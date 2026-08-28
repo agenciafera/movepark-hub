@@ -1,5 +1,5 @@
 import { rotuloDoTelefone, semMarcacao, quandoCompleto } from "./inbox.logic";
-import type { AnexoDaFala } from "./api";
+import { buscarAnexo, type AnexoDaFala } from "./api";
 
 /**
  * A conversa desenhada como imagem, com as mesmas bolhas da tela.
@@ -20,12 +20,29 @@ import type { AnexoDaFala } from "./api";
 export type Medida = (texto: string, negrito?: boolean) => number;
 
 export type FalaParaImagem = {
+  id?: string;
   papel: "cliente" | "agente";
   autor: string;
   texto: string;
   em: string;
   anexos?: AnexoDaFala[];
 };
+
+/**
+ * Uma imagem já carregada e medida, pronta para entrar na bolha.
+ *
+ * O layout precisa do tamanho **antes** de empilhar, e o tamanho só existe depois que a
+ * imagem carrega. Por isso o carregamento acontece fora, e o layout recebe isto pronto.
+ * `fonte` é o que o canvas desenha; nos testes ela nem precisa existir.
+ */
+export type ImagemDaFala = {
+  parte: number;
+  largura: number;
+  altura: number;
+  fonte?: CanvasImageSource;
+};
+
+export type FalaComImagens = FalaParaImagem & { imagens?: ImagemDaFala[] };
 
 /** O que o desenho recebe pronto: cada bolha com posição, tamanho e linhas já quebradas. */
 export type BlocoDaImagem = {
@@ -37,6 +54,8 @@ export type BlocoDaImagem = {
   autor: string;
   hora: string;
   linhas: string[];
+  /** Posição já resolvida de cada imagem, relativa ao canvas. */
+  imagens: { x: number; y: number; largura: number; altura: number; fonte?: CanvasImageSource }[];
 };
 
 export type LayoutDaImagem = {
@@ -62,7 +81,24 @@ export const MEDIDAS = {
   alturaNome: 16,
   alturaCabecalho: 56,
   raio: 14,
+  /*
+    O teto da miniatura. A foto que o cliente manda vem em resolucao de celular, e sem
+    teto uma unica imagem ocuparia mais que a conversa inteira.
+  */
+  maxImagem: 260,
+  maxAlturaImagem: 300,
+  entreImagens: 6,
 } as const;
+
+/** Encolhe a imagem para caber no teto da bolha, sem distorcer. */
+export function medirImagem(
+  largura: number,
+  altura: number,
+): { largura: number; altura: number } {
+  if (largura <= 0 || altura <= 0) return { largura: 0, altura: 0 };
+  const escala = Math.min(MEDIDAS.maxImagem / largura, MEDIDAS.maxAlturaImagem / altura, 1);
+  return { largura: Math.round(largura * escala), altura: Math.round(altura * escala) };
+}
 
 /**
  * Uma imagem tem limite, e conversa não.
@@ -102,12 +138,22 @@ export function quebrarLinhas(texto: string, largura: number, medir: Medida): st
   return fora;
 }
 
-/** O texto da bolha: a fala sem marcação, mais a marca de cada anexo. */
-export function textoParaImagem(f: FalaParaImagem): string {
+/**
+ * O texto da bolha: a fala sem marcação, mais a marca dos anexos que NÃO foram desenhados.
+ *
+ * A imagem que entrou na bolha não precisa de legenda dizendo que é uma imagem. A que
+ * não entrou (um PDF, ou uma foto que falhou ao carregar) precisa, senão a mensagem
+ * aparece vazia e some da conversa a informação de que havia um arquivo ali.
+ */
+export function textoParaImagem(f: FalaComImagens): string {
+  const desenhadas = new Set((f.imagens ?? []).map((i) => i.parte));
   const partes: string[] = [];
   const texto = semMarcacao(f.texto);
   if (texto) partes.push(texto);
-  for (const a of f.anexos ?? []) partes.push(a.nome ? `<${a.tipo}: ${a.nome}>` : `<${a.tipo}>`);
+  for (const a of f.anexos ?? []) {
+    if (desenhadas.has(a.parte)) continue;
+    partes.push(a.nome ? `<${a.tipo}: ${a.nome}>` : `<${a.tipo}>`);
+  }
   return partes.join("\n");
 }
 
@@ -118,7 +164,7 @@ export function textoParaImagem(f: FalaParaImagem): string {
  * do mesmo jeito que quem atendeu leu.
  */
 export function montarLayout(
-  falas: FalaParaImagem[],
+  falas: FalaComImagens[],
   telefoneDoCliente: string,
   medir: Medida,
 ): LayoutDaImagem {
@@ -131,21 +177,40 @@ export function montarLayout(
 
   for (const f of falas ?? []) {
     const conteudo = textoParaImagem(f);
-    if (!conteudo) continue;
+    const imagens = f.imagens ?? [];
+    // Bolha sem texto E sem imagem é chamada de tool: viraria retângulo vazio.
+    if (!conteudo && imagens.length === 0) continue;
 
     const daEquipe = f.papel !== "cliente";
-    const linhas = quebrarLinhas(conteudo, larguraTexto, medir);
-    const larguraDaMaior = Math.max(...linhas.map((l) => medir(l)), 0);
+    const linhas = conteudo ? quebrarLinhas(conteudo, larguraTexto, medir) : [];
+    const larguraDaMaior = Math.max(
+      ...linhas.map((l) => medir(l)),
+      ...imagens.map((i) => i.largura),
+      0,
+    );
     const largura = Math.min(m.maxBolha, Math.ceil(larguraDaMaior) + m.padX * 2);
-    const altura = linhas.length * m.linha + m.padY * 2;
+    const alturaImagens = imagens.reduce((t, i) => t + i.altura + m.entreImagens, 0);
+    const alturaTexto = linhas.length * m.linha;
+    const altura = alturaImagens + alturaTexto + m.padY * 2;
 
     // O nome só aparece de quem atende: o do cliente já está no cabeçalho, e repeti-lo
     // em cada bolha só empurraria a conversa para baixo.
     const autor = daEquipe ? f.autor || "Mia" : "";
     if (autor) y += m.alturaNome;
 
+    const x = daEquipe ? m.largura - m.margem - largura : m.margem;
+
+    // As imagens ficam no topo da bolha, e o texto vem depois: é a ordem do WhatsApp,
+    // onde a legenda acompanha a foto por baixo.
+    let yImagem = y + m.padY;
+    const posicionadas = imagens.map((i) => {
+      const pos = { x: x + m.padX, y: yImagem, largura: i.largura, altura: i.altura, fonte: i.fonte };
+      yImagem += i.altura + m.entreImagens;
+      return pos;
+    });
+
     blocos.push({
-      x: daEquipe ? m.largura - m.margem - largura : m.margem,
+      x,
       y,
       largura,
       altura,
@@ -153,6 +218,7 @@ export function montarLayout(
       autor,
       hora: quandoCompleto(f.em),
       linhas,
+      imagens: posicionadas,
     });
 
     y += altura + m.entreBolhas;
@@ -206,9 +272,49 @@ function caminhoArredondado(
  * Desenha em `devicePixelRatio` (no mínimo 2) porque a imagem quase sempre é olhada com
  * zoom, e texto de 15px renderizado em 1x fica borrado ao ampliar.
  */
+/**
+ * Baixa e decodifica as fotos da conversa, uma fala de cada vez.
+ *
+ * Os bytes não vêm com a conversa: cada anexo é uma chamada, de propósito, para a tela
+ * não esperar megabytes antes da primeira linha. Aqui a gente precisa deles, então
+ * paga-se o custo só quando alguém pede a imagem.
+ *
+ * Anexo que falha ao carregar **não** derruba a cópia: ele volta a ser `<imagem>` no
+ * texto da bolha, e o resto da conversa sai igual.
+ */
+async function carregarImagens(
+  falas: FalaParaImagem[],
+  threadId: string,
+): Promise<FalaComImagens[]> {
+  const desenhaveis = new Set(["imagem", "figurinha"]);
+
+  return await Promise.all(
+    (falas ?? []).map(async (f) => {
+      const fotos = (f.anexos ?? []).filter((a) => desenhaveis.has(a.tipo));
+      if (!threadId || !f.id || fotos.length === 0) return f;
+
+      const imagens: ImagemDaFala[] = [];
+      for (const a of fotos) {
+        try {
+          const { dados } = await buscarAnexo(threadId, f.id, a.parte);
+          const el = new Image();
+          el.src = dados;
+          await el.decode();
+          const { largura, altura } = medirImagem(el.naturalWidth, el.naturalHeight);
+          if (largura > 0) imagens.push({ parte: a.parte, largura, altura, fonte: el });
+        } catch {
+          // Sem a foto, a marca de texto volta: some a imagem, não a informação.
+        }
+      }
+      return { ...f, imagens };
+    }),
+  );
+}
+
 export async function conversaEmImagem(
   falas: FalaParaImagem[],
   telefoneDoCliente: string,
+  threadId = "",
 ): Promise<Blob> {
   // A fonte precisa estar carregada antes de medir: medir com a fonte de fallback e
   // desenhar com a Inter daria bolha curta demais para o texto que ela recebe.
@@ -223,7 +329,7 @@ export async function conversaEmImagem(
   ctx.font = fonteTexto;
   const medir: Medida = (t) => ctx.measureText(t).width;
 
-  const layout = montarLayout(falas, telefoneDoCliente, medir);
+  const layout = montarLayout(await carregarImagens(falas, threadId), telefoneDoCliente, medir);
   if (layout.altura > ALTURA_MAXIMA) {
     throw new Error("Conversa longa demais para virar imagem. Copie em texto.");
   }
@@ -252,10 +358,26 @@ export async function conversaEmImagem(
     caminhoArredondado(ctx, b.x, b.y, b.largura, b.altura, MEDIDAS.raio);
     ctx.fill();
 
+    for (const img of b.imagens) {
+      if (!img.fonte) continue;
+      ctx.save();
+      // Canto arredondado na foto também: quadrado dentro de bolha arredondada
+      // parece anexo colado por cima, e não parte da mensagem.
+      caminhoArredondado(ctx, img.x, img.y, img.largura, img.altura, 8);
+      ctx.clip();
+      ctx.drawImage(img.fonte, img.x, img.y, img.largura, img.altura);
+      ctx.restore();
+    }
+
+    const topoDoTexto =
+      b.y +
+      MEDIDAS.padY +
+      b.imagens.reduce((t, i) => t + i.altura + MEDIDAS.entreImagens, 0);
+
     ctx.fillStyle = b.daEquipe ? COR.textoEquipe : COR.textoCliente;
     ctx.font = fonteTexto;
     b.linhas.forEach((linha, i) => {
-      ctx.fillText(linha, b.x + MEDIDAS.padX, b.y + MEDIDAS.padY + MEDIDAS.linha * i + 15);
+      ctx.fillText(linha, b.x + MEDIDAS.padX, topoDoTexto + MEDIDAS.linha * i + 15);
     });
 
     ctx.fillStyle = COR.hora;

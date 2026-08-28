@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALTURA_MAXIMA,
   MEDIDAS,
+  medirImagem,
   montarLayout,
   quebrarLinhas,
   textoParaImagem,
@@ -99,5 +100,45 @@ describe("montarLayout", () => {
     // que compartilhou toda.
     const muitas = Array.from({ length: 900 }, () => fala({ texto: "uma linha qualquer" }));
     expect(montarLayout(muitas, "5541988149449", medir).altura).toBeGreaterThan(ALTURA_MAXIMA);
+  });
+});
+
+describe("imagem dentro da bolha", () => {
+  const foto = { parte: 0, mime: "image/jpeg", tipo: "imagem" as const, nome: "", bytes: 10 };
+
+  it("encolhe sem distorcer, e não amplia o que já é pequeno", () => {
+    // Foto de celular: 3000x4000 nao pode ocupar mais que a conversa inteira.
+    const grande = medirImagem(3000, 4000);
+    expect(grande.altura).toBeLessThanOrEqual(MEDIDAS.maxAlturaImagem);
+    expect(grande.largura / grande.altura).toBeCloseTo(3000 / 4000, 2);
+    // Figurinha pequena fica do tamanho que e': ampliar so' borra.
+    expect(medirImagem(120, 120)).toEqual({ largura: 120, altura: 120 });
+  });
+
+  it("a foto entra na bolha e a legenda de <imagem> sai", () => {
+    // Legendar de "imagem" a imagem que esta' desenhada ali e' ruido.
+    const f = { ...fala({ texto: "olha isso", anexos: [foto] }), imagens: [{ parte: 0, largura: 200, altura: 150 }] };
+    expect(textoParaImagem(f)).toBe("olha isso");
+
+    const l = montarLayout([f], "5541988149449", medir);
+    const b = l.blocos[0];
+    expect(b.imagens[0].largura).toBe(200);
+    // A bolha cresce para caber foto E texto.
+    expect(b.altura).toBeGreaterThan(150 + MEDIDAS.linha);
+    expect(b.largura).toBeGreaterThanOrEqual(200 + MEDIDAS.padX * 2);
+  });
+
+  it("foto que falhou ao carregar volta a ser <imagem> no texto", () => {
+    // Some a foto, nao a informacao de que havia uma.
+    const f = { ...fala({ texto: "", anexos: [foto] }), imagens: [] };
+    expect(textoParaImagem(f)).toBe("<imagem>");
+    expect(montarLayout([f], "5541988149449", medir).blocos.length).toBe(1);
+  });
+
+  it("bolha só com foto, sem texto, existe", () => {
+    const f = { ...fala({ texto: "", anexos: [foto] }), imagens: [{ parte: 0, largura: 200, altura: 150 }] };
+    const b = montarLayout([f], "5541988149449", medir).blocos[0];
+    expect(b.linhas).toEqual([]);
+    expect(b.altura).toBe(150 + MEDIDAS.entreImagens + MEDIDAS.padY * 2);
   });
 });

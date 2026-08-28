@@ -147,6 +147,13 @@ existiu um áudio ali.
 cinza, quem atende à direita em roxo, nome e horário. Serve para quem vai ler, e também
 para um modelo que lê imagem.
 
+A **foto entra na imagem**, não só a palavra "imagem": antes de montar o layout, cada
+anexo do tipo imagem ou figurinha é baixado (`acao: "anexo"`, o mesmo caminho da tela) e
+decodificado, porque o layout precisa do tamanho antes de empilhar. Ela é encolhida para
+caber (260x300 no máximo, sem distorcer e sem ampliar figurinha pequena) e desenhada no
+topo da bolha, com o texto por baixo, como no WhatsApp. Foto que falha ao carregar volta
+a ser `<imagem>` no texto: some a foto, não a informação de que havia uma.
+
 O desenho é `canvas` puro, sem `html2canvas` nem parente: são cinco formas (bolha, texto,
 nome, hora, marca de anexo), e uma dependência que reimplementa meio CSS erraria em fonte
 e emoji por um resultado igual. O layout mora separado do desenho, em

@@ -202,16 +202,25 @@ export function useResponderConversa() {
  *
  * `staleTime: Infinity` porque anexo não muda: uma vez carregado, fica.
  */
+/**
+ * Os bytes de um anexo, sem passar pelo React.
+ *
+ * A imagem da conversa é desenhada fora de qualquer componente, e lá não há hook. É a
+ * mesma chamada do `useAnexo`, exposta para quem precisa dos bytes e não do estado.
+ */
+export function buscarAnexo(threadId: string, messageId: string, parte: number) {
+  return chamar<{ dados: string; nome: string }>(
+    { acao: "anexo", threadId, messageId, parte },
+    "Não consegui carregar o anexo.",
+  );
+}
+
 export function useAnexo(threadId: string | null, messageId: string, parte: number, ligado: boolean) {
   return useQuery({
     queryKey: inboxKeys.anexo(messageId, parte),
     enabled: ligado && !!threadId && !!messageId,
     staleTime: Infinity,
     gcTime: 10 * 60_000,
-    queryFn: () =>
-      chamar<{ dados: string; nome: string }>(
-        { acao: "anexo", threadId, messageId, parte },
-        "Não consegui carregar o anexo.",
-      ),
+    queryFn: () => buscarAnexo(threadId!, messageId, parte),
   });
 }

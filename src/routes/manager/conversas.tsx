@@ -387,6 +387,9 @@ export default function ManagerConversas() {
                           const png = await conversaEmImagem(
                             conversa.data?.falas ?? [],
                             telefoneDaConversa,
+                            // O id da conversa vai junto: sem ele os anexos nao tem
+                            // como ser buscados, e a foto vira so' a palavra "imagem".
+                            aberta ?? "",
                           );
                           /*
                             `ClipboardItem` e' o unico jeito de por' imagem na area de
