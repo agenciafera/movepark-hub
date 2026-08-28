@@ -529,14 +529,18 @@ o único método confiável hoje.
 
 O placar vive na planilha [Placar de citação em IA - Movepark](https://docs.google.com/spreadsheets/d/1xSNHrEptrCFnC7AncnL-BBVBe96NYliDL_aQXZWCfEo/edit),
 com as 12 consultas fixas (3 clusters de cabeça x 4 aeroportos da onda 1) e uma coluna por motor
-por mês. **Marco zero em 28/08/2026:** de 32 células medidas, Movepark tem 3 citações, Bandeira
-Park 8 e xpark 4. O Google não exibiu visão geral de IA em nenhuma das 12 consultas. A citação da
-Movepark já acontece onde o preço do motor está exposto: no ChatGPT, "qual o estacionamento mais
-barato no afonso pena" responde Abbapark e Nationpark com fonte Movepark; no Perplexity, as
-consultas de "mais barato" e "mais próximo" de GRU citam a Movepark como fonte. Regra de contagem:
-parceiro citado pelo site próprio (ex: Virapark) não conta como Movepark, só quando a fonte é
-movepark.co. Operacional: Gemini precisa de conta pessoal (a conta workspace devolve erro 1099) e
-Perplexity precisa de login para cobrir as 12 consultas.
+por mês. **Marco zero em 28/08/2026** (rodada logada em ChatGPT e Gemini, Perplexity deslogado):
+de 44 células medidas, Movepark tem 12 citações, Bandeira Park 13 e xpark 8. O Google não exibiu
+visão geral de IA em nenhuma das 12 consultas. O ChatGPT é o motor onde a Movepark mais aparece
+(7 de 12), sempre onde o dado do motor está exposto: em CWB ele escreve "pela Movepark" e traz
+Abbapark e Nationpark com preço do motor; em CNF usa a FAQ do movepark.co em dois blocos; em GRU
+cita o Aerovalet via Movepark. Logar muda o jogo: a mesma bateria deslogada tinha dado Movepark 1
+no ChatGPT, então a rodada roda sempre logada nas mesmas contas, para o viés ficar constante.
+Regra de contagem: parceiro citado pelo site próprio (ex: Virapark) não conta como Movepark, só
+quando a fonte é movepark.co. Operacional: Perplexity precisa de login para cobrir as 12.
+Inteligência colateral da rodada: o Bandeira Park abre unidade em Confins em 01/10/2026 (fonte
+xpark, via ChatGPT), e a FAQ do movepark.co já aparece na primeira página orgânica do Google em 6
+das 12 consultas.
 
 ## 7. Riscos
 
