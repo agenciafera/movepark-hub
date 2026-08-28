@@ -100,7 +100,6 @@ import ManagerPartners from "@/routes/manager/partners";
 import ManagerDestinations from "@/routes/manager/destinations";
 import ManagerLotesMapeados from "@/routes/manager/lotes-mapeados";
 import ManagerConversas from "@/routes/manager/conversas";
-import ConversaPublica from "@/routes/conversa-publica";
 import ManagerAuditoriaEnderecos from "@/routes/manager/auditoria-enderecos";
 import ManagerBlog from "@/routes/manager/blog";
 import ManagerApiInterna from "@/routes/manager/api-interna";
@@ -900,14 +899,6 @@ export const routes: RouteRecord[] = [
         ],
       },
 
-      /**
-       * Leitura de conversa compartilhada, fora de qualquer shell.
-       *
-       * Sem `RequireRole`: quem abre não tem conta, e o token da URL é a credencial. Sem
-       * shell do consumidor: a página não é do site, é uma folha que alguém recebeu, e
-       * menu e rodapé convidariam a navegar para onde essa pessoa não tem o que fazer.
-       */
-      { path: "/conversa/:token", element: <ConversaPublica /> },
 
       // Manager (hub_admin)
       {

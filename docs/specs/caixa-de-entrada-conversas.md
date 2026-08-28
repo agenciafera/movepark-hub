@@ -118,16 +118,33 @@ O telefone `5500000000000` é o sentinela de "sem cliente" da bolinha de teste e
 como **Teste sem cliente**: formatado, viraria "(00) 00000-0000" e passaria por cliente de
 verdade na lista.
 
-## Anexos e link de leitura
+## Anexos
 
 Imagem, áudio, arquivo e figurinha chegam como data URI, gravados pelo adaptador no
 momento em que a mensagem entra. A tela pede cada um **por demanda** (`acao: "anexo"`),
 porque carregar tudo junto arrastaria a conversa inteira em base64.
 
-`compartilhar` gera um token de 64 hex e abre `/conversa/<token>`, que é **público e
-somente leitura**, servido pela Edge `conversa-publica` (`verify_jwt = false`).
-`descompartilhar` invalida. A rota está em `ROTAS_PRIVADAS` do worker (noindex) e em
-`ROTAS_DE_APP`, sem o que o manifesto de caminhos responderia 404 em produção.
+## Levar a conversa embora: texto, não link
+
+**Copiar conversa** põe a conversa inteira na área de transferência no formato que o
+WhatsApp usa ao exportar:
+
+```
+[28/08/2026 09:01] (19) 98826-1313: Bom dia, não consegui achar pelo Waze <imagem>
+[28/08/2026 09:01] Mia: Como a sua reserva já tinha início agendado para hoje...
+```
+
+O markdown sai (o destino é leitura, não renderização) e a quebra de linha fica: uma
+lista de contatos que a Mia manda em três linhas viraria um parágrafo emendado, e quem
+colar num modelo leria pior do que o cliente leu no WhatsApp. Anexo vira `<imagem>`,
+`<áudio>`, `<arquivo: nome>`: o arquivo não viaja no texto, e omitir esconderia que
+existiu um áudio ali.
+
+> **Isto substituiu o link público de leitura** (29/08/2026), que gerava um token de 64
+> hex e abria `/conversa/<token>` numa Edge `verify_jwt = false`. Saíram junto a rota,
+> a página, a Edge (apagada do projeto, não só do repo), as entradas do worker e os
+> verbos `compartilhar`/`descompartilhar`/`publica` do beast-bots. Texto puro serve o
+> mesmo propósito e não deixa uma URL viva com a conversa de um cliente atrás dela.
 
 ## Onde está cada coisa
 

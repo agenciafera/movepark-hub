@@ -32,7 +32,6 @@ export type ConversaDaLista = {
   lida_ate: string | null;
   assumida_por: string | null;
   assumida_em: string | null;
-  compartilhada: string | null;
 };
 
 /** A ficha de um anexo. Os bytes vêm depois, por `useAnexo`. */
@@ -59,7 +58,6 @@ export type ConversaAberta = {
   telefone: string;
   lidaAte: string | null;
   assumidaPor: string | null;
-  compartilhada: string | null;
   falas: FalaDaConversa[];
 };
 
@@ -68,7 +66,6 @@ export const inboxKeys = {
   lista: (busca: string) => [...inboxKeys.all, "lista", busca] as const,
   conversa: (id: string) => [...inboxKeys.all, "conversa", id] as const,
   anexo: (msg: string, parte: number) => [...inboxKeys.all, "anexo", msg, parte] as const,
-  publica: (token: string) => ["conversa-publica", token] as const,
 };
 
 /** A mensagem de erro da Edge é mais útil que "FunctionsHttpError". */
@@ -216,56 +213,5 @@ export function useAnexo(threadId: string | null, messageId: string, parte: numb
         { acao: "anexo", threadId, messageId, parte },
         "Não consegui carregar o anexo.",
       ),
-  });
-}
-
-/** Liga e desliga o link público de leitura. Devolve o token quando liga. */
-export function useCompartilharConversa() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ threadId, ligar }: { threadId: string; ligar: boolean }) =>
-      chamar<{ ok: boolean; token: string | null }>(
-        { acao: ligar ? "compartilhar" : "descompartilhar", threadId },
-        "Não consegui mudar o compartilhamento.",
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: inboxKeys.all }),
-  });
-}
-
-/** Um anexo da conversa compartilhada, pelo mesmo token. */
-export function useAnexoPublico(token: string, messageId: string, parte: number, ligado: boolean) {
-  return useQuery({
-    queryKey: [...inboxKeys.publica(token), "anexo", messageId, parte],
-    enabled: ligado && !!token && !!messageId,
-    staleTime: Infinity,
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("conversa-publica", {
-        body: { token, messageId, parte },
-      });
-      if (error) throw new Error((await lerErro(error)) ?? "Não consegui carregar o anexo.");
-      return data as { dados: string };
-    },
-  });
-}
-
-/**
- * A conversa vista por quem recebeu o link.
- *
- * Passa por outra Edge, sem sessão, e o token é a única credencial. Por isso ela vive
- * aqui e não reusa `chamar`: aquela fala com a caixa de entrada inteira.
- */
-export function useConversaPublica(token: string) {
-  return useQuery({
-    queryKey: inboxKeys.publica(token),
-    enabled: !!token,
-    retry: false,
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("conversa-publica", {
-        body: { token },
-      });
-      if (error) throw new Error((await lerErro(error)) ?? "Este link não está mais válido.");
-      return data as { threadId: string; telefone: string; falas: FalaDaConversa[] };
-    },
   });
 }

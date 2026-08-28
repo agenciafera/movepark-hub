@@ -1,4 +1,4 @@
-import type { ConversaDaLista } from "./api";
+import type { AnexoDaFala, ConversaDaLista } from "./api";
 
 /**
  * Regras puras da caixa de entrada, fora do componente para terem teste.
@@ -144,12 +144,23 @@ export function textoDaFala(bruto: string): string {
  * acrescenta nada e o asterisco atrapalha a leitura.
  */
 export function previa(bruto: string | null): string {
+  // A prévia é UMA linha: o `\s+` achata o que a mensagem tinha de quebra.
+  return semMarcacao(bruto).replace(/\s+/g, " ").trim();
+}
+
+/**
+ * O mesmo texto sem a marcação, mas com as quebras de linha de pé.
+ *
+ * A lista achata tudo numa linha; a cópia da conversa não pode, senão a lista de
+ * contatos que a Mia manda em três linhas vira um parágrafo emendado, e quem colar o
+ * texto num modelo lê pior do que o cliente leu no WhatsApp.
+ */
+export function semMarcacao(bruto: string | null): string {
   return textoDaFala(bruto ?? "")
     .replace(/\*\*(.+?)\*\*/gs, "$1")
     .replace(/(?<!\*)\*(?!\*)([^*\n]+?)\*(?!\*)/g, "$1")
     .replace(/(?<!_)_(?!_)([^_\n]+?)_(?!_)/g, "$1")
     .replace(/^#{1,6}\s+/gm, "")
-    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -170,4 +181,53 @@ export function paraExibicao(texto: string): string {
     .replace(/(?<!~)~(?!~)([^\n~]+?)(?<!~)~(?!~)/g, "~~$1~~")
     // O WhatsApp escapa colchete e sublinhado do nome de arquivo; na tela isso é ruído.
     .replace(/\\([[\]_*~])/g, "$1");
+}
+
+/**
+ * A conversa inteira em texto, no formato que o WhatsApp usa ao exportar.
+ *
+ * ```
+ * [28/08/2026 20:00] (41) 98814-9449: ola
+ * [28/08/2026 20:01] Mia: Para iniciarmos o seu atendimento...
+ * ```
+ *
+ * Existe para a conversa sair daqui e ir para outro lugar: um chamado, um colega, um
+ * modelo que vai ler e apontar o que a Mia errou. Texto puro é o que todo lugar aceita,
+ * e por isso substituiu o link público de leitura.
+ *
+ * O markdown sai (`paraExibicao` já resolve o dialeto do WhatsApp) porque o destino é
+ * leitura, não renderização. Anexo vira uma marca do que era: o arquivo não viaja no
+ * texto, e fingir que a mensagem estava vazia esconderia que existiu um áudio ali.
+ */
+export function conversaEmTexto(
+  falas: { papel: "cliente" | "agente"; autor: string; texto: string; em: string; anexos?: AnexoDaFala[] }[],
+  telefoneDoCliente: string,
+): string {
+  const doCliente = rotuloDoTelefone(telefoneDoCliente);
+
+  return (falas ?? [])
+    .map((f) => {
+      const quem = f.papel === "cliente" ? doCliente : f.autor || "Mia";
+      const partes: string[] = [];
+      const texto = semMarcacao(f.texto);
+      if (texto) partes.push(texto);
+      for (const a of f.anexos ?? []) {
+        partes.push(a.nome ? `<${a.tipo}: ${a.nome}>` : `<${a.tipo}>`);
+      }
+      return `[${quandoCompleto(f.em)}] ${quem}: ${partes.join(" ")}`.trimEnd();
+    })
+    .join("\n");
+}
+
+/** Data e hora por extenso, como o WhatsApp escreve na exportação. */
+export function quandoCompleto(iso: string, formatar = padraoBR): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return formatar(d);
+}
+
+function padraoBR(d: Date): string {
+  const data = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${data} ${hora}`;
 }

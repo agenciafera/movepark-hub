@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  Copy,
   ChatCircleDots,
   MagnifyingGlass,
   Envelope,
@@ -7,8 +8,6 @@ import {
   HandPalm,
   Robot,
   PaperPlaneTilt,
-  ShareNetwork,
-  LinkBreak,
   WhatsappLogo,
   Globe,
 } from "@phosphor-icons/react";
@@ -24,7 +23,6 @@ import { Anexo } from "@/features/inbox/Anexo";
 import {
   useAssumirConversa,
   useConversa,
-  useCompartilharConversa,
   useConversas,
   useDevolverConversa,
   useMarcarConversa,
@@ -38,6 +36,7 @@ import {
   quando,
   previa,
   rotuloDoTelefone,
+  conversaEmTexto,
   textoDaFala,
   type FiltroDaCaixa,
 } from "@/features/inbox/inbox.logic";
@@ -75,15 +74,10 @@ export default function ManagerConversas() {
   const assumir = useAssumirConversa();
   const devolver = useDevolverConversa();
   const responder = useResponderConversa();
-  const compartilhar = useCompartilharConversa();
   const [resposta, setResposta] = React.useState("");
   const fim = React.useRef<HTMLDivElement>(null);
 
   const assumida = !!conversa.data?.assumidaPor;
-  const compartilhada = conversa.data?.compartilhada ?? null;
-
-  /** O link que se copia. Montado na tela porque o servidor não conhece o host. */
-  const linkPublico = compartilhada ? `${window.location.origin}/conversa/${compartilhada}` : "";
 
   /**
    * Rola para a última mensagem ao abrir e a cada fala nova.
@@ -338,36 +332,21 @@ export default function ManagerConversas() {
                 <Button
                   type="button"
                   size="sm"
-                  variant={compartilhada ? "primary" : "secondary"}
-                  disabled={compartilhar.isPending}
+                  variant="secondary"
+                  disabled={!conversa.data}
                   onClick={() => {
-                    if (compartilhada) {
-                      compartilhar.mutate(
-                        { threadId: aberta, ligar: false },
-                        {
-                          onSuccess: () => toast.success("Link desativado."),
-                          onError: (e) =>
-                            toast.error(e instanceof Error ? e.message : "Não consegui desativar."),
-                        },
-                      );
-                      return;
-                    }
-                    compartilhar.mutate(
-                      { threadId: aberta, ligar: true },
-                      {
-                        onSuccess: (r) => {
-                          const link = `${window.location.origin}/conversa/${r.token}`;
-                          navigator.clipboard?.writeText(link).catch(() => undefined);
-                          toast.success("Link copiado. Quem receber consegue ler a conversa.");
-                        },
-                        onError: (e) =>
-                          toast.error(e instanceof Error ? e.message : "Não consegui compartilhar."),
-                      },
+                    const texto = conversaEmTexto(
+                      conversa.data?.falas ?? [],
+                      telefoneDaConversa,
                     );
+                    navigator.clipboard
+                      ?.writeText(texto)
+                      .then(() => toast.success("Conversa copiada. Já dá para colar."))
+                      .catch(() => toast.error("Não consegui copiar. Tente de novo."));
                   }}
                 >
-                  {compartilhada ? <LinkBreak size={16} /> : <ShareNetwork size={16} />}
-                  {compartilhada ? "Parar de compartilhar" : "Compartilhar"}
+                  <Copy size={16} />
+                  Copiar conversa
                 </Button>
                 <Button
                   type="button"
@@ -390,24 +369,6 @@ export default function ManagerConversas() {
                 </Button>
                 </div>
               </header>
-
-              {compartilhada ? (
-                <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                  <span className="text-body-sm text-body">Link de leitura ativo:</span>
-                  <code className="truncate text-body-sm text-muted">{linkPublico}</code>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(linkPublico).catch(() => undefined);
-                      toast.success("Link copiado.");
-                    }}
-                  >
-                    Copiar
-                  </Button>
-                </div>
-              ) : null}
 
               <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                 {conversa.isLoading ? (

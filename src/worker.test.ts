@@ -787,33 +787,17 @@ describe("404 real de página", () => {
   });
 });
 
-describe("leitura de conversa compartilhada", () => {
+describe("conversa compartilhada, que deixou de existir", () => {
   /*
-    A rota e' dinamica e nao tem HTML pre-renderizado, entao o fallback de SPA devolve a
-    casca com status 404. A pagina abre, porque o roteamento e' no navegador, mas o
-    status errado some da pre-visualizacao do WhatsApp e do Slack, e este link existe
-    justamente para ser mandado a alguem.
+    O link publico de leitura saiu em 29/08/2026: a conversa passa a se levar em texto,
+    pelo botao "Copiar conversa" da caixa de entrada. O teste fica para provar que a
+    rota saiu inteira, e nao so' da tela: uma rota de app orfa continuaria devolvendo a
+    casca do app com 200 num caminho que nao abre nada.
   */
   const TOKEN = "a".repeat(64);
 
-  it("e' rota de app, senao o manifesto de caminhos a manda para o 404", () => {
-    /*
-      O 404 nao vinha do ASSETS: vem do manifesto. Todo caminho que nao esta no
-      paths-manifest.json e nao e' rota de app recebe a pagina de erro ANTES de chegar
-      aos assets. Foi por isso que a primeira tentativa, um bloco antes do
-      `ASSETS.fetch`, nao mudou nada em producao.
-    */
-    expect(ehRotaDeApp(`/conversa/${TOKEN}`)).toBe(true);
-  });
-
-  it("caminho fora do formato do token nao e' rota de app", () => {
-    // Sem o formato, qualquer coisa sob /conversa/ abriria com a casca do app, que e'
-    // soft 404.
-    expect(ehRotaDeApp("/conversa/qualquer")).toBe(false);
+  it("nao e' mais rota de app", () => {
+    expect(ehRotaDeApp(`/conversa/${TOKEN}`)).toBe(false);
     expect(ehRotaDeApp("/conversa")).toBe(false);
-  });
-
-  it("continua com noindex, porque o token vive na URL", () => {
-    expect(ehRotaPrivada(`/conversa/${TOKEN}`)).toBe(true);
   });
 });

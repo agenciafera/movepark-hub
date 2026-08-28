@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ConversaDaLista } from "./api";
-import { contarNaoLidas, juntarPaginas, filtrar, naoLida, quando, paraExibicao, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
+import { contarNaoLidas, conversaEmTexto, juntarPaginas, filtrar, naoLida, quando, paraExibicao, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
 
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
@@ -14,7 +14,6 @@ const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   lida_ate: null,
   assumida_por: null,
   assumida_em: null,
-  compartilhada: null,
   ...over,
 });
 
@@ -195,5 +194,64 @@ describe("juntarPaginas", () => {
   it("página sem lista não vira buraco", () => {
     expect(juntarPaginas([{ conversas: undefined }, { conversas: [linha({ id: "a" })] }]).length).toBe(1);
     expect(juntarPaginas(undefined)).toEqual([]);
+  });
+});
+
+describe("conversaEmTexto", () => {
+  const fala = (over: Partial<Parameters<typeof conversaEmTexto>[0][number]> = {}) => ({
+    papel: "cliente" as const,
+    autor: "",
+    texto: "ola",
+    em: "2026-08-28T23:00:00.000Z",
+    anexos: [],
+    ...over,
+  });
+
+  it("escreve no formato que o WhatsApp exporta", () => {
+    const texto = conversaEmTexto(
+      [
+        fala({ texto: "quero reservar" }),
+        fala({ papel: "agente", autor: "Mia", texto: "Para quais **datas**?" }),
+        fala({ papel: "agente", autor: "Kallef", texto: "Eu assumo daqui." }),
+      ],
+      "5541988149449",
+    );
+
+    const linhas = texto.split("\n");
+    // Quem falou vem no lugar do nome: o cliente pelo numero, a Mia e a equipe pelo nome.
+    expect(linhas[0]).toMatch(/^\[\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}\] \(41\) 98814-9449: quero reservar$/);
+    expect(linhas[1]).toContain("Mia: Para quais datas?");
+    expect(linhas[2]).toContain("Kallef: Eu assumo daqui.");
+  });
+
+  it("o anexo aparece pelo que era, não some", () => {
+    // O arquivo nao viaja no texto. Omitir deixaria a mensagem vazia, escondendo que
+    // existiu um audio ali, que costuma ser justamente o ponto da conversa.
+    const texto = conversaEmTexto(
+      [
+        fala({ texto: "", anexos: [{ parte: 0, mime: "audio/ogg", tipo: "audio", nome: "", bytes: 10 }] }),
+        fala({
+          texto: "segue",
+          anexos: [{ parte: 1, mime: "application/pdf", tipo: "arquivo", nome: "voucher.pdf", bytes: 20 }],
+        }),
+      ],
+      "5541988149449",
+    );
+    expect(texto).toContain("<audio>");
+    expect(texto).toContain("segue <arquivo: voucher.pdf>");
+  });
+
+  it("a quebra de linha da mensagem sobrevive", () => {
+    // A lista achata tudo numa linha. A copia nao pode: a lista de contatos que a Mia
+    // manda em tres linhas viraria um paragrafo emendado.
+    const texto = conversaEmTexto(
+      [fala({ papel: "agente", autor: "Mia", texto: "Contatos:\n- WhatsApp\n- E-mail" })],
+      "5541988149449",
+    );
+    expect(texto).toContain("Contatos:\n- WhatsApp\n- E-mail");
+  });
+
+  it("conversa vazia vira texto vazio, e não uma linha solta", () => {
+    expect(conversaEmTexto([], "5541988149449")).toBe("");
   });
 });

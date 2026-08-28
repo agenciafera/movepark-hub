@@ -54,8 +54,6 @@ const ACOES = [
   "devolver",
   "responder",
   "anexo",
-  "compartilhar",
-  "descompartilhar",
 ] as const;
 export type AcaoDaCaixa = (typeof ACOES)[number];
 
@@ -176,9 +174,7 @@ export async function handler(req: Request): Promise<Response> {
   if (
     corpo.acao === "assumir" ||
     corpo.acao === "devolver" ||
-    corpo.acao === "responder" ||
-    corpo.acao === "compartilhar" ||
-    corpo.acao === "descompartilhar"
+    corpo.acao === "responder"
   ) {
     console.log(
       `[mia-inbox] ${corpo.acao} uid=${usuario.user.id} email=${usuario.user.email ?? "?"} thread=${String(enviar.threadId)}`,

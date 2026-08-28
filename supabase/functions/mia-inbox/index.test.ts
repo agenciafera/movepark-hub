@@ -74,12 +74,13 @@ Deno.test("responder leva o texto e quem escreveu", () => {
   assertEquals(corpo.assumidaPor, "uid");
 });
 
-// As acoes novas precisam estar na lista fechada, senao a Edge devolve 400 e a tela
-// para de carregar. Aconteceu: o front pedia `anexo` e `compartilhar` e a Edge recusava.
-Deno.test("as acoes de anexo e compartilhamento passam", () => {
+// A acao precisa estar na lista fechada, senao a Edge devolve 400 e a tela para de
+// carregar. Aconteceu: o front pedia `anexo` e a Edge recusava.
+Deno.test("a acao de anexo passa, e o compartilhamento nao existe mais", () => {
   assertEquals(acaoValida("anexo"), true);
-  assertEquals(acaoValida("compartilhar"), true);
-  assertEquals(acaoValida("descompartilhar"), true);
+  // O link publico de leitura saiu: a conversa se leva em texto, pelo "Copiar conversa".
+  assertEquals(acaoValida("compartilhar"), false);
+  assertEquals(acaoValida("descompartilhar"), false);
 });
 
 Deno.test("anexo leva a mensagem e a parte, e nada mais", () => {
@@ -88,15 +89,6 @@ Deno.test("anexo leva a mensagem e a parte, e nada mais", () => {
   } as never);
   assertEquals(Object.keys(corpo).sort().join(","), "acao,agentId,messageId,parte,threadId");
   assertEquals(corpo.parte, 2);
-});
-
-Deno.test("compartilhar nao aceita token do navegador", () => {
-  // O token e' sorteado no servidor. Aceitar um do cliente deixaria alguem fixar um
-  // link adivinhavel.
-  const corpo = corpoParaOBeastBots("compartilhar", "uid", "Kallef", {
-    threadId: "t", token: "aaaa",
-  } as never);
-  assertEquals("token" in corpo, false);
 });
 
 Deno.test("listar leva busca e cursor ao BeastBots", () => {

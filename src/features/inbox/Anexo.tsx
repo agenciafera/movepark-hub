@@ -1,7 +1,7 @@
 import * as React from "react";
 import { DownloadSimple, FileArrowDown, FilePdf } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { useAnexo, useAnexoPublico, type AnexoDaFala } from "./api";
+import { useAnexo, type AnexoDaFala } from "./api";
 
 /**
  * Um anexo da conversa: imagem, figurinha, áudio, vídeo ou arquivo.
@@ -23,13 +23,10 @@ export function Anexo({
   threadId,
   messageId,
   anexo,
-  token,
 }: {
   threadId: string | null;
   messageId: string;
   anexo: AnexoDaFala;
-  /** Na leitura pública o token é a credencial: não há sessão nem caixa de entrada. */
-  token?: string;
 }) {
   /**
    * Imagem e figurinha carregam sozinhas; áudio, vídeo e arquivo esperam um clique.
@@ -41,9 +38,7 @@ export function Anexo({
   const [pedido, setPedido] = React.useState(automatico);
   const [aberto, setAberto] = React.useState(false);
 
-  const interno = useAnexo(threadId, messageId, anexo.parte, pedido && !token);
-  const publico = useAnexoPublico(token ?? "", messageId, anexo.parte, pedido && !!token);
-  const dados = token ? publico : interno;
+  const dados = useAnexo(threadId, messageId, anexo.parte, pedido);
   const uri = dados.data?.dados;
 
   const rotulo =

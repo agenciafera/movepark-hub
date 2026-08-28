@@ -73,10 +73,6 @@ function redirecionaWww(url: URL): Response | null {
  */
 export const ROTAS_PRIVADAS = [
   "/manager",
-  // Leitura de conversa compartilhada. O token vive na URL, então indexá-la publicaria
-  // a conversa de um cliente E o próprio token no índice do Google. Ela é pública para
-  // quem tem o link, e só para essa pessoa.
-  "/conversa",
   "/operator",
   "/account",
   "/checkout",
@@ -767,15 +763,6 @@ const ROTAS_DE_APP: RegExp[] = [
   /^\/faq(\/[^/]+)?$/,
   // Idem: destino que ganha preço depois do build abre pelo cliente até o próximo deploy.
   /^\/estacionamento-mais-barato\/[^/]+$/,
-  /**
-   * Leitura de conversa compartilhada. Não existe HTML para ela: o token nasce depois do
-   * build e é sorteado por conversa, então nenhum `getStaticPaths` a alcançaria.
-   *
-   * O formato é conferido (64 hex, o mesmo da Edge) em vez de aceitar tudo sob
-   * `/conversa/`: sem isso, qualquer caminho ali viraria 200 com a casca do app, que é o
-   * soft 404 que o bloco do lote mapeado neste arquivo existe para evitar.
-   */
-  /^\/conversa\/[0-9a-f]{64}$/,
 ];
 
 export function ehRotaDeApp(pathname: string): boolean {

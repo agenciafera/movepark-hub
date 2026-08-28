@@ -33,7 +33,6 @@ vi.mock("@/features/inbox/api", async (original) => ({
   useAssumirConversa: () => ({ mutate: assumir, isPending: false }),
   useDevolverConversa: () => ({ mutate: devolver, isPending: false }),
   useResponderConversa: () => ({ mutate: responder, isPending: false }),
-  useCompartilharConversa: () => ({ mutate: vi.fn(), isPending: false }),
   // O anexo carrega sozinho; no teste de tela ele chega pronto.
   useAnexo: () => ({ data: { dados: "data:image/jpeg;base64,AAA", nome: "" }, isPending: false, isError: false }),
   useAnexoPublico: () => ({ data: undefined, isPending: false, isError: false }),
@@ -55,7 +54,6 @@ const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   lida_ate: null,
   assumida_por: null,
   assumida_em: null,
-  compartilhada: null,
   ...over,
 });
 
@@ -117,7 +115,6 @@ describe("caixa de entrada", () => {
       telefone: "5541988149449",
       lidaAte: null,
       assumidaPor: "uid",
-      compartilhada: null,
       falas: [
         { id: "m1", papel: "agente", autor: "Mia", texto: "Posso ajudar?", em: "2026-08-27T20:00:00.000Z", anexos: [] },
         { id: "m2", papel: "agente", autor: "Kallef", texto: "Eu assumo daqui.", em: "2026-08-27T20:01:00.000Z", anexos: [] },
@@ -139,7 +136,6 @@ describe("caixa de entrada", () => {
       telefone: "5541988149449",
       lidaAte: null,
       assumidaPor: null,
-      compartilhada: null,
       falas: [
         { id: "m1", papel: "cliente", autor: "", texto: "ola", em: "2026-08-27T20:00:00.000Z", anexos: [] },
         { id: "m2", papel: "agente", autor: "Mia", texto: "Posso ajudar? **Virapark**", em: "2026-08-27T20:01:00.000Z", anexos: [] },
@@ -175,6 +171,37 @@ describe("caixa de entrada", () => {
     expect(screen.queryByText("Conversa sem mensagens")).toBeNull();
   });
 
+  it("copiar leva a conversa inteira em texto, no formato do WhatsApp", async () => {
+    const escrito: string[] = [];
+    // `navigator.clipboard` so' tem getter no happy-dom; definir a propriedade e' o
+    // unico jeito de espiar a copia.
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: (t: string) => (escrito.push(t), Promise.resolve()) },
+    });
+
+    lista.current = [linha({ id: "t-41" })];
+    aberta.current = {
+      threadId: "t-41",
+      telefone: "5541988149449",
+      lidaAte: null,
+      assumidaPor: null,
+      falas: [
+        { id: "m1", papel: "cliente", autor: "", texto: "ola", em: "2026-08-28T23:00:00.000Z", anexos: [] },
+        { id: "m2", papel: "agente", autor: "Mia", texto: "Oi! Posso ajudar?", em: "2026-08-28T23:01:00.000Z", anexos: [] },
+      ],
+    };
+    renderWithProviders(<ManagerConversas />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Conversa com/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Copiar conversa" }));
+
+    await waitFor(() => expect(escrito.length).toBe(1));
+    expect(escrito[0]).toContain("(41) 98814-9449: ola");
+    expect(escrito[0]).toContain("Mia: Oi! Posso ajudar?");
+    // Duas falas, duas linhas: nada de cabecalho inventado em volta.
+    expect(escrito[0].split("\n").length).toBe(2);
+  });
+
   it("página sem lista não derruba a tela", () => {
     // Regressao: um backend antigo no ar devolvia pagina sem `conversas`, o
     // `flatMap` produzia `[undefined]` e a sidebar inteira do Manager caia.
@@ -195,7 +222,7 @@ describe("caixa de entrada", () => {
 
   it("abrir uma conversa não lida marca como lida, sem passo manual", () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, compartilhada: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     expect(marcar).toHaveBeenCalledWith({ threadId: "t-41", lida: true });
@@ -216,7 +243,6 @@ describe("caixa de entrada", () => {
       telefone: "5541988149449",
       lidaAte: null,
       assumidaPor: null,
-      compartilhada: null,
       falas: [
         { id: "m1", papel: "cliente", autor: "", texto: "quero reservar", em: "2026-08-27T20:00:00.000Z", anexos: [] },
         { id: "m2", papel: "agente", autor: "Mia", texto: "Para quais datas?", em: "2026-08-27T20:00:10.000Z", anexos: [] },
@@ -232,7 +258,7 @@ describe("caixa de entrada", () => {
     lista.current = [linha({ assumida_por: "uid-1" })];
     aberta.current = {
       threadId: "t-41", telefone: "5541988149449", lidaAte: null,
-      assumidaPor: "uid-1", compartilhada: null, falas: [],
+      assumidaPor: "uid-1", falas: [],
     };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
@@ -254,7 +280,7 @@ describe("caixa de entrada", () => {
   it("não deixa escrever antes de assumir", async () => {
     // Responder sem assumir deixaria a Mia e a pessoa falando por cima uma da outra.
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, compartilhada: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     await waitFor(() => expect(screen.getByText(/Assuma a conversa para escrever/)).toBeTruthy());
@@ -263,14 +289,14 @@ describe("caixa de entrada", () => {
 
   it("assume, e o botão passa a oferecer devolver", async () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, compartilhada: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null, falas: [] };
     const { rerender } = renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     fireEvent.click(await screen.findByRole("button", { name: /Assumir/ }));
     expect(assumir).toHaveBeenCalledWith({ threadId: "t-41" }, expect.anything());
 
     // Com a conversa assumida, o mesmo lugar devolve.
-    aberta.current = { ...aberta.current!, assumidaPor: "uid-1", compartilhada: null };
+    aberta.current = { ...aberta.current!, assumidaPor: "uid-1" };
     rerender(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     expect(await screen.findByRole("button", { name: /Devolver/ })).toBeTruthy();
@@ -278,7 +304,7 @@ describe("caixa de entrada", () => {
 
   it("envia a resposta e limpa o campo", async () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", compartilhada: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     const campo = await screen.findByLabelText("Resposta para o cliente");
@@ -292,7 +318,7 @@ describe("caixa de entrada", () => {
 
   it("não envia mensagem vazia", async () => {
     lista.current = [linha()];
-    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", compartilhada: null, falas: [] };
+    aberta.current = { threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: "uid-1", falas: [] };
     renderWithProviders(<ManagerConversas />);
     fireEvent.click(screen.getByLabelText("Conversa com (41) 98814-9449"));
     const botao = (await screen.findByLabelText("Enviar")) as HTMLButtonElement;
@@ -303,7 +329,6 @@ describe("caixa de entrada", () => {
     lista.current = [linha()];
     aberta.current = {
       threadId: "t-41", telefone: "5541988149449", lidaAte: null, assumidaPor: null,
-      compartilhada: null,
       falas: [{ id: "m1", papel: "cliente", autor: "", texto: "", em: "x", anexos: [
         { parte: 2, mime: "image/jpeg", tipo: "imagem", nome: "", bytes: 1024 },
       ] }],
