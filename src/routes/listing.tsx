@@ -45,6 +45,7 @@ import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { Go2ParkLiveChip } from "@/features/go2park/Go2ParkLive";
 import { contasDoConsumidorLigadas } from "@/lib/features";
 import {
+  cnpjFormatado,
   localBusinessSchema,
   productOfferSchema,
   breadcrumbSchema,
@@ -218,6 +219,13 @@ export default function ListingPage() {
       ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
       : undefined;
   const ogImage = ogImageRaw?.startsWith("/") ? `${SITE_URL}${ogImageRaw}` : ogImageRaw;
+  // Identidade legal visível: espelha o legalName/taxID do LocalBusiness (unidade > empresa).
+  const cnpjDaUnidade = listing
+    ? cnpjFormatado(listing.location.tax_id ?? listing.company.tax_id)
+    : undefined;
+  const razaoSocialDaUnidade = listing
+    ? (listing.location.legal_name ?? listing.company.legal_name)
+    : null;
 
   // Mesma regra para a FAQ: um único FAQPage por página, com as respostas idênticas às
   // visíveis (ADR-002). Na unidade externa a global não aparece, então não pode ir no schema.
@@ -512,6 +520,15 @@ export default function ListingPage() {
               locationName={listing.location.name}
             />
             <TerminalDistances locationId={listing.location.id} />
+            {/* Identidade legal da operação, a mesma do JSON-LD: o Google cruza o dado
+                estruturado com o texto visível, e CNPJ na página é sinal de confiança. */}
+            {cnpjDaUnidade && (
+              <p className="text-caption-sm text-muted">
+                {razaoSocialDaUnidade
+                  ? `Operado por ${razaoSocialDaUnidade} · CNPJ ${cnpjDaUnidade}`
+                  : `CNPJ da operação: ${cnpjDaUnidade}`}
+              </p>
+            )}
           </section>
 
           {/* Avaliações: na unidade própria fica sempre visível, e o ReviewsBlock mostra o

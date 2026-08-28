@@ -68,7 +68,7 @@ function cnpjValido(digitos: string): boolean {
  * coisa (campo de teste, dado sujo) não vira `taxID`, porque identidade errada é
  * pior que ausente.
  */
-function cnpjFormatado(taxId: string | null | undefined): string | undefined {
+export function cnpjFormatado(taxId: string | null | undefined): string | undefined {
   if (!taxId) return undefined;
   const digitos = taxId.replace(/\D/g, "");
   if (digitos.length !== 14 || !cnpjValido(digitos)) return undefined;

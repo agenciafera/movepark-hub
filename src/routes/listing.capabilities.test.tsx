@@ -72,7 +72,8 @@ function linha(
         id: "c-1",
         slug: "virapark",
         name: "Virapark",
-        legal_name: null,
+        legal_name: "Traces Estacionamentos e Participações Ltda",
+        tax_id: "59075010000309",
         created_at: "2025-08-01T12:00:00Z",
       },
       amenities: [],
@@ -170,6 +171,19 @@ describe("single da unidade PRÓPRIA", () => {
     expect(fora).toMatch(/InStock/);
     expect(fora).toMatch(/"price":"40.00"/);
     expect(fora).not.toMatch(/A reserva é feita e administrada por/);
+  });
+});
+
+describe("identidade legal visível na single", () => {
+  /** A mesma identidade do LocalBusiness sai em texto: o Google cruza schema e página. */
+  it("mostra razão social e CNPJ da operação", async () => {
+    montaPagina("hub");
+    await screen.findAllByText(/Virapark/i);
+    expect(
+      await screen.findByText(
+        "Operado por Traces Estacionamentos e Participações Ltda · CNPJ 59.075.010/0003-09",
+      ),
+    ).toBeInTheDocument();
   });
 });
 
