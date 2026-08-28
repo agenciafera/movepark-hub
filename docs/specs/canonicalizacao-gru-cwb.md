@@ -317,3 +317,25 @@ porque são dados de unidade e afetam mais superfícies que o blog.
    serviços mas não declara o tempo, que é literalmente o que o banco diz.
 2. **Lisboa Park listada no destino de Guarulhos.** A unidade tem `is_listed = true` e
    `destination_id` de GRU, mas não aparece no índice de preços. Parece erro de vínculo de destino.
+
+## Revisão cruzada (Léo, 28/08/2026)
+
+O mapa está aprovado no desenho: clusters certos, donas com dono claro, cadeia de redirect num
+salto só e a revisão de conteúdo feita antes de concentrar o tráfego. Três pontos voltam para o
+Diego, todos nascidos do baseline do Search Console, que foi congelado depois que este mapa foi
+aplicado (a eleição de 15/08 usou a planilha de migração, este baseline é mais completo).
+
+1. **A dona de preço de CWB parece invertida.** `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui`
+   fez 891 cliques em 16 meses na posição média 9,2, segunda página mais clicada do blog inteiro,
+   e foi absorvida por `quanto-custa-um-estacionamento-do-aeroporto-afonso-pena`, que fez 1 clique
+   na posição 36. A expansão de 3.120 palavras é portável: dá para republicar o slug de 891
+   cliques com o conteúdo novo e inverter o 301. O histórico mora no slug, não no texto.
+2. **A dona de melhor de CWB, mesmo caso em menor escala.** O `top-3-estacionamentos-do-aeroporto-de-curitiba`
+   fez 359 cliques na posição 8,9 e foi absorvido pela dona de 28 cliques na posição 17,5.
+3. **Um slug de preço de GRU aponta para a dona de melhor.** `valor-de-diaria-estacionamento-aeroporto-guarulhos`
+   redireciona para o guia de melhores desde 15/08 (na época o título do post era um "TOP 3", o
+   slug diz outra coisa). Candidato a reapontar para a dona de preço, junto com os reapontes de
+   VCP do Conteúdo 19.
+
+A decisão é da praça. Se a escolha atual ficar, vale registrar o motivo aqui, porque os números
+sozinhos apontam para o outro lado.
