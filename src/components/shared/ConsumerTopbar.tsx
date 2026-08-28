@@ -34,6 +34,7 @@ import { useHeaderOculto } from "./useHeaderOculto";
 import { contasDoConsumidorLigadas } from "@/lib/features";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
+import { caminhoDestino } from "@/lib/urls";
 
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
@@ -44,7 +45,7 @@ function parseDate(value: string | null): Date | null {
 function DestinoItem({ d }: { d: Destination }) {
   return (
     <DropdownMenuItem asChild>
-      <Link to={`/destinos/${d.slug}`} className="flex items-center gap-2">
+      <Link to={caminhoDestino(d.public_slug ?? d.slug)} className="flex items-center gap-2">
         <MapPin className="h-4 w-4 text-muted" />
         <span className="flex flex-col">
           <span>{d.short_name ?? d.name}</span>
@@ -73,7 +74,7 @@ function DestinosMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-[70vh] min-w-[260px] overflow-y-auto">
         <DropdownMenuItem asChild>
-          <Link to="/destinos" className="font-medium text-mp-primary">
+          <Link to="/estacionamentos" className="font-medium text-mp-primary">
             Ver todos os destinos
           </Link>
         </DropdownMenuItem>

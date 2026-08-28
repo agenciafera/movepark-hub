@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino } from "@/lib/urls";
 
 const TITLE = "Destinos atendidos | Estacionamento perto de aeroportos | Movepark";
 const DESCRIPTION =
@@ -15,7 +16,7 @@ const DESCRIPTION =
 function DestinoCard({ d }: { d: Destination }) {
   return (
     <Link
-      to={`/destinos/${d.slug}`}
+      to={caminhoDestino(d.public_slug ?? d.slug)}
       className="group flex flex-col gap-1 rounded-md border border-hairline p-4 transition-colors hover:border-mp-primary hover:bg-surface-soft"
     >
       <span className="flex items-center gap-2 text-title-sm text-ink">

@@ -21,6 +21,8 @@ describe("SavedPage — /account/saved", () => {
             id: "lpt-1",
             location: {
               slug: "unidade-aeroporto",
+              public_slug: "ferapark",
+              destination: { public_slug: "aeroporto-guarulhos" },
               name: "Unidade Aeroporto",
               address: "Rua X, 100",
               photos: ["https://cdn.movepark.co/lote.jpg"],
@@ -48,7 +50,7 @@ describe("SavedPage — /account/saved", () => {
     );
     // Link pra página do estacionamento.
     const link = screen.getAllByRole("link").find((a) =>
-      a.getAttribute("href")?.includes("/p/ferapark/unidade-aeroporto/uncovered"),
+      a.getAttribute("href")?.includes("/estacionamentos/aeroporto-guarulhos/ferapark"),
     );
     expect(link).toBeTruthy();
   });
@@ -67,6 +69,8 @@ describe("SavedPage — /account/saved", () => {
             id: "lpt-1",
             location: {
               slug: "unidade-aeroporto",
+              public_slug: "ferapark",
+              destination: { public_slug: "aeroporto-guarulhos" },
               name: "Unidade Aeroporto",
               address: null,
               photos: [],

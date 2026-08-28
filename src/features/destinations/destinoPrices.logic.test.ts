@@ -19,6 +19,7 @@ function unit(over: Partial<PriceUnit> = {}): PriceUnit {
     company_name: "Virapark",
     location_slug: "virapark",
     location_name: "Virapark",
+    public_path: "/estacionamentos/aeroporto-viracopos/virapark",
     parking_type_code: "covered",
     parking_type_name: "Vaga Coberta",
     checkout_mode: "external",
@@ -44,6 +45,7 @@ function unit(over: Partial<PriceUnit> = {}): PriceUnit {
 function viracopos(over: Partial<PriceDestination> = {}): PriceDestination {
   return {
     slug: "aeroporto-de-viracopos",
+    public_slug: "aeroporto-de-viracopos",
     code: "VCP",
     name: "Aeroporto de Viracopos",
     short_name: "Viracopos (VCP)",
@@ -293,7 +295,7 @@ describe("proximityRanking", () => {
       destinationSlug: "aeroporto-de-viracopos",
     });
     expect(linhas).toHaveLength(1);
-    expect(linhas[0].path).toBe("/p/virapark/virapark/covered");
+    expect(linhas[0].path).toBe("/estacionamentos/aeroporto-viracopos/virapark");
   });
 
   it("não fala de traslado na lista de distância, nem quando a unidade declara ter", () => {

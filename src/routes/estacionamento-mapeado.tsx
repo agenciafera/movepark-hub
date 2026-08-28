@@ -17,6 +17,7 @@ import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld
 import { formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino } from "@/lib/urls";
 
 export type EstacionamentoMapeadoLoaderData = {
   destination: Destination;
@@ -62,6 +63,8 @@ export default function EstacionamentoMapeadoPage() {
   if (!data) return null;
 
   const { destination, prospect } = data;
+  // O slug público é o que entra na URL; o antigo segue no banco como histórico.
+  const destinoSlug = (destination.public_slug ?? destination.slug) as string;
   const faqItems = data.faqs ?? [];
   const destinationLabel = destination.short_name ?? destination.name;
   const canonical = `${SITE_URL}/estacionamentos/${destination.slug}/${prospect.slug}`;
@@ -130,7 +133,7 @@ export default function EstacionamentoMapeadoPage() {
               ›
             </li>
             <li>
-              <Link to={`/destinos/${destination.slug}`} className="hover:text-ink">
+              <Link to={caminhoDestino(destinoSlug)} className="hover:text-ink">
                 {destinationLabel}
               </Link>
             </li>
@@ -287,7 +290,7 @@ export default function EstacionamentoMapeadoPage() {
 
         <div className="mt-10">
           <Link
-            to={`/destinos/${destination.slug}`}
+            to={caminhoDestino(destinoSlug)}
             className="text-body-sm font-medium text-mp-primary underline"
           >
             Ver estacionamentos com reserva no {destinationLabel} →

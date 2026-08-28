@@ -122,31 +122,41 @@ describe("título e H1 da unidade", () => {
     locationName: "Aeroporto Afonso Pena",
   };
 
-  // O título antigo era "Vaga Coberta · Aeroporto Afonso Pena | Movepark": sem a marca, que
-  // é justamente o maior bloco de demanda (785 cliques em consulta de marca de parceiro).
+  // O nome canônico da ficha, o mesmo que o banco guarda em `location.public_name` e que
+  // aparece no card, no H1, no <title> e no JSON-LD.
   it("abre pela marca da unidade", () => {
-    expect(listingTitle(abba)).toBe(
-      "Abbapark: Estacionamento Aeroporto Curitiba, Vaga Coberta | Movepark",
-    );
+    expect(listingTitle(abba)).toBe("Abbapark - Estacionamento Aeroporto Curitiba | Movepark");
   });
 
-  it("os três tipos de vaga da mesma unidade deixam de ter H1 idêntico", () => {
+  // O tipo de vaga saiu do título junto com a página por tipo: são três ofertas de UMA
+  // ficha, e três títulos diferentes para a mesma página seria o mesmo problema ao contrário.
+  it("o tipo de vaga não muda o título nem o H1: a ficha é uma só", () => {
     const h1 = ["Vaga Coberta", "Vaga Premium", "Vaga Descoberta"].map((parkingTypeName) =>
       listingHeading({ ...abba, parkingTypeName }),
     );
-    expect(new Set(h1).size).toBe(3);
-    expect(h1[0]).toBe("Abbapark · Vaga Coberta · Aeroporto Curitiba");
+    expect(new Set(h1).size).toBe(1);
+    expect(h1[0]).toBe("Abbapark - Estacionamento Aeroporto Curitiba");
+  });
+
+  // O nome escrito no banco ganha da composição: é ele que passou por revisão editorial
+  // (razão social fora, aeroporto sem repetir, "Estacionamento" sem duplicar).
+  it("o nome público do banco manda quando existe", () => {
+    const comNome = { ...abba, publicName: "Abbapark - Estacionamento Aeroporto Curitiba" };
+    expect(listingHeading(comNome)).toBe("Abbapark - Estacionamento Aeroporto Curitiba");
+    expect(listingTitle({ ...abba, publicName: "  " })).toBe(
+      "Abbapark - Estacionamento Aeroporto Curitiba | Movepark",
+    );
   });
 
   it("sem destino vinculado, cai para o nome da unidade em vez de quebrar", () => {
     const semDestino = { ...abba, destination: null };
     expect(listingTitle(semDestino)).toBe(
-      "Abbapark: Estacionamento Aeroporto Afonso Pena, Vaga Coberta | Movepark",
+      "Abbapark - Estacionamento Aeroporto Afonso Pena | Movepark",
     );
-    expect(listingHeading(semDestino)).toBe("Abbapark · Vaga Coberta · Aeroporto Afonso Pena");
+    expect(listingHeading(semDestino)).toBe("Abbapark - Estacionamento Aeroporto Afonso Pena");
   });
 
-  it("o H1 não usa artigo, porque o gênero muda em destino que não é aeroporto", () => {
+  it("destino que não é aeroporto entra pelo rótulo de busca, sem artigo", () => {
     expect(
       listingHeading({
         companyName: "Aerovalet",
@@ -154,7 +164,7 @@ describe("título e H1 da unidade", () => {
         destination: tiete,
         locationName: "Terminal Rodoviário Tietê",
       }),
-    ).toBe("Aerovalet · Vaga Coberta · Rodoviária Tietê");
+    ).toBe("Aerovalet - Estacionamento Rodoviária Tietê");
   });
 
   it("a descrição nomeia marca, tipo de vaga e destino dentro do limite de meta", () => {

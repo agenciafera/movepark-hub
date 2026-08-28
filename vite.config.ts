@@ -42,29 +42,40 @@ const MAPA_DE_SECOES = "node_modules/.cache/movepark-sitemap-sections.json";
  */
 type RotaComData = { route: string; lastmod?: string };
 
-// Listagens /p/<company>/<location>/<parkingType> ativas (sitemap).
+// Fichas de unidade parceira (/estacionamentos/<destino>/<lote>). Uma por unidade: o tipo
+// de vaga saiu da URL e virou seleção dentro da página (docs/specs/url-estacionamentos.md).
 async function getDynamicRoutes(
   sb: SupabaseClient | null,
 ): Promise<(RotaComData & { destinationId?: string })[]> {
   if (!sb) return [];
 
   const { data } = await sb
-    .from("location_parking_type")
+    .from("location")
     .select(
-      `
-      updated_at,
-      location:location!inner(slug, destination_id, company:company!inner(slug)),
-      company_parking_type:company_parking_type!inner(parking_type:parking_type!inner(code))
-    `,
+      "public_slug, updated_at, destination_id, destination:destination!inner(public_slug, is_published), company:company!inner(status, onboarding_status)",
     )
-    .eq("is_active", true);
+    .eq("is_listed", true)
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .eq("destination.is_published", true)
+    // Empresa fora do ar não tem página pública (mesmo corte da 20261029100000), e sitemap
+    // com URL que não abre é pedido de soft 404.
+    .eq("company.status", "active")
+    .eq("company.onboarding_status", "active")
+    .not("public_slug", "is", null);
 
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map((r: any) => ({
-    route: `/p/${r.location.company.slug}/${r.location.slug}/${r.company_parking_type.parking_type.code}`,
-    lastmod: r.updated_at,
-    destinationId: r.location.destination_id ?? undefined,
-  }));
+  return (data ?? [])
+    .map((r: any): (RotaComData & { destinationId?: string }) | null =>
+      r.destination?.public_slug
+        ? {
+            route: `/estacionamentos/${r.destination.public_slug}/${r.public_slug}`,
+            lastmod: r.updated_at,
+            destinationId: r.destination_id ?? undefined,
+          }
+        : null,
+    )
+    .filter((r): r is RotaComData & { destinationId?: string } => r !== null);
 }
 
 // Páginas de destino (SEO) — /destinos/<slug> de cada destino publicado.
@@ -75,12 +86,13 @@ async function getDestinationRoutes(
 
   const { data } = await sb
     .from("destination")
-    .select("id, slug, updated_at")
-    .eq("is_published", true);
+    .select("id, slug, public_slug, updated_at")
+    .eq("is_published", true)
+    .not("public_slug", "is", null);
 
   // deno-lint-ignore no-explicit-any
   return (data ?? []).map((d: any) => ({
-    route: `/destinos/${d.slug}`,
+    route: `/estacionamentos/${d.public_slug}`,
     lastmod: d.updated_at,
     id: d.id,
     slug: d.slug,
@@ -101,15 +113,19 @@ async function getProspectRoutes(sb: SupabaseClient | null): Promise<RotaComData
 
   const { data } = await sb
     .from("prospect_location")
-    .select("slug, updated_at, destination:destination(slug)")
+    .select("public_slug, updated_at, destination:destination(public_slug)")
     .eq("is_published", true)
-    .is("converted_at", null);
+    .is("converted_at", null)
+    .not("public_slug", "is", null);
 
   return (data ?? [])
     // deno-lint-ignore no-explicit-any
     .map((p: any): RotaComData | null =>
-      p.destination?.slug
-        ? { route: `/estacionamentos/${p.destination.slug}/${p.slug}`, lastmod: p.updated_at }
+      p.destination?.public_slug
+        ? {
+            route: `/estacionamentos/${p.destination.public_slug}/${p.public_slug}`,
+            lastmod: p.updated_at,
+          }
         : null,
     )
     .filter((r): r is RotaComData => r !== null);
@@ -158,7 +174,10 @@ async function getMaisBaratoRoutes(
           (u.prices ?? []).some((p: any) => p.total != null),
       ),
     )
-    .map((d) => ({ route: `/estacionamento-mais-barato/${d.slug}`, slug: d.slug }));
+    .map((d) => ({
+      route: `/estacionamentos/${d.public_slug ?? d.slug}/mais-barato`,
+      slug: d.slug,
+    }));
 }
 
 /**
@@ -274,8 +293,14 @@ async function getPrecosRoutes(
   const { data } = await sb.rpc("destination_price_index");
 
   // deno-lint-ignore no-explicit-any
-  const destinos = (((data as any)?.destinations ?? []) as { slug: string }[]);
-  return destinos.map((d) => ({ route: `/precos/${d.slug}`, slug: d.slug }));
+  const destinos = ((data as any)?.destinations ?? []) as {
+    slug: string;
+    public_slug: string | null;
+  }[];
+  return destinos.map((d) => ({
+    route: `/estacionamentos/${d.public_slug ?? d.slug}/precos`,
+    slug: d.slug,
+  }));
 }
 
 /**
@@ -367,7 +392,7 @@ export default defineConfig(async ({ mode }) => {
     // `/faq` sai daqui e entra como capa: ela é a porta da seção de perguntas, e a data dela
     // é a da pergunta mais recente, não a do build.
     ...SITEMAP_STATIC_ROUTES.filter((r) => r !== "/faq").map((route) => ({ route })),
-    capa("/destinos", destinationRoutes),
+    capa("/estacionamentos", destinationRoutes),
     capa("/precos", precosComData),
     capa("/blog/", blogRoutes),
     capa("/faq", faqRoutes),
@@ -420,7 +445,7 @@ export default defineConfig(async ({ mode }) => {
   const so = (rotas: RotaComData[]) => rotas.map((r) => r.route);
   const secoesDoSitemap: Record<string, string[]> = {
     blog: ["/blog/", ...so(blogRoutes), ...so(blogTaxonomyRoutes)],
-    destinos: ["/destinos", ...so(destinationRoutes)],
+    destinos: ["/estacionamentos", ...so(destinationRoutes)],
     estacionamentos: so(prospectRoutes),
     faq: ["/faq", ...so(faqRoutes)],
     "mais-barato": so(maisBaratoComData),

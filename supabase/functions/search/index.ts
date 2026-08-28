@@ -194,10 +194,10 @@ Deno.serve(async (req: Request) => {
       `
       id, capacity, is_active,
       location:location!inner(
-        id, slug, name, address, latitude, longitude, status, deleted_at, is_listed,
+        id, slug, public_slug, name, address, latitude, longitude, status, deleted_at, is_listed,
         review_avg, review_count, photos, google_place_id, go2park_enabled,
         company:company!inner(id, slug, name, status),
-        destination:destination(code, name, type),
+        destination:destination(code, name, type, public_slug),
         amenities:location_amenity(amenity_code)
       ),
       company_parking_type:company_parking_type!inner(
@@ -460,6 +460,12 @@ Deno.serve(async (req: Request) => {
     location: {
       id: r.location.id,
       slug: r.location.slug,
+      // O caminho da ficha vai pronto: o card não monta URL, e a gramática de
+      // `/estacionamentos/<destino>/<lote>` vive num lugar só.
+      public_path:
+        r.location.destination?.public_slug && r.location.public_slug
+          ? `/estacionamentos/${r.location.destination.public_slug}/${r.location.public_slug}`
+          : null,
       name: r.location.name,
       address: r.location.address,
       latitude: r.location.latitude != null ? Number(r.location.latitude) : null,

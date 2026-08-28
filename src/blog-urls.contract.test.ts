@@ -104,16 +104,18 @@ describe("contrato de URL do blog", () => {
 
   it("categoria vai para o destino do Hub, nas duas formas que o legado emitia", async () => {
     const casos: [string, string][] = [
-      ["/blog/aeroporto-guarulhos/", "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos"],
-      ["/blog/categoria/aeroporto-guarulhos/", "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos"],
-      ["/blog/aeroporto-viracopos/", "/destinos/aeroporto-de-viracopos"],
-      ["/blog/campinas/", "/destinos/aeroporto-de-viracopos"],
-      ["/blog/viracopos/", "/destinos/aeroporto-de-viracopos"],
-      ["/blog/guarulhos/", "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos"],
-      ["/blog/aeroporto-lisboa/", "/destinos/aeroporto-humberto-delgado"],
-      ["/blog/aeroporto-confins/", "/destinos/aeroporto-de-confins"],
-      ["/blog/aeroporto-congonhas/", "/destinos/aeroporto-de-congonhas"],
-      ["/blog/aeroporto-afonso-pena/", "/destinos/aeroporto-afonso-pena"],
+      ["/blog/aeroporto-guarulhos/", "/estacionamentos/aeroporto-guarulhos"],
+      ["/blog/categoria/aeroporto-guarulhos/", "/estacionamentos/aeroporto-guarulhos"],
+      ["/blog/aeroporto-viracopos/", "/estacionamentos/aeroporto-viracopos"],
+      ["/blog/campinas/", "/estacionamentos/aeroporto-viracopos"],
+      ["/blog/viracopos/", "/estacionamentos/aeroporto-viracopos"],
+      ["/blog/guarulhos/", "/estacionamentos/aeroporto-guarulhos"],
+      // Lisboa ainda não é destino publicado: a categoria cai no índice do blog em vez de
+      // apontar para uma página que não existe.
+      ["/blog/aeroporto-lisboa/", "/blog/"],
+      ["/blog/aeroporto-confins/", "/estacionamentos/aeroporto-confins"],
+      ["/blog/aeroporto-congonhas/", "/estacionamentos/aeroporto-congonhas"],
+      ["/blog/aeroporto-afonso-pena/", "/estacionamentos/aeroporto-curitiba"],
     ];
 
     for (const [from, to] of casos) {
@@ -231,12 +233,13 @@ describe("contrato de URL do blog", () => {
     // Um typo aqui manda tráfego real para um 404, e o teste acima não pegaria:
     // ele só compara com a string que este arquivo mesmo declara.
     const destinosDoHub = new Set([
-      "aeroporto-internacional-de-sao-paulo-guarulhos",
-      "aeroporto-de-viracopos",
-      "aeroporto-afonso-pena",
-      "aeroporto-humberto-delgado",
-      "aeroporto-de-confins",
-      "aeroporto-de-congonhas",
+      "aeroporto-guarulhos",
+      "aeroporto-viracopos",
+      "aeroporto-curitiba",
+      "aeroporto-confins",
+      "aeroporto-congonhas",
+      // Lisboa não é destino publicado, então a categoria dela cai no índice do blog.
+      "blog",
     ]);
 
     const categorias = [
@@ -254,7 +257,9 @@ describe("contrato de URL do blog", () => {
     for (const categoria of categorias) {
       const { env } = makeEnv();
       const res = await worker.fetch(req(`/blog/${categoria}/`), env);
-      const destino = (res.headers.get("Location") ?? "").replace("/destinos/", "");
+      const destino = (res.headers.get("Location") ?? "")
+        .replace("/estacionamentos/", "")
+        .replace("/blog/", "blog");
       expect(destinosDoHub.has(destino), `${categoria} -> ${destino}`).toBe(true);
     }
   });
@@ -292,14 +297,12 @@ describe("contrato de URL da taxonomia e da paginação", () => {
 
   it("categoria de aeroporto continua indo para o destino, e não vira arquivo do blog", async () => {
     // O slug de aeroporto nunca virou categoria editorial: ele é o destino, e a
-    // página que converte é /destinos/<slug>.
+    // página que converte é /estacionamentos/<destino>.
     for (const path of ["/blog/categoria/aeroporto-guarulhos/", "/blog/aeroporto-guarulhos/"]) {
       const { env } = makeEnv();
       const res = await worker.fetch(req(path), env);
       expect(res.status, path).toBe(301);
-      expect(res.headers.get("Location"), path).toBe(
-        "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
-      );
+      expect(res.headers.get("Location"), path).toBe("/estacionamentos/aeroporto-guarulhos");
     }
   });
 

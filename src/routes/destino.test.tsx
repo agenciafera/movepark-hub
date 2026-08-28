@@ -82,7 +82,7 @@ function render(opts?: { auth?: ReturnType<typeof mockAuth> }) {
     <HelmetProvider>
       <DestinoPage />
     </HelmetProvider>,
-    { route: "/destinos/aeroporto-de-guarulhos", auth: opts?.auth },
+    { route: "/estacionamentos/aeroporto-de-guarulhos", auth: opts?.auth },
   );
 }
 
@@ -96,6 +96,9 @@ function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
     id: "p1",
     name: "Talentos Park",
     slug: "talentos-park-aeroporto-recife",
+    public_name: "Talentos Park - Estacionamento Aeroporto Recife",
+    public_slug: "talentos-park",
+    public_path: "/estacionamentos/aeroporto-recife/talentos-park",
     address: "R. Projetada, 169 - Boa Viagem, Recife - PE, 51150-650",
     latitude: -8.1309368,
     longitude: -34.9156297,
@@ -160,7 +163,10 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
     const trilha = screen.getByRole("navigation", { name: /Trilha/i });
     expect(trilha).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Destinos" })).toHaveAttribute("href", "/destinos");
+    expect(screen.getByRole("link", { name: "Estacionamentos" })).toHaveAttribute(
+      "href",
+      "/estacionamentos",
+    );
   });
 
   it("cross-link pra outros destinos (exclui o atual)", () => {
@@ -191,7 +197,7 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
     // é 40,6% dos cliques da página, e o cross-link é onde ele vira link interno.
     expect(screen.getByRole("link", { name: "Aeroporto Viracopos" })).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-de-viracopos",
+      "/estacionamentos/aeroporto-de-viracopos",
     );
     expect(screen.getByRole("link", { name: "Aeroporto Congonhas" })).toBeInTheDocument();
     // Sem preço no card: ele é navegação, não comparação.
@@ -418,6 +424,7 @@ function unidade(over: Record<string, unknown> = {}) {
     location: {
       id: "loc1",
       slug: "aeroporto-afonso-pena",
+      public_path: "/estacionamentos/aeroporto-curitiba/abbapark",
       name: "Aeroporto Afonso Pena",
       address: "Av. Rocha Pombo",
       latitude: -25.5,
@@ -470,9 +477,9 @@ describe("lista de unidades no HTML do build", () => {
     const links = screen
       .getAllByRole("link")
       .map((a) => a.getAttribute("href") ?? "")
-      .filter((h) => h.startsWith("/p/"));
+      .filter((h) => h.startsWith("/estacionamentos/aeroporto-curitiba/"));
     expect(links.length).toBeGreaterThan(0);
-    expect(links[0]).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
+    expect(links[0]).toContain("/estacionamentos/aeroporto-curitiba/abbapark");
     expect(screen.getAllByText(/Abbapark/i).length).toBeGreaterThan(0);
   });
 
@@ -517,7 +524,7 @@ describe("lista de unidades no HTML do build", () => {
     // matriz, por isso os dois vêm como lugar. O caso com matriz está logo abaixo.
     expect(itens[0].item["@type"]).toBe("ParkingFacility");
     expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
-    expect(itens[0].item.url).toContain("/p/abbapark/aeroporto-afonso-pena/covered");
+    expect(itens[0].item.url).toContain("/estacionamentos/aeroporto-curitiba/abbapark");
     expect(itens[1].item["@type"]).toBe("ParkingFacility");
     expect(itens[1].item.name).toBe("Talentos Park");
     expect(itens[1].item.url).toContain("/estacionamentos/aeroporto-de-guarulhos/talentos-park");
@@ -639,7 +646,7 @@ describe("lista de unidades no HTML do build", () => {
     const hrefs = screen
       .getAllByRole("link")
       .map((a) => a.getAttribute("href") ?? "")
-      .filter((h) => h.startsWith("/p/"));
+      .filter((h) => h.startsWith("/estacionamentos/aeroporto-curitiba/"));
     expect(hrefs.length).toBeGreaterThan(0);
     for (const href of hrefs) {
       expect(href).not.toContain("from=");
@@ -681,7 +688,7 @@ describe("DestinoPage · favoritar (ligado no useSavedListings)", () => {
     // A intenção fica no localStorage e é migrada pra conta no login (migratePendingSaves).
     expect(JSON.parse(localStorage.getItem("mp:saved") ?? "[]")).toEqual(["lpt1"]);
     expect(navigate).toHaveBeenCalledWith(
-      `/login?next=${encodeURIComponent("/destinos/aeroporto-de-guarulhos")}`,
+      `/login?next=${encodeURIComponent("/estacionamentos/aeroporto-de-guarulhos")}`,
     );
   });
 
@@ -846,7 +853,7 @@ describe("DestinoPage · quanto custa e distância", () => {
     expect(document.body.textContent).not.toMatch(/cobrado no checkout/i);
     expect(screen.getByRole("link", { name: /Ver a tabela completa de preços/i })).toHaveAttribute(
       "href",
-      "/precos/aeroporto-de-guarulhos",
+      "/estacionamentos/aeroporto-de-guarulhos/precos",
     );
     expect(
       screen.getByRole("link", { name: /Como a Movepark apura preço e distância/i }),

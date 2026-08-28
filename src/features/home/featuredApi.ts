@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { searchKeys } from "@/features/search/api";
 import { proximaPosicao, rotuloDeDestino, type NovaPosicao } from "./featured.logic";
+import { caminhoFicha } from "@/lib/urls";
 
 /**
  * Curadoria da vitrine da home (`/manager/destaques`).
@@ -30,6 +31,8 @@ export type FeaturedCandidate = {
   locationSlug: string;
   parkingTypeName: string;
   parkingTypeCode: string;
+  /** Caminho da ficha pública, para o admin abrir o que está curando. */
+  publicPath: string | null;
   destinationLabel: string | null;
   /** Sem tabela de preço o card não tem "a partir de", e a home descarta a linha na renderização. */
   temPreco: boolean;
@@ -54,9 +57,9 @@ export type FeaturedRow = FeaturedCandidate & {
 const SELECT_OFERTA = `
   id,
   location:location_id (
-    id, name, slug, status, is_listed, deleted_at,
+    id, name, slug, public_slug, status, is_listed, deleted_at,
     company:company_id (id, name, slug, status, onboarding_status),
-    destination:destination_id (code, name, short_name)
+    destination:destination_id (code, name, short_name, public_slug)
   ),
   company_parking_type:company_parking_type_id (
     is_active,
@@ -69,9 +72,9 @@ const SELECT_OFERTA = `
 const SELECT_CANDIDATO = `
   id,
   location:location_id!inner (
-    id, name, slug, status, is_listed, deleted_at,
+    id, name, slug, public_slug, status, is_listed, deleted_at,
     company:company_id!inner (id, name, slug, status, onboarding_status),
-    destination:destination_id (code, name, short_name)
+    destination:destination_id (code, name, short_name, public_slug)
   ),
   company_parking_type:company_parking_type_id!inner (
     is_active,
@@ -109,6 +112,10 @@ function paraCandidato(lpt: any): FeaturedCandidate {
     locationSlug: lpt.location?.slug ?? "",
     parkingTypeName: lpt.company_parking_type?.parking_type?.name ?? "Tipo removido",
     parkingTypeCode: lpt.company_parking_type?.parking_type?.code ?? "",
+    publicPath:
+      lpt.location?.destination?.public_slug && lpt.location?.public_slug
+        ? caminhoFicha(lpt.location.destination.public_slug, lpt.location.public_slug)
+        : null,
     destinationLabel: rotuloDeDestino(lpt.location?.destination ?? null),
     temPreco: regras.filter(Boolean).length > 0,
   };

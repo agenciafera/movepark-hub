@@ -22,6 +22,7 @@ import { DestinationForm } from "@/features/destinations/DestinationForm";
 import { DestinationPointsDialog } from "@/features/destinations/DestinationPointsDialog";
 import { DestinationFaqDialog } from "@/features/destinations/DestinationFaqDialog";
 import type { Destination } from "@/types/domain";
+import { caminhoDestino } from "@/lib/urls";
 
 export default function ManagerDestinations() {
   const { data, isLoading } = useAdminDestinations();
@@ -86,7 +87,7 @@ export default function ManagerDestinations() {
                   <TableCell className="font-medium text-ink">
                     {d.name}
                     <a
-                      href={`/destinos/${d.slug}`}
+                      href={caminhoDestino(d.public_slug ?? d.slug)}
                       target="_blank"
                       rel="noreferrer"
                       className="ml-1 inline-flex text-muted hover:text-ink"

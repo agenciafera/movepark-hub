@@ -59,6 +59,7 @@ import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import { lowestPerDay, pickRelatedDestinations, pointsSummary } from "./destino.logic";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino, caminhoFicha } from "@/lib/urls";
 
 /** Skeleton espelhando o ResultCard (mesma forma/altura), evita salto de layout. */
 function ParkingCardSkeleton() {
@@ -127,6 +128,7 @@ type RelatedDestination = {
   seo_label: string | null;
   type: string | null;
   slug: string;
+  public_slug?: string | null;
   is_popular?: boolean | null;
   sort_order?: number | null;
 };
@@ -158,6 +160,8 @@ export default function DestinoPage() {
   const slug = params.slug;
   const query = useDestinationBySlug(loaderDest ? undefined : slug);
   const destination = loaderDest ?? query.data ?? null;
+  // O slug público é o que entra na URL; o antigo segue no banco como histórico.
+  const destinoSlug = (destination?.public_slug ?? destination?.slug ?? "") as string;
 
   const win = React.useMemo(defaultWindow, []);
   // `price_mode: "from"` porque a janela aqui é nossa, não do cliente: sem ele, quem exige
@@ -300,7 +304,7 @@ export default function DestinoPage() {
       .filter((t): t is number => t != null && t > 0);
     return {
       name: `${r.operator.name} · ${r.parking_type.name}`,
-      url: `/p/${r.operator.slug}/${r.location.slug}/${r.parking_type.code}`,
+      url: r.location.public_path ?? "",
       description: `Estacionamento perto do ${seoLabelPrimary(destination)}, em ${destination.city}.`,
       // A capa que o card ao lado já mostra. `image` é recomendado no Product, e sem ele o
       // Search Console acusa aviso em cada item da lista.
@@ -326,7 +330,7 @@ export default function DestinoPage() {
           partners: partnerOffers,
           mapped: prospectItems.map((p) => ({
             name: p.name,
-            url: `/estacionamentos/${destination.slug}/${p.slug}`,
+            url: p.public_path ?? caminhoFicha(destinoSlug, p.slug),
           })),
         })
       : null;
@@ -524,7 +528,7 @@ export default function DestinoPage() {
         <DestinationHero
           trilha={[
             { label: "Início", to: "/" },
-            { label: "Destinos", to: "/destinos" },
+            { label: "Estacionamentos", to: "/estacionamentos" },
             { label: nomeCurto },
           ]}
           eyebrow={`${destination.city}${destination.state ? ` · ${destination.state}` : ""}`}
@@ -787,7 +791,7 @@ export default function DestinoPage() {
                       cross-link é justamente onde ele vira link interno. Sem preço aqui,
                       porque o card é navegação e não comparação. */}
                   <Link
-                    to={`/destinos/${d.slug}`}
+                    to={caminhoDestino(d.public_slug ?? d.slug)}
                     className="flex h-full items-center rounded-md border border-hairline p-4 text-title-md text-ink transition hover:border-mp-primary hover:shadow-tier"
                   >
                     {seoLabelPrimary(d)}

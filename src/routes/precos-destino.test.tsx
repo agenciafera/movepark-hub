@@ -11,6 +11,7 @@ const DIAS = [1, 7, 15, 30];
 function unit(overrides: Partial<PriceUnit>): PriceUnit {
   return {
     company_slug: "aerovalet",
+    public_path: "/estacionamentos/aeroporto-guarulhos/aerovalet",
     company_name: "Aerovalet",
     location_slug: "aeroporto-guarulhos",
     location_name: "Aeroporto de Guarulhos",
@@ -39,6 +40,7 @@ const DATA: PrecosDestinoData = {
   days: DIAS,
   destination: {
     slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+    public_slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
     code: "GRU",
     name: "Aeroporto Internacional de São Paulo Guarulhos",
     short_name: "Guarulhos (GRU)",
@@ -66,8 +68,14 @@ const DATA: PrecosDestinoData = {
 
 function setup(data: PrecosDestinoData | null = DATA) {
   const router = createMemoryRouter(
-    [{ path: "/precos/:slug", element: <PrecosDestinoPage />, loader: () => data }],
-    { initialEntries: ["/precos/aeroporto-internacional-de-sao-paulo-guarulhos"] },
+    [
+      {
+        path: "/estacionamentos/:destino/precos",
+        element: <PrecosDestinoPage />,
+        loader: () => data,
+      },
+    ],
+    { initialEntries: ["/estacionamentos/aeroporto-guarulhos/precos"] },
   );
   return render(
     <HelmetProvider>
@@ -109,13 +117,16 @@ describe("PrecosDestinoPage", () => {
   it("cada linha tem o link Reservar apontando para a página da vaga", async () => {
     setup();
     const links = await screen.findAllByRole("link", { name: "Reservar" });
-    expect(links[0]).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-guarulhos/aerovalet",
+    );
   });
 
   it("cruza com os preços dos outros destinos", async () => {
     setup();
     const link = await screen.findByRole("link", { name: "Congonhas (CGH)" });
-    expect(link).toHaveAttribute("href", "/precos/aeroporto-de-congonhas");
+    expect(link).toHaveAttribute("href", "/estacionamentos/aeroporto-de-congonhas/precos");
   });
 
   it("destino sem preço explica em vez de quebrar", async () => {

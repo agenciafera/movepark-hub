@@ -38,10 +38,13 @@ function makeListing(o: Overrides = {}): ListingDetail {
   const longitude = "longitude" in o ? o.longitude : -46.6;
   const description = "description" in o ? o.description : "Coberta e segura";
   return {
-    company: { slug: "aeropark" },
+    company: { slug: "aeropark", name: "Aeropark" },
     location: {
       name: "Aeroporto Guarulhos",
       slug: "aeroporto-guarulhos",
+      public_slug: "aeropark",
+      public_name: "Aeropark - Estacionamento Aeroporto Guarulhos",
+      destination: { public_slug: "aeroporto-guarulhos" },
       checkout_mode: o.checkout_mode ?? "hub",
       phone: "+551130000000",
       email: "contato@aeropark",
@@ -63,8 +66,10 @@ describe("localBusinessSchema", () => {
   it("monta LocalBusiness/ParkingFacility com url canônica do hub", () => {
     const s = localBusinessSchema(makeListing());
     expect(s["@type"]).toEqual(["LocalBusiness", "ParkingFacility"]);
-    expect(s.name).toBe("Aeroporto Guarulhos · Vaga Coberta");
-    expect(s.url).toBe("https://movepark.co/p/aeropark/aeroporto-guarulhos/covered");
+    // Uma ficha por estacionamento: o nome e a URL do schema são os mesmos do H1 e do
+    // canonical, sem o tipo de vaga.
+    expect(s.name).toBe("Aeropark - Estacionamento Aeroporto Guarulhos");
+    expect(s.url).toBe("https://movepark.co/estacionamentos/aeroporto-guarulhos/aeropark");
     expect(s.address).toMatchObject({ "@type": "PostalAddress", addressCountry: "BR" });
     expect(s.geo).toMatchObject({ "@type": "GeoCoordinates", latitude: -23.5 });
   });
@@ -810,6 +815,7 @@ describe("perfil local da unidade no LocalBusiness", () => {
       type: "airport",
       city: "Guarulhos",
       code: "GRU",
+      public_slug: "aeroporto-guarulhos",
     };
     expect(localBusinessSchema(listing).containedInPlace).toEqual({
       "@type": "Airport",

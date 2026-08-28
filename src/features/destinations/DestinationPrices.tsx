@@ -11,6 +11,7 @@ import {
 } from "@/features/price-index/priceIndex.logic";
 
 import type { DestinoPrices, ProximityRow } from "./destinoPrices.logic";
+import { caminhoPrecos } from "@/lib/urls";
 
 /**
  * A tabela de preços da página de destino e a lista de proximidade.
@@ -287,7 +288,7 @@ export function DestinationPriceTable({ prices, generatedAt, destinationSlug, he
 
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Link
-            to={`/precos/${destinationSlug}`}
+            to={caminhoPrecos(destinationSlug)}
             className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
           >
             Ver a tabela completa de preços

@@ -20,6 +20,10 @@ export type PriceUnit = {
   company_name: string;
   location_slug: string;
   location_name: string;
+  /** Nome canônico da ficha. Nulo em unidade que ainda não foi nomeada. */
+  location_public_name?: string | null;
+  /** `/estacionamentos/<destino>/<lote>`, montado no banco (uma gramática só). */
+  public_path?: string | null;
   parking_type_code: string;
   parking_type_name: string;
   checkout_mode: string;
@@ -37,6 +41,8 @@ export type PriceUnit = {
 
 export type PriceDestination = {
   slug: string;
+  /** Slug da URL pública do destino. Nulo só em destino que nunca foi publicado. */
+  public_slug: string | null;
   code: string;
   name: string;
   short_name: string | null;
@@ -67,7 +73,7 @@ export function unitKey(u: PriceUnit): string {
 }
 
 export function listingPath(u: PriceUnit): string {
-  return `/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}`;
+  return u.public_path ?? "";
 }
 
 /**
@@ -209,6 +215,8 @@ export function topRows(dest: PriceDestination, limit = 5): TopRows {
 /** Aeroporto publicado no catálogo, com ou sem parceiro precificado. */
 export type AirportMeta = {
   slug: string;
+  /** Slug da URL pública do destino (`/estacionamentos/<public_slug>`). */
+  public_slug: string | null;
   code: string | null;
   name: string;
   short_name: string | null;
@@ -219,6 +227,7 @@ export type AirportMeta = {
 /** Lote mapeado sem contrato (ADR-010), compacto para a tabela do índice. */
 export type IndexProspect = {
   name: string;
+  /** Slug público do lote, no mesmo namespace da unidade parceira. */
   slug: string;
   distance_km: number | null;
 };

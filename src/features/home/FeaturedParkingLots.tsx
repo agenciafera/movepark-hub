@@ -80,7 +80,9 @@ function FeaturedOfferCard({
   // A janela do link acompanha a estadia que o card mostrou: mandar 1 diária para um lote que
   // só vende 3 levaria o cliente a uma página sem o preço que ele acabou de ver.
   const { from, to } = getDefaultDates(price_days);
-  const url = `/p/${location.company.slug}/${location.slug}/${parking_type.code}?from=${from}&to=${to}&src=home-destaque`;
+  const url = location.public_path
+    ? `${location.public_path}?from=${from}&to=${to}&vaga=${parking_type.code}&src=home-destaque`
+    : "/estacionamentos";
 
   return (
     <ParkingCard

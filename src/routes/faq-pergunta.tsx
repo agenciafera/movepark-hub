@@ -19,6 +19,7 @@ import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
 
 /** O que o loader entrega: a pergunta, as relacionadas e o contexto de preço. */
 export type FaqPerguntaData = (FaqPageData & { precos: FaqPrecoContexto }) | null;
@@ -221,7 +222,7 @@ export default function FaqPerguntaPage() {
               {precoDestino.partnerCount}{" "}
               {precoDestino.partnerCount === 1 ? "parceiro" : "parceiros"} no comparativo.{" "}
               <Link
-                to={`/precos/${precoDestino.slug}`}
+                to={caminhoPrecos(precoDestino.public_slug ?? precoDestino.slug)}
                 className="font-medium text-mp-indigo underline-offset-2 hover:underline"
               >
                 Ver a tabela completa de preços
@@ -304,7 +305,7 @@ export default function FaqPerguntaPage() {
             semParceiro ? (
               <>
                 <Button asChild>
-                  <Link to={`/destinos/${destino.slug}`}>
+                  <Link to={caminhoDestino(destino.public_slug ?? destino.slug)}>
                     Ver estacionamentos em {destinoCurto}
                   </Link>
                 </Button>
@@ -315,10 +316,14 @@ export default function FaqPerguntaPage() {
             ) : (
               <>
                 <Button asChild>
-                  <Link to={`/destinos/${destino.slug}`}>Reservar vaga em {destinoCurto}</Link>
+                  <Link to={caminhoDestino(destino.public_slug ?? destino.slug)}>
+                    Reservar vaga em {destinoCurto}
+                  </Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to={`/precos/${destino.slug}`}>Comparar preços em {destinoCurto}</Link>
+                  <Link to={caminhoPrecos(destino.public_slug ?? destino.slug)}>
+                    Comparar preços em {destinoCurto}
+                  </Link>
                 </Button>
               </>
             )

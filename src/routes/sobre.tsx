@@ -8,6 +8,7 @@ import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 import { organizationSchema } from "@/lib/jsonld";
 import { siteUrl } from "@/lib/site";
+import { caminhoDestino } from "@/lib/urls";
 
 // Hero de marca em foto (blue hour). Metade esquerda cai na sombra pra segurar a
 // headline branca sob o overlay navy, mesmo comportamento do hero da /seja-parceiro.
@@ -30,18 +31,13 @@ const NUMBERS = [
 /** Destinos com estacionamento parceiro no ar, do mais servido pro menos. */
 const DESTINATIONS = [
   { slug: "jardim-paulista", image: "jardim-paulista", name: "Jardim Paulista", city: "São Paulo" },
-  {
-    slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
-    image: "GRU",
-    name: "Guarulhos",
-    city: "GRU",
-  },
-  { slug: "aeroporto-afonso-pena", image: "CWB", name: "Afonso Pena", city: "CWB" },
-  { slug: "aeroporto-humberto-delgado", image: "LIS", name: "Lisboa", city: "LIS" },
+  { slug: "aeroporto-guarulhos", image: "GRU", name: "Guarulhos", city: "GRU" },
+  { slug: "aeroporto-curitiba", image: "CWB", name: "Afonso Pena", city: "CWB" },
+  { slug: "aeroporto-lisboa", image: "LIS", name: "Lisboa", city: "LIS" },
   { slug: "centro-de-sao-paulo", image: "centro-sp", name: "Centro", city: "São Paulo" },
-  { slug: "aeroporto-de-congonhas", image: "CGH", name: "Congonhas", city: "CGH" },
-  { slug: "aeroporto-de-viracopos", image: "VCP", name: "Viracopos", city: "VCP" },
-  { slug: "aeroporto-de-faro", image: "FAO", name: "Faro", city: "FAO" },
+  { slug: "aeroporto-congonhas", image: "CGH", name: "Congonhas", city: "CGH" },
+  { slug: "aeroporto-viracopos", image: "VCP", name: "Viracopos", city: "VCP" },
+  { slug: "aeroporto-faro", image: "FAO", name: "Faro", city: "FAO" },
 ];
 
 const VALUES = [
@@ -226,7 +222,7 @@ export default function SobrePage() {
             {DESTINATIONS.map((d) => (
               <Link
                 key={d.slug}
-                to={`/destinos/${d.slug}`}
+                to={caminhoDestino(d.slug)}
                 data-reveal
                 className="group relative block overflow-hidden rounded-2xl border border-white/10"
               >
@@ -254,7 +250,7 @@ export default function SobrePage() {
 
           <div className="mt-8">
             <Link
-              to="/destinos"
+              to="/estacionamentos"
               className="inline-flex items-center gap-2 text-body-md font-medium text-white underline-offset-4 hover:underline"
             >
               Ver todos os destinos

@@ -36,6 +36,8 @@ export type SearchResultItem = {
   location: {
     id: string;
     slug: string;
+    /** Caminho da ficha (`/estacionamentos/<destino>/<lote>`), montado no servidor. */
+    public_path: string | null;
     name: string;
     address: string | null;
     latitude: number | null;

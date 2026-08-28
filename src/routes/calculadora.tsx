@@ -60,6 +60,7 @@ import {
   type PriceIndexData,
 } from "@/features/price-index/priceIndex.logic";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino, caminhoFicha, caminhoPrecos } from "@/lib/urls";
 
 const EYEBROW = "text-badge uppercase tracking-[0.4px] text-mp-indigo";
 
@@ -76,7 +77,13 @@ export type CalculadoraProspect = {
 export type CalculadoraData = {
   data: PriceIndexData;
   /** Todos os destinos publicados, com ou sem parceiro precificado. */
-  catalogo: { slug: string; name: string; short_name: string | null; state: string | null }[];
+  catalogo: {
+    slug: string;
+    public_slug: string | null;
+    name: string;
+    short_name: string | null;
+    state: string | null;
+  }[];
   /** Lotes mapeados por slug de destino, para a lista ficar completa como a do concorrente. */
   prospects: Record<string, CalculadoraProspect[]>;
   generatedAt: string;
@@ -311,6 +318,8 @@ export default function CalculadoraPage() {
 
   const destino = destinations.find((d) => d.slug === slug) ?? null;
   const destinoMeta = catalogo.find((c) => c.slug === slug) ?? destino;
+  // O seletor guarda o slug antigo (é a chave do índice de preço); a URL usa o público.
+  const destinoSlug = destinoMeta?.public_slug ?? slug;
   const nome = destinoMeta ? (destinoMeta.short_name ?? destinoMeta.name) : "";
   const mapeados = loaded?.prospects[slug] ?? [];
 
@@ -798,7 +807,7 @@ export default function CalculadoraPage() {
                         : `Ainda estamos mapeando os estacionamentos de ${nome}.`}
                     </p>
                     <Button asChild variant="outline" className="w-full">
-                      <Link to={destino ? `/precos/${destino.slug}` : `/destinos/${slug}`}>
+                      <Link to={destino ? caminhoPrecos(destinoSlug) : caminhoDestino(destinoSlug)}>
                         {destino ? "Ver a tabela completa" : "Ver a página do destino"}
                       </Link>
                     </Button>
@@ -979,7 +988,7 @@ export default function CalculadoraPage() {
                   <>
                     Nenhum parceiro cota {durationLabel(result.days)} nesse destino. Veja a{" "}
                     <Link
-                      to={`/precos/${destino.slug}`}
+                      to={caminhoPrecos(destinoSlug)}
                       className="font-medium text-mp-indigo underline-offset-2 hover:underline"
                     >
                       tabela completa
@@ -990,7 +999,7 @@ export default function CalculadoraPage() {
                   <>
                     Ainda estamos mapeando os estacionamentos de {nome}. Veja a{" "}
                     <Link
-                      to={`/destinos/${slug}`}
+                      to={caminhoDestino(destinoSlug)}
                       className="font-medium text-mp-indigo underline-offset-2 hover:underline"
                     >
                       página do destino
@@ -1257,7 +1266,7 @@ export default function CalculadoraPage() {
                         </span>
                       </span>
                       <Link
-                        to={`/estacionamentos/${slug}/${p.slug}`}
+                        to={caminhoFicha(destinoSlug, p.slug)}
                         className="shrink-0 text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
                       >
                         Ver ficha

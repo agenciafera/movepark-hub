@@ -12,6 +12,7 @@ const DIAS = [1, 7, 15, 30];
 function unit(overrides: Partial<PriceUnit>): PriceUnit {
   return {
     company_slug: "aerovalet",
+    public_path: "/estacionamentos/aeroporto-guarulhos/aerovalet",
     company_name: "Aerovalet",
     location_slug: "aeroporto-guarulhos",
     location_name: "Aeroporto de Guarulhos",
@@ -40,18 +41,21 @@ const DATA: CalculadoraData = {
   catalogo: [
     {
       slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+      public_slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
       name: "Aeroporto Internacional de São Paulo Guarulhos",
       short_name: "Guarulhos (GRU)",
       state: "SP",
     },
     {
       slug: "aeroporto-de-confins",
+      public_slug: "aeroporto-de-confins",
       name: "Aeroporto de Confins",
       short_name: "Confins (CNF)",
       state: "MG",
     },
     {
       slug: "aeroporto-santos-dumont",
+      public_slug: "aeroporto-santos-dumont",
       name: "Aeroporto Santos Dumont",
       short_name: "Santos Dumont (SDU)",
       state: "RJ",
@@ -68,6 +72,7 @@ const DATA: CalculadoraData = {
     destinations: [
       {
         slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+        public_slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
         code: "GRU",
         name: "Aeroporto Internacional de São Paulo Guarulhos",
         short_name: "Guarulhos (GRU)",
@@ -128,7 +133,7 @@ describe("CalculadoraPage", () => {
     expect(painel.textContent).toContain(formatBRL(15.9));
     expect(screen.getByRole("link", { name: "Reservar essa vaga" })).toHaveAttribute(
       "href",
-      "/p/aerovalet/aeroporto-guarulhos/uncovered",
+      "/estacionamentos/aeroporto-guarulhos/aerovalet",
     );
 
     const tabela = screen.getByRole("table", { name: /Preço de/ });
@@ -144,7 +149,10 @@ describe("CalculadoraPage", () => {
     setup();
     const tabela = await screen.findByRole("table", { name: /Preço de/ });
     const reservar = within(tabela).getAllByRole("link", { name: "Reservar" });
-    expect(reservar[0]).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
+    expect(reservar[0]).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-guarulhos/aerovalet",
+    );
     // O lote sem contrato não polui o ranking de quem tem preço (ADR-010).
     expect(tabela.textContent).not.toContain("Talentos Park");
 
@@ -212,7 +220,7 @@ describe("CalculadoraPage", () => {
     expect(screen.getAllByText(/Ainda estamos mapeando/).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "página do destino" })).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-santos-dumont",
+      "/estacionamentos/aeroporto-santos-dumont",
     );
   });
 
@@ -248,7 +256,7 @@ describe("CalculadoraPage", () => {
     // Estacionar vence (111,30 contra 122,50): o CTA já leva a duração calculada.
     const cta = await screen.findByRole("link", { name: "Reservar a vaga mais barata" });
     const href = cta.getAttribute("href")!;
-    expect(href).toContain("/p/aerovalet/aeroporto-guarulhos/uncovered?");
+    expect(href).toContain("/estacionamentos/aeroporto-guarulhos/aerovalet?");
     expect(href).toContain("from=");
     expect(href).toContain("to=");
     expect(screen.getByText(/entrada amanhã às 22h/)).toBeInTheDocument();

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { PreviewItem } from "./UnitPreviewCard";
+import { caminhoFicha } from "@/lib/urls";
 
 /**
  * Leitura da unidade para o **preview travado** (E1.9). Não precisa de RPC nem bypass de RLS: as
@@ -32,7 +33,7 @@ export function usePreviewUnit(locationId: string | undefined) {
       const { data: loc, error } = await supabase
         .from("location")
         .select(
-          "id, name, slug, address, has_shuttle, status, is_listed, photos, company:company!inner(slug), destination:destination(name)",
+          "id, name, slug, public_slug, address, has_shuttle, status, is_listed, photos, company:company!inner(slug), destination:destination(name, public_slug)",
         )
         .eq("id", locationId!)
         .maybeSingle();
@@ -58,12 +59,10 @@ export function usePreviewUnit(locationId: string | undefined) {
         capacity: r.capacity,
       }));
 
-      const companySlug = l.company?.slug as string | undefined;
-      const firstCode = rows[0]?.company_parking_type?.parking_type?.code as string | undefined;
+      // A ficha é uma só por unidade, então o link não depende mais do tipo de vaga.
+      const destinoSlug = (l.destination as { public_slug?: string | null } | null)?.public_slug;
       const publicUrl =
-        companySlug && l.slug && firstCode
-          ? `/p/${companySlug}/${l.slug}/${firstCode}`
-          : null;
+        destinoSlug && l.public_slug ? caminhoFicha(destinoSlug, l.public_slug as string) : null;
 
       return {
         name: l.name,

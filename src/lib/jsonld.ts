@@ -2,8 +2,19 @@ import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
+import { caminhoFicha } from "@/lib/urls";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE } from "@/lib/suporte";
+
+/**
+ * A URL absoluta da ficha. Uma por estacionamento, sem o tipo de vaga: o schema tem que
+ * dizer o mesmo que o canonical da página, senão o Google recebe duas identidades.
+ */
+function urlDaFicha(listing: ListingDetail): string {
+  const destino = listing.location.destination?.public_slug;
+  const lote = listing.location.public_slug;
+  return destino && lote ? `${SITE_URL}${caminhoFicha(destino, lote)}` : SITE_URL;
+}
 
 /**
  * A escada de tarifa progressiva como `UnitPriceSpecification`, uma por janela
@@ -100,13 +111,13 @@ export function localBusinessSchema(
   return {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "ParkingFacility"],
-    name: `${listing.location.name} · ${listing.parking_type.name}`,
+    name: listing.location.public_name ?? `${listing.company.name} - ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
     // Metade das unidades guarda a foto como caminho relativo do legado
     // (`/Estacionamentos/...`), e URL relativa em JSON-LD o buscador não resolve.
     image: listing.location.photos?.length ? listing.location.photos.map(absoluta) : undefined,
-    url: `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`,
+    url: urlDaFicha(listing),
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
     // Identidade legal do catálogo, conferida no registro público: a da unidade
@@ -205,7 +216,7 @@ export function productOfferSchema(
   // externa é o parceiro. É a capacidade `guaranteedSpot` na superfície do schema. Sem ela, a
   // oferta segue existindo com o preço e cala sobre o estoque.
   const availability = caps.guaranteedSpot ? "https://schema.org/InStock" : undefined;
-  const url = `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`;
+  const url = urlDaFicha(listing);
 
   // A faixa do motor manda; `base_price` é reserva. `AggregateOffer` e não `Offer` porque a
   // tabela é escalonada: uma diária só cravaria o preço de uma duração e calaria sobre as
@@ -233,7 +244,7 @@ export function productOfferSchema(
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: `${listing.parking_type.name} · ${listing.location.name}`,
+    name: listing.location.public_name ?? `${listing.company.name} - ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
     // `image` é exigido pelo Google pro rich result de Product: usa as fotos da unidade,

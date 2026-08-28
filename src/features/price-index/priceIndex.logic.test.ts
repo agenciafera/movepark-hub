@@ -53,6 +53,7 @@ function unit(overrides: Partial<PriceUnit>): PriceUnit {
 function dest(units: PriceUnit[]): PriceDestination {
   return {
     slug: "aeroporto-teste",
+    public_slug: "aeroporto-teste",
     code: "TST",
     name: "Aeroporto Teste",
     short_name: "Teste (TST)",
@@ -245,8 +246,13 @@ describe("formatação", () => {
     expect(durationLabel(7)).toBe("7 diárias");
   });
 
-  it("caminho da listagem aponta para /p/", () => {
-    expect(listingPath(unit({}))).toBe("/p/parceiro/unidade/uncovered");
+  // O caminho vem pronto do banco (`public_path`), na mesma gramática de todo o catálogo:
+  // montar aqui colocaria a regra da URL num décimo terceiro lugar.
+  it("caminho da listagem é o que o banco entregou", () => {
+    expect(listingPath(unit({ public_path: "/estacionamentos/aeroporto-teste/parceiro" }))).toBe(
+      "/estacionamentos/aeroporto-teste/parceiro",
+    );
+    expect(listingPath(unit({}))).toBe("");
   });
 });
 
@@ -264,6 +270,7 @@ describe("metaDescription", () => {
 describe("buildAirportSections", () => {
   const meta = (slug: string, overrides: Partial<AirportMeta> = {}): AirportMeta => ({
     slug,
+    public_slug: slug,
     code: "TST",
     name: `Aeroporto ${slug}`,
     short_name: null,
@@ -328,6 +335,7 @@ describe("matchesAirportFilter", () => {
     };
     const m: AirportMeta = {
       slug: "aeroporto-teste",
+      public_slug: "aeroporto-teste",
       code: "TST",
       name: "Aeroporto Teste",
       short_name: "Teste (TST)",
@@ -359,6 +367,7 @@ describe("airportStates", () => {
   it("lista as UFs presentes, sem repetição e sem nulo", () => {
     const m = (slug: string, state: string | null): AirportMeta => ({
       slug,
+      public_slug: slug,
       code: null,
       name: slug,
       short_name: null,
@@ -443,6 +452,7 @@ describe("groupAirports", () => {
   const secao = (over: Partial<AirportSection>): AirportSection => ({
     meta: {
       slug: "s",
+      public_slug: "s",
       code: null,
       name: "Aeroporto",
       short_name: null,

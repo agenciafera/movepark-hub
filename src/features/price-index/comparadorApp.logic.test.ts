@@ -35,6 +35,7 @@ function unit(overrides: Partial<PriceUnit>): PriceUnit {
 
 const DEST: PriceDestination = {
   slug: "aeroporto-teste",
+  public_slug: "aeroporto-teste",
   code: "TST",
   name: "Aeroporto Teste",
   short_name: "Teste (TST)",

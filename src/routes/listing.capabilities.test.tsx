@@ -16,8 +16,8 @@ import ListingPage from "./listing";
 
 const BASE = import.meta.env.VITE_SUPABASE_URL;
 const ROTA =
-  "/p/virapark/virapark/covered?from=2026-08-12T16:00:00.000Z&to=2026-08-21T16:00:00.000Z";
-const PATH = "/p/:operatorSlug/:locationSlug/:parkingTypeCode";
+  "/estacionamentos/aeroporto-viracopos/virapark?from=2026-08-12T16:00:00.000Z&to=2026-08-21T16:00:00.000Z";
+const PATH = "/estacionamentos/:destino/:lote";
 const URL_SAIDA =
   "https://virapark.movepark.co/virapark/vaga-coberta?utm_source=movepark&utm_medium=organic&utm_campaign=afiliado-movepark";
 
@@ -36,6 +36,16 @@ function linha(
     location: {
       id: "loc-1",
       slug: "virapark",
+      public_slug: "virapark",
+      public_name: "Virapark - Estacionamento Aeroporto Viracopos",
+      destination: {
+        seo_label: "Aeroporto Viracopos, Campinas (VCP)",
+        short_name: "Viracopos (VCP)",
+        name: "Aeroporto de Viracopos",
+        type: "airport",
+        city: "Campinas",
+        public_slug: "aeroporto-viracopos",
+      },
       name: "Virapark",
       address: "Antiga Rod. Santos Dumont, Km 64",
       phone: null,

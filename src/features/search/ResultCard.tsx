@@ -83,7 +83,15 @@ export function ResultCard({
   const params = new URLSearchParams(stretchParamsToMinStay(searchParams, item.min_stay_days));
   if (source) params.set("src", source);
 
-  const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${params.toString()}`;
+  // O tipo de vaga saiu da URL e virou seleção dentro da ficha: `?vaga=` abre a página já
+  // na oferta que o card mostrou, sem criar uma URL própria para ela.
+  params.set("vaga", item.parking_type.code);
+  // Sem `public_path` (Edge de busca de uma versão anterior), cai no endereço antigo, que o
+  // worker 301 para a ficha: um salto a mais é melhor que um link para o índice.
+  const base =
+    item.location.public_path ??
+    `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}`;
+  const url = `${base}?${params.toString()}`;
 
   const soldOut = item.availability?.sold_out ?? false;
   const nearCapacity = !soldOut && (item.availability?.near_capacity ?? false);

@@ -1,20 +1,21 @@
 # URL e nome do estacionamento
 
-**Status:** fase 1 no ar (27/08/2026); fase 2 com a base pronta no banco, sem virada de URL ainda · **Migrations:** `20261102090000`, `20261102091500`, `20261103090000`, `20261103091500` · **Teste:** `supabase/tests/url_publica_estacionamentos.test.sql`
+**Status:** virada feita (27/08/2026) · **Migrations:** `20261102090000`, `20261102091500`, `20261103090000`, `20261103091500`, `20261104090000`, `20261104091500` · **Teste:** `supabase/tests/url_publica_estacionamentos.test.sql`
 **Relacionado:** [seo-indexacao.md](./seo-indexacao.md) (cutover do domínio), [lote-mapeado-vitrine.md](./lote-mapeado-vitrine.md) (ADR-010, conversão), [borda-cloudflare.md](./borda-cloudflare.md) (worker)
 
-A fase 1 grava nome e slug canônicos no banco, sem tocar em rota. A fase 2 é a virada das URLs, que é um evento único e ainda não aconteceu. Quem for implementar a fase 2 encontra o checklist inteiro no fim deste arquivo.
+A fase 1 gravou nome e slug canônicos no banco, sem tocar em rota. A virada das URLs veio depois, num evento único, e está registrada abaixo com o que ficou de fora.
 
 ## Decisão
 
 Uma gramática só para as duas famílias de ficha, uma página por estacionamento:
 
 ```
-/estacionamentos/aeroporto-guarulhos                  hub do aeroporto (hoje /destinos/<slug>)
+/estacionamentos                                      índice dos destinos
+/estacionamentos/aeroporto-guarulhos                  hub do aeroporto
 /estacionamentos/aeroporto-guarulhos/aeropark         ficha, parceira ou mapeada
-/estacionamentos/aeroporto-guarulhos/aeropark#vaga-coberta
-/estacionamentos/aeroporto-guarulhos/precos           hoje /precos/<slug>
-/estacionamentos/aeroporto-guarulhos/mais-barato      hoje /estacionamento-mais-barato/<slug>
+/estacionamentos/aeroporto-guarulhos/aeropark?vaga=covered
+/estacionamentos/aeroporto-guarulhos/precos
+/estacionamentos/aeroporto-guarulhos/mais-barato
 ```
 
 E um formato único de nome, que alimenta H1, `<title>`, card e `name` do JSON-LD:
@@ -67,7 +68,7 @@ O nome mais longo do acervo com o sufixo da marca fica em 61 caracteres ("Movepa
 
 **Aeroporto.** `public_slug` derivado do `seo_label`. A maioria só perde o "de/do/internacional". Três mudam de nome:
 
-| Hoje | Alvo |
+| Antes | Agora |
 |---|---|
 | `aeroporto-afonso-pena` | `aeroporto-curitiba` |
 | `aeroporto-salgado-filho` | `aeroporto-porto-alegre` |
@@ -77,7 +78,7 @@ Sete destinos estavam sem `seo_label` (Campo Grande, Florianópolis, Fortaleza, 
 
 **Ficha.** O último segmento é a marca, único dentro do destino. Para o acervo atual a marca da empresa basta, porque nenhuma tem duas unidades no mesmo destino. Quando tiver, o slug precisa de qualificador (bairro ou via), e o índice único é quem avisa.
 
-| Hoje (17 URLs) | Alvo (9 URLs) |
+| Antes (17 URLs) | Agora (9 URLs) |
 |---|---|
 | `/p/aeropark/aeroporto-guarulhos/{covered,uncovered,valet}` | `/estacionamentos/aeroporto-guarulhos/aeropark` |
 | `/p/aerovalet/aeroporto-guarulhos/{covered,uncovered,valet}` | `/estacionamentos/aeroporto-guarulhos/aerovalet` |
@@ -119,20 +120,51 @@ O desenho alternativo era uma tabela `public_slug_registry(destination_id, slug,
 - **`security definer` no mapa, com os gates escritos por extenso.** A primeira versão era invoker, para a RLS decidir o que é público, e morria em `42501`: `prospect_location` teve o `select` revogado de `anon` e concedido por coluna (Q-021, o telefone que a página não mostra), e o mapa lê `converted_at`. Chamado pelo worker com a anon key, o mapa viria vazio e a virada responderia 404 em toda URL antiga.
 - **As RPCs de vitrine devolvem o caminho pronto:** `home_featured_offers`, `destination_prospect_cards` (que agora aceita o slug antigo e o novo) e `destination_price_index` ganharam `public_path`, mais `public_slug` no destino.
 
-## Fase 2: a virada (ainda não feita)
+## A virada, feita em 27/08/2026
 
-Nenhum item é opcional; cada um, esquecido, tira página do índice ou quebra link.
+Tudo num evento só, porque URL nova sem 301 e link interno velho apontando para ela são o
+mesmo problema visto de dois lados.
 
-- [ ] **Colapsar o tipo de vaga.** Uma rota por lote, âncora por tipo, `?vaga=` preservando o deep link da busca, canonical na URL limpa, `AggregateOffer` no schema. Mexe no funil, não só em redirect: o card da busca precisa cair na âncora certa com o preço do filtro.
-- [ ] **Rotas.** `/estacionamentos/:destino/:lote` resolve as duas famílias; `/destinos/:slug` vira `/estacionamentos/:slug`; `precos` e `mais-barato` viram segmento reservado dentro do destino.
-- [ ] **76 posts do blog** têm link para `/destinos/` no `body_md` (69 publicados). `UPDATE` no mesmo deploy, senão todo link interno do acervo vira salto de 301.
-- [ ] **308 ocorrências de `/destinos` no código** fora de teste: worker, [`sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts) e o teste que reprova rota fora do sitemap, [`jsonld.ts`](../../src/lib/jsonld.ts) (BreadcrumbList), `ogImage`, topbar e menu mobile, `ProspectCard`, `destinoPrices`, `useSearchResults`.
-- [ ] **Worker:** ligar o `url_legacy_map()` (já pronto no banco) como 301 na borda, mais `ROTAS_DE_APP` e `BLOG_CATEGORY_TO_DESTINATION` (14 categorias legadas apontam para `/destinos/<slug>`). O `prospectRedirect` por requisição sai: ele consulta o banco a cada URL nova de isolate, e a partir da virada isso seria a rota principal do site.
-- [x] **Banco:** `prospect_redirect_target` já devolve a gramática nova. Com as duas famílias na mesma URL, a conversão deixa de precisar de 301 quando a unidade herda o `public_slug`, e a RPC fica só com o caso de ficha convertida sem oferta publicada (302 para o destino).
-- [ ] **Descoberta:** `public/llms.txt` e `.well-known/mcp/server-card.json` citam `/destinos`.
-- [ ] **Mapa de 301 do WordPress** reescrito para o alvo final, sem corrente de dois saltos.
-- [ ] **`public/Estacionamentos`** (com E maiúsculo, pasta de fotos) colide com a rota no macOS, que é case-insensitive, e não colide no Linux. Já documentado em [`src/worker.ts`](../../src/worker.ts). Renomear ou mover para `public/images/` antes de jogar mais páginas nesse prefixo.
-- [ ] **Copiar `public_slug` na conversão** de lote mapeado para unidade, que é o ganho inteiro do namespace compartilhado.
+- **Rotas.** `/estacionamentos` (índice), `/estacionamentos/:destino`,
+  `/estacionamentos/:destino/precos`, `/estacionamentos/:destino/mais-barato` e
+  `/estacionamentos/:destino/:lote`. O React Router resolve segmento estático antes de
+  dinâmico, que é por que `precos` e `mais-barato` são reservados no banco.
+- **Uma ficha por estacionamento, nas duas famílias.** O loader resolve unidade parceira ou
+  lote mapeado e o componente decide qual página renderizar. O tipo de vaga virou seleção
+  dentro da ficha (`?vaga=`, com âncora `#vaga-<code>`), e o canonical ignora a query.
+- **301 na borda pelo `url_legacy_map()`**, carregado uma vez por isolate. O
+  `prospectRedirect`, que consultava o banco por URL, saiu: depois da virada
+  `/estacionamentos/*` é a rota principal do site.
+- **O mapa do WordPress encolheu de 18 para 6 entradas de aeroporto.** Doze URLs do
+  WordPress (`/estacionamentos/aeroporto-guarulhos`, `/estacionamentos/aeroporto-confins`…)
+  passaram a ser o nosso próprio endereço, então não há o que redirecionar. As que sobraram
+  são as que mudaram de nome (Afonso Pena, Salgado Filho, Santos Dumont, Galeão, Tietê e o
+  caso ambíguo do Rio). **Achado no caminho:** o mapa tinha uma entrada apontando para ela
+  mesma (`/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos`), que era o loop de
+  301 medido em produção. Ela caiu junto.
+- **Conteúdo reescrito no mesmo deploy:** 77 posts, 63 trechos da base de conhecimento e 40
+  perguntas de FAQ deixaram de linkar para `/destinos/*`, `/precos/*` e
+  `/estacionamento-mais-barato/*`.
+- **Sitemap, gêmeo Markdown, `llms.txt` e manifesto de caminhos** seguem a mesma pasta. O
+  `.md` responde no mesmo endereço da página (`dist/estacionamentos/<destino>/precos.md`).
+- **Título e H1 saem do `public_name`.** "Aeropark - Estacionamento Aeroporto Guarulhos",
+  sem o tipo de vaga, que não descreve mais uma página.
+
+Medido no build: **439 páginas, 371 URLs no sitemap** (9 de unidade, contra 17 antes, para os
+mesmos 9 estacionamentos), schema sem erro nem aviso, e **zero link para a gramática antiga
+em todo o `dist`**.
+
+### O que ficou de fora
+
+- **A Edge `search` precisa de deploy.** O código já devolve `public_path` por resultado, mas
+  o deploy não sai daqui (a CLI do Supabase não está linkada nesta máquina e o deploy por MCP
+  exigiria retranscrever os cinco arquivos à mão). Até ele sair, o card da busca cai no
+  endereço antigo e o worker 301 para a ficha: funciona, com um salto a mais. Rodar
+  `supabase functions deploy search`.
+- **Prova de titularidade da reivindicação** (HMAC + OTP) segue adiada, como já estava.
+- **Copiar o `public_slug` na conversão** de lote mapeado para unidade, que é o que faz a
+  ficha reivindicada manter o endereço. Sem conversão nenhuma no acervo hoje, não havia o que
+  migrar; a função de conversão ainda não existe.
 
 ### Risco
 

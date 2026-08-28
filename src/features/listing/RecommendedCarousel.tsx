@@ -103,7 +103,12 @@ export function RecommendedCarousel({
               </div>
             ))
           : items.map((item) => {
-              const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}?${linkParams.toString()}`;
+              // Mesma queda do card da busca: sem `public_path` vale o endereço antigo,
+              // que o worker 301 para a ficha.
+              const base =
+                item.location.public_path ??
+                `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}`;
+              const url = `${base}?${linkParams.toString()}`;
               const soldOut = item.availability?.sold_out ?? false;
 
               return (

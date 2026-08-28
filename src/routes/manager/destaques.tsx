@@ -183,7 +183,7 @@ export default function ManagerDestaques() {
                       <div className="flex gap-2">
                         <Button size="sm" variant="secondary" asChild>
                           <a
-                            href={`/p/${row.companySlug}/${row.locationSlug}/${row.parkingTypeCode}`}
+                            href={row.publicPath ?? "/estacionamentos"}
                             target="_blank"
                             rel="noreferrer"
                           >

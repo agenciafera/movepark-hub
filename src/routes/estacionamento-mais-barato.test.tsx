@@ -113,10 +113,10 @@ describe("EstacionamentoMaisBaratoPage", () => {
   it("tem os dois CTAs: reservar e comparar preços", async () => {
     setup();
     const reservar = await screen.findByRole("link", { name: "Reservar vaga em Viracopos" });
-    expect(reservar).toHaveAttribute("href", "/destinos/aeroporto-de-viracopos");
+    expect(reservar).toHaveAttribute("href", "/estacionamentos/aeroporto-de-viracopos");
     expect(screen.getByRole("link", { name: "Comparar preços em Viracopos" })).toHaveAttribute(
       "href",
-      "/precos/aeroporto-de-viracopos",
+      "/estacionamentos/aeroporto-de-viracopos/precos",
     );
   });
 

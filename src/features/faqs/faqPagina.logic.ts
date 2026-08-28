@@ -12,6 +12,8 @@ export type FaqDestinoRef = {
   name: string;
   short_name: string | null;
   slug: string;
+  /** Slug da URL pública do destino. Nulo em destino que ainda não foi publicado. */
+  public_slug?: string | null;
   code: string;
 };
 
@@ -76,6 +78,8 @@ export function introDaPergunta(
 
 export type FaqPrecoDestino = {
   slug: string;
+  /** Slug da URL pública do destino. */
+  public_slug?: string | null;
   unitCount: number;
   partnerCount: number;
   byDuration: { days: number; from: number; fromPerDay: number }[];

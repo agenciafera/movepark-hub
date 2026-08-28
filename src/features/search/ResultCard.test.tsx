@@ -14,6 +14,7 @@ function item(
     location: {
       id: "loc-1",
       slug: "aeroporto-guarulhos",
+      public_path: "/estacionamentos/aeroporto-guarulhos/aeropark",
       name: "Guarulhos",
       address: null,
       latitude: null,
@@ -139,9 +140,12 @@ describe("ResultCard", () => {
         searchParams={new URLSearchParams()}
       />,
     );
+    // Uma ficha por estacionamento: o tipo de vaga do card vira `?vaga=`, que abre a página
+    // já na oferta que o cliente viu, sem criar uma URL própria para ela.
     expect(container.querySelector("a")?.getAttribute("href") ?? "").toContain(
-      "/p/aerovalet/aeroporto-guarulhos/covered",
+      "/estacionamentos/aeroporto-guarulhos/aeropark?",
     );
+    expect(container.querySelector("a")?.getAttribute("href") ?? "").toContain("vaga=covered");
   });
 
   it("vitrine: mostra a diária e avisa a estadia mínima exigida pelo lote", () => {

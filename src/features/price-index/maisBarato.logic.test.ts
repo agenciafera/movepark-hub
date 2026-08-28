@@ -25,6 +25,7 @@ function unit(overrides: Partial<PriceUnit> & { company_name: string }): PriceUn
 function dest(units: PriceUnit[]): PriceDestination {
   return {
     slug: "aeroporto-teste",
+    public_slug: "aeroporto-teste",
     code: "TST",
     name: "Aeroporto Teste",
     short_name: "Teste (TST)",

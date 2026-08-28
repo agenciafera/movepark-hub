@@ -21,6 +21,7 @@ function item(overrides: {
     location: {
       id: "loc-1",
       slug: "loc",
+      public_path: "/estacionamentos/aeroporto-guarulhos/aeropark",
       name: "Local",
       address: null,
       latitude: null,

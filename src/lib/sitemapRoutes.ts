@@ -70,16 +70,17 @@ export const SITEMAP_PRIVATE_PREFIXES = [
  * Ficam listados para o teste saber que já estão cobertos e não cobrar decisão de novo.
  */
 export const SITEMAP_DYNAMIC_PATTERNS = [
-  "/p/:operatorSlug/:locationSlug/:parkingTypeCode",
-  "/destinos",
-  "/destinos/:slug",
-  "/estacionamentos/:destino/:slug",
+  // Uma pasta para o catálogo, e uma ficha por estacionamento nas duas famílias.
+  // Ver docs/specs/url-estacionamentos.md.
+  "/estacionamentos",
+  "/estacionamentos/:destino",
+  "/estacionamentos/:destino/:lote",
+  "/estacionamentos/:destino/precos",
+  "/estacionamentos/:destino/mais-barato",
   "/blog",
   "/blog/:slug",
   "/faq/:slug",
   "/precos",
-  "/precos/:slug",
-  "/estacionamento-mais-barato/:slug",
   // Taxonomia e paginação do blog (18/08/2026): `getBlogTaxonomyRoutes` no `vite.config.ts`
   // espelha a mesma contagem do `getStaticPaths` de `src/routes.tsx` (48 arquivos no dist/)
   // e entra na seção `blog` do sitemap. Até aqui viviam em `SITEMAP_BLOG_TAXONOMY_PENDING`,

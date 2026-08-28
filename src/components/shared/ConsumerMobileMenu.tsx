@@ -80,7 +80,7 @@ type GrupoDeMenu = { titulo: string; itens: ItemDeMenu[] };
  * topo, antes de qualquer título de grupo. É também o único link daqui que o
  * rodapé não tem: lá a busca já está no header em toda página.
  */
-const DESTINOS: ItemDeMenu = { to: "/destinos", label: "Destinos", icone: MapPin };
+const DESTINOS: ItemDeMenu = { to: "/estacionamentos", label: "Destinos", icone: MapPin };
 
 /**
  * Os grupos, os rótulos e a ordem são os **do rodapé**, item por item.

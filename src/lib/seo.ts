@@ -139,13 +139,33 @@ export function proximityAnchorLabel(d: SeoDestination): string | null {
  * é o que diferencia as três páginas da mesma unidade.
  */
 export function listingTitle(args: {
+  publicName?: string | null;
   companyName: string;
-  parkingTypeName: string;
+  /** Aceito e ignorado: o mesmo objeto alimenta a descrição, que usa o tipo de vaga. */
+  parkingTypeName?: string | null;
   destination?: SeoDestination | null;
   locationName: string;
 }): string {
+  return `${nomeDaFicha(args)} | Movepark`;
+}
+
+/**
+ * O nome canônico da ficha: "{marca} - Estacionamento {destino}".
+ *
+ * Sai de `location.public_name`, escrito e revisado no banco. A composição aqui é o plano B
+ * para unidade que ainda não foi nomeada, e usa a mesma fórmula, para as duas nunca
+ * divergirem na tela.
+ */
+export function nomeDaFicha(args: {
+  publicName?: string | null;
+  companyName: string;
+  parkingTypeName?: string | null;
+  destination?: SeoDestination | null;
+  locationName: string;
+}): string {
+  if (args.publicName?.trim()) return args.publicName.trim();
   const lugar = args.destination ? seoLabelPrimary(args.destination) : args.locationName;
-  return `${args.companyName}: Estacionamento ${lugar}, ${args.parkingTypeName} | Movepark`;
+  return `${args.companyName} - Estacionamento ${lugar}`;
 }
 
 /**
@@ -155,13 +175,13 @@ export function listingTitle(args: {
  * de vaga no meio é o que faz as três páginas da mesma unidade deixarem de ter H1 idêntico.
  */
 export function listingHeading(args: {
+  publicName?: string | null;
   companyName: string;
-  parkingTypeName: string;
+  parkingTypeName?: string | null;
   destination?: SeoDestination | null;
   locationName: string;
 }): string {
-  const lugar = args.destination ? seoLabelPrimary(args.destination) : args.locationName;
-  return `${args.companyName} · ${args.parkingTypeName} · ${lugar}`;
+  return nomeDaFicha(args);
 }
 
 /** Meta description da unidade, usada quando não existe resumo escrito para ela. */

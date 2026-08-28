@@ -87,6 +87,7 @@ export async function fetchDestinationUnits(destination: {
   id: string;
   latitude: number | string | null;
   longitude: number | string | null;
+  public_slug?: string | null;
 }): Promise<SearchResultItem[]> {
   const { data: rows, error } = await supabase
     .from("location_parking_type")
@@ -94,7 +95,7 @@ export async function fetchDestinationUnits(destination: {
       `
       id, capacity, is_active,
       location:location!inner(
-        id, slug, name, address, latitude, longitude,
+        id, slug, public_slug, name, address, latitude, longitude,
         review_avg, review_count, google_place_id, photos, is_listed, deleted_at,
         company:company!inner(slug, name, status),
         amenities:location_amenity(amenity_code)
@@ -138,7 +139,13 @@ export async function fetchDestinationUnits(destination: {
     .filter((id): id is string => !!id);
   const google = await fetchGoogleRatings(placeIds).catch(() => []);
 
-  return buildStaticUnits(unitRows, (proximity ?? []) as unknown as ProximityRow[], google);
+  return buildStaticUnits(
+    unitRows,
+    (proximity ?? []) as unknown as ProximityRow[],
+    google,
+    new Date(),
+    destination.public_slug ?? null,
+  );
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

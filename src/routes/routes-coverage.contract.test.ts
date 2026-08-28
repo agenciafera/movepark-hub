@@ -24,7 +24,7 @@ const WINDUP = join(process.cwd(), "e2e", "windup");
  */
 const COBERTAS_POR_PLAYWRIGHT: Record<string, string> = {
   "/search": "busca com fixture de destino real (support/consumer.ts)",
-  "/p/:operatorSlug/:locationSlug/:parkingTypeCode": "detalhe com preço vivo do banco",
+  "/estacionamentos/:destino/:lote": "ficha com preço vivo do banco",
   "/bookings": "lista do cliente logado com reserva real",
   "/bookings/:code": "detalhe de reserva real",
   "/checkout/:code": "checkout transacional, cobra no Pagar.me",

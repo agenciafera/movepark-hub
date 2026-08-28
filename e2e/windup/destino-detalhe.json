@@ -1,6 +1,6 @@
 {
   "scenario_id": "destino-detalhe",
-  "start_url": "/destinos/aeroporto-qa",
+  "start_url": "/estacionamentos/aeroporto-qa",
   "task": "Passo 1: verifique que a pagina exibe o texto \"Aeroporto QA\". Passo 2: verifique que a pagina exibe o texto \"Campinas\". Passo 3: verifique que a pagina exibe o texto \"Estacionamento perto do Aeroporto QA\".",
   "tags": [
     "smoke",

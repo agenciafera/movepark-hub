@@ -18,6 +18,7 @@
  * Layout pode divergir entre as duas páginas. Número não pode.
  */
 
+import { caminhoFicha } from "@/lib/urls";
 import {
   buildMatrix,
   carUnits,
@@ -239,6 +240,8 @@ export type ProximityRow = {
 export type ProximityProspect = {
   name: string;
   slug: string;
+  /** Caminho da ficha, montado no banco. Cai para o slug quando a ficha não tem. */
+  public_path?: string | null;
   address?: string | null;
   distance_km: number | null;
   /** Ponto do destino mais perto deste lote ("Terminal 2"), quando o destino tem pontos. */
@@ -295,7 +298,7 @@ export function proximityRanking(args: {
     rating: null,
     meters: u.distance_m as number,
     distanceLabel: `${formatDistance(u.distance_m)}${sufixo}`,
-    path: `/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}`,
+    path: u.public_path ?? "",
     kind: "partner",
   }));
 
@@ -314,7 +317,7 @@ export function proximityRanking(args: {
         meters == null
           ? null
           : `${formatDistance(meters)}${p.reference_name ? ` do ${p.reference_name}` : sufixo}`,
-      path: `/estacionamentos/${args.destinationSlug}/${p.slug}`,
+      path: p.public_path ?? caminhoFicha(args.destinationSlug, p.slug),
       kind: "mapped" as const,
     };
   });

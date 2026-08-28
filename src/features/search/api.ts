@@ -8,6 +8,8 @@ export type Destination = {
   name: string;
   short_name: string | null;
   slug: string;
+  /** Slug da URL pública (`/estacionamentos/<public_slug>`). */
+  public_slug: string | null;
   type: "airport" | "bus_terminal" | "city_center" | "district" | "custom";
   city: string;
   state: string | null;
@@ -54,7 +56,7 @@ export function useDestinations() {
       const { data, error } = await supabase
         .from("destination")
         .select(
-          "id, code, name, short_name, slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
+          "id, code, name, short_name, slug, public_slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
         )
         .eq("is_published", true)
         .order("sort_order");
@@ -92,7 +94,7 @@ export function usePopularDestinations(limit = 8) {
       const { data, error } = await supabase
         .from("destination")
         .select(
-          "id, code, name, short_name, slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
+          "id, code, name, short_name, slug, public_slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
         )
         .eq("is_published", true)
         .eq("is_popular", true)
@@ -118,6 +120,8 @@ export type FeaturedOffer = {
     id: string;
     name: string;
     slug: string;
+    /** Caminho da ficha, montado no banco pela mesma função que a busca usa. */
+    public_path: string | null;
     review_avg: number | null;
     review_count: number;
     /** Posição definida na curadoria (`home_featured_offer.sort_order`). Menor aparece antes. */
@@ -171,6 +175,7 @@ export function useFeaturedOffers() {
       if (linhas.length === 0) return [];
 
       const ordem = new Map(linhas.map((r) => [r.id, r.sort_order]));
+      const caminhos = new Map(linhas.map((r) => [r.id, r.public_path]));
       const locationIds = [...new Set(linhas.map((r) => r.location_id))];
 
       // Passo 2: detalhes das locations (empresa, destino, amenidades).
@@ -239,6 +244,7 @@ export function useFeaturedOffers() {
             id: loc.id,
             name: loc.name,
             slug: loc.slug,
+            public_path: caminhos.get(r.id) ?? null,
             review_avg: loc.review_avg ?? null,
             review_count: loc.review_count ?? 0,
             sort_order: ordem.get(r.id) ?? Number.MAX_SAFE_INTEGER,

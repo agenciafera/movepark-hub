@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { siteUrl } from "@/lib/site";
+import { caminhoFicha } from "@/lib/urls";
 
 /**
  * Motor de Crescimento: acesso a dados (Clube, carteira, Indicação).
@@ -143,7 +144,7 @@ export function useLastCompletedBooking(profileId: string | undefined) {
         .from("booking")
         .select(
           `code, check_out_at,
-           location:location!inner(name, slug, company:company!inner(name, slug)),
+           location:location!inner(name, slug, public_slug, destination:destination(public_slug), company:company!inner(name, slug)),
            booking_item:booking_item(item_type, parking_type:parking_type(name, code)),
            vehicle:vehicle(model, license_plate)`,
         )
@@ -162,8 +163,9 @@ export function useLastCompletedBooking(profileId: string | undefined) {
       );
       const ptCode = parkingItem?.parking_type?.code ?? null;
       const listingUrl =
-        r.location?.company?.slug && r.location?.slug && ptCode
-          ? `/p/${r.location.company.slug}/${r.location.slug}/${ptCode}`
+        r.location?.destination?.public_slug && r.location?.public_slug
+          ? caminhoFicha(r.location.destination.public_slug, r.location.public_slug) +
+            (ptCode ? `?vaga=${ptCode}` : "")
           : null;
       const vehicleLabel = r.vehicle
         ? [r.vehicle.model, r.vehicle.license_plate].filter(Boolean).join(" · ")

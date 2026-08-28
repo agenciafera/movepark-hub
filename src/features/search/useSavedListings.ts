@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/context";
+import { caminhoFicha } from "@/lib/urls";
 
 const LS_KEY = "mp:saved";
 
@@ -157,6 +158,8 @@ export type SavedListingDetail = {
     name: string;
     address: string | null;
     cover_image: string | null;
+    /** Caminho da ficha. Nulo quando a unidade ainda não tem slug público. */
+    public_path: string | null;
   };
   parking_type: { code: string; name: string };
 };
@@ -181,9 +184,11 @@ export function useSavedListingsDetail(ids: string[]) {
           id,
           location:location!inner (
             slug,
+            public_slug,
             name,
             address,
             photos,
+            destination:destination ( public_slug ),
             company:company!inner ( slug, name )
           ),
           company_parking_type:company_parking_type!inner (
@@ -198,9 +203,11 @@ export function useSavedListingsDetail(ids: string[]) {
           id: string;
           location: {
             slug: string;
+            public_slug: string | null;
             name: string;
             address: string | null;
             photos: unknown;
+            destination: { public_slug: string | null } | null;
             company: { slug: string; name: string } | null;
           } | null;
           company_parking_type: {
@@ -223,6 +230,10 @@ export function useSavedListingsDetail(ids: string[]) {
             name: rec.location?.name ?? "",
             address: rec.location?.address ?? null,
             cover_image: cover,
+            public_path:
+              rec.location?.destination?.public_slug && rec.location?.public_slug
+                ? caminhoFicha(rec.location.destination.public_slug, rec.location.public_slug)
+                : null,
           },
           parking_type: {
             code: parkingType?.code ?? "",

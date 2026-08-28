@@ -158,15 +158,16 @@ function applyIndexPolicy(response: Response, url: URL): Response {
  * não é aeroporto), então cai no índice do blog em vez de numa página genérica.
  */
 const BLOG_CATEGORY_TO_DESTINATION: Record<string, string | null> = {
-  "aeroporto-guarulhos": "aeroporto-internacional-de-sao-paulo-guarulhos",
-  guarulhos: "aeroporto-internacional-de-sao-paulo-guarulhos",
-  "aeroporto-viracopos": "aeroporto-de-viracopos",
-  viracopos: "aeroporto-de-viracopos",
-  campinas: "aeroporto-de-viracopos",
-  "aeroporto-afonso-pena": "aeroporto-afonso-pena",
-  "aeroporto-lisboa": "aeroporto-humberto-delgado",
-  "aeroporto-confins": "aeroporto-de-confins",
-  "aeroporto-congonhas": "aeroporto-de-congonhas",
+  "aeroporto-guarulhos": "aeroporto-guarulhos",
+  guarulhos: "aeroporto-guarulhos",
+  "aeroporto-viracopos": "aeroporto-viracopos",
+  viracopos: "aeroporto-viracopos",
+  campinas: "aeroporto-viracopos",
+  "aeroporto-afonso-pena": "aeroporto-curitiba",
+  // Lisboa ainda não é destino publicado, então a categoria cai no índice do blog.
+  "aeroporto-lisboa": null,
+  "aeroporto-confins": "aeroporto-confins",
+  "aeroporto-congonhas": "aeroporto-congonhas",
   "aeroporto-navegantes": null,
   "dica-de-viagem": null,
   duvidas: null,
@@ -372,28 +373,16 @@ const WP_INSTITUTIONAL_REDIRECTS: Record<string, string> = {
  * e a tabela `destination` do Supabase — ver docs/specs/inventario-urls-wordpress.md.
  *
  * `/estacionamentos/` (o índice) e `/estacionamentos/rio-de-janeiro/` (RJ tem dois aeroportos
- * no Hub, Galeão e Santos Dumont, sem página conjunta) vão para `/destinos`, o mais próximo sem
+ * no Hub, Galeão e Santos Dumont, sem página conjunta) vão para `/estacionamentos`, o mais próximo sem
  * inventar uma escolha entre os dois.
  */
 const WP_AEROPORTO_REDIRECTS: Record<string, string> = {
-  "/estacionamentos": "/destinos",
-  "/estacionamentos/rio-de-janeiro": "/destinos",
-  "/estacionamentos/aeroporto-viracopos": "/destinos/aeroporto-de-viracopos",
-  "/estacionamentos/aeroporto-afonso-pena": "/destinos/aeroporto-afonso-pena",
-  "/estacionamentos/aeroporto-confins": "/destinos/aeroporto-de-confins",
-  "/estacionamentos/aeroporto-navegantes": "/destinos/aeroporto-internacional-de-navegantes",
-  "/estacionamentos/aeroporto-congonhas": "/destinos/aeroporto-de-congonhas",
-  "/estacionamentos/aeroporto-brasilia": "/destinos/aeroporto-de-brasilia",
-  "/estacionamentos/aeroporto-joao-pessoa": "/destinos/aeroporto-de-joao-pessoa",
-  "/estacionamentos/aeroporto-londrina": "/destinos/aeroporto-de-londrina",
-  "/estacionamentos/aeroporto-maceio": "/destinos/aeroporto-de-maceio",
-  "/estacionamentos/aeroporto-rio-galeao": "/destinos/aeroporto-do-galeao",
-  "/estacionamentos/aeroporto-salgado-filho": "/destinos/aeroporto-salgado-filho",
-  "/estacionamentos/aeroporto-santos-dumont-rio": "/destinos/aeroporto-santos-dumont",
-  "/estacionamentos/aeroporto-recife": "/destinos/aeroporto-internacional-do-recife-guararapes",
-  "/estacionamentos/aeroporto-cuiaba": "/destinos/aeroporto-de-cuiaba",
-  "/estacionamentos/terminal-rodoviario-tiete": "/destinos/terminal-rodoviario-tiete",
-  "/estacionamentos/aeroporto-guarulhos": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+  "/estacionamentos/rio-de-janeiro": "/estacionamentos",
+  "/estacionamentos/aeroporto-afonso-pena": "/estacionamentos/aeroporto-curitiba",
+  "/estacionamentos/aeroporto-rio-galeao": "/estacionamentos/aeroporto-galeao",
+  "/estacionamentos/aeroporto-salgado-filho": "/estacionamentos/aeroporto-porto-alegre",
+  "/estacionamentos/aeroporto-santos-dumont-rio": "/estacionamentos/aeroporto-santos-dumont",
+  "/estacionamentos/terminal-rodoviario-tiete": "/estacionamentos/rodoviaria-tiete",
 };
 
 /**
@@ -405,7 +394,7 @@ const WP_AEROPORTO_REDIRECTS: Record<string, string> = {
  * 2. **Lote mapeado publicado** (ADR-010, mesma marca): vai para a ficha de vitrine
  *    (`/estacionamentos/<destino>/<slug>`), sem reserva mas com o conteúdo equivalente.
  * 3. **Sem par confiável no Hub** (marca não encontrada, ou achada mas não publicada): vai para
- *    a página do destino (`/destinos/<slug>`) — nunca 404, e nunca um chute de marca errada.
+ *    a página do destino (`/estacionamentos/<destino>`), nunca 404 e nunca um chute de marca errada.
  *
  * `bandeira-park` é o caso notável do grupo 3: o WordPress publica a página dela sob Viracopos,
  * mas o lote mapeado equivalente no Hub está em Guarulhos e não publicado (ver o card
@@ -416,78 +405,70 @@ const WP_AEROPORTO_REDIRECTS: Record<string, string> = {
 const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
   // Parceiros ativos do Hub
   "/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos":
-    "/p/aerovalet/aeroporto-guarulhos/covered",
+    "/estacionamentos/aeroporto-guarulhos/aerovalet",
   "/estacionamentos/aeroporto-congonhas/aerovalet-congonhas-estacionamento-aeroporto-congonhas":
-    "/p/aerovalet/aeroporto-congonhas/covered",
+    "/estacionamentos/aeroporto-congonhas/aerovalet",
   "/estacionamentos/terminal-rodoviario-tiete/aerovalet-tiete-terminal-rodoviario-tiete":
-    "/p/aerovalet/terminal-rodoviario-tiete/covered",
-  "/estacionamentos/aeroporto-congonhas/plenty-park": "/p/plenty/aeroporto-congonhas/covered",
-  "/estacionamentos/aeroporto-guarulhos/aeropark-guarulhos": "/p/aeropark/aeroporto-guarulhos/covered",
+    "/estacionamentos/rodoviaria-tiete/aerovalet",
+  "/estacionamentos/aeroporto-guarulhos/aeropark-guarulhos": "/estacionamentos/aeroporto-guarulhos/aeropark",
   "/estacionamentos/aeroporto-afonso-pena/abba-park-estacionamento-aeroporto-afonso-pena":
-    "/p/abbapark/aeroporto-afonso-pena/covered",
+    "/estacionamentos/aeroporto-curitiba/abbapark",
   "/estacionamentos/aeroporto-afonso-pena/estacionamento-aeroporto-afonso-pena-curitiba":
-    "/p/nationpark/aeroporto-afonso-pena/covered",
-  // O tipo de vaga do Garageinn foi renomeado de "uncovered" para "avulsa" depois deste
-  // mapa ter sido escrito (18/08). Alvo desatualizado não vira 404 (o padrão /p/x/y/z em
-  // ROTAS_DE_APP deixa passar de propósito), vira 200 com a casca da home e canonical
-  // apontando pra ela — Google não indexa isso como página própria. Sintoma medido em
-  // produção em 21/08: /p/garageinn/aeroporto-viracopos/uncovered não tinha listagem, e
-  // <link rel="canonical"> saía como "https://movepark.co" em vez de se auto-referenciar.
+    "/estacionamentos/aeroporto-curitiba/nationpark",
+  // O alvo deixou de citar tipo de vaga, que era o que envelhecia aqui: em 21/08 o
+  // Garageinn renomeou "uncovered" para "avulsa" e este mapa passou a apontar para uma URL
+  // sem página, que respondia 200 com a casca da home. A ficha é uma só por lote agora.
   "/estacionamentos/aeroporto-viracopos/garage-inn-aeroporto-viracopos":
-    "/p/garageinn/aeroporto-viracopos/avulsa",
-  "/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos": "/p/virapark/virapark/covered",
-  // Lote mapeado publicado (mesma marca, mesmo destino)
-  "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos": "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
-  "/estacionamentos/aeroporto-viracopos/br-parking": "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
-  "/estacionamentos/aeroporto-viracopos/yellow-parking": "/estacionamentos/aeroporto-de-viracopos/yellow-parking-viracopos",
+    "/estacionamentos/aeroporto-viracopos/garageinn",
+  "/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos": "/estacionamentos/aeroporto-viracopos/virapark",
   "/estacionamentos/aeroporto-confins/aeropark-confins-estacionamento-aeroporto-confins":
-    "/estacionamentos/aeroporto-de-confins/aeropark-confins-aeroporto-confins",
+    "/estacionamentos/aeroporto-confins/aeropark",
   "/estacionamentos/aeroporto-confins/park-confins-estacionamento-aeroporto-confins":
-    "/estacionamentos/aeroporto-de-confins/park-confins-aeroporto-confins",
+    "/estacionamentos/aeroporto-confins/park-confins",
   "/estacionamentos/aeroporto-guarulhos/econopark-gru":
-    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/econopark-aeroporto-de-guarulhos-aeroporto-guarulhos",
+    "/estacionamentos/aeroporto-guarulhos/econopark",
   "/estacionamentos/aeroporto-guarulhos/decolar-park-gru":
-    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/decolar-park-estacionamento-aeroporto-guarulhos",
+    "/estacionamentos/aeroporto-guarulhos/decolar-park",
   "/estacionamentos/aeroporto-guarulhos/flypark-gru":
-    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/flypark-aeroporto-guarulhos",
+    "/estacionamentos/aeroporto-guarulhos/flypark",
   "/estacionamentos/aeroporto-congonhas/congonhas-park-cgh":
-    "/estacionamentos/aeroporto-de-congonhas/congonhas-park-aeroporto-congonhas",
+    "/estacionamentos/aeroporto-congonhas/congonhas-park",
   "/estacionamentos/aeroporto-congonhas/one-parking-estacionamento-aeroporto-congonhas":
-    "/estacionamentos/aeroporto-de-congonhas/one-parking-congonhas-aeroporto-congonhas",
+    "/estacionamentos/aeroporto-congonhas/one-parking",
   "/estacionamentos/cgh/the-parking-estacionamento-aeroporto-congonhas":
-    "/estacionamentos/aeroporto-de-congonhas/the-parking-estacionamento-aeroporto-congonhas",
-  "/estacionamento/express-parking": "/estacionamentos/aeroporto-de-congonhas/express-parking-aeroporto-congonhas",
+    "/estacionamentos/aeroporto-congonhas/the-parking",
+  "/estacionamento/express-parking": "/estacionamentos/aeroporto-congonhas/express-parking",
   "/estacionamentos/aeroporto-congonhas/grand-parking-estacionamento-aeroporto-congonhas":
-    "/estacionamentos/aeroporto-de-congonhas/grand-parking-aeroporto-congonhas",
+    "/estacionamentos/aeroporto-congonhas/grand-parking",
   "/estacionamentos/aeroporto-confins/estacionamento-patio-confins":
-    "/estacionamentos/aeroporto-de-confins/estacionamento-patio-aeroporto-confins",
+    "/estacionamentos/aeroporto-confins/patio",
   "/estacionamentos/aeroporto-guarulhos/urban-park-estacionamento-aeroporto-guarulhos-cumbica":
-    "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/urban-park-aeroporto-guarulhos",
+    "/estacionamentos/aeroporto-guarulhos/urban-park",
   // Sem par confiável no Hub: vai para o destino, nunca 404 nem chute de marca
-  "/estacionamentos/aeroporto-guarulhos/bandeira-park": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+  "/estacionamentos/aeroporto-guarulhos/bandeira-park": "/estacionamentos/aeroporto-guarulhos",
   "/estacionamentos/aeroporto-santos-dumont-rio/bh-park-estacionamento-aeroporto-santos-dumont":
-    "/destinos/aeroporto-santos-dumont",
+    "/estacionamentos/aeroporto-santos-dumont",
   "/estacionamentos/aeroporto-santos-dumont-rio/bossa-nova-mall-estacionamento-aeroporto-santos-dumont":
-    "/destinos/aeroporto-santos-dumont",
-  "/estacionamentos/aeroporto-rio-galeao/estapar-estacionamento-aeroporto-galeao": "/destinos/aeroporto-do-galeao",
+    "/estacionamentos/aeroporto-santos-dumont",
+  "/estacionamentos/aeroporto-rio-galeao/estapar-estacionamento-aeroporto-galeao": "/estacionamentos/aeroporto-galeao",
   "/estacionamentos/aeroporto-confins/premium-park-estacionamento-aeroporto-confins":
-    "/destinos/aeroporto-de-confins",
-  "/estacionamentos/aeroporto-confins/super-park-estacionamento-aeroporto-confins": "/destinos/aeroporto-de-confins",
+    "/estacionamentos/aeroporto-confins",
+  "/estacionamentos/aeroporto-confins/super-park-estacionamento-aeroporto-confins": "/estacionamentos/aeroporto-confins",
   "/estacionamentos/aeroporto-guarulhos/aeroparking-gru":
-    "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
-  "/estacionamentos/aeroporto-guarulhos/viaje-park-gru": "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
-  "/estacionamentos/aeroporto-congonhas/arai-park-cgh": "/destinos/aeroporto-de-congonhas",
-  "/estacionamentos/aeroporto-congonhas/mobi-city-cgh": "/destinos/aeroporto-de-congonhas",
-  "/estacionamentos/rio-de-janeiro/move-parking-nova-iguacu": "/destinos/centro-de-nova-iguacu",
+    "/estacionamentos/aeroporto-guarulhos",
+  "/estacionamentos/aeroporto-guarulhos/viaje-park-gru": "/estacionamentos/aeroporto-guarulhos",
+  "/estacionamentos/aeroporto-congonhas/arai-park-cgh": "/estacionamentos/aeroporto-congonhas",
+  "/estacionamentos/aeroporto-congonhas/mobi-city-cgh": "/estacionamentos/aeroporto-congonhas",
+  "/estacionamentos/rio-de-janeiro/move-parking-nova-iguacu": "/estacionamentos/centro-de-nova-iguacu",
   "/estacionamentos/aeroporto-recife/aero-park-estacionamento-aeroporto-recife":
-    "/destinos/aeroporto-internacional-do-recife-guararapes",
+    "/estacionamentos/aeroporto-recife",
   "/estacionamentos/aeroporto-navegantes/prime-estacionamento-aeroporto-navegantes":
-    "/destinos/aeroporto-internacional-de-navegantes",
+    "/estacionamentos/aeroporto-navegantes",
   "/estacionamentos/aeroporto-confins/central-park-confins-estacionamento-aeroporto-confins":
-    "/destinos/aeroporto-de-confins",
-  "/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins": "/destinos/aeroporto-de-confins",
+    "/estacionamentos/aeroporto-confins",
+  "/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins": "/estacionamentos/aeroporto-confins",
   "/estacionamentos/aeroporto-guarulhos/parkindigo-estacionamento-aeroporto-guarulhos":
-    "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+    "/estacionamentos/aeroporto-guarulhos",
 };
 
 /**
@@ -560,7 +541,7 @@ export function blogRedirect(url: URL): Response | null {
     // indo para o destino: o slug de aeroporto nunca virou categoria editorial.
     if (segments[0] === "categoria" && segments[1] in BLOG_CATEGORY_TO_DESTINATION) {
       const destination = BLOG_CATEGORY_TO_DESTINATION[segments[1]];
-      return redirect301(destination ? `/destinos/${destination}` : "/blog/");
+      return redirect301(destination ? `/estacionamentos/${destination}` : "/blog/");
     }
     return semBarra ? paraCanonica() : null;
   }
@@ -575,7 +556,7 @@ export function blogRedirect(url: URL): Response | null {
 
   if (segments[0] in BLOG_CATEGORY_TO_DESTINATION) {
     const destination = BLOG_CATEGORY_TO_DESTINATION[segments[0]];
-    return redirect301(destination ? `/destinos/${destination}` : "/blog/");
+    return redirect301(destination ? `/estacionamentos/${destination}` : "/blog/");
   }
 
   // Post sem a barra final: a canônica é com barra, igual ao WordPress.
@@ -673,58 +654,38 @@ async function postPublicado(env: Env, slug: string): Promise<boolean> {
 }
 
 /**
- * Alvo do redirecionamento da ficha de lote mapeado, em cache por isolate.
+ * O mapa de 301 da virada de URL, carregado UMA vez por isolate.
  *
- * O veredicto negativo (ficha que não foi convertida) entra em cache junto com o
- * positivo, e isso é aceitável porque o isolate do Worker vive minutos: uma conversão
- * feita agora passa a redirecionar assim que o isolate corrente for reciclado, sem
- * depender de deploy. O custo é uma consulta por URL por isolate frio, então um bot
- * varrendo slug inventado não vira uma consulta por requisição.
+ * Ele responde por todas as URLs antigas do próprio Hub: `/p/<empresa>/<unidade>/<tipo>`
+ * (as três de um mesmo lote colapsaram numa ficha só), `/destinos/*`, `/precos/*`,
+ * `/estacionamento-mais-barato/*` e o slug velho dos lotes mapeados. Ver
+ * docs/specs/url-estacionamentos.md.
  *
- * Falha de rede NÃO entra em cache: guardar o erro desligaria a regra até o isolate
- * morrer. O teto reusa o `VEREDICTO_MAX` porque o risco é o mesmo, memória crescendo
- * com chave que o visitante escolhe.
+ * Uma consulta por isolate, e não uma por requisição como fazia a versão anterior (a RPC
+ * `prospect_redirect_target`, chamada por URL): a partir da virada, `/estacionamentos/*` é a
+ * rota principal do site, e consultar o banco em cada visita a uma ficha seria pagar latência
+ * de origem no caminho mais quente para atender um punhado de URLs velhas. São ~140 linhas.
+ *
+ * Falha NÃO entra em cache e não redireciona nada (fail-open): redirecionamento que não sai
+ * custa o ranking de uma URL; página que não abre custa o site inteiro. A RPC nunca devolve
+ * linha onde origem e destino coincidem, então o mapa não consegue criar loop.
  */
-type ProspectAlvo = { target: string; permanent: boolean };
-const alvoProspect = new Map<string, ProspectAlvo | null>();
+type AlvoLegado = { target: string; permanent: boolean };
+let mapaLegado: Map<string, AlvoLegado> | undefined;
+let mapaLegadoEm = 0;
+/** Cinco minutos: destino publicado no Manager entra sem esperar o isolate morrer. */
+const MAPA_LEGADO_TTL_MS = 5 * 60_000;
 
-/**
- * Ficha de lote mapeado que virou parceiro sai da URL antiga em redirecionamento.
- *
- * `/estacionamentos/<destino>/<slug>` é página pública com ranking próprio. Quando o
- * dono reivindica, a ficha ganha `converted_at` e some de tudo que a publicava: a RPC
- * `destination_prospect_cards` para de devolver, o `getStaticPaths` para de gerar o
- * HTML e o sitemap para de listar. Sem este bloco a URL cai no
- * `not_found_handling: "single-page-application"` do wrangler e responde 200 com a
- * casca vazia da SPA, que é soft 404: o Google mantém a URL indexada apontando para
- * uma página em branco. E entre a conversão e o próximo deploy o HTML velho segue no
- * ar dizendo que o lote não aceita reserva quando ele já é parceiro. Só o Worker cobre
- * essa janela, porque roda antes dos assets (`run_worker_first`).
- *
- * A RPC devolve zero linhas quando a ficha não existe ou não foi convertida, e aí não
- * há redirecionamento nenhum: o request segue como hoje. Convertida com a unidade já
- * listada, o alvo é `/p/<empresa>/<unidade>/<código>` e vale 301. Convertida sem
- * unidade listada, o alvo é `/destinos/<slug>` e vale 302, porque converter não
- * publica oferta (a unidade nasce inativa e sem tipo de vaga): o destino final ainda
- * vai mudar, e um 301 cravaria o provisório no cache do navegador e do Google.
- *
- * Qualquer falha é fail-open (env ausente, rede caindo, resposta não-ok, JSON
- * inesperado): devolve `null` e a página abre normalmente. Redirecionamento que não
- * sai custa ranking de uma URL; página que não abre custa o site inteiro.
- */
-export async function prospectRedirect(url: URL, env: Env): Promise<Response | null> {
-  const segmentos = url.pathname.split("/").filter(Boolean);
-  if (segmentos.length !== 3 || segmentos[0] !== "estacionamentos") return null;
+/** Prefixos que podem carregar URL antiga. Fora deles nem vale consultar o mapa. */
+const PREFIXOS_LEGADOS = ["/p", "/destinos", "/precos", "/estacionamento-mais-barato", "/estacionamentos"];
 
-  const [, destino, slug] = segmentos;
-  const chave = `${destino}/${slug}`;
-  const cacheado = alvoProspect.get(chave);
-  if (cacheado !== undefined) return responderProspect(cacheado);
-
+async function carregarMapaLegado(env: Env): Promise<Map<string, AlvoLegado> | null> {
+  const agora = Date.now();
+  if (mapaLegado && agora - mapaLegadoEm < MAPA_LEGADO_TTL_MS) return mapaLegado;
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
 
   try {
-    const consulta = new URL("/rest/v1/rpc/prospect_redirect_target", env.SUPABASE_URL);
+    const consulta = new URL("/rest/v1/rpc/url_legacy_map", env.SUPABASE_URL);
     const res = await fetch(consulta, {
       method: "POST",
       headers: {
@@ -732,33 +693,42 @@ export async function prospectRedirect(url: URL, env: Env): Promise<Response | n
         Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ p_destination_slug: destino, p_slug: slug }),
+      body: "{}",
     });
     if (!res.ok) return null;
 
     const linhas = (await res.json()) as unknown;
-    if (!Array.isArray(linhas)) return null;
+    if (!Array.isArray(linhas) || linhas.length === 0) return null;
 
-    const linha = linhas[0] as Partial<ProspectAlvo> | undefined;
-    let alvo: ProspectAlvo | null = null;
-    if (linha) {
-      // Linha com formato estranho é tratada como falha, não como "não converteu":
-      // cachear o negativo aqui esconderia o problema até o isolate morrer.
-      if (typeof linha.target !== "string" || typeof linha.permanent !== "boolean") return null;
-      alvo = { target: linha.target, permanent: linha.permanent };
+    const mapa = new Map<string, AlvoLegado>();
+    for (const linha of linhas as Partial<AlvoLegado & { legacy_path: string; target_path: string }>[]) {
+      const de = linha.legacy_path;
+      const para = linha.target_path;
+      // Guarda de loop também aqui, e não só no banco: um mapa que mande uma URL para ela
+      // mesma trava o navegador em redirecionamento infinito, e já aconteceu em produção.
+      if (typeof de !== "string" || typeof para !== "string" || de === para) continue;
+      mapa.set(de, { target: para, permanent: linha.permanent !== false });
     }
+    if (mapa.size === 0) return null;
 
-    if (alvoProspect.size >= VEREDICTO_MAX) alvoProspect.clear();
-    alvoProspect.set(chave, alvo);
-    return responderProspect(alvo);
+    mapaLegado = mapa;
+    mapaLegadoEm = agora;
+    return mapa;
   } catch {
     return null;
   }
 }
 
-function responderProspect(alvo: ProspectAlvo | null): Response | null {
+export async function legacyRedirect(url: URL, env: Env): Promise<Response | null> {
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  if (!PREFIXOS_LEGADOS.some((p) => path === p || path.startsWith(`${p}/`))) return null;
+
+  const mapa = await carregarMapaLegado(env);
+  const alvo = mapa?.get(path);
   if (!alvo) return null;
-  return alvo.permanent ? redirect301(alvo.target) : redirect302(alvo.target);
+  return alvo.permanent
+    ? redirect301(alvo.target + url.search)
+    : redirect302(alvo.target + url.search);
 }
 
 /**
@@ -771,7 +741,7 @@ function responderProspect(alvo: ProspectAlvo | null): Response | null {
  * respondem hoje com o HTML da home, byte a byte, porque vivem do fallback SPA. Enterrar
  * qualquer um deles em 404 não é perda de ranking, é queda de produção.
  *
- * As três famílias de conteúdo (`/p/`, `/destinos/`, `/estacionamentos/`) entram mesmo tendo
+ * O catálogo inteiro (`/estacionamentos/*`) entra mesmo tendo
  * HTML pré-renderizado, porque o manifesto nasce no build e o site é SSG: publicar um
  * destino no Manager o deixaria em 404 até alguém empurrar um commit. `/estacionamentos/`
  * com dois segmentos também precisa continuar abrindo, porque são as 24 páginas de aeroporto
@@ -789,13 +759,19 @@ const ROTAS_DE_APP: RegExp[] = [
   /^\/onboarding$/,
   /^\/voucher(\/.*)?$/,
   /^\/blog(\/.*)?$/,
-  /^\/p\/[^/]+\/[^/]+\/[^/]+$/,
-  /^\/destinos(\/[^/]+)?$/,
+  // Uma pasta para o catálogo inteiro: índice, destino, ficha, preços e mais barato.
+  // Continua em 200 mesmo com HTML pré-renderizado, porque o manifesto nasce no build e o
+  // site é SSG: publicar um destino no Manager o deixaria em 404 até alguém empurrar um
+  // commit. Cobre também as URLs de aeroporto do WordPress, que agora são as nossas.
   /^\/estacionamentos(\/[^/]+){0,2}$/,
-  // Mesma razão de /destinos: as páginas de pergunta (/faq/<slug>) são SSG, e uma FAQ
+  // Mesma razão do catálogo: as páginas de pergunta (/faq/<slug>) são SSG, e uma FAQ
   // publicada no Manager depois do build precisa abrir antes do próximo deploy.
   /^\/faq(\/[^/]+)?$/,
-  // Idem: destino que ganha preço depois do build abre pelo cliente até o próximo deploy.
+  // Idem para o que ainda não migrou de endereço: o 301 do mapa cobre, e se ele falhar a
+  // página abre pelo cliente em vez de virar 404.
+  /^\/p\/[^/]+\/[^/]+\/[^/]+$/,
+  /^\/destinos(\/[^/]+)?$/,
+  /^\/precos(\/[^/]+)?$/,
   /^\/estacionamento-mais-barato\/[^/]+$/,
 ];
 
@@ -859,7 +835,8 @@ export function __resetCachesDoWorker(): void {
   caminhosCache = undefined;
   blogSlugsCache = undefined;
   veredictoSlug.clear();
-  alvoProspect.clear();
+  mapaLegado = undefined;
+  mapaLegadoEm = 0;
 }
 
 async function serve(request: Request, env: Env): Promise<Response> {
@@ -876,11 +853,11 @@ async function serve(request: Request, env: Env): Promise<Response> {
   const blogHop = blogRedirect(url);
   if (blogHop) return blogHop;
 
-  // Ficha de lote mapeado convertida antes da negociação de conteúdo, de propósito:
-  // depois dela, um agente pedindo `Accept: text/markdown` receberia o .md velho da
-  // ficha em vez do redirecionamento, e leria que o lote não aceita reserva.
-  const prospectHop = await prospectRedirect(url, env);
-  if (prospectHop) return prospectHop;
+  // URL antiga do próprio Hub (a virada de /p/, /destinos/, /precos/ e do slug velho dos
+  // lotes mapeados) antes da negociação de conteúdo, de propósito: depois dela, um agente
+  // pedindo `Accept: text/markdown` receberia o .md do endereço velho em vez do 301.
+  const legadoHop = await legacyRedirect(url, env);
+  if (legadoHop) return legadoHop;
 
   // Requisição de asset com hash (ex.: /assets/app-XXXX.js, static-loader-data-*.json):
   // se o arquivo não existe mais (deploy novo invalidou o hash antigo), o

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import worker, {
@@ -174,28 +174,32 @@ describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", (
     expect(res.headers.get("Location")).toBe("/termos");
   });
 
-  it("índice de aeroporto vai para a página de destino", async () => {
+  // Depois da virada de URL, 12 dos 18 índices de aeroporto do WordPress SÃO o endereço do
+  // Hub (`/estacionamentos/aeroporto-guarulhos`), então não há o que redirecionar: a entrada
+  // some do mapa, porque redirecionar uma URL para ela mesma é loop.
+  it("índice de aeroporto que virou o nosso endereço não redireciona", async () => {
     const env = makeEnv({});
     const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos"), env);
 
-    expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe(
-      "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
-    );
+    expect(res.status).toBe(200);
   });
 
-  it("índice de estacionamentos e o caso ambíguo (RJ tem 2 aeroportos) vão para /destinos", async () => {
+  it("índice de aeroporto com nome diferente do nosso continua em 301", async () => {
     const env = makeEnv({});
-    const [indice, rio] = await Promise.all([
-      worker.fetch(req("/estacionamentos"), env),
-      worker.fetch(req("/estacionamentos/rio-de-janeiro"), env),
-    ]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-afonso-pena"), env);
 
-    expect(indice.headers.get("Location")).toBe("/destinos");
-    expect(rio.headers.get("Location")).toBe("/destinos");
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-curitiba");
   });
 
-  it("ficha de parceiro ativo do Hub vai direto para a página de reserva", async () => {
+  it("o caso ambíguo (RJ tem 2 aeroportos) vai para o índice do catálogo", async () => {
+    const env = makeEnv({});
+    const rio = await worker.fetch(req("/estacionamentos/rio-de-janeiro"), env);
+
+    expect(rio.headers.get("Location")).toBe("/estacionamentos");
+  });
+
+  it("ficha de parceiro ativo do Hub vai direto para a ficha da unidade", async () => {
     const env = makeEnv({});
     const res = await worker.fetch(
       req("/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos"),
@@ -203,14 +207,13 @@ describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", (
     );
 
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe("/p/virapark/virapark/covered");
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-viracopos/virapark");
   });
 
-  it("ficha de parceiro ativo aponta pro código de tipo de vaga que existe hoje, não o do dia do mapa", async () => {
+  it("o alvo não cita tipo de vaga, que era o que envelhecia no mapa", async () => {
     // Regressão medida em produção em 21/08: o mapa (18/08) levava o Garageinn pro código
-    // "uncovered", renomeado pra "avulsa" depois. Alvo desatualizado não vira 404 (ROTAS_DE_APP
-    // deixa qualquer /p/x/y/z passar de propósito) — vira 200 com a casca da home e
-    // <link rel="canonical"> apontando pra ela, e por isso a página nunca era indexada.
+    // "uncovered", renomeado pra "avulsa" depois, e a URL respondia 200 com a casca da home.
+    // Com uma ficha por unidade o alvo não tem tipo de vaga para envelhecer.
     const env = makeEnv({});
     const res = await worker.fetch(
       req("/estacionamentos/aeroporto-viracopos/garage-inn-aeroporto-viracopos"),
@@ -218,17 +221,18 @@ describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", (
     );
 
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe("/p/garageinn/aeroporto-viracopos/avulsa");
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-viracopos/garageinn");
   });
 
   it("ficha de lote mapeado publicado vai para a ficha de vitrine equivalente", async () => {
     const env = makeEnv({});
-    const res = await worker.fetch(req("/estacionamentos/aeroporto-viracopos/br-parking"), env);
+    const res = await worker.fetch(
+      req("/estacionamentos/aeroporto-confins/park-confins-estacionamento-aeroporto-confins"),
+      env,
+    );
 
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe(
-      "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
-    );
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-confins/park-confins");
   });
 
   it("ficha sem par confiável no Hub vai para o destino, nunca 404", async () => {
@@ -239,7 +243,7 @@ describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", (
     );
 
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe("/destinos/aeroporto-de-congonhas");
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-congonhas");
   });
 
   it("preserva a query string no redirect", async () => {
@@ -442,158 +446,162 @@ const linhasRpc = (linhas: unknown[]) =>
   });
 
 /** Troca o `fetch` global, que é por onde o Worker fala com a RPC do Supabase. */
-function stubRpc(responder: (body: Record<string, unknown>) => Response | Promise<Response>) {
-  const spy = vi.fn(async (input: unknown, init?: RequestInit) => {
+function stubRpc(responder: () => Response | Promise<Response>) {
+  const spy = vi.fn(async (input: unknown) => {
     const alvo = input instanceof Request ? input.url : String(input);
-    if (!alvo.includes("/rest/v1/rpc/prospect_redirect_target")) {
+    if (!alvo.includes("/rest/v1/rpc/url_legacy_map")) {
       throw new Error(`fetch inesperado no teste: ${alvo}`);
     }
-    return responder(JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>);
+    return responder();
   });
   vi.stubGlobal("fetch", spy);
   return spy;
 }
 
-describe("redirecionamento de ficha convertida", () => {
+const MAPA = [
+  { legacy_path: "/p/aeropark/aeroporto-guarulhos/covered", target_path: "/estacionamentos/aeroporto-guarulhos/aeropark", permanent: true },
+  { legacy_path: "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos", target_path: "/estacionamentos/aeroporto-guarulhos", permanent: true },
+  { legacy_path: "/estacionamentos/aeroporto-de-confins/ipo-park-aeroporto-confins", target_path: "/estacionamentos/aeroporto-confins/ipo-park", permanent: true },
+  { legacy_path: "/estacionamentos/aeroporto-de-confins/lote-sem-oferta", target_path: "/estacionamentos/aeroporto-confins", permanent: false },
+];
+
+/**
+ * A virada de URL na borda (docs/specs/url-estacionamentos.md).
+ *
+ * O mapa vem do banco uma vez por isolate, e não uma consulta por URL como fazia a versão
+ * anterior: depois da virada `/estacionamentos/*` é a rota principal do site.
+ */
+describe("301 das URLs antigas do Hub", () => {
+  beforeEach(() => __resetCachesDoWorker());
   afterEach(() => vi.unstubAllGlobals());
 
-  it("não toca na rede fora de /estacionamentos", async () => {
-    const rpc = stubRpc(() => linhasRpc([]));
-    const res = await worker.fetch(req("/destinos/aeroporto-de-confins"), envProspect());
+  it("não toca na rede fora dos prefixos que podem ter URL antiga", async () => {
+    const rpc = stubRpc(() => linhasRpc(MAPA));
+    const res = await worker.fetch(req("/sobre"), envProspect());
     expect(rpc).not.toHaveBeenCalled();
     expect(res.status).toBe(200);
   });
 
-  it("não dispara em caminho com 2 ou 4 segmentos sob /estacionamentos", async () => {
-    const rpc = stubRpc(() => linhasRpc([]));
-    const env = envProspect();
-    const dois = await worker.fetch(req("/estacionamentos/aeroporto-de-confins"), env);
-    const quatro = await worker.fetch(req("/estacionamentos/a/b/c"), env);
-    expect(rpc).not.toHaveBeenCalled();
-    expect(dois.status).toBe(200);
-    expect(quatro.status).toBe(200);
+  it("colapsa as três URLs por tipo de vaga na ficha da unidade", async () => {
+    stubRpc(() => linhasRpc(MAPA));
+    const res = await worker.fetch(req("/p/aeropark/aeroporto-guarulhos/covered"), envProspect());
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-guarulhos/aeropark");
   });
 
-  it("deixa a ficha não convertida seguir para o asset", async () => {
-    const rpc = stubRpc(() => linhasRpc([]));
-    const env = envProspect();
-    const res = await worker.fetch(req("/estacionamentos/aeroporto-de-confins/lote-livre"), env);
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type") ?? "").toContain("text/html");
-  });
-
-  it("manda 301 para a unidade quando ela já está listada", async () => {
-    const rpc = stubRpc((body) => {
-      expect(body).toEqual({
-        p_destination_slug: "aeroporto-de-confins",
-        p_slug: "lote-listado",
-      });
-      return linhasRpc([{ target: "/p/mercy/mercy-confins/coberto", permanent: true }]);
-    });
+  it("leva o destino para a pasta nova", async () => {
+    stubRpc(() => linhasRpc(MAPA));
     const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-de-confins/lote-listado"),
+      req("/destinos/aeroporto-internacional-de-sao-paulo-guarulhos"),
       envProspect(),
     );
-    expect(rpc).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe("/p/mercy/mercy-confins/coberto");
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-guarulhos");
   });
 
-  it("manda 302 para o destino enquanto a unidade não está listada", async () => {
-    stubRpc(() => linhasRpc([{ target: "/destinos/aeroporto-de-confins", permanent: false }]));
+  // Barra final tem dono: `normalizaBarraFinal` roda antes e canoniza. Aqui o que importa é
+  // a query da busca sobreviver ao 301, senão o cliente perde as datas que escolheu.
+  it("preserva a query da busca no redirecionamento", async () => {
+    stubRpc(() => linhasRpc(MAPA));
+    const res = await worker.fetch(
+      req("/estacionamentos/aeroporto-de-confins/ipo-park-aeroporto-confins?from=2026-09-01"),
+      envProspect(),
+    );
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe(
+      "/estacionamentos/aeroporto-confins/ipo-park?from=2026-09-01",
+    );
+  });
+
+  it("302 quando o alvo ainda é provisório (ficha convertida sem oferta publicada)", async () => {
+    stubRpc(() => linhasRpc(MAPA));
     const res = await worker.fetch(
       req("/estacionamentos/aeroporto-de-confins/lote-sem-oferta"),
       envProspect(),
     );
     expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe("/destinos/aeroporto-de-confins");
     expect(res.headers.get("Cache-Control")).toBe("no-cache");
   });
 
-  it("aceita a barra final na URL da ficha", async () => {
-    stubRpc((body) => {
-      expect(body.p_slug).toBe("lote-com-barra");
-      return linhasRpc([{ target: "/p/mercy/mercy-confins/coberto", permanent: true }]);
-    });
+  it("URL nova segue para o asset, sem redirecionamento", async () => {
+    stubRpc(() => linhasRpc(MAPA));
     const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-de-confins/lote-com-barra/"),
+      req("/estacionamentos/aeroporto-guarulhos/aeropark"),
       envProspect(),
     );
-    expect(res.status).toBe(301);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type") ?? "").toContain("text/html");
   });
 
-  // Prova que o bloco roda ANTES da negociação de conteúdo. Se ele descesse na ordem,
-  // o agente receberia o .md velho dizendo que o lote não aceita reserva.
+  // Prova que o bloco roda ANTES da negociação de conteúdo: senão o agente receberia o .md
+  // do endereço velho em vez do 301.
   it("redireciona também quem pede text/markdown", async () => {
-    stubRpc(() => linhasRpc([{ target: "/p/mercy/mercy-confins/coberto", permanent: true }]));
+    stubRpc(() => linhasRpc(MAPA));
     const env = envProspect({
-      "/estacionamentos/aeroporto-de-confins/lote-md.md": { body: "# velho", type: "text/plain" },
+      "/p/aeropark/aeroporto-guarulhos/covered.md": { body: "# velho", type: "text/plain" },
     });
     const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-de-confins/lote-md", { Accept: "text/markdown" }),
+      req("/p/aeropark/aeroporto-guarulhos/covered", { Accept: "text/markdown" }),
       env,
     );
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe("/p/mercy/mercy-confins/coberto");
     expect(env.ASSETS.fetch).not.toHaveBeenCalled();
   });
 
-  it("serve a página normalmente quando a RPC cai (fetch rejeita)", async () => {
+  it("carrega o mapa uma vez por isolate, e não uma consulta por URL", async () => {
+    const rpc = stubRpc(() => linhasRpc(MAPA));
+    const env = envProspect();
+    const a = await worker.fetch(req("/p/aeropark/aeroporto-guarulhos/covered"), env);
+    const b = await worker.fetch(
+      req("/destinos/aeroporto-internacional-de-sao-paulo-guarulhos"),
+      env,
+    );
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(a.status).toBe(301);
+    expect(b.status).toBe(301);
+  });
+
+  // O `br-parking-viracopos` ficou em loop de 301 em produção por causa de uma linha que
+  // mandava a URL para ela mesma. A guarda existe no banco e de novo aqui.
+  it("ignora linha que manda a URL para ela mesma", async () => {
+    stubRpc(() =>
+      linhasRpc([{ legacy_path: "/destinos/x", target_path: "/destinos/x", permanent: true }]),
+    );
+    const res = await worker.fetch(req("/destinos/x"), envProspect());
+    expect(res.status).toBe(200);
+  });
+
+  it("serve a página normalmente quando a RPC cai, e não guarda a falha", async () => {
     const rpc = stubRpc(() => {
       throw new Error("rede fora");
     });
     const env = envProspect();
-    const res = await worker.fetch(req("/estacionamentos/aeroporto-de-confins/lote-rede"), env);
+    const res = await worker.fetch(req("/p/aeropark/aeroporto-guarulhos/covered"), env);
     expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type") ?? "").toContain("text/html");
-    // Falha não entra em cache: senão um soluço da rede desligaria a regra até o
-    // isolate morrer.
-    await worker.fetch(req("/estacionamentos/aeroporto-de-confins/lote-rede"), env);
+    await worker.fetch(req("/p/aeropark/aeroporto-guarulhos/covered"), env);
     expect(rpc).toHaveBeenCalledTimes(2);
   });
 
   it("serve a página normalmente quando a RPC responde 500", async () => {
     stubRpc(() => new Response("boom", { status: 500 }));
-    const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-de-confins/lote-500"),
-      envProspect(),
-    );
+    const res = await worker.fetch(req("/p/aeropark/aeroporto-guarulhos/covered"), envProspect());
     expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type") ?? "").toContain("text/html");
   });
 
   it("serve a página normalmente quando a resposta vem num formato inesperado", async () => {
-    stubRpc(() => linhasRpc([{ alvo: "/p/x", eterno: 1 }]));
-    const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-de-confins/lote-torto"),
-      envProspect(),
-    );
+    stubRpc(() => linhasRpc([{ de: "/p/x", para: "/y" }]));
+    const res = await worker.fetch(req("/p/aeropark/aeroporto-guarulhos/covered"), envProspect());
     expect(res.status).toBe(200);
   });
 
   it("não consulta a RPC sem as envs do Supabase", async () => {
-    const rpc = stubRpc(() => linhasRpc([]));
+    const rpc = stubRpc(() => linhasRpc(MAPA));
     const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-de-confins/lote-sem-env"),
+      req("/p/aeropark/aeroporto-guarulhos/covered"),
       makeEnv({}),
     );
     expect(rpc).not.toHaveBeenCalled();
     expect(res.status).toBe(200);
-  });
-
-  it("cacheia o alvo e não consulta a RPC de novo na mesma URL", async () => {
-    const rpc = stubRpc(() =>
-      linhasRpc([{ target: "/p/mercy/mercy-gru/coberto", permanent: true }]),
-    );
-    const env = envProspect();
-    const caminho = "/estacionamentos/aeroporto-de-confins/lote-cacheado";
-    const primeira = await worker.fetch(req(caminho), env);
-    const segunda = await worker.fetch(req(caminho), env);
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(primeira.status).toBe(301);
-    expect(segunda.status).toBe(301);
-    expect(segunda.headers.get("Location")).toBe("/p/mercy/mercy-gru/coberto");
   });
 });
 
@@ -691,14 +699,14 @@ describe("404 real de página", () => {
     expect(res.status).toBe(200);
   });
 
-  it("/estacionamentos com 1 e 2 segmentos nunca 404, nem os que não estão no mapa do WP", async () => {
-    // `/estacionamentos` (bare) é uma das 24 páginas de aeroporto do WordPress: desde que o
-    // WP_AEROPORTO_REDIRECTS entrou (ver describe "301 legado do WordPress"), ela 301 pro
-    // destino em vez de só não-404ar. `/estacionamentos/aeroporto-de-confins` usa o slug do
-    // Hub (com "-de-"), não o do WP ("aeroporto-confins"): não está em nenhum mapa de
-    // redirect, e mesmo assim precisa continuar abrindo (200), não virando 404.
+  it("/estacionamentos com 1 e 2 segmentos nunca 404, dentro ou fora do mapa", async () => {
+    // `/estacionamentos` é o índice do catálogo desde a virada de URL, e era também uma das
+    // páginas do WordPress: os dois lados falam o mesmo endereço, então ela abre (200) em vez
+    // de redirecionar. `/estacionamentos/aeroporto-de-confins` usa o slug ANTIGO do Hub: sem
+    // as envs do Supabase o mapa de 301 não carrega, e mesmo assim ela precisa abrir, não
+    // virar 404.
     const bare = await worker.fetch(req("/estacionamentos"), envCom404());
-    expect(bare.status).toBe(301);
+    expect(bare.status).toBe(200);
     __resetCachesDoWorker();
 
     const foraDoMapa = await worker.fetch(req("/estacionamentos/aeroporto-de-confins"), envCom404());
@@ -839,14 +847,21 @@ describe("mapa do WordPress com entrada identidade", () => {
     expect(r).toBeNull();
   });
 
-  it("URL do WP diferente da do Hub segue em 301", () => {
+  // Depois da virada de URL, este é o outro lado do mesmo caso: o slug do WordPress virou o
+  // nosso endereço, então a entrada saiu do mapa e a página abre em vez de redirecionar.
+  it("URL do WP que virou a nossa também não redireciona", () => {
     const r = wpLegacyRedirect(
       new URL("https://movepark.co/estacionamentos/aeroporto-viracopos/br-parking"),
     );
-    expect(r?.status).toBe(301);
-    expect(r?.headers.get("Location")).toBe(
-      "/estacionamentos/aeroporto-de-viracopos/br-parking-viracopos",
+    expect(r).toBeNull();
+  });
+
+  it("URL do WP com nome diferente do nosso segue em 301", () => {
+    const r = wpLegacyRedirect(
+      new URL("https://movepark.co/estacionamentos/aeroporto-confins/park-confins-estacionamento-aeroporto-confins"),
     );
+    expect(r?.status).toBe(301);
+    expect(r?.headers.get("Location")).toBe("/estacionamentos/aeroporto-confins/park-confins");
   });
 });
 

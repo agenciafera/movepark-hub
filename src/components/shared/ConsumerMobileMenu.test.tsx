@@ -152,7 +152,7 @@ describe("ConsumerMobileMenu", () => {
    * estilização sem erro nenhum no console.
    */
   it("a classe do item é string, nunca o código de uma função", async () => {
-    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/destinos" });
+    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/estacionamentos" });
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
 
     for (const item of container.ownerDocument.querySelectorAll("nav a")) {
@@ -163,7 +163,7 @@ describe("ConsumerMobileMenu", () => {
 
   /** Sem a marca, o leitor não sabe em que seção está. */
   it("marca a seção atual, e só ela", async () => {
-    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/destinos" });
+    const { container } = renderWithProviders(<ConsumerMobileMenu />, { route: "/estacionamentos" });
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
 
     const marcados = [...container.ownerDocument.querySelectorAll("nav a[aria-current='page']")];
@@ -272,7 +272,7 @@ describe("ConsumerMobileMenu", () => {
 });
 
 const LINKS_ESPERADOS: Record<string, string> = {
-  "/destinos": "Destinos",
+  "/estacionamentos": "Destinos",
   "/sobre": "Sobre nós",
   "/blog/": "Blog",
   "/precos": "Índice de preços",

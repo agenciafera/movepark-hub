@@ -38,6 +38,7 @@ import {
   type PriceIndexData,
 } from "@/features/price-index/priceIndex.logic";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
 
 /** Mesmo recuo do container do `PageHero`, para o cartão nascer alinhado com o h1. */
 const CONTAINER = "mx-auto w-full max-w-[1080px] px-4 desktop:px-8";
@@ -286,7 +287,8 @@ function CartaoDeAeroporto({
   const { meta, dest, rows, hiddenPartnerCount } = section;
   const nome = nomeDoAeroporto(meta);
   const summary = dest ? destinationSummary(dest, [1, 7, 15]) : null;
-  const paginaPropria = dest ? `/precos/${meta.slug}` : `/destinos/${meta.slug}`;
+  const metaSlug = meta.public_slug ?? meta.slug;
+  const paginaPropria = dest ? caminhoPrecos(metaSlug) : caminhoDestino(metaSlug);
   const ordenadas = sortRowsByPeriod(rows, periodo);
   const menorKey = ordenadas.find((r) => r.cells.find((c) => c.days === periodo)?.perDay != null)
     ?.key;
@@ -648,7 +650,7 @@ export default function PrecosPage() {
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="min-w-0">
                         <Link
-                          to={`/destinos/${s.meta.slug}`}
+                          to={caminhoDestino(s.meta.public_slug ?? s.meta.slug)}
                           className="text-title-md text-ink hover:text-mp-indigo"
                         >
                           {nomeDoAeroporto(s.meta)}
@@ -680,7 +682,7 @@ export default function PrecosPage() {
                       ))}
                     </ul>
                     <Link
-                      to={`/destinos/${s.meta.slug}`}
+                      to={caminhoDestino(s.meta.public_slug ?? s.meta.slug)}
                       className="mt-auto text-body-sm font-semibold text-mp-indigo underline-offset-2 hover:underline"
                     >
                       Ver {total === 1 ? "a ficha" : `os ${total}`} no destino
@@ -707,7 +709,7 @@ export default function PrecosPage() {
               {grupos.aindaMapeando.map((s) => (
                 <li key={s.meta.slug}>
                   <Link
-                    to={`/destinos/${s.meta.slug}`}
+                    to={caminhoDestino(s.meta.public_slug ?? s.meta.slug)}
                     className="inline-block rounded-full border border-hairline px-4 py-2 text-body-sm text-body transition hover:border-mp-navy hover:text-ink"
                   >
                     {nomeDoAeroporto(s.meta)}

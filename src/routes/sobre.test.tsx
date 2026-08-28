@@ -57,20 +57,20 @@ describe("SobrePage — /sobre", () => {
     expect(daFaixa).toHaveLength(1);
   });
 
-  it("os cards de destino apontam pros slugs reais de /destinos", () => {
+  it("os cards de destino apontam pros slugs públicos do catálogo", () => {
     renderPage();
 
     expect(screen.getByRole("link", { name: /Guarulhos/i })).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+      "/estacionamentos/aeroporto-guarulhos",
     );
     expect(screen.getByRole("link", { name: /Lisboa/i })).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-humberto-delgado",
+      "/estacionamentos/aeroporto-lisboa",
     );
     expect(screen.getByRole("link", { name: /Ver todos os destinos/i })).toHaveAttribute(
       "href",
-      "/destinos",
+      "/estacionamentos",
     );
   });
 

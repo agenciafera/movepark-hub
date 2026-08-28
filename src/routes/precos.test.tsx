@@ -11,6 +11,7 @@ const DIAS = [1, 7, 15, 30];
 
 const UNIT: PriceUnit = {
   company_slug: "aerovalet",
+  public_path: "/estacionamentos/aeroporto-guarulhos/aerovalet",
   company_name: "Aerovalet",
   location_slug: "aeroporto-guarulhos",
   location_name: "Aeroporto de Guarulhos",
@@ -37,6 +38,7 @@ const DATA: PrecosIndexData = {
   aeroportos: [
     {
       slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+      public_slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
       code: "GRU",
       name: "Aeroporto Internacional de São Paulo Guarulhos",
       short_name: "Guarulhos (GRU)",
@@ -45,6 +47,7 @@ const DATA: PrecosIndexData = {
     },
     {
       slug: "aeroporto-de-confins",
+      public_slug: "aeroporto-de-confins",
       code: "CNF",
       name: "Aeroporto de Confins",
       short_name: "Confins (CNF)",
@@ -53,6 +56,7 @@ const DATA: PrecosIndexData = {
     },
     {
       slug: "aeroporto-santos-dumont",
+      public_slug: "aeroporto-santos-dumont",
       code: "SDU",
       name: "Aeroporto Santos Dumont",
       short_name: "Santos Dumont (SDU)",
@@ -71,6 +75,7 @@ const DATA: PrecosIndexData = {
     destinations: [
       {
         slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+        public_slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
         code: "GRU",
         name: "Aeroporto Internacional de São Paulo Guarulhos",
         short_name: "Guarulhos (GRU)",
@@ -136,7 +141,10 @@ describe("PrecosPage", () => {
     expect(within(cartao).getByText(`total ${brl(111.3)}`)).toBeInTheDocument();
 
     const reservar = within(cartao).getByRole("link", { name: /Reservar/ });
-    expect(reservar).toHaveAttribute("href", "/p/aerovalet/aeroporto-guarulhos/uncovered");
+    expect(reservar).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-guarulhos/aerovalet",
+    );
   });
 
   /**
@@ -189,7 +197,7 @@ describe("PrecosPage", () => {
     expect(within(grupo).queryByRole("link", { name: /Reservar/ })).not.toBeInTheDocument();
     expect(within(grupo).getByRole("link", { name: "Ver os 2 no destino" })).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-de-confins",
+      "/estacionamentos/aeroporto-de-confins",
     );
   });
 
@@ -201,7 +209,7 @@ describe("PrecosPage", () => {
 
     expect(within(grupo).getByRole("link", { name: "Santos Dumont (SDU)" })).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-santos-dumont",
+      "/estacionamentos/aeroporto-santos-dumont",
     );
     expect(within(grupo).getByRole("link", { name: "Seja parceiro" })).toHaveAttribute(
       "href",

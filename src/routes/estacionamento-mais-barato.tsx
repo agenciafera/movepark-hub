@@ -9,6 +9,7 @@ import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino, caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
 /** O que o loader entrega: o destino e o ranking de menor preço por duração. */
 export type MaisBaratoData = {
@@ -54,7 +55,7 @@ export default function EstacionamentoMaisBaratoPage() {
   const curto = shortSemCodigo(destino.short_name, destino.name);
   const prosa = aeroportoEmProsa(destino);
   const mesAno = mesAnoAtual();
-  const canonical = `${SITE_URL}/estacionamento-mais-barato/${destino.slug}`;
+  const canonical = `${SITE_URL}${caminhoMaisBarato(destino.slug)}`;
   const pergunta = `Qual é o estacionamento mais barato no ${prosa}?`;
 
   const diaria = linhas.find((l) => l.days === 1) ?? linhas[0];
@@ -126,7 +127,7 @@ export default function EstacionamentoMaisBaratoPage() {
               ›
             </li>
             <li>
-              <Link to={`/destinos/${destino.slug}`} className="hover:text-ink">
+              <Link to={caminhoDestino(destino.slug)} className="hover:text-ink">
                 {curto}
               </Link>
             </li>
@@ -193,7 +194,7 @@ export default function EstacionamentoMaisBaratoPage() {
           </div>
           <p className="mt-3 text-body-sm text-muted">
             <Link
-              to={`/precos/${destino.slug}`}
+              to={caminhoPrecos(destino.slug)}
               className="font-medium text-mp-indigo underline-offset-2 hover:underline"
             >
               Ver a tabela completa, com todos os parceiros e o preço de balcão
@@ -238,7 +239,7 @@ export default function EstacionamentoMaisBaratoPage() {
               {mapeados.map((m) => (
                 <li key={m.slug}>
                   <Link
-                    to={`/estacionamentos/${destino.slug}/${m.slug}`}
+                    to={caminhoFicha(destino.slug, m.slug)}
                     className="font-medium text-mp-indigo underline-offset-2 hover:underline"
                   >
                     {m.name}
@@ -266,10 +267,10 @@ export default function EstacionamentoMaisBaratoPage() {
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Button asChild>
-            <Link to={`/destinos/${destino.slug}`}>Reservar vaga em {curto}</Link>
+            <Link to={caminhoDestino(destino.slug)}>Reservar vaga em {curto}</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link to={`/precos/${destino.slug}`}>Comparar preços em {curto}</Link>
+            <Link to={caminhoPrecos(destino.slug)}>Comparar preços em {curto}</Link>
           </Button>
         </div>
       </article>

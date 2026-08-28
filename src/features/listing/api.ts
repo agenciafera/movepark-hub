@@ -7,6 +7,23 @@ import type { AvailabilityCheck, MinStayUnit } from "./availability.logic";
 import type { GooglePlaceSnapshot } from "@/types/domain";
 import { fetchGooglePlaceSnapshot } from "@/features/reviews/googleApi";
 
+/**
+ * Um tipo de vaga da unidade. A ficha é UMA página por estacionamento, e o tipo é a oferta
+ * selecionada dentro dela (`?vaga=`), não uma página própria: três URLs para o mesmo lote
+ * repartiam link, endereço, fotos, FAQ e avaliações entre páginas quase idênticas.
+ * Ver docs/specs/url-estacionamentos.md.
+ */
+export type TipoDeVaga = {
+  /** location_parking_type_id */
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  capacity: number;
+  base_price: number;
+  external_checkout_url: string | null;
+};
+
 export type ListingDetail = {
   id: string; // location_parking_type_id
   capacity: number;
@@ -29,6 +46,10 @@ export type ListingDetail = {
   location: {
     id: string;
     slug: string;
+    /** Último segmento da URL pública (`/estacionamentos/<destino>/<public_slug>`). */
+    public_slug: string | null;
+    /** Nome canônico da ficha ("{marca} - Estacionamento {destino}"), o H1 e o `<title>`. */
+    public_name: string | null;
     name: string;
     address: string | null;
     phone: string | null;
@@ -81,8 +102,12 @@ export type ListingDetail = {
       city: string | null;
       /** Código IATA quando o destino é aeroporto. Vira `iataCode` no schema. */
       code: string | null;
+      /** Slug do destino na URL pública, a primeira metade do caminho da ficha. */
+      public_slug: string | null;
     } | null;
   };
+  /** Todos os tipos de vaga ativos da unidade, na ordem em que a página os oferece. */
+  tipos: TipoDeVaga[];
   parking_type: {
     code: string;
     name: string;
@@ -103,12 +128,12 @@ export type ListingDetail = {
 const baseSelect = `
   id, capacity, is_active, external_checkout_url,
   location:location!inner(
-    id, slug, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours,
+    id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos,
     company:company!inner(id, slug, name, legal_name, tax_id, created_at),
-    destination:destination(seo_label, short_name, name, type, city, code),
+    destination:destination!inner(seo_label, short_name, name, type, city, code, public_slug),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)
     )
@@ -119,31 +144,53 @@ const baseSelect = `
   )
 `;
 
+/**
+ * A ficha da unidade, por destino e lote (`/estacionamentos/<destino>/<lote>`).
+ *
+ * Traz a unidade inteira, com TODOS os tipos de vaga ativos, e escolhe um como oferta em
+ * evidência: `vagaCode` quando a URL pede (`?vaga=`), senão o mais barato pelo preço de
+ * balcão, que é o que a página anuncia como "a partir de". Antes existia uma página por
+ * tipo, e as três da mesma unidade repetiam endereço, fotos, FAQ e avaliações.
+ */
 export async function fetchListing(
-  operatorSlug: string,
-  locationSlug: string,
-  parkingTypeCode: string,
+  destinoSlug: string,
+  loteSlug: string,
+  vagaCode?: string,
 ): Promise<ListingDetail | null> {
   const { data, error } = await supabase
     .from("location_parking_type")
     .select(baseSelect)
     .eq("is_active", true)
-    // Só serve a página pública /p/... de unidades listadas (gate de recebedor ativo). A RLS
+    // Só serve a ficha pública de unidades listadas (gate de recebedor ativo). A RLS
     // pública já exige location.is_listed; este filtro deixa explícito. O preview do dono usa
     // outra leitura (previewApi, RLS de dono), que ignora is_listed.
     .eq("location.is_listed", true)
-    .limit(50);
+    .eq("location.public_slug", loteSlug)
+    .eq("location.destination.public_slug", destinoSlug)
+    .limit(20);
   if (error) throw error;
 
   // deno-lint-ignore no-explicit-any
-  const match = (data ?? []).find((r: any) => {
-    return (
-      r.location?.slug === locationSlug &&
-      r.location?.company?.slug === operatorSlug &&
-      r.company_parking_type?.parking_type?.code === parkingTypeCode
-    );
-  });
-  if (!match) return null;
+  const linhas = (data ?? []) as any[];
+  if (linhas.length === 0) return null;
+
+  // Mais barato primeiro: é a oferta que o card da busca anuncia e a que o `AggregateOffer`
+  // usa como `lowPrice`. Empate desempata pelo código, para a página não trocar de oferta
+  // em evidência entre um build e outro.
+  const tipos: TipoDeVaga[] = linhas
+    .map((r) => ({
+      id: r.id as string,
+      code: r.company_parking_type.parking_type.code as string,
+      name: r.company_parking_type.parking_type.name as string,
+      description: (r.company_parking_type.parking_type.description ?? null) as string | null,
+      capacity: (r.capacity ?? 0) as number,
+      base_price: Number(r.company_parking_type.base_price),
+      external_checkout_url: (r.external_checkout_url ?? null) as string | null,
+    }))
+    .sort((a, b) => a.base_price - b.base_price || a.code.localeCompare(b.code));
+
+  const escolhido = tipos.find((t) => t.code === vagaCode) ?? tipos[0];
+  const match = linhas.find((r) => r.id === escolhido.id)!;
 
   // Cast via `unknown`: `external_checkout_url` é campo COMPUTADO do PostgREST (função que
   // recebe a linha de location_parking_type). O `supabase gen types` não emite computed field,
@@ -190,6 +237,8 @@ export async function fetchListing(
     location: {
       id: m.location.id,
       slug: m.location.slug,
+      public_slug: m.location.public_slug ?? null,
+      public_name: m.location.public_name ?? null,
       name: m.location.name,
       // Default 'hub' na leitura: a coluna nasceu com esse default e ler ausência como
       // 'external' apagaria a página de toda unidade nativa se o select falhasse.
@@ -232,6 +281,7 @@ export async function fetchListing(
     company_parking_type: {
       base_price: Number(m.company_parking_type.base_price),
     },
+    tipos,
     amenities: amenitiesRaw,
     other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
     google,
@@ -311,15 +361,15 @@ export function useLocationTerminals(locationId: string | undefined) {
 }
 
 export function useListing(
-  operatorSlug: string | undefined,
-  locationSlug: string | undefined,
-  parkingTypeCode: string | undefined,
+  destinoSlug: string | undefined,
+  loteSlug: string | undefined,
+  vagaCode?: string,
   options?: { initialData?: ListingDetail },
 ) {
   return useQuery({
-    queryKey: ["listing", operatorSlug, locationSlug, parkingTypeCode] as const,
-    queryFn: () => fetchListing(operatorSlug!, locationSlug!, parkingTypeCode!),
-    enabled: !!operatorSlug && !!locationSlug && !!parkingTypeCode,
+    queryKey: ["listing", destinoSlug, loteSlug, vagaCode ?? null] as const,
+    queryFn: () => fetchListing(destinoSlug!, loteSlug!, vagaCode),
+    enabled: !!destinoSlug && !!loteSlug,
     staleTime: 60_000,
     initialData: options?.initialData,
   });

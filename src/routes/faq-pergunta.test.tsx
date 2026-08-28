@@ -20,6 +20,7 @@ const DATA: FaqPerguntaData = {
       name: "Aeroporto Internacional de São Paulo–Guarulhos",
       short_name: "Guarulhos (GRU)",
       slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+      public_slug: "aeroporto-guarulhos",
       code: "GRU",
     },
   },
@@ -126,12 +127,12 @@ describe("FaqPerguntaPage", () => {
     const reservar = await screen.findByRole("link", { name: "Reservar vaga em Guarulhos" });
     expect(reservar).toHaveAttribute(
       "href",
-      "/destinos/aeroporto-internacional-de-sao-paulo-guarulhos",
+      "/estacionamentos/aeroporto-guarulhos",
     );
     const comparar = screen.getByRole("link", { name: "Comparar preços em Guarulhos" });
     expect(comparar).toHaveAttribute(
       "href",
-      "/precos/aeroporto-internacional-de-sao-paulo-guarulhos",
+      "/estacionamentos/aeroporto-guarulhos/precos",
     );
   });
 
@@ -167,6 +168,7 @@ describe("FaqPerguntaPage", () => {
           name: "Aeroporto de Confins",
           short_name: "Confins (CNF)",
           slug: "aeroporto-de-confins",
+          public_slug: "aeroporto-confins",
           code: "CNF",
         },
       },
@@ -182,7 +184,7 @@ describe("FaqPerguntaPage", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText(/o comparativo da região está logo abaixo/)).toBeInTheDocument();
     const ver = screen.getByRole("link", { name: "Ver estacionamentos em Confins" });
-    expect(ver).toHaveAttribute("href", "/destinos/aeroporto-de-confins");
+    expect(ver).toHaveAttribute("href", "/estacionamentos/aeroporto-confins");
     expect(
       screen.getByRole("link", { name: "Comparar preços em outros aeroportos" }),
     ).toHaveAttribute("href", "/precos");

@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLoaderData, useLocation } from "react-router-dom";
 import type { RouteRecord } from "vite-react-ssg";
 import type { LoaderFunctionArgs } from "react-router-dom";
 
@@ -22,6 +22,7 @@ import {
 } from "@/features/price-index/priceIndex.logic";
 import { maisBaratoPorDuracao } from "@/features/price-index/maisBarato.logic";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
+import { caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
 import { AppProviders } from "@/components/shared/AppProviders";
 import { RootErrorBoundary } from "@/components/shared/RootErrorBoundary";
@@ -140,56 +141,150 @@ function RedirectToLogin() {
   return <Navigate to={`/login${location.search}`} replace />;
 }
 
-async function listingLoader({ params }: LoaderFunctionArgs) {
-  try {
-    const listing = await fetchListing(
-      params.operatorSlug!,
-      params.locationSlug!,
-      params.parkingTypeCode!,
-    );
-    if (!listing) return null;
-    // FAQ no loader porque a página é pré-renderizada: as respostas e o FAQPage
-    // (JSON-LD) precisam sair no HTML do build. Falha aqui não derruba a página;
-    // o hook do cliente cobre quando `faqs` vem nulo.
-    const faqs = await fetchFaqCombined({ locationId: listing.location.id }).catch(() => null);
-    // A faixa de diária também no loader, e pelo mesmo motivo do FAQ: o "a partir de" do card e
-    // o `AggregateOffer` do JSON-LD precisam sair no HTML do build. `base_price` não serve para
-    // isso (é 0 em toda unidade espelhada), então o preço vem do motor.
-    const showcase = await fetchPriceShowcase(
-      params.operatorSlug!,
-      params.locationSlug!,
-      params.parkingTypeCode!,
-    ).catch(() => null);
-    return { listing, faqs, showcase };
-  } catch {
-    return null;
-  }
+/**
+ * Qual das duas fichas renderizar. A decisão sai do loader, que já sabe se o slug é de
+ * unidade parceira ou de lote mapeado, e não de mais uma consulta no cliente.
+ */
+function FichaEstacionamento() {
+  const data = useLoaderData() as FichaLoaderData;
+  return data?.kind === "mapeado" ? <EstacionamentoMapeadoPage /> : <ListingPage />;
 }
 
-async function fetchAllListingPaths(): Promise<string[]> {
-  const { data } = await supabase
-    .from("location_parking_type")
-    .select(
-      `
-      location:location!inner(
-        slug,
-        company:company!inner(slug)
-      ),
-      company_parking_type:company_parking_type!inner(
-        parking_type:parking_type!inner(code)
+/**
+ * A ficha de estacionamento (`/estacionamentos/<destino>/<lote>`), nas duas famílias.
+ *
+ * Unidade parceira e lote mapeado dividem a mesma URL porque, para quem busca, são a mesma
+ * coisa: um estacionamento perto do destino. O que muda é o que a página promete, e isso já
+ * era resolvido por capacidade (ADR-009). O ganho está na reivindicação: quando o dono
+ * assume a ficha, ela deixa de ser mapeada e vira unidade **no mesmo endereço**, em vez de
+ * responder 301 para uma URL nova, jogando fora o ranking no dia em que ela passa a faturar.
+ * Ver docs/specs/url-estacionamentos.md.
+ */
+export type FichaLoaderData =
+  | {
+      kind: "unidade";
+      listing: Awaited<ReturnType<typeof fetchListing>>;
+      faqs: Awaited<ReturnType<typeof fetchFaqCombined>> | null;
+      showcase: Awaited<ReturnType<typeof fetchPriceShowcase>> | null;
+    }
+  | {
+      kind: "mapeado";
+      destination: Record<string, unknown>;
+      prospect: Awaited<ReturnType<typeof fetchDestinationProspects>>[number];
+      faqs: Awaited<ReturnType<typeof fetchFaqCombined>> | null;
+      google: Awaited<ReturnType<typeof fetchGooglePlaceSnapshot>> | null;
+    }
+  | null;
+
+async function fichaLoader({ params, request }: LoaderFunctionArgs): Promise<FichaLoaderData> {
+  const destino = params.destino!;
+  const lote = params.lote!;
+  // `?vaga=` só escolhe a oferta em evidência. A URL canônica é sem ela, então o build
+  // pré-renderiza a página com o tipo padrão e a query só vale na navegação.
+  const vaga = new URL(request.url, "http://local").searchParams.get("vaga") ?? undefined;
+
+  try {
+    const listing = await fetchListing(destino, lote, vaga);
+    if (listing) {
+      // FAQ no loader porque a página é pré-renderizada: as respostas e o FAQPage
+      // (JSON-LD) precisam sair no HTML do build. Falha aqui não derruba a página;
+      // o hook do cliente cobre quando `faqs` vem nulo.
+      const faqs = await fetchFaqCombined({ locationId: listing.location.id }).catch(() => null);
+      // A faixa de diária também no loader, e pelo mesmo motivo do FAQ: o "a partir de" do card e
+      // o `AggregateOffer` do JSON-LD precisam sair no HTML do build. `base_price` não serve para
+      // isso (é 0 em toda unidade espelhada), então o preço vem do motor.
+      const showcase = await fetchPriceShowcase(
+        listing.company.slug,
+        listing.location.slug,
+        listing.parking_type.code,
+      ).catch(() => null);
+      return { kind: "unidade", listing, faqs, showcase };
+    }
+  } catch {
+    // Cai no lote mapeado: erro de rede na primeira leitura não pode decidir que a ficha
+    // não existe.
+  }
+
+  return await fichaMapeadaLoader(destino, lote);
+}
+
+/** Página do lote MAPEADO (E0.17-e). Sem preço, sem reserva, sem caminho para uma. */
+async function fichaMapeadaLoader(destino: string, lote: string): Promise<FichaLoaderData> {
+  const { data: destination } = await supabase
+    .from("destination")
+    .select("*")
+    .eq("public_slug", destino)
+    .eq("is_published", true)
+    .maybeSingle();
+  if (!destination) return null;
+
+  // A RPC já aplica `is_published` e `converted_at is null`, e é `security invoker`: o
+  // telefone não vem nem aqui, no build. Ficha convertida some da lista e a página deixa
+  // de ser gerada; o worker cobre a janela até o próximo build.
+  const prospects = await fetchDestinationProspects(destination.slug as string).catch(() => []);
+  const prospect = prospects.find((p) => p.public_slug === lote);
+  if (!prospect) return null;
+
+  // FAQ do AEROPORTO, nunca da unidade: lote mapeado não tem FAQ própria por
+  // desenho (ADR-010), mas as perguntas do destino (traslado, segurança,
+  // gabarito) são fato do aeroporto e valem aqui. Só escopo `destination`: a
+  // global fala de reserva pela Movepark, que esta página não oferece.
+  const faqs = await fetchFaqCombined({ destinationId: destination.id as string })
+    .then((items) => items.filter((f) => f.scope === "destination"))
+    .catch(() => null);
+
+  // Avaliações do Google, a única prova social que este lote pode ter: nota Movepark exige
+  // `booking`, e lote mapeado não gera nenhum. Buscado aqui, no loader, para o bloco sair no
+  // HTML do build (§6 e §8 de avaliacoes-google.md). Falha não derruba a página: sem snapshot
+  // a seção só não existe. O `google_place_id` vem da RPC porque o grant de coluna do Q-021
+  // não deixa o front ler direto da tabela.
+  const google = prospect.google_place_id
+    ? await fetchGooglePlaceSnapshot(prospect.google_place_id).catch(() => null)
+    : null;
+
+  return { kind: "mapeado", destination, prospect, faqs, google };
+}
+
+/**
+ * Uma URL por estacionamento, das duas famílias. O tipo de vaga saiu da URL: eram 17
+ * páginas para 9 lotes, com endereço, fotos, FAQ e avaliações repetidos em cada uma.
+ */
+async function fetchAllFichaPaths(): Promise<string[]> {
+  const [unidades, mapeados] = await Promise.all([
+    supabase
+      .from("location")
+      .select(
+        "public_slug, destination:destination!inner(public_slug, is_published), company:company!inner(status, onboarding_status)",
       )
-    `,
-    )
-    .eq("is_active", true)
-    // Só pré-renderiza páginas de unidades publicamente listadas (gate de recebedor ativo).
-    // A RLS pública já exige location.is_listed; este filtro deixa explícito no build (SSG).
-    .eq("location.is_listed", true);
+      // Só pré-renderiza unidade publicamente listada (gate de recebedor ativo) e de empresa
+      // no ar, que é o mesmo corte da vitrine: gerar HTML de unidade que a RLS esconde
+      // publicaria uma página vazia com canonical próprio.
+      .eq("is_listed", true)
+      .is("deleted_at", null)
+      .eq("status", "active")
+      .eq("destination.is_published", true)
+      .eq("company.status", "active")
+      .eq("company.onboarding_status", "active")
+      .not("public_slug", "is", null),
+    supabase
+      .from("prospect_location")
+      .select("public_slug, destination:destination!inner(public_slug, is_published)")
+      .eq("is_published", true)
+      .is("converted_at", null)
+      .eq("destination.is_published", true)
+      .not("public_slug", "is", null),
+  ]);
 
   // deno-lint-ignore no-explicit-any
-  return (data ?? []).map(
-    (r: any) =>
-      `/p/${r.location.company.slug as string}/${r.location.slug as string}/${r.company_parking_type.parking_type.code as string}`,
-  );
+  const caminho = (r: any): string | null => {
+    const destino = r.destination?.public_slug as string | undefined;
+    const lote = r.public_slug as string | undefined;
+    return destino && lote ? caminhoFicha(destino, lote) : null;
+  };
+
+  return [...(unidades.data ?? []), ...(mapeados.data ?? [])]
+    .map(caminho)
+    .filter((p): p is string => p !== null);
 }
 
 /**
@@ -214,7 +309,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
   const { data } = await supabase
     .from("destination")
     .select("*")
-    .eq("slug", params.slug!)
+    .eq("public_slug", params.destino!)
     .eq("is_published", true)
     .maybeSingle();
   if (!data) return null;
@@ -223,14 +318,14 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
   // hook do cliente cobre e sem preço a tabela some. Em paralelo porque nenhuma depende
   // da outra.
   const [prospects, units, faqs, index, irmaos, points] = await Promise.all([
-    fetchDestinationProspects(params.slug!).catch(() => []),
+    fetchDestinationProspects(data.slug as string).catch(() => []),
     fetchDestinationUnits(data).catch(() => []),
     fetchFaqCombined({ destinationId: data.id as string }).catch(() => null),
     fetchPriceIndex().catch(() => null),
     (async () => {
       const { data: irmaos } = await supabase
         .from("destination")
-        .select("id, name, short_name, seo_label, type, slug, is_popular, sort_order")
+        .select("id, name, short_name, seo_label, type, slug, public_slug, is_popular, sort_order")
         .eq("is_published", true)
         .order("sort_order");
       return irmaos ?? [];
@@ -243,7 +338,9 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     units,
     faqs,
     priceDestination:
-      index?.destinations.find((d: { slug: string }) => d.slug === params.slug) ?? null,
+      index?.destinations.find(
+        (d: { public_slug: string | null }) => d.public_slug === params.destino,
+      ) ?? null,
     related: irmaos,
     points: points.map((p) => ({ id: p.id, name: p.name })),
     generatedAt: new Date().toISOString(),
@@ -251,62 +348,14 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
 }
 
 async function fetchAllDestinationPaths(): Promise<string[]> {
-  const { data } = await supabase.from("destination").select("slug").eq("is_published", true);
-  return (data ?? []).map((d) => `/destinos/${d.slug as string}`);
-}
-
-/** Página do lote MAPEADO (E0.17-e). Sem preço, sem reserva, sem caminho para uma. */
-async function estacionamentoMapeadoLoader({ params }: LoaderFunctionArgs) {
-  const { data: destination } = await supabase
-    .from("destination")
-    .select("*")
-    .eq("slug", params.destino!)
-    .eq("is_published", true)
-    .maybeSingle();
-  if (!destination) return null;
-
-  // A RPC já aplica `is_published` e `converted_at is null`, e é `security invoker`: o
-  // telefone não vem nem aqui, no build. Ficha convertida some da lista e a página deixa
-  // de ser gerada, que é o comportamento certo enquanto a conversão (E0.17-g) não existe
-  // para ter para onde redirecionar.
-  const prospects = await fetchDestinationProspects(params.destino!).catch(() => []);
-  const prospect = prospects.find((p) => p.slug === params.slug);
-  if (!prospect) return null;
-
-  // FAQ do AEROPORTO, nunca da unidade: lote mapeado não tem FAQ própria por
-  // desenho (ADR-010), mas as perguntas do destino (traslado, segurança,
-  // gabarito) são fato do aeroporto e valem aqui. Só escopo `destination`: a
-  // global fala de reserva pela Movepark, que esta página não oferece.
-  const faqs = await fetchFaqCombined({ destinationId: destination.id as string })
-    .then((items) => items.filter((f) => f.scope === "destination"))
-    .catch(() => null);
-
-  // Avaliações do Google, a única prova social que este lote pode ter: nota Movepark exige
-  // `booking`, e lote mapeado não gera nenhum. Buscado aqui, no loader, para o bloco sair no
-  // HTML do build (§6 e §8 de avaliacoes-google.md). Falha não derruba a página: sem snapshot
-  // a seção só não existe. O `google_place_id` vem da RPC porque o grant de coluna do Q-021
-  // não deixa o front ler direto da tabela.
-  const google = prospect.google_place_id
-    ? await fetchGooglePlaceSnapshot(prospect.google_place_id).catch(() => null)
-    : null;
-
-  return { destination, prospect, faqs, google };
-}
-
-async function fetchAllProspectPaths(): Promise<string[]> {
   const { data } = await supabase
-    .from("prospect_location")
-    .select("slug, destination:destination(slug)")
+    .from("destination")
+    .select("public_slug")
     .eq("is_published", true)
-    .is("converted_at", null);
-  return (data ?? [])
-    .map((p) => {
-      // deno-lint-ignore no-explicit-any
-      const destino = (p as any).destination?.slug as string | undefined;
-      return destino ? `/estacionamentos/${destino}/${p.slug as string}` : null;
-    })
-    .filter((path): path is string => path !== null);
+    .not("public_slug", "is", null);
+  return (data ?? []).map((d) => `/estacionamentos/${d.public_slug as string}`);
 }
+
 
 const BLOG_SELECT =
   "*, destination:destination(id, name, short_name, slug)," +
@@ -481,7 +530,7 @@ function blogListingPaths(kind: BlogKind, comPaginas: boolean) {
 async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
   const index = await fetchPriceIndex().catch(() => null);
   if (!index) return null;
-  const dest = index.destinations.find((d) => d.slug === params.slug);
+  const dest = index.destinations.find((d) => d.public_slug === params.destino);
   if (!dest) return null;
   const linhas = maisBaratoPorDuracao(dest, index.days);
   if (linhas.length === 0) return null;
@@ -490,10 +539,15 @@ async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
   // cadastrado) completam a resposta: o comparativo cobre os parceiros com
   // reserva; a praça inteira aparece por link, sem preço (ADR-010).
   const mapeados = await fetchDestinationProspects(dest.slug)
-    .then((ps) => ps.map((p) => ({ name: p.name, slug: p.slug })))
+    .then((ps) => ps.map((p) => ({ name: p.public_name ?? p.name, slug: p.public_slug ?? p.slug })))
     .catch(() => [] as { name: string; slug: string }[]);
   return {
-    destino: { name: dest.name, short_name: dest.short_name, slug: dest.slug, code: dest.code },
+    destino: {
+      name: dest.name,
+      short_name: dest.short_name,
+      slug: dest.public_slug ?? dest.slug,
+      code: dest.code,
+    },
     linhas,
     unitCount: resumo.unitCount,
     mapeados,
@@ -506,7 +560,8 @@ async function fetchAllMaisBaratoPaths(): Promise<string[]> {
   if (!index) return [];
   return index.destinations
     .filter((d) => maisBaratoPorDuracao(d, index.days).length > 0)
-    .map((d) => `/estacionamento-mais-barato/${d.slug}`);
+    .filter((d) => d.public_slug)
+    .map((d) => caminhoMaisBarato(d.public_slug as string));
 }
 
 /**
@@ -627,11 +682,15 @@ async function precosDestinoLoader({
   params,
 }: LoaderFunctionArgs): Promise<PrecosDestinoData | null> {
   const data = await fetchPriceIndex().catch(() => null);
-  const destination = data?.destinations.find((d) => d.slug === params.slug) ?? null;
+  const destination = data?.destinations.find((d) => d.public_slug === params.destino) ?? null;
   if (!data || !destination) return null;
   const others = data.destinations
-    .filter((d) => d.slug !== destination.slug)
-    .map((d) => ({ slug: d.slug, name: d.name, short_name: d.short_name }));
+    .filter((d) => d.slug !== destination.slug && d.public_slug)
+    .map((d) => ({
+      slug: d.public_slug as string,
+      name: d.name,
+      short_name: d.short_name,
+    }));
   return { days: data.days, destination, others, generatedAt: new Date().toISOString() };
 }
 
@@ -645,7 +704,7 @@ async function calculadoraLoader(): Promise<CalculadoraData | null> {
   // O select cobre TODOS os destinos publicados, com ou sem parceiro precificado.
   const { data: catalogoRaw } = await supabase
     .from("destination")
-    .select("slug, name, short_name, state")
+    .select("slug, public_slug, name, short_name, state")
     .eq("is_published", true)
     .order("sort_order");
   const catalogo = (catalogoRaw ?? []) as CalculadoraData["catalogo"];
@@ -676,7 +735,9 @@ async function calculadoraLoader(): Promise<CalculadoraData | null> {
 /** Uma URL por destino publicado com unidade precificada. */
 async function fetchAllPrecosPaths(): Promise<string[]> {
   const data = await fetchPriceIndex().catch(() => null);
-  return (data?.destinations ?? []).map((d) => `/precos/${d.slug}`);
+  return (data?.destinations ?? [])
+    .filter((d) => d.public_slug)
+    .map((d) => caminhoPrecos(d.public_slug as string));
 }
 
 // Índice de destinos: carrega os publicados no build (SSG) p/ o crawler ver os links.
@@ -684,7 +745,7 @@ async function destinosLoader() {
   const { data } = await supabase
     .from("destination")
     .select(
-      "id, code, name, short_name, slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
+      "id, code, name, short_name, slug, public_slug, type, city, state, country, latitude, longitude, is_popular, sort_order",
     )
     .eq("is_published", true)
     .order("sort_order");
@@ -704,12 +765,6 @@ export const routes: RouteRecord[] = [
         children: [
           { path: "/", element: <HomePage /> },
           { path: "/search", element: <SearchResultsPage /> },
-          {
-            path: "/p/:operatorSlug/:locationSlug/:parkingTypeCode",
-            element: <ListingPage />,
-            loader: listingLoader,
-            getStaticPaths: fetchAllListingPaths,
-          },
           { path: "/faq", element: <FaqPage />, loader: faqIndexLoader },
           {
             path: "/faq/:slug",
@@ -812,30 +867,33 @@ export const routes: RouteRecord[] = [
             path: "/uber-ou-estacionamento-aeroporto",
             element: <Navigate to="/calculadora-estacionamento-aeroporto?modo=app" replace />,
           },
+          // Uma pasta para o catálogo inteiro. `precos` e `mais-barato` são segmentos
+          // estáticos e o React Router os resolve antes de `:lote`, que é por isso que os
+          // dois são reservados no banco (nenhum lote pode se chamar assim).
+          { path: "/estacionamentos", element: <DestinosPage />, loader: destinosLoader },
           {
-            path: "/precos/:slug",
-            element: <PrecosDestinoPage />,
-            loader: precosDestinoLoader,
-            getStaticPaths: fetchAllPrecosPaths,
-          },
-          { path: "/destinos", element: <DestinosPage />, loader: destinosLoader },
-          {
-            path: "/destinos/:slug",
+            path: "/estacionamentos/:destino",
             element: <DestinoPage />,
             loader: destinoLoader,
             getStaticPaths: fetchAllDestinationPaths,
           },
           {
-            path: "/estacionamentos/:destino/:slug",
-            element: <EstacionamentoMapeadoPage />,
-            loader: estacionamentoMapeadoLoader,
-            getStaticPaths: fetchAllProspectPaths,
+            path: "/estacionamentos/:destino/precos",
+            element: <PrecosDestinoPage />,
+            loader: precosDestinoLoader,
+            getStaticPaths: fetchAllPrecosPaths,
           },
           {
-            path: "/estacionamento-mais-barato/:slug",
+            path: "/estacionamentos/:destino/mais-barato",
             element: <EstacionamentoMaisBaratoPage />,
             loader: maisBaratoLoader,
             getStaticPaths: fetchAllMaisBaratoPaths,
+          },
+          {
+            path: "/estacionamentos/:destino/:lote",
+            element: <FichaEstacionamento />,
+            loader: fichaLoader,
+            getStaticPaths: fetchAllFichaPaths,
           },
           {
             element: <RequireRole roles={["customer"]} />,

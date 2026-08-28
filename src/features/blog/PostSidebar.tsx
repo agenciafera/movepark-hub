@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { CoverImage } from "./CoverImage";
 import { formatDate } from "@/lib/format";
 import type { BlogPost, Destination } from "@/types/domain";
+import { caminhoDestino } from "@/lib/urls";
 
 type Props = {
-  destination: Pick<Destination, "name" | "slug"> | null;
+  destination: Pick<Destination, "name" | "slug" | "public_slug"> | null;
   relacionados: BlogPost[];
 };
 
@@ -85,7 +86,7 @@ export function PostSidebar({ destination, relacionados }: Props) {
             Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.
           </p>
           <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to={`/destinos/${destination.slug}`}>Ver estacionamentos</Link>
+            <Link to={caminhoDestino(destination.public_slug ?? destination.slug)}>Ver estacionamentos</Link>
           </Button>
         </div>
       )}

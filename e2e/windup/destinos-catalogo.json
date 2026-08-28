@@ -1,6 +1,6 @@
 {
   "scenario_id": "destinos-catalogo",
-  "start_url": "/destinos",
+  "start_url": "/estacionamentos",
   "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Destinos atendidos pela Movepark' e o texto 'Mais buscados, e que o rodape exibe o texto Seja parceiro.",
   "tags": [
     "smoke",

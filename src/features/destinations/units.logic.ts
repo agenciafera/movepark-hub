@@ -16,6 +16,7 @@
  *
  * Lógica pura, sem rede: a query mora em `api.ts` e o teste exercita as regras aqui.
  */
+import { caminhoFicha } from "@/lib/urls";
 import { calcFromPrice, type PricingRuleRaw } from "@/features/search/fromPrice";
 import type { SearchResultItem } from "@/features/search/useSearchResults";
 import type { GoogleRatingRow } from "@/features/reviews/googleApi";
@@ -29,6 +30,7 @@ export type UnitRow = {
   location: {
     id: string;
     slug: string;
+    public_slug: string | null;
     name: string;
     address: string | null;
     latitude: number | string | null;
@@ -72,6 +74,8 @@ export function buildStaticUnits(
   proximity: ProximityRow[],
   google: GoogleRatingRow[] = [],
   now: Date = new Date(),
+  /** Slug público do destino, para montar o caminho da ficha de cada unidade. */
+  destinoPublicSlug?: string | null,
 ): SearchResultItem[] {
   const geo = new Map(proximity.map((p) => [p.location_id, p]));
   // Só snapshot fresco entra no HTML. A policy do banco já filtra na leitura, e conferir de
@@ -110,6 +114,10 @@ export function buildStaticUnits(
       location: {
         id: loc.id,
         slug: loc.slug,
+        public_path:
+          destinoPublicSlug && loc.public_slug
+            ? caminhoFicha(destinoPublicSlug, loc.public_slug)
+            : null,
         name: loc.name,
         address: loc.address,
         latitude: num(loc.latitude),

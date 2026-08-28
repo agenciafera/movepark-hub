@@ -59,7 +59,7 @@ export default function SavedPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
           {detail.data?.map((item) => {
-            const url = `/p/${item.operator.slug}/${item.location.slug}/${item.parking_type.code}`;
+            const url = item.location.public_path ?? "/estacionamentos";
             return (
               <article
                 key={item.id}

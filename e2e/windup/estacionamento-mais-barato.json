@@ -1,6 +1,6 @@
 {
   "scenario_id": "estacionamento-mais-barato",
-  "start_url": "/estacionamento-mais-barato/aeroporto-de-viracopos",
+  "start_url": "/estacionamentos/aeroporto-viracopos/mais-barato",
   "task": "Verifique que a pagina exibe um titulo que comeca com Qual e o estacionamento mais barato, uma secao com o texto Menor preco por duracao e um link com o texto Comparar precos em Viracopos.",
   "tags": [
     "smoke",

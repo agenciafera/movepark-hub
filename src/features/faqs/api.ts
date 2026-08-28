@@ -246,7 +246,7 @@ export function useFaqCombined(args: {
 const FAQ_INDEX_SELECT =
   "id, scope, destination_id, question, answer, slug, sort_order," +
   " category:faq_category(slug, label, sort_order)," +
-  " destination:destination(name, short_name, slug)";
+  " destination:destination(name, short_name, slug, public_slug)";
 
 export type FaqIndexItem = {
   id: string;
@@ -289,6 +289,7 @@ export type FaqPageFaq = {
     name: string;
     short_name: string | null;
     slug: string;
+    public_slug: string | null;
     code: string;
   } | null;
 };
@@ -306,7 +307,7 @@ export async function fetchFaqBySlug(slug: string): Promise<FaqPageData | null> 
     .select(
       "id, scope, destination_id, question, answer, body_md, slug, updated_at," +
         " category:faq_category(slug, label, sort_order)," +
-        " destination:destination(id, name, short_name, slug, code)",
+        " destination:destination(id, name, short_name, slug, code, public_slug)",
     )
     .eq("slug", slug)
     .eq("is_published", true)

@@ -52,38 +52,59 @@ import {
   type SchemaReview,
 } from "@/lib/jsonld";
 import { SITE_URL } from "@/lib/site";
+import { caminhoFicha } from "@/lib/urls";
 
-/** O que `listingLoader` entrega: a unidade e o FAQ mesclado, já no HTML do build. */
-type ListingLoaderData = {
-  listing: ListingDetail;
-  faqs: FaqCombinedItem[] | null;
-  showcase: PriceShowcase | null;
-} | null;
+/**
+ * O que o loader da ficha entrega. A rota `/estacionamentos/:destino/:lote` serve as duas
+ * famílias, então o dado vem discriminado: aqui só interessa `kind: "unidade"`.
+ */
+type ListingLoaderData =
+  | {
+      kind: "unidade";
+      listing: ListingDetail;
+      faqs: FaqCombinedItem[] | null;
+      showcase: PriceShowcase | null;
+    }
+  | { kind: "mapeado" }
+  | null;
+
+/** A query da ficha com a vaga escolhida, preservando o resto (datas, origem). */
+function paramsComVaga(atual: URLSearchParams, vaga: string): string {
+  const p = new URLSearchParams(atual);
+  p.set("vaga", vaga);
+  return p.toString();
+}
 
 export default function ListingPage() {
-  const params = useParams<{
-    operatorSlug: string;
-    locationSlug: string;
-    parkingTypeCode: string;
-  }>();
+  const params = useParams<{ destino: string; lote: string }>();
   const [searchParams] = useSearchParams();
   const saved = useSavedListings();
-  const loaderData = useLoaderData() as ListingLoaderData | undefined;
+  const loaderDataBruto = useLoaderData() as ListingLoaderData | undefined;
+  // A rota é compartilhada com a ficha do lote mapeado; aqui só interessa a unidade.
+  const loaderData = loaderDataBruto?.kind === "unidade" ? loaderDataBruto : undefined;
+
+  // O tipo de vaga não é mais uma página, é a oferta em evidência dentro da ficha. `?vaga=`
+  // só escolhe qual, e o canonical ignora a query: as três páginas por unidade repartiam
+  // endereço, fotos, FAQ e avaliações entre documentos quase idênticos.
+  const vaga = searchParams.get("vaga") ?? undefined;
 
   const { data: listing, isLoading, error } = useListing(
-    params.operatorSlug,
-    params.locationSlug,
-    params.parkingTypeCode,
+    params.destino,
+    params.lote,
+    vaga,
     { initialData: loaderData?.listing ?? undefined },
   );
+  const companySlug = listing?.company.slug;
+  const locationSlug = listing?.location.slug;
+  const parkingTypeCode = listing?.parking_type.code;
 
   // Faixa de diária do motor de preço: alimenta o "a partir de" do card e o `AggregateOffer` do
   // JSON-LD com o MESMO número, que é o que o ADR-009 pede. O loader já trouxe no build; o hook
   // cobre a navegação por link.
   const { data: showcase } = usePriceShowcase(
-    params.operatorSlug,
-    params.locationSlug,
-    params.parkingTypeCode,
+    companySlug,
+    locationSlug,
+    parkingTypeCode,
     loaderData?.showcase,
   );
 
@@ -145,8 +166,8 @@ export default function ListingPage() {
       ? Math.max(1, Math.ceil((initialTo.getTime() - initialFrom.getTime()) / 86_400_000))
       : 1);
   const { types: typePrices } = useLocationTypePrices({
-    companySlug: params.operatorSlug,
-    locationSlug: params.locationSlug,
+    companySlug,
+    locationSlug,
     days: upsellDays,
   });
 
@@ -171,6 +192,7 @@ export default function ListingPage() {
   // unidade deixarem de disputar entre si.
   const seoArgs = listing
     ? {
+        publicName: listing.location.public_name,
         companyName: listing.company.name,
         parkingTypeName: listing.parking_type.name,
         destination: listing.location.destination,
@@ -183,9 +205,12 @@ export default function ListingPage() {
     (seoArgs && listing
       ? listingDescription({ ...seoArgs, city: listing.location.destination?.city ?? null })
       : "");
-  const pageUrl = listing
-    ? `${SITE_URL}/p/${listing.company.slug}/${listing.location.slug}/${listing.parking_type.code}`
-    : "";
+  // Canonical sem a query: `?vaga=` escolhe a oferta em evidência, não cria outra página.
+  const caminho =
+    listing?.location.destination?.public_slug && listing.location.public_slug
+      ? caminhoFicha(listing.location.destination.public_slug, listing.location.public_slug)
+      : "";
+  const pageUrl = caminho ? `${SITE_URL}${caminho}` : "";
   // og:image relativa é inválida (o scraper social não resolve o caminho relativo
   // das fotos importadas do legado): absolutiza sobre o domínio canônico.
   const ogImageRaw =
@@ -269,7 +294,7 @@ export default function ListingPage() {
   const upgradeNudge = upgradeTarget ? (
     <UpgradeVagaNudge
       target={upgradeTarget}
-      to={`/p/${params.operatorSlug}/${params.locationSlug}/${upgradeTarget.code}?${searchParams.toString()}`}
+      to={`?${paramsComVaga(searchParams, upgradeTarget.code)}`}
     />
   ) : null;
   const hasDescription = (listing.capacity ?? 0) > 0 || !!listing.parking_type.description;
@@ -334,13 +359,40 @@ export default function ListingPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="space-y-2">
-          {/* Empresa · unidade, o mesmo título do card que trouxe o cliente até aqui e o
-              mesmo do <title>/JSON-LD. Só a empresa deixava três unidades da Aerovalet
-              com H1 idêntico. */}
+          {/* "{marca} - Estacionamento {destino}", o mesmo nome do card que trouxe o cliente
+              até aqui, do <title> e do JSON-LD. Sai de `location.public_name`. */}
           <h1 className="text-balance text-display-xl text-ink">
             {seoArgs ? listingHeading(seoArgs) : parkingTitle(listing.company.name, listing.location.name)}
           </h1>
-          <p className="text-display-sm text-muted">{listing.parking_type.name}</p>
+          {/* O tipo de vaga é escolha dentro da ficha, não uma página por tipo: as três da
+              mesma unidade repetiam endereço, fotos, FAQ e avaliações. Com um tipo só, o
+              seletor não existe e a linha vira o rótulo de sempre. */}
+          {listing.tipos.length > 1 ? (
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de vaga">
+              {listing.tipos.map((t) => {
+                const atual = t.code === listing.parking_type.code;
+                return (
+                  <Link
+                    key={t.code}
+                    id={`vaga-${t.code}`}
+                    to={`?${paramsComVaga(searchParams, t.code)}`}
+                    replace
+                    aria-current={atual ? "true" : undefined}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-body-sm transition-colors",
+                      atual
+                        ? "border-mp-primary bg-mp-primary/10 font-medium text-ink"
+                        : "border-hairline text-muted hover:border-mp-primary hover:text-ink",
+                    )}
+                  >
+                    {t.name}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-display-sm text-muted">{listing.parking_type.name}</p>
+          )}
 
           {/* Social proof row */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

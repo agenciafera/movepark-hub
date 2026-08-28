@@ -26,6 +26,23 @@ import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
 // leem (llms-full.txt, faq/*.md, precos/*.md, destinos/*.md), então host errado aqui é o site
 // inteiro se apresentando num endereço que não existe mais.
 const SITE_URL = DEFAULT_SITE_URL;
+
+/**
+ * Os caminhos do catálogo, na mesma gramática do app (src/lib/urls.ts): o gêmeo Markdown
+ * responde no MESMO caminho da página, por negociação de conteúdo no worker.
+ * `public_slug` é o slug da URL; `slug` continua sendo a chave antiga do banco.
+ */
+const pubSlug = (d) => d.public_slug ?? d.slug;
+const cDestino = (d) => `/estacionamentos/${pubSlug(d)}`;
+const cPrecos = (d) => `${cDestino(d)}/precos`;
+const cMaisBarato = (d) => `${cDestino(d)}/mais-barato`;
+
+/** Escreve `dist/estacionamentos/<destino>/<arquivo>`, criando a pasta do destino. */
+function escreverNoDestino(dest, arquivo, conteudo) {
+  const pasta = path.join(DIST, "estacionamentos", pubSlug(dest));
+  fs.mkdirSync(pasta, { recursive: true });
+  fs.writeFileSync(path.join(pasta, arquivo), conteudo);
+}
 const DIST = "dist";
 
 // ---------------------------------------------------------------------------
@@ -113,7 +130,7 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
       "&order=sort_order.asc,created_at.asc",
   ),
   rest(
-    "destination?select=name,short_name,slug,code,city,state,type,seo_label,intro" +
+    "destination?select=name,short_name,slug,public_slug,code,city,state,type,seo_label,intro" +
       "&is_published=eq.true&order=sort_order.asc",
   ),
   rest(
@@ -139,8 +156,8 @@ for (let i = 0; i < destinations.length; i += 6) {
       prospectsPorDestino.set(
         d.slug,
         (cards ?? []).map((p) => ({
-          name: p.name,
-          slug: p.slug,
+          name: p.public_name ?? p.name,
+          slug: p.public_slug ?? p.slug,
           distance_km: p.distance_km == null ? null : Number(p.distance_km),
         })),
       );
@@ -286,7 +303,7 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
         for (const r of resumo) {
           linhas.push(`| ${durLabel(r.dias)} | ${brl(r.total)} | ${brl(r.total / r.dias)}/dia |`);
         }
-        linhas.push("", `Tabela completa: ${SITE_URL}/precos/${dest.slug}`, "");
+        linhas.push("", `Tabela completa: ${SITE_URL}${cPrecos(dest)}`, "");
       }
     }
 
@@ -323,11 +340,11 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
     linhas.push(
       dest
         ? semParceiro
-          ? `Ver estacionamentos: ${SITE_URL}/destinos/${dest.slug}`
-          : `Reservar vaga: ${SITE_URL}/destinos/${dest.slug}`
+          ? `Ver estacionamentos: ${SITE_URL}${cDestino(dest)}`
+          : `Reservar vaga: ${SITE_URL}${cDestino(dest)}`
         : `Buscar estacionamento: ${SITE_URL}/search`,
       dest && !semParceiro
-        ? `Comparar preços: ${SITE_URL}/precos/${dest.slug}`
+        ? `Comparar preços: ${SITE_URL}${cPrecos(dest)}`
         : `Comparar preços: ${SITE_URL}/precos`,
       `Todas as perguntas: ${SITE_URL}/faq`,
       "",
@@ -486,14 +503,14 @@ const blocoAchados = ACHADOS.length
 // depois que tudo está declarado.
 gerarFaqPaginasMd(new Map(destinosComPreco.map((d) => [d.slug, d])), diasIndice);
 
-fs.mkdirSync(path.join(DIST, "precos"), { recursive: true });
+
 
 for (const dest of destinosComPreco) {
   const nome = nomeCurto(dest);
   const linhas = [
     "---",
     `title: "Preços de estacionamento em ${nome}: diária, 7, 15 e 30 dias | Movepark"`,
-    `canonical: ${SITE_URL}/precos/${dest.slug}`,
+    `canonical: ${SITE_URL}${cPrecos(dest)}`,
     `updated: ${hoje}`,
     "---",
     "",
@@ -513,11 +530,11 @@ for (const dest of destinosComPreco) {
   }
   linhas.push("", "## Tabela de preços", "", ...tabelaMarkdown(dest, diasIndice), "");
   linhas.push(
-    `Reservar: ${SITE_URL}/destinos/${dest.slug}`,
+    `Reservar: ${SITE_URL}${cDestino(dest)}`,
     `Índice completo: ${SITE_URL}/precos`,
     "",
   );
-  fs.writeFileSync(path.join(DIST, "precos", `${dest.slug}.md`), linhas.join("\n"));
+  escreverNoDestino(dest, "precos.md", linhas.join("\n"));
 }
 
 /**
@@ -553,7 +570,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
       return d === 1 ? brl(total) : `${brl(total / d)} (total ${brl(total)})`;
     };
     linhas.push(
-      `| ${u.company_name} (${u.parking_type_name}) · [reservar](${SITE_URL}/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}) | ${celula(1)} | ${celula(7)} | ${celula(15)} |`,
+      `| ${u.company_name} (${u.parking_type_name}) · [reservar](${SITE_URL}${u.public_path ?? ""}) | ${celula(1)} | ${celula(7)} | ${celula(15)} |`,
     );
   }
   if (unidades.length > limit) {
@@ -576,7 +593,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
     "Quanto custa estacionar perto de cada aeroporto, no preço real de reserva: uma",
     "tabela por destino, ordenada pela diária mais baixa, com 7 e 15 dias em R$/dia.",
     "Toda linha é um parceiro Movepark com reserva online. A tabela completa de cada",
-    "destino (com 30 diárias) vive em /precos/<slug>; a versão Markdown responde no",
+    "destino (com 30 diárias) vive em /estacionamentos/<destino>/precos; o Markdown responde no",
     "mesmo endereço com o header `Accept: text/markdown`.",
     "",
   ];
@@ -586,7 +603,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
       "",
       ...tabelaTopMarkdown(dest),
       "",
-      `Tabela completa: ${SITE_URL}/precos/${dest.slug}`,
+      `Tabela completa: ${SITE_URL}${cPrecos(dest)}`,
       "",
     );
   }
@@ -603,7 +620,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
       "",
     );
     for (const d of semParceiro) {
-      linhas.push(`- ${nomeCurto(d)}: ${SITE_URL}/destinos/${d.slug}`);
+      linhas.push(`- ${nomeCurto(d)}: ${SITE_URL}${cDestino(d)}`);
     }
     linhas.push("");
   }
@@ -651,14 +668,14 @@ function tabelaTopMarkdown(dest, limit = 5) {
   for (const d of destinations) {
     const cidade = [d.city, d.state].filter(Boolean).join("/");
     linhas.push(
-      `- ${d.name}${d.code ? ` (${d.code})` : ""}${cidade ? `, ${cidade}` : ""}: ${SITE_URL}/destinos/${d.slug}`,
+      `- ${d.name}${d.code ? ` (${d.code})` : ""}${cidade ? `, ${cidade}` : ""}: ${SITE_URL}${cDestino(d)}`,
     );
   }
 
   if (destinosComPreco.length > 0) {
     linhas.push("", "## Índice de preços (motor de reservas, valor do checkout)", "");
     for (const dest of destinosComPreco) {
-      linhas.push(`### ${nomeCurto(dest)}`, "", `URL: ${SITE_URL}/precos/${dest.slug}`, "");
+      linhas.push(`### ${nomeCurto(dest)}`, "", `URL: ${SITE_URL}${cPrecos(dest)}`, "");
       for (const r of resumoPorDuracao(dest, diasIndice)) {
         linhas.push(
           `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name})`,
@@ -687,7 +704,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
 // intro, quanto custa, estacionamentos com link, FAQ do destino.
 // ---------------------------------------------------------------------------
 {
-  fs.mkdirSync(path.join(DIST, "destinos"), { recursive: true });
+  fs.mkdirSync(path.join(DIST, "estacionamentos"), { recursive: true });
   const precoPorSlugDest = new Map(destinosComPreco.map((d) => [d.slug, d]));
 
   for (const d of destinations) {
@@ -695,7 +712,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
     const linhas = [
       "---",
       `title: "Estacionamento ${rotulo} | Movepark"`,
-      `canonical: ${SITE_URL}/destinos/${d.slug}`,
+      `canonical: ${SITE_URL}${cDestino(d)}`,
       `updated: ${hoje}`,
       "---",
       "",
@@ -721,7 +738,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
       linhas.push(
         `Preços do motor de reservas da Movepark, conferidos em ${hojeBR}. O valor entre parênteses é o balcão do estacionamento, sem reserva.`,
         "",
-        `Tabela completa: ${SITE_URL}/precos/${d.slug}`,
+        `Tabela completa: ${SITE_URL}${cPrecos(d)}`,
         `Como apuramos: ${SITE_URL}/metodologia`,
         "",
       );
@@ -788,21 +805,21 @@ function tabelaTopMarkdown(dest, limit = 5) {
 
     linhas.push(
       `Reservar: ${SITE_URL}/search?dest=${encodeURIComponent(d.code)}`,
-      `Todos os destinos: ${SITE_URL}/destinos`,
+      `Todos os destinos: ${SITE_URL}/estacionamentos`,
       "",
     );
 
     linhas.push(...blocoAchados);
-    fs.writeFileSync(path.join(DIST, "destinos", `${d.slug}.md`), linhas.join("\n"));
+    fs.writeFileSync(path.join(DIST, "estacionamentos", `${pubSlug(d)}.md`), linhas.join("\n"));
   }
 }
 
 // ---------------------------------------------------------------------------
-// estacionamento-mais-barato/<slug>.md — a intenção "mais barato" em Markdown,
+// estacionamentos/<destino>/mais-barato.md: a intenção "mais barato" em Markdown,
 // com vencedor e segunda opção por duração (mesma regra da página React).
 // ---------------------------------------------------------------------------
 {
-  fs.mkdirSync(path.join(DIST, "estacionamento-mais-barato"), { recursive: true });
+
 
   for (const dest of destinosComPreco) {
     const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
@@ -823,7 +840,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
     const linhas = [
       "---",
       `title: "Estacionamento mais barato em ${nome} (${dest.code}) | Movepark"`,
-      `canonical: ${SITE_URL}/estacionamento-mais-barato/${dest.slug}`,
+      `canonical: ${SITE_URL}${cMaisBarato(dest)}`,
       `updated: ${hoje}`,
       "---",
       "",
@@ -835,8 +852,8 @@ function tabelaTopMarkdown(dest, limit = 5) {
       "| --- | --- | --- | --- |",
       ...linhasTabela,
       "",
-      `Tabela completa e preço de balcão: ${SITE_URL}/precos/${dest.slug}`,
-      `Reservar: ${SITE_URL}/destinos/${dest.slug}`,
+      `Tabela completa e preço de balcão: ${SITE_URL}${cPrecos(dest)}`,
+      `Reservar: ${SITE_URL}${cDestino(dest)}`,
       "",
     ];
 
@@ -847,15 +864,12 @@ function tabelaTopMarkdown(dest, limit = 5) {
         "",
         "O comparativo acima cobre os estacionamentos com reserva online pela Movepark. Estes são os demais lotes mapeados na região, incluindo o oficial do aeroporto quando existe; a ficha traz endereço, mapa e a nota do Google, e o preço se confirma na cotação com o próprio estacionamento.",
         "",
-        ...mapeadosMd.map((m) => `- [${m.name}](${SITE_URL}/estacionamentos/${dest.slug}/${m.slug})`),
+        ...mapeadosMd.map((m) => `- [${m.name}](${SITE_URL}${cDestino(dest)}/${m.slug})`),
         "",
       );
     }
     linhas.push(...blocoAchados);
-    fs.writeFileSync(
-      path.join(DIST, "estacionamento-mais-barato", `${dest.slug}.md`),
-      linhas.join("\n"),
-    );
+    escreverNoDestino(dest, "mais-barato.md", linhas.join("\n"));
   }
 }
 

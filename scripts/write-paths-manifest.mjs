@@ -88,13 +88,14 @@ const lista = [...caminhos].map((c) => c.toLowerCase()).sort();
  * manifesto viaja incompleto. Exigir uma entrada de cada família é o que detecta isso.
  */
 const FAMILIAS = [
-  ["/p/", "unidades"],
-  ["/destinos/", "destinos"],
-  ["/blog/", "posts do blog"],
+  // Uma pasta para o catálogo: o destino tem 2 segmentos e a ficha tem 3, então a checagem
+  // olha a profundidade, senão "existe alguma coisa em /estacionamentos/" passaria com só
+  // metade do catálogo no ar. Ver docs/specs/url-estacionamentos.md.
+  [(c) => /^\/estacionamentos\/[^/]+$/.test(c), "destinos"],
+  [(c) => /^\/estacionamentos\/[^/]+\/[^/]+$/.test(c), "fichas de estacionamento"],
+  [(c) => c.startsWith("/blog/"), "posts do blog"],
 ];
-const faltando = FAMILIAS.filter(([prefixo]) => !lista.some((c) => c.startsWith(prefixo))).map(
-  ([, nome]) => nome,
-);
+const faltando = FAMILIAS.filter(([bate]) => !lista.some((c) => bate(c))).map(([, nome]) => nome);
 if (faltando.length > 0) {
   console.error(
     `paths-manifest: build sem ${faltando.join(", ")}. ` +

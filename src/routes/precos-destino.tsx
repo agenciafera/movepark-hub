@@ -21,6 +21,7 @@ import {
   type PriceDestination,
 } from "@/features/price-index/priceIndex.logic";
 import { SITE_URL } from "@/lib/site";
+import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
 
 export type PrecosDestinoData = {
   days: number[];
@@ -113,6 +114,7 @@ export default function PrecosDestinoPage() {
   }
 
   const { days, destination, others, generatedAt } = data;
+  const destinoSlug = destination.public_slug ?? destination.slug;
   const nome = destination.short_name ?? destination.name;
   const matrix = buildMatrix(destination, days);
   const summary = destinationSummary(destination, days);
@@ -376,7 +378,7 @@ export default function PrecosDestinoPage() {
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Button asChild>
-            <Link to={`/destinos/${destination.slug}`}>Ver estacionamentos em {nome}</Link>
+            <Link to={caminhoDestino(destinoSlug)}>Ver estacionamentos em {nome}</Link>
           </Button>
           <Link
             to="/search"
@@ -393,7 +395,7 @@ export default function PrecosDestinoPage() {
               {others.map((o) => (
                 <li key={o.slug}>
                   <Link
-                    to={`/precos/${o.slug}`}
+                    to={caminhoPrecos(o.slug)}
                     className="text-body-md text-ink underline-offset-2 hover:text-mp-primary hover:underline"
                   >
                     {o.short_name ?? o.name}

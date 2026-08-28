@@ -22,6 +22,7 @@ function dest(overrides: Partial<Destination> = {}): Destination {
     name: "Aeroporto de Guarulhos",
     short_name: "Guarulhos",
     slug: "aeroporto-de-guarulhos",
+    public_slug: "aeroporto-de-guarulhos",
     type: "airport",
     city: "Guarulhos",
     state: "SP",
@@ -39,7 +40,7 @@ function render() {
     <HelmetProvider>
       <DestinosPage />
     </HelmetProvider>,
-    { route: "/destinos" },
+    { route: "/estacionamentos" },
   );
 }
 
@@ -48,7 +49,7 @@ beforeEach(() => {
 });
 
 describe("DestinosPage", () => {
-  it("renderiza H1 e separa destinos populares de outros, com links para cada /destinos/:slug", () => {
+  it("renderiza H1 e separa destinos populares de outros, com links para cada /estacionamentos/:destino", () => {
     vi.mocked(useDestinations).mockReturnValue({
       data: [
         dest(),
@@ -58,6 +59,7 @@ describe("DestinosPage", () => {
           name: "Aeroporto de Viracopos",
           short_name: "Viracopos",
           slug: "aeroporto-de-viracopos",
+          public_slug: "aeroporto-de-viracopos",
           city: "Campinas",
           is_popular: false,
         }),
@@ -73,9 +75,9 @@ describe("DestinosPage", () => {
     expect(screen.getByRole("heading", { name: /Outros destinos/i })).toBeInTheDocument();
 
     const gru = screen.getByRole("link", { name: /Guarulhos/i });
-    expect(gru).toHaveAttribute("href", "/destinos/aeroporto-de-guarulhos");
+    expect(gru).toHaveAttribute("href", "/estacionamentos/aeroporto-de-guarulhos");
     const vcp = screen.getByRole("link", { name: /Viracopos/i });
-    expect(vcp).toHaveAttribute("href", "/destinos/aeroporto-de-viracopos");
+    expect(vcp).toHaveAttribute("href", "/estacionamentos/aeroporto-de-viracopos");
   });
 
   it("mostra estado vazio quando não há destinos publicados", () => {
