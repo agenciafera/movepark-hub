@@ -6,7 +6,9 @@ description: >-
   IAs (GEO: ChatGPT, Gemini, Perplexity, Claude, AI Overviews). Cobre revisão
   ortográfica, tom jovem e moderno, sintaxe de markdown válida sem nenhum HTML
   cru na tela, densidade de palavra-chave, palavra-chave na primeira frase, no
-  título, nos headings e no alt das imagens, link interno e link externo com
+  título, nos headings e no alt das imagens, imagens sempre geradas no
+  Higgsfield em .webp com a palavra-chave no nome do arquivo e no alt
+  (acessibilidade), link interno e link externo com
   contexto que nunca aponta para concorrente de estacionamento, mínimo de 3.000
   palavras, tabela de preços, Schema Markup e checagem de canibalização contra
   os 93 posts do acervo. Use SEMPRE que o pedido envolver post de blog do
@@ -209,7 +211,7 @@ category: guias
 tags: [traslado, economia, estadia-longa]
 author: <slug do autor>
 destination: aeroporto-de-confins
-cover_image_url: https://.../assets-public/blog/<slug>/capa.webp
+cover_image_url: https://.../assets-public/blog/<slug>/estacionamento-aeroporto-confins.webp
 cover_alt: estacionamento no aeroporto de Confins com vagas cobertas
 ---
 ```
@@ -264,7 +266,39 @@ Afonso Pena, Guarulhos, Humberto Delgado. Lista completa em
 do projeto (travessão, "não é X, é Y", regra de três, superlativo vazio,
 prolixidade) e vale para o post inteiro, não só para os títulos.
 
-## Passo 5: medir com o analisador
+## Passo 5: imagens (Higgsfield, .webp, palavra-chave no nome e no alt)
+
+Toda imagem do post nasce no **Higgsfield** e chega ao leitor em **`.webp`**. Sem
+exceção: para post de blog, esta regra **sobrepõe a skill `gerar-imagens-gemini`**
+(que segue valendo para o resto do projeto).
+
+1. **Gerar no Higgsfield.** Use o conector MCP do Higgsfield: `generate_image`
+   para uma imagem, `generate_image_batch` + `jobs_wait` para várias independentes.
+   Se as tools não estiverem carregadas, busque com `ToolSearch` por
+   "higgsfield generate image". Prompt descritivo em inglês (assunto,
+   enquadramento, luz, estilo fotográfico realista, sem texto sobreposto);
+   aspect ratio 16:9 para capa e imagens de corpo.
+2. **O nome do arquivo carrega a palavra-chave**, em kebab-case, sem acento e sem
+   stopwords: a capa é `<palavra-chave>.webp` (ex.:
+   `estacionamento-aeroporto-guarulhos.webp`) e as demais acrescentam um sufixo
+   do que mostram (`estacionamento-aeroporto-guarulhos-traslado.webp`). Nome
+   genérico (`capa.webp`, `imagem1.webp`, `hero.webp`, hash) é proibido: o nome
+   do arquivo é sinal de SEO de imagem e o analisador cobra.
+3. **Formato sempre `.webp`**, largura máxima 1600px. O Higgsfield devolve
+   PNG/JPEG; baixe e converta antes de subir:
+
+```bash
+cwebp -q 82 -resize 1600 0 entrada.png -o estacionamento-aeroporto-guarulhos.webp
+```
+
+4. **Alt em toda imagem, sem exceção** (é acessibilidade, não enfeite): descreva
+   em pt-BR o que a imagem mostra, sem começar com "imagem de" ou "foto de". A
+   capa (e pelo menos uma imagem do corpo, quando houver várias) leva a
+   palavra-chave no alt de forma natural; as demais variam a descrição, porque
+   alt idêntico repetido é penalizado (regra em
+   [`references/yoast-criterios.md`](references/yoast-criterios.md)).
+
+## Passo 6: medir com o analisador
 
 Não declare o post otimizado sem rodar isto. O script implementa os critérios do
 Yoast adaptados ao projeto, e falha alto no que quebra o site.
@@ -287,7 +321,7 @@ Cuidado com o vício clássico: o objetivo é o texto bom que passa na medida, n
 medida verde num texto pior. Se para chegar em 1% de densidade a frase-chave
 precisar entrar torta em oito lugares, o problema é a frase-chave, não o texto.
 
-## Passo 6: Schema Markup
+## Passo 7: Schema Markup
 
 A página do post emite `BlogPosting`, `BreadcrumbList` e `FAQPage` sozinha
 (`src/routes/blog-post.tsx` com os helpers de `src/lib/jsonld.ts`), e o `.md` para
@@ -315,7 +349,7 @@ qualquer post daquele aeroporto, linke para `/faq/<slug>` em vez de repetir.
 As receitas e o que ainda exigiria código estão em
 [`references/schema-markup.md`](references/schema-markup.md).
 
-## Passo 7: publicar
+## Passo 8: publicar
 
 **Publicação é ação externa. Nunca marque `is_published: true` sem o usuário
 mandar.** Entregue como rascunho, mostre o relatório do analisador e pergunte.
@@ -333,9 +367,10 @@ Ao publicar, três coisas acontecem juntas, e faltar uma deixa o post capenga:
    escrito no Hub não ganha o arquivo sozinho: escreva você, no mesmo formato de
    cabeçalho dos 93 existentes (título, resumo em citação, data, URL canônica,
    link do destino, `---`, corpo).
-3. **Imagens no Storage**, em `assets-public/blog/<slug>/`, em WebP, largura
-   máxima 1600px. Nunca hotlink de terceiro (os 10 hotlinks do Bing herdados já
-   vinham quebrando e carregavam risco autoral).
+3. **Imagens no Storage**, em `assets-public/blog/<slug>/`, geradas no
+   Higgsfield, em `.webp` com a palavra-chave no nome do arquivo e alt em todas
+   (Passo 5), largura máxima 1600px. Nunca hotlink de terceiro (os 10 hotlinks
+   do Bing herdados já vinham quebrando e carregavam risco autoral).
 
 Depois: `bun run test` e `bun run typecheck` verdes, `git status` sem untracked
 que o código referencia, commit e push na `main`. O deploy sai sozinho em ~2
@@ -351,7 +386,7 @@ Antes de dizer que o post está pronto:
    ortografia feita com atenção, não em diagonal.
 3. Zero HTML, zero travessão, zero bloco de código, títulos entre `##` e `####`.
 4. Frase-chave no título, na primeira frase, em parte dos H2/H3, no slug, na meta
-   description e em pelo menos um alt.
+   description, em pelo menos um alt e no nome dos arquivos de imagem.
 5. Pelo menos um link para `/estacionamentos/<slug>`, dois ou três para outros posts, e
    um externo de fonte reconhecida com rótulo que diz o que é.
 6. 3.000 palavras ou mais, com tabela onde houver dado comparável.
@@ -361,7 +396,8 @@ Antes de dizer que o post está pronto:
    `?`, resposta em parágrafo logo abaixo, no mínimo duas), com pergunta própria do
    post e não cópia de `/faq/<slug>`. Abertura autossuficiente, números com unidade.
 9. Front matter completo, `category`, `tags` e `destination` dentro dos catálogos.
-10. `public/blog/<slug>.md` escrito, imagens no Storage, tudo commitado.
+10. `public/blog/<slug>.md` escrito; imagens geradas no Higgsfield, em `.webp`
+    com a palavra-chave no nome e alt em todas, no Storage; tudo commitado.
 11. Publicação só depois do "pode publicar" do usuário.
 
 ## Referências

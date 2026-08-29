@@ -9,8 +9,10 @@ description: >-
   (ex.: "faz um desenho de...", "preciso de uma foto de...", "cria um banner
   pra..."). É o provedor de imagem oficial deste projeto: NUNCA use outro gerador
   de imagens (nem SVG à mão, nem outro serviço de IA) quando o pedido for uma
-  imagem rasterizada. Para diagramas/gráficos vetoriais simples, prefira as
-  ferramentas de visualização normais; esta skill é para imagens geradas por IA.
+  imagem rasterizada. EXCEÇÃO: imagem de post do blog é gerada no Higgsfield
+  (regra da skill blogpost-seo-geo). Para diagramas/gráficos vetoriais simples,
+  prefira as ferramentas de visualização normais; esta skill é para imagens
+  geradas por IA.
 ---
 
 # Gerar imagens com o MCP gemini-image
@@ -19,6 +21,11 @@ Neste projeto, **toda imagem gerada por IA sai do MCP `gemini-image`** (pacote
 `@houtini/gemini-mcp`, que roda o Google Gemini / Nano Banana Pro). A config e a
 chave já vivem no `.mcp.json` do projeto, no servidor `gemini-image`. Não troque
 de provedor, não invente chave, não gere a imagem "na mão".
+
+**Exceção única: imagem de post do blog.** Imagem que vai para um blogpost
+(capa ou corpo) é gerada no **Higgsfield**, seguindo o Passo 5 da skill
+`blogpost-seo-geo` (nome de arquivo com a palavra-chave, `.webp`, alt em todas).
+Para todo o resto do projeto, o Gemini continua sendo o provedor.
 
 ## Como chamar
 

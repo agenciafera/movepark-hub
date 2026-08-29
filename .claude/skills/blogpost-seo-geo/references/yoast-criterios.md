@@ -68,6 +68,16 @@ e cobertura de tema é sinal.
 **Alt das imagens.** Toda imagem precisa de alt, e pelo menos um alt precisa da
 frase-chave. Todos os alts com a mesma frase é laranja: alt descreve a imagem,
 não é campo de keyword. Vale para a capa, que no card do índice é o nome do link.
+Alt é acessibilidade antes de ser SEO: é o que o leitor de tela anuncia.
+
+**Formato das imagens.** Toda imagem (capa incluída) em `.webp`; qualquer outra
+extensão é vermelho. É regra do projeto (Passo 5 da skill): a imagem nasce no
+Higgsfield em PNG/JPEG e é convertida antes de subir ao Storage.
+
+**Frase-chave no nome do arquivo.** Todo arquivo de imagem carrega as palavras de
+conteúdo da frase-chave em kebab-case (a capa é `<palavra-chave>.webp`, as demais
+ganham sufixo do que mostram). Nome genérico (`capa.webp`, `hero.webp`, hash) é
+vermelho: o nome do arquivo é sinal de SEO de imagem que o Google Imagens lê.
 
 **Link interno.** Pelo menos um, e pelo menos um para `/estacionamentos/<slug>`. O link
 para o destino é vermelho quando falta: sem ele o post preserva ranking e

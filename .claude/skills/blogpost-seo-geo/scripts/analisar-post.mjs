@@ -264,6 +264,42 @@ if (!todasImagens.length) {
   else if (chave && comChave === todasImagens.length && todasImagens.length > 2)
     laranja(G_SEO, "Frase-chave no alt", "Todos os alts repetem a frase-chave. Descreva a imagem, varie.");
   else if (chave) verde(G_SEO, "Frase-chave no alt", `${comChave} de ${todasImagens.length}.`);
+
+  // 2.6b formato e nome do arquivo (Passo 5: Higgsfield, .webp, chave no nome)
+  const nomeArquivo = (src) => {
+    const semQuery = src.split(/[?#]/)[0];
+    return semQuery.slice(semQuery.lastIndexOf("/") + 1);
+  };
+  const foraDoWebp = todasImagens.filter((i) => !/\.webp$/i.test(nomeArquivo(i.src)));
+  if (foraDoWebp.length)
+    vermelho(
+      G_SEO,
+      "Formato das imagens",
+      `${foraDoWebp.length} de ${todasImagens.length} fora do .webp: ${foraDoWebp
+        .map((i) => nomeArquivo(i.src))
+        .join("; ")}. O formato do blog é sempre .webp.`,
+    );
+  else verde(G_SEO, "Formato das imagens", "Todas em .webp.");
+  if (chave) {
+    const tokens = norm(chave)
+      .split(" ")
+      .filter((p) => p && !new RegExp(`^${LIGACAO}$`).test(p))
+      .map((p) => (p.length > 4 ? p.replace(/s$/, "") : p));
+    const temChaveNoNome = (i) => {
+      const nome = norm(nomeArquivo(i.src)).replace(/[-_.]/g, " ");
+      return tokens.every((t) => nome.includes(t));
+    };
+    const semChaveNoNome = todasImagens.filter((i) => !temChaveNoNome(i));
+    if (semChaveNoNome.length)
+      vermelho(
+        G_SEO,
+        "Frase-chave no nome do arquivo",
+        `${semChaveNoNome.length} de ${todasImagens.length} sem a frase-chave no nome: ${semChaveNoNome
+          .map((i) => nomeArquivo(i.src))
+          .join("; ")}. Padrão: <palavra-chave>.webp (ex.: estacionamento-aeroporto-guarulhos.webp).`,
+      );
+    else verde(G_SEO, "Frase-chave no nome do arquivo", "Todos os nomes carregam a frase-chave.");
+  }
 }
 
 // 2.7 links
