@@ -336,10 +336,39 @@ Daí as três regras, implementadas em [`src/lib/seo.ts`](../../src/lib/seo.ts) 
 Os H2 variam a forma de propósito. Repetir o bigrama exato em título, H1 e todos os H2 da
 mesma página é sinal de spam, não de relevância.
 
-**Destino que não é aeroporto** (`type != 'airport'`) não recebe a palavra "aeroporto", e os
-H2 de traslado e mapa voltam ao texto genérico, porque o artigo mudaria de gênero
-("Traslado até o Rodoviária Tietê" está errado). O Tietê também trocou de rótulo: é buscado
-como "rodoviária tietê" (2.842 impressões somadas), não como "terminal rodoviário".
+**Destino que não é aeroporto** (`type != 'airport'`) não recebe a palavra "aeroporto". O
+artigo do H2 vem do tipo (`bus_terminal` é o único feminino do catálogo), e não de um texto
+genérico: até 29/08/2026 o traslado e o mapa caíam em "Como funciona o traslado" e
+"Localização" só para não escrever "Traslado até o Rodoviária Tietê", e a página perdia a
+palavra-chave em dois cabeçalhos. Agora sai "Traslado até a Rodoviária Tietê" e "Onde fica a
+Rodoviária Tietê". Tipo novo entra na função `artigo` de [`src/lib/seo.ts`](../../src/lib/seo.ts)
+junto com o artigo dele. O Tietê também trocou de rótulo: é buscado como "rodoviária tietê"
+(2.842 impressões somadas), não como "terminal rodoviário".
+
+### A intro abre pela consulta que a página responde
+
+As 26 intros abriam com um parágrafo enciclopédico sobre o aeroporto ("O Aeroporto
+Internacional de Viracopos, o VCP, fica em Campinas...") e **nenhuma citava "estacionamento"
+nos primeiros 200 caracteres**. Título, H1 e H2 já falavam a palavra-chave; o corpo respondia
+outra pergunta, e o primeiro parágrafo é onde o leitor e o extrator de IA decidem do que a
+página trata.
+
+Desde 29/08/2026 (migration `20261105090000`) toda intro tem:
+
+1. **Abertura com a palavra-chave na primeira frase**, dizendo o que a página entrega: preço
+   da diária, distância até o terminal e tipo de vaga.
+2. **O miolo factual do aeroporto intacto**, que é o que sustenta a página depois da abertura
+   e o que responde "onde fica" para quem pergunta a uma IA.
+3. **Fecho com o termo no plural** ("os estacionamentos Aeroporto Viracopos da lista abaixo"),
+   no lugar do "Nesta página você conhece melhor o aeroporto" que não dizia nada.
+
+A abertura **não promete condição de transação** (ADR-009): ela fala do que a página tem, não
+do que a reserva garante, porque na mesma lista convivem unidade que fecha no Hub e lote que
+nem vende reserva online.
+
+Medido no `dist` depois da mudança: Viracopos com 2.053 palavras e a frase exata em 6
+posições (H1, H2 da lista, nome dos cards, fecho da intro e H2 da FAQ), densidade de 0,58%;
+Guarulhos em 0,94%.
 
 **Página da unidade** (`/p/...`) segue a mesma fonte, com a marca na frente:
 

@@ -74,23 +74,31 @@ export function destinationListHeading(d: SeoDestination): string {
   return `Estacionamentos ${seoLabelPrimaryWithCode(d)}`;
 }
 
-/** Verdadeiro quando o destino é aeroporto, o que libera os H2 com artigo masculino. */
+/** Verdadeiro quando o destino é aeroporto, o que muda a âncora da distância. */
 function ehAeroporto(d: SeoDestination): boolean {
   return d.type === "airport";
 }
 
 /**
- * H2 do bloco de traslado. Em aeroporto vira "Traslado até o Aeroporto Curitiba"; em
- * rodoviária ou bairro o artigo mudaria de gênero, então o texto genérico continua valendo.
- * Guardar a preposição no banco só para acertar isso seria caro para o que resolve.
+ * O artigo que acompanha o rótulo do destino, pelo tipo.
+ *
+ * Existe porque os H2 do destino que não é aeroporto caíam num texto genérico ("Localização",
+ * "Como funciona o traslado") só para não errar o gênero, e aí a página do Tietê perdia a
+ * palavra-chave em dois cabeçalhos. Rodoviária é o único feminino do catálogo; aeroporto,
+ * centro e bairro são masculinos. Um tipo novo entra aqui junto com o artigo dele.
  */
+function artigo(d: SeoDestination): "o" | "a" {
+  return d.type === "bus_terminal" ? "a" : "o";
+}
+
+/** H2 do bloco de traslado: "Traslado até o Aeroporto Curitiba", "até a Rodoviária Tietê". */
 export function shuttleHeading(d: SeoDestination): string {
-  return ehAeroporto(d) ? `Traslado até o ${seoLabelPrimary(d)}` : "Como funciona o traslado";
+  return `Traslado até ${artigo(d)} ${seoLabelPrimary(d)}`;
 }
 
 /** H2 do mapa. "onde fica o aeroporto de confins" tem 729 impressões e zero clique hoje. */
 export function locationHeading(d: SeoDestination): string {
-  return ehAeroporto(d) ? `Onde fica o ${seoLabelPrimary(d)}` : "Localização";
+  return `Onde fica ${artigo(d)} ${seoLabelPrimary(d)}`;
 }
 
 /** H2 da FAQ: "Perguntas frequentes: estacionamento Aeroporto Curitiba". */
@@ -98,9 +106,9 @@ export function faqHeading(d: SeoDestination): string {
   return `Perguntas frequentes: estacionamento ${seoLabelPrimary(d)}`;
 }
 
-/** H2 do bloco de melhores notas. Aqui a preposição fica, porque a frase é corrida. */
+/** H2 do bloco de melhores notas: "Mais bem avaliados no Aeroporto Curitiba". */
 export function topRatedHeading(d: SeoDestination): string {
-  return `Mais bem avaliados no ${seoLabelPrimary(d)}`;
+  return `Mais bem avaliados n${artigo(d)} ${seoLabelPrimary(d)}`;
 }
 
 /**
@@ -109,9 +117,7 @@ export function topRatedHeading(d: SeoDestination): string {
  * página e a que o comparador concorrente responde em tabela.
  */
 export function priceHeading(d: SeoDestination): string {
-  return ehAeroporto(d)
-    ? `Quanto custa estacionar no ${seoLabelPrimary(d)}`
-    : `Quanto custa estacionar em ${seoLabelPrimary(d)}`;
+  return `Quanto custa estacionar n${artigo(d)} ${seoLabelPrimary(d)}`;
 }
 
 /**
@@ -122,7 +128,7 @@ export function priceHeading(d: SeoDestination): string {
 export function proximityHeading(d: SeoDestination): string {
   return ehAeroporto(d)
     ? `Distância até o terminal do ${seoLabelPrimary(d)}`
-    : `Distância até ${seoLabelPrimary(d)}`;
+    : `Distância até ${artigo(d)} ${seoLabelPrimary(d)}`;
 }
 
 /** Sufixo da distância na lista: "328 m do terminal" em aeroporto e rodoviária. */

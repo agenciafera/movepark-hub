@@ -9,6 +9,8 @@ import {
   listingHeading,
   listingTitle,
   locationHeading,
+  priceHeading,
+  proximityHeading,
   seoLabel,
   seoLabelPrimary,
   seoLabelPrimaryWithCode,
@@ -32,7 +34,7 @@ const tiete = {
   seo_label: "Rodoviária Tietê, São Paulo",
   short_name: "Tietê",
   name: "Terminal Rodoviário Tietê",
-  type: "bus_station",
+  type: "bus_terminal",
 };
 
 describe("seoLabel", () => {
@@ -101,11 +103,20 @@ describe("H2 do destino", () => {
     expect(destinationListHeading(cwb)).toBe("Estacionamentos Aeroporto Curitiba (CWB)");
   });
 
-  it("traslado e mapa só usam artigo em aeroporto, onde o gênero é sempre o mesmo", () => {
+  // Antes, destino que não era aeroporto caía num H2 genérico ("Localização", "Como funciona
+  // o traslado") só para não errar o gênero, e a página do Tietê perdia a palavra-chave em
+  // dois cabeçalhos. O artigo vem do tipo do destino.
+  it("todo destino nomeia a palavra-chave no traslado e no mapa, com o artigo certo", () => {
     expect(shuttleHeading(cwb)).toBe("Traslado até o Aeroporto Curitiba");
     expect(locationHeading(cwb)).toBe("Onde fica o Aeroporto Curitiba");
-    expect(shuttleHeading(tiete)).toBe("Como funciona o traslado");
-    expect(locationHeading(tiete)).toBe("Localização");
+    expect(shuttleHeading(tiete)).toBe("Traslado até a Rodoviária Tietê");
+    expect(locationHeading(tiete)).toBe("Onde fica a Rodoviária Tietê");
+  });
+
+  it("preço, distância e avaliação seguem o mesmo artigo", () => {
+    expect(priceHeading(tiete)).toBe("Quanto custa estacionar na Rodoviária Tietê");
+    expect(proximityHeading(tiete)).toBe("Distância até a Rodoviária Tietê");
+    expect(topRatedHeading(tiete)).toBe("Mais bem avaliados na Rodoviária Tietê");
   });
 
   it("FAQ e avaliações também nomeiam o destino", () => {
