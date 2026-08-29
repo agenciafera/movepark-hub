@@ -524,6 +524,63 @@ Três decisões que a spec deixou em aberto e a execução teve de fechar:
 
 ---
 
+## Cobertura: de onde vêm os concorrentes
+
+**(E0.17-j)** · ✅ no ar em 29/08/2026.
+
+A seção de lote mapeado existia desde 11/08, mas quase não tinha o que mostrar: **14 dos 26
+destinos exibiam zero concorrente** e outros 4 exibiam um ou dois. A página prometia comparação
+e entregava vitrine da Movepark. É a comparação que faz um leitor confiar na página e um motor
+de IA citá-la, então cobertura aqui não é enfeite, é o produto.
+
+A rodada juntou duas fontes:
+
+1. **24 rascunhos que já existiam**, mapeados na curadoria do WordPress, com endereço, nunca
+   publicados. Um `update is_published = true` resolveu.
+2. **76 lotes novos do Google Places** (`searchText`), num raio de 12 km do aeroporto e 1,5 km
+   dos destinos urbanos, filtrados por `types` conter `parking` e por status operacional.
+   Inclui Lisboa, Porto e Faro, que tinham a lista vazia. Fecha em **143 publicados**.
+
+**A curadoria do nome foi manual, entrada por entrada.** A extração automática devolvia
+"Estacionamento", "Cgb", "Uber (Bolsão)" e endereço no lugar de marca, e nada disso pode virar
+`public_name`, que é título de página. Ficaram de fora locadora, hotel, estacionamento de
+universidade, bolsão de aplicativo e o próprio aeroporto, que o Places devolve porque tem pátio.
+
+**Parceiro não entra como concorrente.** O Places devolve Airpark, Redpark e Skypark em Lisboa,
+Airpark em Faro e Moveparking em Nova Iguaçu, e os cinco são nossos: já têm ficha vendável.
+Quem barrou os três primeiros foi o guarda de `public_slug` (a mesma URL não pode ser de uma
+`location` e de um `prospect_location` no mesmo destino), o que é a prova de que o guarda
+simétrico do E0.17 vale o que custa. Moveparking saiu na curadoria.
+
+**Lisboa, Porto e Faro entraram com dado, não com página.** Os três destinos estão
+`is_published = false`, então o SSG não gera `/estacionamentos/aeroporto-lisboa` e os 14 lotes
+de lá não aparecem em lugar nenhum hoje. Estão prontos para o dia em que Portugal for
+publicado, e é por isso que a contagem de publicados (143) é maior que a soma das páginas.
+
+### O que ficou curto, e por quê
+
+| Destino | Concorrentes | Motivo |
+|---|---|---|
+| Maceió | 1 | O Places só devolve o pátio da Estapar. O resto é locadora ou shopping a 13 km. |
+| João Pessoa | 1 | Idem. Estapar é o único lote de aeroporto na praça. |
+| Teresina | 2 | O pátio oficial que a busca trouxe já era o rascunho "Smartpark Teresina", mesmo `google_place_id`, e o `on conflict` deduplicou. |
+
+Não é falha da busca, é o mercado dessas três praças. Subir de 1 para 3 ali exige pesquisa de
+campo, não outra query. Fica registrado para o time decidir.
+
+### Notas de implementação
+
+- A chave do Maps é restrita por **HTTP referrer**, então a chamada ao Places precisa mandar
+  `Referer: https://movepark.co/`. É o mesmo motivo pelo qual a Edge `google-place-refresh`
+  manda esse header.
+- `data_source = 'google_places'` e `google_place_id` preenchidos em todos: a deduplicação é por
+  `place_id` (D-009), e foi ela que pegou o caso de Teresina sozinha.
+- `public_name` sai de `unit_public_name(marca, destination_id)`, então o nome da página segue o
+  padrão `{unidade} - Estacionamento {destino}` sem precisar escrever nada à mão.
+- Pátio do próprio aeroporto entra como **"Oficial do Aeroporto"**, não como o nome que o Places
+  devolve. "Estacionamento do Aeroporto de Teresina - Estacionamento Aeroporto Teresina" seria o
+  resultado do nome cru.
+
 ## Higiene dos registros legados
 
 **(E0.17-b)** · ✅ no ar em 11/08/2026, e a apuração mudou a premissa.
@@ -611,3 +668,4 @@ Candidatas a chave, provavelmente em cascata:
 - [x] A conversão grava a procedência, é idempotente (carimba só a primeira unidade) e **não** publica oferta. Sem `convert_prospect_location()` transacional: o carimbo entra no `onboarding_upsert_location`, e o OTP ficou para quando houver volume.
 - [x] URL de ficha convertida faz 301 para a `location`, no Worker, antes dos assets. Enquanto a unidade não está listada o redirecionamento é 302 para a página do destino, porque o endereço definitivo ainda vai existir e 301 é o que ninguém revisita.
 - [x] Registros obsoletos resolvidos em `location` (11 soft delete, 1 inativa), preservando o que tem `booking`. Eram QA em produção, não prospecção: ver a seção. **Sobram 3 fixtures de QA listadas publicamente**, fora da lista da spec, aguardando decisão do time.
+- [x] Cobertura de concorrente: 23 dos 26 destinos com 3 ou mais lotes mapeados publicados. Maceió, João Pessoa e Teresina ficam abaixo por falta de mercado, não por falta de busca.
