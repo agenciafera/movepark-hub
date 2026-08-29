@@ -7,9 +7,11 @@ de quem escreve, senão a regra vale só enquanto alguém lembra dela.
 
 ## Link interno
 
-**Pelo menos um para `/destinos/<slug>`.** É a página que converte e onde mora o
+**Pelo menos um para `/estacionamentos/<slug>`.** É a página que converte e onde mora o
 preço vivo. Sem ela, o post preserva o ranking e desperdiça a visita, porque não
 tem para onde mandar o leitor. O analisador trata a ausência como bloqueio.
+Link antigo para `/destinos/<slug>` segue contando enquanto o 301 da borda
+existir, mas post novo usa o caminho novo.
 
 **Dois ou três para outros posts.** O acervo tem 93. Link entre posts distribui
 autoridade e ajuda o Google a entender que existe um cluster sobre aquele
@@ -19,7 +21,7 @@ aeroporto, com uma página principal (o destino) e satélites (os posts).
 funciona; "clique aqui" não. O texto do link é sinal de relevância para o alvo, e
 é a única pista que o leitor tem antes de clicar.
 
-**Caminho relativo.** Use `/destinos/aeroporto-de-confins`, não a URL absoluta.
+**Caminho relativo.** Use `/estacionamentos/aeroporto-de-confins`, não a URL absoluta.
 Post do blog termina com barra: `/blog/<slug>/`. Sem a barra, o worker devolve
 301, e um salto interno desnecessário é desperdício.
 

@@ -141,7 +141,7 @@ select * from public.destination_prospect_cards('aeroporto-de-confins');
 
 | Origem | Como o preço entra no post | Envelhece? |
 |---|---|---|
-| **Parceiro** | Do motor de reservas, pelo `destination_price_index`. É o mesmo valor cobrado no checkout | Não. O link para `/destinos/<slug>` leva ao preço vivo |
+| **Parceiro** | Do motor de reservas, pelo `destination_price_index`. É o mesmo valor cobrado no checkout | Não. O link para `/estacionamentos/<slug>` leva ao preço vivo |
 | **Não-parceiro** | Conferido na fonte por você, um a um, com nome da fonte e data da consulta no próprio post | **Sim, e ninguém avisa.** Ver abaixo |
 
 **Tabela de aeroporto sem parceiro é permitida, e é o que ganha essas praças.**
@@ -166,7 +166,7 @@ por isso que a data ao lado do número não é enfeite, é o que permite ao leit
 ao modelo saberem o quanto confiar.
 
 **O post é a única superfície onde esse preço aparece.** `/precos`,
-`/destinos/<slug>` e a ficha do lote seguem sem tarifa de não-parceiro, por
+`/estacionamentos/<slug>` e a ficha do lote seguem sem tarifa de não-parceiro, por
 ADR-010 e por [`docs/specs/indice-precos.md`](../../../docs/specs/indice-precos.md):
 lá o valor publicado é o valor cobrado, e essa é a vantagem estrutural sobre o
 índice do concorrente. No post o número é editorial, datado e sem botão de
@@ -185,7 +185,7 @@ ou uma regra de arquitetura do projeto.
 | O `#` do título nunca vai no corpo | O H1 é o `title` do post, renderizado pela página |
 | Zero travessão `—` e traço `–` | Regra do `CLAUDE.md` para o projeto inteiro. Use ponto, vírgula, dois-pontos ou " - " |
 | Nenhuma promessa de transação | **ADR-009**: post não declara capacidade. Nada de "vaga garantida", "cancelamento grátis", "preço fixo". A promessa mora na unidade, onde `getLocationCapabilities` manda |
-| Todo valor em R$ carrega **data de referência**. De parceiro, mais o link para `/destinos/<slug>`; de não-parceiro, mais o **nome da fonte** | Tarifa sem data vira promessa que o código não consegue retirar. O do parceiro tem o preço vivo a um clique; o do não-parceiro não tem para onde apontar, então a fonte nomeada é o que o substitui (portão 1.4) |
+| Todo valor em R$ carrega **data de referência**. De parceiro, mais o link para `/estacionamentos/<slug>`; de não-parceiro, mais o **nome da fonte** | Tarifa sem data vira promessa que o código não consegue retirar. O do parceiro tem o preço vivo a um clique; o do não-parceiro não tem para onde apontar, então a fonte nomeada é o que o substitui (portão 1.4) |
 | Link externo **nunca** para quem vende vaga | Inclui agregador, comparador, site próprio de parceiro, site de lote mapeado e a página de estacionamento do próprio aeroporto. Vale **mesmo quando ele é a fonte do preço**: cite pelo nome, não linke. Lista em [`scripts/fontes.json`](scripts/fontes.json), regra em [`references/links-e-fontes.md`](references/links-e-fontes.md) |
 | Slug publicado **nunca** muda | Os 93 slugs herdados são o contrato de URL que guarda o tráfego, congelados em `legacy-slugs.json`. Renomear é apagar uma URL que o Google conhece |
 | Slug novo **nunca** pode estar em `BLOG_CONSOLIDATED_SLUGS` | O worker responde 301 antes de servir a página. O post existiria no banco e apareceria no Manager, mas a URL nunca abriria, e a falha é silenciosa |
@@ -243,7 +243,7 @@ slug fora deles é recusado na escrita. `destination` é o slug do aeroporto em
 5. **FAQ no fim**, 5 a 8 perguntas reais, em `###` terminado em `?`, resposta de
    40 a 60 palavras cada no parágrafo logo abaixo. É esse formato que emite o
    `FAQPage` da página, e cada pergunta precisa ser própria do post.
-6. **CTA para `/destinos/<slug>`**, sem prometer nada que a unidade não declare.
+6. **CTA para `/estacionamentos/<slug>`**, sem prometer nada que a unidade não declare.
 
 **Tom: jovem e moderno, sem virar caricatura.** Segunda pessoa ("você chega no
 aeroporto e..."), frases curtas, verbo no presente, zero jargão corporativo. Sem
@@ -308,7 +308,7 @@ Abaixo de duas perguntas o bloco não é emitido, porque `FAQPage` descreve uma 
 
 **A regra de conteúdo que sustenta isso: a FAQ do post pergunta o que só aquele
 post responde.** As perguntas genéricas do aeroporto já respondem em `/faq/<slug>`,
-em `/destinos/<slug>` e na single (ADR-002); repetir uma delas aqui coloca a mesma
+em `/estacionamentos/<slug>` e na single (ADR-002); repetir uma delas aqui coloca a mesma
 pergunta com a mesma resposta numa quarta URL. Se a pergunta caberia igual em
 qualquer post daquele aeroporto, linke para `/faq/<slug>` em vez de repetir.
 
@@ -352,7 +352,7 @@ Antes de dizer que o post está pronto:
 3. Zero HTML, zero travessão, zero bloco de código, títulos entre `##` e `####`.
 4. Frase-chave no título, na primeira frase, em parte dos H2/H3, no slug, na meta
    description e em pelo menos um alt.
-5. Pelo menos um link para `/destinos/<slug>`, dois ou três para outros posts, e
+5. Pelo menos um link para `/estacionamentos/<slug>`, dois ou três para outros posts, e
    um externo de fonte reconhecida com rótulo que diz o que é.
 6. 3.000 palavras ou mais, com tabela onde houver dado comparável.
 7. Todo R$ com data de referência. De parceiro, com link para o preço vivo; de

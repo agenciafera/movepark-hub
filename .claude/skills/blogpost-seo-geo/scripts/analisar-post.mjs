@@ -272,6 +272,10 @@ const links = [...corpo.matchAll(/(?<!!)\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g)].map((
   href: m[2],
 }));
 const PROPRIO = /(^|\.)movepark\.co$/i;
+// Páginas que convertem: a ficha nova (/estacionamentos/, desde 28/08/2026) e a rota de
+// destino (/destinos/), aceita enquanto existir. /precos/ vale como preço vivo.
+const RE_CONVERSAO = /\/(estacionamentos|destinos)\//;
+const RE_PRECO_VIVO = /\/(estacionamentos|destinos|precos)\//;
 const hostDe = (href) => {
   try {
     return new URL(href).hostname.toLowerCase();
@@ -284,11 +288,15 @@ const externos = links.filter((l) => !internos.includes(l) && /^https?:/i.test(l
 
 if (!internos.length) vermelho(G_SEO, "Link interno", "Nenhum link interno. O post não leva a lugar nenhum do site.");
 else {
-  const paraDestino = internos.filter((l) => /\/destinos\//.test(l.href)).length;
+  const paraDestino = internos.filter((l) => RE_CONVERSAO.test(l.href)).length;
   const paraPost = internos.filter((l) => /\/blog\//.test(l.href)).length;
   if (!paraDestino)
-    vermelho(G_SEO, "Link para o destino", "Nenhum link para /destinos/<slug>. É a página que converte e onde mora o preço vivo.");
-  else verde(G_SEO, "Link para o destino", `${paraDestino} link(s) para /destinos/.`);
+    vermelho(
+      G_SEO,
+      "Link para o destino",
+      "Nenhum link para /estacionamentos/<slug> ou /destinos/<slug>. É a página que converte e onde mora o preço vivo.",
+    );
+  else verde(G_SEO, "Link para o destino", `${paraDestino} link(s) para página de conversão (/estacionamentos/ ou /destinos/).`);
   if (!paraPost) laranja(G_SEO, "Link interno para post", "Nenhum link para outro post. O acervo tem 93, use dois ou três relacionados.");
   else verde(G_SEO, "Link interno", `${internos.length} internos, ${paraPost} para outros posts.`);
 }
@@ -424,8 +432,12 @@ if (/R\$/.test(puro)) {
       "Há valor em R$ sem data de referência. Sem data a tarifa vira promessa que o código não consegue retirar (ADR-009).",
     );
   else verde(G_PRECO, "Data do preço", "Os valores estão datados.");
-  if (!internos.some((l) => /\/destinos\//.test(l.href)))
-    vermelho(G_PRECO, "Preço vivo", "Valor no corpo sem link para /destinos/, onde o preço é o de verdade.");
+  if (!internos.some((l) => RE_PRECO_VIVO.test(l.href)))
+    vermelho(
+      G_PRECO,
+      "Preço vivo",
+      "Valor no corpo sem link para /estacionamentos/, /precos/ ou /destinos/, onde o preço é o de verdade.",
+    );
 }
 const promessa =
   /(vaga garantida|garantimos|cancelamento gr[áa]tis|cancele quando quiser|reembolso garantido|pre[çc]o fixo)/i.exec(

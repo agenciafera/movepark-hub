@@ -47,7 +47,7 @@ dela em `/faq/<slug>`.
 ### A regra de conteúdo que sustenta isso
 
 **A FAQ do post pergunta o que só aquele post responde.** As perguntas de escopo
-global e de destino já respondem em `/faq/<slug>`, em `/destinos/<slug>` e na
+global e de destino já respondem em `/faq/<slug>`, em `/estacionamentos/<slug>` e na
 single da unidade (ADR-002). Copiar uma delas para o fim do post coloca a mesma
 pergunta com a mesma resposta numa quarta URL, que é exatamente a canibalização que
 o acervo já sofre.

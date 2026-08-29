@@ -69,10 +69,11 @@ e cobertura de tema é sinal.
 frase-chave. Todos os alts com a mesma frase é laranja: alt descreve a imagem,
 não é campo de keyword. Vale para a capa, que no card do índice é o nome do link.
 
-**Link interno.** Pelo menos um, e pelo menos um para `/destinos/<slug>`. O link
+**Link interno.** Pelo menos um, e pelo menos um para `/estacionamentos/<slug>`. O link
 para o destino é vermelho quando falta: sem ele o post preserva ranking e
 desperdiça a visita. Link para outros posts é laranja quando falta, e o acervo
-tem 93 para escolher.
+tem 93 para escolher. O analisador ainda aceita `/destinos/<slug>`, que hoje
+redireciona 301 na borda; post novo usa o caminho novo.
 
 **Link externo.** Pelo menos um, com rótulo que diz o que é. "Clique aqui" é
 laranja. Concorrente é vermelho. Ver `links-e-fontes.md`.
@@ -112,10 +113,11 @@ herdados já usam tabela, quase sempre para comparar preço, traslado e diferenc
 agosto de 2026", "consultado em 08/2026"). Sem data, vermelho: o ADR-009 trata
 tarifa fixa no corpo como dívida, porque no dia em que a unidade mudar de
 `checkout_mode` o texto vira promessa falsa que o código não consegue retirar.
-Com data e link para `/destinos/<slug>`, o número é um retrato datado e o preço
+Com data e link para `/estacionamentos/<slug>`, o número é um retrato datado e o preço
 vivo fica a um clique.
 
-**Preço vivo.** R$ no corpo sem link para `/destinos/` é vermelho, pelo mesmo motivo.
+**Preço vivo.** R$ no corpo sem link para `/estacionamentos/`, `/precos/` ou
+`/destinos/` é vermelho, pelo mesmo motivo.
 
 **Promessa de transação.** "Vaga garantida", "cancelamento grátis", "cancele
 quando quiser", "reembolso garantido", "preço fixo" são vermelhos. Post não
