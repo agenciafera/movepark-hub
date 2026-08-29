@@ -22,6 +22,7 @@ function dest(overrides: Partial<Destination> = {}): Destination {
     name: "Aeroporto Internacional do Recife/Guararapes",
     short_name: "Recife (REC)",
     slug: "aeroporto-internacional-do-recife-guararapes",
+    public_slug: "aeroporto-recife",
     type: "airport",
     city: "Recife",
     state: "PE",
@@ -211,9 +212,9 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
       longitude: -34.9156297,
     });
     expect(facility.address.addressLocality).toBe("Recife");
-    expect(facility.url).toBe(
-      "https://movepark.co/estacionamentos/aeroporto-internacional-do-recife-guararapes/talentos-park-aeroporto-recife",
-    );
+    // Os dois slugs públicos, nunca os internos: o par antigo responde 301 e canonical
+    // apontando pra URL que redireciona é loop (regressão de 29/08/2026).
+    expect(facility.url).toBe("https://movepark.co/estacionamentos/aeroporto-recife/talentos-park");
   });
 
   /**

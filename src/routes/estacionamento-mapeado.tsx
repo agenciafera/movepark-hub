@@ -17,7 +17,7 @@ import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld
 import { formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
-import { caminhoDestino } from "@/lib/urls";
+import { caminhoDestino, caminhoFicha } from "@/lib/urls";
 
 export type EstacionamentoMapeadoLoaderData = {
   destination: Destination;
@@ -67,7 +67,9 @@ export default function EstacionamentoMapeadoPage() {
   const destinoSlug = (destination.public_slug ?? destination.slug) as string;
   const faqItems = data.faqs ?? [];
   const destinationLabel = destination.short_name ?? destination.name;
-  const canonical = `${SITE_URL}/estacionamentos/${destination.slug}/${prospect.slug}`;
+  // Os dois slugs públicos, nunca os internos: o par antigo responde 301 pra cá, e
+  // canonical apontando pra URL que redireciona é loop que derruba a indexação.
+  const canonical = `${SITE_URL}${caminhoFicha(destinoSlug, prospect.public_slug ?? prospect.slug)}`;
   const distancia = prospect.distance_km == null ? null : formatDistance(prospect.distance_km);
 
   const title = tituloLoteMapeado(prospect.name, destination.city);
@@ -105,8 +107,8 @@ export default function EstacionamentoMapeadoPage() {
           {JSON.stringify(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
-              { name: "Destinos", url: `${SITE_URL}/destinos` },
-              { name: destinationLabel, url: `${SITE_URL}/destinos/${destination.slug}` },
+              { name: "Destinos", url: `${SITE_URL}/estacionamentos` },
+              { name: destinationLabel, url: `${SITE_URL}${caminhoDestino(destinoSlug)}` },
               { name: prospect.name, url: canonical },
             ]),
           )}

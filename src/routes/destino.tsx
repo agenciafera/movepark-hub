@@ -224,7 +224,9 @@ export default function DestinoPage() {
   }
 
   const title = destination.meta_title ?? destinationTitle(destination);
-  const canonical = `${SITE_URL}/destinos/${destination.slug}`;
+  // O caminho público, nunca o slug interno: /destinos/<slug> agora responde 301 de volta
+  // pra cá, e canonical apontando pra URL que redireciona é loop que derruba a indexação.
+  const canonical = `${SITE_URL}${caminhoDestino(destinoSlug)}`;
   // Imagem otimizada (resize/transform do Supabase). O og:image é 1.91:1 (1200×630,
   // padrão de card social); pro JSON-LD damos também a versão quadrada (1:1), porque o
   // Google aceita múltiplas proporções e prefere ter 16:9/4:3/1:1. Tudo gerado on-the-fly
@@ -505,7 +507,7 @@ export default function DestinoPage() {
           {JSON.stringify(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
-              { name: "Destinos", url: `${SITE_URL}/destinos` },
+              { name: "Destinos", url: `${SITE_URL}/estacionamentos` },
               { name: destination.name, url: canonical },
             ]),
           )}

@@ -644,7 +644,7 @@ async function precosLoader(): Promise<PrecosIndexData | null> {
   const data = await fetchPriceIndex().catch(() => null);
   const { data: destinos } = await supabase
     .from("destination")
-    .select("slug, code, name, short_name, city, state")
+    .select("slug, public_slug, code, name, short_name, city, state")
     .eq("is_published", true)
     .eq("type", "airport")
     .order("sort_order");

@@ -108,7 +108,7 @@ export default function EstacionamentoMaisBaratoPage() {
           {JSON.stringify(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
-              { name: curto, url: `${SITE_URL}/destinos/${destino.slug}` },
+              { name: curto, url: `${SITE_URL}${caminhoDestino(destino.slug)}` },
               { name: "Mais barato", url: canonical },
             ]),
           )}

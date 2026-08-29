@@ -154,6 +154,23 @@ Medido no build: **439 páginas, 371 URLs no sitemap** (9 de unidade, contra 17 
 mesmos 9 estacionamentos), schema sem erro nem aviso, e **zero link para a gramática antiga
 em todo o `dist`**.
 
+### O que a virada esqueceu, e o conserto de 29/08/2026
+
+O "zero link para a gramática antiga" media os links do corpo, mas não o `<head>`. Dois dias
+depois da virada, medido em produção: a página do destino, o índice `/estacionamentos`, a
+página de preços do destino e a ficha de lote mapeado declaravam **canonical, `og:url` e
+JSON-LD na forma antiga** (`/destinos/<slug interno>`, `/precos/<slug interno>`), que agora
+responde 301 de volta para a própria página. Canonical em loop faz o Google descartar a
+declaração e escolher por conta, e foi por isso que `/estacionamentos/aeroporto-fortaleza`
+ficou fora do índice enquanto a página de FAQ equivalente ranqueava.
+
+O conserto trocou a montagem dessas URLs pelos helpers de `src/lib/urls.ts` com
+`public_slug ?? slug`, incluiu o `public_slug` no select do loader de `/precos` (sem ele o
+`AirportMeta` caía no slug interno) e ganhou guarda permanente: o contract test
+`src/lib/urls.contract.test.ts` reprova qualquer `${SITE_URL}/destinos`, `${SITE_URL}/precos/`
+ou `${SITE_URL}/p/` emitido por código de `src/`. Depois do deploy, pedir reindexação das
+páginas de destino no Search Console encurta a recuperação.
+
 ### O que ficou de fora
 
 - **A Edge `search` precisa de deploy.** O código já devolve `public_path` por resultado, mas

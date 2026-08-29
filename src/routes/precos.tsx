@@ -421,7 +421,11 @@ export default function PrecosPage() {
   const lista = itemListSchema(
     sections.map((s) => ({
       name: `Preços de estacionamento em ${nomeDoAeroporto(s.meta)}`,
-      url: s.dest ? `${SITE_URL}/precos/${s.meta.slug}` : `${SITE_URL}/destinos/${s.meta.slug}`,
+      url: `${SITE_URL}${
+        s.dest
+          ? caminhoPrecos(s.meta.public_slug ?? s.meta.slug)
+          : caminhoDestino(s.meta.public_slug ?? s.meta.slug)
+      }`,
     })),
   );
 

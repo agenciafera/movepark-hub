@@ -24,6 +24,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isAuthorized, mapPlaceDetails, selectStale } from "./logic.ts";
+import { siteUrl } from "../_shared/site.ts";
 
 // `reviews` traz o objeto Review inteiro, e é dele que sai o `originalText` (o texto na
 // língua em que o autor escreveu), que é o que o espelho guarda: a chamada manda
@@ -108,7 +109,9 @@ Deno.serve(async (req: Request) => {
             "X-Goog-Api-Key": googleKey,
             "X-Goog-FieldMask": FIELD_MASK,
             // Satisfaz a restricao por referrer quando a chave usada e a do projeto.
-            Referer: "https://hub.movepark.co/",
+            // O host vem de _shared/site.ts: escrito a mao aqui, ficou preso no
+            // hub.movepark.co depois do cutover (o contract test pegou).
+            Referer: `${siteUrl()}/`,
           },
         },
       );

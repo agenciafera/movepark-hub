@@ -2,7 +2,7 @@ import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
-import { caminhoFicha } from "@/lib/urls";
+import { caminhoDestino, caminhoFicha } from "@/lib/urls";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE } from "@/lib/suporte";
 
@@ -275,6 +275,7 @@ export function productOfferSchema(
 export function destinationSchema(d: {
   name: string;
   slug: string;
+  public_slug?: string | null;
   city: string;
   state: string | null;
   country: string;
@@ -298,7 +299,7 @@ export function destinationSchema(d: {
     name: d.name,
     description: d.meta_description ?? undefined,
     image,
-    url: `${SITE_URL}/destinos/${d.slug}`,
+    url: `${SITE_URL}${caminhoDestino(d.public_slug ?? d.slug)}`,
     address: {
       "@type": "PostalAddress",
       addressLocality: d.city,

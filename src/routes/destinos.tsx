@@ -39,11 +39,11 @@ export default function DestinosPage() {
 
   const popular = destinations.filter((d) => d.is_popular);
   const others = destinations.filter((d) => !d.is_popular);
-  const canonical = `${SITE_URL}/destinos`;
+  const canonical = `${SITE_URL}/estacionamentos`;
 
   const listItems = destinations.map((d) => ({
     name: d.name,
-    url: `${SITE_URL}/destinos/${d.slug}`,
+    url: `${SITE_URL}${caminhoDestino(d.public_slug ?? d.slug)}`,
   }));
 
   return (

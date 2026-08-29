@@ -121,7 +121,7 @@ export default function PrecosDestinoPage() {
   const motos = motoUnits(destination.units);
   const temMinStay = matrix.rows.some((r) => r.cells.some((c) => c.minStayDays != null));
 
-  const canonical = `${SITE_URL}/precos/${destination.slug}`;
+  const canonical = `${SITE_URL}${caminhoPrecos(destinoSlug)}`;
   const titulo = `Preços de estacionamento em ${nome}: diária, 7, 15 e 30 dias`;
   const description = metaDescription(destination, summary);
 

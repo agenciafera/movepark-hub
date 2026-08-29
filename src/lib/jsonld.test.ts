@@ -429,11 +429,11 @@ describe("destinationSchema", () => {
     meta_description: "Estacionamento perto do GRU.",
   };
 
-  it("monta Place com url canônica de /destinos e endereço/geo", () => {
+  it("monta Place com a url pública de /estacionamentos e endereço/geo", () => {
     const s = destinationSchema(base);
     expect(s["@type"]).toBe("Place");
     expect(s.name).toBe("Aeroporto de Guarulhos");
-    expect(s.url).toBe("https://movepark.co/destinos/aeroporto-de-guarulhos");
+    expect(s.url).toBe("https://movepark.co/estacionamentos/aeroporto-de-guarulhos");
     expect(s.description).toBe("Estacionamento perto do GRU.");
     expect(s.address).toMatchObject({
       "@type": "PostalAddress",
@@ -446,6 +446,11 @@ describe("destinationSchema", () => {
       latitude: -23.43,
       longitude: -46.47,
     });
+  });
+
+  it("prefere o public_slug quando existe: o slug interno vira 301 e canonical em loop", () => {
+    const s = destinationSchema({ ...base, public_slug: "aeroporto-guarulhos" });
+    expect(s.url).toBe("https://movepark.co/estacionamentos/aeroporto-guarulhos");
   });
 
   it("aeroporto ganha o subtipo Airport e o código IATA", () => {
