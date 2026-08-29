@@ -348,6 +348,42 @@ export const BLOG_CONSOLIDATED_SLUGS: Record<string, string> = {
     "top-3-estacionamentos-do-aeroporto-de-curitiba",
   "facilidade-e-conforto-estacionamento-aeroporto-curitiba-cwb":
     "top-3-estacionamentos-do-aeroporto-de-curitiba",
+
+  // ---------------------------------------------------------------------------
+  // Terceira rodada (28/08/2026): Viracopos, um dono por termo. Fecha a praça
+  // pelos clusters de cabeça, com as donas eleitas pelo baseline do Search
+  // Console. Mapa e critério em docs/specs/canonicalizacao-vcp-cnf.md.
+  // Confins ficou de fora porque os 3 posts de lá ficam.
+  // ---------------------------------------------------------------------------
+
+  // Viracopos · preço, valor, diária (a dona é o guia, que já recebe a consulta)
+  "guia-completo-estacionamento-aeroporto-viracopos-2026-precos-seguranca-e-economia":
+    "estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica",
+  "qual-o-valor-da-diaria-do-estacionamento-no-aeroporto-viracopos-2024":
+    "estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica",
+  "qual-e-o-valor-da-diaria-estacionamento-aeroporto-viracopos":
+    "estacionamento-aeroporto-viracopos-vcp-guia-completo-com-precos-opcoes-e-a-melhor-escolha-economica",
+  // Viracopos · proximidade, perto, onde deixar o carro
+  "onde-estacionar-proximo-ao-aeroporto-de-viracopos":
+    "onde-deixar-o-carro-estacionado-em-viracopos",
+  "estacionamento-vcp-onde-deixar-o-carro-em-viracopos-sem-dor-de-cabeca":
+    "onde-deixar-o-carro-estacionado-em-viracopos",
+  "onde-estacionar-meu-carro-em-aeroporto-viracopos-em-2024":
+    "onde-deixar-o-carro-estacionado-em-viracopos",
+  // Viracopos · barato, economia, desconto
+  "garanta-desconto-no-estacionamento-do-aeroporto-viracopos-com-a-movepark":
+    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+  "como-pagar-menos-no-estacionamento-do-aeroporto-campinas":
+    "como-pagar-mais-barato-no-estacionamento-do-aeroporto-viracopos-em-2024",
+  // Viracopos · melhor e comparativo (o vencedor é o mesmo de 15/08)
+  "por-que-o-virapark-se-destaca-como-melhor-estacionamento-do-aeroporto-campinas":
+    "quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024",
+  // Viracopos · reserva e como funciona
+  "como-reservar-vaga-no-estacionamento-do-aeroporto-de-viracopos":
+    "estacionamento-aeroporto-viracopos-como-reservar-antecipadamente-e-garantir-sua-vaga",
+  // Viracopos · guia do aeroporto (o que não é consulta de estacionamento)
+  "viracopos-para-iniciantes-guia-para-uma-viagem-tranquila-e-sem-estresse":
+    "guia-completo-descubra-o-melhor-do-aeroporto-viracopos",
 };
 
 const redirect301 = (to: string) =>

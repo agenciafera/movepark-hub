@@ -1,9 +1,9 @@
 # Mapa de canonicalização: Viracopos e Confins
 
-**Status:** definido em 28/08/2026, pendente da revisão cruzada do Diego. A aplicação (301 no
-worker, despublicação e revisão de conteúdo) sai na atividade
-[Revisar e consolidar blog posts, Viracopos e Confins](https://app.clickup.com/t/86ak6q0h7) e no
-Conteúdo 19.
+**Status:** definido, revisado com o Diego e **aplicado em 28/08/2026**: os 11 redirects estão em
+`BLOG_CONSOLIDATED_SLUGS`, os perdedores saíram de publicação e as sete donas passaram pela
+revisão de conteúdo (as três de cabeça na atividade de consolidação; melhor, reserva, guia do
+aeroporto e o genérico de reserva nesta rodada, com preço do motor de 28/08/2026).
 **Atividade:** [Conteúdo 02, mapa de canonicalização](https://app.clickup.com/t/86ak6h4tz)
 **Planilha:** uma linha por post do acervo inteiro, as quatro praças mais os aeroportos fora da
 onda, em [`dados/mapa-canonicalizacao-blog.csv`](./dados/mapa-canonicalizacao-blog.csv)
@@ -116,6 +116,14 @@ agora é a dona de barato. A intenção deles é preço, então o alvo mudou par
 `preco-estacionamento-aeroporto-viracopos-saiba-tudo-aqui` ·
 `quanto-custa-deixar-o-carro-no-aeroporto-viracopos-por-7-dias` ·
 `quanto-custa-para-estacionar-no-aeroporto-viracopos`
+
+### Ajustes feitos na aplicação
+
+Duas donas trocaram de título na revisão de conteúdo, com o slug intacto: a de melhor virou
+"Melhores estacionamentos do Aeroporto Viracopos em 2026" (reescrita answer-first, sem concorrente
+citado e sem link pra quem vende vaga) e a de reserva virou "Como reservar estacionamento no
+Aeroporto Viracopos", tirando a promessa "garantir sua vaga" do título, como o ADR-009 manda. O
+guia do aeroporto e o post genérico de reserva perderam travessão, promessa e link de parceiro.
 
 ### O resultado em número
 
