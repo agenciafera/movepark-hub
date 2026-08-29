@@ -173,11 +173,10 @@ páginas de destino no Search Console encurta a recuperação.
 
 ### O que ficou de fora
 
-- **A Edge `search` precisa de deploy.** O código já devolve `public_path` por resultado, mas
-  o deploy não sai daqui (a CLI do Supabase não está linkada nesta máquina e o deploy por MCP
-  exigiria retranscrever os cinco arquivos à mão). Até ele sair, o card da busca cai no
-  endereço antigo e o worker 301 para a ficha: funciona, com um salto a mais. Rodar
-  `supabase functions deploy search`.
+- **A Edge `search` precisava de deploy: feito em 29/08/2026.** O código já devolvia
+  `public_path` por resultado, mas a máquina da virada não tinha a CLI linkada. Deployada
+  junto com o conserto do canonical; medido em produção, o resultado da busca traz
+  `location.public_path` na pasta nova.
 - **Prova de titularidade da reivindicação** (HMAC + OTP) segue adiada, como já estava.
 - **Copiar o `public_slug` na conversão** de lote mapeado para unidade, que é o que faz a
   ficha reivindicada manter o endereço. Sem conversão nenhuma no acervo hoje, não havia o que
