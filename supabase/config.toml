@@ -447,6 +447,12 @@ verify_jwt = false
 [functions.marketing-unsubscribe]
 verify_jwt = false
 
+# Submissão ao IndexNow, chamada pelo pg_cron via pg_net. O cron manda só o header
+# x-indexnow-dispatch-key, validado contra o Vault por RPC, e nenhum Authorization. Com o gate de
+# JWT ligado, a chamada morreria em 401 antes de a função rodar, e a fila encheria em silêncio.
+[functions.indexnow]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
