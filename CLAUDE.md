@@ -219,8 +219,8 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
 
 - **ADR-010 · Lote não-parceiro não vive na tabela transacional.** Estacionamento que a Movepark
   mapeou e que **não tem contrato** mora em **`prospect_location`**, tabela própria e enxuta ligada a
-  `destination`, **nunca** em `company` + `location`. Ela não tem preço, tipo de vaga,
-  `checkout_mode`, `is_listed`, `take_rate_bps` nem recebedor, e **nenhuma FK de `booking`,
+  `destination`, **nunca** em `company` + `location`. Ela não tem preço **transacional**, tipo de
+  vaga, `checkout_mode`, `is_listed`, `take_rate_bps` nem recebedor, e **nenhuma FK de `booking`,
   `review`, `fare` ou `payout_*` aponta para ela**: o estado impossível é impossível por **ausência
   de coluna**, não por trigger. A alternativa (reusar as tabelas com um estágio `prospect` protegido
   por trigger) foi medida e descartada: **52 funções fazem `from public.location` e só 2 filtram
@@ -236,7 +236,14 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   endereço, por constraint, e ficha convertida é somente leitura. **Regra de crescimento:** campo novo só entra na
   tabela se aparecer na página de destino; se alguém pedir horário, tem que vir nullable (em
   `location`, `is_24h` é `NOT NULL DEFAULT true` e emitir schema a partir dele afirmaria ao Google um
-  horário que ninguém verificou). Ver
+  horário que ninguém verificou). **Preço PESQUISADO é a exceção que a própria regra autoriza, e
+  não é preço transacional:** as colunas `researched_*` guardam o valor de terceiro que a Movepark
+  conferiu, com `researched_at` e `research_source` obrigatórios por constraint, porque sem eles a
+  página afirmaria hoje um número de quando ninguém sabe. Elas existem porque **21 dos 26 destinos
+  não tinham tabela de preço nenhuma** (ela só renderiza com unidade vendável) e a página ficava
+  muda na consulta com intenção de compra. Nada disso vira `Offer` no JSON-LD, entra em `booking`,
+  `fare`, cupom ou payout, nem passa perto do motor de preço, e na tela o grupo é separado do
+  parceiro sob "sem reserva online", com a data ao lado do valor (ADR-009). Ver
   [`docs/specs/lote-mapeado-vitrine.md`](docs/specs/lote-mapeado-vitrine.md).
   Épico **E0.17**; decidido em Q-022.
 

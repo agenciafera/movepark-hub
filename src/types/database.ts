@@ -4441,6 +4441,12 @@ export type Database = {
           phone: string | null
           public_name: string | null
           public_slug: string | null
+          research_source: string | null
+          researched_at: string | null
+          researched_biweekly_brl: number | null
+          researched_daily_brl: number | null
+          researched_monthly_brl: number | null
+          researched_weekly_brl: number | null
           slug: string
           updated_at: string
         }
@@ -4466,6 +4472,12 @@ export type Database = {
           phone?: string | null
           public_name?: string | null
           public_slug?: string | null
+          research_source?: string | null
+          researched_at?: string | null
+          researched_biweekly_brl?: number | null
+          researched_daily_brl?: number | null
+          researched_monthly_brl?: number | null
+          researched_weekly_brl?: number | null
           slug: string
           updated_at?: string
         }
@@ -4491,6 +4503,12 @@ export type Database = {
           phone?: string | null
           public_name?: string | null
           public_slug?: string | null
+          research_source?: string | null
+          researched_at?: string | null
+          researched_biweekly_brl?: number | null
+          researched_daily_brl?: number | null
+          researched_monthly_brl?: number | null
+          researched_weekly_brl?: number | null
           slug?: string
           updated_at?: string
         }
@@ -5844,6 +5862,11 @@ export type Database = {
           public_path: string
           public_slug: string
           reference_name: string
+          researched_at: string
+          researched_biweekly_brl: number
+          researched_daily_brl: number
+          researched_monthly_brl: number
+          researched_weekly_brl: number
           slug: string
         }[]
       }
@@ -6214,6 +6237,12 @@ export type Database = {
           p_longitude: number
           p_name: string
           p_phone?: string
+          p_research_source?: string
+          p_researched_at?: string
+          p_researched_biweekly_brl?: number
+          p_researched_daily_brl?: number
+          p_researched_monthly_brl?: number
+          p_researched_weekly_brl?: number
           p_slug: string
         }
         Returns: string
@@ -6254,6 +6283,12 @@ export type Database = {
           notified_owner_at: string
           phone: string
           place_id_conflict_name: string
+          research_source: string
+          researched_at: string
+          researched_biweekly_brl: number
+          researched_daily_brl: number
+          researched_monthly_brl: number
+          researched_weekly_brl: number
           slug: string
           state: string
           updated_at: string

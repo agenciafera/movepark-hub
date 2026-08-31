@@ -54,6 +54,11 @@ function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
     google_rating: null,
     google_rating_count: 0,
     google_fetched_at: null,
+    researched_daily_brl: null,
+    researched_weekly_brl: null,
+    researched_biweekly_brl: null,
+    researched_monthly_brl: null,
+    researched_at: null,
     ...overrides,
   };
 }

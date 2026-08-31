@@ -7,8 +7,11 @@ import {
   buildDestinoPrices,
   destinationMetaDescription,
   longStayInsight,
+  pesquisadoRows,
+  pesquisadoSummary,
   proximityRanking,
 } from "./destinoPrices.logic";
+import type { PesquisadoInput } from "./destinoPrices.logic";
 
 const brl = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
@@ -310,5 +313,86 @@ describe("proximityRanking", () => {
     });
     expect(linhas.find((l) => l.kind === "partner")?.detail).toBeNull();
     expect(linhas.find((l) => l.kind === "mapped")?.detail).toBe("sem reserva online");
+  });
+});
+
+describe("preço pesquisado do lote mapeado", () => {
+  function mapeado(over: Partial<PesquisadoInput> = {}): PesquisadoInput {
+    return {
+      name: "Central Park",
+      public_name: "Central Park - Estacionamento Aeroporto Confins",
+      slug: "central-park-aeroporto-confins",
+      public_path: "/estacionamentos/aeroporto-confins/central-park",
+      researched_daily_brl: 22.9,
+      researched_weekly_brl: 168,
+      researched_biweekly_brl: null,
+      researched_monthly_brl: null,
+      researched_at: "2026-08-29",
+      ...over,
+    };
+  }
+
+  it("alinha cada valor com a sua duração e deixa nulo onde a pesquisa não cobriu", () => {
+    const [linha] = pesquisadoRows([mapeado()], "aeroporto-confins");
+    expect(DESTINO_DURATIONS).toEqual([1, 7, 15, 30]);
+    expect(linha.totals).toEqual([22.9, 168, null, null]);
+    expect(linha.label).toBe("Central Park - Estacionamento Aeroporto Confins");
+    // A coluna leva o nome canônico; a frase de resposta rápida leva só a marca, senão
+    // vira "R$ 22,90 no Central Park - Estacionamento Aeroporto Confins, preço pesquisado".
+    expect(linha.shortLabel).toBe("Central Park");
+    expect(linha.path).toBe("/estacionamentos/aeroporto-confins/central-park");
+    expect(linha.researchedAt).toBe("2026-08-29");
+  });
+
+  it("descarta preço sem data, que é afirmação sobre o negócio do outro sem lastro", () => {
+    // A constraint do banco já garante o par, mas uma leitura antiga em cache não passa por
+    // ela. Se escapasse, a página mostraria valor de terceiro sem dizer de quando é.
+    expect(pesquisadoRows([mapeado({ researched_at: null })], "d")).toEqual([]);
+  });
+
+  it("descarta lote sem nenhum valor, em vez de renderizar linha vazia", () => {
+    const semPreco = mapeado({
+      researched_daily_brl: null,
+      researched_weekly_brl: null,
+      researched_biweekly_brl: null,
+      researched_monthly_brl: null,
+    });
+    expect(pesquisadoRows([semPreco], "d")).toEqual([]);
+  });
+
+  it("ordena pela semana, que é a compra mais comum e a referência da matriz de parceiro", () => {
+    const linhas = pesquisadoRows(
+      [
+        mapeado({ slug: "caro", public_name: "Caro", researched_weekly_brl: 217 }),
+        mapeado({ slug: "barato", public_name: "Barato", researched_weekly_brl: 149 }),
+      ],
+      "d",
+    );
+    expect(linhas.map((l) => l.label)).toEqual(["Barato", "Caro"]);
+  });
+
+  it("cai na ficha montada quando o lote ainda não tem public_path", () => {
+    const [linha] = pesquisadoRows([mapeado({ public_path: null })], "aeroporto-confins");
+    expect(linha.path).toBe("/estacionamentos/aeroporto-confins/central-park-aeroporto-confins");
+  });
+
+  it("a resposta curta é a menor diária, com a data em que foi conferida", () => {
+    const linhas = pesquisadoRows(
+      [
+        mapeado({ slug: "a", name: "Park Confins", public_name: "Park Confins - X", researched_daily_brl: 35 }),
+        mapeado({ slug: "b", name: "Central Park", public_name: "Central Park - X", researched_daily_brl: 22.9 }),
+      ],
+      "d",
+    );
+    expect(pesquisadoSummary(linhas)).toEqual({
+      total: 22.9,
+      label: "Central Park",
+      researchedAt: "2026-08-29",
+    });
+  });
+
+  it("não inventa resposta curta quando nenhum lote publicou diária avulsa", () => {
+    const soSemana = mapeado({ researched_daily_brl: null });
+    expect(pesquisadoSummary(pesquisadoRows([soSemana], "d"))).toBeNull();
   });
 });

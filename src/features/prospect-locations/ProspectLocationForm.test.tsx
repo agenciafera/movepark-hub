@@ -98,6 +98,12 @@ function makeRow(over: Partial<ProspectLocationAdminRow> = {}): ProspectLocation
     created_at: "2026-08-01T12:00:00Z",
     updated_at: "2026-08-01T12:00:00Z",
     ...over,
+    researched_daily_brl: null,
+    researched_weekly_brl: null,
+    researched_biweekly_brl: null,
+    researched_monthly_brl: null,
+    researched_at: null,
+    research_source: null,
   };
 }
 

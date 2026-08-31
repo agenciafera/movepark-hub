@@ -39,6 +39,12 @@ const BASE_INPUT: ProspectLocationInput = {
   amenities: ["coberto", "24h"],
   dataSource: "manual",
   isPublished: false,
+  researchedDailyBrl: null,
+  researchedWeeklyBrl: null,
+  researchedBiweeklyBrl: null,
+  researchedMonthlyBrl: null,
+  researchedAt: null,
+  researchSource: null,
 };
 
 /** Uma linha crua da RPC: `numeric` sai como string no PostgREST. */
@@ -164,6 +170,14 @@ describe("useSaveProspectLocation", () => {
       p_amenities: ["coberto", "24h"],
       p_data_source: "manual",
       p_is_published: false,
+      // Preço pesquisado vai SEMPRE, mesmo nulo: omitir a chave esconderia de quem lê o log
+      // que a ficha ficou sem preço, que é o estado da maioria delas.
+      p_researched_daily_brl: null,
+      p_researched_weekly_brl: null,
+      p_researched_biweekly_brl: null,
+      p_researched_monthly_brl: null,
+      p_researched_at: null,
+      p_research_source: null,
     });
   });
 

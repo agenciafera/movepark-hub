@@ -32,6 +32,13 @@ describe("formatBRL", () => {
 });
 
 describe("formatDate / formatDateTime / formatTime", () => {
+  it("data pura é calendário, não instante: não volta um dia no fuso de Brasília", () => {
+    // `new Date("2026-08-29")` é meia-noite UTC, que em UTC-3 é 28/08 às 21h. A data da
+    // pesquisa de preço do lote mapeado sai ao lado do valor, e errar o dia é errar o dado.
+    expect(formatDate("2026-08-29")).toBe("29/08/2026");
+    expect(formatDate("2026-01-01")).toBe("01/01/2026");
+  });
+
   // Datas locais (construtor com componentes) — independentes de timezone.
   const d = new Date(2026, 5, 10, 14, 30); // 10/06/2026 14:30 local
   it("formata data", () => {

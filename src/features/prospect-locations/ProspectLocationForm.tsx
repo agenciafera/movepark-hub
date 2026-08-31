@@ -38,6 +38,18 @@ const DATA_SOURCES = [
   { value: "import_wp", label: "Importado do WordPress" },
 ];
 
+/**
+ * Campo de preço em texto vira número, ou nulo.
+ *
+ * Aceita vírgula porque é assim que se digita em pt-BR, e devolve nulo para vazio, para
+ * zero e para lixo: zero não é "de graça", é campo mal preenchido, e a constraint do banco
+ * recusa. Preço pesquisado é valor de terceiro (ADR-009), então errar para nulo é o certo.
+ */
+function reais(v: string): number | null {
+  const n = Number(v.trim().replace(/\./g, "").replace(",", "."));
+  return v.trim() === "" || !Number.isFinite(n) || n <= 0 ? null : n;
+}
+
 /** `distance_m` chega em metros e o formatador do repo fala em km. */
 function metersLabel(m: number | null | undefined) {
   if (m === null || m === undefined) return null;
@@ -84,6 +96,12 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
     dataSource: "manual",
     amenities: [] as string[],
     isPublished: false,
+    researchedDaily: "",
+    researchedWeekly: "",
+    researchedBiweekly: "",
+    researchedMonthly: "",
+    researchedAt: "",
+    researchSource: "",
   });
 
   React.useEffect(() => {
@@ -104,12 +122,26 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
       dataSource: p?.data_source ?? "manual",
       amenities: p?.amenities ?? [],
       isPublished: p?.is_published ?? false,
+      researchedDaily: p?.researched_daily_brl != null ? String(p.researched_daily_brl) : "",
+      researchedWeekly: p?.researched_weekly_brl != null ? String(p.researched_weekly_brl) : "",
+      researchedBiweekly:
+        p?.researched_biweekly_brl != null ? String(p.researched_biweekly_brl) : "",
+      researchedMonthly: p?.researched_monthly_brl != null ? String(p.researched_monthly_brl) : "",
+      researchedAt: p?.researched_at ?? "",
+      researchSource: p?.research_source ?? "",
     });
   }, [open, prospect]);
 
   function set<K extends keyof typeof f>(k: K, v: (typeof f)[K]) {
     setF((prev) => ({ ...prev, [k]: v }));
   }
+
+  const temPreco = [
+    f.researchedDaily,
+    f.researchedWeekly,
+    f.researchedBiweekly,
+    f.researchedMonthly,
+  ].some((v) => reais(v) != null);
 
   /**
    * Endereço, ponto no mapa e Place ID vêm do MESMO componente do cadastro de
@@ -201,6 +233,12 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
       toast.error("Preencha o endereço para poder publicar.");
       return;
     }
+    // Preço de terceiro sem data e sem fonte não vai para a página. O servidor recusa de
+    // qualquer jeito; aqui a pessoa recebe a frase antes de perder o que digitou.
+    if (temPreco && (!f.researchedAt || !f.researchSource.trim())) {
+      toast.error("Preço pesquisado precisa da data em que foi conferido e de onde saiu.");
+      return;
+    }
     try {
       await save.mutateAsync({
         id: prospect?.id ?? null,
@@ -217,6 +255,12 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
         amenities: f.amenities,
         dataSource: f.dataSource,
         isPublished: f.isPublished,
+        researchedDailyBrl: reais(f.researchedDaily),
+        researchedWeeklyBrl: reais(f.researchedWeekly),
+        researchedBiweeklyBrl: reais(f.researchedBiweekly),
+        researchedMonthlyBrl: reais(f.researchedMonthly),
+        researchedAt: temPreco ? f.researchedAt : null,
+        researchSource: temPreco ? f.researchSource.trim() : null,
       });
       toast.success("Lote salvo");
       onOpenChange(false);
@@ -330,6 +374,64 @@ export function ProspectLocationForm({ open, prospect, onOpenChange }: Props) {
               onChange={(e) => set("googleMapsUrl", e.target.value)}
             />
           </div>
+
+          {/* Preço PESQUISADO (E0.17-k). Fica num bloco próprio, separado do resto, porque
+              é o único campo da ficha que afirma algo sobre o NEGÓCIO do outro: sem data e
+              sem fonte não vai para a página, e a página mostra a data ao lado do valor. */}
+          <fieldset className="flex flex-col gap-3 rounded-md border border-hairline p-4 tablet:col-span-2">
+            <legend className="px-1 text-caption font-semibold text-ink">
+              Preço pesquisado (não é oferta)
+            </legend>
+            <p className="text-caption text-muted">
+              Vai para a tabela da página do destino, no grupo "sem reserva online", com a data
+              ao lado. Preencha o que conferiu e deixe o resto vazio. Total do período, em reais.
+            </p>
+            <div className="grid grid-cols-2 gap-3 tablet:grid-cols-4">
+              {(
+                [
+                  ["researchedDaily", "1 diária"],
+                  ["researchedWeekly", "7 diárias"],
+                  ["researchedBiweekly", "15 diárias"],
+                  ["researchedMonthly", "30 diárias"],
+                ] as const
+              ).map(([campo, rotulo]) => (
+                <div key={campo} className="flex flex-col gap-1.5">
+                  <Label htmlFor={`pl-${campo}`}>{rotulo}</Label>
+                  <Input
+                    id={`pl-${campo}`}
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={f[campo]}
+                    onChange={(e) => set(campo, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-3 tablet:grid-cols-[200px_minmax(0,1fr)]">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pl-researched-at">Conferido em {temPreco && "*"}</Label>
+                <Input
+                  id="pl-researched-at"
+                  type="date"
+                  max={new Date().toISOString().slice(0, 10)}
+                  value={f.researchedAt}
+                  onChange={(e) => set("researchedAt", e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pl-research-source">Onde conferiu {temPreco && "*"}</Label>
+                <Input
+                  id="pl-research-source"
+                  placeholder="site do lote, tabela de balcão, telefone"
+                  value={f.researchSource}
+                  onChange={(e) => set("researchSource", e.target.value)}
+                />
+                <p className="text-caption text-muted">
+                  Fica no painel para auditoria. Não aparece na página.
+                </p>
+              </div>
+            </div>
+          </fieldset>
 
           <div className="flex flex-col gap-1.5 tablet:col-span-2">
             <Label htmlFor="pl-description">Descrição</Label>

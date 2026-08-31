@@ -111,6 +111,11 @@ function prospect(overrides: Partial<ProspectCardData> = {}): ProspectCardData {
     google_rating: null,
     google_rating_count: 0,
     google_fetched_at: null,
+    researched_daily_brl: null,
+    researched_weekly_brl: null,
+    researched_biweekly_brl: null,
+    researched_monthly_brl: null,
+    researched_at: null,
     ...overrides,
   };
 }
@@ -456,6 +461,79 @@ function ldJson(): Record<string, unknown>[] {
     JSON.parse(s.textContent ?? "{}"),
   );
 }
+
+describe("DestinoPage · preço pesquisado do lote mapeado (E0.17-k)", () => {
+  /** Um lote mapeado com preço conferido por nós, como o guia de Confins traz. */
+  function comPreco() {
+    return prospect({
+      name: "Central Park",
+      public_name: "Central Park - Estacionamento Aeroporto Confins",
+      slug: "central-park-aeroporto-confins",
+      public_path: "/estacionamentos/aeroporto-confins/central-park",
+      researched_daily_brl: 22.9,
+      researched_weekly_brl: 168,
+      researched_at: "2026-08-29",
+    });
+  }
+
+  it("a tabela de preço existe sem parceiro nenhum, que é o caso de 21 dos 26 destinos", () => {
+    // Até 29/08/2026 a seção inteira sumia quando o motor não tinha unidade vendável: a
+    // página respondia "onde fica" e ficava muda em "quanto custa".
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [comPreco()] } as never);
+
+    render();
+
+    expect(screen.getByRole("heading", { level: 2, name: /Quanto custa estacionar/i })).toBeInTheDocument();
+    expect(screen.getByText("R$ 168,00")).toBeInTheDocument();
+  });
+
+  it("mostra a data da pesquisa junto do valor, porque é preço do negócio do outro", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [comPreco()] } as never);
+
+    render();
+
+    const grupo = screen.getByText(/Sem reserva online, preço pesquisado por nós/i);
+    expect(grupo).toBeInTheDocument();
+    expect(screen.getAllByText(/preço pesquisado em/i).length).toBeGreaterThan(0);
+    expect(document.querySelector('time[datetime="2026-08-29"]')).toBeTruthy();
+  });
+
+  it("a resposta curta usa a menor diária pesquisada quando não há oferta nossa", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [comPreco()] } as never);
+
+    render();
+
+    expect(screen.getByText(/Diária mais barata:/i)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 22,90 no Central Park/i)).toBeInTheDocument();
+  });
+
+  it("lote sem preço pesquisado não vira linha vazia na tabela", () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [prospect()] } as never);
+
+    render();
+
+    expect(screen.queryByRole("heading", { level: 2, name: /Quanto custa estacionar/i })).toBeNull();
+  });
+
+  it("o preço pesquisado não vira Offer no JSON-LD: não é oferta nossa (ADR-009)", async () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [comPreco()] } as never);
+
+    render();
+
+    await waitFor(() => expect(document.querySelectorAll("script[type=\"application/ld+json\"]").length).toBeGreaterThan(0));
+    const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .map((n) => n.textContent ?? "")
+      .join(" ");
+    expect(blocos).toContain("Central Park");
+    expect(blocos).not.toContain("22.9");
+    expect(blocos).not.toContain("22,90");
+  });
+});
 
 describe("lista de unidades no HTML do build", () => {
   // O bug medido em 13/08/2026: dist/destinos/aeroporto-afonso-pena.html tinha ZERO

@@ -10,7 +10,8 @@ import {
   sortRowsByPeriod,
 } from "@/features/price-index/priceIndex.logic";
 
-import type { DestinoPrices, ProximityRow } from "./destinoPrices.logic";
+import type { DestinoPrices, PesquisadoRow, ProximityRow } from "./destinoPrices.logic";
+import { DESTINO_DURATIONS, pesquisadoSummary } from "./destinoPrices.logic";
 import { caminhoPrecos } from "@/lib/urls";
 
 /**
@@ -26,9 +27,16 @@ import { caminhoPrecos } from "@/lib/urls";
  */
 
 type Props = {
-  prices: DestinoPrices;
-  /** Data em que o build consultou o motor. */
-  generatedAt: string;
+  /** Matriz do motor. Nula em destino sem unidade vendável, que é a maioria. */
+  prices: DestinoPrices | null;
+  /** Data em que o build consultou o motor. Nula junto com `prices`. */
+  generatedAt: string | null;
+  /**
+   * Lote mapeado com preço PESQUISADO por nós (ADR-009/ADR-010): entra na mesma tabela,
+   * num grupo próprio, sem link de reserva e com a data da pesquisa ao lado. É o que faz
+   * a tabela existir nos 21 destinos que ainda não têm parceiro.
+   */
+  pesquisados: PesquisadoRow[];
   /** Slug do destino, para o link da tabela completa. */
   destinationSlug: string;
   heading: string;
@@ -37,31 +45,61 @@ type Props = {
 /** O período que abre a seção. 7 diárias é a compra mais comum. */
 const PERIODO_PADRAO = 7;
 
-export function DestinationPriceTable({ prices, generatedAt, destinationSlug, heading }: Props) {
-  const { matrix, summary, longStay, lastUpdated } = prices;
-  const dias = matrix.days;
+export function DestinationPriceTable({
+  prices,
+  generatedAt,
+  pesquisados,
+  destinationSlug,
+  heading,
+}: Props) {
+  const matrix = prices?.matrix ?? null;
+  const summary = prices?.summary ?? null;
+  const longStay = prices?.longStay ?? null;
+  const lastUpdated = prices?.lastUpdated ?? null;
+  const dias = matrix?.days ?? DESTINO_DURATIONS;
   const [periodo, setPeriodo] = React.useState(
     dias.includes(PERIODO_PADRAO) ? PERIODO_PADRAO : (dias[0] ?? PERIODO_PADRAO),
   );
   const grupoId = React.useId();
 
-  if (matrix.rows.length === 0) return null;
-  const temMinStay = matrix.rows.some((r) => r.cells.some((c) => c.minStayDays != null));
-  const temBalcao = matrix.rows.some((r) => r.cells.some((c) => c.oldTotal != null));
-  const linhas = sortRowsByPeriod(matrix.rows, periodo);
+  const linhasParceiro = matrix?.rows ?? [];
+  if (linhasParceiro.length === 0 && pesquisados.length === 0) return null;
+  const temMinStay = linhasParceiro.some((r) => r.cells.some((c) => c.minStayDays != null));
+  const temBalcao = linhasParceiro.some((r) => r.cells.some((c) => c.oldTotal != null));
+  const linhas = sortRowsByPeriod(linhasParceiro, periodo);
+  const soPesquisa = linhasParceiro.length === 0;
+  // A resposta curta da pesquisa só aparece quando não há parceiro. Com parceiro, a
+  // resposta curta é a nossa oferta, e duas respostas para "quanto custa" na mesma tela
+  // seriam duas verdades.
+  const respostaPesquisa = soPesquisa ? pesquisadoSummary(pesquisados, dias) : null;
 
   return (
     <>
       <div className="flex max-w-[68ch] flex-col gap-2">
         <h2 className="text-balance text-display-2xl text-ink">{heading}</h2>
         <p className="text-pretty text-body-md text-body">
-          Escolha a duração da estadia e compare o total nas vagas com reserva online.
+          {soPesquisa
+            ? "Escolha a duração da estadia e compare o total. Nenhum destes lotes reserva pela Movepark: os valores foram pesquisados por nós, com a data ao lado de cada linha."
+            : "Escolha a duração da estadia e compare o total nas vagas com reserva online."}
         </p>
       </div>
 
       {/* Resposta rápida: o menor preço por duração, extraível por buscador e IA
           sem depender de ler a tabela inteira. */}
-      {summary.byDuration.length > 0 && (
+      {respostaPesquisa && (
+        <div className="mt-6 rounded-lg bg-canvas p-5 tablet:p-6">
+          <p className="text-body-md text-body">
+            <strong className="font-semibold text-ink">Diária mais barata:</strong>{" "}
+            {formatBRL(respostaPesquisa.total)} no {respostaPesquisa.label}, preço pesquisado em{" "}
+            <time dateTime={respostaPesquisa.researchedAt}>
+              {formatDate(respostaPesquisa.researchedAt)}
+            </time>
+            . Confirme no local antes de ir.
+          </p>
+        </div>
+      )}
+
+      {summary != null && summary.byDuration.length > 0 && (
         <div className="mt-6 rounded-lg bg-canvas p-5 tablet:p-6">
           <ul className="space-y-2">
             {summary.byDuration.map((s) => (
@@ -109,7 +147,9 @@ export function DestinationPriceTable({ prices, generatedAt, destinationSlug, he
             })}
           </div>
         </div>
-        <span className="text-caption-sm text-muted">Total do período, com reserva online</span>
+        <span className="text-caption-sm text-muted">
+          {soPesquisa ? "Total do período, preço pesquisado" : "Total do período, com reserva online"}
+        </span>
       </div>
 
       {/* Tabela no desktop, cartão empilhado no mobile: o mesmo desenho que a página já
@@ -123,7 +163,9 @@ export function DestinationPriceTable({ prices, generatedAt, destinationSlug, he
       <div className="mt-4 rounded-md tablet:border tablet:border-hairline tablet:bg-canvas">
         <table className="block w-full border-collapse tablet:table">
           <caption className="sr-only">
-            Preço por duração nos estacionamentos com reserva online, total do período
+            {soPesquisa
+              ? "Preço por duração nos estacionamentos da região, pesquisado por nós, total do período"
+              : "Preço por duração nos estacionamentos com reserva online e, abaixo, nos lotes sem reserva, com preço pesquisado por nós"}
           </caption>
           <thead className="hidden tablet:table-header-group">
             <tr className="border-b border-hairline">
@@ -255,6 +297,106 @@ export function DestinationPriceTable({ prices, generatedAt, destinationSlug, he
               );
             })}
           </tbody>
+
+          {/* Grupo próprio, nunca misturado com o parceiro. A separação é a mesma da lista
+              de distância e pelo mesmo motivo: uma linha leva a uma reserva e a outra não,
+              e uma tabela que embaralha as duas promete reserva onde não existe (ADR-009).
+              O nome do lote é link para a ficha mapeada, que também não vende nada. */}
+          {pesquisados.length > 0 && (
+            <tbody className="block space-y-3 tablet:table-row-group tablet:space-y-0">
+              <tr className="hidden tablet:table-row">
+                <th
+                  scope="colgroup"
+                  colSpan={1 + dias.length * 2}
+                  className="border-t border-hairline px-5 pb-2 pt-5 text-left text-caption-sm font-medium text-muted"
+                >
+                  Sem reserva online, preço pesquisado por nós
+                </th>
+              </tr>
+              {pesquisados.map((row) => {
+                return (
+                  <tr
+                    key={row.key}
+                    className={cn(
+                      "grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-hairline bg-canvas p-4",
+                      "tablet:table-row tablet:border-0 tablet:border-b tablet:border-hairline-soft tablet:p-0 tablet:last:border-b-0",
+                    )}
+                  >
+                    <th
+                      scope="row"
+                      className="col-span-2 text-left align-top font-normal tablet:table-cell tablet:px-5 tablet:py-4"
+                    >
+                      <span className="flex flex-wrap items-center gap-2">
+                        {row.path ? (
+                          <Link
+                            to={row.path}
+                            className="text-title-md text-ink underline-offset-2 hover:text-mp-primary hover:underline"
+                          >
+                            {row.label}
+                          </Link>
+                        ) : (
+                          <span className="text-title-md text-ink">{row.label}</span>
+                        )}
+                        <span className="rounded-full border border-hairline px-2 py-0.5 text-badge uppercase tracking-[0.4px] text-muted">
+                          Sem reserva online
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block text-caption-sm text-muted">
+                        preço pesquisado em{" "}
+                        <time dateTime={row.researchedAt}>{formatDate(row.researchedAt)}</time>
+                      </span>
+                    </th>
+
+                    {dias.map((d, idx) => {
+                      const ativo = d === periodo;
+                      const valor = row.totals[idx] ?? null;
+                      return (
+                        <React.Fragment key={d}>
+                          <td
+                            className={cn(
+                              ativo
+                                ? "block align-top tablet:table-cell tablet:px-5 tablet:py-4 tablet:text-right"
+                                : "hidden",
+                            )}
+                          >
+                            <span className="block text-caption-sm text-muted tablet:hidden">
+                              Total {durationLabel(d)}
+                            </span>
+                            {valor != null ? (
+                              <span className="block text-display-sm tabular-nums text-ink">
+                                {formatBRL(valor)}
+                              </span>
+                            ) : (
+                              <span className="block text-caption-sm text-muted">
+                                não pesquisado
+                              </span>
+                            )}
+                          </td>
+                          <td
+                            className={cn(
+                              ativo
+                                ? "block text-right align-top tablet:table-cell tablet:px-5 tablet:py-4"
+                                : "hidden",
+                            )}
+                          >
+                            <span className="block text-caption-sm text-muted tablet:hidden">
+                              Por diária
+                            </span>
+                            {valor != null && (
+                              <span className="block text-title-md tabular-nums text-ink">
+                                {formatBRL(valor / d)}
+                                {d > 1 && <span className="sr-only"> por diária</span>}
+                              </span>
+                            )}
+                          </td>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          )}
         </table>
       </div>
 
@@ -274,16 +416,26 @@ export function DestinationPriceTable({ prices, generatedAt, destinationSlug, he
               de diárias.{" "}
             </>
           )}
-          Conferido no motor de reservas em{" "}
-          <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>
-          {lastUpdated && (
+          {pesquisados.length > 0 && (
             <>
-              {" "}
-              · tabela de parceiro mais recente de{" "}
-              <time dateTime={lastUpdated}>{formatDate(lastUpdated)}</time>
+              Onde diz "sem reserva online", o preço foi PESQUISADO por nós na data da linha,
+              direto com o estacionamento. Não é oferta da Movepark e pode ter mudado.{" "}
             </>
           )}
-          .
+          {generatedAt && (
+            <>
+              Conferido no motor de reservas em{" "}
+              <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>
+              {lastUpdated && (
+                <>
+                  {" "}
+                  · tabela de parceiro mais recente de{" "}
+                  <time dateTime={lastUpdated}>{formatDate(lastUpdated)}</time>
+                </>
+              )}
+              .
+            </>
+          )}
         </p>
 
         <div className="flex flex-wrap gap-x-6 gap-y-2">

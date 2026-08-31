@@ -11,9 +11,20 @@ export function formatBRL(value: number | null | undefined): string {
   return brl.format(value);
 }
 
+/**
+ * Só a data, `dd/MM/yyyy`.
+ *
+ * `YYYY-MM-DD` puro é tratado como data de CALENDÁRIO, não como instante. `new Date()`
+ * parseia a forma curta como meia-noite UTC, e no fuso de Brasília isso volta um dia:
+ * `2026-08-29` saía "28/08/2026". Passou despercebido enquanto todo `date` do banco era
+ * lido junto de um horário; apareceu quando a data da pesquisa de preço do lote mapeado
+ * foi para a tela ao lado do valor, onde errar o dia é errar o dado.
+ */
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—";
-  return format(new Date(value), "dd/MM/yyyy", { locale: ptBR });
+  const soData = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const d = soData ? new Date(`${value}T00:00:00`) : new Date(value);
+  return format(d, "dd/MM/yyyy", { locale: ptBR });
 }
 
 export function formatDateTime(value: string | Date | null | undefined): string {

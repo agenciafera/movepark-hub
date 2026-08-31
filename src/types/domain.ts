@@ -82,6 +82,16 @@ export type ProspectCard = {
   google_rating: number | null;
   google_rating_count: number;
   google_fetched_at: string | null;
+  /**
+   * Preço PESQUISADO por nós, em reais, nunca oferta (ADR-009/ADR-010). Só existe com
+   * `researched_at`, por constraint: preço de terceiro sem data é afirmação sem lastro.
+   */
+  researched_daily_brl: number | null;
+  researched_weekly_brl: number | null;
+  researched_biweekly_brl: number | null;
+  researched_monthly_brl: number | null;
+  /** Data em que o valor foi conferido (ISO). Renderizada junto do preço. */
+  researched_at: string | null;
 };
 
 /**
@@ -128,6 +138,14 @@ export type ProspectLocationAdminRow = {
   state: "draft" | "published" | "converted";
   distance_m: number;
   place_id_conflict_name: string | null;
+  /** Preço PESQUISADO por nós, nunca oferta. Só existe com data e fonte (constraint). */
+  researched_daily_brl: number | null;
+  researched_weekly_brl: number | null;
+  researched_biweekly_brl: number | null;
+  researched_monthly_brl: number | null;
+  researched_at: string | null;
+  /** Onde o valor foi conferido. Auditoria: fica no painel, não vai para a página. */
+  research_source: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -168,6 +186,12 @@ export type ProspectLocationInput = {
   amenities: string[];
   dataSource: string;
   isPublished: boolean;
+  researchedDailyBrl: number | null;
+  researchedWeeklyBrl: number | null;
+  researchedBiweeklyBrl: number | null;
+  researchedMonthlyBrl: number | null;
+  researchedAt: string | null;
+  researchSource: string | null;
 };
 
 /** Post do blog. O `slug` é herdado do WordPress e é contrato de URL (docs/specs/blog.md). */

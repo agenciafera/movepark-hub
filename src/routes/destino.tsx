@@ -52,6 +52,7 @@ import { DestinationHero } from "@/features/destinations/DestinationHero";
 import {
   buildDestinoPrices,
   destinationMetaDescription,
+  pesquisadoRows,
   proximityRanking,
   type ProximityProspect,
 } from "@/features/destinations/destinoPrices.logic";
@@ -251,6 +252,10 @@ export default function DestinoPage() {
   const priceDest = loaded?.priceDestination ?? null;
   const prices = priceDest ? buildDestinoPrices(priceDest) : null;
   const generatedAt = loaded?.generatedAt ?? null;
+
+  // Lote mapeado com preço pesquisado entra na MESMA tabela, em grupo próprio. É o que
+  // faz a seção "quanto custa" existir em destino sem parceiro (ADR-009/ADR-010).
+  const pesquisados = pesquisadoRows(prospectItems, destinoSlug);
 
   // Endereço do parceiro vem da vitrine, não da matriz: o motor não carrega endereço.
   const addressByLocation = new Map(
@@ -644,13 +649,19 @@ export default function DestinoPage() {
 
         {/* Quanto custa: a matriz 1/7/15/30 do motor, em tabela, no HTML do build.
             Vem logo depois da vitrine porque é a mesma pergunta que os cards abrem
-            ("a partir de R$ X") e que só a tabela fecha. */}
-        {prices && generatedAt && (
+            ("a partir de R$ X") e que só a tabela fecha.
+
+            A condição NÃO é mais "tem matriz do motor". Em 21 dos 26 destinos não existe
+            unidade vendável, e até 29/08/2026 a seção inteira sumia neles: a página ficava
+            muda justamente na consulta com intenção de compra. Com preço pesquisado do lote
+            mapeado a tabela existe sem parceiro nenhum. */}
+        {(prices || pesquisados.length > 0) && (
           <section className="mt-12 bg-surface-soft py-16 desktop:py-24">
             <div className={CALHA}>
               <DestinationPriceTable
                 prices={prices}
                 generatedAt={generatedAt}
+                pesquisados={pesquisados}
                 destinationSlug={destination.slug}
                 heading={priceHeading(destination)}
               />

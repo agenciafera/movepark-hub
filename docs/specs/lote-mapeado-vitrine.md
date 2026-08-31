@@ -581,6 +581,86 @@ campo, não outra query. Fica registrado para o time decidir.
   devolve. "Estacionamento do Aeroporto de Teresina - Estacionamento Aeroporto Teresina" seria o
   resultado do nome cru.
 
+## Preço pesquisado: a tabela passa a existir sem parceiro
+
+**(E0.17-k)** · ✅ no ar em 30/08/2026.
+
+A medição que abriu a entrega: **21 dos 26 destinos não tinham tabela de preço nenhuma**. Ela
+só renderiza quando existe unidade vendável, e isso acontece em cinco praças (Guarulhos,
+Viracopos, Congonhas, Curitiba e Tietê). Nos outros 21 a página respondia "onde fica" e "a que
+distância", e ficava muda na consulta com intenção de compra. Confins era o retrato: seis
+concorrentes listados, com endereço e distância, e zero real na tela.
+
+O dado já existia, só não no banco. Vinte posts do blog trazem preço de concorrente pesquisado
+à mão, com data e fonte: o guia de Confins compara BePark, Multipark, Park Confins, Central
+Park e o pátio oficial com valores de agosto de 2026; o de Viracopos traz o bolsão F e o
+edifício garagem "conferidos no site do aeroporto em 28 de agosto de 2026". Pesquisa que vive
+em prosa numa URL de blog não entra em tabela, não é comparável e não é citada.
+
+### Isto não afrouxa o ADR-010
+
+O ADR diz que `prospect_location` não tem preço, e continua verdade no sentido que importa:
+aqui não existe preço **transacional**. As colunas guardam preço de terceiro **pesquisado por
+nós**, com data e fonte. Nenhuma delas cria promessa de transação, vira `Offer` no JSON-LD,
+entra em `booking`, `fare`, cupom ou payout, ou passa perto do motor de preço. A regra de
+crescimento do próprio ADR-010 ("campo novo só entra se aparecer na página de destino") é o que
+autoriza: os seis campos aparecem, e são o motivo da entrega.
+
+### O que a constraint garante, e por quê
+
+`prospect_researched_price_needs_source` recusa qualquer preço sem `researched_at` **e** sem
+`research_source`. Não é disciplina, é constraint, porque a tela não é a única porta: migration,
+RPC e service role também escrevem. Preço de concorrente sem carimbo de quando foi conferido é
+afirmação nossa sobre o negócio do outro, e a reclamação vem dele.
+`prospect_researched_price_positive` recusa zero e negativo: num campo de preço, zero não é
+"de graça", é campo mal preenchido, e "R$ 0,00 a diária" numa tabela pública é o pior erro
+possível aqui. Apagar o preço junto com data e fonte é sempre permitido, senão tirar um valor
+obsoleto do ar viraria quebra-cabeça e o time deixaria o valor velho na página.
+
+### O grant é por coluna, e a fonte fica de fora
+
+O `select` em `prospect_location` é concedido **por coluna** desde o Q-021. Coluna nova nasce
+fora do grant, e a RPC de vitrine é invoker: sem a linha de `grant select`, ela morre em `42501`
+para `anon` e a seção some inteira (foi exatamente o bug da `20261103091500`). Os quatro preços
+e a data entram no grant; **`research_source` fica fora**, porque é rastro de auditoria, não
+conteúdo. Quem precisa dele é o admin, que lê pela RPC security definer.
+
+### Na tela
+
+O grupo de preço pesquisado é um `<tbody>` próprio dentro da mesma `<table>`, sob o rótulo
+"Sem reserva online, preço pesquisado por nós", nunca embaralhado com a linha de parceiro. A
+separação é a mesma da lista de distância e pelo mesmo motivo: uma linha leva a uma reserva e a
+outra não. Cada linha carrega a data da pesquisa ao lado do nome, e o rodapé repete que não é
+oferta da Movepark.
+
+Quando **não há parceiro nenhum**, a página ganha a resposta curta a partir da pesquisa
+("Diária mais barata: R$ 22,90 no Central Park, preço pesquisado em 29/08/2026"), que é a frase
+que um motor de IA extrai. Com parceiro, essa resposta curta continua sendo a nossa oferta:
+duas respostas para "quanto custa" na mesma tela seriam duas verdades.
+
+### A primeira carga, e o que ficou de fora
+
+Entrou só o que foi conferido em agosto de 2026: Park Confins, Central Park e Multipark em
+Confins, e o bolsão econômico F do pátio oficial de Viracopos. Central Park e Multipark não
+estavam mapeados e entraram junto, com ficha do Places.
+
+Ficou de fora, e o motivo importa mais que a lista:
+
+| Fonte | Por que não entrou |
+|---|---|
+| Pátio oficial de Confins | O post separa Econômico (R$ 26,90 com 72h de antecedência) e Premium (R$ 60,00 a R$ 105,00 no balcão), e o Places devolve P1, P3 e Premium como fichas distintas. Uma linha só não representa os dois. |
+| Navegantes | O único valor publicado do comparativo é o da LocaPark, e o que o Places tem com esse nome é locadora. O Dummont Park é pátio de verdade e não publica tabela. |
+| Congonhas e Guarulhos | Os valores de concorrente nesses posts são de 2024 e fev/2025. Publicar preço de terceiro com 18 meses como se fosse atual é o risco que a coluna existe para evitar. |
+
+### Pendências
+
+- **Cadência de atualização.** Decidida como "ver no ar primeiro" em 30/08/2026. A data já é
+  renderizada em cada linha, então valor velho fica visível em vez de silencioso, mas nada
+  esconde ou avisa sobre preço antigo ainda. Ao decidir, o lugar do aviso é o painel.
+- **`/estacionamentos/<destino>/precos`** continua só com parceiro: ela lê
+  `destination_price_index`, que é outra RPC. A página de destino era a que rankeia e foi a
+  que entrou primeiro.
+
 ## Higiene dos registros legados
 
 **(E0.17-b)** · ✅ no ar em 11/08/2026, e a apuração mudou a premissa.
@@ -669,3 +749,4 @@ Candidatas a chave, provavelmente em cascata:
 - [x] URL de ficha convertida faz 301 para a `location`, no Worker, antes dos assets. Enquanto a unidade não está listada o redirecionamento é 302 para a página do destino, porque o endereço definitivo ainda vai existir e 301 é o que ninguém revisita.
 - [x] Registros obsoletos resolvidos em `location` (11 soft delete, 1 inativa), preservando o que tem `booking`. Eram QA em produção, não prospecção: ver a seção. **Sobram 3 fixtures de QA listadas publicamente**, fora da lista da spec, aguardando decisão do time.
 - [x] Cobertura de concorrente: 23 dos 26 destinos com 3 ou mais lotes mapeados publicados. Maceió, João Pessoa e Teresina ficam abaixo por falta de mercado, não por falta de busca.
+- [x] Preço pesquisado do lote mapeado na tabela do destino, com data ao lado, fora do JSON-LD e fora do grant público no caso da fonte. Constraint recusa preço sem data e sem fonte, e recusa zero.

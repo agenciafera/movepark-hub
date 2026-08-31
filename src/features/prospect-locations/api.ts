@@ -114,6 +114,12 @@ export function useSaveProspectLocation() {
         p_amenities: input.amenities,
         p_data_source: input.dataSource,
         p_is_published: input.isPublished,
+        p_researched_daily_brl: input.researchedDailyBrl,
+        p_researched_weekly_brl: input.researchedWeeklyBrl,
+        p_researched_biweekly_brl: input.researchedBiweeklyBrl,
+        p_researched_monthly_brl: input.researchedMonthlyBrl,
+        p_researched_at: input.researchedAt,
+        p_research_source: input.researchSource,
       };
       // Os params têm default no SQL e aceitam null; o type gen do Supabase não reflete isso.
       const { data, error } = await supabase.rpc("manager_prospect_location_save", args as never);

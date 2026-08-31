@@ -43,6 +43,11 @@ export const destinationsKeys = {
  * consegue ler o `google_place_id` da tabela para buscar o snapshot por conta própria: o grant
  * de coluna do Q-021 cortou o SELECT direto.
  */
+/** `numeric` do Postgres chega como string no PostgREST; nulo continua nulo. */
+function numeroOuNulo(v: unknown): number | null {
+  return v == null ? null : Number(v);
+}
+
 export async function fetchDestinationProspects(slug: string): Promise<ProspectCard[]> {
   const { data, error } = await supabase.rpc("destination_prospect_cards", {
     p_destination_slug: slug,
@@ -57,6 +62,12 @@ export async function fetchDestinationProspects(slug: string): Promise<ProspectC
     google_rating_count: row.google_rating_count ?? 0,
     google_fetched_at: row.google_fetched_at ?? null,
     amenities: Array.isArray(row.amenities) ? (row.amenities as string[]) : [],
+    // Mesmo motivo do `distance_km` acima: numeric do Postgres chega como string.
+    researched_daily_brl: numeroOuNulo(row.researched_daily_brl),
+    researched_weekly_brl: numeroOuNulo(row.researched_weekly_brl),
+    researched_biweekly_brl: numeroOuNulo(row.researched_biweekly_brl),
+    researched_monthly_brl: numeroOuNulo(row.researched_monthly_brl),
+    researched_at: row.researched_at ?? null,
   })) as ProspectCard[];
 }
 

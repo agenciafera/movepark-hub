@@ -64,6 +64,112 @@ export type DestinoPrices = {
 };
 
 /**
+ * Uma linha da tabela de preço vinda de PESQUISA, não do motor.
+ *
+ * Existe porque em 21 dos 26 destinos não há unidade vendável, e até 29/08/2026 a
+ * tabela de preço simplesmente não renderizava neles: a página respondia "onde fica"
+ * e "a que distância", e ficava muda na consulta que tem intenção de compra. O dado
+ * já existia em prosa no blog (o guia de Confins compara cinco pátios com valores de
+ * agosto de 2026); o que faltava era ele estar em tabela, com data ao lado.
+ *
+ * Nunca é oferta: não tem link de reserva, não vira `Offer` no JSON-LD e carrega a
+ * data em que foi conferido, porque preço de terceiro sem carimbo é afirmação nossa
+ * sobre o negócio do outro (ADR-009).
+ */
+export type PesquisadoRow = {
+  key: string;
+  label: string;
+  /** A marca sozinha ("Central Park"), para caber numa frase em vez de numa coluna. */
+  shortLabel: string;
+  /** Ficha do lote mapeado. Nulo enquanto faltar slug público. */
+  path: string | null;
+  /** Um total por duração, na mesma ordem de `days`. Nulo onde a pesquisa não cobriu. */
+  totals: (number | null)[];
+  /** Data da pesquisa (ISO), a mesma para a linha inteira. */
+  researchedAt: string;
+};
+
+/** O que a página de destino precisa de um lote mapeado para virar linha de preço. */
+export type PesquisadoInput = {
+  name: string;
+  public_name?: string | null;
+  slug: string;
+  public_path?: string | null;
+  researched_daily_brl: number | null;
+  researched_weekly_brl: number | null;
+  researched_biweekly_brl: number | null;
+  researched_monthly_brl: number | null;
+  researched_at: string | null;
+};
+
+/**
+ * Lote mapeado com preço pesquisado, pronto para a tabela.
+ *
+ * Fica de fora quem não tem NENHUM valor e quem não tem data: a constraint do banco
+ * já garante o par, e a checagem aqui é a segunda porta, para uma leitura antiga em
+ * cache não escapar sem carimbo. Ordena pela semana, que é a compra mais comum e a
+ * mesma referência da matriz de parceiro; quem não tem semana cai para a diária e
+ * depois para o nome.
+ */
+export function pesquisadoRows(
+  prospects: PesquisadoInput[],
+  destinationSlug: string,
+  days: number[] = DESTINO_DURATIONS,
+): PesquisadoRow[] {
+  const porDuracao = (p: PesquisadoInput, d: number): number | null => {
+    if (d === 1) return p.researched_daily_brl;
+    if (d === 7) return p.researched_weekly_brl;
+    if (d === 15) return p.researched_biweekly_brl;
+    if (d === 30) return p.researched_monthly_brl;
+    return null;
+  };
+
+  return prospects
+    .filter((p) => p.researched_at != null)
+    .map((p) => ({ p, totals: days.map((d) => porDuracao(p, d)) }))
+    .filter(({ totals }) => totals.some((t) => t != null))
+    .map(({ p, totals }) => ({
+      key: `pesquisado:${p.slug}`,
+      label: (p.public_name ?? "").trim() || p.name,
+      shortLabel: p.name,
+      path: p.public_path ?? caminhoFicha(destinationSlug, p.slug),
+      totals,
+      researchedAt: p.researched_at as string,
+    }))
+    .sort((a, b) => {
+      const ref = (r: PesquisadoRow) =>
+        r.totals[days.indexOf(7)] ?? r.totals[days.indexOf(1)] ?? Infinity;
+      const d = ref(a) - ref(b);
+      return d !== 0 ? d : a.label.localeCompare(b.label, "pt-BR");
+    });
+}
+
+/**
+ * A resposta curta quando o destino não tem parceiro nenhum.
+ *
+ * Nesse caso o preço pesquisado é a única resposta possível para "quanto custa", e é
+ * a frase que um motor de IA extrai. Some assim que existe parceiro: aí a resposta
+ * curta é a nossa oferta, com data do motor, e duas respostas curtas na mesma página
+ * seriam duas verdades para a mesma pergunta.
+ */
+export function pesquisadoSummary(
+  rows: PesquisadoRow[],
+  days: number[] = DESTINO_DURATIONS,
+): { total: number; label: string; researchedAt: string } | null {
+  const i = days.indexOf(1);
+  if (i < 0) return null;
+  let melhor: { total: number; label: string; researchedAt: string } | null = null;
+  for (const r of rows) {
+    const t = r.totals[i];
+    if (t == null) continue;
+    if (melhor === null || t < melhor.total) {
+      melhor = { total: t, label: r.shortLabel, researchedAt: r.researchedAt };
+    }
+  }
+  return melhor;
+}
+
+/**
  * A maior queda de preço por diária entre as vagas do destino.
  *
  * Escolhe a maior, e não a da vaga mais barata, porque a frase responde "existe
