@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 // no `node` do encadeamento do `package.json`, mas sem teste ela seria a única peça do
 // pipeline de sitemap sem cobertura. A declaração de tipo mora em
 // `scripts/sitemap-split.logic.d.mts`. Ver docs/superpowers/specs/2026-08-17-sitemap-por-secao-design.md.
-import { dividirSitemap, maisRecenteDentre } from "../../scripts/sitemap-split.logic.mjs";
+import {
+  VIRADA_URL_ESTACIONAMENTOS,
+  dividirSitemap,
+  lastmodDeUrlNova,
+  maisRecenteDentre,
+} from "../../scripts/sitemap-split.logic.mjs";
 
 const PROLOG = '<?xml version="1.0" encoding="UTF-8"?>';
 const ABRE_URLSET =
@@ -183,5 +188,32 @@ describe("dividirSitemap", () => {
     const indice = `${PROLOG}<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://movepark.co/sitemap-blog.xml</loc></sitemap></sitemapindex>`;
 
     expect(() => dividirSitemap(indice, MAPA)).toThrow(/índice/i);
+  });
+});
+
+describe("lastmodDeUrlNova", () => {
+  it("registro parado desde antes da virada usa a data da virada", () => {
+    // O caso real: em 01/09/2026 os destinos ainda tinham updated_at de 28/05, e o sitemap
+    // afirmava ao Google que uma URL de quatro dias nao mudava havia tres meses.
+    expect(lastmodDeUrlNova("2026-05-28T18:31:15.592Z")).toBe(VIRADA_URL_ESTACIONAMENTOS);
+  });
+
+  it("registro tocado depois da virada manda, porque ai a data e verdadeira", () => {
+    expect(lastmodDeUrlNova("2026-08-30T10:00:00.000Z")).toBe("2026-08-30T10:00:00.000Z");
+  });
+
+  it("sem data no banco cai na virada, nao em undefined", () => {
+    expect(lastmodDeUrlNova(undefined)).toBe(VIRADA_URL_ESTACIONAMENTOS);
+    expect(lastmodDeUrlNova(null)).toBe(VIRADA_URL_ESTACIONAMENTOS);
+  });
+
+  it("data ilegivel nao derruba o piso", () => {
+    expect(lastmodDeUrlNova("nao e data")).toBe(VIRADA_URL_ESTACIONAMENTOS);
+  });
+
+  it("aceita outro nascimento, para servir a proxima virada de endereco", () => {
+    expect(lastmodDeUrlNova("2026-01-01T00:00:00.000Z", "2026-06-01T00:00:00.000Z")).toBe(
+      "2026-06-01T00:00:00.000Z",
+    );
   });
 });

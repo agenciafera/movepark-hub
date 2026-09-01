@@ -25,6 +25,21 @@ E um formato único de nome, que alimenta H1, `<title>`, card e `name` do JSON-L
 "Virapark - Estacionamento Aeroporto Viracopos"
 ```
 
+## O lastmod depois da virada
+
+O `updated_at` do banco descreve o **registro**, não a URL. Medido em 01/09/2026, quatro dias
+depois da virada, os destinos ainda traziam `updated_at` de 28/05, então o sitemap afirmava ao
+Google que uma URL de quatro dias não mudava havia três meses. Como o `lastmod` é sinal de
+prioridade de recrastreio, isso despriorizava exatamente as páginas que mais precisavam ser
+relidas.
+
+A regra que passou a valer é uma invariante, não um remendo: **nenhuma URL pode alegar
+`lastmod` anterior à própria existência.** Vive em `lastmodDeUrlNova`
+([sitemap-split.logic.mjs](../../scripts/sitemap-split.logic.mjs)), aplicada nas três pontas da
+família (`/estacionamentos`, hub de destino e as duas famílias de ficha). Registro tocado depois
+da virada continua mandando, porque aí a data dele é a mais recente e é a verdadeira. FAQ e blog
+ficam de fora de propósito: eles não trocaram de endereço.
+
 ## Por que
 
 Medido em produção em 27/08/2026, com o site já servindo o `movepark.co`:

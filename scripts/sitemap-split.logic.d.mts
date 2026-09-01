@@ -38,3 +38,13 @@ export function dividirSitemap(
   xml: string,
   mapaDeSecoes: Record<string, string[]>,
 ): ResultadoDoSplit;
+
+export const VIRADA_URL_ESTACIONAMENTOS: string;
+
+/**
+ * `lastmod` que nunca é anterior ao nascimento da URL. Ver o .mjs para o porquê.
+ */
+export function lastmodDeUrlNova(
+  updatedAt: string | null | undefined,
+  nascimento?: string,
+): string | undefined;

@@ -51,6 +51,29 @@ export function maisRecenteDentre(...datas) {
   return vencedora;
 }
 
+/**
+ * Dia em que a família `/estacionamentos/*` passou a existir, na virada de endereço
+ * (docs/specs/url-estacionamentos.md).
+ */
+export const VIRADA_URL_ESTACIONAMENTOS = "2026-08-28T00:00:00.000Z";
+
+/**
+ * `lastmod` de URL que nasceu numa virada de endereço.
+ *
+ * O `updated_at` do banco descreve o REGISTRO, não a URL. Depois da virada de 28/08/2026 a
+ * maioria dos destinos seguia com `updated_at` de 28/05, então o sitemap afirmava ao Google
+ * que uma URL de quatro dias não mudava havia três meses. Como o `lastmod` é sinal de
+ * prioridade de recrastreio, isso despriorizava justamente as páginas que mais precisavam
+ * ser relidas: as que acabaram de trocar de endereço.
+ *
+ * A regra é uma invariante, não um remendo de data: nenhuma URL pode alegar `lastmod`
+ * anterior à própria existência. Registro tocado depois da virada continua mandando, porque
+ * aí a data dele é a mais recente e é a verdadeira.
+ */
+export function lastmodDeUrlNova(updatedAt, nascimento = VIRADA_URL_ESTACIONAMENTOS) {
+  return maisRecenteDentre(nascimento, updatedAt);
+}
+
 /** Data mais recente entre os blocos `<url>` de uma seção. */
 function maisRecente(blocos) {
   return maisRecenteDentre(

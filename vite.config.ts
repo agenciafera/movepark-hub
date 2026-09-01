@@ -14,7 +14,7 @@ import {
 } from "./src/lib/sitemapRoutes";
 // Mesma função que o split usa para o lastmod do índice. Uma só, para as duas pontas não
 // divergirem sobre o que é "a data mais recente".
-import { maisRecenteDentre } from "./scripts/sitemap-split.logic.mjs";
+import { lastmodDeUrlNova, maisRecenteDentre } from "./scripts/sitemap-split.logic.mjs";
 // Mesma paginação do getStaticPaths da listagem (src/routes.tsx): sem ela, o sitemap podia
 // contar página diferente do que o SSG de fato gera. Módulo puro, sem import próprio, então
 // entra na mesma exceção do site-host.mjs e do sitemapRoutes.ts.
@@ -70,7 +70,7 @@ async function getDynamicRoutes(
       r.destination?.public_slug
         ? {
             route: `/estacionamentos/${r.destination.public_slug}/${r.public_slug}`,
-            lastmod: r.updated_at,
+            lastmod: lastmodDeUrlNova(r.updated_at),
             destinationId: r.destination_id ?? undefined,
           }
         : null,
@@ -93,7 +93,7 @@ async function getDestinationRoutes(
   // deno-lint-ignore no-explicit-any
   return (data ?? []).map((d: any) => ({
     route: `/estacionamentos/${d.public_slug}`,
-    lastmod: d.updated_at,
+    lastmod: lastmodDeUrlNova(d.updated_at),
     id: d.id,
     slug: d.slug,
   }));
@@ -131,7 +131,7 @@ async function getProspectRoutes(sb: SupabaseClient | null): Promise<RotaComData
       p.destination?.public_slug
         ? {
             route: `/estacionamentos/${p.destination.public_slug}/${p.public_slug}`,
-            lastmod: p.updated_at,
+            lastmod: lastmodDeUrlNova(p.updated_at),
           }
         : null,
     )
