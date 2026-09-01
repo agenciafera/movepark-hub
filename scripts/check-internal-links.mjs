@@ -33,6 +33,17 @@ import { join } from "node:path";
 const DIST = "dist";
 const conhecidos = new Set(JSON.parse(readFileSync(join(DIST, "paths-manifest.json"), "utf8")));
 
+/** Os gêmeos Markdown, que são o corpus lido por agente de IA. */
+function markdown(dir) {
+  const saida = [];
+  for (const nome of readdirSync(dir)) {
+    const caminho = join(dir, nome);
+    if (statSync(caminho).isDirectory()) saida.push(...markdown(caminho));
+    else if (nome.endsWith(".md")) saida.push(caminho);
+  }
+  return saida;
+}
+
 function paginas(dir) {
   const saida = [];
   for (const nome of readdirSync(dir)) {
@@ -57,11 +68,34 @@ function normaliza(href) {
  */
 const FAMILIAS = /^\/(estacionamentos|blog|faq|destinos|precos|estacionamento-mais-barato|p)(\/|$)/;
 
+/**
+ * Todo link interno de um arquivo, em qualquer das formas que o acervo usa.
+ *
+ * O link ABSOLUTO (`https://movepark.co/destinos/...`) entrou aqui em 31/08/2026: a
+ * varredura anterior olhava só `href="/..."` e `](/...)`, e por isso não viu os 35 links
+ * para `/destinos/<slug legado>` que moravam nos gêmeos Markdown, que é justamente o
+ * arquivo que agente de IA lê.
+ */
+function linksInternos(texto) {
+  const saida = [];
+  for (const [, u] of texto.matchAll(/href="(\/[^"]*)"/g)) saida.push(u);
+  for (const [, u] of texto.matchAll(/\]\((\/[^)\s]*)\)/g)) saida.push(u);
+  // O `\\` no corte não é enfeite: dentro do JSON-LD a URL vem escapada (`...\/blog\/x\/\"`)
+  // e sem ele o alvo capturado terminava numa barra invertida que não existe na URL.
+  for (const [, u] of texto.matchAll(/https:\/\/movepark\.co(\/[^\s)"'<>\\]*)/g)) saida.push(u);
+  return saida;
+}
+
 const quebrados = new Map();
-for (const pagina of paginas(DIST)) {
+const arquivos = [...paginas(DIST), ...markdown(DIST)];
+for (const pagina of arquivos) {
   const html = readFileSync(pagina, "utf8");
-  for (const [, href] of html.matchAll(/href="(\/[^"]*)"/g)) {
-    if (!FAMILIAS.test(href.split(/[?#]/)[0])) continue;
+  for (const href of linksInternos(html)) {
+    const semQuery = href.split(/[?#]/)[0];
+    if (!FAMILIAS.test(semQuery)) continue;
+    // Arquivo servido de dentro da família (blog/feed.xml, o gêmeo .md) não é página e não
+    // está no manifesto, que só lista HTML.
+    if (/\.[a-z0-9]+$/i.test(semQuery.split("/").pop() ?? "")) continue;
     const alvo = normaliza(href);
     if (conhecidos.has(alvo)) continue;
     if (!quebrados.has(alvo)) quebrados.set(alvo, new Set());
@@ -76,6 +110,10 @@ for (const pagina of paginas(DIST)) {
  * para posts canibalizados: o HTML do mesmo slug já ia de 301 para o vencedor e o `.md`
  * continuava respondendo 200 com o artigo velho, competindo com o vencedor exatamente na
  * superfície onde a consolidação mais importa.
+ *
+ * Desde então o gêmeo é GERADO do banco pelo generate-geo-artifacts, então órfão só
+ * aparece se alguém voltar a versionar arquivo em `public/blog/`. A checagem fica como
+ * rede: guard barato que já pegou 59 arquivos uma vez.
  */
 const orfaos = readdirSync(join(DIST, "blog"))
   .filter((n) => n.endsWith(".md"))
@@ -85,7 +123,7 @@ if (orfaos.length > 0) {
   console.error(
     `check-internal-links: ${orfaos.length} gêmeo(s) markdown sem post vivo em public/blog/.\n` +
       "O .md responde 200 com o artigo antigo enquanto o HTML do mesmo slug vai de 301 para o\n" +
-      "vencedor. Apague o arquivo: a consolidação precisa valer para a IA também.\n" +
+      "vencedor. O gêmeo é gerado do banco: apague o arquivo versionado em public/blog/.\n" +
       orfaos
         .slice(0, 15)
         .map((n) => `  public/blog/${n}`)

@@ -130,9 +130,16 @@ describe("domínio canônico", () => {
     expect(infratores, "arquivo estático precisa ser trocado à mão na migração").toEqual([]);
   });
 
-  it("o corpus Markdown do blog não cita o host antigo", () => {
-    const infratores = arquivos(["public/blog"], [".md"]).filter((f) => HOST_ANTIGO.test(ler(f)));
-
-    expect(infratores.length, `${infratores.length} posts com host antigo`).toBe(0);
+  /**
+   * O gêmeo Markdown do post é GERADO do banco desde 31/08/2026, e o guard contra host
+   * antigo mora no `generate-geo-artifacts.mjs`, que lê a mesma fonte da página.
+   *
+   * Antes eram arquivos versionados aqui, e este teste lia O ARQUIVO: quando o `.md` do
+   * post de Confins foi corrigido à mão e o `body_md` não, o teste ficou verde enquanto a
+   * página servia o host antigo. Guard que aponta para o artefato, e não para a fonte, dá
+   * confiança falsa. O que sobra aqui é impedir a volta do arquivo versionado.
+   */
+  it("não existe gêmeo Markdown versionado: ele é gerado do banco", () => {
+    expect(arquivos(["public/blog"], [".md"])).toEqual([]);
   });
 });

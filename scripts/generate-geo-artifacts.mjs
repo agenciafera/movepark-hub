@@ -130,11 +130,11 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
       "&order=sort_order.asc,created_at.asc",
   ),
   rest(
-    "destination?select=name,short_name,slug,public_slug,code,city,state,type,seo_label,intro" +
+    "destination?select=id,name,short_name,slug,public_slug,code,city,state,type,seo_label,intro" +
       "&is_published=eq.true&order=sort_order.asc",
   ),
   rest(
-    "blog_post?select=slug,title,published_at,ai_summary" +
+    "blog_post?select=slug,title,published_at,ai_summary,excerpt,body_md,destination_id" +
       "&is_published=eq.true&deleted_at=is.null&order=published_at.desc",
   ),
   rpc("destination_price_index"),
@@ -953,6 +953,55 @@ for (const d of destinations) {
     fs.writeFileSync(path.join(dir, `${m.slug}.md`), linhas.join("\n"));
     lotesMd += 1;
   }
+}
+
+// ---------------------------------------------------------------------------
+// blog/<slug>.md: o gêmeo Markdown de cada post publicado.
+//
+// Passou a ser GERADO em 31/08/2026. Antes eram arquivos versionados em
+// `public/blog/`, escritos uma vez pelo import do WordPress, e o resultado foi drift:
+// o post de Confins teve o arquivo corrigido à mão e o `body_md` não, então o gêmeo
+// dizia uma coisa e a página (que renderiza do banco) dizia outra. Pior, o teste de
+// contrato lia o ARQUIVO, então ficou verde enquanto a página citava o host antigo.
+//
+// Gerando do banco, gêmeo e página não conseguem divergir, e os 35 links absolutos para
+// `/destinos/<slug legado>` que moravam nesses arquivos deixam de existir por construção:
+// o cabeçalho é montado aqui, com `public_slug`.
+// ---------------------------------------------------------------------------
+{
+  const destinoPorId = new Map(destinations.map((d) => [d.id, d]));
+  fs.mkdirSync(path.join(DIST, "blog"), { recursive: true });
+
+  for (const p of posts) {
+    const dest = p.destination_id ? destinoPorId.get(p.destination_id) : null;
+    const resumo = (p.ai_summary ?? p.excerpt ?? "").trim();
+    const linhas = [`# ${p.title}`, ""];
+    if (resumo) linhas.push(`> ${resumo}`, "");
+    linhas.push(`- Publicado em: ${String(p.published_at).slice(0, 10)}`);
+    linhas.push(`- URL: ${SITE_URL}/blog/${p.slug}/`);
+    // Só quando o destino tem página no ar: Portugal tem parceiro e `is_published = false`,
+    // e apontar para lá seria anunciar endereço que o build não gera.
+    if (dest) linhas.push(`- Estacionamentos deste aeroporto: ${SITE_URL}${cDestino(dest)}`);
+    linhas.push("", "---", (p.body_md ?? "").trim(), "");
+    fs.writeFileSync(path.join(DIST, "blog", `${p.slug}.md`), linhas.join("\n"));
+  }
+
+  // O corpus que a IA lê não pode citar o host que aposentamos. A checagem mora aqui, e
+  // não num teste de arquivo, porque a fonte agora é o banco: um `body_md` com o host
+  // antigo reprova o build em vez de sair publicado em silêncio.
+  const comHostAntigo = posts
+    .filter((p) => /hub\.movepark\.co|movepark\.com\.br/.test(p.body_md ?? ""))
+    .map((p) => p.slug);
+  if (comHostAntigo.length > 0) {
+    console.error(
+      `geo-artifacts: ${comHostAntigo.length} post com host antigo no body_md: ` +
+        comHostAntigo.join(", ") +
+        ". Corrija no banco: o gêmeo Markdown e a página saem os dois daí.",
+    );
+    process.exit(1);
+  }
+
+  console.log(`geo-artifacts: ${posts.length} gêmeos Markdown de post gerados do banco`);
 }
 
 // ---------------------------------------------------------------------------

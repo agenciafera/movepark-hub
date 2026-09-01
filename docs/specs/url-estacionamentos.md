@@ -314,3 +314,52 @@ substring.** O `OPO-alegre` custou duas FAQ e foi achado por acaso; a migration
   `is_published = false`. Enquanto for assim, os 14 lotes de lá ficam fora do sitemap e do
   build, por desenho.
 - **`/seja-parceiro` sem canonical.** Única página pública indexável nessa situação.
+
+## O gêmeo Markdown passa a nascer do banco (31/08/2026)
+
+Correção de premissa primeiro: eu disse "32 dos 68 posts publicados não têm gêmeo markdown" e
+o número estava errado. **São 36 posts publicados, com 36 gêmeos, um para um.** Os 68 do
+sitemap do blog são 36 posts mais 31 páginas de arquivo (`/blog/aeroporto/<slug>`,
+`/blog/categoria/<x>`, `/blog/autor/<x>`) mais o índice. Não faltava gêmeo nenhum.
+
+O que a conferência achou no lugar foi pior, e é o motivo desta seção.
+
+### Drift entre o gêmeo e a página
+
+`public/blog/<slug>.md` era arquivo versionado, escrito uma vez pelo import do WordPress. A
+página renderiza do `blog_post.body_md`. São duas cópias do mesmo texto, e elas divergiram:
+
+- Em 30/08 corrigi o host antigo **no arquivo** do post de Confins. O `body_md` ficou como
+  estava. A página seguiu servindo `hub.movepark.co` e `/destinos/aeroporto-de-confins`.
+- O teste de contrato que deveria pegar isso lia o **arquivo**, não o banco. Ficou verde.
+
+Guard que aponta para o artefato, e não para a fonte, dá confiança falsa. Foi exatamente o
+mesmo formato do teste que cravava a URL errada da ficha do lote mapeado.
+
+### Link absoluto nunca tinha sido varrido
+
+A varredura de 31/08 olhou `](/...)` e `href="/..."`. Link **absoluto** passou inteiro pela
+peneira, e é a forma que mais aparece no gêmeo: **35 links para
+`https://movepark.co/destinos/<slug legado>`**, um por post com destino, na linha
+"Estacionamentos deste aeroporto" do cabeçalho. Cinco deles apontavam para
+`aeroporto-humberto-delgado`, que não tem página em endereço nenhum.
+
+No banco: 1 post e 7 trechos da base de conhecimento (o que o chatbot cita) com o host antigo.
+
+### O conserto
+
+1. **Migration `20261110090000`** troca host e gramática antiga em link absoluto e relativo,
+   dirigida pela tabela `destination`, do slug mais LONGO para o mais curto.
+2. **O gêmeo é gerado** pelo `generate-geo-artifacts.mjs`, do mesmo `body_md` que a página
+   usa. Gêmeo e página não conseguem mais divergir, e o cabeçalho sai com `public_slug` por
+   construção. Os 36 arquivos versionados foram apagados.
+3. **O guard do host antigo mudou de lugar**: mora no gerador, que lê o banco, e reprova o
+   build. O teste de contrato que lia os arquivos virou o inverso: falha se alguém voltar a
+   versionar `.md` em `public/blog/`.
+4. **O `check-internal-links.mjs` passou a varrer Markdown e link absoluto**, não só HTML e
+   link relativo.
+
+### Regra
+
+**Guard de conteúdo aponta para a FONTE, nunca para o artefato.** Se o texto vive no banco, o
+guard lê o banco ou roda no gerador; ler o arquivo gerado só prova que o gerador rodou.
