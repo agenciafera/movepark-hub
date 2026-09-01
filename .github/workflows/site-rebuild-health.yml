@@ -1,0 +1,140 @@
+name: Saúde da publicação automática
+
+# Por que este workflow existe. O mecanismo que publica o site quando o conteúdo muda
+# (docs/specs/deploy-automatico.md) ficou 13 dias inerte sem ninguém perceber: faltava o
+# segredo do Deploy Hook, o cron caía num ramo que volta em silêncio e a fila passou de 3.700
+# pedidos represados. A lógica estava certa; o que faltou foi alguém para reclamar.
+#
+# Aqui mora esse alguém. Uma vez por dia a checagem pergunta ao banco se a publicação
+# automática CONSEGUE publicar (`public.site_rebuild_health()`) e, quando a resposta é não,
+# abre ou atualiza uma issue. Quando volta ao normal, a issue é fechada sozinha.
+#
+# O alarme mora no GitHub de propósito. Um cron novo no Postgres escrevendo aviso no log
+# repetiria o defeito original: log que ninguém lê é o mesmo que silêncio. Issue notifica
+# quem acompanha o repo.
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # 09:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_REF: mgaigbezdalbyuqiofcf
+      # secrets não pode ser referenciado em `if:` de step; expomos como env de job (permitido)
+      # e o `if` testa env.SUPABASE_ACCESS_TOKEN. Mesmo padrão do security-scan.yml.
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Pergunta ao banco se a publicação está de pé
+        id: health
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          resp=$(curl -fsSL -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"select public.site_rebuild_health() as h"}' \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query")
+          h=$(echo "$resp" | jq -c '.[0].h')
+          echo "ok=$(echo "$h" | jq -r '.ok')"          >> "$GITHUB_OUTPUT"
+          echo "motivo=$(echo "$h" | jq -r '.motivo // "-"')" >> "$GITHUB_OUTPUT"
+          echo "pendentes=$(echo "$h" | jq -r '.pendentes')"  >> "$GITHUB_OUTPUT"
+          echo "horas=$(echo "$h" | jq -r '.horas_esperando')" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Publicação automática do site"
+            echo '```json'
+            echo "$h" | jq .
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Abre ou atualiza a issue quando a publicação está parada
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        uses: actions/github-script@v7
+        env:
+          MOTIVO: ${{ steps.health.outputs.motivo }}
+          PENDENTES: ${{ steps.health.outputs.pendentes }}
+          HORAS: ${{ steps.health.outputs.horas }}
+        with:
+          script: |
+            const title = "🚨 A publicação automática do site está parada";
+            const explicacao = {
+              sem_deploy_hook:
+                "O segredo `cloudflare_deploy_hook_url` não existe no Vault do Supabase. " +
+                "Sem ele o cron não tem para onde postar e a fila só cresce. " +
+                "Crie o Deploy Hook em Workers & Pages › movepark-hub › Settings › Builds e guarde a URL no Vault.",
+              desligado:
+                "A publicação está desligada em `app_setting.site_rebuild_policy` (`enabled: false`) e já segurou conteúdo além do limite. " +
+                "Se o desligamento não é mais necessário, volte `enabled` para `true`.",
+              fila_parada:
+                "Existe conteúdo esperando publicação há mais tempo que o limite. O cron pode estar parado, ou o Deploy Hook pode estar respondendo erro. " +
+                "Confira `net._http_response` para o último disparo.",
+              fila_grande:
+                "A fila acumulou mais pedidos que o limite sem publicar. Provável disparo falhando em silêncio.",
+            };
+            const motivo = process.env.MOTIVO;
+            const body = [
+              `A checagem diária encontrou a publicação automática do site fora do ar.`,
+              ``,
+              `| | |`,
+              `|---|---|`,
+              `| Motivo | \`${motivo}\` |`,
+              `| Pedidos pendentes | ${process.env.PENDENTES} |`,
+              `| Espera do mais antigo | ${process.env.HORAS} h |`,
+              ``,
+              explicacao[motivo] ?? "Motivo não catalogado. Rode `select public.site_rebuild_health();`.",
+              ``,
+              `Enquanto isso, edição de conteúdo no Manager só vai ao ar num push na \`main\`.`,
+              ``,
+              `Contexto: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/main/docs/specs/deploy-automatico.md`,
+              `Run desta checagem: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "site-rebuild",
+            });
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["site-rebuild"],
+              });
+            }
+
+      - name: Fecha a issue quando a publicação volta
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🚨 A publicação automática do site está parada";
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "site-rebuild",
+            });
+            for (const issue of issues.filter(i => i.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "A checagem de hoje voltou saudável: a fila está sendo publicada. Fechando.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: "closed",
+              });
+            }
+
+      - name: Aviso se o token não está configurado
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          echo "⏭️ SUPABASE_ACCESS_TOKEN não configurado; saúde da publicação não foi checada." >> "$GITHUB_STEP_SUMMARY"
+          echo "Configure em Settings → Secrets para habilitar." >> "$GITHUB_STEP_SUMMARY"

@@ -1,7 +1,9 @@
 # Publicação automática do site
 
 **Status:** implementado em 19/08/2026, migration `20261030140000_deploy_automatico_no_save.sql`.
-**Pendente de ativação:** o Deploy Hook precisa ser criado no Cloudflare e guardado no Vault (§5).
+**Nunca publicou nada.** O Deploy Hook não chegou a ser criado, o segredo do Vault não existe e o
+mecanismo ficou 13 dias inerte sem ninguém perceber. O diagnóstico está em "O silêncio de 13 dias";
+a checagem que passou a reclamar está em "O alarme"; o passo que falta está em "Ativação".
 
 ## O problema
 
@@ -91,6 +93,59 @@ que é escrita por gente. Ficaram de fora de propósito:
   pedido.
 - **`booking`** e o resto do caminho transacional, que não sai em HTML pré-renderizado.
 
+## O silêncio de 13 dias
+
+Descoberto em 01/09/2026, no projeto `mgaigbezdalbyuqiofcf`:
+
+| Sinal | Leitura |
+|---|---|
+| `site_rebuild_request`: 3.834 pendentes, **zero** despachadas, a mais antiga de 19/08/2026 19:00 UTC | nada foi publicado desde o minuto em que o mecanismo entrou |
+| cron `dispatch-site-rebuild` (jobid 21) devolvendo `succeeded` todo minuto | não era cron parado |
+| `site_rebuild_decision()` respondendo `{"acao":"disparar","pendentes":3834}` | a regra de quando publicar estava certa |
+| `select count(*) from vault.decrypted_secrets where name = 'cloudflare_deploy_hook_url'` = **0** | a causa |
+
+Sem o segredo, `cron_dispatch_site_rebuild()` cai no ramo `sem_deploy_hook`, devolve um jsonb
+dizendo isso e volta sem carimbar nada. Ninguém lê esse retorno. Para o pg_cron a execução foi um
+sucesso, porque de fato não houve erro, e essa é a armadilha: **`succeeded` no cron significa "a
+função rodou", não "o site publicou".** Durante 13 dias toda edição de conteúdo no Manager (blog,
+FAQ, destino, unidade, preço espelhado) continuou dependendo de um push na `main` para ir ao ar,
+que era exatamente o problema que o mecanismo existia para resolver.
+
+O defeito não estava na lógica. Estava em não haver ninguém para reclamar do silêncio.
+
+## O alarme
+
+`public.site_rebuild_health(p_now)` responde a outra pergunta que não a da decisão. A decisão diz
+"publico agora?", e responder "não" é o comportamento dela na maioria dos minutos. A saúde diz
+"este mecanismo consegue publicar?", e responder "não" é sempre notícia.
+
+```json
+{"ok": false, "motivo": "sem_deploy_hook", "pendentes": 3834, "mais_antigo": "2026-08-19T19:00:48Z",
+ "horas_esperando": 314.9, "ultimo_build": null, "tem_deploy_hook": false, "ligado": true,
+ "limites": {"pendentes": 250, "horas": 6}}
+```
+
+| Motivo | Quando |
+|---|---|
+| `sem_deploy_hook` | o segredo não existe no Vault. Reclama **mesmo com a fila vazia**: é invariante de configuração, e foi o caso que passou despercebido |
+| `desligado` | `enabled: false` no `app_setting` **e** já segurando conteúdo além do limite de horas. O desligamento de emergência é legítimo; virar estado permanente não é |
+| `fila_parada` | a mudança mais antiga espera há mais que `alert_max_age_hours` (6 h) |
+| `fila_grande` | mais que `alert_max_pending` (250) pedidos sem publicar, antes mesmo de bater o relógio |
+
+Os dois limites moram no mesmo `app_setting.site_rebuild_policy`, então apertar ou afrouxar o
+alarme não exige deploy. A função é `security definer` porque precisa olhar o Vault, e devolve só
+`tem_deploy_hook: true|false`: a URL nunca sai dali (tem teste para isso).
+
+**Quem pergunta é o GitHub Actions**, uma vez por dia, em
+[`.github/workflows/site-rebuild-health.yml`](../../.github/workflows/site-rebuild-health.yml):
+consulta pela Management API do Supabase (com o `SUPABASE_ACCESS_TOKEN` que o `security-scan` já
+usa, sem segredo novo), abre ou atualiza uma issue rotulada `site-rebuild` quando `ok: false` e
+fecha a issue sozinha quando a publicação volta.
+
+Não existe cron novo no Postgres para isso, e é decisão, não esquecimento: um cron cuja única
+consequência é escrever aviso no log do Postgres repetiria o defeito original, porque log que
+ninguém lê é a mesma coisa que silêncio. Issue notifica gente.
+
 ## Ativação (o passo que depende de gente)
 
 Enquanto o segredo não existir, a fila enche e nada é publicado: o cron responde
@@ -104,9 +159,20 @@ tudo o que se acumulou. Nada se perde.
 
 Não coloque a URL no repo, no `wrangler.jsonc` nem em variável do front.
 
+**O passo 1 é de dashboard mesmo, e isso foi verificado.** O token OAuth do wrangler daquela conta
+não alcança `builds/*`: `GET /accounts/{id}/builds/repos`, `/builds/deploy_hooks` e
+`/builds/workers/movepark-hub/builds` respondem `10000 Authentication error`, e não existe rota de
+deploy hook fora de `builds/*` (o que responde em `/workers/services/movepark-hub/...` é o endpoint
+do serviço, que ignora o sufixo e devolve o mesmo JSON para qualquer caminho inventado). Para
+automatizar isso um dia seria preciso um API token com permissão de Workers Builds, criado no
+painel. Enquanto não houver, criar o hook é clique humano.
+
 ## Observar
 
 ```sql
+-- isto está de pé? (a pergunta que o alarme faz todo dia)
+select public.site_rebuild_health();
+
 -- a decisão neste instante
 select public.site_rebuild_decision();
 
@@ -141,9 +207,11 @@ A fila é lida no painel só por `hub_admin` (RLS). Pedido despachado é podado 
 
 ## Testes
 
-`supabase/tests/site_rebuild.test.sql` (pgTAP, 15 casos): estrutura e RLS, o trigger enfileirando,
+`supabase/tests/site_rebuild.test.sql` (pgTAP, 22 casos): estrutura e RLS, o trigger enfileirando,
 um statement de duas linhas gerando um pedido só, as quatro janelas da decisão, o desligamento por
-`app_setting` e o caso sem segredo no Vault (não publica e não perde a fila).
+`app_setting` e o caso sem segredo no Vault (não publica e não perde a fila). Os sete últimos são a
+saúde: alarme aceso sem hook mesmo com a fila vazia, `fila_parada`, `fila_grande`, limite vindo do
+`app_setting` e a garantia de que a URL do hook não aparece no retorno da função.
 
 ## Referências
 

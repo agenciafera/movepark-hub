@@ -7,7 +7,7 @@
 -- disparo é o de segurança: sem segredo no Vault, ninguém publica e a fila não é perdida.
 
 begin;
-select plan(15);
+select plan(22);
 
 delete from public.site_rebuild_request;
 
@@ -91,6 +91,59 @@ select is(public.cron_dispatch_site_rebuild()->>'motivo', 'sem_deploy_hook',
 select is(
   (select count(*)::int from public.site_rebuild_request where dispatched_at is null),
   1, 'e o pedido continua pendente, esperando o hook existir'
+);
+
+-- ── Saúde: a pergunta "isto consegue publicar?" ──
+--
+-- Estes casos existem por causa de 01/09/2026: o mecanismo passou 13 dias inerte porque o
+-- segredo do Deploy Hook nunca foi cadastrado, e nada no sistema reclamava. A decisão de
+-- publicar respondia "não" o tempo todo, o que é normal nela; quem tinha que gritar era a
+-- saúde, que não existia.
+
+-- Sem hook, é notícia mesmo com a fila zerada: o mecanismo está inerte por configuração.
+delete from public.site_rebuild_request;
+select is((public.site_rebuild_health(now())->>'ok')::boolean, false,
+  'sem o Deploy Hook cadastrado, a publicação automática não está saudável');
+select is(public.site_rebuild_health(now())->>'motivo', 'sem_deploy_hook',
+  'e o motivo aponta o segredo que falta, mesmo com a fila vazia');
+
+select vault.create_secret(
+  'https://api.cloudflare.com/client/v4/deploy_hooks/segredo-so-do-teste',
+  'cloudflare_deploy_hook_url',
+  'fixture do pgTAP'
+);
+
+-- A saúde é lida por quem não pode ver a URL: ela responde um booleano, nunca o segredo.
+select is(
+  position('segredo-so-do-teste' in public.site_rebuild_health(now())::text),
+  0, 'a saúde diz que o hook existe sem devolver a URL dele'
+);
+
+select is((public.site_rebuild_health(now())->>'ok')::boolean, true,
+  'com hook e sem fila, a publicação está saudável'
+);
+
+-- Conteúdo esperando além do limite é o sintoma de disparo falhando em silêncio.
+insert into public.site_rebuild_request (source_table, op, requested_at)
+values ('faq', 'UPDATE', now() - interval '10 hours');
+select is(public.site_rebuild_health(now())->>'motivo', 'fila_parada',
+  'conteúdo parado há mais horas que o limite acende o alarme');
+
+-- Fila que incha depressa acende antes de o relógio bater: import ou correção em massa que
+-- não está saindo.
+delete from public.site_rebuild_request;
+insert into public.site_rebuild_request (source_table, op, requested_at)
+select 'location', 'UPDATE', now() from generate_series(1, 251);
+select is(public.site_rebuild_health(now())->>'motivo', 'fila_grande',
+  'fila grande e recente acende o alarme antes do limite de horas'
+);
+
+-- Os limites são config, não código: mexer neles não pode exigir migration.
+update public.app_setting
+   set value = jsonb_set(value::jsonb, '{alert_max_pending}', '5000')::text
+ where key = 'site_rebuild_policy';
+select is((public.site_rebuild_health(now())->>'ok')::boolean, true,
+  'subir o limite no app_setting cala o alarme sem deploy'
 );
 
 select * from finish();

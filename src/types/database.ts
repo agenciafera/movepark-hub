@@ -6835,6 +6835,7 @@ export type Database = {
         Returns: Json
       }
       site_rebuild_decision: { Args: { p_now?: string }; Returns: Json }
+      site_rebuild_health: { Args: { p_now?: string }; Returns: Json }
       slugify: { Args: { p_text: string }; Returns: string }
       split_person_name: {
         Args: { p_full: string }
