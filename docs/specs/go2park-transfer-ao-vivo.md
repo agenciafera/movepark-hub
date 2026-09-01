@@ -14,16 +14,23 @@ A **Go2Park** ([go2park.com.br](https://go2park.com.br)) é o produto irmão da 
 operação de transporte. Do lado do passageiro ela entrega três coisas: a van no mapa em tempo
 real, aviso de proximidade e acesso pelo navegador, sem instalar app nem criar conta.
 
-Três unidades têm o contrato hoje:
+Quatro unidades têm o contrato hoje:
 
 | Empresa | Unidade | Destino | `checkout_mode` |
 |---|---|---|---|
 | Nationpark | `aeroporto-afonso-pena` | Afonso Pena (CWB) | `external` |
 | Virapark | `virapark` | Viracopos (VCP) | `external` |
 | Garageinn | `aeroporto-viracopos` | Viracopos (VCP) | `external` |
+| BePark | `aeroporto-confins` | Confins (CNF) | `external` |
 
 Nenhum vizinho de aeroporto oferece o mesmo, então este é o diferencial comparativo dessas
 unidades na vitrine: quem escolhe entre quatro cards no mesmo aeroporto vê um só com o selo.
+
+A BePark entrou em 01/09/2026, junto com o cadastro da unidade. Ela é o caso em que o selo
+custa menos para ganhar: é a **única** unidade parceira em Confins, um destino que até então só
+tinha lote mapeado, então o diferencial não disputa com vizinho nenhum. `go2park_whatsapp`
+nasceu nulo, como nas outras três, e o bloco fica sem CTA até alguém copiar o número do painel
+da Go2Park.
 
 ## Modelo
 
@@ -45,7 +52,7 @@ os dois selos, então dá para ver quem tem contrato sem abrir nada.
 A permissão não depende da tela. O trigger `location_go2park_guard` recusa quem não é `hub_admin`,
 pela mesma razão de `location_checkout_mode_guard`: com `locations:write` o parceiro ligaria o selo
 por PostgREST sem passar por tela nenhuma. Sem JWT (service role, migration, seed) passa, que é
-como o próprio seed das três unidades roda.
+como o seed das três primeiras unidades roda, e como a BePark foi ligada no cadastro.
 
 **Desligar importa tanto quanto ligar.** Contrato encerrado com o selo no ar vira promessa falsa
 no card e na página, então o caminho de desligar é testado junto com o de ligar
@@ -76,15 +83,17 @@ oferecer botão. O banco recusa qualquer coisa fora do E.164 (constraint
 
 **Por que não reusar `location.phone`:** aquele é o telefone da portaria, canal da garantia de vaga
 ([spot-guarantee.md](./spot-guarantee.md)), e a base legada já registra confusão nessa linha, com
-Nationpark e Abbapark exibindo o número do Virapark. Nas três unidades com Go2Park a `phone` está
-nula hoje, então nem serviria de ponto de partida.
+Nationpark e Abbapark exibindo o número do Virapark. Nas três primeiras unidades com Go2Park a
+`phone` está nula, então nem serviria de ponto de partida. A BePark tem `phone` preenchida
+(+55 31 99559-0090, a que o white-label declara), e ainda assim ela não vira o contato da van:
+é o número do balcão, e quem acabou de pousar precisa falar com quem dirige.
 
 ## ADR-009: é fato, não promessa
 
 O rastreio da van **não** passa por `getLocationCapabilities`. Ele descreve o serviço do lote,
 como endereço, foto e frequência do transfer, e continua verdadeiro independentemente de onde a
-reserva fecha. Passar o bloco pelo gate de capacidade apagaria o diferencial exatamente das três
-unidades que o têm, porque as três são de checkout externo.
+reserva fecha. Passar o bloco pelo gate de capacidade apagaria o diferencial exatamente das
+unidades que o têm, porque todas elas são de checkout externo.
 
 O teste que trava isso é `src/routes/listing.capabilities.test.tsx` (bloco "Go2Park na single"):
 um caso exige o bloco na unidade externa, o outro exige a ausência dele na unidade sem contrato.

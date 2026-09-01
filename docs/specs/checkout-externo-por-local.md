@@ -2,8 +2,9 @@
 
 > **Épico:** E0.14 · **Fase:** 0 · **Q vinculados:** Q-017, Q-018
 > **Status:** implementado em 04/08/2026 (migration `20260921000000_checkout_mode_external.sql`).
-> Nove unidades em modo externo: seis desde 10/08/2026 e as três da Aerovalet desde 12/08/2026
-> (ver o fim deste arquivo).
+> Dez unidades em modo externo: seis desde 10/08/2026, as três da Aerovalet desde 12/08/2026 e a
+> BePark desde 01/09/2026 (ver o fim deste arquivo).
+> Hoje **toda** unidade que a vitrine mostra é externa: as dez publicadas são as dez externas.
 > Nada virou `external` ou `silent` na base: os defaults preservam o comportamento atual e a
 > virada é ato de `hub_admin`, unidade por unidade.
 
@@ -144,6 +145,13 @@ de uma pessoa.
 Em 12/08/2026 são **nove** unidades e dezessete vagas. A decisão continua valendo, porque a
 revisão de janeiro é uma consulta só e cabe numa sentada, mas o número já não é o mesmo que a
 sustentou: o próximo lote que entrar é hora de reabrir a conta, não de reafirmar por hábito.
+
+Esse lote entrou em 01/09/2026 (BePark, dez unidades e dezoito vagas), e a conta foi reaberta:
+**segue fora do código**, porque o que mudou foi a contagem e não a natureza do problema. Dez
+linhas ainda cabem numa consulta, e a revisão de janeiro continua sendo uma sentada. O que a
+BePark muda de verdade é outro parágrafo desta spec: ela é a primeira unidade que **nasceu**
+externa em vez de virar, então "lote novo nasce no Hub", lá no topo, deixou de descrever a
+prática. Quem revisar em janeiro decide as duas coisas juntas, o prazo e a regra de entrada.
 
 Reverter continua sendo uma linha:
 
@@ -411,3 +419,85 @@ unidade `hub` com `uniform_by_duration` e `fixed_bracket` ali. Os 17 casos saír
 motivo dos 13 de 10/08: com a tabela espelhada, o valor golden deixa de descrever aquela linha e
 vira vermelho quando o parceiro mexe no preço dele. As duas estratégias seguem cobertas em
 `supabase/tests/pricing.test.sql`, contra o seed congelado.
+
+## BePark em 01/09/2026: a primeira unidade parceira em Confins
+
+São **dez unidades externas e dezoito vagas**. É a primeira unidade que nasceu direto no modelo
+externo, em vez de virar depois: a empresa, a unidade, o De/Para e a virada saíram no mesmo
+cadastro.
+
+| Empresa | Unidade | Tenant WL | Categoria | Tipo mapeado | Piso |
+|---|---|---|---|---|---|
+| BePark | Aeroporto de Confins | `bepark` | `aeroporto-confins` | coberta → `vaga-coberta` | nenhum |
+
+`hub_relationship = onboarded`. `wl_sync_enabled = false`, como nas outras oito: o parceiro está
+com o limitador de vagas desligado no white-label (`has_spot_data: false` no `/availability`),
+então não há número de ocupação para reconciliar.
+
+### Confins tinha 8 lotes mapeados e nenhum parceiro
+
+Até hoje o destino `aeroporto-de-confins` só existia como vitrine de `prospect_location`
+(ADR-010): AeroPark Confins, IPO Park, Auto Park Brasil, Estacionamento Pátio, Space Park, Park
+Confins, Central Park e Multipark, nenhum com contrato. A BePark é a primeira ficha que fatura
+ali, e por isso é a única do destino com preço, Go2Park e link de saída.
+
+Isso tem consequência de busca, não só de catálogo. O acervo legado do WordPress tinha página
+própria para a BePark (`/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins/`,
+post 1195), e o baseline do Search Console de 24/08 registra **21 cliques e 9.141 impressões**
+para a consulta "bepark", na posição média 8,3. Essa URL hoje responde 301 para a página do
+destino, onde a BePark não aparecia. O cadastro fecha esse buraco.
+
+### A tabela do parceiro tem lacuna, e o espelho a reproduz sem alisar
+
+O parceiro publica três regras (diária de R$ 45,00, pacote de 5 a 7 dias por R$ 200,00, pacote de
+12 a 30 dias por R$ 400,00) e deixa 2 a 4, 8 a 11 e 31 em diante sem regra própria. O que ele
+cobra nessas faixas é o último pacote atingido mais R$ 45,00 por dia, e é a única leitura que
+mantém a curva monotônica: R$ 45/dia direto faria 11 diárias (R$ 495,00) custar mais que 12
+(R$ 400,00).
+
+O amostrador achou isso sozinho, em 41 chamadas, e escreveu:
+
+| from_day | to_day | unit_price | total_price |
+|---|---|---|---|
+| 1 | 4 | 45,00 | |
+| 5 | 7 | | 200,00 |
+| 8 | 8 | | 245,00 |
+| 9 | 9 | | 290,00 |
+| 10 | 10 | 33,50 | |
+| 11 | 11 | | 380,00 |
+| 12 | 30 | | 400,00 |
+| 31 | 31 | | 445,00 |
+| 1 | aberta | 45,00 (balcão) | |
+
+O dia 10 é o detalhe que explica o desenho das duas passadas de agrupamento: R$ 335,00 dividido
+por 10 dá R$ 33,50 exatos, então ele fecha em centavo e vira faixa de diária; os vizinhos 8, 9 e
+11 não fecham e viram preço fechado de um dia. Não é inconsistência, é o agrupamento preferindo
+diária sempre que ela reproduz o total ao centavo.
+
+**Conferido nas duas pontas:** as 19 durações de 1 a 31 diárias batem ao centavo contra o
+parceiro, preço e balcão, e a segunda passada do espelho voltou `changed: 0, divergent: 0`.
+
+### O que a cauda custa
+
+Acima de 31 diárias o motor devolve `NULL` e a busca descarta, porque a faixa 12 a 30 é preço
+fechado e cauda fechada não se abre (a regra está em [espelhamento-preco-wl.md](./espelhamento-preco-wl.md)).
+Só que aqui a cauda **é** conhecida e linear: cotei o parceiro em 31, 35, 45 e 60 diárias e os
+quatro casos são R$ 400,00 mais R$ 45,00 por dia (R$ 445,00, R$ 625,00, R$ 1.075,00 e
+R$ 1.750,00). Ou seja, a BePark vende estadia longa e o Hub deixa de mostrar.
+
+Fica registrado como perda conhecida e pequena (estadia acima de um mês em estacionamento de
+aeroporto é rara), não como pendência: abrir a cauda mexe no amostrador, que serve dezoito vagas,
+e isso é escopo próprio.
+
+### A divergência que apareceu antes de publicar, e não era de preço
+
+A primeira passada do espelho voltou `divergent: 1` com o Hub devolvendo `null` em todas as cinco
+durações verificadas. Não era erro de tabela: a unidade ainda estava com `is_listed = false`, e
+`simulate_price` filtra `is_listed` desde a correção de 18/08 que fechou o vazamento das RPCs
+definer. Com a unidade fora da vitrine, o motor do Hub não tem o que responder, e a verificação
+diferencial lê isso como divergência.
+
+**Quem for cadastrar a próxima: espelhe depois de publicar, ou espere a divergência.** Para
+conferir a tabela antes de publicar, chame `_apply_pricing` direto sobre as faixas gravadas, que
+é o mesmo motor sem o filtro de visibilidade. Foi assim que as 19 durações foram validadas com a
+unidade ainda invisível.

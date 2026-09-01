@@ -82,10 +82,18 @@ export const JOURNEY: JourneyMoment[] = [
 ];
 
 /**
- * Sinais do hero. Números conferidos no banco em 17/08/2026 (projeto
- * mgaigbezdalbyuqiofcf): 18 unidades listadas, todas com `is_24h`, em 6
- * aeroportos distintos. Ao mexer, rode a contagem de novo: número sem lastro é
- * o que esta página não pode ter.
+ * Sinais do hero. Números reconferidos em 01/09/2026 (projeto mgaigbezdalbyuqiofcf),
+ * ao cadastrar a BePark em Confins: 10 unidades vivas, todas com `is_24h`, em 6
+ * destinos. Ao mexer, rode a contagem de novo: número sem lastro é o que esta
+ * página não pode ter.
+ *
+ * **Conte pelo que a vitrine mostra, não por `is_listed`.** Um `select` só por
+ * `is_listed` devolve 19 hoje, e nove desses são de empresa `inactive`, que a busca
+ * descarta. A contagem certa filtra também `location.status`, `company.status` e
+ * `company.onboarding_status` em `active`, que é o mesmo gate de `check_availability`
+ * e de `simulate_price`. Pela contagem frouxa a linha "todas 24h" já estaria falsa,
+ * por causa da unidade de Nova Iguaçu da Moveparking, que é `is_listed` e não é 24h,
+ * mas também não chega à tela.
  */
 export const JOURNEY_STATS = [
   { value: "2 min", label: "Da busca ao voucher no seu e-mail" },
