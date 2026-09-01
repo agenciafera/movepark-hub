@@ -108,6 +108,10 @@ export const ROTAS_PRIVADAS = [
   // roteamento, nunca por decisão.
   "/motor-preview",
   "/design-system",
+  // Documentação da API e do MCP. É material interno, e a decisão é que nunca apareça na
+  // busca. Não custa descoberta por agente: quem consome isso chega pelos cards em
+  // `/.well-known/` e pelo `llms.txt`, que são buscados direto, sem passar pelo índice.
+  "/docs",
 ] as const;
 
 /**

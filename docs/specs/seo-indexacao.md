@@ -43,10 +43,16 @@ Cobertura garantida por teste em [`src/worker.test.ts`](../../src/worker.test.ts
 
 ## Áreas privadas: noindex independente de host
 
-Implementado em 18/08/2026. Sete prefixos respondem `X-Robots-Tag: noindex, follow` em
-**qualquer** host, sem depender da regra de host:
+Implementado em 18/08/2026, com doze prefixos hoje. Todos respondem `X-Robots-Tag: noindex,
+follow` em **qualquer** host, sem depender da regra de host:
 
-`/manager` · `/operator` · `/account` · `/checkout` · `/bookings` · `/onboarding` · `/voucher`
+**As sete áreas logadas** (18/08/2026): `/manager` · `/operator` · `/account` · `/checkout` ·
+`/bookings` · `/onboarding` · `/voucher`
+
+**Cinco que não são área logada, mas também não são conteúdo:** `/descadastro` (carrega o
+destinatário em `?t=<token>`, então indexar publica o token) · `/auth` (retorno de
+autenticação) · `/motor-preview` e `/design-system` (ferramentas internas, públicas por
+descuido de roteamento) · `/docs` (01/09/2026).
 
 **Por que precisou de regra própria.** Elas estavam fora do Google por tabela, não por
 política: o host inteiro respondia `noindex`. No dia em que o `movepark.co` entrar no
@@ -74,10 +80,20 @@ A mesma família de caminhos já é recusada pelo sitemap (`SITEMAP_PRIVATE_PREF
 separadas, um teste em [`src/worker.test.ts`](../../src/worker.test.ts) reprova prefixo que
 entre no worker e não no pós-build do sitemap.
 
-**Ainda em aberto:** rotas que são públicas mas internas por natureza (`/motor-preview`,
-`/design-system`, `/docs`) e o resultado parametrizado de `/search` continuam sem `noindex`
-próprio. Estão fora do sitemap, mas ficam indexáveis no dia do cutover se alguém as linkar.
-Decidir antes de migrar.
+**A doc da API e do MCP (`/docs`) saiu do índice em 01/09/2026.** Ela estava **indexada** de
+fato, não só indexável: a inspeção de URL devolveu "Enviada e indexada" naquele dia. A decisão
+é que material interno nunca apareça na busca. Isso **não** custa descoberta por agente, que
+acontece pelos cards em `/.well-known/` e pelo `llms.txt`, buscados direto e sem passar pelo
+índice; o custo é um parceiro humano não achar a doc pesquisando no Google. Sair do índice
+depende de o Google recrastrear a página para ler o cabeçalho novo, o que leva semanas, e por
+isso **não** se acrescenta `Disallow` no `robots.txt`: bloquear ali impediria a leitura do
+`noindex` e prenderia a URL como "indexada, porém bloqueada".
+
+**Ainda em aberto:** o resultado parametrizado de `/search` continua sem `noindex` próprio e
+**já está indexado** (`/search?dest=GRU` devolveu "Enviada e indexada" em 01/09/2026). Cada
+combinação de `dest`, `from`, `to` e `src` é uma URL distinta, ou seja, espaço sem fim
+consumindo orçamento de rastreio. Decidir se a busca sem parâmetro fica e a parametrizada sai,
+ou se a família inteira sai.
 
 ## Operação
 

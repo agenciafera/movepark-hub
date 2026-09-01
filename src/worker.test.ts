@@ -389,6 +389,8 @@ describe("noindex por rota nas áreas privadas", () => {
     // Ferramentas internas, públicas por descuido de roteamento.
     "/motor-preview",
     "/design-system",
+    // Doc da API e do MCP: interna por decisão, e estava indexada até 01/09/2026.
+    "/docs",
   ])("%s nunca pode sair da lista de rotas privadas", (area) => {
     expect(ROTAS_PRIVADAS).toContain(area);
     expect(ehRotaPrivada(`${area}/qualquer/coisa`)).toBe(true);

@@ -30,6 +30,8 @@ const PRIVADOS = [
   "/onboarding",
   "/motor-preview",
   "/design-system",
+  // Doc da API e do MCP: interna por decisão. Ver ROTAS_PRIVADAS no worker.
+  "/docs",
   "/descadastro",
   "/auth",
   "/finance",
