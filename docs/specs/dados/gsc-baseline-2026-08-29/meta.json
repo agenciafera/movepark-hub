@@ -1,0 +1,15 @@
+{
+  "propriedade": "sc-domain:movepark.co",
+  "inicio": "2025-04-30",
+  "fim": "2026-08-29",
+  "dataState": "final",
+  "geradoEm": "2026-09-01T20:52:17.536Z",
+  "script": "scripts/gsc-baseline.mjs",
+  "linhas": {
+    "consultas": 9865,
+    "paginas": 808,
+    "consultaPagina": 37753,
+    "dias": 487,
+    "consultasClassificadas": 880
+  }
+}
