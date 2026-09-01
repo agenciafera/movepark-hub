@@ -6,7 +6,7 @@ import type { BlogPost, Destination } from "@/types/domain";
 import { caminhoDestino } from "@/lib/urls";
 
 type Props = {
-  destination: Pick<Destination, "name" | "slug" | "public_slug"> | null;
+  destination: Pick<Destination, "name" | "slug" | "public_slug" | "is_published"> | null;
   relacionados: BlogPost[];
 };
 
@@ -79,7 +79,12 @@ export function PostSidebar({ destination, relacionados }: Props) {
         O CTA por destino é o motivo de `destination_id` existir: sem ele o post
         preserva o ranking e não tem para onde mandar o leitor.
       */}
-      {destination && (
+      {/*
+        Só com a página do destino no ar. Portugal tem parceiro e não tem
+        `/estacionamentos/aeroporto-lisboa`, porque o `destination` está despublicado: o
+        botão existia e levava a lugar nenhum em todo post de Lisboa, Porto e Faro.
+      */}
+      {destination?.is_published && (
         <div className="rounded-md bg-mp-primary p-5">
           <h2 className="text-display-sm text-white">Vai viajar por {destination.name}?</h2>
           <p className="mt-2 text-body-sm leading-relaxed text-white/85">

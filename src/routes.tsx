@@ -358,7 +358,10 @@ async function fetchAllDestinationPaths(): Promise<string[]> {
 
 
 const BLOG_SELECT =
-  "*, destination:destination(id, name, short_name, slug)," +
+  // `public_slug` e `is_published` do destino não são enfeite: sem o primeiro o CTA da
+  // sidebar cai no slug legado, e sem o segundo ele oferece página de destino que o SSG
+  // não gera (Portugal). Os dois viraram link morto no blog inteiro até 30/08/2026.
+  "*, destination:destination(id, name, short_name, slug, public_slug, is_published)," +
   " category:blog_category(id, name, slug)," +
   " author:blog_author(id, name, slug)," +
   " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
@@ -595,6 +598,9 @@ async function faqPerguntaLoader({ params }: LoaderFunctionArgs) {
           kind: "destino",
           destino: {
             slug: dest.slug,
+            // Sem copiar o público aqui, o `public_slug ?? slug` da tela caía no legado e
+            // a FAQ linkava `/estacionamentos/<slug antigo>/precos`, que não existe.
+            public_slug: dest.public_slug,
             unitCount: resumo.unitCount,
             partnerCount: resumo.partnerCount,
             byDuration: resumo.byDuration.map((d) => ({
@@ -660,6 +666,7 @@ async function precosLoader(): Promise<PrecosIndexData | null> {
         prospects[a.slug] = cards.map((p) => ({
           name: p.name,
           slug: p.slug,
+          public_path: p.public_path,
           distance_km: p.distance_km,
         }));
       }),
@@ -718,7 +725,12 @@ async function calculadoraLoader(): Promise<CalculadoraData | null> {
         const cards = await fetchDestinationProspects(s).catch(() => []);
         return [
           s,
-          cards.map((p) => ({ name: p.name, slug: p.slug, distance_km: p.distance_km })),
+          cards.map((p) => ({
+            name: p.name,
+            slug: p.slug,
+            public_path: p.public_path,
+            distance_km: p.distance_km,
+          })),
         ] as const;
       }),
     );

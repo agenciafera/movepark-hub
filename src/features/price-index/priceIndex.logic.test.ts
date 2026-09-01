@@ -281,6 +281,7 @@ describe("buildAirportSections", () => {
   const prospect = (slug: string): IndexProspect => ({
     name: `Lote ${slug}`,
     slug,
+    public_path: `/estacionamentos/aeroporto-guarulhos/${slug}`,
     distance_km: 1.2,
   });
 
@@ -470,7 +471,7 @@ describe("groupAirports", () => {
   it("separa por aquilo que a Movepark consegue prometer em cada aeroporto", () => {
     const { rows } = buildMatrix(dest([unit({})]), [1, 7, 15], 1);
     const comParceiro = secao({ rows });
-    const soMapeado = secao({ mapeados: [{ name: "Lote", slug: "lote", distance_km: 1 }] });
+    const soMapeado = secao({ mapeados: [{ name: "Lote", slug: "lote", public_path: "/estacionamentos/d/lote", distance_km: 1 }] });
     const vazio = secao({});
 
     const g = groupAirports([vazio, comParceiro, soMapeado]);
@@ -489,7 +490,7 @@ describe("groupAirports", () => {
 
   it("um aeroporto entra em exatamente um grupo", () => {
     const { rows } = buildMatrix(dest([unit({})]), [1, 7, 15], 1);
-    const todas = [secao({ rows }), secao({ mapeados: [{ name: "L", slug: "l", distance_km: null }] }), secao({})];
+    const todas = [secao({ rows }), secao({ mapeados: [{ name: "L", slug: "l", public_path: "/estacionamentos/d/l", distance_km: null }] }), secao({})];
     const g = groupAirports(todas);
     expect(g.comReserva.length + g.mapeados.length + g.aindaMapeando.length).toBe(todas.length);
   });

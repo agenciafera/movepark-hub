@@ -29,15 +29,23 @@ const NUMBERS = [
 ];
 
 /** Destinos com estacionamento parceiro no ar, do mais servido pro menos. */
+/**
+ * As oito vitrines do mapa de destinos.
+ *
+ * Só entra destino com página no ar. Lisboa e Faro estavam aqui e os dois ladrilhos eram
+ * link morto: as praças de Portugal têm parceiro, mas o `destination` delas está
+ * `is_published = false`, então o SSG não gera `/estacionamentos/aeroporto-lisboa`. Ficaram
+ * Confins e Galeão no lugar até Portugal ganhar página (30/08/2026).
+ */
 const DESTINATIONS = [
   { slug: "jardim-paulista", image: "jardim-paulista", name: "Jardim Paulista", city: "São Paulo" },
   { slug: "aeroporto-guarulhos", image: "GRU", name: "Guarulhos", city: "GRU" },
   { slug: "aeroporto-curitiba", image: "CWB", name: "Afonso Pena", city: "CWB" },
-  { slug: "aeroporto-lisboa", image: "LIS", name: "Lisboa", city: "LIS" },
+  { slug: "aeroporto-confins", image: "CNF", name: "Confins", city: "CNF" },
   { slug: "centro-de-sao-paulo", image: "centro-sp", name: "Centro", city: "São Paulo" },
   { slug: "aeroporto-congonhas", image: "CGH", name: "Congonhas", city: "CGH" },
   { slug: "aeroporto-viracopos", image: "VCP", name: "Viracopos", city: "VCP" },
-  { slug: "aeroporto-faro", image: "FAO", name: "Faro", city: "FAO" },
+  { slug: "aeroporto-galeao", image: "GIG", name: "Galeão", city: "GIG" },
 ];
 
 const VALUES = [

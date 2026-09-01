@@ -56,6 +56,9 @@ function dest(overrides: Partial<Destination> = {}): Destination {
     short_name: "Guarulhos",
     seo_label: "Aeroporto Guarulhos (GRU)",
     slug: "aeroporto-de-guarulhos",
+    // Slug legado E slug público, como em produção. Sem o público aqui o teste media um
+    // destino que não existe mais, e foi assim que ele cravou a URL errada por dois dias.
+    public_slug: "aeroporto-guarulhos",
     type: "airport",
     city: "Guarulhos",
     state: "SP",
@@ -270,10 +273,11 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
     // entregaria de graça o que íamos cobrar 20%, e link de reserva prometeria o que não
     // existe (CDC art. 30/31). Nenhum dos dois nasce numa refatoração sem este teste cair.
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute(
-      "href",
-      "/estacionamentos/aeroporto-de-guarulhos/talentos-park-aeroporto-recife",
-    );
+    // O `public_path` da RPC manda, e nada é montado a partir do slug legado. A asserção
+    // antiga esperava `/estacionamentos/<slug legado>/<slug legado>`, que não é rota: num
+    // clique dentro do app não há requisição HTTP, o 301 do Worker não roda e a pessoa cai
+    // em "Vaga não encontrada". Eram os 131 links da lista (corrigido em 30/08/2026).
+    expect(links[0]).toHaveAttribute("href", "/estacionamentos/aeroporto-recife/talentos-park");
     expect(linha.querySelectorAll("button")).toHaveLength(0);
     expect(linha).not.toHaveTextContent(/R\$/);
     // Nenhum href absoluto: é assim que "link para fora" apareceria.
@@ -282,6 +286,22 @@ describe("DestinoPage · lotes mapeados (E0.17-d)", () => {
         /^https?:\/\//.test(el.getAttribute("href") ?? ""),
       ),
     ).toHaveLength(0);
+  });
+
+  it("sem public_path, o fallback monta a URL com os slugs PÚBLICOS dos dois lados", () => {
+    // O fallback existe para ficha sem caminho no banco. Ele não pode reintroduzir o slug
+    // legado por baixo: seria o mesmo link quebrado, só que mais difícil de achar.
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({
+      data: [prospect({ public_path: null })],
+    } as never);
+
+    render();
+
+    expect(linhaMapeada().querySelector("a")).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-guarulhos/talentos-park",
+    );
   });
 
   it("a linha é clicável inteira, e o texto do link continua sendo só o nome", () => {
@@ -605,7 +625,8 @@ describe("lista de unidades no HTML do build", () => {
     expect(itens[0].item.url).toContain("/estacionamentos/aeroporto-curitiba/abbapark");
     expect(itens[1].item["@type"]).toBe("ParkingFacility");
     expect(itens[1].item.name).toBe("Talentos Park");
-    expect(itens[1].item.url).toContain("/estacionamentos/aeroporto-de-guarulhos/talentos-park");
+    // Slug público dos dois lados, aqui também: o schema descreve a URL que existe.
+    expect(itens[1].item.url).toContain("/estacionamentos/aeroporto-guarulhos/talentos-park");
   });
 
   it("sem matriz do motor, o item vendável descreve o lugar em vez de chutar preço", async () => {
@@ -931,7 +952,8 @@ describe("DestinoPage · quanto custa e distância", () => {
     expect(document.body.textContent).not.toMatch(/cobrado no checkout/i);
     expect(screen.getByRole("link", { name: /Ver a tabela completa de preços/i })).toHaveAttribute(
       "href",
-      "/estacionamentos/aeroporto-de-guarulhos/precos",
+      // Slug público: `/estacionamentos/<slug legado>/precos` não é página gerada.
+      "/estacionamentos/aeroporto-guarulhos/precos",
     );
     expect(
       screen.getByRole("link", { name: /Como a Movepark apura preço e distância/i }),

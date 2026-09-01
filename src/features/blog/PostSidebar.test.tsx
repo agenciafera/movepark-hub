@@ -4,7 +4,13 @@ import { MemoryRouter } from "react-router-dom";
 import { PostSidebar } from "./PostSidebar";
 import type { BlogPost } from "@/types/domain";
 
-const DESTINO = { name: "Aeroporto de Viracopos", slug: "aeroporto-de-viracopos", public_slug: "aeroporto-de-viracopos" };
+/** Slug legado E público, como toda linha real: o CTA tem que usar o público. */
+const DESTINO = {
+  name: "Aeroporto de Viracopos",
+  slug: "aeroporto-de-viracopos",
+  public_slug: "aeroporto-viracopos",
+  is_published: true,
+};
 
 const RELACIONADO = {
   id: "post-2",
@@ -41,11 +47,23 @@ describe("PostSidebar", () => {
   it("o CTA do destino aponta para a página que converte", () => {
     montar({ destination: DESTINO, relacionados: [] });
     const cta = screen.getByRole("link", { name: "Ver estacionamentos" });
-    expect(cta).toHaveAttribute("href", "/estacionamentos/aeroporto-de-viracopos");
+    expect(cta).toHaveAttribute("href", "/estacionamentos/aeroporto-viracopos");
     expect(cta.className).toContain("h-12");
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
       "Vai viajar por Aeroporto de Viracopos?",
     );
+  });
+
+  it("sem página de destino no ar, o CTA não existe em vez de apontar para o vazio", () => {
+    // Portugal tem parceiro e não tem página: o `destination` está despublicado, o SSG não
+    // gera `/estacionamentos/aeroporto-lisboa` e o botão levava a lugar nenhum em todo post
+    // de Lisboa, Porto e Faro (30/08/2026).
+    montar({
+      destination: { ...DESTINO, name: "Aeroporto de Lisboa", is_published: false },
+      relacionados: [],
+    });
+    expect(screen.queryByRole("link", { name: "Ver estacionamentos" })).toBeNull();
+    expect(screen.queryByText(/Vai viajar por/)).toBeNull();
   });
 
   it("os relacionados entram como lista de links com data", () => {

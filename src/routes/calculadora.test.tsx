@@ -63,9 +63,21 @@ const DATA: CalculadoraData = {
   ],
   prospects: {
     "aeroporto-internacional-de-sao-paulo-guarulhos": [
-      { name: "Talentos Park", slug: "talentos-park", distance_km: 1.2 },
+      {
+        name: "Talentos Park",
+        slug: "talentos-park-aeroporto-guarulhos",
+        public_path: "/estacionamentos/aeroporto-guarulhos/talentos-park",
+        distance_km: 1.2,
+      },
     ],
-    "aeroporto-de-confins": [{ name: "Golden Park", slug: "golden-park", distance_km: 1.4 }],
+    "aeroporto-de-confins": [
+      {
+        name: "Golden Park",
+        slug: "golden-park-aeroporto-confins",
+        public_path: "/estacionamentos/aeroporto-confins/golden-park",
+        distance_km: 1.4,
+      },
+    ],
   },
   data: {
     days: DIAS,
@@ -163,9 +175,12 @@ describe("CalculadoraPage", () => {
       screen.getByText("Mapeados pela nossa equipe. O preço é a tabela do local."),
     ).toBeInTheDocument();
     const fichas = screen.getAllByRole("link", { name: "Ver ficha" });
+    // O `public_path` da RPC manda. A asserção antiga esperava a URL montada com o slug
+    // legado do destino, que não é rota: num clique dentro do app não há requisição HTTP,
+    // o 301 do Worker não roda e a pessoa cai em "Vaga não encontrada" (30/08/2026).
     expect(fichas[fichas.length - 1]).toHaveAttribute(
       "href",
-      "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/talentos-park",
+      "/estacionamentos/aeroporto-guarulhos/talentos-park",
     );
   });
 

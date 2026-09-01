@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "lefthook install && node scripts/setup-git-filters.mjs",
     "dev": "node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite",
-    "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build && node scripts/canonicalize-sitemap.mjs && node scripts/split-sitemap.mjs && node scripts/write-paths-manifest.mjs && node scripts/generate-geo-artifacts.mjs && node scripts/audit-structured-data.mjs",
+    "build": "tsc -b && node --import ./scripts/ws-polyfill.mjs node_modules/.bin/vite-react-ssg build && node scripts/canonicalize-sitemap.mjs && node scripts/split-sitemap.mjs && node scripts/write-paths-manifest.mjs && node scripts/check-internal-links.mjs && node scripts/generate-geo-artifacts.mjs && node scripts/audit-structured-data.mjs",
     "preview": "bun run build && wrangler dev",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit && tsc -p e2e/playwright/tsconfig.json --noEmit",

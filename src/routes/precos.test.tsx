@@ -66,8 +66,18 @@ const DATA: PrecosIndexData = {
   ],
   prospects: {
     "aeroporto-de-confins": [
-      { name: "Golden Park", slug: "golden-park", distance_km: 1.4 },
-      { name: "Park do Aeroporto", slug: "park-do-aeroporto", distance_km: 2.1 },
+      {
+        name: "Golden Park",
+        slug: "golden-park",
+        public_path: "/estacionamentos/aeroporto-confins/golden-park",
+        distance_km: 1.4,
+      },
+      {
+        name: "Park do Aeroporto",
+        slug: "park-do-aeroporto",
+        public_path: "/estacionamentos/aeroporto-confins/park-do-aeroporto",
+        distance_km: 2.1,
+      },
     ],
   },
   data: {

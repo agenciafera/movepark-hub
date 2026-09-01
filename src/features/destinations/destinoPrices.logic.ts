@@ -95,6 +95,14 @@ export type PesquisadoInput = {
   public_name?: string | null;
   slug: string;
   public_path?: string | null;
+  /**
+   * Último segmento da URL pública. O fallback usa ELE, nunca o `slug`, que é o slug
+   * legado: `/estacionamentos/<destino>/<slug legado>` não é rota nenhuma. Num clique
+   * dentro do app não há requisição HTTP, então o 301 do Worker nunca roda e a pessoa
+   * cai em "Vaga não encontrada" (30/08/2026, 131 links da lista de distância).
+   */
+  public_slug?: string | null;
+
   researched_daily_brl: number | null;
   researched_weekly_brl: number | null;
   researched_biweekly_brl: number | null;
@@ -132,7 +140,7 @@ export function pesquisadoRows(
       key: `pesquisado:${p.slug}`,
       label: (p.public_name ?? "").trim() || p.name,
       shortLabel: p.name,
-      path: p.public_path ?? caminhoFicha(destinationSlug, p.slug),
+      path: p.public_path ?? caminhoFicha(destinationSlug, p.public_slug ?? p.slug),
       totals,
       researchedAt: p.researched_at as string,
     }))
@@ -346,8 +354,16 @@ export type ProximityRow = {
 export type ProximityProspect = {
   name: string;
   slug: string;
-  /** Caminho da ficha, montado no banco. Cai para o slug quando a ficha não tem. */
+  /** Caminho da ficha, montado no banco. É o valor bom: quem chama repassa o da RPC. */
   public_path?: string | null;
+  /**
+   * Último segmento da URL pública. O fallback usa ELE, nunca o `slug`, que é o slug
+   * legado: `/estacionamentos/<destino>/<slug legado>` não é rota nenhuma. Num clique
+   * dentro do app não há requisição HTTP, então o 301 do Worker nunca roda e a pessoa
+   * cai em "Vaga não encontrada" (30/08/2026, 131 links da lista de distância).
+   */
+  public_slug?: string | null;
+
   address?: string | null;
   distance_km: number | null;
   /** Ponto do destino mais perto deste lote ("Terminal 2"), quando o destino tem pontos. */
@@ -369,6 +385,7 @@ export type ProximityProspect = {
 export function proximityRanking(args: {
   units: PriceUnit[];
   prospects: ProximityProspect[];
+  /** Slug PÚBLICO do destino. O legado aqui monta URL que só existe atrás de um 301. */
   destinationSlug: string;
   /** Rótulo do que fica no fim da frase de distância ("do terminal"). */
   anchorLabel?: string | null;
@@ -423,7 +440,7 @@ export function proximityRanking(args: {
         meters == null
           ? null
           : `${formatDistance(meters)}${p.reference_name ? ` do ${p.reference_name}` : sufixo}`,
-      path: p.public_path ?? caminhoFicha(args.destinationSlug, p.slug),
+      path: p.public_path ?? caminhoFicha(args.destinationSlug, p.public_slug ?? p.slug),
       kind: "mapped" as const,
     };
   });

@@ -71,6 +71,11 @@ const CONTAINER = "mx-auto w-full max-w-[1080px] px-4 desktop:px-8";
 export type CalculadoraProspect = {
   name: string;
   slug: string;
+  /**
+   * Caminho da ficha, montado no banco. Sem ele o link saía de `slug`, que é o slug
+   * legado, e a gaveta mandava a pessoa para uma URL que não é rota (30/08/2026).
+   */
+  public_path: string | null;
   distance_km: number | null;
 };
 
@@ -1266,7 +1271,7 @@ export default function CalculadoraPage() {
                         </span>
                       </span>
                       <Link
-                        to={caminhoFicha(destinoSlug, p.slug)}
+                        to={p.public_path ?? caminhoFicha(destinoSlug, p.slug)}
                         className="shrink-0 text-caption-sm font-medium text-mp-indigo underline underline-offset-4"
                       >
                         Ver ficha

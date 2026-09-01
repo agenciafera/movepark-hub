@@ -194,3 +194,56 @@ O momento é o mais barato que vai existir: as páginas `/p/*` viveram sob `noin
 2. **"AeroPark"** em Confins colide com a marca do parceiro **Aeropark** em Guarulhos. Destinos diferentes, então não há conflito de URL nem de página, mas numa lista global aparecem dois.
 3. **"RL"** (Galeão) e **"JR"** (Cuiabá) ficaram curtos depois de tirar "Estacionamentos". Podem voltar ao nome cheio como exceção.
 4. **Cinco parceiros ativos e listados ficam fora do `sitemap-unidades.xml`** (Lisboa Park, Gaita Park, Motion Park, Moveparking, Agência Fera). São empresas com `status` fora de `active`, o mesmo grupo que a `20261029100000` já tratou. Confirmar se é demo antes de dar URL pública a eles.
+
+## O 301 do Worker não salva link interno (30/08/2026)
+
+A lista de distância da página de destino montava o caminho da ficha do lote mapeado com o
+slug **legado dos dois lados** em vez de usar o `public_path` que a RPC já devolve. Eram 131
+links, um por lote mapeado, em todos os 26 destinos.
+
+**Por que ninguém viu por dois dias.** No `curl` a URL responde 301, porque o Worker tem o
+mapa de URL legada (`url_legacy_map()`) e o alvo é 200. Só que clique dentro do app é
+navegação do React Router: **não existe requisição HTTP**, o Worker não roda, o roteador casa
+`/estacionamentos/:destino/:lote` com os slugs errados, `fichaMapeadaLoader` não acha o lote
+pelo `public_slug` e a tela mostra "Vaga não encontrada". Quem só testa com `curl` vê tudo
+verde.
+
+**Por que o teste não pegou.** Ele existia e cravava a URL errada: `expect(links[0])
+.toHaveAttribute("href", "/estacionamentos/aeroporto-de-guarulhos/talentos-park-aeroporto-recife")`.
+A fixture do destino também não tinha `public_slug`, então media um mundo onde a virada de URL
+não aconteceu.
+
+### A regra
+
+**Link para a ficha sai de `public_path`.** A RPC monta, o front repassa. Onde houver fallback,
+ele usa slug **público** dos dois lados, nunca o legado. Loader que enxuga a linha da RPC
+(`prospects.map(...)`) tem que carregar `public_path` junto: foi assim que o caminho se perdeu
+em três lugares (a lista de distância, a gaveta da calculadora e o índice de preços).
+
+### O guarda
+
+`scripts/check-internal-links.mjs` roda no `bun run build`, depois do `write-paths-manifest`.
+Cruza todo `href="/estacionamentos/..."` do `dist` com o `paths-manifest.json` e **reprova o
+build** quando o alvo não existe. Escopo estreito de propósito: só essa família, que é a que
+tem slug legado e slug público convivendo. Rota de app sem HTML pré-renderizado (`/search`,
+`/checkout/:code`) fica fora e continua sendo assunto do worker.
+
+Na primeira execução ele achou 16 alvos quebrados além dos 131 links. Todos do mesmo formato,
+"alguém leu `slug` onde devia ler `public_slug`":
+
+| Onde | O que estava errado |
+|---|---|
+| `destino.tsx` → lista de distância | não repassava `public_path` ao `proximityRanking` |
+| `destino.tsx` → "Ver a tabela completa" | passava `destination.slug` para a tabela de preço |
+| `routes.tsx` → loader da FAQ | montava `precos.destino` sem copiar `public_slug` |
+| `routes.tsx` → `BLOG_SELECT` | não trazia `public_slug` do destino, e o CTA da sidebar caía no legado |
+| `routes.tsx` → loaders de `/precos` e `/calculadora` | descartavam `public_path` do lote |
+| `sobre.tsx` | dois ladrilhos fixos apontando para Lisboa e Faro, que não têm página |
+| conteúdo (8 posts, 5 trechos, 2 FAQ) | link para `/estacionamentos/aeroporto-lisboa`, que não existe em endereço nenhum |
+
+### Portugal
+
+Lisboa, Porto e Faro têm parceiro no ar e `destination.is_published = false`, então o SSG não
+gera página para eles. Enquanto for assim, link de conteúdo aponta para `/search?dest=<código>`
+(migration `20261108090000`) e o CTA da sidebar do blog não renderiza (`destination.is_published`).
+Publicar as três praças resolve os dois e é decisão de produto, não de código.

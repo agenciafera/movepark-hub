@@ -275,6 +275,12 @@ export default function DestinoPage() {
     return {
       name: p.name,
       slug: p.slug,
+      // O caminho vem PRONTO da RPC. Sem estas duas linhas o ranking montava
+      // `/estacionamentos/<slug legado do destino>/<slug legado do lote>`, que não é rota:
+      // no clique dentro do app não há requisição HTTP, o 301 do Worker nunca roda e a
+      // pessoa cai em "Vaga não encontrada". Eram os 131 links da lista de distância.
+      public_path: p.public_path,
+      public_slug: p.public_slug,
       address: p.address,
       distance_km: p.distance_km,
       reference_name: p.reference_name,
@@ -288,7 +294,7 @@ export default function DestinoPage() {
   const proximity = proximityRanking({
     units: priceDest?.units ?? [],
     prospects: prospectRows,
-    destinationSlug: destination.slug,
+    destinationSlug: destinoSlug,
     anchorLabel: proximityAnchorLabel(destination),
     addressByLocation,
   });
@@ -337,7 +343,7 @@ export default function DestinoPage() {
           partners: partnerOffers,
           mapped: prospectItems.map((p) => ({
             name: p.name,
-            url: p.public_path ?? caminhoFicha(destinoSlug, p.slug),
+            url: p.public_path ?? caminhoFicha(destinoSlug, p.public_slug ?? p.slug),
           })),
         })
       : null;
@@ -662,7 +668,7 @@ export default function DestinoPage() {
                 prices={prices}
                 generatedAt={generatedAt}
                 pesquisados={pesquisados}
-                destinationSlug={destination.slug}
+                destinationSlug={destinoSlug}
                 heading={priceHeading(destination)}
               />
             </div>

@@ -30,7 +30,7 @@ export const blogKeys = {
  * rascunho para o público, então ele mora nesta const, num lugar só.
  */
 const baseSelect =
-  "*, destination:destination(id, name, short_name, slug, public_slug)," +
+  "*, destination:destination(id, name, short_name, slug, public_slug, is_published)," +
   " category:blog_category(id, name, slug)," +
   " author:blog_author(id, name, slug, avatar_url)," +
   " tags:blog_post_tag(tag:blog_tag(id, name, slug))";
@@ -76,7 +76,7 @@ export function useBlogPost(slug: string | undefined) {
  */
 const listSelect =
   "id, slug, title, excerpt, cover_image_url, published_at," +
-  " destination:destination(id, name, short_name, slug, public_slug)," +
+  " destination:destination(id, name, short_name, slug, public_slug, is_published)," +
   " category:blog_category(id, name, slug)," +
   " author:blog_author(id, name, slug, avatar_url)," +
   " tags:blog_post_tag(tag:blog_tag(id, name, slug))";

@@ -227,8 +227,10 @@ export type AirportMeta = {
 /** Lote mapeado sem contrato (ADR-010), compacto para a tabela do índice. */
 export type IndexProspect = {
   name: string;
-  /** Slug público do lote, no mesmo namespace da unidade parceira. */
+  /** Slug do lote como veio da RPC. Não serve para montar URL: use `public_path`. */
   slug: string;
+  /** Caminho da ficha, montado no banco. */
+  public_path: string | null;
   distance_km: number | null;
 };
 

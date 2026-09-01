@@ -64,10 +64,14 @@ describe("SobrePage — /sobre", () => {
       "href",
       "/estacionamentos/aeroporto-guarulhos",
     );
-    expect(screen.getByRole("link", { name: /Lisboa/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Confins/i })).toHaveAttribute(
       "href",
-      "/estacionamentos/aeroporto-lisboa",
+      "/estacionamentos/aeroporto-confins",
     );
+    // Nenhum ladrilho para praça sem página. Lisboa e Faro estavam aqui e eram link morto:
+    // as duas têm parceiro, mas o `destination` está despublicado e o SSG não gera a página.
+    expect(screen.queryByRole("link", { name: /Lisboa/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Faro/i })).toBeNull();
     expect(screen.getByRole("link", { name: /Ver todos os destinos/i })).toHaveAttribute(
       "href",
       "/estacionamentos",

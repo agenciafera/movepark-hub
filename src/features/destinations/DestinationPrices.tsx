@@ -439,12 +439,17 @@ export function DestinationPriceTable({
         </p>
 
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <Link
-            to={caminhoPrecos(destinationSlug)}
-            className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
-          >
-            Ver a tabela completa de preços
-          </Link>
+          {/* `/estacionamentos/<destino>/precos` só existe onde o motor tem unidade, porque
+              é ele que gera a página. Em destino que só tem preço pesquisado o link levava
+              a lugar nenhum, e foi a própria mudança de 30/08 que criou o caso. */}
+          {!soPesquisa && (
+            <Link
+              to={caminhoPrecos(destinationSlug)}
+              className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
+            >
+              Ver a tabela completa de preços
+            </Link>
+          )}
           <Link
             to="/metodologia"
             className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
