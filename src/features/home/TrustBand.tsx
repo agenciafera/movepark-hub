@@ -53,7 +53,7 @@ function VerifiedIllustration() {
             <SealCheck className="tb-badge-pop h-4 w-4 shrink-0 text-mp-primary" />
           </div>
           <div className="mt-0.5 flex items-center gap-1">
-            <Star className="tb-star h-3 w-3 fill-mp-navy stroke-none" />
+            <Star weight="fill" className="tb-star h-3 w-3 text-mp-navy" />
             <span className="text-[12px] text-muted">4.9 · 248 avaliações</span>
           </div>
         </div>

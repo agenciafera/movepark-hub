@@ -155,7 +155,7 @@ export function RecommendedCarousel({
 
                     {item.location.review_avg != null && item.location.review_count > 0 && (
                       <div className="mt-1.5 flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-ink text-ink" />
+                        <Star weight="fill" className="h-3 w-3 text-ink" />
                         <span className="text-caption font-medium text-ink">
                           {item.location.review_avg.toFixed(1)}
                         </span>

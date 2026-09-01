@@ -36,8 +36,15 @@ export function RatingStars({
     >
       {[1, 2, 3, 4, 5].map((n) => {
         const filled = n <= value;
+        // A estrela cheia é OUTRO GLIFO, não a mesma com `fill` no CSS. No Lucide o desenho
+        // era um traço e `fill-current` preenchia o miolo; no Phosphor o peso `regular` já é
+        // o contorno fechado, então `fill-ink` só pintava a moldura e nota 4 saía igual a
+        // nota 0. Quem troca cheia por vazia aqui é o `weight`.
         const star = (
-          <Star className={cn(SIZE[size], filled ? "fill-ink text-ink" : "text-hairline")} />
+          <Star
+            weight={filled ? "fill" : "regular"}
+            className={cn(SIZE[size], filled ? "text-ink" : "text-hairline")}
+          />
         );
         return onChange ? (
           <button
@@ -87,7 +94,7 @@ export function RatingBadge({
   if (href) {
     return (
       <a href={href} className={cn(base, "underline-offset-2 hover:underline", className)}>
-        <Star className="h-3.5 w-3.5 fill-ink text-ink" />
+        <Star weight="fill" className="h-3.5 w-3.5 text-ink" />
         {label}
         {suffixNode}
       </a>
@@ -95,7 +102,7 @@ export function RatingBadge({
   }
   return (
     <span className={cn(base, className)}>
-      <Star className="h-3.5 w-3.5 fill-ink text-ink" />
+      <Star weight="fill" className="h-3.5 w-3.5 text-ink" />
       {label}
       {suffixNode}
     </span>

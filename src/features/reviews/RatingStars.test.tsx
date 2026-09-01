@@ -20,6 +20,43 @@ describe("RatingStars", () => {
     expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
     expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   });
+
+  // Regressão da migração Lucide → Phosphor. A cheia era a mesma estrela com `fill-ink` no
+  // CSS, o que funcionava no Lucide (desenho de traço) e virou nada no Phosphor, onde o peso
+  // `regular` já é o contorno fechado: nota 4 desenhava exatamente igual a nota 0, e as
+  // avaliações do Google saíram na BePark sem estrela cheia nenhuma.
+  //
+  // A asserção é sobre o GLIFO desenhado, não sobre a classe: o que quebrou foi o desenho, e
+  // teste de classe passaria feliz com o bug no ar. Compara geometria sem cravar o `d` do
+  // Phosphor, que muda a cada versão do pacote.
+  function geometrias(container: HTMLElement): string[] {
+    return [...container.querySelectorAll("svg path")].map((p) => p.getAttribute("d") ?? "");
+  }
+
+  it("desenha a estrela cheia com outro glifo, não com fill no CSS", () => {
+    const { container } = render(<RatingStars value={3} />);
+    const ds = geometrias(container);
+    expect(ds).toHaveLength(5);
+
+    // Duas geometrias distintas: as 3 primeiras cheias, as 2 últimas vazias.
+    expect(new Set(ds).size).toBe(2);
+    expect(new Set(ds.slice(0, 3)).size).toBe(1);
+    expect(new Set(ds.slice(3)).size).toBe(1);
+    expect(ds[0]).not.toBe(ds[4]);
+  });
+
+  it("nota cheia e nota zero não desenham a mesma coisa", () => {
+    const { container: cinco } = render(<RatingStars value={5} />);
+    const { container: zero } = render(<RatingStars value={0} />);
+    const dCheia = geometrias(cinco);
+    const dVazia = geometrias(zero);
+
+    // Cada extremo é uniforme, e um é o oposto do outro. Com o bug, os dois arrays eram
+    // idênticos e este `not.toBe` era a única linha que falhava.
+    expect(new Set(dCheia).size).toBe(1);
+    expect(new Set(dVazia).size).toBe(1);
+    expect(dCheia[0]).not.toBe(dVazia[0]);
+  });
 });
 
 describe("RatingBadge", () => {

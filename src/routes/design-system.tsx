@@ -285,7 +285,7 @@ function PropertyCard({
         <div className="flex items-center justify-between">
           <span className="text-[15px] font-semibold text-ink">{title}</span>
           <span className="flex items-center gap-0.5 text-[13px] text-ink">
-            <Star className="h-3 w-3 fill-ink stroke-none" /> {rating}
+            <Star weight="fill" className="h-3 w-3 text-ink" /> {rating}
           </span>
         </div>
         <span className="text-body-sm text-muted">{host}</span>
@@ -1147,7 +1147,7 @@ export default function DesignSystemPage() {
                   <Token>salvo · mp-primary</Token>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                  <Star className="h-5 w-5 fill-ink stroke-none" />
+                  <Star weight="fill" className="h-5 w-5 text-ink" />
                   <Token>estrela de rating</Token>
                 </div>
                 <div className="flex flex-col items-center gap-2">
