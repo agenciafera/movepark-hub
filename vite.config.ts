@@ -107,14 +107,21 @@ async function getDestinationRoutes(
  *
  * `converted_at is null` porque ficha convertida virou `location`: mandar as duas
  * ao sitemap seria pedir para o Google escolher entre duas páginas nossas.
+ *
+ * O destino tem que estar PUBLICADO pelo mesmo motivo que o `getStaticPaths` exige: sem
+ * isso o SSG não gera a ficha e o sitemap anuncia URL que responde "Vaga não encontrada".
+ * Aconteceu com os 14 lotes de Lisboa, Porto e Faro entre 29 e 31/08/2026: as três praças
+ * têm parceiro e `destination.is_published = false`, então o sitemap virou uma fábrica de
+ * soft 404 para o Google.
  */
 async function getProspectRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
   if (!sb) return [];
 
   const { data } = await sb
     .from("prospect_location")
-    .select("public_slug, updated_at, destination:destination(public_slug)")
+    .select("public_slug, updated_at, destination:destination!inner(public_slug, is_published)")
     .eq("is_published", true)
+    .eq("destination.is_published", true)
     .is("converted_at", null)
     .not("public_slug", "is", null);
 

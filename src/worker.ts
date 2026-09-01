@@ -439,11 +439,12 @@ const WP_AEROPORTO_REDIRECTS: Record<string, string> = {
  * 3. **Sem par confiável no Hub** (marca não encontrada, ou achada mas não publicada): vai para
  *    a página do destino (`/estacionamentos/<destino>`), nunca 404 e nunca um chute de marca errada.
  *
- * `bandeira-park` é o caso notável do grupo 3: o WordPress publica a página dela sob Viracopos,
- * mas o lote mapeado equivalente no Hub está em Guarulhos e não publicado (ver o card
- * "Aeropark GRU publica as fotos do Bandeira Park como se fossem dela"). Redirecionar para uma
- * ficha não publicada não abriria nada; vai para o destino Guarulhos, que é o correto segundo o
- * Hub, não o WordPress.
+ * `bandeira-park` era o caso notável do grupo 3 e deixou de ser: o lote mapeado dela em
+ * Guarulhos foi publicado em 29/08/2026, a ficha existe e a URL do WordPress é EXATAMENTE o
+ * endereço dela aqui. A entrada saiu do mapa em 31/08 porque, com a página no ar, o 301
+ * roubava a própria página e mandava a pessoa para o destino. É a mesma classe de entrada
+ * identidade que a virada de URL removeu, e a varredura de link a pegou porque a URL estava
+ * no sitemap e respondia 301.
  */
 const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
   // Parceiros ativos do Hub
@@ -488,7 +489,6 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
   "/estacionamentos/aeroporto-guarulhos/urban-park-estacionamento-aeroporto-guarulhos-cumbica":
     "/estacionamentos/aeroporto-guarulhos/urban-park",
   // Sem par confiável no Hub: vai para o destino, nunca 404 nem chute de marca
-  "/estacionamentos/aeroporto-guarulhos/bandeira-park": "/estacionamentos/aeroporto-guarulhos",
   "/estacionamentos/aeroporto-santos-dumont-rio/bh-park-estacionamento-aeroporto-santos-dumont":
     "/estacionamentos/aeroporto-santos-dumont",
   "/estacionamentos/aeroporto-santos-dumont-rio/bossa-nova-mall-estacionamento-aeroporto-santos-dumont":
@@ -571,10 +571,26 @@ export function blogRedirect(url: URL): Response | null {
   const segments = path.slice("/blog".length).split("/").filter(Boolean);
   if (!segments.length) return null;
 
+  // Gêmeo markdown do post: `/blog/<slug>.md` é o que agente de IA busca, e ele precisa
+  // seguir o MESMO mapa de consolidação do HTML. Sem isto o `.md` de um slug canibalizado
+  // respondia 200 com o artigo velho enquanto o HTML do mesmo slug já ia de 301 para o
+  // vencedor: a consolidação valia para o Google e não valia para a IA, que é justamente
+  // quem lê markdown. Achado em 31/08/2026, com 59 arquivos nessa situação.
+  const ultimo = segments[segments.length - 1];
+  if (ultimo.endsWith(".md") && segments.length === 1) {
+    const semExtensao = `/blog/${ultimo.slice(0, -3)}`;
+    const alvo = BLOG_LEGACY_PATHS[semExtensao] ?? BLOG_CONSOLIDATED_SLUGS[ultimo.slice(0, -3)];
+    if (alvo) {
+      const destino = alvo.startsWith("/") ? alvo : `/blog/${alvo}`;
+      return redirect301(`${destino.replace(/\/+$/, "")}.md${url.search}`);
+    }
+    return null;
+  }
+
   // Arquivo servido de dentro do /blog (feed.xml): não é slug de post, não entra
   // no contrato de barra final. Sem isto, /blog/feed.xml virava 301 pra forma com
   // barra e o RSS nunca abria.
-  if (/\.[a-z0-9]+$/i.test(segments[segments.length - 1])) return null;
+  if (/\.[a-z0-9]+$/i.test(ultimo)) return null;
 
   const semBarra = !url.pathname.endsWith("/");
   const paraCanonica = () => redirect301(`${path}/${url.search}`);

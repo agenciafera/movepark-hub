@@ -15,9 +15,15 @@
  * A checagem é do que dá para checar sem browser: o link aponta para um caminho que o build
  * gerou? Cruzar com o `paths-manifest.json` responde isso, e teria reprovado o build.
  *
- * Escopo de propósito estreito: só `/estacionamentos/**`, que é a família com slug legado e
- * slug público convivendo. Rota de app sem HTML pré-renderizado (`/checkout/:code`,
- * `/operator/*`) não entra aqui e continua sendo problema do worker.
+ * Escopo: as famílias de CONTEÚDO, que são as que existem como arquivo no build e as que o
+ * Google indexa. Nasceu só com `/estacionamentos/**` em 30/08 e cresceu no dia seguinte,
+ * quando uma varredura à mão achou mais 19 alvos mortos fora dela: 14 posts canibalizados,
+ * 3 URLs na gramática antiga e 1 slug de FAQ errado, todos linkados do corpo de outro post.
+ * O corpo do post usa `<Link>` (`PostBody.tsx`), então cada um era um "Essa página não
+ * existe" no clique, com 301 saudável no `curl`.
+ *
+ * Área logada e rota parametrizada (`/checkout/:code`, `/operator/*`, `/account/*`,
+ * `/search`) ficam fora: não têm HTML no build por desenho, e cobrá-las aqui seria ruído.
  *
  * Roda depois do write-paths-manifest.mjs.
  */
@@ -44,15 +50,49 @@ function normaliza(href) {
   return decodeURI(semBarra).toLowerCase();
 }
 
+/**
+ * Famílias que TÊM que existir como arquivo no build. Uma URL daqui que não está no
+ * manifesto ou não existe, ou existe só atrás de um 301, e nos dois casos o clique
+ * dentro do app quebra.
+ */
+const FAMILIAS = /^\/(estacionamentos|blog|faq|destinos|precos|estacionamento-mais-barato|p)(\/|$)/;
+
 const quebrados = new Map();
 for (const pagina of paginas(DIST)) {
   const html = readFileSync(pagina, "utf8");
-  for (const [, href] of html.matchAll(/href="(\/estacionamentos\/[^"]*)"/g)) {
+  for (const [, href] of html.matchAll(/href="(\/[^"]*)"/g)) {
+    if (!FAMILIAS.test(href.split(/[?#]/)[0])) continue;
     const alvo = normaliza(href);
     if (conhecidos.has(alvo)) continue;
     if (!quebrados.has(alvo)) quebrados.set(alvo, new Set());
     quebrados.get(alvo).add(pagina.replace(`${DIST}/`, ""));
   }
+}
+
+/**
+ * Gêmeo markdown sem post vivo.
+ *
+ * `/blog/<slug>.md` é o que agente de IA busca. Em 31/08/2026 havia 59 desses arquivos
+ * para posts canibalizados: o HTML do mesmo slug já ia de 301 para o vencedor e o `.md`
+ * continuava respondendo 200 com o artigo velho, competindo com o vencedor exatamente na
+ * superfície onde a consolidação mais importa.
+ */
+const orfaos = readdirSync(join(DIST, "blog"))
+  .filter((n) => n.endsWith(".md"))
+  .filter((n) => !conhecidos.has(`/blog/${n.slice(0, -3)}`.toLowerCase()));
+
+if (orfaos.length > 0) {
+  console.error(
+    `check-internal-links: ${orfaos.length} gêmeo(s) markdown sem post vivo em public/blog/.\n` +
+      "O .md responde 200 com o artigo antigo enquanto o HTML do mesmo slug vai de 301 para o\n" +
+      "vencedor. Apague o arquivo: a consolidação precisa valer para a IA também.\n" +
+      orfaos
+        .slice(0, 15)
+        .map((n) => `  public/blog/${n}`)
+        .join("\n") +
+      (orfaos.length > 15 ? `\n  ... e mais ${orfaos.length - 15}.` : ""),
+  );
+  process.exit(1);
 }
 
 if (quebrados.size > 0) {
@@ -68,11 +108,12 @@ if (quebrados.size > 0) {
   console.error(
     `check-internal-links: ${quebrados.size} destino(s) de link interno não existem no build.\n` +
       "Link assim funciona no curl (o Worker faz 301) e QUEBRA no clique, que é navegação do\n" +
-      "React Router e não passa pela borda. Use o `public_path` que a RPC devolve.\n" +
+      "React Router e não passa pela borda. Aponte para a URL que existe: `public_path` da RPC\n" +
+      "no caso da ficha, e o slug vivo no caso de post e FAQ.\n" +
       linhas.join("\n") +
       resto,
   );
   process.exit(1);
 }
 
-console.log(`check-internal-links: ok, todo link de /estacionamentos aponta para página que existe`);
+console.log("check-internal-links: ok, todo link de conteúdo aponta para página que existe");

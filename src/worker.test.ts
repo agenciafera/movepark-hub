@@ -870,3 +870,33 @@ describe("feed do blog não entra no contrato de barra", () => {
     expect(blogRedirect(new URL("https://movepark.co/blog/feed.xml"))).toBeNull();
   });
 });
+
+describe("gêmeo markdown segue o mesmo mapa de consolidação do HTML", () => {
+  /**
+   * `/blog/<slug>.md` é o que agente de IA busca. Até 31/08/2026 ele ficava FORA do mapa,
+   * junto do feed.xml, e o `.md` de um slug canibalizado respondia 200 com o artigo antigo
+   * enquanto o HTML do mesmo slug já ia de 301 para o vencedor. A consolidação valia para o
+   * Google e não valia para a IA, que é quem lê markdown.
+   */
+  it("slug consolidado leva o .md junto, para o .md do vencedor", () => {
+    const r = blogRedirect(
+      new URL("https://movepark.co/blog/5-vantagens-de-estacionar-no-aeroporto-de-curitiba.md"),
+    );
+    expect(r?.status).toBe(301);
+    expect(r?.headers.get("Location")).toBe(
+      "/blog/top-3-estacionamentos-do-aeroporto-de-curitiba.md",
+    );
+  });
+
+  it("slug vivo em .md passa direto, sem 301", () => {
+    expect(
+      blogRedirect(
+        new URL("https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-curitiba.md"),
+      ),
+    ).toBeNull();
+  });
+
+  it("o feed continua fora disso", () => {
+    expect(blogRedirect(new URL("https://movepark.co/blog/feed.xml"))).toBeNull();
+  });
+});

@@ -247,3 +247,55 @@ Lisboa, Porto e Faro têm parceiro no ar e `destination.is_published = false`, e
 gera página para eles. Enquanto for assim, link de conteúdo aponta para `/search?dest=<código>`
 (migration `20261108090000`) e o CTA da sidebar do blog não renderiza (`destination.is_published`).
 Publicar as três praças resolve os dois e é decisão de produto, não de código.
+
+## Varredura completa de link e sitemap (31/08/2026)
+
+Depois do conserto dos 131 links, uma varredura de tudo: todo `href` do `dist`, todo link
+markdown de `blog_post`, `knowledge_chunk`, `faq` e `destination.intro`, todo `<loc>` dos oito
+sitemaps, todo `rel="canonical"` e todos os artefatos GEO. O que apareceu:
+
+| Achado | Tamanho | Por que passou |
+|---|---|---|
+| Posts canibalizados linkados do corpo de outro post | 14 alvos, 21 fontes | O corpo usa `<Link>`: 301 no `curl`, "página não existe" no clique |
+| Gramática antiga sobrevivente (`/destinos/`, `/precos/`, `/estacionamento-mais-barato/` de Viracopos) | 3 alvos, 21 fontes | A migration `20261104090000` varreu o slug PÚBLICO; estes tinham o legado |
+| Slug de FAQ errado (`...-aceitos`) | 1 | Nunca existiu; ninguém clicou |
+| Sitemap anunciando ficha sem página (Lisboa, Porto, Faro) | 14 URLs | `getProspectRoutes` não filtrava `destination.is_published`, ao contrário do `getStaticPaths` |
+| Sitemap anunciando URL que o próprio Worker redireciona | 1 (`bandeira-park`) | Entrada do mapa do WordPress escrita quando o lote não era publicado; ele foi publicado em 29/08 e o 301 passou a roubar a própria página |
+| Gêmeo markdown de post morto respondendo 200 | 59 arquivos | `blogRedirect` pulava qualquer segmento com extensão, para não quebrar o `feed.xml` |
+| `/search?dest=OPO-alegre` | 2 FAQ | `replace` de substring meu, em 30/08: `aeroporto-porto` casou dentro de `aeroporto-porto-alegre` |
+
+Zero canonical divergente, zero canonical com host errado, zero canonical para página
+inexistente. Nenhuma página pública fora do sitemap (as 63 de fora são área logada e
+opt-out declarado em `SITEMAP_OPT_OUT`).
+
+### O gêmeo markdown é o caso mais caro em GEO
+
+`/blog/<slug>.md` é o que agente de IA busca. Os 59 arquivos eram de posts que a
+consolidação de 15/08 tinha fundido: o HTML do slug ia de 301 para o vencedor e o `.md` do
+MESMO slug respondia 200 com o artigo antigo. A consolidação valia para o Google e não valia
+para a IA, que é justamente quem lê markdown. Os arquivos foram apagados e o `blogRedirect`
+passou a levar o `.md` pelo mesmo mapa do HTML.
+
+### O guarda cresceu
+
+`scripts/check-internal-links.mjs` cobria só `/estacionamentos/**` e por isso não viu nada
+disso. Agora cobre `/estacionamentos`, `/blog`, `/faq`, `/destinos`, `/precos`,
+`/estacionamento-mais-barato` e `/p`, e reprova o build também quando existe gêmeo markdown
+sem post vivo.
+
+### Regra que ficou
+
+**Substituição de URL em conteúdo é do ALVO INTEIRO do link (`](x)` e `](x/)`), nunca de
+substring.** O `OPO-alegre` custou duas FAQ e foi achado por acaso; a migration
+`20261109090000` já usa a forma correta.
+
+### Continua em aberto
+
+- **32 dos 68 posts publicados não têm gêmeo markdown.** Não é regressão (nunca tiveram: os
+  36 que existem vieram do import do WordPress), mas é superfície de GEO que o blog não
+  ocupa. Gerá-los cabe no `generate-geo-artifacts.mjs`, que já faz isso para FAQ, preço,
+  unidade e lote mapeado.
+- **Portugal sem página de destino.** Lisboa, Porto e Faro têm parceiro e
+  `is_published = false`. Enquanto for assim, os 14 lotes de lá ficam fora do sitemap e do
+  build, por desenho.
+- **`/seja-parceiro` sem canonical.** Única página pública indexável nessa situação.
