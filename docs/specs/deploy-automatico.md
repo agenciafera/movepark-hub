@@ -93,6 +93,30 @@ que é escrita por gente. Ficaram de fora de propósito:
   pedido.
 - **`booking`** e o resto do caminho transacional, que não sai em HTML pré-renderizado.
 
+### O espelho de preço escreve calado
+
+`pricing_rule`, `pricing_tier` e `location_parking_type` estão na lista porque preço muda a
+página, mas quem mais escreve nelas não é gente: é o espelho do white-label (E0.13), de 3 em 3
+horas, e ele regrava as três a cada passada mesmo quando o parceiro não mexeu em nada. O
+`on conflict do update` sempre atualiza `mirror_verified_at`, as faixas são apagadas e
+reinseridas uma a uma, e a estadia mínima é regravada por cima do mesmo valor.
+
+Medido em 02/09/2026, em 48 horas de fila: 428 pedidos de `pricing_tier`, 94 de `pricing_rule` e
+48 de `location_parking_type`, contra **duas** mudanças reais de preço no mesmo período. Com o
+hook ligado isso seriam oito builds por dia sem conteúdo novo, e um mecanismo que publica sem
+motivo perde a confiança tão rápido quanto um que não publica.
+
+A saída (migration `20261111090000`): `request_site_rebuild()` respeita o GUC de transação
+`movepark.skip_site_rebuild`, e `wl_mirror_apply_pricing` o abre enquanto escreve, fechando no
+fim. O pedido de publicação passa a ser explícito, um por passada, e só quando a impressão
+digital da regra ou a estadia mínima mudam. É a mesma pergunta que a função já respondia para
+decidir se grava linha de histórico: o que entra no log de mudança de preço é o que pede
+publicação. O retorno da RPC ganhou `rebuild_requested` para isso ficar visível.
+
+Trigger de statement não enxerga linha, então a alternativa "compare a coluna no `when`" não
+existe aqui; e trocar por trigger de linha não resolveria `pricing_tier`, que é apagada e
+reinserida (toda linha é sempre nova).
+
 ## O silêncio de 13 dias
 
 Descoberto em 01/09/2026, no projeto `mgaigbezdalbyuqiofcf`:
@@ -206,6 +230,9 @@ A fila é lida no painel só por `hub_admin` (RLS). Pedido despachado é podado 
   justamente para não carimbar como publicado o que o Cloudflare não chegou a ler.
 
 ## Testes
+
+`supabase/tests/pricing_mirror.test.sql` cobre o lado do espelho (seis casos): a porta aberta e
+fechada, passada sem mudança que não deixa pedido na fila, e mudança real que pede um build só.
 
 `supabase/tests/site_rebuild.test.sql` (pgTAP, 22 casos): estrutura e RLS, o trigger enfileirando,
 um statement de duas linhas gerando um pedido só, as quatro janelas da decisão, o desligamento por

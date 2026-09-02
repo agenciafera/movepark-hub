@@ -6,10 +6,13 @@
 --   2. mudança de tabela grava, com o antes e o depois, porque é histórico de preço;
 --   3. escala de número não conta como mudança (1 e 1.00 são o mesmo preço);
 --   4. a retenção poupa o histórico e só envelhece divergência e erro;
---   5. cliente nenhum executa as RPCs do job.
+--   5. cliente nenhum executa as RPCs do job;
+--   6. passada que não muda nada também não pede publicação do site (20261111090000). Sem
+--      isso são oito builds por dia sem conteúdo novo, e o mecanismo de publicação vira
+--      barulho de fundo que ninguém lê.
 
 begin;
-select plan(20);
+select plan(26);
 
 do $$
 declare
@@ -116,6 +119,54 @@ select is(
 select is(
   (select count(*)::int from public.pricing_mirror_run where kind = 'change'),
   2, 'histórico de preço não é apagado pela retenção, mesmo velho');
+
+-- ── publicação automática: passada calada não pede build ───────────────────
+-- Migration 20261111090000. O espelho escreve em três tabelas que têm trigger de
+-- publicação, e escrevia nas três a cada passada mesmo sem mudança de preço.
+delete from public.site_rebuild_request;
+
+-- A porta em si: enquanto ela está aberta, escrita nenhuma enfileira.
+select set_config('movepark.skip_site_rebuild', 'on', true);
+insert into public.amenity (code, name, category)
+values ('e013_porta_aberta', 'E013 porta aberta', 'extras');
+select is(
+  (select count(*)::int from public.site_rebuild_request),
+  0, 'com a porta aberta, mudança de conteúdo não enfileira publicação'
+);
+select set_config('movepark.skip_site_rebuild', 'off', true);
+insert into public.amenity (code, name, category)
+values ('e013_porta_fechada', 'E013 porta fechada', 'extras');
+select is(
+  (select count(*)::int from public.site_rebuild_request),
+  1, 'com a porta fechada, o enfileirador volta ao normal'
+);
+
+-- Passada sem mudança: escreve nas três tabelas e não pede nada.
+delete from public.site_rebuild_request;
+select is(
+  (pg_temp.aplica('[{"from_day":1,"to_day":1,"unit_price":40,"is_old_price":false},
+                    {"from_day":2,"to_day":6,"unit_price":32.90,"is_old_price":false},
+                    {"from_day":7,"to_day":null,"unit_price":24.90,"is_old_price":false},
+                    {"from_day":1,"to_day":null,"unit_price":40,"is_old_price":true}]'::jsonb)
+   ->> 'rebuild_requested')::boolean,
+  false, 'passada que reencontra a mesma tabela não pede publicação');
+select is(
+  (select count(*)::int from public.site_rebuild_request),
+  0, 'e não deixa pedido nenhum na fila, nem de pricing_tier'
+);
+
+-- Mudança de verdade: um pedido, não um por statement.
+select is(
+  (pg_temp.aplica('[{"from_day":1,"to_day":1,"unit_price":40,"is_old_price":false},
+                    {"from_day":2,"to_day":6,"unit_price":35.90,"is_old_price":false},
+                    {"from_day":7,"to_day":null,"unit_price":24.90,"is_old_price":false},
+                    {"from_day":1,"to_day":null,"unit_price":40,"is_old_price":true}]'::jsonb)
+   ->> 'rebuild_requested')::boolean,
+  true, 'parceiro mudou o preço e a publicação é pedida');
+select is(
+  (select count(*)::int from public.site_rebuild_request),
+  1, 'mudança pede UM build, não um por tabela tocada'
+);
 
 -- ── as RPCs do job não são chamáveis pelo cliente ──────────────────────────
 select is(

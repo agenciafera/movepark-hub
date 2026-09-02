@@ -27,6 +27,20 @@ Não existe, portanto, uma lista de "exceções do WL que o Hub aceita ou recusa
 praticar, o espelho reproduz; o que ele não conseguir reproduzir vira `divergent`, e a vitrine
 para de afirmar preço fechado até alguém olhar.
 
+## A passada calada não publica o site
+
+Desde a publicação automática (`20261030140000`), escrever em `pricing_rule`, `pricing_tier` ou
+`location_parking_type` enfileira um pedido de build. O espelho escreve nas três a cada passada,
+mesmo sem mudança: o `on conflict do update` sempre regrava `mirror_verified_at`, as faixas são
+apagadas e reinseridas uma a uma, e a estadia mínima é regravada por cima do mesmo valor. Em 48
+horas medidas (02/09/2026) isso deu 570 pedidos contra duas mudanças reais de preço.
+
+Desde a `20261111090000` o espelho abre o GUC `movepark.skip_site_rebuild` enquanto escreve e
+enfileira **um** pedido no fim, só quando a impressão digital da regra ou a estadia mínima
+mudam. É a mesma condição que já decidia se grava linha em `pricing_mirror_run`, então preço que
+entra no histórico é preço que pede publicação, e nada além disso. O retorno da RPC ganhou
+`rebuild_requested`.
+
 ## Por quê tempo real está fora
 
 A busca do Hub ficaria refém do uptime do backend do parceiro, e página lenta mata o orgânico
