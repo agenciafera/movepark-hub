@@ -617,6 +617,33 @@ afirmação nossa sobre o negócio do outro, e a reclamação vem dele.
 possível aqui. Apagar o preço junto com data e fonte é sempre permitido, senão tirar um valor
 obsoleto do ar viraria quebra-cabeça e o time deixaria o valor velho na página.
 
+### A validade: 90 dias, e o vencido some sozinho
+
+A constraint garante que nada entra sem carimbo. Faltava o contrário: garantir que nada
+**fica** depois de vencer. Um valor conferido em 29/08/2026 continuaria na tabela em 2027, com
+a data ao lado, e a data não conserta o número.
+
+A regra é de 90 dias, contados de `researched_at`, e vale em duas portas. A RPC
+`destination_prospect_cards` devolve **nulo** nas quatro colunas de preço e na data quando o
+prazo passou (`public.preco_pesquisado_fresco`, migration `20261111091500`), e a página confere
+de novo ao montar a linha (`isPesquisaFresca`, em `destinoPrices.logic.ts`). A segunda porta
+existe porque a página é SSG: o HTML sai congelado no dia do build, e sem checar na renderização
+uma página construída no dia 89 mostraria o preço no dia 200. É o mesmo desenho do
+`isSnapshotFresh` da nota do Google.
+
+Vence o **preço**, não a ficha: a linha do lote continua na página com endereço, distância e
+link, só sem tarifa. Sumir com a ficha seria esconder um estacionamento que existe.
+
+Por que 90 e não 30 (o prazo da nota do Google): é calibragem, não princípio. Tabela de
+estacionamento não muda toda semana, e não existe robô que revalide isso. São 145 fichas
+mapeadas e a reconferência é manual, uma a uma, na fonte. Trinta dias esvaziariam a página antes
+de alguém conseguir dar a volta na lista.
+
+O painel **não** filtra. `manager_prospect_locations` continua devolvendo o valor vencido com a
+data, e a lista marca "Preço vencido" na linha: é lá que alguém reconfere, e esconder o número
+de quem vai atualizá-lo só faz o trabalho ser refeito do zero. O aviso na lista é o que impede o
+vencimento de acontecer em silêncio, já que a página some com o preço sem avisar ninguém.
+
 ### O grant é por coluna, e a fonte fica de fora
 
 O `select` em `prospect_location` é concedido **por coluna** desde o Q-021. Coluna nova nasce
@@ -750,3 +777,4 @@ Candidatas a chave, provavelmente em cascata:
 - [x] Registros obsoletos resolvidos em `location` (11 soft delete, 1 inativa), preservando o que tem `booking`. Eram QA em produção, não prospecção: ver a seção. **Sobram 3 fixtures de QA listadas publicamente**, fora da lista da spec, aguardando decisão do time.
 - [x] Cobertura de concorrente: 23 dos 26 destinos com 3 ou mais lotes mapeados publicados. Maceió, João Pessoa e Teresina ficam abaixo por falta de mercado, não por falta de busca.
 - [x] Preço pesquisado do lote mapeado na tabela do destino, com data ao lado, fora do JSON-LD e fora do grant público no caso da fonte. Constraint recusa preço sem data e sem fonte, e recusa zero.
+- [x] Validade de 90 dias no preço pesquisado: a RPC devolve nulo no vencido, a página confere de novo na renderização e o painel marca "Preço vencido" para quem vai reconferir (`20261111091500`).

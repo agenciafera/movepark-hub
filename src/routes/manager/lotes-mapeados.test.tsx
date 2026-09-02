@@ -65,13 +65,15 @@ function makeRow(over: Partial<ProspectLocationAdminRow>): ProspectLocationAdmin
     place_id_conflict_name: null,
     created_at: "2026-08-01T12:00:00Z",
     updated_at: "2026-08-01T12:00:00Z",
-    ...over,
     researched_daily_brl: null,
     researched_weekly_brl: null,
     researched_biweekly_brl: null,
     researched_monthly_brl: null,
     researched_at: null,
     research_source: null,
+    // Depois do spread: o preço pesquisado é o único campo que a lista precisa variar por
+    // caso, e antes dele o `...over` era engolido em silêncio.
+    ...over,
   };
 }
 
@@ -92,6 +94,22 @@ const convertido = makeRow({
   converted_location_id: "loc-9",
   converted_location_name: "Virapark Unidade Recife",
   converted_company_id: "comp-9",
+});
+const precoVencido = makeRow({
+  id: "p5",
+  name: "Lote Com Preço Velho",
+  slug: "lote-preco-velho",
+  researched_daily_brl: 29.9,
+  researched_at: "2026-05-01",
+  research_source: "site do lote",
+});
+const precoNoPrazo = makeRow({
+  id: "p6",
+  name: "Lote Com Preço Novo",
+  slug: "lote-preco-novo",
+  researched_daily_brl: 29.9,
+  researched_at: "2026-08-29",
+  research_source: "site do lote",
 });
 const colidindo = makeRow({
   id: "p4",
@@ -115,6 +133,21 @@ describe("ManagerLotesMapeados", () => {
     expect(screen.getByText("Talentos Park")).toBeInTheDocument();
     expect(screen.getByText("Lote Sem Rua")).toBeInTheDocument();
     expect(screen.getByText("Virapark Recife")).toBeInTheDocument();
+  });
+
+  it("avisa quem tem preço pesquisado vencido, que já saiu da página sem avisar ninguém", () => {
+    // O preço de terceiro vale 90 dias e some da página de destino quando vence. Some em
+    // silêncio, então esta lista é o único lugar onde alguém percebe.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-02T12:00:00Z"));
+    rows.current = [precoVencido, precoNoPrazo];
+    try {
+      renderWithProviders(<ManagerLotesMapeados />);
+      expect(screen.getAllByText("Preço vencido")).toHaveLength(1);
+      expect(screen.getByText("Lote Com Preço Novo")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("linha sem endereço avisa e trava o Switch de publicar", () => {

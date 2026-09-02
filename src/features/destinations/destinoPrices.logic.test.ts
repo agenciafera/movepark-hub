@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PriceDestination, PriceUnit } from "@/features/price-index/priceIndex.logic";
 import { destinationSummary } from "@/features/price-index/priceIndex.logic";
 import {
   DESTINO_DURATIONS,
+  PRECO_PESQUISADO_TTL_DIAS,
   buildDestinoPrices,
   destinationMetaDescription,
+  isPesquisaFresca,
   longStayInsight,
   pesquisadoRows,
   pesquisadoSummary,
@@ -317,6 +319,17 @@ describe("proximityRanking", () => {
 });
 
 describe("preço pesquisado do lote mapeado", () => {
+  // O relógio congela porque a validade do preço de terceiro conta a partir da data da
+  // pesquisa: sem isto a suíte passaria hoje e começaria a falhar sozinha em 90 dias.
+  const HOJE = new Date("2026-09-02T12:00:00Z");
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(HOJE);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   function mapeado(over: Partial<PesquisadoInput> = {}): PesquisadoInput {
     return {
       name: "Central Park",
@@ -394,5 +407,24 @@ describe("preço pesquisado do lote mapeado", () => {
   it("não inventa resposta curta quando nenhum lote publicou diária avulsa", () => {
     const soSemana = mapeado({ researched_daily_brl: null });
     expect(pesquisadoSummary(pesquisadoRows([soSemana], "d"))).toBeNull();
+  });
+
+  it("preço vencido sai da página, porque a data ao lado não conserta um número velho", () => {
+    // 90 dias contados da pesquisa. A RPC já devolve nulo no vencido; esta é a segunda
+    // porta, a que protege o HTML de um build antigo (a página é SSG).
+    const vencido = mapeado({ researched_at: "2026-06-04" });
+    expect(pesquisadoRows([vencido], "d")).toEqual([]);
+  });
+
+  it("o preço do último dia de validade continua na página", () => {
+    const noLimite = mapeado({ researched_at: "2026-06-05" });
+    expect(pesquisadoRows([noLimite], "d")).toHaveLength(1);
+  });
+
+  it("a validade é de 90 dias, o mesmo número que a RPC aplica", () => {
+    // Gêmeo em SQL: public.preco_pesquisado_fresco (20261111091500).
+    expect(PRECO_PESQUISADO_TTL_DIAS).toBe(90);
+    expect(isPesquisaFresca("2026-06-05")).toBe(true);
+    expect(isPesquisaFresca("2026-06-04")).toBe(false);
   });
 });

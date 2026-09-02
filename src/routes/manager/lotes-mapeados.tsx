@@ -40,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAdminDestinations } from "@/features/destinations/api";
+import { isPesquisaFresca } from "@/features/destinations/destinoPrices.logic";
 import { ProspectLocationForm } from "@/features/prospect-locations/ProspectLocationForm";
 import {
   useDeleteProspectLocation,
@@ -305,6 +306,21 @@ export default function ManagerLotesMapeados() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {row.last_reviewed_at ? formatDate(row.last_reviewed_at) : "-"}
+                      {/*
+                        O preço pesquisado vale 90 dias e some da página de destino quando
+                        vence. Some em silêncio, então o aviso mora aqui: esta lista é o
+                        único lugar onde alguém percebe que a ficha parou de responder
+                        "quanto custa".
+                      */}
+                      {row.researched_at && !isPesquisaFresca(row.researched_at) && (
+                        <div
+                          className="mt-1 flex items-center gap-1.5 text-caption text-error"
+                          title={`Pesquisado em ${formatDate(row.researched_at)}. Fora da página até ser reconferido.`}
+                        >
+                          <Warning className="h-3.5 w-3.5 shrink-0" />
+                          Preço vencido
+                        </div>
+                      )}
                     </TableCell>
 
                     <TableCell>

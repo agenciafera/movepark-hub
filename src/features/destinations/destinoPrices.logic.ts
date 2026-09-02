@@ -111,18 +111,40 @@ export type PesquisadoInput = {
 };
 
 /**
+ * Quanto tempo um preço de terceiro continua sendo uma afirmação defensável.
+ *
+ * Gêmeo em SQL: `public.preco_pesquisado_fresco` (20261111091500), que já devolve nulo
+ * no vencido. Se um dia mudar, os dois mudam juntos.
+ */
+export const PRECO_PESQUISADO_TTL_DIAS = 90;
+
+/**
+ * A segunda porta da validade.
+ *
+ * A primeira é a RPC, que nem entrega o vencido. Esta existe porque a página de destino
+ * é SSG: o HTML sai congelado no dia do build, e sem checar de novo na renderização uma
+ * página construída no dia 89 seguiria mostrando o preço no dia 200. É o mesmo desenho
+ * do `isSnapshotFresh` da nota do Google.
+ */
+export function isPesquisaFresca(researchedAt: string, now: Date = new Date()): boolean {
+  const idade = now.getTime() - new Date(`${researchedAt}T12:00:00Z`).getTime();
+  return idade < PRECO_PESQUISADO_TTL_DIAS * 24 * 60 * 60 * 1000;
+}
+
+/**
  * Lote mapeado com preço pesquisado, pronto para a tabela.
  *
- * Fica de fora quem não tem NENHUM valor e quem não tem data: a constraint do banco
- * já garante o par, e a checagem aqui é a segunda porta, para uma leitura antiga em
- * cache não escapar sem carimbo. Ordena pela semana, que é a compra mais comum e a
- * mesma referência da matriz de parceiro; quem não tem semana cai para a diária e
- * depois para o nome.
+ * Fica de fora quem não tem NENHUM valor, quem não tem data e quem tem data vencida: a
+ * constraint do banco já garante o par, e a checagem aqui é a segunda porta, para uma
+ * leitura antiga em cache não escapar sem carimbo. Ordena pela semana, que é a compra
+ * mais comum e a mesma referência da matriz de parceiro; quem não tem semana cai para a
+ * diária e depois para o nome.
  */
 export function pesquisadoRows(
   prospects: PesquisadoInput[],
   destinationSlug: string,
   days: number[] = DESTINO_DURATIONS,
+  now: Date = new Date(),
 ): PesquisadoRow[] {
   const porDuracao = (p: PesquisadoInput, d: number): number | null => {
     if (d === 1) return p.researched_daily_brl;
@@ -133,7 +155,7 @@ export function pesquisadoRows(
   };
 
   return prospects
-    .filter((p) => p.researched_at != null)
+    .filter((p) => p.researched_at != null && isPesquisaFresca(p.researched_at, now))
     .map((p) => ({ p, totals: days.map((d) => porDuracao(p, d)) }))
     .filter(({ totals }) => totals.some((t) => t != null))
     .map(({ p, totals }) => ({

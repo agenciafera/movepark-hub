@@ -6737,6 +6737,10 @@ export type Database = {
         }
         Returns: Json
       }
+      preco_pesquisado_fresco: {
+        Args: { p_hoje?: string; p_researched_at: string }
+        Returns: boolean
+      }
       pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
       prospect_public_path: {
         Args: { p: Database["public"]["Tables"]["prospect_location"]["Row"] }

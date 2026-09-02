@@ -11,14 +11,18 @@
 --      por coluna desde o Q-021: coluna nova nasce fora do grant, e quem esquece a linha de
 --      grant derruba a vitrine inteira em 42501 (foi o bug da 20261103091500);
 --   4. a fonte é rastro de auditoria, não conteúdo, e por isso fica fora do grant público;
---   5. `anon` NÃO executa as duas manager_*. As três funções mudaram de assinatura e foram
+--   5. a VALIDADE: preço de terceiro vale 90 dias e some da vitrine quando vence
+--      (20261111091500). Preço velho na tela é o que torna a comparação indefensável, e a
+--      data ao lado não conserta o número. O painel continua vendo o vencido, que é onde
+--      alguém reconfere;
+--   6. `anon` NÃO executa as duas manager_*. As três funções mudaram de assinatura e foram
 --      recriadas, e função nova neste projeto nasce com `anon=X` por default privilege: o
 --      `revoke ... from public` não alcança esse grant. Os advisors pegaram em 30/08/2026.
 --
 -- Roda em transação com rollback.
 
 begin;
-select plan(11);
+select plan(16);
 
 -- ── fixtures ────────────────────────────────────────────────────────────────────────
 -- Geo no Atlântico Sul para não colidir com destino do seed: `nearest_destination` varre
@@ -131,6 +135,38 @@ select ok(
     'EXECUTE'
   ),
   'anon NÃO executa manager_prospect_location_save'
+);
+
+-- ── 12 a 16. a validade ─────────────────────────────────────────────────────────────
+select is(public.preco_pesquisado_fresco('2026-06-05', '2026-09-02'), true,
+  'preço de 89 dias ainda vale');
+select is(public.preco_pesquisado_fresco('2026-06-04', '2026-09-02'), false,
+  'preço de 90 dias vence: é o mesmo limite do isPesquisaFresca em TS');
+select is(public.preco_pesquisado_fresco(null, '2026-09-02'), false,
+  'sem data não existe validade a conferir');
+
+-- A vitrine devolve a linha, mas sem tarifa: o lote continua na página com endereço e
+-- distância. Sumir com a linha inteira seria esconder um estacionamento que existe.
+do $$
+begin
+  update public.prospect_location
+     set researched_daily_brl = 22.90,
+         researched_at = current_date - 200,
+         research_source = 'site do lote'
+   where id = '11111111-1111-1111-1111-111111111111';
+end $$;
+
+select is(
+  (select researched_daily_brl from public.destination_prospect_cards('destino-preco-pgtap')
+    where id = '11111111-1111-1111-1111-111111111111'),
+  null::numeric,
+  'preço vencido não sai da vitrine com valor'
+);
+select is(
+  (select count(*)::int from public.destination_prospect_cards('destino-preco-pgtap')
+    where id = '11111111-1111-1111-1111-111111111111'),
+  1,
+  'mas o lote continua na página: vence o preço, não a ficha'
 );
 
 select * from finish();
