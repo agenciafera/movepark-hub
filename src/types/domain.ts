@@ -112,6 +112,34 @@ export type ProspectCard = {
  * aqui porque a RPC é `security definer` e o painel é interno; ele continua fora do
  * `ProspectCard`, que é o que vai para a página pública (Q-021).
  */
+/**
+ * Uma proposta do robô de pesquisa de preço, ao lado do que a ficha publica hoje.
+ * A tela decide comparando os dois, então os dois viajam na mesma linha.
+ */
+export type PriceResearchRow = {
+  id: string;
+  prospect_location_id: string;
+  prospect_name: string;
+  destination_name: string;
+  status: "pending" | "failed";
+  source_url: string | null;
+  fetched_at: string | null;
+  daily_brl: number | null;
+  weekly_brl: number | null;
+  biweekly_brl: number | null;
+  monthly_brl: number | null;
+  /** Trecho literal da página que sustenta os valores. É a prova, não enfeite. */
+  evidence: string | null;
+  model: string | null;
+  notes: string | null;
+  created_at: string;
+  atual_daily_brl: number | null;
+  atual_weekly_brl: number | null;
+  atual_biweekly_brl: number | null;
+  atual_monthly_brl: number | null;
+  atual_researched_at: string | null;
+};
+
 export type ProspectLocationAdminRow = {
   id: string;
   destination_id: string;

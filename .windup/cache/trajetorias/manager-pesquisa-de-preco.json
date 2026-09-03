@@ -1,0 +1,77 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-pesquisa-de-preco",
+    "start_url": "/manager/pesquisa-de-preco",
+    "start_sig": "sig:30b80afac064bfc7",
+    "scenario_sig": "59d402acb43cf6a0"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-pesquisa-de-preco",
+    "start_url": "http://localhost:5273/manager/pesquisa-de-preco",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "main page heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main p",
+          "description": "description paragraph"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "h3",
+          "description": "empty state heading"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a5",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "final verification of page content"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "selector": "h1"
+        }
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Pesquisa de preço\", depois a descricao \"O robô lê o site dos lotes mapeados toda semana\", depois o texto \"Nada para decidir agora\".",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-09-03T12:02:01.158Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-03T12:02:04.232Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

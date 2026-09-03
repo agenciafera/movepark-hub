@@ -31,8 +31,10 @@ do $$
 declare
   dest uuid := gen_random_uuid();
 begin
-  insert into public.destination (id, name, slug, latitude, longitude, is_published)
-  values (dest, 'Destino do teste de preço', 'destino-preco-pgtap', -20.0, -30.0, true);
+  -- `code`, `type` e `city` são NOT NULL desde o baseline. Sem eles o fixture morre em
+  -- 23502 e o arquivo inteiro não roda: passou despercebido porque o pgTAP não está no CI.
+  insert into public.destination (id, code, type, name, slug, city, state, latitude, longitude, is_published)
+  values (dest, 'ZZ0', 'airport', 'Destino do teste de preço', 'destino-preco-pgtap', 'Cidade', 'MG', -20.0, -30.0, true);
 
   insert into public.prospect_location
     (id, destination_id, name, slug, address, latitude, longitude, is_published)

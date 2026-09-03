@@ -423,6 +423,11 @@ verify_jwt = false
 [functions.google-place-refresh]
 verify_jwt = false
 
+# Robô semanal de pesquisa de preço de concorrente. Autorização própria: header
+# x-price-research-key, conferido contra o segredo da Edge. Chamado pelo pg_cron.
+[functions.prospect-price-research]
+verify_jwt = false
+
 # Autorização própria: header x-location-audit-key (cron) ou JWT de hub_admin conferido
 # contra o banco (botão do Manager). Ver docs/specs/auditoria-enderecos.md.
 [functions.location-address-audit]

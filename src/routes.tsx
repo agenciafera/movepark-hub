@@ -100,6 +100,7 @@ import ManagerFaqCategorias from "@/routes/manager/faq-categorias";
 import ManagerPartners from "@/routes/manager/partners";
 import ManagerDestinations from "@/routes/manager/destinations";
 import ManagerLotesMapeados from "@/routes/manager/lotes-mapeados";
+import ManagerPesquisaDePreco from "@/routes/manager/pesquisa-de-preco";
 import ManagerConversas from "@/routes/manager/conversas";
 import ManagerAuditoriaEnderecos from "@/routes/manager/auditoria-enderecos";
 import ManagerBlog from "@/routes/manager/blog";
@@ -984,6 +985,7 @@ export const routes: RouteRecord[] = [
               { path: "partners", element: <ManagerPartners /> },
               { path: "destinations", element: <ManagerDestinations /> },
               { path: "lotes-mapeados", element: <ManagerLotesMapeados /> },
+              { path: "pesquisa-de-preco", element: <ManagerPesquisaDePreco /> },
         { path: "conversas", element: <ManagerConversas /> },
               { path: "auditoria-enderecos", element: <ManagerAuditoriaEnderecos /> },
               { path: "blog", element: <ManagerBlog /> },

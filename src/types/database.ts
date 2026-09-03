@@ -4418,6 +4418,71 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_price_research: {
+        Row: {
+          biweekly_brl: number | null
+          created_at: string
+          daily_brl: number | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          evidence: string | null
+          fetched_at: string | null
+          id: string
+          model: string | null
+          monthly_brl: number | null
+          notes: string | null
+          prospect_location_id: string
+          source_url: string | null
+          status: string
+          weekly_brl: number | null
+        }
+        Insert: {
+          biweekly_brl?: number | null
+          created_at?: string
+          daily_brl?: number | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          evidence?: string | null
+          fetched_at?: string | null
+          id?: string
+          model?: string | null
+          monthly_brl?: number | null
+          notes?: string | null
+          prospect_location_id: string
+          source_url?: string | null
+          status?: string
+          weekly_brl?: number | null
+        }
+        Update: {
+          biweekly_brl?: number | null
+          created_at?: string
+          daily_brl?: number | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          evidence?: string | null
+          fetched_at?: string | null
+          id?: string
+          model?: string | null
+          monthly_brl?: number | null
+          notes?: string | null
+          prospect_location_id?: string
+          source_url?: string | null
+          status?: string
+          weekly_brl?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_price_research_prospect_location_id_fkey"
+            columns: ["prospect_location_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_location"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_location: {
         Row: {
           address: string | null
@@ -6736,6 +6801,35 @@ export type Database = {
           p_to: string
         }
         Returns: Json
+      }
+      manager_price_research_decide: {
+        Args: { p_action: string; p_id: string; p_note?: string }
+        Returns: undefined
+      }
+      manager_price_research_pending: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          atual_biweekly_brl: number
+          atual_daily_brl: number
+          atual_monthly_brl: number
+          atual_researched_at: string
+          atual_weekly_brl: number
+          biweekly_brl: number
+          created_at: string
+          daily_brl: number
+          destination_name: string
+          evidence: string
+          fetched_at: string
+          id: string
+          model: string
+          monthly_brl: number
+          notes: string
+          prospect_location_id: string
+          prospect_name: string
+          source_url: string
+          status: string
+          weekly_brl: number
+        }[]
       }
       preco_pesquisado_fresco: {
         Args: { p_hoje?: string; p_researched_at: string }
