@@ -1,0 +1,93 @@
+<!doctype html>
+<!--
+  Slide de carrossel do Instagram da Movepark, 1080 x 1350 (4:5).
+
+  Por que existe: modelo de difusão erra número, erra acento e não reproduz a
+  Inter. Então a foto vem do Higgsfield e o texto entra por cima, aqui, com os
+  tokens do DESIGN.md. Assim o número sai certo e a tipografia é a da marca.
+
+  Uso:
+    1. Troque --foto pelo caminho do arquivo gerado no Higgsfield.
+    2. Edite o kicker, o h1 e o rodapé.
+    3. Abra no browser, resize_window para 1080 x 1350, screenshot.
+    4. Converta para JPEG (comando no SKILL.md, Passo 7).
+
+  Variantes: troque a classe do <body> por "dado" (número grande, fundo
+  gradiente) ou "texto" (navy chapado, para pergunta ou citação).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Slide Movepark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #29263F;
+    --indigo: #4041A3;
+    --violet: #5D5FEF;
+    --pale:   #E4F2FF;
+    --red:    #DA455E;
+    --foto:   url("./foto.jpg");
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1350px; }
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    color: #fff;
+    background: var(--navy) var(--foto) center / cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 88px;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Camada escura: garante contraste do texto sobre qualquer foto. */
+  body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(41,38,63,.15) 0%, rgba(41,38,63,.55) 45%, rgba(41,38,63,.92) 100%);
+  }
+  body > * { position: relative; }
+
+  body.dado  { background: linear-gradient(160deg, var(--indigo), var(--violet) 55%, var(--indigo)); justify-content: center; }
+  body.texto { background: var(--navy); justify-content: center; }
+  body.dado::before, body.texto::before { display: none; }
+
+  .kicker {
+    font-size: 30px; font-weight: 600; letter-spacing: .02em;
+    color: var(--pale); margin-bottom: 28px; opacity: .9;
+  }
+  h1 {
+    font-size: 84px; font-weight: 700; line-height: 1.06; letter-spacing: -.02em;
+    text-wrap: balance; max-width: 15ch;
+  }
+  /* Violeta marca o destaque, nunca o fundo inteiro. Ver DESIGN.md. */
+  h1 em { font-style: normal; color: var(--violet); }
+  body.dado h1 em, body.texto h1 em { color: var(--pale); }
+  .numero { font-size: 200px; font-weight: 900; line-height: .9; letter-spacing: -.04em; }
+  p.apoio {
+    font-size: 34px; font-weight: 400; line-height: 1.4; margin-top: 32px;
+    max-width: 26ch; opacity: .92;
+  }
+  footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 56px; font-size: 26px; font-weight: 500; opacity: .8;
+  }
+  .arraste { display: flex; align-items: center; gap: 12px; }
+  .arraste::after { content: "\2192"; font-size: 32px; }
+</style>
+</head>
+<body>
+  <div class="kicker">Aeroporto de Confins</div>
+  <h1>A diferença de preço quase nunca está no <em>pátio</em></h1>
+  <p class="apoio">Está no traslado, e é por isso que dois lotes vizinhos cobram o dobro um do outro.</p>
+  <footer>
+    <span>movepark.co</span>
+    <span class="arraste">arraste</span>
+  </footer>
+</body>
+</html>

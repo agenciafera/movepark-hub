@@ -1,0 +1,29 @@
+{
+  "_nota": "Banco de hashtags do Instagram da Movepark. Regra e critério de escolha em ../references/hashtags.md. Atualizado em 03/09/2026.",
+  "praca": {
+    "GRU": ["aeroportodeguarulhos", "gru", "aeroportogru", "guarulhos"],
+    "VCP": ["viracopos", "aeroportodeviracopos", "campinas", "vcp"],
+    "CNF": ["confins", "aeroportodeconfins", "belohorizonte", "cnf"],
+    "CGH": ["congonhas", "aeroportodecongonhas", "saopaulo"],
+    "CWB": ["afonsopena", "aeroportodecuritiba", "curitiba"],
+    "NVT": ["navegantes", "aeroportodenavegantes", "balneariocamboriu"],
+    "LIS": ["aeroportodelisboa", "lisboa", "portugal"]
+  },
+  "intencao": {
+    "estacionamento": ["estacionamentoaeroporto", "estacionamento", "vagacoberta"],
+    "viagem": ["dicasdeviagem", "viagemdecarro", "viajarbarato", "planejandoaviagem"],
+    "economia": ["economianaviagem", "dicadeeconomia"],
+    "servico": ["traslado", "valet", "reservaonline"]
+  },
+  "marca": ["movepark"],
+  "proibidas": {
+    "estacionamentobarato": "promessa de preco absoluto que o post nao sustenta",
+    "vagagarantida": "promessa de transacao, ADR-009",
+    "cancelamentogratis": "promessa de transacao, ADR-009",
+    "precofixo": "promessa de transacao, ADR-009",
+    "follow4follow": "engajamento artificial, penaliza a conta",
+    "likeforlike": "engajamento artificial, penaliza a conta",
+    "seguidores": "engajamento artificial, penaliza a conta"
+  },
+  "genericas_sozinhas_nao": ["viagem", "brasil", "aeroporto", "carro"]
+}
