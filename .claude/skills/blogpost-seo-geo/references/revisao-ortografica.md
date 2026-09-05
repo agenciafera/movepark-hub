@@ -71,7 +71,7 @@ BSB, POA, SDU. Cite o código pelo menos uma vez junto do nome por extenso, porq
 - **Data presente e correta.** Todo valor em R$ e todo dado de movimento ou
   capacidade carrega quando foi apurado.
 - **Link abre.** Cada link externo, testado. Cada link interno, conferido contra
-  o slug real (`grep -l "<slug>" public/blog/` resolve).
+  o slug real (consulte `blog_post` no banco, não arquivo do repo).
 - **Alt descreve a imagem.** Alt é texto lido por quem não vê a imagem, não campo
   de palavra-chave. Um alt com a frase-chave basta, o resto descreve.
 - **Título e meta description sem promessa.** O que está na SERP é a primeira

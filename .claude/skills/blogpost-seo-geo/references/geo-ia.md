@@ -12,11 +12,12 @@ otimizar o que não é lido.
 
 **1. O arquivo markdown.** Crawler de IA não executa JavaScript, e o site é SSG
 com render no cliente. Se o agente pedir a página e receber a casca, ele não lê
-nada. Por isso cada post existe também como `public/blog/<slug>.md`, servido pelo
+nada. Por isso cada post existe também como `/blog/<slug>.md`, servido pelo
 `src/worker.ts` por content negotiation quando o `Accept` é `text/markdown`.
-**Este arquivo é o post, na prática, para toda IA.** Post novo escrito no Hub não
-ganha o arquivo automaticamente: o gerador só lê do WordPress. Escrever o `.md` é
-parte da entrega, não um extra.
+**Esse gêmeo é o post, na prática, para toda IA.** Desde 01/09/2026 ele nasce do
+banco: o `scripts/generate-geo-artifacts.mjs` lê `blog_post` no build e escreve
+`dist/blog/<slug>.md` para todo post publicado. Ou seja, o que você escreve no
+`body_md` é o que a IA lê, e não existe arquivo separado para manter.
 
 **2. A busca em tempo real.** ChatGPT com busca, Perplexity e Gemini consultam o
 índice na hora. Aqui o que vale é o SEO clássico: ranquear bem, ter título claro
@@ -94,4 +95,5 @@ curl -sH "Accept: text/markdown" https://hub.movepark.co/blog/<slug>/ | head -20
 ```
 
 Se voltar o post, o caminho das IAs está aberto. Se voltar o `llms.txt` genérico,
-o arquivo `public/blog/<slug>.md` não foi criado ou não foi commitado.
+o build ainda não rodou depois da publicação: o gêmeo só existe a partir do
+próximo `bun run build`, e é aí que vale conferir se o deploy do Cloudflare saiu.

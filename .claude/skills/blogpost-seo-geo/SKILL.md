@@ -17,7 +17,7 @@ description: >-
   "otimiza esse texto do blog", "por que esse post não ranqueia", "faz um
   conteúdo pra aparecer no ChatGPT", "preciso de um artigo de 3 mil palavras".
   Também use ao auditar post já publicado, ao planejar pauta e antes de
-  qualquer escrita em blog_post ou public/blog/. NÃO se aplica a copy de
+  qualquer escrita em blog_post. NÃO se aplica a copy de
   landing page (use copy-lp-queiroz) nem a texto de UI (use revisar-texto).
 ---
 
@@ -75,20 +75,33 @@ Cauda só compensa depois que a cabeça tem dono. A estratégia inteira, com as 
 e a divisão de praças, está em
 [`docs/specs/plano-conteudo-aeroportos.md`](../../../docs/specs/plano-conteudo-aeroportos.md).
 
-**1.2 Canibalização.** Rode a busca no acervo antes de escrever, separando post
-vivo de post morto:
+**1.2 Canibalização.** Rode a busca no acervo antes de escrever, **e rode no
+banco**, que é a fonte da verdade:
 
-```bash
-grep -ril "confins" public/blog/ | sed 's|.*/||;s|\.md$||' | while read s; do
-  grep -q "\"$s\"" public/blog-slugs.json && echo "VIVO  $s" || echo "MORTO $s"
-done
+```sql
+-- o que já está publicado naquele aeroporto, com o título que ele disputa hoje
+select p.slug, p.title, p.meta_title, c.slug as categoria,
+       p.published_at::date as publicado, length(p.body_md) as tamanho
+from public.blog_post p
+left join public.blog_category c on c.id = p.category_id
+join public.destination d on d.id = p.destination_id
+where d.slug = 'aeroporto-de-confins' and p.is_published and p.deleted_at is null
+order by p.published_at desc;
 ```
 
-`public/blog/` guarda os 95 posts importados do WordPress, mas **26 deles saíram
-do ar na consolidação por intenção de 15/08/2026** e hoje respondem 301. O
-comando acima distingue os dois porque `public/blog-slugs.json` é regerado no
-build a partir do banco e lista só o que está publicado. Atualizar um post MORTO
-é trabalho perdido: a URL nunca abre.
+**Não use `grep` em arquivo do repo para esta checagem.** O `public/blog/` deixou
+de existir em 01/09/2026 (commit `da054b82`), e mesmo antes disso o arquivo
+divergia do que a página renderiza, porque a página sempre leu `body_md`. Em
+05/09/2026 essa armadilha custou caro: a checagem por `grep` num checkout 209
+commits atrasado disse que o guia de Confins ainda era o texto de 1.060 palavras
+de 2025, quando o banco já tinha a versão reescrita em 29/08 com o título
+"Estacionamento aeroporto Confins: preços e comparativo 2026". Três posts foram
+escritos contra um retrato velho, e um deles nasceu disputando a mesma intenção
+do pilar.
+
+Se o seu checkout estiver atrasado, `git fetch origin main` antes de qualquer
+conclusão sobre o acervo. Título e `meta_title` do banco são o que diz qual
+intenção cada post já reivindica.
 
 O acervo herdado tinha até oito posts disputando a MESMA consulta ("melhor
 estacionamento Viracopos"), e o Google não elege vencedor entre páginas irmãs. A
@@ -360,13 +373,14 @@ Ao publicar, três coisas acontecem juntas, e faltar uma deixa o post capenga:
    `POST /v1/blog/posts` ou pela tool de MCP de Manager (escopo de plataforma
    `blog:write`). Sem a chave à mão, `execute_sql` com upsert por `slug` no
    Supabase MCP. Campos e validação em `supabase/functions/_shared/blog-write.ts`.
-2. **`public/blog/<slug>.md` commitado.** Este arquivo é o que faz o post existir
-   para as IAs: crawler de IA não roda JavaScript, e o `src/worker.ts` serve este
-   `.md` na content negotiation em `text/markdown`. **O gerador
-   (`scripts/import-wp-blog.mjs --markdown`) só lê do WordPress**, então post novo
-   escrito no Hub não ganha o arquivo sozinho: escreva você, no mesmo formato de
-   cabeçalho dos 93 existentes (título, resumo em citação, data, URL canônica,
-   link do destino, `---`, corpo).
+2. **Gêmeo markdown: nada a fazer, ele nasce do banco.** O `/blog/<slug>.md` é o
+   que faz o post existir para as IAs, porque crawler de IA não roda JavaScript.
+   Desde 01/09/2026 (commit `da054b82`) o `scripts/generate-geo-artifacts.mjs`
+   lê `blog_post` e escreve `dist/blog/<slug>.md` no build, para todo post
+   publicado. **Não escreva nem commite `public/blog/<slug>.md`**: essa pasta foi
+   removida justamente porque o arquivo versionado divergia do `body_md` e o
+   teste de contrato lia o arquivo, ficando verde sobre a versão errada. O que
+   você escreve no `body_md` é o que sai no gêmeo.
 3. **Imagens no Storage**, em `assets-public/blog/<slug>/`, geradas no
    Higgsfield, em `.webp` com a palavra-chave no nome do arquivo e alt em todas
    (Passo 5), largura máxima 1600px. Nunca hotlink de terceiro (os 10 hotlinks
@@ -396,8 +410,8 @@ Antes de dizer que o post está pronto:
    `?`, resposta em parágrafo logo abaixo, no mínimo duas), com pergunta própria do
    post e não cópia de `/faq/<slug>`. Abertura autossuficiente, números com unidade.
 9. Front matter completo, `category`, `tags` e `destination` dentro dos catálogos.
-10. `public/blog/<slug>.md` escrito; imagens geradas no Higgsfield, em `.webp`
-    com a palavra-chave no nome e alt em todas, no Storage; tudo commitado.
+10. Imagens geradas no Higgsfield, em `.webp` com a palavra-chave no nome e alt
+    em todas, commitadas (o gêmeo markdown sai do banco, não é arquivo seu).
 11. Publicação só depois do "pode publicar" do usuário.
 
 ## Referências
