@@ -385,3 +385,19 @@ Oferta vincula o fornecedor (CDC art. 30); omissão relevante é publicidade eng
 (art. 7 § único e art. 25 §1). Asterisco não transfere responsabilidade: documenta que se
 sabia da divergência.
 
+
+## Ressalva aberta: a bolinha do WhatsApp promete reserva em toda página (05/09/2026)
+
+A `WhatsappBubble` (`src/features/support/WhatsappBubble.tsx`) passou a trazer a frase "Reserva
+rápida em menos de 1min". Ela é montada na casca do consumer, ou seja, aparece **em toda página,
+inclusive nas unidades de `checkout_mode = external`**, onde a reserva não fecha na Movepark. São
+10 unidades listadas hoje.
+
+Isso contraria o espírito do ADR-009: é promessa de transação renderizando sem consultar
+capacidade. A decisão foi do dono do produto, ciente do conflito, e está registrada aqui para que
+o próximo a mexer não trate como esquecimento e "conserte" sem contexto.
+
+O teste-guarda (`src/routes/listing.capabilities.test.tsx`) não pega este caso porque renderiza a
+página da unidade, não a casca. Se a ressalva for revertida, o caminho é a bolinha ler a capacidade
+da rota ativa, ou trocar a frase por uma neutra ("Falar com a Movepark") quando a unidade for
+externa. Antes desta mudança a bolinha não prometia nada: era só o glifo do WhatsApp.

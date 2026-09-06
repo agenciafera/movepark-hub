@@ -179,11 +179,32 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
         },
+        // Bolinha de WhatsApp do consumer (WhatsappBubble). São três camadas de
+        // propósito: o que vende altura é a sombra encolhendo, não o sobe e desce.
+        // Um elemento subindo sozinho o olho lê como deslizando.
+        "mia-flutuar": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-7px)" },
+        },
+        "mia-mascote": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-5px)" },
+        },
+        "mia-sombra": {
+          "0%, 100%": { transform: "scaleX(1)", opacity: "0.3" },
+          "50%": { transform: "scaleX(0.86)", opacity: "0.16" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         marquee: "marquee 40s linear infinite",
+        // 3,4s porque mais rápido lê como nervoso, e peça que insiste cansa em
+        // página longa. A defasagem negativa do mascote faz ele chegar depois da
+        // pílula, o que tira o ar de peça única mexendo em bloco.
+        "mia-flutuar": "mia-flutuar 3.4s cubic-bezier(0.45, 0, 0.55, 1) infinite",
+        "mia-mascote": "mia-mascote 3.4s cubic-bezier(0.45, 0, 0.55, 1) -0.42s infinite",
+        "mia-sombra": "mia-sombra 3.4s cubic-bezier(0.45, 0, 0.55, 1) infinite",
       },
       transitionTimingFunction: {
         standard: "cubic-bezier(0.2, 0, 0, 1)",
