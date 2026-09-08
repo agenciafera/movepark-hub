@@ -288,7 +288,7 @@ Ritmo proposto: **2 páginas por semana por pessoa** e **4 peças de Instagram p
 | **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois. ✅ GRU e CWB em 27/08/2026, em [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md). ✅ VCP e CNF em 28/08/2026, em [canonicalizacao-vcp-cnf.md](./canonicalizacao-vcp-cnf.md); planilha do acervo inteiro em [dados/mapa-canonicalizacao-blog.csv](./dados/mapa-canonicalizacao-blog.csv) |
 | Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois. ✅ congelado em 27/08/2026: 9.744 consultas, 709 páginas, 1,35 milhão de impressões, em [baseline-search-console.md](./baseline-search-console.md) |
 | **Placar de citação em IA** | 12 consultas por mês em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
-| Bing Webmaster Tools | A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá | Diego |
+| Bing Webmaster Tools | A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá | Diego. ✅ verificado e sitemap enviado em 08/09/2026. **O Bing tinha 8 URLs descobertas contra 808 páginas do Google**, e o que ele indexava do domínio eram os 7 subdomínios de white-label, não o site. Ping automático por [IndexNow](./indexnow.md) no build; os subdomínios viraram atividade própria |
 | Kit de marca do Instagram | Grid, tipografia grande, molde de carrossel e de reels | Diego |
 
 ### Fase 1: uma URL por termo de cabeça (semanas 2 a 6)
