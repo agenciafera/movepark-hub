@@ -292,7 +292,7 @@ content(
       { c: ["<b>Cadastrar o Be Park no Hub</b>", "Sem ele Confins não tem tarifa, distância nem reserva, e a praça inteira fica sem número para publicar", "Leonardo"], hl: true },
       { c: ["<b>Mapa de canonicalização</b>", "Definir, por aeroporto, qual URL vai ganhar cada termo de cabeça e o que será redirecionado para ela", "Leonardo e Diego"], hl: true },
       ["Baseline do Search Console", "16 meses por consulta e por página, congelados como marco zero", "Leonardo e Diego"],
-      { c: ["<b>Placar de citação em IA</b>", "12 consultas rodadas por mês em ChatGPT, Gemini, Perplexity e visão geral do Google, registrando quem foi citado", "Leonardo e Diego"], hl: true },
+      { c: ["<b>Placar de citação em IA</b>", "12 consultas rodadas a cada 15 dias em ChatGPT, Gemini, Perplexity e visão geral do Google, registrando quem foi citado", "Leonardo e Diego"], hl: true },
       ["Bing Webmaster Tools", "A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá", "Diego"],
       ["Kit de marca do Instagram", "Grid, tipografia grande, molde de carrossel e de reels", "Diego"],
     ],
@@ -466,7 +466,7 @@ content(
   `${table(
     ["Rotina", "Frequência", "Por quê"],
     [
-      { c: ["<b>Placar de citação em IA</b>", "mensal", "É o único jeito de saber se estamos ganhando de Bandeira Park e xpark. Não existe painel: é print e planilha"], hl: true },
+      { c: ["<b>Placar de citação em IA</b>", "quinzenal", "É o único jeito de saber se estamos ganhando de Bandeira Park e xpark. Não existe painel: é print e planilha"], hl: true },
       { c: ["<b>Carimbo e valores das páginas de cabeça</b>", "mensal", "Frescor é critério de desempate entre fontes que dizem a mesma coisa"], hl: true },
       ["Revisão das dez páginas em maior queda", "quinzenal", "Perda de posição na cabeça custa caro e se recupera devagar"],
       ["Consolidação dos posts canibais restantes", "4 por mês", "O acervo tem cerca de 30 duplicatas além das que a Fase 1 absorve"],
@@ -481,7 +481,7 @@ content(
 content(
   "O placar",
   "Como saber se estamos ganhando",
-  `${lead("Não existe ferramenta que meça citação em IA. O método é manual e é o único confiável: doze consultas, quatro motores, uma vez por mês, com print.")}
+  `${lead("Não existe ferramenta que meça citação em IA. O método é manual e é o único confiável: doze consultas, quatro motores, a cada 15 dias, com print.")}
    ${table(
      ["Consulta rodada todo mês", "Onde", "O que se registra"],
      [
