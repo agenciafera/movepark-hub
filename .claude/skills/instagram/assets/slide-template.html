@@ -7,10 +7,13 @@
   tokens do DESIGN.md. Assim o número sai certo e a tipografia é a da marca.
 
   Uso:
-    1. Troque --foto pelo caminho do arquivo gerado no Higgsfield.
-    2. Edite o kicker, o h1 e o rodapé.
-    3. Abra no browser, resize_window para 1080 x 1350, screenshot.
-    4. Converta para JPEG (comando no SKILL.md, Passo 7).
+    1. Troque --foto pelo caminho do arquivo gerado no Higgsfield. CONFIRA A
+       EXTENSAO: o Higgsfield devolve .png e este template nasce apontando .jpg.
+       Se errar, o fundo cai no navy e o slide sai sem foto, sem avisar.
+    2. Edite o kicker, o h1 e o rodapé. Valor em R$ leva &nbsp; entre o simbolo
+       e o numero, senao a quebra de linha separa os dois.
+    3. node ../scripts/render-slide.mjs slide.html saida.jpg
+       (renderiza em 1080x1350, confere as imagens e ja grava o JPEG)
 
   Variantes: troque a classe do <body> por "dado" (número grande, fundo
   gradiente) ou "texto" (navy chapado, para pergunta ou citação).
@@ -84,7 +87,7 @@
 <body>
   <div class="kicker">Aeroporto de Confins</div>
   <h1>A diferença de preço quase nunca está no <em>pátio</em></h1>
-  <p class="apoio">Está no traslado, e é por isso que dois lotes vizinhos cobram o dobro um do outro.</p>
+  <p class="apoio">Está no traslado, e é por isso que dois lotes vizinhos cobram o dobro um do outro. Exemplo de valor: R$&nbsp;26,90.</p>
   <footer>
     <span>movepark.co</span>
     <span class="arraste">arraste</span>

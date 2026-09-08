@@ -242,29 +242,59 @@ cima, no template.
 
 ### O texto por cima da imagem
 
-Slide com título grande é composto, não gerado. Use
+Slide com título grande é composto, não gerado. Copie
 [`assets/slide-template.html`](assets/slide-template.html), que já carrega os
 tokens da marca (navy `#29263F`, violet `#5D5FEF`, Inter) em 1080 x 1350:
 
-1. Edite o `<h1>` e o `<p>` do template, e aponte o `--foto` para o arquivo do
-   Higgsfield.
-2. Abra com as ferramentas de browser, `resize_window` para 1080 x 1350 e tire
-   o screenshot.
-3. Converta para JPEG (passo seguinte).
+1. Edite o `<h1>`, o `<p class="apoio">` e o kicker.
+2. Aponte o `--foto` para o arquivo do Higgsfield, **conferindo a extensão**: o
+   modelo costuma devolver `.png` e o template nasce apontando para `.jpg`.
+3. Renderize, o que já entrega o JPEG no tamanho certo:
 
-Regras de composição: no máximo **12 palavras** por slide, tipo grande o
-bastante para ler no feed sem abrir, contraste de texto sobre foto garantido por
-uma camada escura, e o violeta reservado para o número ou o destaque, nunca para
-o fundo inteiro.
+```bash
+node .claude/skills/instagram/scripts/render-slide.mjs slide.html saida.jpg
+```
+
+O script existe por causa de uma falha que não dá para ver: quando o `--foto`
+aponta para arquivo inexistente, o fundo cai no navy da marca e o slide sai
+bonito, só que sem foto. Ele confere toda imagem referenciada antes de
+renderizar, aborta dizendo qual faltou e sugere a extensão certa quando acha o
+arquivo com outra.
+
+Regras de composição:
+
+- No máximo **12 palavras** por slide, tipo grande o bastante para ler no feed
+  sem abrir.
+- Violeta (`<em>`) só no destaque ou no número, nunca no fundo inteiro.
+- **Valor em R$ leva espaço insecável**: escreva `R$&nbsp;7`. Sem isso a quebra
+  de linha separa o símbolo do número e o slide sai com "R$" pendurado no fim
+  de uma linha.
+- Contraste garantido pela camada escura do template. Não remova o `::before`.
 
 ### Conversão e nome do arquivo
 
 O Higgsfield devolve PNG ou JPEG grande. Padronize antes de publicar:
 
 ```bash
-# 1080x1350, JPEG, qualidade 82, sRGB, dentro dos 8 MB
-magick entrada.png -resize 1080x1350^ -gravity center -extent 1080x1350 \
-  -colorspace sRGB -quality 82 estacionamento-aeroporto-guarulhos-01.jpg
+# sips é nativo do macOS e não pede instalação. Recorta pelo centro em 1080x1350
+# e grava JPEG, que é o único formato que a API aceita.
+sips -s format jpeg -s formatOptions 82 \
+     -c 1350 1080 entrada.png \
+     --out estacionamento-aeroporto-guarulhos-01.jpg
+```
+
+> `-c altura largura` recorta pelo centro, nessa ordem. Trocar a ordem devolve
+> uma imagem deitada que o Instagram recusa por proporção.
+
+Se a máquina tiver ImageMagick, o equivalente é
+`magick entrada.png -resize 1080x1350^ -gravity center -extent 1080x1350 -colorspace sRGB -quality 82 saida.jpg`.
+Ele não vem instalado por padrão no macOS, então o `sips` é o caminho da casa.
+
+Confira antes de subir, porque arquivo fora do formato só falha na hora de
+publicar:
+
+```bash
+sips -g pixelWidth -g pixelHeight -g format saida.jpg && du -h saida.jpg
 ```
 
 Nome em kebab-case com a palavra-chave e o número do slide, sem acento:
