@@ -52,6 +52,17 @@ type FaqItem = {
   category: Category | null;
   /** URL própria da pergunta (/faq/<slug>). Só global/destination; auto/location não têm. */
   slug?: string | null;
+  /**
+   * Corpo longo em Markdown, editado no Manager. Só existe em pergunta do banco
+   * (`auto` é gerada aqui e não tem).
+   *
+   * Sai daqui porque a página de destino passou a renderizar as perguntas do
+   * escopo `destination` como SEÇÃO, com a prosa inteira visível, e não só como
+   * linha de accordion. A resposta curta (`answer`) continua sendo o que o
+   * `FAQPage` afirma, então ela segue visível literal (ADR-002); o `body_md` é
+   * aprofundamento embaixo dela, nunca substituto.
+   */
+  body_md?: string | null;
 };
 
 const AUTO_CATEGORY: Category = {
@@ -375,7 +386,7 @@ Deno.serve(async (req: Request) => {
   let q = supa
     .from("faq")
     .select(
-      "id, scope, location_id, destination_id, question, answer, slug, sort_order, category:faq_category(slug, label, sort_order)",
+      "id, scope, location_id, destination_id, question, answer, body_md, slug, sort_order, category:faq_category(slug, label, sort_order)",
     )
     .eq("is_published", true)
     .is("deleted_at", null);

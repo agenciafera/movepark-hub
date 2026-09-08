@@ -558,3 +558,97 @@ cada unidade.
 **Rolagem suave.** O CTA do hero e o atalho do estado vazio são âncoras na própria página. O
 `scroll-behavior: smooth` entrou em `src/index.css`, dentro de
 `@media (prefers-reduced-motion: no-preference)`, e vale para o site inteiro.
+
+## As perguntas do aeroporto viram seção (08/09/2026)
+
+Auditoria contra os dois concorrentes na praça de Viracopos, medida no HTML publicado:
+
+| | Movepark (antes) | xpark | Bandeira Park |
+|---|---|---|---|
+| Perguntas como cabeçalho com prosa | 0 seções (só accordion) | 7 | **10** |
+| Tamanho médio da resposta do destino | ~290 caracteres | seção inteira | seção inteira |
+| Palavras visíveis | 2.334 | 2.570 | 2.620 |
+| Schema | Airport, Breadcrumb, ItemList+AggregateOffer, FAQPage | Airport, Breadcrumb, FAQPage, ItemList | só Organization |
+| `llms.txt` | 5,9 KB, 9 seções | 16 KB, 16 seções (por aeroporto) | 9,1 KB |
+
+Recuperação em LLM é por **passagem**, e a passagem mais citável é a que tem a pergunta do
+usuário no cabeçalho e o argumento inteiro embaixo. Tínhamos a pergunta certa e o texto curto
+demais, preso num accordion.
+
+### O corte é por escopo, sem coluna nova
+
+`keyQuestions.logic.ts` divide o que a Edge `get-faq` devolve:
+
+- **`destination` vira seção** (`DestinationKeyQuestions`): `<h2>` com a pergunta literal, a
+  `answer` visível como parágrafo de abertura e o `body_md` aberto embaixo.
+- **`global` fica no accordion**, sob "Perguntas gerais sobre reservar pela Movepark". São as
+  de plataforma (como reservo, prazo do PIX, cancelamento), que se repetem em toda página.
+
+As duas listas são **disjuntas**: sem isso a mesma pergunta sairia duas vezes na página e duas
+vezes no `FAQPage`. Isso cai no modelo de camadas do ADR-002 sem migration e sem uma segunda
+régua editorial para alguém manter.
+
+**A `answer` continua sendo o que o `FAQPage` afirma, e continua visível palavra por palavra**
+(ADR-002). O `body_md` é aprofundamento embaixo dela, nunca substituto. Há teste que falha se a
+seção deixar de renderizar a `answer`.
+
+### Duas armadilhas que custaram tempo
+
+1. **A Edge `get-faq` não devolvia `body_md`.** Sem ele a seção tinha o mesmo texto curto do
+   accordion, e a mudança não valeria nada. O campo entrou no select e no `FaqCombinedItem`.
+2. **Rebaixar o cabeçalho no Markdown não funciona.** `normalizaTitulos`, em
+   `markdown.logic.ts`, existe para subir a hierarquia quando o corpo não tem nenhum `h2`, e
+   desfazia o rebaixamento na hora. O ajuste tem que ser depois do parse, e por isso o
+   `PostBody` ganhou `minHeadingLevel`. Com `3`, o `##` do corpo vira `h3` e o `###` vira `h4`,
+   preservando a hierarquia interna em vez de achatar tudo num nível só. `sectionBody` só
+   descarta o primeiro `##`, que foi escrito para a página própria da pergunta e aqui
+   duplicaria o H2.
+
+### Conteúdo: quatro perguntas que decidem a compra
+
+Escritas para VCP, GRU, CNF e CGH (migration `20261113090000_faq_decisao_por_aeroporto.sql` e
+as aplicadas em 08/09/2026):
+
+1. **oficial do aeroporto ou particular**, com a conta por duração e o ponto de virada
+2. **o que a diária já inclui**
+3. **compensa deixar mais dias**, medido no dado real
+4. **dá para acompanhar a van em tempo real**, só onde `location.go2park_enabled` é verdadeiro
+   (Virapark e Garageinn em VCP, BePark em CNF)
+
+Mais a reescrita de "coberta ou descoberta" e "é seguro", que respondiam sem um único fato da
+praça ("varia por estacionamento"). Como linha de accordion passava; como seção com H2 próprio,
+resposta que não afirma nada não sustenta citação nenhuma.
+
+**Ordem editorial answer-first:** preço abre (1), a decisão vem em seguida (2 a 4), a logística
+fecha (7 a 14).
+
+**Regras de conteúdo aplicadas.** Todo número sai do motor de preços ou de resposta já
+publicada e revisada; distância é a do PostGIS (ADR-001). Sobre concorrente só entra o que o
+site dele publica (coberta contra descoberta). Estrutura de pátio e tipo de piso ficaram de
+fora por decisão de 08/09/2026: não temos fonte, e o CDC art. 38 põe o ônus da prova em quem
+afirma.
+
+### O que ficou de fora, e por quê
+
+**`AggregateRating` continua sem sair.** Não é falta de código: `location.review_count` é 0 em
+todas as unidades das quatro praças, menos o Virapark, que tem 1. Emitir estrela com uma
+avaliação é fraco e o Google costuma ignorar. Além disso `checkout_mode = 'external'` desliga a
+capacidade `reviews` (ADR-009), que é o caso das sete unidades. A nota do Google que aparece no
+card é de terceiro e não pode ser emitida como nossa. Reabrir quando houver avaliação própria
+em volume.
+
+### Resultado medido em Viracopos
+
+| | Antes | Depois |
+|---|---|---|
+| H2 em forma de pergunta | 0 | **14** |
+| H2 no total | 7 | 22 |
+| Tabelas | 1 | 3 |
+| Palavras visíveis | 2.334 | **3.589** |
+| `llms.txt` | 5,9 KB / 9 seções | **25,5 KB / 6 seções por aeroporto** |
+
+O `llms.txt` passou a trazer, por aeroporto, as unidades com preço por duração e distância
+medida, os lotes mapeados e as perguntas da praça com a URL de cada uma. O bloco antigo era uma
+linha por aeroporto apontando para `/precos/<slug>`, que virou redirecionamento na migração de
+URL. `robots.txt` passou a nomear `anthropic-ai` e `meta-externalagent`, que antes só caíam no
+grupo `*`.

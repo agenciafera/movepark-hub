@@ -182,6 +182,14 @@ export type FaqCombinedItem = {
   category: { slug: string; label: string; sort_order: number } | null;
   /** URL própria da pergunta (/faq/<slug>). `auto` e `location` não têm página. */
   slug?: string | null;
+  /**
+   * Corpo longo em Markdown. Só pergunta do banco tem; `auto` é gerada na Edge.
+   *
+   * A página de destino renderiza as perguntas de escopo `destination` como seção
+   * com prosa visível, e é este campo que dá profundidade a ela. A `answer` segue
+   * sendo o que o `FAQPage` afirma e continua visível literal (ADR-002).
+   */
+  body_md?: string | null;
 };
 
 /**

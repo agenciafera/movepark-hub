@@ -48,6 +48,8 @@ import {
   DestinationPriceTable,
   DestinationProximity,
 } from "@/features/destinations/DestinationPrices";
+import { DestinationKeyQuestions } from "@/features/destinations/DestinationKeyQuestions";
+import { accordionQuestions, keyQuestions } from "@/features/destinations/keyQuestions.logic";
 import { DestinationHero } from "@/features/destinations/DestinationHero";
 import {
   buildDestinoPrices,
@@ -401,6 +403,11 @@ export default function DestinoPage() {
     ? new URLSearchParams({ dest: destination.code, from: win.from, to: win.to })
     : new URLSearchParams({ dest: destination.code });
   const faqItems = (faqData ?? []).map((f) => ({ question: f.question, answer: f.answer }));
+  // Corte por escopo (ADR-002): a do aeroporto vira seção com H2 e prosa aberta, a de
+  // plataforma continua no accordion. As duas listas são disjuntas de propósito, senão a
+  // mesma pergunta sairia duas vezes na página e duas vezes no FAQPage.
+  const perguntasDoDestino = keyQuestions(faqData);
+  const perguntasGerais = accordionQuestions(faqData);
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
@@ -773,18 +780,32 @@ export default function DestinoPage() {
           />
         </section>
 
-        {/* FAQ em camadas: destino + global (ADR-002), mesmo componente de listing.tsx e faq.tsx */}
+        {/* FAQ em camadas (ADR-002), agora em DOIS formatos, por escopo.
+
+            As perguntas do AEROPORTO viram seção, com H2 literal e a prosa aberta:
+            é o que a auditoria de 08/09/2026 mostrou faltar contra os concorrentes
+            da mesma praça, que respondem 10 e 7 perguntas em seção enquanto as
+            nossas viviam num accordion com resposta de três linhas.
+
+            As perguntas de PLATAFORMA (escopo global) seguem no accordion, porque
+            se repetem em toda página e não merecem H2 próprio. O corte por escopo
+            garante que nenhuma pergunta apareça nos dois lugares, o que duplicaria
+            a página e o FAQPage. */}
         {(faqLoading || faqItems.length > 0) && (
           <section className="bg-surface-soft py-16 desktop:py-24">
             <div className={CALHA}>
               <h2 className="mb-6 text-balance text-display-2xl text-ink">
                 {faqHeading(destination)}
               </h2>
+              <DestinationKeyQuestions items={perguntasDoDestino} />
+              {perguntasGerais.length > 0 && (
+                <h2 className="mb-6 mt-14 text-balance text-display-md text-ink">
+                  Perguntas gerais sobre reservar pela Movepark
+                </h2>
+              )}
               <FaqList
-                items={faqLoading ? undefined : faqData}
+                items={faqLoading ? undefined : perguntasGerais}
                 isLoading={faqLoading}
-                groupByScope
-                destinationLabel={`Sobre ${nomeCurto}`}
               />
               <Link
                 to="/faq"

@@ -165,8 +165,40 @@ function Block({ block, id }: { block: MdBlock; id?: string }) {
  * O markdown vira elemento React, sem `dangerouslySetInnerHTML`: não existe
  * caminho de XSS mesmo se um dia o corpo passar a ser editado por mais gente.
  */
-export function PostBody({ markdown }: { markdown: string }) {
-  const blocks = React.useMemo(() => parseMarkdown(markdown), [markdown]);
+export function PostBody({
+  markdown,
+  minHeadingLevel = 2,
+}: {
+  markdown: string;
+  /**
+   * Nível mais raso que os títulos do corpo podem ocupar.
+   *
+   * O default 2 vale para post e para página de pergunta, onde o corpo é o
+   * conteúdo principal e vem logo depois do `<h1>`. Passe 3 quando o corpo entra
+   * EMBAIXO de um `<h2>` que já o intitula, como na página de destino: lá a
+   * pergunta é o `<h2>` da seção, e um subtítulo do corpo em `<h2>` viraria irmão
+   * dela em vez de parte da resposta, achatando o outline justo na página que o
+   * crawler lê para entender a hierarquia.
+   *
+   * `normalizaTitulos` (em markdown.logic) já sobe a hierarquia quando o corpo não
+   * tem `h2` nenhum, então rebaixar no Markdown de entrada não resolve: ele desfaz.
+   * O ajuste tem que acontecer depois do parse, que é aqui.
+   */
+  minHeadingLevel?: 2 | 3;
+}) {
+  const blocks = React.useMemo(() => {
+    const parsed = parseMarkdown(markdown);
+    if (minHeadingLevel === 2) return parsed;
+    const niveis = parsed.filter((b) => b.type === "heading").map((b) => b.level);
+    if (!niveis.length) return parsed;
+    const desloca = minHeadingLevel - Math.min(...niveis);
+    if (desloca <= 0) return parsed;
+    return parsed.map((b) =>
+      b.type === "heading"
+        ? { ...b, level: Math.min(4, b.level + desloca) as 2 | 3 | 4 }
+        : b,
+    );
+  }, [markdown, minHeadingLevel]);
 
   /*
     Os ids dos h2 saem daqui, contando a ordem dos h2 no corpo, exatamente como

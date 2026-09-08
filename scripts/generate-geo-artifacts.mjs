@@ -1040,38 +1040,77 @@ for (const d of destinations) {
 }
 
 // ---------------------------------------------------------------------------
-// llms.txt: refresh da data + menor diária por aeroporto inline (o agente
-// responde "quanto custa" sem abrir outra página)
+// llms.txt: refresh da data e o BLOCO POR AEROPORTO.
+//
+// Antes daqui saía só uma linha por aeroporto com a menor diária, e apontando
+// para `/precos/<slug>`, que virou redirecionamento depois da migração de URL.
+// A auditoria de 08/09/2026 mediu o custo: o nosso llms.txt tinha 5,9 KB e 9
+// seções contra 16 KB e 16 seções do comparador concorrente, que quebra por
+// aeroporto com operadoras e FAQ de cada praça. Um agente que lê o nosso saía
+// sem saber quem opera onde.
+//
+// Agora cada aeroporto com parceiro precificado ganha uma subseção com as
+// unidades (preço por duração, distância medida e o que a diária inclui), os
+// lotes mapeados e as perguntas do destino com a URL de cada uma. Tudo sai do
+// mesmo dado da página, então não existe versão do llms.txt divergindo do site.
 // ---------------------------------------------------------------------------
 {
   const alvo = path.join(DIST, "llms.txt");
   if (fs.existsSync(alvo)) {
-    const menorPorDestino = destinosComPreco
-      .map((dest) => {
-        const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
-        const unidades = unidadesCarro(dest);
-        const menores = unidades
-          .map((u) => {
-            const dia1 = totalDe(u, 1);
-            return dia1 == null ? null : dia1;
-          })
-          .filter((v) => v != null);
-        if (menores.length === 0) return null;
-        return `- ${comCodigo(dest, nome)}: a partir de ${brl(Math.min(...menores))} a diária, ${unidades.length === 1 ? "1 opção" : `${unidades.length} opções`} com reserva online: ${SITE_URL}/precos/${dest.slug}`;
-      })
-      .filter(Boolean);
-    const bloco = [
-      `## Menor diária por aeroporto (em ${hojeBR})`,
-      "",
-      ...menorPorDestino,
-      "",
-    ].join("\n");
+    const linhaUnidade = (u) => {
+      const partes = [];
+      const dia1 = totalDe(u, 1);
+      if (dia1 != null) partes.push(`${brl(dia1)} a diária`);
+      for (const d of [7, 30]) {
+        const t = totalDe(u, d);
+        if (t != null) partes.push(`${brl(t)} em ${d} diárias (${brl(t / d)}/dia)`);
+      }
+      const dist = fmtDistancia(u.distance_m);
+      const onde = dist ? `, a ${dist} do terminal` : "";
+      const url = u.public_path ? ` ${SITE_URL}${u.public_path}` : "";
+      return `  - ${u.company_name}, ${u.parking_type_name.toLowerCase()}${onde}: ${partes.join("; ")}.${url}`;
+    };
+
+    const secoes = [];
+    for (const dest of destinosComPreco) {
+      const meta = destinations.find((d) => d.slug === dest.slug);
+      if (!meta) continue;
+      const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+      const unidades = unidadesCarro(dest);
+      if (unidades.length === 0) continue;
+      const base = `${SITE_URL}/estacionamentos/${pubSlug(meta)}`;
+
+      const bloco = [`### ${comCodigo(dest, nome)}${meta.city ? `, ${meta.city}` : ""}${meta.state ? ` (${meta.state})` : ""}`, ""];
+      bloco.push(`Página: ${base}`, `Tabela de preços: ${base}/precos`, "");
+      bloco.push("Com reserva online pela Movepark:");
+      for (const u of unidades) bloco.push(linhaUnidade(u));
+
+      const mapeados = (prospectsPorDestino.get(dest.slug) ?? []).filter((p) => p.distance_km != null);
+      if (mapeados.length > 0) {
+        bloco.push("", "Mapeados, sem reserva online pela Movepark:");
+        for (const p of mapeados.slice(0, 10)) {
+          bloco.push(`  - ${p.name}, a ${fmtDistancia(Math.round(p.distance_km * 1000))} do terminal: ${base}/${p.slug}`);
+        }
+      }
+
+      const perguntas = (porDestino.get(dest.slug) ?? []).filter((q) => q.slug);
+      if (perguntas.length > 0) {
+        bloco.push("", "Perguntas respondidas nesta praça:");
+        for (const q of perguntas) bloco.push(`  - ${q.question} ${urlPergunta(q)}`);
+      }
+      bloco.push("");
+      secoes.push(bloco.join("\n"));
+    }
+
+    const bloco = [`## Aeroportos e operadoras (em ${hojeBR})`, "", ...secoes].join("\n");
     let conteudo = fs
       .readFileSync(alvo, "utf8")
       .replace(/^Última atualização:.*$/m, `Última atualização: ${hoje}`);
-    if (!conteudo.includes("## Menor diária por aeroporto")) {
-      conteudo = conteudo.replace(/^## Como funciona$/m, `${bloco}\n## Como funciona`);
-    }
+    // Remove a versão antiga do bloco (uma linha por aeroporto) quando existir,
+    // para o arquivo não acumular as duas gerações.
+    conteudo = conteudo.replace(/## Menor diária por aeroporto[\s\S]*?(?=^## )/m, "");
+    conteudo = conteudo.replace(/## Aeroportos e operadoras[\s\S]*?(?=^## )/m, "");
+    conteudo = conteudo.replace(/^## Como funciona$/m, `${bloco}\n## Como funciona`);
     fs.writeFileSync(alvo, conteudo);
   }
 }
@@ -1079,5 +1118,5 @@ for (const d of destinations) {
 console.log(
   `geo-artifacts: ${paginas} páginas de FAQ, ${destinosComPreco.length} de preços, ` +
     `${unidadesMd} de unidade e ${lotesMd} de lote mapeado em Markdown, ` +
-    `faq.md, precos.md, llms-full.txt, blog/feed.xml e llms.txt (data + menor diária) atualizados`,
+    `faq.md, precos.md, llms-full.txt, blog/feed.xml e llms.txt (data + bloco por aeroporto) atualizados`,
 );
