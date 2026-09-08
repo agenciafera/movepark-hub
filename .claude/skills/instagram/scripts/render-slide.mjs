@@ -49,28 +49,23 @@ const dir = path.dirname(html);
 const saida = path.resolve(saidaArg || html.replace(/\.html?$/i, ".jpg"));
 const temporario = saida.replace(/\.jpe?g$/i, ".render.png");
 
-// ---- 1. toda imagem local referenciada tem que existir ----------------------
-// É esta checagem que impede o slide sair sem foto e ninguém notar.
+// ---- 1. mapeia as imagens locais citadas, para dar dica boa depois ----------
+// Este bloco NAO bloqueia: uma `url()` citada no CSS pode nunca ser usada (as
+// variantes `dado` e `texto` do template sobrescrevem o background e deixam a
+// variavel --foto sem uso). Quem bloqueia e a requisicao que falha de verdade,
+// no passo 2.
 const fonte = fs.readFileSync(html, "utf8");
-const referencias = [...fonte.matchAll(/url\(\s*["']?(?!data:|https?:)([^"')]+)["']?\s*\)/g)]
+const citadas = [...fonte.matchAll(/url\(\s*["']?(?!data:|https?:)([^"')]+)["']?\s*\)/g)]
   .map((m) => m[1].trim())
   .filter((r) => r && !r.startsWith("#"));
-const faltando = [...new Set(referencias)].filter((r) => !fs.existsSync(path.resolve(dir, r)));
 
-if (faltando.length) {
-  console.error("\nO slide referencia imagem que não existe, então ele sairia sem foto:\n");
-  for (const f of faltando) {
-    const alt = ["png", "jpg", "jpeg", "webp"]
-      .map((ext) => r_troca(f, ext))
-      .find((c) => fs.existsSync(path.resolve(dir, c)));
-    console.error(`  ${f}${alt ? `   (existe ${alt}, confira a extensão)` : ""}`);
-  }
-  console.error("");
-  process.exit(1);
-}
-
-function r_troca(arquivo, ext) {
-  return arquivo.replace(/\.\w+$/, `.${ext}`);
+/** Sugere o mesmo arquivo com outra extensão, que é o erro mais comum. */
+function dica(alvo) {
+  const base = decodeURIComponent(alvo.split("/").pop() || "");
+  const irmao = ["png", "jpg", "jpeg", "webp"]
+    .map((ext) => base.replace(/\.\w+$/, `.${ext}`))
+    .find((c) => c !== base && fs.existsSync(path.resolve(dir, c)));
+  return irmao ? `   (existe ${irmao}, confira a extensão)` : "";
 }
 
 // ---- 2. renderiza no tamanho exato ------------------------------------------
@@ -79,9 +74,77 @@ const page = await browser.newPage({
   viewport: { width: LARGURA, height: ALTURA },
   deviceScaleFactor: 1,
 });
+
+// A falha que motivou este script: o --foto apontando para arquivo inexistente.
+// O fundo cai no navy da marca, o slide sai bonito e sem foto, e nada avisa.
+const falharam = new Set();
+page.on("requestfailed", (req) => {
+  if (req.resourceType() === "image") falharam.add(req.url());
+});
+
 await page.goto(`file://${html}`);
 await page.waitForLoadState("networkidle");
 await page.evaluate(() => document.fonts.ready);
+
+if (falharam.size) {
+  await browser.close();
+  console.error("\nO slide tentou carregar imagem que não existe, então sairia sem foto:\n");
+  for (const u of falharam) {
+    const rel = citadas.find((c) => u.endsWith(encodeURI(c.replace(/^\.\//, "")))) || u;
+    console.error(`  ${rel}${dica(u)}`);
+  }
+  console.error("");
+  process.exit(1);
+}
+
+// ---- 2b. o CSS do template aplicou? -----------------------------------------
+// Slide em branco é um JPEG válido de 1080x1350 e passa em toda checagem de
+// dimensão. Já aconteceu: um replace de `<body>` casou com o `<body>` que
+// aparece dentro do comentário do template e levou o `<head>` junto. O sintoma
+// era zero, o slide só saía branco. `background-color` transparente no body
+// significa que nenhuma folha de estilo pegou, porque o template sempre pinta.
+const estado = await page.evaluate(() => {
+  const cs = getComputedStyle(document.body);
+  return {
+    fundo: cs.backgroundColor,
+    imagem: cs.backgroundImage,
+    fonte: cs.fontFamily,
+    texto: (document.body.innerText || "").trim().length,
+    exemplos: [...document.querySelectorAll("[data-exemplo]")].map((e) =>
+      (e.innerText || "").trim().slice(0, 60),
+    ),
+  };
+});
+
+const semFundo = estado.fundo === "rgba(0, 0, 0, 0)" && estado.imagem === "none";
+if (semFundo) {
+  await browser.close();
+  console.error("\nO body não recebeu fundo nenhum, então o CSS do template não aplicou.");
+  console.error("O slide sairia em branco. Confira se o <head> e o <style> sobreviveram");
+  console.error("à edição do arquivo.\n");
+  process.exit(1);
+}
+if (!estado.texto) {
+  await browser.close();
+  console.error("\nO slide renderizou sem texto visível. Confira o corpo do HTML.\n");
+  process.exit(1);
+}
+// O conteúdo de demonstração do template carrega `data-exemplo`. Se ele
+// sobreviveu, ou a edição não aconteceu, ou ela foi desfeita sem ninguém ver.
+// Aconteceu: um `String.replace` cuja copy tinha "R$&nbsp;" fez o `$&` reinserir
+// o body inteiro do template, e o slide saiu com o texto de exemplo duplicado.
+if (estado.exemplos.length) {
+  await browser.close();
+  console.error("\nO slide ainda tem conteúdo de exemplo do template:\n");
+  for (const e of estado.exemplos) console.error(`  "${e}"`);
+  console.error("\nEdite o texto e remova o atributo data-exemplo.\n");
+  process.exit(1);
+}
+
+if (!/Inter/i.test(estado.fonte)) {
+  console.warn(`aviso: a fonte do body é ${estado.fonte}, e a da marca é Inter.`);
+}
+
 await page.screenshot({ path: temporario });
 await browser.close();
 

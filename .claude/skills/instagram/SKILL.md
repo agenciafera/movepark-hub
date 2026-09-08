@@ -270,6 +270,12 @@ Regras de composição:
   de linha separa o símbolo do número e o slide sai com "R$" pendurado no fim
   de uma linha.
 - Contraste garantido pela camada escura do template. Não remova o `::before`.
+- **Vermelho (`.alerta`) só sobre a variante `texto`**, que é navy chapado. Sobre
+  o gradiente violeta da variante `dado` ele some, e o número que devia gritar
+  fica ilegível.
+- Num carrossel, alterne os fundos por assunto, não por slide. Repetir a variante
+  `dado` em sequência é o que diz "mesmo pátio, prazos diferentes"; a troca de
+  fundo é que sinaliza mudança de assunto.
 
 ### Conversão e nome do arquivo
 

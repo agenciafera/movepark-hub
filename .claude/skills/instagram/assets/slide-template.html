@@ -15,6 +15,9 @@
     3. node ../scripts/render-slide.mjs slide.html saida.jpg
        (renderiza em 1080x1350, confere as imagens e ja grava o JPEG)
 
+    O conteudo de exemplo carrega data-exemplo. O render recusa o slide se algum
+    sobreviver, entao nao da pra publicar o texto de demonstracao por engano.
+
   Variantes: troque a classe do <body> por "dado" (número grande, fundo
   gradiente) ou "texto" (navy chapado, para pergunta ou citação).
 -->
@@ -56,8 +59,11 @@
   }
   body > * { position: relative; }
 
-  body.dado  { background: linear-gradient(160deg, var(--indigo), var(--violet) 55%, var(--indigo)); justify-content: center; }
-  body.texto { background: var(--navy); justify-content: center; }
+  /* As variantes trocam o fundo e mantêm o texto ancorado embaixo, igual ao
+     slide de foto. Num carrossel, texto que muda de altura a cada slide quebra
+     o ritmo do arraste. */
+  body.dado  { background: linear-gradient(160deg, var(--indigo), var(--violet) 55%, var(--indigo)); }
+  body.texto { background: var(--navy); }
   body.dado::before, body.texto::before { display: none; }
 
   .kicker {
@@ -71,7 +77,15 @@
   /* Violeta marca o destaque, nunca o fundo inteiro. Ver DESIGN.md. */
   h1 em { font-style: normal; color: var(--violet); }
   body.dado h1 em, body.texto h1 em { color: var(--pale); }
-  .numero { font-size: 200px; font-weight: 900; line-height: .9; letter-spacing: -.04em; }
+  /* Grande de propósito: num slide sem foto o número é o assunto, e a
+     900 da Inter em corpo alto é o único momento de tipo grande da marca. */
+  .numero { font-size: 300px; font-weight: 900; line-height: .9; letter-spacing: -.04em; }
+  /* O cifrão precisa de folga: encostado no primeiro dígito ele lê como parte
+     do número. */
+  .numero .cifra { font-size: .38em; font-weight: 700; vertical-align: .5em; margin-right: .12em; opacity: .72; }
+  /* Vermelho é alerta, e só tem contraste sobre o navy. Sobre o gradiente
+     violeta da variante `dado` ele desaparece, então alerta usa `texto`. */
+  body.texto .numero.alerta { color: var(--red); }
   p.apoio {
     font-size: 34px; font-weight: 400; line-height: 1.4; margin-top: 32px;
     max-width: 26ch; opacity: .92;
@@ -85,9 +99,9 @@
 </style>
 </head>
 <body>
-  <div class="kicker">Aeroporto de Confins</div>
-  <h1>A diferença de preço quase nunca está no <em>pátio</em></h1>
-  <p class="apoio">Está no traslado, e é por isso que dois lotes vizinhos cobram o dobro um do outro. Exemplo de valor: R$&nbsp;26,90.</p>
+  <div class="kicker" data-exemplo>Aeroporto de Confins</div>
+  <h1 data-exemplo>A diferença de preço quase nunca está no <em>pátio</em></h1>
+  <p class="apoio" data-exemplo>Está no traslado, e é por isso que dois lotes vizinhos cobram o dobro um do outro. Exemplo de valor: R$&nbsp;26,90.</p>
   <footer>
     <span>movepark.co</span>
     <span class="arraste">arraste</span>
