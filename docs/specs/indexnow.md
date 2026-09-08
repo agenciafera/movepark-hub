@@ -81,6 +81,15 @@ um `dist` velho na máquina anunciaria URL que não existe mais.
 | `422` | URL fora do host declarado |
 | `429` | submissão em excesso |
 
+## O 403 da estreia é normal
+
+A primeira submissão depois de publicar uma chave nova volta
+`403 SiteVerificationNotCompleted`: o serviço ainda não buscou o `.txt` na raiz. Não é chave
+errada nem arquivo no lugar errado, é fila. Em 08/09/2026 levou quatro tentativas espaçadas
+de dois minutos, cerca de seis minutos ao todo, até responder `200` para as 463 URLs.
+
+Só vale insistir com espaçamento. Repetir em rajada é o que o protocolo pune com `429`.
+
 ## O que isto não resolve
 
 O aviso cobre só o `movepark.co`. Os 7 subdomínios de white-label (`nationpark`, `garageinn`,
