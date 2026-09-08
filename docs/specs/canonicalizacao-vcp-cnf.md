@@ -55,16 +55,21 @@ consultas, 6 cliques). É absorvido pela dona, que herda o dado de 2026 na atual
 
 | Cluster de cabeça | Página dona | Complemento |
 | --- | --- | --- |
-| preço, valor, diária | **a criar** (Conteúdo 10), destravada pelo cadastro do Be Park (Conteúdo 01) | `/precos/aeroporto-de-confins`, que só nasce com parceiro precificado |
-| barato, economia, desconto | **a criar** (Conteúdo 14) | `/estacionamento-mais-barato/aeroporto-de-confins`, idem |
+| preço, valor, diária | `/blog/preco-do-estacionamento-no-aeroporto-de-confins/` | `/estacionamentos/aeroporto-confins/precos` |
+| barato, economia, desconto | `/blog/estacionamento-mais-barato-no-aeroporto-de-confins/` | `/estacionamentos/aeroporto-confins/mais-barato` |
 | proximidade, perto, onde deixar | `/blog/guia-completo-dos-estacionamentos-proximos-ao-aeoroporto-de-confins/` | `/destinos/aeroporto-de-confins` |
 
-Confins tem 3 posts e os 3 ficam. Não há o que consolidar: o problema da praça é ausência, não
-duplicata. Enquanto as donas de preço e de barato não existem, o
-`top-3-estacionamentos-do-aeroporto-de-confins` (209 cliques, dona do melhor) segura as duas
-intenções, e é ele que já recebe "estacionamento aeroporto confins mais barato" hoje. Regra da
-praça: **nenhuma promessa de reserva** enquanto não houver parceiro no sistema (ADR-009); CTA vai
-para a vitrine de lote mapeado e para a captação.
+Os 3 posts herdados ficam. Não havia o que consolidar: o problema da praça era ausência, não
+duplicata. As duas donas que faltavam foram escritas e publicadas em 05/09/2026, depois que o
+cadastro do BePark (Conteúdo 01) destravou a tarifa da praça. O
+`top-3-estacionamentos-do-aeroporto-de-confins` (209 cliques) deixa de acumular preço e barato e
+volta a ser só a dona do **melhor**, que é a intenção do slug dele.
+
+**Confins deixou de ser praça sem parceiro em 01/09/2026.** O BePark entrou como unidade listada,
+com `checkout_mode = external`. A regra da praça muda junto: onde antes valia "nenhuma promessa de
+reserva por falta de parceiro", agora vale o corte normal do ADR-009, que é o da unidade externa.
+O post segue sem promessa de transação, porque post não declara capacidade, e o CTA aponta para
+`/estacionamentos/aeroporto-confins`, onde `getLocationCapabilities` manda.
 
 O slug da dona de proximidade carrega o typo "aeoroporto" desde o WordPress. Fica: slug publicado
 nunca muda, e o histórico mora nele.

@@ -67,6 +67,13 @@ conversão ao mesmo tempo.
 Enquanto o cadastro não acontece, Confins é a única praça sem tarifa, sem distância medida e sem
 reserva. **É o primeiro entregável da Fase 0**, e sem ele metade da praça do Leonardo fica parada.
 
+**Resolvido em 01/09/2026, e o que estava abaixo virou história.** O BePark entrou como unidade
+listada em `/estacionamentos/aeroporto-confins/bepark`, com `checkout_mode = external`, traslado de
+10 minutos e tarifa vinda do motor. Com a tarifa no ar, a dona de preço de CNF foi escrita e
+publicada em 05/09/2026 (Conteúdo 10), e o mapa de ownership da praça está em
+[`canonicalizacao-vcp-cnf.md`](./canonicalizacao-vcp-cnf.md). O comparativo e a tabela de números
+vivos logo abaixo continuam com o retrato de 25 e 26/08/2026, que é a data em que foram medidos.
+
 Comparativo das quatro praças em 26/08/2026:
 
 | Praça | Parceiros no Hub | Menor semana publicada | Posts no acervo |
