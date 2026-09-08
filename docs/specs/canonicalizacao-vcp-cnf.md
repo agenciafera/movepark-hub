@@ -71,6 +71,20 @@ reserva por falta de parceiro", agora vale o corte normal do ADR-009, que é o d
 O post segue sem promessa de transação, porque post não declara capacidade, e o CTA aponta para
 `/estacionamentos/aeroporto-confins`, onde `getLocationCapabilities` manda.
 
+**A dona de proximidade foi reescrita em 08/09/2026** (Conteúdo 18). Ela abria pelo preço e tinha
+"Quanto custa" como primeiro H2, ou seja, disputava a intenção da dona de preço recém-publicada. A
+reescrita devolveu a página ao cluster dela: a frase-chave passou a ser "estacionamento perto do
+aeroporto de Confins", os nove pátios saem ordenados por distância medida no PostGIS (ADR-001), e a
+comparação de valores saiu do corpo, com link para a dona de preço. Dois fatos errados caíram
+junto: o Central Park era chamado de vizinho mais próximo, quando o Park Confins está a 2,87 km
+contra 2,96 km dele, e o Multipark aparecia a "poucas quadras", quando está a 9,13 km e é o mais
+distante da lista.
+
+**O analisador trava nessa página com um bloqueio que não tem conserto.** Ele exige a frase-chave
+dentro do slug, e o slug carrega o typo abaixo. Nenhuma frase-chave de proximidade casa, porque
+todas contêm "aeroporto". Ficou o termo de cabeça real, com a exceção registrada aqui, em vez de
+uma frase-chave enfraquecida para agradar a métrica.
+
 O slug da dona de proximidade carrega o typo "aeoroporto" desde o WordPress. Fica: slug publicado
 nunca muda, e o histórico mora nele.
 
