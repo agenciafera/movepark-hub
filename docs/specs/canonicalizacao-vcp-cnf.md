@@ -138,11 +138,32 @@ agora é a dona de barato. A intenção deles é preço, então o alvo mudou par
 
 ### Ajustes feitos na aplicação
 
-Duas donas trocaram de título na revisão de conteúdo, com o slug intacto: a de melhor virou
+Três donas trocaram de título na revisão de conteúdo, com o slug intacto: a de melhor virou
 "Melhores estacionamentos do Aeroporto Viracopos em 2026" (reescrita answer-first, sem concorrente
-citado e sem link pra quem vende vaga) e a de reserva virou "Como reservar estacionamento no
-Aeroporto Viracopos", tirando a promessa "garantir sua vaga" do título, como o ADR-009 manda. O
-guia do aeroporto e o post genérico de reserva perderam travessão, promessa e link de parceiro.
+citado e sem link pra quem vende vaga), a de reserva virou "Como reservar estacionamento no
+Aeroporto Viracopos", tirando a promessa "garantir sua vaga" do título, como o ADR-009 manda, e a
+de barato virou "O mais barato no estacionamento do Aeroporto Viracopos em 2026" em 08/09/2026. O
+motivo do terceiro é o slug congelado: ele lê "mais barato no estacionamento do aeroporto
+viracopos", então a frase-chave só casa com título, slug e primeira frase ao mesmo tempo quando
+"barato" vem antes de "estacionamento" no H1. O guia do aeroporto e o post genérico de reserva
+perderam travessão, promessa e link de parceiro.
+
+### A dona de barato, reescrita em 08/09/2026 (Conteúdo 12)
+
+A revisão trocou o retrato de agosto pelo de setembro e entregou o que a atividade pedia: o menor
+total por duração (1, 2, 3, 7, 15 e 30 diárias) com o nome de quem pratica, a economia contra o
+balcão em reais e em percentual por duração, os R$ 147,00 que separam Virapark e Garageinn na
+semana, o custo do dia sobrando na reserva e as três trocas de quem paga menos, começando pelos
+2,7 km a mais até o terminal.
+
+Dois ajustes de fato valem registro. Saíram os números de comparador (ParkMundo, mai/2026) e o JF
+Parking, que não existe no inventário dos 12 pátios; entraram os valores conferidos na fonte em
+03/09/2026, os mesmos da dona de preço, para as duas páginas não se contradizerem. E o cluster de
+cupom e desconto, que é o que a página de fato recebe no Search Console (cupom de desconto
+Virapark, ~530 impressões em 16 meses, posição 11), ganhou seção própria com resposta honesta em
+vez dos dois parágrafos antigos. São 3.763 palavras, 8 pares de FAQPage e a superlativa "maior
+diferença entre parceiros da rede" caiu, porque GRU tem spread maior (R$ 363,90 contra R$ 147,00
+em 7 diárias).
 
 ### O resultado em número
 
