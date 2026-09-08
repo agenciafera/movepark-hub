@@ -15,6 +15,17 @@ const config: Config = {
     screens: {
       tablet: "744px",
       desktop: "1128px",
+      /*
+        Desktop com altura para segurar uma coluna lateral inteira.
+
+        A lateral do post gruda no topo enquanto o texto rola, e grudada numa
+        janela baixa o que passa da borda de baixo fica fora de alcance pelo
+        artigo inteiro, porque o `sticky` só solta quando a linha da grade acaba.
+        O piso de 660px é a coluna mais alta que a lateral chega a ter (três
+        relacionados de três linhas mais o CTA, 624px) somada ao respiro de cima
+        e de baixo. Abaixo disso ela rola junto com o texto, que mostra tudo.
+      */
+      "desktop-tall": { raw: "(min-width: 1128px) and (min-height: 660px)" },
     },
     extend: {
       colors: {

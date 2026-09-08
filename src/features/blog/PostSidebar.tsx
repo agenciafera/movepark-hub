@@ -27,13 +27,19 @@ export function PostSidebar({ destination, relacionados }: Props) {
     altura da linha, e um elemento do tamanho da própria linha nunca tem por
     onde grudar. Encolhido ao conteúdo, ele volta a ter espaço para rolar.
 
-    O teto de altura é o seguro para tela baixa: grudado, um bloco mais alto que
-    a janela deixaria o último relacionado fora de alcance pelo artigo inteiro,
-    já que o `sticky` só solta quando a linha da grade acaba. Em tela normal a
-    lateral não chega perto do teto e nada muda.
+    A coluna não tem teto de altura nem rolagem própria. O teto era `100dvh-7rem`,
+    um número fixo, enquanto o `top` acompanha o header que se esconde: em janela
+    de 700px ele cortava a coluna de 624px em 588px e abria uma barra de rolagem
+    dentro da página, com o primeiro relacionado escondido por cima. Rolagem
+    aninhada num bloco de 300px é difícil de perceber e mais difícil ainda de
+    operar, e o leitor não tem por que saber que aquilo rola.
+
+    O seguro para tela baixa mudou de lugar: em vez de cortar a coluna, é o
+    `sticky` que só entra onde ela cabe (`desktop-tall`). Abaixo disso a lateral
+    rola junto com o texto, e nada fica preso fora da tela.
   */
   return (
-    <aside className="mt-12 flex flex-col gap-8 transition-[top] duration-300 ease-out motion-reduce:transition-none print:hidden desktop:sticky desktop:top-[calc(var(--topbar-offset,5rem)+1rem)] desktop:mt-0 desktop:max-h-[calc(100dvh-7rem)] desktop:self-start desktop:overflow-y-auto desktop:overscroll-contain">
+    <aside className="mt-12 flex flex-col gap-8 transition-[top] duration-300 ease-out motion-reduce:transition-none print:hidden desktop:mt-0 desktop:self-start desktop-tall:sticky desktop-tall:top-[calc(var(--topbar-offset,5rem)+1rem)]">
       {relacionados.length > 0 && (
         <nav aria-label="Leia também">
           <p className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">

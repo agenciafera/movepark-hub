@@ -111,12 +111,27 @@ describe("PostSidebar", () => {
   /**
    * `sticky` sem `self-start` não gruda: o item da grade estica até a altura da
    * linha e nunca sobra espaço para rolar dentro dela.
+   *
+   * O `sticky` mora no `desktop-tall`, e não no `desktop`: em janela baixa a
+   * coluna grudada deixaria o CTA fora de alcance pelo artigo inteiro.
    */
-  it("a lateral encolhe ao conteúdo antes de grudar, e tem teto de altura", () => {
+  it("a lateral encolhe ao conteúdo e só gruda em tela que a segura inteira", () => {
     const { container } = montar({ destination: DESTINO, relacionados: [RELACIONADO] });
     const aside = container.querySelector("aside")!;
     expect(aside.className).toContain("desktop:self-start");
-    expect(aside.className).toContain("desktop:sticky");
-    expect(aside.className).toContain("desktop:max-h-[calc(100dvh-7rem)]");
+    expect(aside.className).toContain("desktop-tall:sticky");
+    expect(aside.className).not.toContain("desktop:sticky");
+  });
+
+  /**
+   * Teto de altura com rolagem própria cortava a coluna e escondia o primeiro
+   * relacionado por cima, numa barra de 300px que ninguém percebe. A coluna sai
+   * inteira, e quem rola é a página.
+   */
+  it("a lateral não tem rolagem própria", () => {
+    const { container } = montar({ destination: DESTINO, relacionados: [RELACIONADO] });
+    const aside = container.querySelector("aside")!;
+    expect(aside.className).not.toContain("overflow-y-auto");
+    expect(aside.className).not.toContain("max-h-");
   });
 });
