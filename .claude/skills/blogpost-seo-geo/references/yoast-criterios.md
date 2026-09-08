@@ -65,19 +65,32 @@ para robô.
 300, o que serve para post genérico; aqui o alvo é liderar uma busca disputada,
 e cobertura de tema é sinal.
 
-**Alt das imagens.** Toda imagem precisa de alt, e pelo menos um alt precisa da
-frase-chave. Todos os alts com a mesma frase é laranja: alt descreve a imagem,
-não é campo de keyword. Vale para a capa, que no card do índice é o nome do link.
-Alt é acessibilidade antes de ser SEO: é o que o leitor de tela anuncia.
+**Alt das imagens.** Toda imagem precisa de alt, e o alt é medido um a um, não
+"pelo menos um". Alt sem o núcleo da frase-chave é vermelho, alt repetido em duas
+imagens é vermelho, e a frase-chave inteira em todos é laranja: alt descreve a
+imagem, não é campo de keyword. Vale para a capa, que no card do índice é o nome
+do link. Alt é acessibilidade antes de ser SEO: é o que o leitor de tela anuncia.
 
 **Formato das imagens.** Toda imagem (capa incluída) em `.webp`; qualquer outra
 extensão é vermelho. É regra do projeto (Passo 5 da skill): a imagem nasce no
 Higgsfield em PNG/JPEG e é convertida antes de subir ao Storage.
 
-**Frase-chave no nome do arquivo.** Todo arquivo de imagem carrega as palavras de
-conteúdo da frase-chave em kebab-case (a capa é `<palavra-chave>.webp`, as demais
-ganham sufixo do que mostram). Nome genérico (`capa.webp`, `hero.webp`, hash) é
-vermelho: o nome do arquivo é sinal de SEO de imagem que o Google Imagens lê.
+**Palavra-chave no nome do arquivo.** Medida imagem a imagem, porque toda imagem
+é uma vaga no Google Imagens e o padrão que falhava era otimizar só a capa. O
+nome (kebab-case, sem acento) precisa do **núcleo**: duas palavras do campo
+semântico, pelo menos uma delas da frase-chave. Sinônimo do front matter conta,
+então `estacionamento-vcp-...` passa igual a `estacionamento-viracopos-...`.
+Faltou núcleo, é vermelho: nome genérico (`capa.webp`, `imagem2.webp`, hash) joga
+a vaga fora.
+
+**Variação por imagem.** Além do núcleo, cada imagem do corpo precisa de um termo
+próprio do que ela mostra (`preco`, `vaga-coberta`, `traslado`, `como-chegar`).
+É vermelho quando a imagem não tem variação nenhuma, quando a variação é
+genérica ou numérica (`-2`, `-final`, `-novo` não são busca), quando duas imagens
+repetem a variação ou quando dois nomes são iguais. Sem isso as imagens do mesmo
+post disputam a mesma busca entre si. A capa é a exceção: ela leva a frase-chave
+inteira e não precisa de variação (se lhe faltar uma palavra da frase-chave, é
+laranja).
 
 **Link interno.** Pelo menos um, e pelo menos um para `/estacionamentos/<slug>`. O link
 para o destino é vermelho quando falta: sem ele o post preserva ranking e

@@ -7,8 +7,9 @@ description: >-
   ortográfica, tom jovem e moderno, sintaxe de markdown válida sem nenhum HTML
   cru na tela, densidade de palavra-chave, palavra-chave na primeira frase, no
   título, nos headings e no alt das imagens, imagens sempre geradas no
-  Higgsfield em .webp com a palavra-chave no nome do arquivo e no alt
-  (acessibilidade), link interno e link externo com
+  Higgsfield em .webp com a palavra-chave e uma variação própria no nome do
+  arquivo e no alt de TODAS as imagens, não só da capa (acessibilidade), link
+  interno e link externo com
   contexto que nunca aponta para concorrente de estacionamento, mínimo de 3.000
   palavras, tabela de preços, Schema Markup e checagem de canibalização contra
   os 93 posts do acervo. Use SEMPRE que o pedido envolver post de blog do
@@ -279,37 +280,85 @@ Afonso Pena, Guarulhos, Humberto Delgado. Lista completa em
 do projeto (travessão, "não é X, é Y", regra de três, superlativo vazio,
 prolixidade) e vale para o post inteiro, não só para os títulos.
 
-## Passo 5: imagens (Higgsfield, .webp, palavra-chave no nome e no alt)
+## Passo 5: imagens (Higgsfield, .webp, palavra-chave em todas)
 
 Toda imagem do post nasce no **Higgsfield** e chega ao leitor em **`.webp`**. Sem
 exceção: para post de blog, esta regra **sobrepõe a skill `gerar-imagens-gemini`**
 (que segue valendo para o resto do projeto).
 
-1. **Gerar no Higgsfield.** Use o conector MCP do Higgsfield: `generate_image`
-   para uma imagem, `generate_image_batch` + `jobs_wait` para várias independentes.
-   Se as tools não estiverem carregadas, busque com `ToolSearch` por
-   "higgsfield generate image". Prompt descritivo em inglês (assunto,
-   enquadramento, luz, estilo fotográfico realista, sem texto sobreposto);
-   aspect ratio 16:9 para capa e imagens de corpo.
-2. **O nome do arquivo carrega a palavra-chave**, em kebab-case, sem acento e sem
-   stopwords: a capa é `<palavra-chave>.webp` (ex.:
-   `estacionamento-aeroporto-guarulhos.webp`) e as demais acrescentam um sufixo
-   do que mostram (`estacionamento-aeroporto-guarulhos-traslado.webp`). Nome
-   genérico (`capa.webp`, `imagem1.webp`, `hero.webp`, hash) é proibido: o nome
-   do arquivo é sinal de SEO de imagem e o analisador cobra.
-3. **Formato sempre `.webp`**, largura máxima 1600px. O Higgsfield devolve
-   PNG/JPEG; baixe e converta antes de subir:
+**A otimização vale para a última imagem igual à capa.** O erro que se repete é
+caprichar no nome da capa e deixar o resto virar `imagem2.webp` ou
+`traslado.webp`. Cada imagem é uma vaga no Google Imagens e uma busca diferente:
+quem procura "vaga coberta em Viracopos" não digita a mesma coisa que quem
+procura "preço do estacionamento de Viracopos". Nome genérico joga essa vaga
+fora, e nome repetido faz as imagens competirem entre si pela mesma busca.
+
+### 1. Planeje os nomes antes de gerar
+
+Escreva a tabela primeiro, com uma linha por imagem, e só depois mande gerar. É o
+passo que evita o padrão "a primeira sai certa e as outras não":
+
+| # | O que mostra | Variação | Nome do arquivo | Alt |
+|---|---|---|---|---|
+| capa | visão geral do pátio | (nenhuma) | `estacionamento-aeroporto-de-viracopos.webp` | estacionamento no aeroporto de Viracopos visto da entrada |
+| 2 | tabela de diárias | `preco` | `estacionamento-aeroporto-de-viracopos-preco.webp` | tabela de preço da diária do estacionamento em Viracopos |
+| 3 | carro sob cobertura | `vaga-coberta` | `estacionamento-viracopos-vaga-coberta.webp` | vaga coberta no estacionamento de Viracopos com o carro protegido do sol |
+| 4 | van no embarque | `traslado-van` | `estacionamento-viracopos-traslado-van.webp` | van do traslado do estacionamento em Viracopos embarcando passageiros |
+
+### 2. A fórmula do nome: núcleo + variação
+
+`<servico>-<lugar>-<variacao>.webp`, em kebab-case, sem acento e sem stopword.
+
+- **Núcleo** é o que se repete em todas: o serviço (`estacionamento`) mais o
+  lugar (`aeroporto-de-viracopos`, `viracopos` ou `vcp`). Pode encurtar de uma
+  imagem para outra, e é bom que encurte: a forma curta pega outra busca.
+- **Variação** é o que só aquela imagem tem, escrita como alguém pesquisaria.
+  Uma por imagem, nenhuma repetida, e nunca um número (`-2`, `-final`, `-novo`
+  não são termo de busca; são o mesmo nome genérico com outra cara).
+- **A capa é a única que pode dispensar a variação**: ela leva a frase-chave
+  inteira, e uma variação ali é bem-vinda, não obrigatória.
+
+Banco de variações, para não travar na hora (combine com as `tags` do post):
+
+| Intenção | Variações |
+|---|---|
+| preço | `preco`, `tarifa-diaria`, `preco-diaria`, `quanto-custa`, `comparativo-precos` |
+| tipo de vaga | `vaga-coberta`, `vaga-descoberta`, `garagem-fechada`, `valet`, `manobrista` |
+| traslado | `traslado`, `traslado-van`, `van-embarque`, `desembarque`, `tempo-de-traslado` |
+| chegada | `como-chegar`, `entrada`, `portaria`, `mapa`, `acesso-rodovia` |
+| confiança | `seguranca`, `cameras`, `portao`, `24-horas`, `equipe` |
+| uso | `reserva-online`, `check-in`, `longa-permanencia`, `viagem-em-familia`, `bagagem` |
+
+### 3. Gerar no Higgsfield
+
+Use o conector MCP do Higgsfield: `generate_image` para uma imagem,
+`generate_image_batch` + `jobs_wait` para várias independentes. Se as tools não
+estiverem carregadas, busque com `ToolSearch` por "higgsfield generate image".
+Prompt descritivo em inglês (assunto, enquadramento, luz, estilo fotográfico
+realista, sem texto sobreposto); aspect ratio 16:9 para capa e corpo. O prompt
+segue a linha da tabela: se a variação é `vaga-coberta`, a imagem mostra
+cobertura, senão o alt vira legenda de uma foto que não existe.
+
+### 4. Converter para `.webp`
+
+Formato sempre `.webp`, largura máxima 1600px. O Higgsfield devolve PNG/JPEG;
+baixe e converta antes de subir, já salvando com o nome planejado:
 
 ```bash
-cwebp -q 82 -resize 1600 0 entrada.png -o estacionamento-aeroporto-guarulhos.webp
+cwebp -q 82 -resize 1600 0 entrada.png -o estacionamento-viracopos-vaga-coberta.webp
 ```
 
-4. **Alt em toda imagem, sem exceção** (é acessibilidade, não enfeite): descreva
-   em pt-BR o que a imagem mostra, sem começar com "imagem de" ou "foto de". A
-   capa (e pelo menos uma imagem do corpo, quando houver várias) leva a
-   palavra-chave no alt de forma natural; as demais variam a descrição, porque
-   alt idêntico repetido é penalizado (regra em
-   [`references/yoast-criterios.md`](references/yoast-criterios.md)).
+### 5. Alt em toda imagem, com a mesma variação do nome
+
+Alt é acessibilidade antes de ser SEO: é o que o leitor de tela anuncia. Descreva
+em pt-BR o que a imagem mostra, sem começar com "imagem de" ou "foto de", e
+carregue o núcleo (serviço + lugar) de forma natural, mais o recorte daquela
+imagem. Dois alts nunca são iguais, e repetir a frase-chave inteira em todos é
+penalizado: o alt descreve, não é campo de keyword. Se a descrição honesta da
+imagem não comporta o núcleo, a imagem está errada para o post, não o alt.
+
+O analisador cobra imagem a imagem: núcleo no nome e no alt, variação própria em
+cada uma, `.webp` em todas. Vermelho ali é bloqueio, não sugestão.
 
 ## Passo 6: medir com o analisador
 
@@ -382,8 +431,8 @@ Ao publicar, três coisas acontecem juntas, e faltar uma deixa o post capenga:
    teste de contrato lia o arquivo, ficando verde sobre a versão errada. O que
    você escreve no `body_md` é o que sai no gêmeo.
 3. **Imagens no Storage**, em `assets-public/blog/<slug>/`, geradas no
-   Higgsfield, em `.webp` com a palavra-chave no nome do arquivo e alt em todas
-   (Passo 5), largura máxima 1600px. Nunca hotlink de terceiro (os 10 hotlinks
+   Higgsfield, em `.webp`, todas com a palavra-chave e uma variação própria no
+   nome do arquivo e no alt (Passo 5), largura máxima 1600px. Nunca hotlink de terceiro (os 10 hotlinks
    do Bing herdados já vinham quebrando e carregavam risco autoral).
 
 Depois: `bun run test` e `bun run typecheck` verdes, `git status` sem untracked
@@ -399,8 +448,8 @@ Antes de dizer que o post está pronto:
 2. Passou pela skill `revisar-texto` (portão anti-IA) e por uma leitura de
    ortografia feita com atenção, não em diagonal.
 3. Zero HTML, zero travessão, zero bloco de código, títulos entre `##` e `####`.
-4. Frase-chave no título, na primeira frase, em parte dos H2/H3, no slug, na meta
-   description, em pelo menos um alt e no nome dos arquivos de imagem.
+4. Frase-chave no título, na primeira frase, em parte dos H2/H3, no slug e na
+   meta description.
 5. Pelo menos um link para `/estacionamentos/<slug>`, dois ou três para outros posts, e
    um externo de fonte reconhecida com rótulo que diz o que é.
 6. 3.000 palavras ou mais, com tabela onde houver dado comparável.
@@ -410,8 +459,9 @@ Antes de dizer que o post está pronto:
    `?`, resposta em parágrafo logo abaixo, no mínimo duas), com pergunta própria do
    post e não cópia de `/faq/<slug>`. Abertura autossuficiente, números com unidade.
 9. Front matter completo, `category`, `tags` e `destination` dentro dos catálogos.
-10. Imagens geradas no Higgsfield, em `.webp` com a palavra-chave no nome e alt
-    em todas, commitadas (o gêmeo markdown sai do banco, não é arquivo seu).
+10. Imagens geradas no Higgsfield, em `.webp`, e **cada uma** com a palavra-chave
+    mais uma variação própria no nome do arquivo e no alt, sem nome nem alt
+    repetido (o gêmeo markdown sai do banco, não é arquivo seu).
 11. Publicação só depois do "pode publicar" do usuário.
 
 ## Referências

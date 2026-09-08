@@ -244,7 +244,7 @@ if (palavras < 3000)
   vermelho(G_SEO, "Contagem de palavras", `${palavras} palavras. O mínimo do projeto é 3.000.`);
 else verde(G_SEO, "Contagem de palavras", `${palavras} palavras.`);
 
-// 2.6 imagens e alt
+// 2.6 imagens: alt, formato, nome do arquivo e variação
 const imagens = [...corpo.matchAll(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g)].map((m) => ({
   alt: m[1].trim(),
   src: m[2],
@@ -252,53 +252,130 @@ const imagens = [...corpo.matchAll(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g)].map((m) 
 const todasImagens = meta.cover_image_url
   ? [{ alt: (meta.cover_alt || "").trim(), src: meta.cover_image_url, capa: true }, ...imagens]
   : imagens;
+
+/**
+ * Toda imagem é uma vaga no Google Imagens, não só a capa.
+ *
+ * O que falhava na prática: a capa saía com a frase-chave inteira e as demais
+ * viravam `imagem2.webp` ou `traslado.webp`. Por isso a medida é imagem a
+ * imagem, e cobra duas coisas ao mesmo tempo: o **núcleo** (serviço + local,
+ * aceitando sinônimo e forma curta do lugar) e uma **variação** própria do que
+ * aquela imagem mostra. Núcleo sem variação vira nome repetido; variação sem
+ * núcleo é nome genérico. As duas juntas dão a cauda longa.
+ */
+const stem = (p) => (p.length > 4 ? p.replace(/s$/, "") : p);
+const tokensDe = (t) =>
+  norm(t)
+    .split(" ")
+    .filter((p) => p && !new RegExp(`^${LIGACAO}$`).test(p))
+    .map(stem);
+const tokensChave = chave ? tokensDe(chave) : [];
+const poolChave = new Set([...tokensChave, ...sinonimos.flatMap(tokensDe)]);
+const MIN_NUCLEO = Math.min(2, tokensChave.length);
+const GENERICO =
+  /^(imagem|img|image|foto|photo|capa|cover|hero|banner|final|nova|novo|copia|arquivo|webp|jpg|jpeg|png|\d+)$/;
+
+const nomeArquivo = (src) => {
+  const semQuery = src.split(/[?#]/)[0];
+  return semQuery.slice(semQuery.lastIndexOf("/") + 1);
+};
+const tokensDoNome = (i) => tokensDe(nomeArquivo(i.src).replace(/\.[a-z0-9]+$/i, ""));
+/** Núcleo presente: duas palavras do campo semântico, pelo menos uma da frase-chave. */
+const temNucleo = (toks) =>
+  toks.some((t) => tokensChave.includes(t)) && toks.filter((t) => poolChave.has(t)).length >= MIN_NUCLEO;
+/** O que sobra depois do núcleo, ignorando ruído: é a variação daquela imagem. */
+const variacaoDe = (toks) => toks.filter((t) => !poolChave.has(t) && !GENERICO.test(t));
+const duplicados = (lista) => {
+  const visto = new Set();
+  const repetidos = new Set();
+  for (const v of lista) (visto.has(v) ? repetidos : visto).add(v);
+  return [...repetidos];
+};
+const listar = (imgs) => imgs.map((i) => nomeArquivo(i.src)).join("; ");
+
 if (!todasImagens.length) {
   vermelho(G_SEO, "Imagens", "Nenhuma imagem, nem capa. Sem capa o card do índice fica sem nome.");
 } else {
   const semAlt = todasImagens.filter((i) => !i.alt);
-  const comChave = chave ? todasImagens.filter((i) => contarFrase(norm(i.alt), chave) > 0).length : 0;
   if (semAlt.length) vermelho(G_SEO, "Alt das imagens", `${semAlt.length} de ${todasImagens.length} sem alt.`);
   else verde(G_SEO, "Alt das imagens", `${todasImagens.length} imagens, todas com alt.`);
-  if (chave && comChave === 0)
-    vermelho(G_SEO, "Frase-chave no alt", "Nenhum alt contém a frase-chave.");
-  else if (chave && comChave === todasImagens.length && todasImagens.length > 2)
-    laranja(G_SEO, "Frase-chave no alt", "Todos os alts repetem a frase-chave. Descreva a imagem, varie.");
-  else if (chave) verde(G_SEO, "Frase-chave no alt", `${comChave} de ${todasImagens.length}.`);
 
-  // 2.6b formato e nome do arquivo (Passo 5: Higgsfield, .webp, chave no nome)
-  const nomeArquivo = (src) => {
-    const semQuery = src.split(/[?#]/)[0];
-    return semQuery.slice(semQuery.lastIndexOf("/") + 1);
-  };
+  if (chave) {
+    // 2.6a a palavra-chave vale para toda imagem, com variação em cada uma
+    const semNucleoNoAlt = todasImagens.filter((i) => i.alt && !temNucleo(tokensDe(i.alt)));
+    if (semNucleoNoAlt.length)
+      vermelho(
+        G_SEO,
+        "Palavra-chave no alt",
+        `${semNucleoNoAlt.length} de ${todasImagens.length} com alt sem a palavra-chave nem variação dela: "${semNucleoNoAlt
+          .map((i) => i.alt)
+          .join('"; "')}". Todo alt descreve a imagem carregando serviço + lugar.`,
+      );
+    else verde(G_SEO, "Palavra-chave no alt", `${todasImagens.length} alts, todos com a palavra-chave ou variação.`);
+
+    const exatos = todasImagens.filter((i) => contarFrase(norm(i.alt), chave) > 0).length;
+    if (exatos === todasImagens.length && todasImagens.length > 2)
+      laranja(
+        G_SEO,
+        "Variação no alt",
+        "Todos os alts repetem a frase-chave inteira. Alt descreve a imagem: varie o recorte em cada um.",
+      );
+
+    const altsRepetidos = duplicados(todasImagens.filter((i) => i.alt).map((i) => norm(i.alt)));
+    if (altsRepetidos.length)
+      vermelho(G_SEO, "Alt repetido", `Mesmo alt em mais de uma imagem: "${altsRepetidos.join('"; "')}".`);
+  }
+
+  // 2.6b formato (Passo 5: Higgsfield, sempre .webp)
   const foraDoWebp = todasImagens.filter((i) => !/\.webp$/i.test(nomeArquivo(i.src)));
   if (foraDoWebp.length)
     vermelho(
       G_SEO,
       "Formato das imagens",
-      `${foraDoWebp.length} de ${todasImagens.length} fora do .webp: ${foraDoWebp
-        .map((i) => nomeArquivo(i.src))
-        .join("; ")}. O formato do blog é sempre .webp.`,
+      `${foraDoWebp.length} de ${todasImagens.length} fora do .webp: ${listar(foraDoWebp)}. O formato do blog é sempre .webp.`,
     );
   else verde(G_SEO, "Formato das imagens", "Todas em .webp.");
+
+  // 2.6c nome do arquivo: núcleo em todas, variação própria em cada uma
   if (chave) {
-    const tokens = norm(chave)
-      .split(" ")
-      .filter((p) => p && !new RegExp(`^${LIGACAO}$`).test(p))
-      .map((p) => (p.length > 4 ? p.replace(/s$/, "") : p));
-    const temChaveNoNome = (i) => {
-      const nome = norm(nomeArquivo(i.src)).replace(/[-_.]/g, " ");
-      return tokens.every((t) => nome.includes(t));
-    };
-    const semChaveNoNome = todasImagens.filter((i) => !temChaveNoNome(i));
-    if (semChaveNoNome.length)
+    const semNucleo = todasImagens.filter((i) => !temNucleo(tokensDoNome(i)));
+    if (semNucleo.length)
       vermelho(
         G_SEO,
-        "Frase-chave no nome do arquivo",
-        `${semChaveNoNome.length} de ${todasImagens.length} sem a frase-chave no nome: ${semChaveNoNome
-          .map((i) => nomeArquivo(i.src))
-          .join("; ")}. Padrão: <palavra-chave>.webp (ex.: estacionamento-aeroporto-guarulhos.webp).`,
+        "Palavra-chave no nome do arquivo",
+        `${semNucleo.length} de ${todasImagens.length} sem a palavra-chave no nome: ${listar(semNucleo)}. Padrão: <servico>-<lugar>-<variacao>.webp (ex.: estacionamento-viracopos-vaga-coberta.webp).`,
       );
-    else verde(G_SEO, "Frase-chave no nome do arquivo", "Todos os nomes carregam a frase-chave.");
+    else verde(G_SEO, "Palavra-chave no nome do arquivo", `${todasImagens.length} nomes, todos com a palavra-chave.`);
+
+    const capa = todasImagens.find((i) => i.capa);
+    if (capa && !tokensChave.every((t) => tokensDoNome(capa).includes(t)))
+      laranja(
+        G_SEO,
+        "Nome da capa",
+        `A capa é a imagem da frase-chave inteira: ${nomeArquivo(capa.src)} não traz todas as palavras de "${chave}".`,
+      );
+
+    const doCorpo = todasImagens.filter((i) => !i.capa);
+    const semVariacao = doCorpo.filter((i) => variacaoDe(tokensDoNome(i)).length === 0);
+    const nomesRepetidos = duplicados(todasImagens.map((i) => norm(nomeArquivo(i.src))));
+    const variacoesRepetidas = duplicados(
+      doCorpo.map((i) => variacaoDe(tokensDoNome(i)).join("-")).filter(Boolean),
+    );
+    const problemas = [];
+    if (semVariacao.length)
+      problemas.push(
+        `${semVariacao.length} sem variação própria (só a frase-chave, ou sufixo numérico/genérico): ${listar(semVariacao)}`,
+      );
+    if (nomesRepetidos.length) problemas.push(`nome repetido: ${nomesRepetidos.join("; ")}`);
+    if (variacoesRepetidas.length) problemas.push(`variação repetida: ${variacoesRepetidas.join("; ")}`);
+    if (problemas.length)
+      vermelho(
+        G_SEO,
+        "Variação por imagem",
+        `${problemas.join(". ")}. Cada imagem disputa uma busca diferente: preco, vaga-coberta, traslado, seguranca, como-chegar.`,
+      );
+    else if (doCorpo.length)
+      verde(G_SEO, "Variação por imagem", `${doCorpo.length} imagens de corpo, cada uma com uma variação própria.`);
   }
 }
 
