@@ -1,7 +1,10 @@
 # API de publicação do Instagram: o que é limite duro
 
-Conferido na documentação da Meta em 03/09/2026. Tudo aqui é limite da
-plataforma, não preferência da marca. O que quebra a marca está no `SKILL.md`.
+**Esta é a fonte canônica dos limites da plataforma.** Nenhum número daqui é
+repetido no `SKILL.md`, justamente para não existirem duas versões que
+divergem quando a Meta mudar um deles. Conferido na documentação em
+03/09/2026. O que quebra a marca, e não a publicação, está no `SKILL.md`,
+Passo 2.
 
 ## Conta e permissão
 

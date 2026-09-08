@@ -102,12 +102,12 @@ reconhecível. A regra do blog vale igual aqui.
 
 Os quatro formatos que sustentam os primeiros 125 caracteres.
 
-| Formato | Molde | Quando usa |
-|---|---|---|
-| Número que surpreende | "<Ação> em <praça> custa de R$ X a R$ Y. A diferença é <variável>." | Corte de preço |
-| Erro comum | "Quem <ação> em <praça> costuma errar em <ponto>." | Corte de objeção |
-| Pergunta digitada | "<pergunta da cauda longa, literal>" | Corte de FAQ |
-| Contexto que decide | "<Situação concreta> muda tudo na escolha do estacionamento." | Corte de gancho |
+| Formato | Molde | Exemplo | Quando usa |
+|---|---|---|---|
+| Número que surpreende | "<Ação> em <praça> custa de R$ X a R$ Y. A diferença é <variável>." | "Estacionar em Guarulhos por 7 dias custa de R$ 89 a R$ 340. A diferença é o traslado." | Corte de preço |
+| Erro comum | "Quem <ação> em <praça> costuma errar em <ponto>." | "Quem deixa o carro no aeroporto de Confins costuma errar na hora de escolher o traslado." | Corte de objeção |
+| Pergunta digitada | "<pergunta da cauda longa, literal>" | "Quanto custa deixar o carro em Viracopos por uma semana?" | Corte de FAQ |
+| Contexto que decide | "<Situação concreta> muda tudo na escolha do estacionamento." | "Voo às 6h em Congonhas muda tudo na escolha do estacionamento." | Corte de gancho |
 
 Puxe a pergunta literal do arquivo de cauda longa em vez de inventar:
 

@@ -72,23 +72,27 @@ não o pré-requisito.
 
 ## Passo 2: as regras duras
 
-Estas não são preferências. As de cima quebram a publicação, as de baixo quebram
-a marca. Números conferidos na documentação da Meta, detalhe em
-[`references/api-instagram.md`](references/api-instagram.md).
+Duas famílias, e elas moram em lugares diferentes de propósito.
+
+**Os limites da plataforma** (formato do arquivo, largura, contagem de slides, de
+caracteres e de hashtags) são especificação da Meta e vivem em
+[`references/api-instagram.md`](references/api-instagram.md). Não decore: o
+analisador do Passo 10 verifica todos, um por um. O único que muda o trabalho
+antes de escrever é que o Instagram aceita **só JPEG**, e o blog gera `.webp`,
+então converter faz parte do corte, não do acabamento.
+
+**As regras da Movepark** são as de baixo. O analisador também as verifica, mas
+elas decidem o texto enquanto ele está sendo escrito, então ficam à mão:
 
 | Regra | Por quê |
 |---|---|
-| Imagem em **JPEG**, nunca `.webp` nem PNG | A API rejeita qualquer outro formato. O blog gera `.webp`, então o corte **sempre** converte |
-| Largura máxima **1440px**, arquivo até **8 MB** | Acima disso a criação do container falha. O padrão da casa é **1080 x 1350** (4:5) |
-| Proporção entre **4:5 e 1.91:1** | Fora da faixa o Instagram corta sozinho, e corta errado |
-| Carrossel de no máximo **10 slides** | Limite da API, mesmo que o app aceite mais |
-| Legenda até **2.200 caracteres**, **30 hashtags** e **20 @** | Limite duro. Passar disso recusa a publicação inteira |
-| Alt em **toda** imagem, até 1.000 caracteres | É acessibilidade **e** é indexado pelo Google. Não vale para reel e story, que não aceitam o campo |
 | Zero travessão `—` e traço `–` | Regra do `CLAUDE.md` para o projeto inteiro. Use ponto, vírgula, dois-pontos ou " - " |
 | Nenhuma promessa de transação | **ADR-009**. Nada de "vaga garantida", "cancelamento grátis", "preço fixo". A promessa mora na unidade, onde `getLocationCapabilities` manda |
 | Todo R$ carrega **data de referência** | Tarifa sem data vira promessa que ninguém consegue retirar depois |
+| Alt em **toda** imagem | O Instagram não exige, nós exigimos. É acessibilidade e é indexado pelo Google. Reel e story não aceitam o campo |
 | **Movepark** é uma palavra, M maiúsculo | Nunca "MovePark", "Move Park" ou "MOVEPARK" |
 | Nunca cite concorrente pelo @ | Marcar arroba de quem vende vaga entrega audiência de graça |
+| O padrão da casa é **1080 x 1350** | É o retrato mais alto que o Instagram aceita, e o que ocupa mais tela no feed |
 
 ## Passo 3: a legenda
 
@@ -105,14 +109,9 @@ Seis blocos, nesta ordem. A estrutura vale para carrossel e para post único.
 
 **O gancho é o trabalho inteiro.** Os primeiros 125 caracteres são o que decide
 se alguém abre o resto, e são também o trecho que o Google mostra. Ele precisa
-conter a frase-chave e uma tensão real. Quatro formatos que funcionam:
-
-| Formato | Exemplo |
-|---|---|
-| Número que surpreende | "Estacionar em Guarulhos por 7 dias custa de R$ 89 a R$ 340. A diferença é o traslado." |
-| Erro comum | "Quem deixa o carro no aeroporto de Confins costuma errar na hora de escolher o traslado." |
-| Pergunta que a pessoa digita | "Quanto custa deixar o carro em Viracopos por uma semana?" |
-| Contexto que muda a decisão | "Voo às 6h em Congonhas muda tudo na escolha do estacionamento." |
+conter a frase-chave e uma tensão real. Quatro formatos sustentam isso, com
+molde e exemplo no banco de ganchos de
+[`references/legendas.md`](references/legendas.md).
 
 **O corpo é escaneável, não é prosa.** Linha curta, uma ideia por linha, quebra
 entre blocos. Legenda em bloco único de 8 linhas não é lida no celular. Sem
@@ -127,7 +126,7 @@ sem exclamação em série. Referência em `PRODUCT.md` e `DESIGN.md`.
 projeto e a legenda não é exceção: modelo produz travessão, "não é X, é Y" e
 regra de três sem perceber.
 
-Fórmulas prontas por tipo de corte em
+Molde por tipo de corte, banco de ganchos e banco de CTAs em
 [`references/legendas.md`](references/legendas.md).
 
 ## Passo 4: palavras-chave
@@ -162,15 +161,17 @@ hoje sinaliza spam e derruba entrega.
 
 Monte em três camadas, uma de cada:
 
-| Camada | O que é | Alcance | Exemplos |
+| Camada | O que é | Alcance | Quantas |
 |---|---|---|---|
-| **Praça** | O aeroporto ou a cidade | Alto, disputado | `#aeroportodeguarulhos` `#viracopos` `#confins` |
-| **Intenção** | O que a pessoa quer resolver | Médio, qualificado | `#estacionamentoaeroporto` `#viagemdecarro` `#dicasdeviagem` |
-| **Marca** | Nossa, sempre a última | Baixo, é acervo | `#movepark` |
+| **Praça** | O aeroporto ou a cidade | Alto, disputado | 1 a 2 |
+| **Intenção** | O que a pessoa quer resolver | Médio, qualificado | 1 a 2 |
+| **Marca** | Nossa, sempre a última | Baixo, é acervo | 1 |
 
-Banco por aeroporto e por tema em
-[`references/hashtags.md`](references/hashtags.md), com a lista das que estão
-proibidas e o motivo.
+O banco por aeroporto e por tema, as proibidas com o motivo de cada uma e o
+critério para escolher hashtag de praça nova estão em
+[`references/hashtags.md`](references/hashtags.md). A versão legível por máquina,
+que o analisador consulta, é o
+[`scripts/hashtags.json`](scripts/hashtags.json).
 
 **Hashtag vai na legenda, não no primeiro comentário.** O comentário some da
 indexação, e o esconderijo não engana mais o algoritmo desde que a busca por
@@ -188,12 +189,9 @@ da bio, e o link da bio carrega UTM para a atribuição funcionar:
 https://movepark.co/destinos/<slug>?utm_source=instagram&utm_medium=social&utm_campaign=<slug-do-post>
 ```
 
-| Objetivo do corte | CTA |
-|---|---|
-| Corte 1 (gancho) | "O guia completo está no link da bio." |
-| Corte 2 (preço) | "A tabela atualizada fica no link da bio." |
-| Corte 3 (FAQ) | "Tem mais dúvida? Manda aqui nos comentários." |
-| Corte 4 (erro) | "Compara os lotes no link da bio antes de reservar." |
+O CTA de cada corte sai do banco em
+[`references/legendas.md`](references/legendas.md), que também lista os
+proibidos.
 
 **O CTA não promete o que a unidade não declara (ADR-009).** "Reserve com
 cancelamento grátis" é promessa de transação e está proibido na legenda, porque

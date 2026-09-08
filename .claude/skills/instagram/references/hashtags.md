@@ -1,24 +1,10 @@
 # Hashtags: banco e regra
 
-## A regra em uma linha
+## Onde mora a regra
 
-**De 3 a 5 por post, uma de cada camada, marca por último, sempre na legenda.**
-
-O limite duro do Instagram é 30, mas o próprio Instagram recomenda de 3 a 5
-desde que a busca por texto passou a valer mais que a etiqueta. Bloco de 30 lê
-como spam e derruba a entrega. O limite de 30 conta hashtags da legenda **e** do
-primeiro comentário somadas, então esconder no comentário não contorna nada, só
-tira o texto do trecho que o Google indexa.
-
-## As três camadas
-
-| Camada | Função | Quantas |
-|---|---|---|
-| **Praça** | Amarra o post ao aeroporto ou à cidade. É onde mora a intenção de viagem | 1 a 2 |
-| **Intenção** | O problema que a pessoa está resolvendo | 1 a 2 |
-| **Marca** | Acervo próprio, sempre a última da lista | 1 (`#movepark`) |
-
-Combinação típica: `#aeroportodeguarulhos #estacionamentoaeroporto #movepark`
+A regra (de 3 a 5 por post) e as três camadas estão no
+[`SKILL.md`](../SKILL.md), Passo 5. **Aqui mora o banco**: quais hashtags existem
+por praça e por tema, quais estão proibidas e como escolher uma praça nova.
 
 ## Banco por praça
 

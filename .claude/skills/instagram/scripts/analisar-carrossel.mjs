@@ -155,6 +155,18 @@ else verde(G_LEGENDA, "Emoji", `${emojis} emojis.`);
 // -------------------------------------------------------------- palavra-chave
 
 const chave = meta.keyphrase ? norm(meta.keyphrase) : "";
+
+// A frase-chave raramente cabe inteira e contígua num alt ou num nome de
+// arquivo, que não repetem preposição. Exigir substring exata reprovaria alt
+// bom, então o critério é cobertura das palavras de conteúdo. O mesmo critério
+// serve aos dois lugares, para não existirem duas definições de "carrega a
+// frase-chave" divergindo entre si.
+const STOP = new Set(["no", "na", "de", "do", "da", "em", "o", "a", "os", "as", "para", "por", "com", "que"]);
+const relevantes = chave.split(" ").filter((w) => w.length > 2 && !STOP.has(w));
+const alvo = Math.min(2, relevantes.length);
+const cobreChave = (texto) =>
+  relevantes.filter((w) => norm(texto).includes(w)).length >= alvo;
+
 if (!chave) {
   vermelho(G_CHAVE, "Frase-chave", "Front matter sem `keyphrase`. Sem ela o corte não herda a busca do post.");
 } else {
@@ -168,8 +180,8 @@ if (!chave) {
   else verde(G_CHAVE, "Na legenda", `${ocorrencias} ocorrências.`);
 
   const alts = slides.map((s) => s.alt || "");
-  if (alts.length && !alts.some((a) => norm(a).includes(chave)))
-    laranja(G_CHAVE, "No alt", "Nenhum alt carrega a frase-chave. O alt é indexado pelo Google desde 07/2025.");
+  if (alts.length && !alts.some(cobreChave))
+    laranja(G_CHAVE, "No alt", `Nenhum alt cobre ${alvo} das palavras de conteúdo da frase-chave. O alt é indexado pelo Google desde 07/2025.`);
   else if (alts.length) verde(G_CHAVE, "No alt", "Presente em pelo menos um alt.");
 }
 
@@ -214,11 +226,17 @@ if (noComentario) laranja(G_HASH, "Local", "Hashtag parece destinada ao primeiro
 
 // ----------------------------------------------------------------------- CTA
 
-const CTAS = [/link da bio/i, /nos coment[áa]rios/i, /salva esse post/i, /manda para quem/i, /compara os lotes/i];
-const ctasEncontrados = CTAS.filter((r) => r.test(legendaCompleta)).length;
+const ACOES = [
+  ["ir ao link da bio", [/link da bio/i, /link na bio/i]],
+  ["comentar", [/nos coment[áa]rios/i, /comenta a[íi]/i, /me conta nos coment/i]],
+  ["salvar", [/salva esse post/i, /salve esse post/i]],
+  ["compartilhar", [/manda para quem/i, /manda pra quem/i, /compartilha com/i]],
+];
+const acoesPedidas = ACOES.filter(([, rs]) => rs.some((r) => r.test(legendaCompleta)));
+const ctasEncontrados = acoesPedidas.length;
 if (ctasEncontrados === 0) vermelho(G_CTA, "Presença", "Nenhum CTA reconhecido. Todo post fecha com uma ação.");
-else if (ctasEncontrados > 1) laranja(G_CTA, "Quantidade", `${ctasEncontrados} CTAs. Uma ação por post: duas fazem a pessoa não escolher nenhuma.`);
-else verde(G_CTA, "Presença", "Um CTA.");
+else if (ctasEncontrados > 1) laranja(G_CTA, "Quantidade", `${ctasEncontrados} ações pedidas (${acoesPedidas.map(([n]) => n).join(", ")}). Uma por post: duas fazem a pessoa não escolher nenhuma.`);
+else verde(G_CTA, "Presença", `Um CTA (${acoesPedidas[0][0]}).`);
 
 if (!meta.cta_url) {
   laranja(G_CTA, "URL", "Front matter sem `cta_url`. Sem ela a atribuição do link da bio não fecha.");
@@ -259,12 +277,7 @@ if (slides.length) {
   if (comAltIniciandoErrado.length) laranja(G_IMG, "Alt redundante", `${comAltIniciandoErrado.length} alt(s) começando com "imagem de" ou "foto de".`);
 
   if (chave) {
-    // Compara por palavra de conteúdo: o nome do arquivo não repete preposição,
-    // então exigir a frase-chave inteira em kebab reprovaria nome bom.
-    const STOP = new Set(["no", "na", "de", "do", "da", "em", "o", "a", "os", "as", "para", "por", "com"]);
-    const relevantes = chave.split(" ").filter((w) => w.length > 2 && !STOP.has(w));
-    const cobre = (nome) => relevantes.filter((w) => kebab(nome).includes(w)).length >= Math.min(2, relevantes.length);
-    const nomeGenerico = slides.filter((s) => s.arquivo && !cobre(s.arquivo.replace(/\.\w+$/, "")));
+    const nomeGenerico = slides.filter((s) => s.arquivo && !cobreChave(s.arquivo.replace(/\.\w+$/, "").replace(/-/g, " ")));
     if (nomeGenerico.length) laranja(G_IMG, "Nome do arquivo", `${nomeGenerico.length} arquivo(s) sem a palavra-chave no nome. O nome é sinal de busca de imagem.`);
     else verde(G_IMG, "Nome do arquivo", "Todos carregam a palavra-chave.");
   }
