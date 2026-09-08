@@ -3477,6 +3477,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          is_system: boolean
           location_ids: string[]
           name: string
           slug: string
@@ -3489,6 +3490,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          is_system?: boolean
           location_ids?: string[]
           name: string
           slug: string
@@ -3501,6 +3503,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          is_system?: boolean
           location_ids?: string[]
           name?: string
           slug?: string
@@ -6370,6 +6373,10 @@ export type Database = {
         Args: { p_email: string; p_phone: string; p_profile_id: string }
         Returns: string
       }
+      marketing_discoveries: {
+        Args: { p_location_ids?: string[]; p_window_days?: number }
+        Returns: Json
+      }
       marketing_contact_metrics: {
         Args: { p_from?: string; p_location_ids?: string[]; p_to?: string }
         Returns: {
@@ -6503,6 +6510,19 @@ export type Database = {
           total_spent: number
           vehicle_model: string
         }[]
+      }
+      marketing_rfm_contacts: {
+        Args: {
+          p_limit?: number
+          p_location_ids?: string[]
+          p_segment: string
+          p_window_days?: number
+        }
+        Returns: Json
+      }
+      marketing_rfm_overview: {
+        Args: { p_location_ids?: string[]; p_window_days?: number }
+        Returns: Json
       }
       marketing_segment_counts: {
         Args: { p_location_ids?: string[] }

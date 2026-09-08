@@ -46,7 +46,7 @@ export type FieldDef = {
   label: string;
   kind: FieldKind;
   /** Onde o campo aparece agrupado na UI. */
-  group: "Comportamento" | "Valor" | "Growth" | "Veículo" | "Contato";
+  group: "Comportamento" | "Valor" | "RFM" | "Growth" | "Veículo" | "Contato";
   options?: Array<{ value: string; label: string }>;
   hint?: string;
 };
@@ -83,6 +83,66 @@ export const SEGMENT_FIELDS: FieldDef[] = [
     hint: "A cadência da própria pessoa. Base do público de recompra.",
   },
   {
+    key: "cycle_overdue_days",
+    label: "Dias além do próprio ciclo",
+    kind: "number",
+    group: "Comportamento",
+    hint: "Negativo é antes da hora, 0 é a hora, positivo é atraso. Entre -5 e 15 é a janela provável de retorno.",
+  },
+  { key: "bookings_30", label: "Reservas nos últimos 30 dias", kind: "number", group: "Comportamento" },
+  { key: "bookings_90", label: "Reservas nos últimos 90 dias", kind: "number", group: "Comportamento" },
+  { key: "bookings_180", label: "Reservas nos últimos 180 dias", kind: "number", group: "Comportamento" },
+  { key: "bookings_365", label: "Reservas nos últimos 365 dias", kind: "number", group: "Comportamento" },
+  {
+    key: "avg_stay_days",
+    label: "Duração média da estadia (dias)",
+    kind: "number",
+    group: "Comportamento",
+  },
+  {
+    key: "avg_lead_days",
+    label: "Antecedência média da reserva (dias)",
+    kind: "number",
+    group: "Comportamento",
+    hint: "Quantos dias antes da entrada a pessoa costuma reservar.",
+  },
+  {
+    key: "weekend_share",
+    label: "Fatia de entradas no fim de semana",
+    kind: "number",
+    group: "Comportamento",
+    hint: "De 0 a 1, sobre sexta, sábado e domingo. Sobre as reservas que têm data.",
+  },
+  {
+    key: "top_dow",
+    label: "Dia da semana predominante",
+    kind: "enum",
+    group: "Comportamento",
+    options: [
+      { value: "0", label: "Domingo" },
+      { value: "1", label: "Segunda" },
+      { value: "2", label: "Terça" },
+      { value: "3", label: "Quarta" },
+      { value: "4", label: "Quinta" },
+      { value: "5", label: "Sexta" },
+      { value: "6", label: "Sábado" },
+    ],
+  },
+  {
+    key: "has_second_booking",
+    label: "Já fez a segunda reserva",
+    kind: "boolean",
+    group: "Comportamento",
+    hint: "O marco de ativação: é a taxa de 1ª para 2ª que o time mede.",
+  },
+  {
+    key: "abandoned",
+    label: "Tem reserva iniciada e não paga",
+    kind: "boolean",
+    group: "Comportamento",
+    hint: "Checkout começado com viagem ainda por vir.",
+  },
+  {
     key: "vacation_share",
     label: "Fatia de viagens em férias",
     kind: "number",
@@ -103,6 +163,51 @@ export const SEGMENT_FIELDS: FieldDef[] = [
   },
   { key: "total_spent", label: "Total gasto", kind: "money", group: "Valor" },
   { key: "avg_ticket", label: "Ticket médio", kind: "money", group: "Valor" },
+  { key: "last_ticket", label: "Valor da última reserva", kind: "money", group: "Valor" },
+  {
+    key: "r_score",
+    label: "Score de recência (R)",
+    kind: "number",
+    group: "RFM",
+    hint: "De 1 a 5, por quintil da própria base. 5 é o mais recente.",
+  },
+  {
+    key: "f_score",
+    label: "Score de frequência (F)",
+    kind: "number",
+    group: "RFM",
+    hint: "De 1 a 5, por quintil. 5 é quem mais volta.",
+  },
+  {
+    key: "m_score",
+    label: "Score monetário (M)",
+    kind: "number",
+    group: "RFM",
+    hint: "De 1 a 5, por quintil. 5 é quem mais gerou receita.",
+  },
+  {
+    key: "rfm_segment",
+    label: "Segmento RFM",
+    kind: "enum",
+    group: "RFM",
+    hint: "A célula da matriz Recência × Frequência, com o M promovendo os de maior valor.",
+    options: [
+      { value: "campeoes", label: "Campeões" },
+      { value: "fieis", label: "Fiéis" },
+      { value: "recorrentes", label: "Recorrentes" },
+      { value: "potenciais", label: "Potenciais" },
+      { value: "novos", label: "Novos" },
+      { value: "ocasionais", label: "Ocasionais" },
+      { value: "oportunidade", label: "Oportunidade" },
+      { value: "atencao", label: "Atenção" },
+      { value: "recuperar", label: "Recuperar" },
+      { value: "em_risco", label: "Em risco" },
+      { value: "alto_risco", label: "Alto risco" },
+      { value: "inativos", label: "Inativos" },
+      { value: "perdidos", label: "Perdidos" },
+      { value: "perdidos_vip", label: "Perdidos VIP" },
+    ],
+  },
   {
     key: "cohort",
     label: "Coorte",
@@ -138,6 +243,24 @@ export const SEGMENT_FIELDS: FieldDef[] = [
     hint: "Já tem cadência de mensalista: volta muito ou volta rápido.",
   },
   { key: "vehicle_model", label: "Modelo do veículo", kind: "text", group: "Veículo" },
+  {
+    key: "vehicle_brand",
+    label: "Marca do veículo",
+    kind: "text",
+    group: "Veículo",
+    hint: "Normalizada a partir do campo livre: \"PEUGEOT/2008\" e \"Onix\" viram PEUGEOT e CHEVROLET.",
+  },
+  {
+    key: "vehicle_origin",
+    label: "Origem da marca",
+    kind: "enum",
+    group: "Veículo",
+    hint: "Proxy de perfil pela marca, não o dado fiscal de importação do veículo.",
+    options: [
+      { value: "nacional", label: "Nacional" },
+      { value: "importada", label: "Importada" },
+    ],
+  },
   { key: "vehicle_color", label: "Cor do veículo", kind: "text", group: "Veículo" },
   { key: "tags", label: "Etiquetas", kind: "tags", group: "Contato" },
   { key: "email_consent", label: "Aceita e-mail", kind: "boolean", group: "Contato" },

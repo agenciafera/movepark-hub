@@ -1,5 +1,9 @@
 # Automação de marketing (E3.1)
 
+> **Continua em [marketing-rfm.md](./marketing-rfm.md) (E3.2):** motor RFM em quintis, campos
+> comportamentais da especificação do time de marketing, 11 segmentos automáticos e o motor de
+> descobertas. Campo novo de contato entra lá, não aqui.
+
 Ferramenta de marketing dentro do `/manager`, no espírito de RD Station, Mautic e LeadLovers, mas
 assentada no que o Hub realmente sabe sobre o cliente: a reserva.
 

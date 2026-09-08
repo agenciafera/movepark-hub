@@ -4,11 +4,14 @@ import { supabase } from "@/lib/supabase";
 import type {
   Json,
   MarketingCampaign,
+  MarketingDiscoveries,
   MarketingFunnel,
   MarketingLeadRow,
   MarketingPipeline,
   MarketingPipelineStage,
   MarketingProfileMatrix,
+  MarketingRfmContact,
+  MarketingRfmOverview,
   MarketingSegment,
   MarketingSegmentContact,
   MarketingSegmentCount,
@@ -36,6 +39,12 @@ export const marketingKeys = {
   campaign: (id: string) => [...marketingKeys.all, "campaign", id] as const,
   messages: (campaignId: string) => [...marketingKeys.all, "messages", campaignId] as const,
   dispatchConfig: () => [...marketingKeys.all, "dispatch-config"] as const,
+  rfm: (locationIds?: string[], windowDays?: number) =>
+    [...marketingKeys.all, "rfm", locationIds, windowDays] as const,
+  rfmContacts: (segment: string, locationIds?: string[]) =>
+    [...marketingKeys.all, "rfm-contacts", segment, locationIds] as const,
+  discoveries: (locationIds?: string[], windowDays?: number) =>
+    [...marketingKeys.all, "discoveries", locationIds, windowDays] as const,
 };
 
 /** `undefined` quer dizer "todas as unidades": é o que as RPCs esperam para não filtrar. */
@@ -577,4 +586,57 @@ export function useLeadsRealtime(enabled = true) {
       supabase.removeChannel(canal);
     };
   }, [qc, enabled]);
+}
+
+// ─── RFM e descobertas (E3.2) ────────────────────────────────────────────────
+
+/**
+ * Painel RFM. `staleTime` alto de propósito: o score é recalculado a cada consulta e varre a base
+ * inteira, então refazer a conta a cada troca de aba é caro sem mudar nada na tela.
+ */
+export function useRfmOverview(locationIds?: string[], windowDays?: number) {
+  return useQuery({
+    queryKey: marketingKeys.rfm(locationIds, windowDays),
+    staleTime: 120_000,
+    queryFn: async (): Promise<MarketingRfmOverview> => {
+      const { data, error } = await supabase.rpc("marketing_rfm_overview", {
+        ...locationArg(locationIds),
+        ...(windowDays ? { p_window_days: windowDays } : {}),
+      });
+      if (error) throw error;
+      return data as unknown as MarketingRfmOverview;
+    },
+  });
+}
+
+/** Quem está numa célula da matriz. Só busca quando uma célula foi realmente aberta. */
+export function useRfmContacts(segment: string | null, locationIds?: string[]) {
+  return useQuery({
+    queryKey: marketingKeys.rfmContacts(segment ?? "", locationIds),
+    enabled: Boolean(segment),
+    staleTime: 120_000,
+    queryFn: async (): Promise<MarketingRfmContact[]> => {
+      const { data, error } = await supabase.rpc("marketing_rfm_contacts", {
+        p_segment: segment as string,
+        ...locationArg(locationIds),
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as MarketingRfmContact[];
+    },
+  });
+}
+
+export function useDiscoveries(locationIds?: string[], windowDays?: number) {
+  return useQuery({
+    queryKey: marketingKeys.discoveries(locationIds, windowDays),
+    staleTime: 120_000,
+    queryFn: async (): Promise<MarketingDiscoveries> => {
+      const { data, error } = await supabase.rpc("marketing_discoveries", {
+        ...locationArg(locationIds),
+        ...(windowDays ? { p_window_days: windowDays } : {}),
+      });
+      if (error) throw error;
+      return data as unknown as MarketingDiscoveries;
+    },
+  });
 }

@@ -667,3 +667,103 @@ export type LocationAddressAuditRow = {
 
 export type LocationAddressVerifyStatus = "pending" | "ok" | "divergent" | "no_match" | "error";
 export type LocationAddressDecision = "pending" | "applied" | "dismissed";
+
+// ─── Marketing · RFM e descobertas (E3.2) ────────────────────────────────────
+
+/** Rótulo da célula da matriz Recência × Frequência (pág. 7 da proposta de CRM). */
+export type MarketingRfmSegment =
+  | "campeoes"
+  | "fieis"
+  | "recorrentes"
+  | "potenciais"
+  | "novos"
+  | "ocasionais"
+  | "oportunidade"
+  | "atencao"
+  | "recuperar"
+  | "em_risco"
+  | "alto_risco"
+  | "inativos"
+  | "perdidos"
+  | "perdidos_vip";
+
+export type MarketingRfmOverview = {
+  window_days: number;
+  totals: {
+    contacts: number;
+    customers: number;
+    /**
+     * Quantos entraram no cálculo. Ele governa a leitura da tela inteira: quintil sobre pouca
+     * gente sempre preenche as cinco faixas, então "campeão" com base pequena quer dizer
+     * "o melhor entre poucos", não "cliente de alto valor".
+     */
+    eligible: number;
+    bookings_per_customer: number;
+    avg_ticket: number;
+    avg_ltv: number;
+    revenue: number;
+  };
+  by_segment: Array<{
+    segment: MarketingRfmSegment;
+    contacts: number;
+    revenue: number;
+    avg_m: number;
+  }>;
+  matrix: Array<{
+    r_score: number;
+    f_score: number;
+    contacts: number;
+    revenue: number;
+    segment: MarketingRfmSegment;
+  }>;
+  opportunities: {
+    alto_valor_em_risco: number;
+    proximos_do_ciclo: number;
+    novos_para_segunda: number;
+  };
+};
+
+/**
+ * Um detector de comportamento. `status` tem três valores de propósito: sem `sem_dados`, um
+ * detector sem histórico voltaria vazio, e vazio se lê como "não há nada acontecendo".
+ */
+export type MarketingDiscovery = {
+  key: string;
+  title: string;
+  status: "achado" | "estavel" | "sem_dados";
+  headline?: string;
+  detail?: string;
+  /** Só em `sem_dados`: o que exatamente falta para o detector poder responder. */
+  requirement?: string;
+  metric?: number;
+  baseline?: number;
+  delta_pct?: number;
+  sample?: number;
+  contacts?: number;
+};
+
+export type MarketingDiscoveries = {
+  generated_at: string;
+  window_days: number;
+  history_days: number;
+  history_months: number;
+  items: MarketingDiscovery[];
+};
+
+export type MarketingRfmContact = {
+  contact_key: string;
+  display_name: string | null;
+  email: string | null;
+  phone: string | null;
+  bookings_count: number;
+  total_spent: number;
+  avg_ticket: number;
+  days_since_last: number | null;
+  avg_gap_days: number | null;
+  vehicle_model: string | null;
+  vehicle_origin: string | null;
+  r_score: number;
+  f_score: number;
+  m_score: number;
+  rfm_segment: MarketingRfmSegment;
+};

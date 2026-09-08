@@ -112,6 +112,11 @@ export default function ManagerMarketingSegments() {
                       >
                         {seg.name}
                       </button>
+                      {seg.is_system && (
+                        <span className="ml-2 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-caption-sm font-medium text-violet-700">
+                          RFM
+                        </span>
+                      )}
                       {seg.description && (
                         <p className="text-caption-sm text-muted">{seg.description}</p>
                       )}
@@ -141,9 +146,20 @@ export default function ManagerMarketingSegments() {
                       {describeDefinition(seg.definition as unknown as SegmentGroup)}
                     </TableCell>
                     <TableCell className="text-right">
+                      {/*
+                        Segmento do modelo RFM não se apaga: campanha vinculada ficaria órfã e a
+                        matriz perderia a célula. As regras dele continuam editáveis, porque a
+                        definição de "fiel" é decisão de marketing, não de código.
+                      */}
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={seg.is_system}
+                        title={
+                          seg.is_system
+                            ? "Segmento do modelo RFM. Edite as regras em vez de excluir."
+                            : undefined
+                        }
                         aria-label={`Excluir ${seg.name}`}
                         onClick={() => {
                           if (!confirm(`Excluir o segmento "${seg.name}"?`)) return;
