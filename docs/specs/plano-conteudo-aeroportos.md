@@ -287,7 +287,7 @@ Ritmo proposto: **2 páginas por semana por pessoa** e **4 peças de Instagram p
 | **Cadastrar o Be Park no Hub** | Sem ele Confins não tem tarifa, distância nem reserva | Leonardo |
 | **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois. ✅ GRU e CWB em 27/08/2026, em [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md). ✅ VCP e CNF em 28/08/2026, em [canonicalizacao-vcp-cnf.md](./canonicalizacao-vcp-cnf.md); planilha do acervo inteiro em [dados/mapa-canonicalizacao-blog.csv](./dados/mapa-canonicalizacao-blog.csv) |
 | Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois. ✅ congelado em 27/08/2026: 9.744 consultas, 709 páginas, 1,35 milhão de impressões, em [baseline-search-console.md](./baseline-search-console.md) |
-| **Placar de citação em IA** | 12 consultas por mês em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
+| **Placar de citação em IA** | 12 consultas a cada quinze dias em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
 | Bing Webmaster Tools | A busca do ChatGPT se apoia no índice da Microsoft, e ninguém checou se estamos lá | Diego. ✅ verificado e sitemap enviado em 08/09/2026. **O Bing tinha 8 URLs descobertas contra 808 páginas do Google**, e o que ele indexava do domínio eram os 7 subdomínios de white-label, não o site. Ping automático por [IndexNow](./indexnow.md) no build; os subdomínios viraram atividade própria |
 | Kit de marca do Instagram | Grid, tipografia grande, molde de carrossel e de reels | Diego |
 
@@ -347,7 +347,7 @@ de guia âncora, página de preço e FAQ.
 
 | Rotina | Frequência |
 |---|---|
-| **Placar de citação em IA** | mensal, com print |
+| **Placar de citação em IA** | quinzenal (dia 13 e dia 28), com print |
 | Carimbo e valores das páginas de cabeça | mensal |
 | Revisão das dez páginas em maior queda | quinzenal |
 | Consolidação dos posts canibais restantes | 4 por mês |
@@ -356,7 +356,7 @@ de guia âncora, página de preço e FAQ.
 ### 3.3 O placar contra Bandeira Park e xpark
 
 Não existe ferramenta que meça citação em IA, então o método é manual e é o único confiável: **doze
-consultas, quatro motores, uma vez por mês, com print e data em planilha**. As consultas cobrem os
+consultas, quatro motores, a cada quinze dias, com print e data em planilha**. As consultas cobrem os
 três clusters de cabeça nos quatro aeroportos, e o que se registra é quem foi citado: Movepark,
 Bandeira Park, xpark ou nenhum dos três.
 
@@ -529,14 +529,16 @@ Nada é escrito duas vezes. O post é a fonte, o Instagram é a distribuição.
 | Posts do acervo emitindo `FAQPage` | ✅ 95 de 95 | manter | manter |
 | Aeroportos com trio completo | 0 | 4 | 12 |
 
-**Como medir citação em IA**, já que não existe painel: rodar mensalmente as doze consultas
-principais em ChatGPT com busca, Gemini, Perplexity e no Google com visão geral de IA, e registrar
-em planilha se a Movepark, o Bandeira Park ou o xpark foi citado, com print. É trabalho manual e é
-o único método confiável hoje.
+**Como medir citação em IA**, já que não existe painel: rodar a cada quinze dias, no dia 13 e no
+dia 28, as doze consultas principais em ChatGPT com busca, Gemini, Perplexity e no Google com visão
+geral de IA, e registrar em planilha se a Movepark, o Bandeira Park ou o xpark foi citado, com
+print. É trabalho manual e é o único método confiável hoje. A rodada é automatizada pela tarefa
+agendada `placar-citacao-ia-movepark`, que carrega as doze consultas, a regra de contagem e as
+armadilhas de cada motor.
 
 O placar vive na planilha [Placar de citação em IA - Movepark](https://docs.google.com/spreadsheets/d/1xSNHrEptrCFnC7AncnL-BBVBe96NYliDL_aQXZWCfEo/edit),
-com as 12 consultas fixas (3 clusters de cabeça x 4 aeroportos da onda 1) e uma coluna por motor
-por mês. **Marco zero em 28/08/2026** (rodada logada em ChatGPT e Gemini, Perplexity deslogado):
+com as 12 consultas fixas (3 clusters de cabeça x 4 aeroportos da onda 1) e quatro colunas novas
+por rodada, uma por motor, sem nunca sobrescrever a rodada anterior. **Marco zero em 28/08/2026** (rodada logada em ChatGPT e Gemini, Perplexity deslogado):
 de 44 células medidas, Movepark tem 12 citações, Bandeira Park 13 e xpark 8. O Google não exibiu
 visão geral de IA em nenhuma das 12 consultas. O ChatGPT é o motor onde a Movepark mais aparece
 (7 de 12), sempre onde o dado do motor está exposto: em CWB ele escreve "pela Movepark" e traz
@@ -548,6 +550,24 @@ quando a fonte é movepark.co. Operacional: Perplexity precisa de login para cob
 Inteligência colateral da rodada: o Bandeira Park abre unidade em Confins em 01/10/2026 (fonte
 xpark, via ChatGPT), e a FAQ do movepark.co já aparece na primeira página orgânica do Google em 6
 das 12 consultas.
+
+**A leitura por motor do marco zero**, que é o corte que diz onde estamos performando:
+
+| Motor | Medidas | Movepark | Bandeira Park | xpark | Movepark sozinha |
+|---|---|---|---|---|---|
+| ChatGPT com busca (logado) | 12 | **7 (58%)** | 4 | 4 | 3 |
+| Gemini (logado) | 12 | 3 (25%) | 4 | 1 | 3 |
+| Perplexity (deslogado) | 8 | 2 (25%) | 5 | 3 | 0 |
+| Google (visão geral de IA) | 12 | 0 | 0 | 0 | 0 |
+
+O ChatGPT é o único motor onde a Movepark lidera. O Google não é derrota e sim superfície fechada:
+nenhuma das doze consultas abriu visão geral de IA, então ninguém pontua. **O empate de 12 a 13 no
+total é inteiramente Viracopos**: tirando VCP, fica Movepark 12 contra Bandeira Park 7, e VCP
+sozinha entrega 6 dos 13 pontos do concorrente. Nas 32 células em que alguma IA respondeu, o corte
+por pergunta é "mais barato" 55%, "preço" 36% e "mais próximo" 20%; esse último é o pior e ao mesmo
+tempo o mais vazio, porque em 6 das 10 células ninguém foi citado e o xpark tira zero. O padrão das
+doze citações é um só: a página traz um preço ou uma distância, com número e data, de um lote com
+nome. Onde esse número não existe na página, como em Viracopos, não há citação em motor nenhum.
 
 ## 7. Riscos
 
