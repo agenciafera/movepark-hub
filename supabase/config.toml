@@ -402,6 +402,9 @@ verify_jwt = false
 [functions.refresh-recipients]
 verify_jwt = false
 
+[functions.publish-instagram]
+verify_jwt = false
+
 [functions.send-whatsapp-otp]
 verify_jwt = false
 
