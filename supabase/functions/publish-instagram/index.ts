@@ -42,9 +42,32 @@ interface Config {
 
 function lerConfig(): Config | null {
   const token = Deno.env.get("INSTAGRAM_ACCESS_TOKEN");
-  const igUserId = Deno.env.get("INSTAGRAM_USER_ID");
-  if (!token || !igUserId) return null;
-  return { token, igUserId, versao: Deno.env.get("INSTAGRAM_API_VERSION") ?? VERSAO_PADRAO };
+  if (!token) return null;
+  return {
+    token,
+    igUserId: Deno.env.get("INSTAGRAM_USER_ID") ?? "",
+    versao: Deno.env.get("INSTAGRAM_API_VERSION") ?? VERSAO_PADRAO,
+  };
+}
+
+/**
+ * Descobre o id da conta do Instagram a partir das Páginas do token.
+ * Poupa um passo manual: com o token em mãos, o INSTAGRAM_USER_ID sai daqui.
+ */
+async function descobrirConta(cfg: Config) {
+  const r = await graph(cfg, "me/accounts", "GET", {
+    fields: "id,name,instagram_business_account{id,username}",
+  });
+  const paginas = Array.isArray(r.body.data) ? (r.body.data as Array<Record<string, any>>) : [];
+  const comIg = paginas
+    .filter((p) => p.instagram_business_account?.id)
+    .map((p) => ({
+      pagina: p.name,
+      page_id: p.id,
+      instagram_user_id: p.instagram_business_account.id,
+      username: p.instagram_business_account.username,
+    }));
+  return { ok: r.ok, paginas: paginas.length, contas: comIg, resposta: r.ok ? undefined : r.body };
 }
 
 async function graph(
@@ -90,8 +113,9 @@ Deno.serve(async (req: Request) => {
   const cfg = lerConfig();
   if (!cfg) {
     return json({
-      error: "faltam secrets",
-      detalhe: "defina INSTAGRAM_ACCESS_TOKEN e INSTAGRAM_USER_ID nos secrets do projeto",
+      error: "falta o token",
+      detalhe: "defina INSTAGRAM_ACCESS_TOKEN nos secrets do projeto. O INSTAGRAM_USER_ID a " +
+        "própria função descobre: rode com action diagnose.",
     }, 503);
   }
 
@@ -101,7 +125,27 @@ Deno.serve(async (req: Request) => {
   // ---- diagnose: confere o token antes de qualquer escrita ------------------
   if (action === "diagnose") {
     const permissoes = await graph(cfg, "me/permissions", "GET");
-    const conta = await graph(cfg, cfg.igUserId, "GET", {
+    const descoberta = await descobrirConta(cfg);
+
+    // Sem o id configurado, usa o primeiro descoberto para já dizer se dá certo.
+    const idParaChecar = cfg.igUserId || descoberta.contas[0]?.instagram_user_id;
+    if (!idParaChecar) {
+      const concedidasSemConta = Array.isArray(permissoes.body.data)
+        ? (permissoes.body.data as Array<Record<string, string>>)
+            .filter((p) => p.status === "granted").map((p) => p.permission)
+        : [];
+      return json({
+        ok: false,
+        motivo: "o token não enxerga nenhuma Página com conta do Instagram ligada",
+        permissoes_concedidas: concedidasSemConta,
+        paginas_vistas: descoberta.paginas,
+        dica: "confirme que a conta é profissional, que está ligada a uma Página, e que o token " +
+          "tem pages_show_list além das permissões de Instagram",
+        resposta_da_meta: descoberta.resposta,
+      }, 400);
+    }
+
+    const conta = await graph(cfg, idParaChecar, "GET", {
       fields: "id,username,name,followers_count,media_count",
     });
     const concedidas = Array.isArray(permissoes.body.data)
@@ -117,6 +161,9 @@ Deno.serve(async (req: Request) => {
     return json({
       ok: conta.ok && temPublicacao,
       conta: conta.ok ? conta.body : { erro: conta.body },
+      contas_encontradas: descoberta.contas,
+      instagram_user_id_em_uso: idParaChecar,
+      instagram_user_id_configurado: cfg.igUserId || null,
       permissoes_concedidas: concedidas,
       pode_publicar: temPublicacao,
       falta: temPublicacao ? [] : [precisa[1], `ou ${alternativa[1]}`],
@@ -124,6 +171,15 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action !== "publish") return json({ error: `action desconhecida: ${action}` }, 400);
+
+  // Publicar NUNCA usa conta descoberta: o id tem que estar configurado, senão
+  // um token com duas Páginas postaria na errada sem ninguém escolher.
+  if (!cfg.igUserId) {
+    return json({
+      error: "INSTAGRAM_USER_ID não configurado",
+      detalhe: "rode action diagnose, pegue o instagram_user_id da conta certa e grave no secret",
+    }, 503);
+  }
 
   // ---- publish --------------------------------------------------------------
   const caption: string = corpo.caption ?? "";
