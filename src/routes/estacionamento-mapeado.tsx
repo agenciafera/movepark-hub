@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { tituloLoteMapeado } from "@/features/destinations/loteMapeado.logic";
+import { precoPesquisado, postsDoLote } from "@/features/destinations/loteMapeadoPreco.logic";
 import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
-import { formatDistance } from "@/lib/format";
+import { formatBRL, formatDate, formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoFicha } from "@/lib/urls";
@@ -28,6 +29,8 @@ export type EstacionamentoMapeadoLoaderData = {
   /** Espelho do Google (§6 de avaliacoes-google.md). Nulo enquanto o refresh não passou
    *  naquele place_id, ou quando o hub_admin desligou o bloco daquele lote. */
   google?: GooglePlaceSnapshot | null;
+  /** Posts do aeroporto, para o bloco "leia também" sair no HTML do build. */
+  posts?: { slug: string; title: string; excerpt: string | null }[];
 } | null;
 
 /**
@@ -63,6 +66,8 @@ export default function EstacionamentoMapeadoPage() {
   if (!data) return null;
 
   const { destination, prospect } = data;
+  const preco = precoPesquisado(prospect);
+  const posts = postsDoLote(data.posts, prospect.public_slug ?? prospect.slug);
   // O slug público é o que entra na URL; o antigo segue no banco como histórico.
   const destinoSlug = (destination.public_slug ?? destination.slug) as string;
   const faqItems = data.faqs ?? [];
@@ -175,11 +180,38 @@ export default function EstacionamentoMapeadoPage() {
               {distancia} do {prospect.reference_name ?? destinationLabel}
             </p>
           )}
-          {/* Preço declarado como ausente, e não omitido: quem chega da busca precisa saber
-              que a falta de preço é da oferta, não da página. */}
-          <p className="text-body-md text-muted">
-            Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark.
-          </p>
+          {/* Preço pesquisado por nós, quando existe.
+
+              Até 08/09/2026 esta linha era o texto fixo "Preço: não informado", e a MESMA
+              página se contradizia: a FAQ logo abaixo citava R$ 18,49 do Bandeira Park e a
+              tabela do destino mostrava a linha dele com "preço pesquisado em 08/09/2026".
+              As colunas `researched_*` já existiam; só esta ficha não as lia.
+
+              A frase de ausência continua, e é importante que continue: quem chega da busca
+              precisa saber que a falta de preço é da oferta, não da página. O que mudou é
+              que ela virou a exceção. */}
+          {preco ? (
+            <div className="text-body-md text-body">
+              <p>
+                Preço pesquisado por nós em{" "}
+                <time dateTime={preco.researchedAt}>{formatDate(preco.researchedAt)}</time>, no
+                canal do próprio estacionamento. Não é reserva pela Movepark.
+              </p>
+              <ul className="mt-2 space-y-1">
+                {preco.linhas.map((l) => (
+                  <li key={l.days} className="tabular-nums">
+                    <strong className="font-semibold text-ink">{l.label}:</strong>{" "}
+                    {formatBRL(l.total)}
+                    {l.days > 1 && <span className="text-muted"> ({formatBRL(l.perDay)} por diária)</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-body-md text-muted">
+              Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark.
+            </p>
+          )}
         </section>
 
         {prospect.description && (
@@ -287,6 +319,35 @@ export default function EstacionamentoMapeadoPage() {
               Perguntas frequentes sobre estacionar perto do {destinationLabel}
             </h2>
             <FaqList items={faqItems} />
+          </section>
+        )}
+
+        {/* Leia também: posts do aeroporto, com o da marca deste lote na frente.
+
+            Existia só como hook de cliente, então nenhum post recebia link daqui no HTML
+            do build. Em Viracopos são 11 posts publicados sobre a praça, três deles de
+            marca (Virapark, Garageinn, Bandeira Park), e a ficha de cada lote saía sem
+            um único link para eles. */}
+        {posts.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-4 text-display-md text-ink">
+              Leia também sobre estacionar no {destinationLabel}
+            </h2>
+            <ul className="divide-y divide-hairline border-y border-hairline">
+              {posts.map((p) => (
+                <li key={p.slug} className="py-3">
+                  <Link
+                    to={`/blog/${p.slug}/`}
+                    className="text-body-md text-ink underline-offset-2 hover:text-mp-primary hover:underline"
+                  >
+                    {p.title}
+                  </Link>
+                  {p.excerpt && (
+                    <p className="mt-1 text-pretty text-body-sm text-muted">{p.excerpt}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

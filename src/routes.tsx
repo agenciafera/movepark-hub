@@ -174,6 +174,7 @@ export type FichaLoaderData =
       prospect: Awaited<ReturnType<typeof fetchDestinationProspects>>[number];
       faqs: Awaited<ReturnType<typeof fetchFaqCombined>> | null;
       google: Awaited<ReturnType<typeof fetchGooglePlaceSnapshot>> | null;
+      posts: Awaited<ReturnType<typeof fetchPostsDoDestino>>;
     }
   | null;
 
@@ -243,7 +244,11 @@ async function fichaMapeadaLoader(destino: string, lote: string): Promise<FichaL
     ? await fetchGooglePlaceSnapshot(prospect.google_place_id).catch(() => null)
     : null;
 
-  return { kind: "mapeado", destination, prospect, faqs, google };
+  // Posts do aeroporto, com o da marca deste lote na frente quando existe. Aqui, e não
+  // em hook de cliente, porque a ficha é pré-renderizada e o link precisa sair no HTML.
+  const posts = await fetchPostsDoDestino(destination.id as string).catch(() => []);
+
+  return { kind: "mapeado", destination, prospect, faqs, google, posts };
 }
 
 /**
@@ -289,6 +294,29 @@ async function fetchAllFichaPaths(): Promise<string[]> {
 }
 
 /**
+ * Posts publicados de um destino, para o bloco "leia também" sair no HTML do BUILD.
+ *
+ * Existia só como hook de cliente (`useRelatedPosts`), e por isso a página de destino
+ * de Viracopos, com 11 posts publicados sobre a praça (7 deles de 19 mil caracteres),
+ * chegava ao crawler com UM link de blog, e era o do índice `/blog/`. Nenhum post
+ * recebia link da página que rankeia para o aeroporto.
+ *
+ * Campos enxutos de propósito: o card precisa de slug, título e resumo, e baixar
+ * `body_md` de 6 posts no loader custaria ~120 KB por página gerada.
+ */
+async function fetchPostsDoDestino(destinationId: string) {
+  const { data } = await supabase
+    .from("blog_post")
+    .select("slug, title, excerpt, published_at, cover_image_url")
+    .eq("destination_id", destinationId)
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .order("published_at", { ascending: false })
+    .limit(6);
+  return data ?? [];
+}
+
+/**
  * O destino, as unidades VENDÁVEIS, os lotes MAPEADOS (E0.17-d), o FAQ, a matriz de
  * preços e os destinos irmãos.
  *
@@ -318,7 +346,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
   // existe, sem unidade vendável a lista volta a depender da busca no cliente, sem FAQ o
   // hook do cliente cobre e sem preço a tabela some. Em paralelo porque nenhuma depende
   // da outra.
-  const [prospects, units, faqs, index, irmaos, points] = await Promise.all([
+  const [prospects, units, faqs, index, irmaos, points, posts] = await Promise.all([
     fetchDestinationProspects(data.slug as string).catch(() => []),
     fetchDestinationUnits(data).catch(() => []),
     fetchFaqCombined({ destinationId: data.id as string }).catch(() => null),
@@ -332,6 +360,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
       return irmaos ?? [];
     })().catch(() => []),
     fetchDestinationPoints(data.id as string).catch(() => []),
+    fetchPostsDoDestino(data.id as string).catch(() => []),
   ]);
   return {
     destination: data,
@@ -344,6 +373,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
       ) ?? null,
     related: irmaos,
     points: points.map((p) => ({ id: p.id, name: p.name })),
+    posts,
     generatedAt: new Date().toISOString(),
   };
 }

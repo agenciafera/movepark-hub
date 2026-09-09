@@ -268,3 +268,67 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
     expect(screen.queryByRole("heading", { name: /Perguntas frequentes/ })).toBeNull();
   });
 });
+
+describe("preço pesquisado e leia também na ficha do lote", () => {
+  /**
+   * Contradição achada em 08/09/2026, na MESMA página do Bandeira Park: o topo dizia
+   * "Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark" e a
+   * FAQ logo abaixo dizia "R$ 18,49 na descoberta", enquanto a tabela da página do destino
+   * mostrava a linha dele com "preço pesquisado em 08/09/2026". As colunas `researched_*`
+   * existiam e só esta tela não as lia.
+   */
+  it("mostra o preço pesquisado com a data, em vez de negar que ele existe", () => {
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospect: prospect({
+        researched_daily_brl: 18.49,
+        researched_weekly_brl: 93.17,
+        researched_monthly_brl: 239.4,
+        researched_at: "2026-09-08T00:00:00Z",
+      }),
+    });
+
+    render();
+
+    const linha = screen.getByText(/Preço pesquisado por nós em/);
+    expect(linha).toBeInTheDocument();
+    // A data vive num <time>, com o ISO no atributo: é ela que dá lastro ao número.
+    expect(linha.querySelector("time")).toHaveAttribute("datetime", "2026-09-08T00:00:00Z");
+    expect(screen.getByText(/R\$\s?18,49/)).toBeInTheDocument();
+    // A frase que se contradizia não pode sobrar na mesma tela.
+    expect(screen.queryByText(/Preço: não informado/)).not.toBeInTheDocument();
+    // E continua dizendo que não é reserva pela Movepark (ADR-010).
+    expect(screen.getByText(/Não é reserva pela Movepark/)).toBeInTheDocument();
+  });
+
+  it("sem preço pesquisado, volta a declarar a ausência", () => {
+    loaderData.mockReturnValue({ destination: dest(), prospect: prospect() });
+
+    render();
+
+    expect(screen.getByText(/Preço: não informado/)).toBeInTheDocument();
+    expect(screen.queryByText(/Preço pesquisado por nós/)).not.toBeInTheDocument();
+  });
+
+  it("linka os posts do aeroporto, com o da própria marca na frente", () => {
+    // Antes disso a ficha saía do build sem um único link de blog, e existem três posts
+    // de marca só em Viracopos.
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospect: prospect({ public_slug: "bandeira-park" }),
+      posts: [
+        { slug: "estacionamento-coberto-em-viracopos", title: "Estacionamento coberto", excerpt: null },
+        { slug: "bandeira-park-viracopos", title: "Bandeira Park Viracopos", excerpt: "O preço real." },
+      ],
+    });
+
+    render();
+
+    const links = screen
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href") ?? "")
+      .filter((h) => h.startsWith("/blog/"));
+    expect(links[0]).toBe("/blog/bandeira-park-viracopos/");
+    expect(links).toContain("/blog/estacionamento-coberto-em-viracopos/");
+  });
+});

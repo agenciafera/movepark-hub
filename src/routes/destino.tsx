@@ -147,6 +147,8 @@ type DestinoLoaderData = {
   related?: RelatedDestination[];
   /** Terminais/píeres do destino, para a ficha de abertura. */
   points?: Pick<DestinationPoint, "id" | "name">[];
+  /** Posts publicados do destino, para o "leia também" sair no HTML do build. */
+  posts?: { slug: string; title: string; excerpt: string | null }[];
   /** Momento em que o build consultou o motor. */
   generatedAt?: string;
 } | null;
@@ -406,6 +408,7 @@ export default function DestinoPage() {
   // Corte por escopo (ADR-002): a do aeroporto vira seção com H2 e prosa aberta, a de
   // plataforma continua no accordion. As duas listas são disjuntas de propósito, senão a
   // mesma pergunta sairia duas vezes na página e duas vezes no FAQPage.
+  const postsDoDestino = (loaded?.posts ?? []).slice(0, 6);
   const perguntasDoDestino = keyQuestions(faqData);
   const perguntasGerais = accordionQuestions(faqData);
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
@@ -812,6 +815,43 @@ export default function DestinoPage() {
                 className="mt-6 inline-block text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
               >
                 Ver todas as perguntas na central →
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Leia também: os posts do aeroporto.
+
+            Dependia de `useRelatedPosts`, um hook de cliente, então a página chegava ao
+            crawler com UM link de blog, o do índice `/blog/`. Em Viracopos são 11 posts
+            publicados sobre a praça, sete deles de 19 mil caracteres, e nenhum recebia
+            link da página que rankeia para o aeroporto. */}
+        {postsDoDestino.length > 0 && (
+          <section className="bg-canvas py-16 desktop:py-24">
+            <div className={CALHA}>
+              <h2 className="mb-6 text-balance text-display-2xl text-ink">
+                Leia também sobre {nomeCurto}
+              </h2>
+              <ul className="grid grid-cols-1 gap-x-8 gap-y-6 tablet:grid-cols-2">
+                {postsDoDestino.map((p) => (
+                  <li key={p.slug}>
+                    <Link
+                      to={`/blog/${p.slug}/`}
+                      className="text-title-md text-ink underline-offset-2 hover:text-mp-primary hover:underline"
+                    >
+                      {p.title}
+                    </Link>
+                    {p.excerpt && (
+                      <p className="mt-1 text-pretty text-body-md text-muted">{p.excerpt}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/blog/"
+                className="mt-6 inline-block text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
+              >
+                Ver todos os artigos →
               </Link>
             </div>
           </section>
