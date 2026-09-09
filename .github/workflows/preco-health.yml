@@ -1,0 +1,143 @@
+name: Saúde do preço pesquisado
+
+# Por que este workflow existe. O preço de lote sem contrato tem validade de 90 dias
+# (`preco_pesquisado_fresco`): passou disso, a linha some da tabela do destino sem avisar
+# ninguém, e a praça volta a não responder "quanto custa". O CI não pega isso, porque o
+# vencimento não acontece num push, acontece na passagem do tempo. Guarda que só roda em
+# PR não vê o relógio.
+#
+# Aqui mora esse relógio. Uma vez por dia a checagem roda o mesmo `check-precos-faq.mjs`
+# do CI, agora com `--validade`, e abre ou atualiza uma issue quando encontra preço
+# vencido, prestes a vencer, ou uma FAQ contradizendo o dado pesquisado. Voltou ao normal,
+# a issue fecha sozinha.
+#
+# O alarme mora no GitHub pelo mesmo motivo do `site-rebuild-health.yml`: log que ninguém
+# lê é o mesmo que silêncio.
+
+on:
+  schedule:
+    - cron: "0 13 * * *" # 10:00 em Brasília, uma hora depois da saúde da publicação
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  preco:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Confere o preço pesquisado contra as FAQ
+        id: check
+        if: ${{ env.VITE_SUPABASE_ANON_KEY != '' }}
+        run: |
+          set -euo pipefail
+          node scripts/check-precos-faq.mjs --json --validade > relatorio.json
+          for campo in ok divergencias sem_lastro vencidos vencendo faqs lotes_com_preco; do
+            echo "$campo=$(jq -r ".$campo" relatorio.json)" >> "$GITHUB_OUTPUT"
+          done
+          {
+            echo "### Preço pesquisado"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Divergências com a FAQ | $(jq -r .divergencias relatorio.json) |"
+            echo "| Preço vencido | $(jq -r .vencidos relatorio.json) |"
+            echo "| Vence em até 14 dias | $(jq -r .vencendo relatorio.json) |"
+            echo "| Preço de FAQ sem lastro | $(jq -r .sem_lastro relatorio.json) |"
+            echo "| Lotes com preço pesquisado | $(jq -r .lotes_com_preco relatorio.json) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Abre ou atualiza a issue quando há preço para arrumar
+        if: >-
+          ${{ env.VITE_SUPABASE_ANON_KEY != '' &&
+              (steps.check.outputs.divergencias != '0' ||
+               steps.check.outputs.vencidos != '0' ||
+               steps.check.outputs.vencendo != '0') }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const r = JSON.parse(fs.readFileSync("relatorio.json", "utf8"));
+            const title = "💰 Preço pesquisado precisa de atenção";
+            const bloco = (nome, linhas) =>
+              linhas.length === 0 ? [] : ["", `**${nome}**`, "", "```", ...linhas, "```"];
+            const body = [
+              "A checagem diária encontrou preço de lote mapeado fora do lugar.",
+              "",
+              "| | |",
+              "|---|---|",
+              `| Divergências com a FAQ | ${r.divergencias} |`,
+              `| Preço vencido | ${r.vencidos} |`,
+              `| Vence em até 14 dias | ${r.vencendo} |`,
+              `| Preço de FAQ sem lastro | ${r.sem_lastro} |`,
+              "",
+              "Divergência é a página se contradizendo: a tabela do destino e a ficha leem",
+              "`prospect_location.researched_*`, e a FAQ traz outro número para o mesmo pátio.",
+              "Vencido é pior de um jeito silencioso: passados 90 dias a linha some da tabela",
+              "e o destino para de responder \"quanto custa\".",
+              "",
+              "Em qualquer dos dois, o conserto é o mesmo: reconferir no site do PRÓPRIO",
+              "operador, nunca em agregador, e regravar `researched_*` com a data de hoje.",
+              ...bloco("Divergências", r.detalhe.divergencias),
+              ...bloco("Validade", r.detalhe.validade),
+              ...bloco("Sem lastro (não barra o CI, mas é dívida)", r.detalhe.sem_lastro),
+              "",
+              `Run desta checagem: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "preco-pesquisado",
+            });
+            const existing = issues.find((i) => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["preco-pesquisado"],
+              });
+            }
+
+      - name: Fecha a issue quando o preço volta ao lugar
+        if: >-
+          ${{ env.VITE_SUPABASE_ANON_KEY != '' &&
+              steps.check.outputs.divergencias == '0' &&
+              steps.check.outputs.vencidos == '0' &&
+              steps.check.outputs.vencendo == '0' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "💰 Preço pesquisado precisa de atenção";
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "preco-pesquisado",
+            });
+            for (const issue of issues.filter((i) => i.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "A checagem de hoje passou: nenhuma divergência e nenhum preço vencido. Fechando.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: "closed",
+              });
+            }
+
+      - name: Aviso se os segredos não estão configurados
+        if: ${{ env.VITE_SUPABASE_ANON_KEY == '' }}
+        run: |
+          echo "⏭️ VITE_SUPABASE_* não configurado; preço pesquisado não foi checado." >> "$GITHUB_STEP_SUMMARY"
+          echo "Configure em Settings → Secrets para habilitar." >> "$GITHUB_STEP_SUMMARY"
