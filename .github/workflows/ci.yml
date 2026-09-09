@@ -31,6 +31,13 @@ jobs:
       # ↔ pastas), que é o que dá para checar sem segredo. A comparação com o que está publicado
       # mora no security-scan.yml, onde o SUPABASE_ACCESS_TOKEN existe.
       - run: bun run lint:edge-functions
+      # Distância em texto de FAQ tem que bater com o PostGIS (ADR-001). Sem os
+      # segredos do Supabase o script sai com 0 e avisa, então PR de fork não quebra;
+      # o valor está no push da `main`, onde as chaves existem.
+      - run: bun run lint:distancias
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - run: bun run test:unit
 
   # pgTAP contra o stack local (schema do baseline + seed). Sem segredos.

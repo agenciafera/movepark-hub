@@ -652,3 +652,54 @@ medida, os lotes mapeados e as perguntas da praça com a URL de cada uma. O bloc
 linha por aeroporto apontando para `/precos/<slug>`, que virou redirecionamento na migração de
 URL. `robots.txt` passou a nomear `anthropic-ai` e `meta-externalagent`, que antes só caíam no
 grupo `*`.
+
+## Distância em conteúdo sai do PostGIS, e um guarda cobra isso
+
+Varredura de 08/09/2026 nas 27 praças: **oito afirmações de distância escritas à mão em texto
+de FAQ não batiam com a medição do banco**, e a página publicava as duas ao mesmo tempo, uma na
+resposta e outra na seção "Distância até o terminal", que lê o dado medido.
+
+| Praça | Unidade | Escrito à mão | Medido |
+|---|---|---|---|
+| CWB | Nationpark | 510 m | 1.441 m |
+| CWB | Abbapark | 580 m | 2.567 m |
+| GRU | Aerovalet | 480 m | **4.549 m** |
+| GRU | Aeropark | 720 m | 2.672 m |
+| CGH | Aerovalet | 290 m | 738 m |
+| CGH | Plenty Park | 280 m | 863 m |
+| VCP | Garageinn | 330 m | 979 m |
+| VCP | Virapark | 1,3 km | 3.695 m |
+
+**A regra:** número de distância em conteúdo sai de `st_distance` sobre a geografia da unidade,
+nunca de estimativa. Distância declarada é o campo que um comparador força a favor de quem quer
+destacar, e medir é o nosso diferencial; um número que nós mesmos desmentimos na mesma página
+custa mais credibilidade do que o número bonito compra.
+
+Algumas frases mudaram além do algarismo, porque a moldura ficou falsa: "colados no aeroporto"
+não se sustenta a 2,6 km, nem "pertinho do terminal" a 4,5 km.
+
+### O guarda
+
+`scripts/check-distancias-faq.mjs`, ligado em `bun run lint:distancias` e no job `quality` do
+CI. Para cada FAQ de escopo `destination`, procura o nome de cada unidade parceira daquele
+destino e compara a distância afirmada ao redor do nome com a medida.
+
+Três decisões que o fizeram parar de dar falso positivo, todas travadas em
+`src/distancia-faq.contract.test.ts`:
+
+1. **Só o primeiro número depois do nome.** Em "a Aeropark a 2,7 km e a Aerovalet a 4,5 km",
+   olhar a janela inteira atribuía à Aeropark a distância da Aerovalet. Toda frase com duas
+   unidades virava falso positivo.
+2. **Também olha para trás.** O português atribui distância dos dois lados: "738 m na
+   Aerovalet". Só olhar para a frente pegava o número da unidade seguinte da lista.
+3. **Afirmação de teto é teto.** "os dois a menos de 900 m" não diz que a unidade está a 900 m;
+   a comparação vira "cabe embaixo do teto?".
+
+Tolerância de 10% com piso de 100 m, de propósito: o texto arredonda ("1,4 km" para 1.441 m) e
+o alvo é erro de ordem de grandeza, não a segunda casa. Ausência de número nunca falha, porque
+prosa sem distância é escolha editorial legítima. Sem `VITE_SUPABASE_*` o script sai com 0 e
+avisa, então PR de fork não quebra.
+
+**O que ele não cobre:** distância de lote que não é parceiro. NVT e FLN têm números em texto
+sobre lotes ("Catedral a 100 m", "Floripa Park a 250 m") que não existem em `prospect_location`
+com esse nome, então não há medida para conferir. Ficam como pendência editorial.

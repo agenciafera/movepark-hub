@@ -22,6 +22,7 @@
     "deploy:api": "wrangler deploy -c wrangler.api.jsonc",
     "gen:cards": "node scripts/gen-card-hashes.mjs",
     "lint:openapi": "node scripts/check-openapi-drift.mjs",
+    "lint:distancias": "node scripts/check-distancias-faq.mjs",
     "lint:schema": "node scripts/audit-structured-data.mjs",
     "lint:edge-functions": "node scripts/check-edge-functions.mjs",
     "lint:partner-llms": "bun scripts/check-partner-llms-drift.ts",
