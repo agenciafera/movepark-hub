@@ -18,12 +18,16 @@ Search, antes do refresh. Sem isso, ficha cadastrada sem a chave nunca entrava n
 selo para sempre. Critérios de aceite, guarda de colisão e carimbo de nova tentativa em
 [place-id-lote-mapeado.md](./place-id-lote-mapeado.md).
 
-**Pendência real que sobrou:** a URL do deploy hook do Cloudflare em
-`app_setting.google_place_rebuild_hook_url`. Sem ela o refresh devolve `rebuilt: false` em toda
-passada e o HTML publicado envelhece até alguém dar push na `main`. O rebuild é a **defesa
-principal** do prazo de 30 dias no HTML (§5); o guard do componente é só a rede. A chave nasce
-privada (`is_public = false`) porque a policy `app_setting_public_read` entrega para `anon` toda
-chave marcada, e deploy hook é credencial de disparo.
+**O rebuild não é mais problema desta spec.** A Edge não chama Deploy Hook: ela enfileira em
+`site_rebuild_request` como qualquer outra mudança de conteúdo, e quem decide quando publicar é a
+publicação automática do site ([deploy-automatico.md](./deploy-automatico.md)), que já tem debounce
+e alarme. A chave `app_setting.google_place_rebuild_hook_url` foi removida na migration
+`20261113153000`: era uma segunda cópia da mesma URL secreta, com duas rotações e duas formas de
+ficar meio configurado.
+
+**A dependência que sobra é a de lá:** enquanto o segredo `cloudflare_deploy_hook_url` não existir
+no Vault, nada publica, e o HTML envelhece até alguém dar push na `main`. O rebuild é a **defesa
+principal** do prazo de 30 dias no HTML (§5); o guard do componente é só a rede.
 
 Relacionado: [reviews.md](./reviews.md) · [capacidades-unidade.md](./capacidades-unidade.md) ·
 [checkout-externo-por-local.md](./checkout-externo-por-local.md) ·

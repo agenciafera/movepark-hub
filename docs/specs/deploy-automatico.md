@@ -21,8 +21,13 @@ site continua com o conteúdo velho até alguém do time lembrar de rebuildar.
 
 ## O desenho
 
+Desde 08/09/2026 a Edge `google-place-refresh` também entra por aqui, enfileirando quando um
+snapshot do Google muda. Ela chamava o Deploy Hook direto, com a URL numa segunda casa
+(`app_setting.google_place_rebuild_hook_url`, removida na migration `20261113153000`). Segredo em
+dois lugares é rotação em dois lugares: agora existe um hook só, e ele mora no Vault.
+
 ```
-save no Manager
+save no Manager, ou refresh do Google
   └─ trigger de statement na tabela  ──►  site_rebuild_request (fila)
                                               │
         pg_cron, de minuto em minuto ─────────┤ site_rebuild_decision()

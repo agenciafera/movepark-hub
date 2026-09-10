@@ -20,7 +20,7 @@
 // POST /functions/v1/google-place-refresh   (header: x-google-place-key: <GOOGLE_PLACE_REFRESH_KEY>)
 // body opcional: { place_id?: string }  → limita a um lugar (útil para rodar na mão)
 //                 { skip_lookup?: true } → pula a resolução e só refresha quem já tem place_id
-// → { ok, candidates, refreshed, failed, resolved, unresolved, rebuilt }
+// → { ok, candidates, refreshed, failed, resolved, unresolved, enqueued }
 //
 // Antes do refresh, resolve o place_id das fichas que ainda não têm: sem a chave elas nunca
 // entram no cron e ficam sem selo para sempre. Critérios de aceite e histórico da rodada
@@ -169,19 +169,22 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // O HTML do SSG também é cache do conteúdo do Google, então mudou snapshot, rebuilda.
-  let rebuilt = false;
+  // O HTML do SSG também é cache do conteúdo do Google, então mudou snapshot, precisa republicar.
+  //
+  // Enfileira em vez de chamar o Deploy Hook direto. A publicação automática do site já tem fila,
+  // debounce e alarme (docs/specs/deploy-automatico.md), e manter um segundo caminho para o mesmo
+  // hook significava a URL guardada em dois lugares, duas rotações e duas formas de ficar meio
+  // configurado. Aqui o refresh só declara que mudou conteúdo; quem decide quando publicar é o
+  // `site_rebuild_decision`.
+  let enqueued = false;
   if (refreshed > 0) {
-    const { data: setting } = await admin
-      .from("app_setting")
-      .select("value")
-      .eq("key", "google_place_rebuild_hook_url")
-      .maybeSingle();
-    const hook = (setting?.value as string | null) ?? null;
-    if (hook) {
-      const r = await fetch(hook, { method: "POST" }).catch(() => null);
-      rebuilt = !!r?.ok;
+    const { error } = await admin
+      .from("site_rebuild_request")
+      .insert({ source_table: "google_place_snapshot", op: "UPDATE" });
+    if (error) {
+      console.error(`google-place-refresh: falha ao enfileirar rebuild: ${error.message}`);
     }
+    enqueued = !error;
   }
 
   return json({
@@ -191,7 +194,7 @@ Deno.serve(async (req: Request) => {
     failed,
     resolved: lookup.resolved,
     unresolved: lookup.unresolved,
-    rebuilt,
+    enqueued,
   });
 });
 
