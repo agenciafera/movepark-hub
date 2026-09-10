@@ -144,53 +144,71 @@ it("guard: nenhum caso golden aponta para unidade externa", () => {
  * cobra outro, que é o mesmo defeito de "duas respostas para a mesma pergunta" que a auditoria
  * de 08/09/2026 apontou no comparador concorrente.
  */
+/**
+ * Estes dois batem no banco vivo dezenas de vezes, e o runner do CI tem latência bem maior que
+ * a máquina de quem desenvolve: local rodam em ~4 s e no GitHub estouraram os 5 s padrão do
+ * vitest na primeira tentativa. As chamadas passaram a ir em paralelo e o teto é generoso de
+ * propósito, porque o que se mede aqui é divergência de preço, não tempo de resposta.
+ */
+const TIMEOUT = 60_000;
+
 describe.skipIf(!hasEnv)("produção: preço publicado contra preço calculado", () => {
-  it("toda unidade que o site lista é precificável", async () => {
+  it("toda unidade que o site lista é precificável", { timeout: TIMEOUT }, async () => {
     const idx = await priceIndex();
     const units = idx.destinations.flatMap((d) => d.units);
     expect(units.length, "o índice de preço voltou vazio; isso já é o defeito").toBeGreaterThan(0);
 
-    const quebradas: string[] = [];
-    for (const u of units) {
-      const res = await simulate({
-        p_company: u.company_slug,
-        p_location: u.location_slug,
-        p_parking_type: u.parking_type_code,
-        p_days: 7,
-      });
-      if (res.error || !(Number(res.price) > 0)) {
-        quebradas.push(
-          `${u.company_slug}/${u.location_slug}/${u.parking_type_code}: ${res.error ?? res.price}`,
-        );
-      }
-    }
+    const quebradas = (
+      await Promise.all(
+        units.map(async (u) => {
+          const res = await simulate({
+            p_company: u.company_slug,
+            p_location: u.location_slug,
+            p_parking_type: u.parking_type_code,
+            p_days: 7,
+          });
+          const rotulo = `${u.company_slug}/${u.location_slug}/${u.parking_type_code}`;
+          return res.error || !(Number(res.price) > 0)
+            ? `${rotulo}: ${res.error ?? res.price}`
+            : null;
+        }),
+      )
+    ).filter((x): x is string => x !== null);
+
     expect(quebradas, "unidade listada que o motor não consegue precificar").toEqual([]);
   });
 
-  it("o preço publicado no índice é o mesmo que o motor calcula", async () => {
-    const idx = await priceIndex();
-    const divergentes: string[] = [];
-    for (const u of idx.destinations.flatMap((d) => d.units)) {
-      for (const p of u.prices) {
-        // `total` nulo é legítimo: unidade com estadia mínima não cota durações curtas.
-        if (p.total == null) continue;
-        const res = await simulate({
-          p_company: u.company_slug,
-          p_location: u.location_slug,
-          p_parking_type: u.parking_type_code,
-          p_days: p.days,
-        });
-        if (Math.abs(Number(res.price) - p.total) > 0.01) {
-          divergentes.push(
-            `${u.company_slug}/${u.location_slug}/${u.parking_type_code} ${p.days}d: ` +
-              `índice R$ ${p.total} contra motor R$ ${res.price}`,
-          );
-        }
-      }
-    }
-    expect(
-      divergentes,
-      "a página anuncia um preço e o motor cobra outro para a mesma unidade e duração",
-    ).toEqual([]);
-  });
+  it(
+    "o preço publicado no índice é o mesmo que o motor calcula",
+    { timeout: TIMEOUT },
+    async () => {
+      const idx = await priceIndex();
+      // `total` nulo é legítimo: unidade com estadia mínima não cota durações curtas.
+      const pares = idx.destinations
+        .flatMap((d) => d.units)
+        .flatMap((u) => u.prices.filter((p) => p.total != null).map((p) => ({ u, p })));
+
+      const divergentes = (
+        await Promise.all(
+          pares.map(async ({ u, p }) => {
+            const res = await simulate({
+              p_company: u.company_slug,
+              p_location: u.location_slug,
+              p_parking_type: u.parking_type_code,
+              p_days: p.days,
+            });
+            return Math.abs(Number(res.price) - p.total!) > 0.01
+              ? `${u.company_slug}/${u.location_slug}/${u.parking_type_code} ${p.days}d: ` +
+                  `índice R$ ${p.total} contra motor R$ ${res.price}`
+              : null;
+          }),
+        )
+      ).filter((x): x is string => x !== null);
+
+      expect(
+        divergentes,
+        "a página anuncia um preço e o motor cobra outro para a mesma unidade e duração",
+      ).toEqual([]);
+    },
+  );
 });
