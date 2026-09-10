@@ -92,7 +92,7 @@ nunca muda, e o histórico mora nele.
 
 | Intenção | Página dona |
 | --- | --- |
-| melhor, comparativo | `quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024` (desde 15/08) |
+| melhor, comparativo | `quais-os-melhores-estacionamentos-do-aeroporto-viracopos-em-2024` (desde 15/08, expandida em 10/09) |
 | reserva, como funciona | `estacionamento-aeroporto-viracopos-como-reservar-antecipadamente-e-garantir-sua-vaga` |
 | guia do aeroporto | `guia-completo-descubra-o-melhor-do-aeroporto-viracopos` |
 | reserva genérica, sem praça | `como-reservar-um-estacionamento-com-pagamento-antecipado` |
@@ -147,6 +147,46 @@ motivo do terceiro é o slug congelado: ele lê "mais barato no estacionamento d
 viracopos", então a frase-chave só casa com título, slug e primeira frase ao mesmo tempo quando
 "barato" vem antes de "estacionamento" no H1. O guia do aeroporto e o post genérico de reserva
 perderam travessão, promessa e link de parceiro.
+
+### A dona de melhor, expandida em 10/09/2026
+
+Ela era a última dona de VCP presa no passo 2 desta lista, "expansão das donas ao padrão": tinha
+**1.096 palavras** contra 5.325 da dona de preço, 4.070 da de barato e 3.692 da de proximidade. O
+gatilho foi a consulta de cabeça do cluster, "qual o melhor estacionamento no aeroporto de
+viracopos", que vale **3.868 impressões e 65 cliques em 16 meses** no baseline de 29/08 e onde a
+posição média do site é **9,4**. Pior: nessa consulta o Google mostra a ficha do Virapark (1.483
+impressões, posição 10,4) e a dona comparativa entra com **85 impressões**. A página que o 301
+absorveu, `qual-o-melhor-...-guia-completo-...`, recebia 721 impressões na mesma consulta, então a
+fusão se defende no tráfego total das duas (12.111 contra 9.988), mas não na consulta de cabeça.
+O diagnóstico não mudou o mapa: mudou o tamanho da dona.
+
+São **3.309 palavras** agora, e a mudança de fundo é o inventário. O post comparava 4 opções numa
+praça de **11 pátios**; agora traz os 7 que publicam tarifa em tabela, nomeia os 4 que só informam
+preço por telefone (Eco22, Aero Viracopos, Pórtico e BR Parking) e responde por faixa de 1, 2, 3,
+7, 15 e 30 diárias. Entraram as quatro variáveis que explicam a diferença de preço da praça:
+distância medida no PostGIS contra "5 minutos" declarado, pacote semanal contra diária vezes sete,
+o mínimo de 2 diárias do Yellow Parking (que tira a terceira diária mais baixa da praça do pódio
+para quem viaja um dia só) e balcão contra online.
+
+Duas seções nasceram para intenções órfãs que o Search Console mostrava sem dona em VCP. A
+**tabela de nota do Google dos 11 pátios** cobre o cluster de avaliação e reputação, que somava
+**6.749 impressões em posição 9,4** e não tinha página responsável, e ela registra o fato
+desconfortável de que os dois parceiros ficam em 4,0, abaixo de cinco pátios da praça. E um H2
+resolve **"aeroporto de Campinas" como o mesmo lugar**, eixo que vale 28.171 impressões em 164
+consultas a uma posição média de 10,5 e que ficou sem dona quando
+`como-pagar-menos-no-estacionamento-do-aeroporto-campinas` foi absorvido por uma dona que só diz
+Viracopos.
+
+Preço de parceiro do motor em 10/09/2026; de não-parceiro conferido na fonte, com data por linha,
+nos mesmos valores das donas de preço e de barato, para as três não se contradizerem. Nenhuma
+promessa de transação: as duas unidades da praça são `checkout_mode = external` (ADR-009). O
+`excerpt` também foi reescrito, porque o antigo elegia Virapark e Garageinn e passou a contradizer
+o corpo, que aponta o Bandeira Park como menor total da semana. Analisador **VERDE**, com três
+avisos aceitos: densidade da frase-chave em 0,2% (a frase tem seis palavras, e 0,5% pediria ~15
+repetições, o que o próprio manual da skill chama de problema da frase-chave, não do texto), nome
+da capa (asset legado, já no Storage, cujo rename não traz ganho) e palavras de transição em
+26,2% contra o piso de 30% do Yoast, que só subiria empilhando conector de redação escolar, o que
+o portão anti-IA do projeto proíbe.
 
 ### A dona de barato, reescrita em 08/09/2026 (Conteúdo 12)
 
