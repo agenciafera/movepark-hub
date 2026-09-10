@@ -763,7 +763,7 @@ export default function PrecosPage() {
 
       <section className={cn(CONTAINER, "pt-12 desktop:pt-16")}>
         <div className={cn(CARTAO, "p-5 desktop:p-8")}>
-          <h2 className="text-balance text-display-sm text-ink">De onde vêm estes preços</h2>
+          <h2 className="text-balance text-display-sm text-ink">De onde vêm estes preços?</h2>
           <Accordion type="single" collapsible defaultValue="m-0" className="mt-2">
             {METODOLOGIA.map((m, i) => (
               <AccordionItem key={m.q} value={`m-${i}`}>

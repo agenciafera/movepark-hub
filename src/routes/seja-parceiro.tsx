@@ -327,7 +327,7 @@ function ComoFunciona() {
     <section className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20">
       <div className="grid grid-cols-1 items-start gap-x-10 gap-y-8 tablet:grid-cols-2 desktop:gap-x-14">
         <div className="tablet:col-start-2 tablet:row-start-1">
-          <h2 className="text-display-2xl text-ink">Como funciona</h2>
+          <h2 className="text-display-2xl text-ink">Como funciona?</h2>
           <p className="mt-3 text-body-md text-body">
             Do cadastro ao repasse, a Movepark cuida da parte chata. Você cuida das vagas.
           </p>
@@ -720,7 +720,7 @@ export default function SejaParceiroPage() {
           className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-20"
         >
           <h2 data-reveal className="mx-auto max-w-2xl text-center text-display-2xl text-ink">
-            Por que colocar seu estacionamento aqui
+            Por que colocar seu estacionamento aqui?
           </h2>
           {/* Grade uniforme 3x2, como nos dois mockups. Era um bento com dois
               destaques grandes; agora que "Como funciona" e a faixa de números já

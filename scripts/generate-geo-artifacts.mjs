@@ -218,6 +218,16 @@ const keywordTitulo = (dest) => {
     : `Estacionamento ${curto}`;
 };
 
+/**
+ * Mesmo par `artigo()` + `seoLabelPrimary()` de `src/lib/seo.ts`: sem o código entre
+ * parênteses e sem a variante depois da vírgula. O gêmeo markdown tem que repetir o H2
+ * da página React palavra por palavra, senão a página e a citação de IA respondem a
+ * mesma pergunta com títulos diferentes.
+ */
+const rotuloPrimario = (dest) =>
+  semCodigo(dest.seo_label ?? dest.short_name, dest.name).split(",")[0].trim();
+const artigoDestino = (dest) => (dest.type === "bus_terminal" ? "a" : "o");
+
 const aeroportoProsa = (dest) =>
   dest.name.startsWith("Aeroporto") && dest.name.length <= 28
     ? dest.name
@@ -293,7 +303,7 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
       const resumo = resumoPreco;
       if (resumo.length > 0) {
         linhas.push(
-          `## Quanto custa estacionar no ${aeroportoProsa(dest)}`,
+          `## Quanto custa estacionar por período no ${aeroportoProsa(dest)}?`,
           "",
           "Preços do motor de reservas, os mesmos do checkout. O valor por dia cai conforme a estadia.",
           "",
@@ -310,21 +320,21 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
     if (paginaDePreco) {
       if (semParceiro && dest) {
         linhas.push(
-          `## Como escolher o estacionamento no ${aeroportoProsa(dest)}`,
+          `## Como escolher o estacionamento no ${aeroportoProsa(dest)}?`,
           "",
           `Neste aeroporto a reserva é fechada direto com o estacionamento. A página do ${aeroportoProsa(dest)} mapeia os da região, com endereço, telefone e avaliação do Google: cote dois ou três, compare o total do período e confirme o traslado antes de pagar.`,
           "",
         );
       } else {
         linhas.push(
-          "## Como reservar com a Movepark",
+          "## Como reservar com a Movepark?",
           "",
           "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
           "",
         );
       }
       linhas.push(
-        "## O que conferir antes de reservar",
+        "## O que conferir antes de reservar?",
         "",
         ...(semParceiro ? CHECKLIST_FAQ_SEM_PARCEIRO : CHECKLIST_FAQ).map((item) => `- ${item}`),
         "",
@@ -728,7 +738,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
       // Resposta rápida primeiro (uma linha por duração), depois a matriz completa
       // por operadora. O gêmeo espelha a página React, que passou a trazer a matriz
       // em vez de só o "a partir de": resumo sem comparação não sustenta citação.
-      linhas.push("## Quanto custa", "");
+      linhas.push(`## Quanto custa estacionar n${artigoDestino(d)} ${rotuloPrimario(d)}?`, "");
       for (const r of resumo) {
         linhas.push(
           `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name})${r.dias > 1 ? `, ${brl(r.total / r.dias)} por diária` : ""}`,

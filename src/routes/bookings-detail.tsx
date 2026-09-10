@@ -209,7 +209,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
           <main className="flex min-w-[320px] flex-1 flex-col gap-5 print:hidden">
             {canSeeVoucher && (
               <section className="rounded-lg bg-canvas p-6 desktop:p-7">
-                <h2 className="text-title-md text-ink">Como será sua entrada</h2>
+                <h2 className="text-title-md text-ink">Como será sua entrada?</h2>
                 <ol className="mt-5">
                   {passos.map((passo, i) => (
                     <li key={passo.n} className="flex gap-3.5">

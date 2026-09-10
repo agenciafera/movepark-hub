@@ -98,7 +98,7 @@ export function shuttleHeading(d: SeoDestination): string {
 
 /** H2 do mapa. "onde fica o aeroporto de confins" tem 729 impressões e zero clique hoje. */
 export function locationHeading(d: SeoDestination): string {
-  return `Onde fica ${artigo(d)} ${seoLabelPrimary(d)}`;
+  return `Onde fica ${artigo(d)} ${seoLabelPrimary(d)}?`;
 }
 
 /** H2 da FAQ: "Perguntas frequentes: estacionamento Aeroporto Curitiba". */
@@ -117,7 +117,7 @@ export function topRatedHeading(d: SeoDestination): string {
  * página e a que o comparador concorrente responde em tabela.
  */
 export function priceHeading(d: SeoDestination): string {
-  return `Quanto custa estacionar n${artigo(d)} ${seoLabelPrimary(d)}`;
+  return `Quanto custa estacionar n${artigo(d)} ${seoLabelPrimary(d)}?`;
 }
 
 /**

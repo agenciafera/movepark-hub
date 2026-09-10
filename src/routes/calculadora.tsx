@@ -1320,7 +1320,7 @@ export default function CalculadoraPage() {
             <div className="grid items-start gap-6 desktop:grid-cols-2 desktop:gap-10">
               <div className="flex min-w-0 flex-col items-start gap-3">
                 <h2 className="text-balance text-display-2xl text-ink">
-                  Quanto você economiza reservando online
+                  Quanto você economiza reservando online?
                 </h2>
                 <p className="max-w-[44ch] text-pretty text-body-md text-body">
                   A diferença entre reservar antes e chegar sem reserva na vaga mais barata de{" "}
@@ -1483,7 +1483,7 @@ export default function CalculadoraPage() {
         className={cn(CONTAINER, "scroll-mt-24 pb-16 pt-12 desktop:pb-24 desktop:pt-16")}
       >
         <div className={cn(cartao, "p-5 desktop:p-8")}>
-          <h2 className="text-balance text-display-sm text-ink">Como a calculadora funciona</h2>
+          <h2 className="text-balance text-display-sm text-ink">Como a calculadora funciona?</h2>
           <Accordion type="single" collapsible defaultValue="m-0" className="mt-2">
             {METODOLOGIA.map((m, i) => (
               <AccordionItem key={m.q} value={`m-${i}`}>

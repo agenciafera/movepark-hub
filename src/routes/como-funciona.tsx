@@ -409,7 +409,7 @@ export default function ComoFuncionaPage() {
           <div className="flex flex-col items-center gap-3 text-center" data-reveal>
             <span className={EYEBROW}>Garantias</span>
             <h2 className="max-w-2xl text-balance text-display-2xl text-ink">
-              O que a Movepark garante por escrito
+              O que a Movepark garante por escrito?
             </h2>
             <p className="max-w-[56ch] text-pretty text-body-md text-body">
               Vale para reserva fechada dentro da Movepark. Quando você reserva direto no site do
@@ -502,7 +502,7 @@ export default function ComoFuncionaPage() {
         <div className="mx-auto grid max-w-[1080px] grid-cols-1 items-start gap-8 px-4 py-16 desktop:grid-cols-[300px_1fr] desktop:gap-14 desktop:px-8 desktop:py-24">
           <div className="flex min-w-0 flex-col gap-3">
             <span className={EYEBROW}>Dúvidas</span>
-            <h2 className="text-balance text-display-2xl text-ink">O que mais perguntam</h2>
+            <h2 className="text-balance text-display-2xl text-ink">O que mais perguntam?</h2>
             <Link
               to="/faq"
               className="self-start text-body-md font-semibold text-mp-primary underline underline-offset-4"

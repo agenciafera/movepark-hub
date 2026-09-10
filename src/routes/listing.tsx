@@ -494,7 +494,7 @@ export default function ListingPage() {
           {hasAmenities && (
             <>
               <section className="space-y-5">
-                <h2 className="text-display-sm text-ink">O que essa vaga oferece</h2>
+                <h2 className="text-display-sm text-ink">O que essa vaga oferece?</h2>
                 <AmenityList amenities={amenities} />
               </section>
               <Separator />
@@ -503,7 +503,7 @@ export default function ListingPage() {
 
           {/* Como chegar */}
           <section className="space-y-4" id="como-chegar">
-            <h2 className="text-display-sm text-ink">Como chegar</h2>
+            <h2 className="text-display-sm text-ink">Como chegar?</h2>
             <HowToArrive
               address={listing.location.address}
               latitude={listing.location.latitude}
@@ -760,7 +760,7 @@ function ListingKnowSection({ listing }: { listing: ListingDetail }) {
 
   return (
     <section className="space-y-6">
-      <h2 className="text-display-sm text-ink">O que você deve saber</h2>
+      <h2 className="text-display-sm text-ink">O que você deve saber?</h2>
       <div
         className={cn(
           "grid grid-cols-1 gap-8 tablet:divide-x tablet:divide-hairline",

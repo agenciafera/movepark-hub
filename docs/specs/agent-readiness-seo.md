@@ -154,6 +154,46 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
 - **Achados citáveis do índice** repetidos com a mesma redação nos gêmeos
   Markdown e no `llms-full.txt`, mais `tags` no frontmatter do FAQ.
 
+## Heading em forma de pergunta fecha com "?"
+
+Um H2 escrito como pergunta **tem que terminar em "?"**. Vale nas páginas públicas
+(`/estacionamentos/*`, `/p/*`, `/faq/*`, `/precos/*`, calculadora, LPs) e no gêmeo markdown
+que o `generate-geo-artifacts.mjs` emite, porque os dois respondem à mesma consulta e não
+podem responder com títulos diferentes.
+
+O motivo é o parser, não a gramática. Em pt-BR a pergunta não inverte sujeito e verbo, então
+"Quanto custa estacionar no Aeroporto Viracopos" e "Quanto custa estacionar no Aeroporto
+Viracopos?" só se distinguem pelo "?". Sem ele o extrator de trecho do buscador e o chunker de
+LLM leem a mesma frase como título de seção, e o par pergunta -> parágrafo que sustenta a
+citação deixa de existir. O peso é maior no GEO do que no SEO: o Google normaliza pontuação no
+casamento de consulta (o "?" não muda ranking), mas quem cita a resposta é a IA, e ela precisa
+enxergar a unidade de pergunta e resposta. No gêmeo markdown o efeito é ainda mais direto,
+porque ali o heading é a única estrutura que existe.
+
+A regra é estreita de propósito, e o que ela **não** cobre importa tanto quanto o que cobre:
+
+- **Fecha com "?"**: heading que abre com palavra interrogativa e forma pergunta direta
+  ("Onde fica o Aeroporto de Confins?", "O que conferir antes de reservar?", "De onde vêm
+  estes preços?").
+- **Fica como está**: título declarativo ("Distância até o terminal do Aeroporto Guarulhos",
+  "Tabela de preços"), título com dois-pontos e fragmento indireto ("Voo atrasou e o carro está
+  no estacionamento: o que fazer"), e afirmação que só começa com pronome interrogativo
+  ("Quem já é parceiro conta"). Ponto de interrogação em título que não é pergunta não ajuda o
+  parser e estraga a leitura.
+
+O H2 nunca repete o H1 palavra por palavra: em `/faq/<slug>` o H1 é a pergunta da FAQ e o bloco
+de preço pergunta outra coisa ("Quanto custa estacionar **por período** no ...?"). Dois headings
+idênticos na mesma página não somam, só disputam.
+
+Onde a regra mora: `priceHeading()` e `locationHeading()` em [`src/lib/seo.ts`](../../src/lib/seo.ts),
+os H2 de `faq-pergunta.tsx` e das demais rotas públicas, e os headings markdown de
+[`scripts/generate-geo-artifacts.mjs`](../../scripts/generate-geo-artifacts.mjs). O guarda é
+[`src/routes/heading-question.contract.test.ts`](../../src/routes/heading-question.contract.test.ts),
+uma varredura de fonte (o drift entra por copy nova e passa por typecheck, lint e render sem
+reclamar). Afirmação que abre com pronome interrogativo entra na allowlist do teste, com motivo
+escrito. No conteúdo do banco a mesma regra vale para os headings de `faq.body_md`; o corpo dos
+posts do blog usa outro padrão, de título de seção declarativo, e fica fora daqui.
+
 ## Sequenciamento (ordem de prioridade)
 
 1. **HTML rastreável** (vite-react-ssg + build-time fetch Supabase) — bloqueador nº 1.

@@ -108,13 +108,13 @@ describe("H2 do destino", () => {
   // dois cabeçalhos. O artigo vem do tipo do destino.
   it("todo destino nomeia a palavra-chave no traslado e no mapa, com o artigo certo", () => {
     expect(shuttleHeading(cwb)).toBe("Traslado até o Aeroporto Curitiba");
-    expect(locationHeading(cwb)).toBe("Onde fica o Aeroporto Curitiba");
+    expect(locationHeading(cwb)).toBe("Onde fica o Aeroporto Curitiba?");
     expect(shuttleHeading(tiete)).toBe("Traslado até a Rodoviária Tietê");
-    expect(locationHeading(tiete)).toBe("Onde fica a Rodoviária Tietê");
+    expect(locationHeading(tiete)).toBe("Onde fica a Rodoviária Tietê?");
   });
 
   it("preço, distância e avaliação seguem o mesmo artigo", () => {
-    expect(priceHeading(tiete)).toBe("Quanto custa estacionar na Rodoviária Tietê");
+    expect(priceHeading(tiete)).toBe("Quanto custa estacionar na Rodoviária Tietê?");
     expect(proximityHeading(tiete)).toBe("Distância até a Rodoviária Tietê");
     expect(topRatedHeading(tiete)).toBe("Mais bem avaliados na Rodoviária Tietê");
   });

@@ -94,7 +94,7 @@ describe("FaqPerguntaPage", () => {
   it("página de preço mostra a tabela de quanto custa com o dado do índice", async () => {
     setup({ ...DATA, faq: { ...DATA.faq!, category: PAGAMENTOS } } as FaqPerguntaData);
     expect(
-      await screen.findByRole("heading", { name: /Quanto custa estacionar no Aeroporto de Guarulhos/ }),
+      await screen.findByRole("heading", { name: /Quanto custa estacionar por período no Aeroporto de Guarulhos/ }),
     ).toBeInTheDocument();
     expect(screen.getByText("1 diária")).toBeInTheDocument();
     expect(screen.getByText("R$ 34,90")).toBeInTheDocument();
@@ -113,10 +113,10 @@ describe("FaqPerguntaPage", () => {
       screen.queryByRole("heading", { name: /Quanto custa estacionar/ }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "Como reservar com a Movepark" }),
+      screen.queryByRole("heading", { name: "Como reservar com a Movepark?" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "O que conferir antes de reservar" }),
+      screen.queryByRole("heading", { name: "O que conferir antes de reservar?" }),
     ).not.toBeInTheDocument();
     // Os CTAs de navegação continuam: eles não são conteúdo, são saída da página.
     expect(screen.getByRole("link", { name: "Reservar vaga em Guarulhos" })).toBeInTheDocument();
@@ -139,7 +139,7 @@ describe("FaqPerguntaPage", () => {
   it("página de preço lista o checklist do que conferir antes de reservar", async () => {
     setup({ ...DATA, faq: { ...DATA.faq!, category: PAGAMENTOS } } as FaqPerguntaData);
     expect(
-      await screen.findByRole("heading", { name: "O que conferir antes de reservar" }),
+      await screen.findByRole("heading", { name: "O que conferir antes de reservar?" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Traslado até o terminal/)).toBeInTheDocument();
   });
@@ -176,11 +176,11 @@ describe("FaqPerguntaPage", () => {
     } as FaqPerguntaData);
     expect(
       await screen.findByRole("heading", {
-        name: "Como escolher o estacionamento no Aeroporto de Confins",
+        name: "Como escolher o estacionamento no Aeroporto de Confins?",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "Como reservar com a Movepark" }),
+      screen.queryByRole("heading", { name: "Como reservar com a Movepark?" }),
     ).not.toBeInTheDocument();
     expect(screen.getByText(/o comparativo da região está logo abaixo/)).toBeInTheDocument();
     const ver = screen.getByRole("link", { name: "Ver estacionamentos em Confins" });

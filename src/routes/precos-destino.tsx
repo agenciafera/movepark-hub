@@ -359,7 +359,7 @@ export default function PrecosDestinoPage() {
         )}
 
         <section className="mt-10">
-          <h2 className="text-display-sm text-ink">De onde vêm estes preços</h2>
+          <h2 className="text-display-sm text-ink">De onde vêm estes preços?</h2>
           <p className="mt-3 text-body-md text-body">
             Do motor de preços da Movepark, o mesmo que calcula sua reserva. O valor desta página
             é o cobrado no checkout e muda junto com a tabela do parceiro.
