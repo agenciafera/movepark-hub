@@ -1,8 +1,42 @@
 # Place ID dos lotes mapeados (E0.17-i)
 
 > **Épico:** [E0.17](https://app.clickup.com/t/86ajyp580) · **Fase:** 0 · **Relacionado:** D-009, ADR-010
-> **Status:** executado em 14/08/2026. 53 de 63 fichas com `google_place_id`, 39 publicadas.
-> Este arquivo é o registro do método e dos achados. Repetir daqui quando entrar um lote novo em volume.
+> **Status:** executado à mão em 14/08/2026 (53 de 63 fichas com `google_place_id`, 39 publicadas)
+> e **automatizado em 08/09/2026**: a Edge `google-place-refresh` resolve o id sozinha, com os
+> mesmos critérios de aceite desta spec. Este arquivo segue sendo o registro do método e dos achados.
+
+## Automatizado desde 08/09/2026
+
+O que era script de console agora roda dentro da Edge `google-place-refresh`, antes do refresh de
+cada passada do cron. O gatilho foi um caso concreto: o Bandeira Park de Viracopos entrou pelo
+painel sem `google_place_id`, e ficha sem a chave **nunca** entra no refresh, porque o cron só olha
+quem já tem. Ou seja, ela nasceria sem selo e ficaria sem para sempre.
+
+Como funciona:
+
+- **Alvos:** `location` viva e listada, e `prospect_location` publicada e não convertida, as duas
+  com `google_place_id` nulo. Incluir `location` fecha a lacuna do D-009 registrada mais abaixo,
+  em que a guarda de colisão estava cega porque nenhuma unidade parceira tinha a chave.
+- **Critérios de aceite:** os desta spec, em `pickPlaceMatch` (`logic.ts`), com teste para cada
+  regra. `businessStatus` OPERACIONAL, `primaryType` em `parking_lot`/`parking_garage`/`park_and_ride`,
+  e o par (similaridade, distância) da tabela acima.
+- **Empate reprova.** Quando dois candidatos passam no aceite com similaridade a menos de 0,05 um
+  do outro, a função devolve `null`. Sem desempate confiável, não escolher é a resposta certa, e
+  esse é exatamente o caso MultiPark x Bandeira Park, que dividem coordenada.
+- **Similaridade de nome** ignora as palavras que aparecem em todo nome do setor (`park`,
+  `estacionamento`, `aeroporto`, sigla de praça). Sem isso "Aero Park" e "DF Park" empatam em
+  `park`, que foi como os leads de Brasília entraram errados na rodada manual.
+- **Carimbo de tentativa:** toda tentativa grava `google_place_lookup_at`, **inclusive a que não
+  casa**, e a Edge só volta a tentar depois de 30 dias (`RETRY_LOOKUP_AFTER_DAYS`). Sem o carimbo,
+  as 10 fichas sem match pagariam Places API toda semana por uma resposta já conhecida. Coluna
+  criada na migration `20261113141500_place_id_lookup_carimbo.sql`, nas duas tabelas.
+- **Endereço sim, nome não.** Match aceito substitui o endereço pelo do Google e preserva o nome,
+  pela mesma razão da rodada manual.
+- **Chave:** a mesma `GOOGLE_PLACES_SERVER_KEY` do refresh, com o header `Referer` do domínio.
+  Não é preciso rodar de aba autorizada nem criar chave nova.
+
+Para pular a resolução numa chamada manual: `{ "skip_lookup": true }` no corpo. A resposta ganhou
+`resolved` e `unresolved`.
 
 ## Por quê
 

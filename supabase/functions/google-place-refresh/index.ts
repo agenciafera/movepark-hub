@@ -19,11 +19,24 @@
 //
 // POST /functions/v1/google-place-refresh   (header: x-google-place-key: <GOOGLE_PLACE_REFRESH_KEY>)
 // body opcional: { place_id?: string }  → limita a um lugar (útil para rodar na mão)
-// → { ok, candidates, refreshed, failed, rebuilt }
+//                 { skip_lookup?: true } → pula a resolução e só refresha quem já tem place_id
+// → { ok, candidates, refreshed, failed, resolved, unresolved, rebuilt }
+//
+// Antes do refresh, resolve o place_id das fichas que ainda não têm: sem a chave elas nunca
+// entram no cron e ficam sem selo para sempre. Critérios de aceite e histórico da rodada
+// manual em docs/specs/place-id-lote-mapeado.md.
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { isAuthorized, mapPlaceDetails, selectStale } from "./logic.ts";
+import {
+  isAuthorized,
+  mapPlaceDetails,
+  type PlaceCandidate,
+  pickPlaceMatch,
+  RETRY_LOOKUP_AFTER_DAYS,
+  SEARCH_BIAS_RADIUS_M,
+  selectStale,
+} from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 
 // `reviews` traz o objeto Review inteiro, e é dele que sai o `originalText` (o texto na
@@ -65,7 +78,16 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  const body = (await req.json().catch(() => ({}))) as { place_id?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    place_id?: string;
+    skip_lookup?: boolean;
+  };
+
+  // Resolve antes de refreshar: quem ganha place_id agora já entra como candidato na mesma passada.
+  const lookup = { resolved: 0, unresolved: 0 };
+  if (!body.place_id && !body.skip_lookup) {
+    Object.assign(lookup, await resolverPlaceIds(admin, googleKey));
+  }
 
   const [locs, prospects, snaps] = await Promise.all([
     admin
@@ -162,5 +184,182 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ ok: true, candidates: candidates.length, refreshed, failed, rebuilt });
+  return json({
+    ok: true,
+    candidates: candidates.length,
+    refreshed,
+    failed,
+    resolved: lookup.resolved,
+    unresolved: lookup.unresolved,
+    rebuilt,
+  });
 });
+
+type Alvo = {
+  tabela: "location" | "prospect_location";
+  id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+/**
+ * Preenche `google_place_id` das fichas vivas que estão sem ele, por Text Search.
+ *
+ * Toda tentativa carimba `google_place_lookup_at`, inclusive a que não casa. Sem esse carimbo
+ * as fichas sem match (eram 10 na rodada manual) voltariam a ser consultadas toda semana, para
+ * sempre, pagando Places API por uma resposta que já se sabe qual é.
+ *
+ * Quando o match é aceito, o endereço do Google substitui o nosso, porque o nosso já veio errado
+ * antes (Talentos Park). O **nome não**: o Google devolve "Fulano Park - Estacionamento
+ * Aeroporto", que polui a listagem, e nome é decisão editorial.
+ */
+async function resolverPlaceIds(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  googleKey: string,
+): Promise<{ resolved: number; unresolved: number }> {
+  const corte = new Date(
+    Date.now() - RETRY_LOOKUP_AFTER_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const semTentativa = `google_place_lookup_at.is.null,google_place_lookup_at.lt.${corte}`;
+
+  const [locs, prospects, usadosLoc, usadosProsp] = await Promise.all([
+    admin
+      .from("location")
+      .select("id, name, address, latitude, longitude, company:company_id(name)")
+      .is("google_place_id", null)
+      .is("deleted_at", null)
+      .eq("is_listed", true)
+      .or(semTentativa),
+    admin
+      .from("prospect_location")
+      .select("id, name, address, latitude, longitude")
+      .is("google_place_id", null)
+      .eq("is_published", true)
+      .is("converted_at", null)
+      .or(semTentativa),
+    // Guarda do D-009: place_id preso a qualquer ficha, publicada ou não, não pode ser
+    // reaproveitado. MultiPark e Bandeira Park têm coordenada idêntica e IDs distintos.
+    admin.from("location").select("google_place_id").not("google_place_id", "is", null),
+    admin.from("prospect_location").select("google_place_id").not("google_place_id", "is", null),
+  ]);
+
+  const emUso = new Set<string>(
+    [...(usadosLoc.data ?? []), ...(usadosProsp.data ?? [])].map(
+      (x: { google_place_id: string }) => x.google_place_id,
+    ),
+  );
+
+  const alvos: Alvo[] = [
+    // A unidade parceira se chama "Aeroporto de Guarulhos" no catálogo, ou seja, o único token
+    // que sobra depois de tirar as palavras genéricas é a cidade, que casa com qualquer pátio
+    // da praça. A marca vem da empresa (Aeropark, Plenty Park, Garageinn), e é ela que
+    // distingue. Sem isso o match dependeria só da distância.
+    ...((locs.data ?? []) as (Omit<Alvo, "tabela" | "name"> & {
+      name: string;
+      company: { name: string } | null;
+    })[]).map((r) => ({
+      ...r,
+      name: [r.company?.name, r.name].filter(Boolean).join(" "),
+      tabela: "location" as const,
+    })),
+    ...((prospects.data ?? []) as Omit<Alvo, "tabela">[]).map((r) => ({
+      ...r,
+      tabela: "prospect_location" as const,
+    })),
+  ];
+
+  let resolved = 0;
+  let unresolved = 0;
+
+  for (const alvo of alvos) {
+    const carimbo = { google_place_lookup_at: new Date().toISOString() };
+    try {
+      if (alvo.latitude === null || alvo.longitude === null) {
+        // Sem coordenada não há locationBias nem critério de distância: reprova sem gastar chamada.
+        throw new Error("ficha sem coordenada");
+      }
+      const achados = await buscarPorTexto(googleKey, alvo);
+      const escolhido = pickPlaceMatch(
+        { name: alvo.name, latitude: alvo.latitude, longitude: alvo.longitude },
+        achados,
+        emUso,
+      );
+      if (!escolhido) {
+        unresolved++;
+        await admin.from(alvo.tabela).update(carimbo).eq("id", alvo.id);
+        console.log(
+          `google-place-refresh: sem match para ${alvo.tabela}/${alvo.id} (${alvo.name})`,
+        );
+        continue;
+      }
+      emUso.add(escolhido.id);
+      const patch: Record<string, unknown> = { ...carimbo, google_place_id: escolhido.id };
+      if (escolhido.formattedAddress) patch.address = escolhido.formattedAddress;
+      const { error } = await admin.from(alvo.tabela).update(patch).eq("id", alvo.id);
+      if (error) throw new Error(error.message);
+      resolved++;
+      console.log(
+        `google-place-refresh: ${alvo.tabela}/${alvo.id} (${alvo.name}) -> ${escolhido.id}`,
+      );
+    } catch (e) {
+      unresolved++;
+      const message = e instanceof Error ? e.message : String(e);
+      console.error(
+        `google-place-refresh: lookup falhou em ${alvo.tabela}/${alvo.id}: ${message}`,
+      );
+      await admin.from(alvo.tabela).update(carimbo).eq("id", alvo.id);
+    }
+  }
+
+  return { resolved, unresolved };
+}
+
+/** Text Search da Places API (New), com viés na coordenada que já temos. */
+async function buscarPorTexto(googleKey: string, alvo: Alvo): Promise<PlaceCandidate[]> {
+  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": googleKey,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.location," +
+        "places.businessStatus,places.primaryType",
+      Referer: `${siteUrl()}/`,
+    },
+    body: JSON.stringify({
+      textQuery: [alvo.name, alvo.address].filter(Boolean).join(", "),
+      languageCode: "pt-BR",
+      regionCode: "BR",
+      maxResultCount: 3,
+      locationBias: {
+        circle: {
+          center: { latitude: alvo.latitude, longitude: alvo.longitude },
+          radius: SEARCH_BIAS_RADIUS_M,
+        },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`searchText ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as {
+    places?: {
+      id?: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      businessStatus?: string;
+      primaryType?: string;
+      location?: { latitude?: number; longitude?: number };
+    }[];
+  };
+  return (data.places ?? []).map((p) => ({
+    id: p.id ?? "",
+    displayName: p.displayName?.text ?? "",
+    formattedAddress: p.formattedAddress ?? null,
+    businessStatus: p.businessStatus ?? null,
+    primaryType: p.primaryType ?? null,
+    latitude: p.location?.latitude ?? null,
+    longitude: p.location?.longitude ?? null,
+  }));
+}

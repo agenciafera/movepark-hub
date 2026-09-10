@@ -4,29 +4,26 @@
 > exibido como prova social separada e rotulada, nunca somado à avaliação Movepark.
 > **Ao mudar uma regra, atualize esta spec no mesmo PR.**
 
-**Status:** ✅ implementado em 14/08/2026, faltando ligar o refresh. No ar: tabela
-`google_place_snapshot` com TTL na policy e purge diário (`purge-google-place-snapshots`, ativo
-no `pg_cron`), bloco atribuído na ficha da unidade e na do lote mapeado, e selo único no card de
-busca, no destino e no card de lote mapeado.
+**Status:** ✅ no ar. Tabela `google_place_snapshot` com TTL na policy e purge diário
+(`purge-google-place-snapshots`), bloco atribuído na ficha da unidade e na do lote mapeado, e selo
+único no card de busca, no destino e no card de lote mapeado.
 
-**Pendente, e é o que falta para a nota aparecer:** a Edge `google-place-refresh` está escrita e
-testada no repo, mas **não** foi publicada nem agendada, porque depende da
-`GOOGLE_PLACES_SERVER_KEY` (chave de servidor, restrita por IP, que ainda não existe). Sem ela a
-tabela fica vazia, e vazia é o estado correto: nenhuma superfície inventa nota, todas caem no
-comportamento de antes.
+A Edge `google-place-refresh` **está publicada e agendada** (v17, `verify_jwt=false`), com a
+`GOOGLE_PLACES_SERVER_KEY` configurada. Em 08/09/2026 o espelho tinha 143 lugares e nenhum
+`fetch_error`. O texto anterior desta seção dizia que faltava publicar e agendar, e estava
+desatualizado.
 
-**Para ligar, os quatro passos:**
+**Desde 08/09/2026 a Edge também resolve o `google_place_id` de quem ainda não tem**, por Text
+Search, antes do refresh. Sem isso, ficha cadastrada sem a chave nunca entrava no cron e nascia sem
+selo para sempre. Critérios de aceite, guarda de colisão e carimbo de nova tentativa em
+[place-id-lote-mapeado.md](./place-id-lote-mapeado.md).
 
-1. `supabase secrets set GOOGLE_PLACES_SERVER_KEY=...` (a chave de servidor, restrita por IP).
-2. `supabase functions deploy google-place-refresh --no-verify-jwt`.
-3. Agendamento semanal no `pg_cron`, com o header `x-google-place-key`.
-4. **A URL do deploy hook do Cloudflare em `app_setting.google_place_rebuild_hook_url`.** A
-   chave já existe no banco, semeada vazia e com `is_public = false` (migration
-   `20261025091500`). Sem preenchê-la o refresh roda e devolve `rebuilt: false` em toda
-   passada, e o HTML publicado envelhece até alguém dar push na `main`: o rebuild é a
-   **defesa principal** do prazo de 30 dias no HTML (§5), e o guard do componente é só a
-   rede. Ela nasce privada porque a policy `app_setting_public_read` entrega para `anon`
-   toda chave marcada, e deploy hook é credencial de disparo.
+**Pendência real que sobrou:** a URL do deploy hook do Cloudflare em
+`app_setting.google_place_rebuild_hook_url`. Sem ela o refresh devolve `rebuilt: false` em toda
+passada e o HTML publicado envelhece até alguém dar push na `main`. O rebuild é a **defesa
+principal** do prazo de 30 dias no HTML (§5); o guard do componente é só a rede. A chave nasce
+privada (`is_public = false`) porque a policy `app_setting_public_read` entrega para `anon` toda
+chave marcada, e deploy hook é credencial de disparo.
 
 Relacionado: [reviews.md](./reviews.md) · [capacidades-unidade.md](./capacidades-unidade.md) ·
 [checkout-externo-por-local.md](./checkout-externo-por-local.md) ·

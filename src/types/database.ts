@@ -2319,6 +2319,7 @@ export type Database = {
           go2park_whatsapp: string | null
           google_maps_url: string | null
           google_place_id: string | null
+          google_place_lookup_at: string | null
           has_notice: boolean
           has_passenger_quantity: boolean
           has_pcd_config: boolean
@@ -2366,6 +2367,7 @@ export type Database = {
           go2park_whatsapp?: string | null
           google_maps_url?: string | null
           google_place_id?: string | null
+          google_place_lookup_at?: string | null
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
@@ -2413,6 +2415,7 @@ export type Database = {
           go2park_whatsapp?: string | null
           google_maps_url?: string | null
           google_place_id?: string | null
+          google_place_lookup_at?: string | null
           has_notice?: boolean
           has_passenger_quantity?: boolean
           has_pcd_config?: boolean
@@ -4499,6 +4502,7 @@ export type Database = {
           geog: unknown
           google_maps_url: string | null
           google_place_id: string | null
+          google_place_lookup_at: string | null
           id: string
           is_published: boolean
           last_reviewed_at: string | null
@@ -4530,6 +4534,7 @@ export type Database = {
           geog?: unknown
           google_maps_url?: string | null
           google_place_id?: string | null
+          google_place_lookup_at?: string | null
           id?: string
           is_published?: boolean
           last_reviewed_at?: string | null
@@ -4561,6 +4566,7 @@ export type Database = {
           geog?: unknown
           google_maps_url?: string | null
           google_place_id?: string | null
+          google_place_lookup_at?: string | null
           id?: string
           is_published?: boolean
           last_reviewed_at?: string | null

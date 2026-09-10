@@ -1,5 +1,16 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { isAuthorized, mapPlaceDetails, REFRESH_AFTER_DAYS, selectStale } from "./logic.ts";
+import {
+  haversineKm,
+  isAuthorized,
+  mapPlaceDetails,
+  nameSimilarity,
+  normalizeName,
+  type PlaceCandidate,
+  pickPlaceMatch,
+  REFRESH_AFTER_DAYS,
+  RETRY_LOOKUP_AFTER_DAYS,
+  selectStale,
+} from "./logic.ts";
 
 const NOW = new Date("2026-08-14T12:00:00Z");
 
@@ -124,4 +135,108 @@ Deno.test("mapPlaceDetails: review sem autor e descartada, porque atribuicao e o
     reviews: [{ rating: 5, text: { text: "boa" }, publishTime: "2026-07-02T10:00:00Z" }],
   });
   assertEquals(out.reviews, []);
+});
+
+// --- resolução de place_id por Text Search ---------------------------------
+
+const VCP = { lat: -23.0074, lng: -47.1345 };
+const base = (over: Partial<PlaceCandidate> = {}): PlaceCandidate => ({
+  id: "place-a",
+  displayName: "Bandeira Park - Estacionamento Aeroporto Viracopos Campinas VCP",
+  formattedAddress: "R. Antônio Luchiari, 1100 - Distrito Industrial, Campinas - SP",
+  businessStatus: "OPERATIONAL",
+  primaryType: "parking_lot",
+  latitude: -22.991637,
+  longitude: -47.1119593,
+  ...over,
+});
+const alvoBandeira = { name: "Bandeira Park", latitude: -22.991637, longitude: -47.1119593 };
+
+Deno.test("normalizeName: tira acento, caixa e pontuacao", () => {
+  assertEquals(normalizeName("Pórtico  Estacionamento!"), "portico estacionamento");
+});
+
+Deno.test("nameSimilarity: nome identico da 1", () => {
+  assertEquals(nameSimilarity("Bandeira Park", "bandeira park"), 1);
+});
+
+Deno.test("nameSimilarity: o nome longo do Google contem o nosso e passa o limite forte", () => {
+  const s = nameSimilarity("Bandeira Park", base().displayName);
+  assertEquals(s >= 0.85, true);
+});
+
+Deno.test("nameSimilarity: marcas diferentes que so dividem 'park' nao pontuam", () => {
+  // Foi assim que os leads de Brasilia entraram errado na rodada manual.
+  assertEquals(nameSimilarity("Aero Park", "DF Park"), 0);
+});
+
+Deno.test("nameSimilarity: Multipark e Bandeira Park nao se confundem", () => {
+  assertEquals(nameSimilarity("Multipark", "Bandeira Park") < 0.6, true);
+});
+
+Deno.test("haversineKm: mesma coordenada da zero", () => {
+  assertEquals(Math.round(haversineKm(VCP.lat, VCP.lng, VCP.lat, VCP.lng)), 0);
+});
+
+Deno.test("pickPlaceMatch: aceita o match obvio", () => {
+  assertEquals(pickPlaceMatch(alvoBandeira, [base()])?.id, "place-a");
+});
+
+Deno.test("pickPlaceMatch: recusa lugar fechado", () => {
+  const fechado = base({ businessStatus: "CLOSED_TEMPORARILY" });
+  assertEquals(pickPlaceMatch(alvoBandeira, [fechado]), null);
+});
+
+Deno.test("pickPlaceMatch: aceita park_and_ride, que o regex antigo reprovava", () => {
+  const pnr = base({ primaryType: "park_and_ride" });
+  assertEquals(pickPlaceMatch(alvoBandeira, [pnr])?.id, "place-a");
+});
+
+Deno.test("pickPlaceMatch: recusa tipo que nao e estacionamento", () => {
+  // Market Park (VIX) resolveu para um hotel na rodada manual.
+  const hotel = base({ primaryType: "lodging", displayName: "Quality Hotel Aeroporto" });
+  assertEquals(pickPlaceMatch(alvoBandeira, [hotel]), null);
+});
+
+Deno.test("pickPlaceMatch: nome forte tolera 15 km, porque o pino errado costuma ser o nosso", () => {
+  const longe = base({ latitude: -22.94, longitude: -47.06 });
+  const km = haversineKm(alvoBandeira.latitude, alvoBandeira.longitude, -22.94, -47.06);
+  assertEquals(km > 3 && km <= 15, true);
+  assertEquals(pickPlaceMatch(alvoBandeira, [longe])?.id, "place-a");
+});
+
+Deno.test("pickPlaceMatch: place_id ja preso a outra ficha e recusado (guarda do D-009)", () => {
+  assertEquals(pickPlaceMatch(alvoBandeira, [base()], new Set(["place-a"])), null);
+});
+
+Deno.test("pickPlaceMatch: empate entre dois aprovados reprova em vez de chutar", () => {
+  const a = base({ id: "a" });
+  const b = base({ id: "b" });
+  assertEquals(pickPlaceMatch(alvoBandeira, [a, b]), null);
+});
+
+Deno.test("pickPlaceMatch: sem candidato devolve null", () => {
+  assertEquals(pickPlaceMatch(alvoBandeira, []), null);
+});
+
+Deno.test("pickPlaceMatch: candidato sem coordenada e descartado", () => {
+  const semGeo = base({ latitude: null, longitude: null });
+  assertEquals(pickPlaceMatch(alvoBandeira, [semGeo]), null);
+});
+
+Deno.test("RETRY_LOOKUP_AFTER_DAYS: a janela de nova tentativa e de 30 dias", () => {
+  assertEquals(RETRY_LOOKUP_AFTER_DAYS, 30);
+});
+
+Deno.test("nameSimilarity: marca da empresa e o que distingue a unidade parceira", () => {
+  // A unidade se chama "Aeroporto de Congonhas" no catálogo. Sozinho, o nome deixa só
+  // "congonhas", que casa com qualquer pátio da praça. Com a marca junto, o certo passa
+  // e o concorrente vizinho não.
+  const certo = "Plenty Park - Estacionamento Aeroporto Congonhas";
+  const vizinho = "Estapar Estacionamento Aeroporto Congonhas";
+
+  assertEquals(nameSimilarity("Aeroporto de Congonhas", vizinho) >= 0.85, true);
+
+  assertEquals(nameSimilarity("Plenty Park Aeroporto de Congonhas", certo) >= 0.85, true);
+  assertEquals(nameSimilarity("Plenty Park Aeroporto de Congonhas", vizinho) < 0.6, true);
 });
