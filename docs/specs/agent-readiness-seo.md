@@ -191,8 +191,20 @@ os H2 de `faq-pergunta.tsx` e das demais rotas públicas, e os headings markdown
 [`src/routes/heading-question.contract.test.ts`](../../src/routes/heading-question.contract.test.ts),
 uma varredura de fonte (o drift entra por copy nova e passa por typecheck, lint e render sem
 reclamar). Afirmação que abre com pronome interrogativo entra na allowlist do teste, com motivo
-escrito. No conteúdo do banco a mesma regra vale para os headings de `faq.body_md`; o corpo dos
-posts do blog usa outro padrão, de título de seção declarativo, e fica fora daqui.
+escrito.
+
+No conteúdo do banco a regra vale igual, para os headings de `faq.body_md` e de
+`blog_post.body_md` (aplicada em set/2026: 203 headings em 36 posts, mais 37 no FAQ). Lá o guarda
+não pode ser teste de fonte, porque o texto não mora no repo: quem segura é o portão
+`Pergunta sem "?"` do `analisar-post.mjs`, na skill `blogpost-seo-geo`, que reprova o
+meio-caminho (abre com palavra interrogativa e não fecha com "?"). Antes ele contava como
+pergunta qualquer título que só COMEÇASSE com palavra interrogativa, e foi por esse furo que os
+203 passaram.
+
+Trocar o texto do heading é seguro para as âncoras: o `headingId()` de
+[`markdown.logic.ts`](../../src/features/blog/markdown.logic.ts) derruba o que não é
+alfanumérico e apara o hífen final antes de cortar em 60 caracteres, então acrescentar "?" no fim
+não muda o id nem quebra link profundo.
 
 ## Sequenciamento (ordem de prioridade)
 

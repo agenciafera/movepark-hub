@@ -244,9 +244,16 @@ slug fora deles é recusado na escrita. `destination` é o slug do aeroporto em
 
 1. **Abertura que responde na hora**, até 90 palavras, com a frase-chave na
    primeira frase. É o trecho que vira AI Overview e resposta de chatbot.
-2. **H2 em forma de pergunta**, do jeito que a pessoa pergunta. Logo abaixo de
-   cada um, um parágrafo autossuficiente que responde sozinho, sem depender do
-   resto do texto. Motor generativo extrai trecho, não página.
+2. **H2 em forma de pergunta**, do jeito que a pessoa pergunta, **fechando com
+   "?"**. Logo abaixo de cada um, um parágrafo autossuficiente que responde
+   sozinho, sem depender do resto do texto. Motor generativo extrai trecho, não
+   página. O "?" não é enfeite: em pt-BR a pergunta não inverte sujeito e verbo,
+   então "Quanto custa estacionar em Confins" e a mesma frase com "?" só se
+   distinguem pela pontuação, e sem ela o extrator lê título de seção em vez de
+   par pergunta/resposta. Título declarativo ("Tabela de preços") e título com
+   dois-pontos e fragmento indireto ("Voo atrasou: o que fazer") continuam sem
+   "?", porque não são pergunta. O portão `Pergunta sem "?"` do
+   [`analisar-post.mjs`](scripts/analisar-post.mjs) reprova o meio-caminho.
 3. **Tabela sempre que houver dado comparável.** Preço por diária, comparativo
    entre opções, distância e tempo de traslado. Tabela é o formato que o modelo
    consegue ler inteiro e que o Google usa em rich result. Em aeroporto sem

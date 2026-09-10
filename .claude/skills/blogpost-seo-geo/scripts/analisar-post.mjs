@@ -630,11 +630,27 @@ else if (aberturaPalavras > 90)
   laranja(G_GEO, "Resposta direta", `A abertura tem ${aberturaPalavras} palavras. Motor generativo cita bloco curto e autossuficiente, até 90.`);
 else verde(G_GEO, "Resposta direta", `Abertura com ${aberturaPalavras} palavras.`);
 
-const titulosPergunta = titulos.filter((t) =>
-  /\?|^(como|quanto|qual|quais|quando|onde|por que|vale a pena|o que)/i.test(t.texto),
-).length;
+const ABRE_PERGUNTA =
+  /^(quanto|quantos|quantas|onde|de onde|aonde|como|o que|por que|quando|qual|quais|quem|vale a pena)\b/i;
+const titulosPergunta = titulos.filter((t) => t.texto.includes("?")).length;
+// Heading que ABRE com palavra interrogativa mas não fecha com "?" é o pior dos dois
+// mundos: em pt-BR a pergunta não inverte sujeito e verbo, então sem o "?" o extrator
+// do buscador e o chunker de LLM leem a mesma frase como título de seção, e o par
+// pergunta -> parágrafo que sustenta a citação some. Título com dois-pontos ("Voo
+// atrasou: o que fazer") é aposto, não pergunta, e fica de fora.
+const meioCaminho = titulos.filter(
+  (t) => ABRE_PERGUNTA.test(t.texto) && !t.texto.includes("?") && !t.texto.includes(":"),
+);
 if (!titulosPergunta) laranja(G_GEO, "Títulos em pergunta", "Nenhum subtítulo em forma de pergunta. É por pergunta que a IA acha o trecho.");
 else verde(G_GEO, "Títulos em pergunta", `${titulosPergunta} de ${titulos.length}.`);
+if (meioCaminho.length)
+  vermelho(
+    G_GEO,
+    "Pergunta sem \"?\"",
+    `${meioCaminho.length} título(s) em forma de pergunta sem o "?": ${meioCaminho
+      .map((t) => `"${t.texto}"`)
+      .join(", ")}. Sem o "?" o trecho deixa de ser par pergunta/resposta.`,
+  );
 
 const temFaq = titulos.some((t) => /perguntas frequentes|d[úu]vidas|faq/i.test(t.texto));
 if (!temFaq) laranja(G_GEO, "Bloco de FAQ", "Sem seção de perguntas frequentes. É o formato que mais vira citação e resposta.");
