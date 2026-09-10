@@ -41,18 +41,31 @@ export type PriceCase = {
   note?: string;
 };
 
-export const priceCases: PriceCase[] = [
-  // ── incremental_formula (1d/2d especiais; 3+ = base + dias×mult) ─────────
-  { company: "airpark", location: "faro", parking_type: "covered", days: 1, expected: 25, strategy: "incremental_formula" },
-  { company: "airpark", location: "faro", parking_type: "covered", days: 2, expected: 28, strategy: "incremental_formula" },
-  { company: "airpark", location: "faro", parking_type: "covered", days: 5, expected: 55, strategy: "incremental_formula", note: "10 + 5×9" },
+// ## 12/09/2026: a lista ficou VAZIA, e isso é o retrato correto da produção
+//
+// As três empresas que sobravam aqui (`airpark`, `ferapark` e `moveparking`) eram fixtures de
+// demonstração, e foram desativadas em produção em 12/08/2026, as três em dois minutos
+// (`company.status` virou `inactive`). O `get_pricing_data` exige `status = 'active'`, então
+// desde aquele dia TODOS os casos deste arquivo devolviam "Tipo de vaga não encontrado" e o job
+// `live-integration` estava vermelho na `main`. Passou quase um mês assim sem ninguém olhar.
+//
+// Não dá para simplesmente trocar por outra unidade. Hoje a produção só pratica duas
+// estratégias em unidade ativa e listada, `fixed_bracket` e `uniform_by_duration`, e TODAS as
+// unidades que as praticam são externas (aeropark, aerovalet, bepark, abbapark, nationpark,
+// garageinn, plenty, virapark). Caso golden em unidade externa é justamente o que o guard
+// abaixo proíbe, porque a tabela delas é espelhada do parceiro e muda quando ele mexe no preço.
+//
+// Ou seja: `incremental_formula`, `monthly_remainder` e `hourly_capped` saíram da produção
+// junto com as fixtures. A cobertura das SETE estratégias continua inteira em
+// `supabase/tests/pricing.test.sql`, contra o seed congelado, que é imune a isso.
+//
+// Reativar as empresas de demonstração para o teste voltar ao verde seria pior que o defeito:
+// `airpark/faro` e `moveparking/nova-iguacu` têm `is_listed = true`, então elas voltariam a
+// aparecer na busca do site para gente de verdade.
+//
+// O que o `live-integration` passou a fazer, em vez de valor golden, está no próprio
+// `simulate-price.int.test.ts`: conferir que toda unidade que o site LISTA é precificável e que
+// o preço publicado no índice bate com o que o simulador calcula. Esse teste não apodrece,
+// porque lê o que estiver vivo.
 
-  // ── monthly_remainder (pacote 30d + resto diário) ───────────────────────
-  { company: "ferapark", location: "unidade-aeroporto", parking_type: "covered", days: 1, expected: 21.99, strategy: "monthly_remainder" },
-  { company: "ferapark", location: "unidade-aeroporto", parking_type: "covered", days: 30, expected: 310, strategy: "monthly_remainder" },
-  { company: "ferapark", location: "unidade-aeroporto", parking_type: "covered", days: 35, expected: 419.95, strategy: "monthly_remainder", note: "310 + 5×21,99" },
-
-  // ── hourly_capped (teto de diária; base diária) ─────────────────────────
-  { company: "moveparking", location: "nova-iguacu", parking_type: "uncovered", days: 1, expected: 20, strategy: "hourly_capped" },
-  { company: "moveparking", location: "nova-iguacu", parking_type: "uncovered", days: 2, expected: 40, strategy: "hourly_capped" },
-];
+export const priceCases: PriceCase[] = [];
