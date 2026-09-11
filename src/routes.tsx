@@ -182,7 +182,11 @@ async function fichaLoader({ params, request }: LoaderFunctionArgs): Promise<Fic
   const destino = params.destino!;
   const lote = params.lote!;
   // `?vaga=` só escolhe a oferta em evidência. A URL canônica é sem ela, então o build
-  // pré-renderiza a página com o tipo padrão e a query só vale na navegação.
+  // pré-renderiza a página com o tipo padrão. ATENÇÃO: no navegador de produção este loader não
+  // roda. O vite-react-ssg o substitui por um fetch do JSON do build indexado por PATHNAME, sem
+  // query string, e devolve sempre a ficha do tipo padrão. Quem honra `?vaga=` no cliente é a
+  // query da página (`useListing`), que ignora o dado do loader quando o tipo não bate. A leitura
+  // abaixo vale no build e no `bun run dev`, onde o loader ainda roda de verdade.
   const vaga = new URL(request.url, "http://local").searchParams.get("vaga") ?? undefined;
 
   try {

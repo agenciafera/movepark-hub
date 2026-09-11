@@ -89,11 +89,21 @@ export default function ListingPage() {
   // endereço, fotos, FAQ e avaliações entre documentos quase idênticos.
   const vaga = searchParams.get("vaga") ?? undefined;
 
+  // O dado do loader só serve de `initialData` quando é do MESMO tipo que a URL pede. No
+  // navegador o vite-react-ssg troca o loader por um fetch do JSON do build indexado por
+  // PATHNAME: a query string não chega nele, e ele devolve sempre a ficha do tipo padrão (o mais
+  // barato). Semear essa ficha na chave de `?vaga=uncovered` marcava a chave com o tipo errado e,
+  // como `initialData` conta como dado fresco, o fetch certo nunca acontecia: a página abria em
+  // Coberta e clicar nas outras tags não mudava nada. Em dev o loader roda de verdade e enxerga a
+  // query, então lá a ficha bate e o aproveitamento continua.
+  const fichaDoLoader = loaderData?.listing;
+  const loaderBateComVaga = !!fichaDoLoader && (!vaga || fichaDoLoader.parking_type.code === vaga);
+
   const { data: listing, isLoading, error } = useListing(
     params.destino,
     params.lote,
     vaga,
-    { initialData: loaderData?.listing ?? undefined },
+    { initialData: loaderBateComVaga ? fichaDoLoader : undefined },
   );
   const companySlug = listing?.company.slug;
   const locationSlug = listing?.location.slug;
@@ -106,7 +116,9 @@ export default function ListingPage() {
     companySlug,
     locationSlug,
     parkingTypeCode,
-    loaderData?.showcase,
+    // Mesma regra da ficha: a faixa do build é do tipo padrão. `?? undefined` porque
+    // `initialData: null` também conta como dado e mataria o fetch quando o build falhou.
+    loaderBateComVaga ? (loaderData?.showcase ?? undefined) : undefined,
   );
 
   const { data: reviews } = useLocationReviews(

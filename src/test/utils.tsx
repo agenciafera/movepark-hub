@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { render } from "@testing-library/react";
 import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router-dom";
+import type { LoaderFunction } from "react-router-dom";
 import { AuthContext } from "@/auth/context";
 import type { AuthContextValue } from "@/auth/context";
 import type { Session, UserRole } from "@/types/domain";
@@ -62,6 +63,12 @@ export function renderWithProviders(
      * Sem `path`, mantém o MemoryRouter simples dos testes que não precisam disso.
      */
     path?: string;
+    /**
+     * Loader da rota, para testar página de SSG. Em produção o `vite-react-ssg` troca o loader
+     * do cliente por um fetch do JSON do build, indexado por PATHNAME: ele devolve sempre o
+     * mesmo dado, sem a query string. Um loader constante aqui reproduz isso.
+     */
+    loader?: LoaderFunction;
   },
 ) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -69,7 +76,7 @@ export function renderWithProviders(
 
   const tree = opts?.path ? (
     <RouterProvider
-      router={createMemoryRouter([{ path: opts.path, element: ui }], {
+      router={createMemoryRouter([{ path: opts.path, element: ui, loader: opts.loader }], {
         initialEntries: [opts?.route ?? "/"],
         future,
       })}
