@@ -159,9 +159,20 @@ não sabe que `POST /transfers` tem dois corpos possíveis: quem sabe disso é o
 | Deno | `buildTransferBody` (as duas pernas, nunca `recipient_id`), `buildTransferResult`, header `Idempotency-Key`, `buildBalanceResult`; roteamento do webhook (repasse casa antes de saque) |
 | Vitest | gating do botão por papel, diálogo de confirmação, valor exibido |
 
-## Primeiro repasse real
+## Primeiro repasse real: pendente, por decisão
 
-Decidido em 11/09/2026: depois do deploy, **um repasse de valor baixo**, com parceiro e valor
-definidos pelo usuário. O alvo natural é a **Agência Fera** (`re_cms7wc1eievek0l9tfxnb8wz2`,
-`active`), única empresa com dívida real aberta: R$ 76,50 da MP-BE2E2B, a primeira venda sem split.
-É dinheiro da própria casa, então o teste não envolve terceiro.
+Tudo está no ar e o caminho foi ensaiado com os dados reais em transação revertida: o painel lista
+a **Agência Fera** com R$ 76,50 em aberto (`re_cms7wc1eievek0l9tfxnb8wz2`, `active`), e a RPC monta
+o pedido com as duas pernas corretas (`re_cms5cvg…` → `re_cms7wc1…`) e chave de idempotência
+própria. O único passo nunca exercitado é a chamada `POST /transfers` em si.
+
+Decidido em 11/09/2026: **nenhum repasse automático de validação.** O primeiro clique é de gente,
+em Manager › Repasses. Quem apertar deve conferir depois:
+
+1. `payout_transfer` com `external_transfer_id` preenchido e status `processing` ou `paid`.
+2. O evento `transfer.*` caindo em `payout_transfer`, **não** em `payout_withdrawal` (é o que a
+   ordem do ramo no `pagarme-webhook` garante, e é o erro mais fácil de não perceber).
+3. O painel recalculando o devido para R$ 0,00 depois de `paid`.
+
+Se a chamada falhar, a linha fica em `created` de propósito e o botão **retoma a mesma linha**, com
+a mesma chave de idempotência. Clicar de novo não cria um segundo repasse.
