@@ -90,11 +90,40 @@ O host nunca é escrito à mão: vem de `siteUrl()` (ver `src/lib/site.ts`).
 No Wix e no Google Sites, o bloco de incorporar HTML renderiza o conteúdo dentro
 de um **iframe**. Um link dentro de um iframe pertence ao documento do iframe, não
 à página que o hospeda, então ele não transfere autoridade do domínio do parceiro
-para o nosso. O selo ficaria visível e não valeria nada.
+para o nosso. O selo ficaria visível e não valeria nada. O Squarespace e o Webflow
+inserem o embed no próprio DOM e recebem o snippet normalmente.
 
-Por isso a página oferece, para esses casos, os dois valores separados (o texto e
-a URL) e manda criar um elemento de texto comum com link aplicado. O Squarespace e
-o Webflow inserem o embed no próprio DOM e recebem o snippet normalmente.
+Para o Wix, a página tem seção própria (`PassoAPassoWix`) com dois caminhos, os
+dois com link de verdade:
+
+1. **Caixa e texto do editor** (recomendado). O parceiro reproduz o desenho com os
+   elementos nativos, e o link é aplicado no texto. A âncora continua sendo texto,
+   que é o que mais conta.
+2. **O selo como imagem**, com o link aplicado nela. O desenho sai idêntico, mas
+   quem faz o papel da âncora passa a ser o `alt`, que vale menos.
+
+A ficha com os valores do desenho (cor, borda, raio, respiro, corpo, peso) é
+publicada na página a partir de `ESPECIFICACAO`, `RAIO`, `CORPO` e `RESPIRO`, as
+mesmas constantes que montam o CSS do snippet. Com duas listas, a do código e a da
+instrução, a segunda envelheceria calada.
+
+### Os PNGs são gerados, nunca desenhados
+
+`scripts/gerar-selo-png.ts` (`bun run gen:selo`) renderiza o HTML de
+`gerarSnippet` num Chromium do Playwright e fotografa o elemento, em 3x e com fundo
+transparente fora da moldura. São 10 arquivos em `public/selo/` (5 frases x 2
+fundos).
+
+O motivo de não abrir o Figma: uma imagem desenhada à mão seria a segunda verdade
+do selo, livre para divergir do código na primeira vez que alguém mudasse uma cor,
+e ninguém notaria. `PassoAPassoWix.test.tsx` reprova se uma frase nova entrar no
+catálogo sem o PNG correspondente.
+
+Nada de README ou nota dentro de `public/selo/`: a pasta é servida, e a nota
+interna viraria uma URL pública.
+
+O símbolo solto, para quem monta a caixa à mão, reusa os PNGs que já existiam para
+os e-mails (`/brand/simbolo-movepark-email.png` e `-white-email.png`).
 
 ## Onde a página vive
 
@@ -118,5 +147,6 @@ exceção consciente ao padrão da skill `harmonizar-paginas`.
 
 - Não há contagem de quantos parceiros instalaram o selo. Hoje isso só aparece
   como tráfego por `utm_source` no analytics, e só para quem preencheu o nome.
-- O texto do selo não tem versão em imagem. Se algum parceiro pedir, a decisão
-  precisa pesar que âncora de imagem vale menos que âncora de texto.
+- O passo a passo do Wix foi escrito a partir da interface do editor, e não
+  verificado numa conta real. Se o Wix renomear um menu, o texto envelhece sem
+  quebrar teste nenhum.

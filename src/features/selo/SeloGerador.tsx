@@ -1,19 +1,10 @@
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Check, Copy } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import {
-  FRASES,
-  gerarSnippet,
-  montarUrl,
-  textoDoSelo,
-  type Estilo,
-  type FraseId,
-  type Fundo,
-} from "./selo.logic";
+import { BotaoCopiar } from "./BotaoCopiar";
+import { PassoAPassoWix } from "./PassoAPassoWix";
+import { FRASES, gerarSnippet, type Estilo, type FraseId, type Fundo } from "./selo.logic";
 
 const ESTILOS: { id: Estilo; label: string }[] = [
   { id: "caixa", label: "Com moldura" },
@@ -71,25 +62,11 @@ export function SeloGerador() {
   const [estilo, setEstilo] = useState<Estilo>("caixa");
   const [fundo, setFundo] = useState<Fundo>("claro");
   const [parceiro, setParceiro] = useState("");
-  const [copiado, setCopiado] = useState<"html" | "url" | "texto" | null>(null);
 
   const snippet = useMemo(
     () => gerarSnippet({ frase, estilo, fundo, parceiro }),
     [frase, estilo, fundo, parceiro],
   );
-  const url = useMemo(() => montarUrl(parceiro), [parceiro]);
-  const texto = textoDoSelo(frase);
-
-  async function copiar(valor: string, qual: "html" | "url" | "texto") {
-    try {
-      await navigator.clipboard.writeText(valor);
-      setCopiado(qual);
-      toast.success("Copiado");
-      window.setTimeout(() => setCopiado(null), 2000);
-    } catch {
-      toast.error("Seu navegador bloqueou a cópia. Selecione o texto e copie na mão.");
-    }
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -165,40 +142,16 @@ export function SeloGerador() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-4">
               <span className="text-body-sm font-medium text-ink">Código para colar</span>
-              <Button size="sm" variant="secondary" onClick={() => copiar(snippet, "html")}>
-                {copiado === "html" ? <Check weight="bold" /> : <Copy />}
-                Copiar
-              </Button>
+              <BotaoCopiar valor={snippet} />
             </div>
             <pre className="overflow-x-auto rounded-sm border border-hairline bg-surface-soft p-4 text-body-sm text-body">
               <code>{snippet}</code>
             </pre>
           </div>
-
-          <div className="flex flex-col gap-3 rounded-sm border border-hairline p-4">
-            <p className="text-title-md text-ink">Site em Wix, Squarespace ou Google Sites?</p>
-            <p className="text-pretty text-body-sm text-body">
-              Nesses construtores, não use o bloco de incorporar HTML. Ele monta o código dentro de
-              uma moldura isolada, e o link deixa de contar. Crie um texto no rodapé e aplique o
-              link nele, com estes dois valores.
-            </p>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-3 rounded-sm bg-surface-soft px-3 py-2">
-                <span className="truncate text-body-sm text-body">{texto}</span>
-                <Button size="sm" variant="ghost" onClick={() => copiar(texto, "texto")}>
-                  {copiado === "texto" ? "Copiado" : "Copiar texto"}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between gap-3 rounded-sm bg-surface-soft px-3 py-2">
-                <span className="truncate text-body-sm text-body">{url}</span>
-                <Button size="sm" variant="ghost" onClick={() => copiar(url, "url")}>
-                  {copiado === "url" ? "Copiado" : "Copiar link"}
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
+
+      <PassoAPassoWix frase={frase} fundo={fundo} />
     </div>
   );
 }

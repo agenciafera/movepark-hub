@@ -103,11 +103,46 @@ export function montarUrl(parceiro?: string): string {
 
 const FONTE = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
+/**
+ * Os valores do desenho, por fundo.
+ *
+ * Ficam aqui, e não soltos na string de CSS, porque a página também os publica como
+ * ficha técnica: quem monta o selo à mão no editor do Wix precisa dos mesmos números.
+ * Com duas listas, a do código e a da instrução, a segunda envelheceria calada.
+ */
+export const ESPECIFICACAO = {
+  claro: {
+    texto: "#29263F",
+    fundo: "#FFFFFF",
+    borda: "#E6E6EA",
+    /** Como a borda se diz para quem vai digitar o valor no editor do Wix. */
+    bordaLegivel: "#E6E6EA",
+    fundoLegivel: "#FFFFFF",
+  },
+  escuro: {
+    texto: "#FFFFFF",
+    fundo: "transparent",
+    borda: "rgba(255,255,255,0.24)",
+    bordaLegivel: "branco com 24% de opacidade",
+    fundoLegivel: "sem preenchimento",
+  },
+} as const;
+
+/** Raio do canto, em px. */
+export const RAIO = 10;
+/** Corpo do texto, em px. O prefixo vai em peso 500 e a marca em 700. */
+export const CORPO = 13;
+/** Respiro interno da moldura, em px. */
+export const RESPIRO = { vertical: 7, horizontal: 12 } as const;
+/** Altura do símbolo ao lado do texto, em px. */
+export const ALTURA_DO_SIMBOLO = 13;
+
 /** O navy do símbolo vira branco sobre fundo escuro, senão os dois triângulos somem. */
 function simbolo(fundo: Fundo): string {
   const navy = fundo === "escuro" ? "#FFFFFF" : "#29263F";
+  const largura = Math.round((ALTURA_DO_SIMBOLO * 113) / 73);
   return [
-    '<svg width="20" height="13" viewBox="0 0 113 73" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="flex:none">',
+    `<svg width="${largura}" height="${ALTURA_DO_SIMBOLO}" viewBox="0 0 113 73" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="flex:none">`,
     '<path d="M31.3281 72.2007H58.5883L112.091 0H84.8308L31.3281 72.2007Z" fill="#DA455E"/>',
     '<path d="M9.70703 72.2007H25.3143L78.7982 0H63.1909L9.70703 72.2007Z" fill="#A6DBDF"/>',
     `<path d="M0 72.2007H3.92435L57.4083 0H53.4839L0 72.2007Z" fill="${navy}"/>`,
@@ -118,8 +153,8 @@ function simbolo(fundo: Fundo): string {
 }
 
 function estiloDoLink(estilo: Estilo, fundo: Fundo): string {
-  const cor = fundo === "escuro" ? "#FFFFFF" : "#29263F";
-  const comum = `color:${cor};font-family:${FONTE};font-size:13px;line-height:1;text-decoration:none`;
+  const spec = ESPECIFICACAO[fundo];
+  const comum = `color:${spec.texto};font-family:${FONTE};font-size:${CORPO}px;line-height:1;text-decoration:none`;
 
   if (estilo === "texto") {
     return `${comum};font-weight:600`;
@@ -128,13 +163,12 @@ function estiloDoLink(estilo: Estilo, fundo: Fundo): string {
   // Sobre escuro a moldura é transparente, e não navy: o rodapé do parceiro pode ser
   // preto, grafite ou uma foto, e um retângulo navy chapado apareceria como remendo.
   // Sobre claro o branco fica, porque aí ele é o que destaca o selo do cinza do rodapé.
-  const caixa =
-    fundo === "escuro"
-      ? "border:1px solid rgba(255,255,255,0.24);background:transparent"
-      : "border:1px solid #E6E6EA;background:#FFFFFF";
-
+  const caixa = `border:1px solid ${spec.borda};background:${spec.fundo}`;
   const base = `display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-weight:500;${comum}`;
-  return estilo === "caixa" ? `${base};padding:7px 12px;border-radius:10px;${caixa}` : base;
+
+  return estilo === "caixa"
+    ? `${base};padding:${RESPIRO.vertical}px ${RESPIRO.horizontal}px;border-radius:${RAIO}px;${caixa}`
+    : base;
 }
 
 /**

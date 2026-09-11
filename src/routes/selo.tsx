@@ -28,8 +28,7 @@ const PLATAFORMAS = [
   },
   {
     nome: "Wix",
-    passos:
-      "Não use o bloco de incorporar HTML. No rodapé, adicione um texto, escreva a frase do selo, selecione a palavra Movepark e aplique o link. Deixe a opção nofollow desligada.",
+    passos: "Não recebe o código. Siga o passo a passo do Wix, logo acima nesta página.",
   },
   {
     nome: "Squarespace",
@@ -46,8 +45,7 @@ const PLATAFORMAS = [
   },
   {
     nome: "Google Sites",
-    passos:
-      "Mesma orientação do Wix: escreva o texto no rodapé e aplique o link nele, em vez de incorporar código.",
+    passos: "Também não recebe o código. Vale o mesmo passo a passo do Wix.",
   },
 ];
 
@@ -104,7 +102,7 @@ export default function SeloPage() {
         <SeloGerador />
 
         <section className="flex flex-col gap-6">
-          <h2 className="text-balance text-display-sm text-ink">Onde colar no seu site</h2>
+          <h2 className="text-balance text-display-sm text-ink">Onde colar no seu site?</h2>
           <dl className="grid gap-x-8 gap-y-6 tablet:grid-cols-2">
             {PLATAFORMAS.map((p) => (
               <div key={p.nome} className="flex flex-col gap-1">
