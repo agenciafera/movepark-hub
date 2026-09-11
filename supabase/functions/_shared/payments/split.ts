@@ -27,8 +27,18 @@ export interface BuildSplitArgs {
   /** Preço base da reserva — base do repasse ao parceiro e da comissão. */
   baseCents: number;
   takeRateBps: number; // basis points (1500 = 15%)
-  moveparkRecipientId: string;
-  partnerRecipientId: string;
+  moveparkRecipientId: string | null;
+  partnerRecipientId: string | null;
+  /**
+   * Os ids são obrigatórios? `true` quando o split VAI ao gateway (ele precisa saber para quem
+   * mandar). `false` no modo de custódia: ali a cobrança cai inteira na conta da Movepark, o split
+   * fica só como razão do que devemos, e exigir recebedor recusaria com 409 uma venda que o gateway
+   * aceita. Publicar no catálogo e estar apto a receber são concerns separados por desenho (E1.9
+   * deixa o parceiro publicar antes do KYC), e o código não pode reamarrar os dois.
+   *
+   * Default `true`: quem não disser nada continua no comportamento estrito.
+   */
+  requireRecipients?: boolean;
 }
 
 /**
@@ -41,6 +51,7 @@ export function buildSplit({
   takeRateBps,
   moveparkRecipientId,
   partnerRecipientId,
+  requireRecipients = true,
 }: BuildSplitArgs): SplitRule[] {
   if (!Number.isInteger(baseCents) || baseCents <= 0) {
     throw new Error("Valor da cobrança inválido.");
@@ -48,7 +59,9 @@ export function buildSplit({
   if (!Number.isInteger(chargedCents) || chargedCents < baseCents) {
     throw new Error("Valor cobrado inválido (menor que o preço base).");
   }
-  if (!partnerRecipientId) throw new Error("Recebedor do parceiro ausente.");
+  if (requireRecipients && !partnerRecipientId) {
+    throw new Error("Recebedor do parceiro ausente.");
+  }
 
   const commission = Math.min(
     baseCents,
@@ -64,7 +77,7 @@ export function buildSplit({
   // Parceiro: absorve taxa e risco; recebe o líquido do preço base.
   const rules: SplitRule[] = [
     {
-      recipientId: partnerRecipientId,
+      recipientId: partnerRecipientId ?? null,
       amount: partnerAmount,
       type: "flat",
       liable: true,
@@ -75,9 +88,11 @@ export function buildSplit({
 
   // Movepark: comissão + excedente, sem taxa/risco.
   if (moveparkAmount > 0) {
-    if (!moveparkRecipientId) throw new Error("Recebedor master da Movepark não configurado.");
+    if (requireRecipients && !moveparkRecipientId) {
+      throw new Error("Recebedor master da Movepark não configurado.");
+    }
     rules.push({
-      recipientId: moveparkRecipientId,
+      recipientId: moveparkRecipientId ?? null,
       amount: moveparkAmount,
       type: "flat",
       liable: false,

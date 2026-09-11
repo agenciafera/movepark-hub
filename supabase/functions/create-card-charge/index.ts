@@ -17,6 +17,7 @@ import {
   getGateway,
   GatewayConfigError,
   isGatewaySplitEnabled,
+  pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
@@ -127,10 +128,6 @@ Deno.serve(async (req: Request) => {
     .eq("provider", "pagarme")
     .is("deleted_at", null)
     .maybeSingle();
-  if (!recipient?.external_recipient_id) {
-    return jsonResponse({ error: "O estacionamento ainda não tem recebedor ativo no gateway." }, 409);
-  }
-
   // 3. Recebedor master da Movepark + política de parcelamento (Manager)
   const { data: settings } = await admin
     .from("app_setting")
@@ -139,6 +136,19 @@ Deno.serve(async (req: Request) => {
   const settingMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]));
   const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
   const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
+
+  // Com a custódia ligada o split NÃO vai ao gateway e a cobrança cai inteira na conta da Movepark,
+  // então o recebedor do parceiro não é pré-requisito para VENDER. Ele só faz falta na hora do
+  // repasse, e lá a RPC `payout_transfer_request` exige que esteja `active`. Exigir aqui recusava
+  // com 409 uma venda que o gateway aceita, e reamarrava "publicar no catálogo" a "estar apto a
+  // receber", que o E1.9 separou de propósito (o parceiro publica antes do KYC).
+  if (splitEnabled && !recipient?.external_recipient_id) {
+    return jsonResponse(
+      { error: "O estacionamento ainda não tem recebedor ativo no gateway." },
+      409,
+    );
+  }
+
   const policy = parseInstallmentPolicy(settingMap.card_installment_policy);
   if (!policy.enabled) return jsonResponse({ error: "Pagamento com cartão indisponível." }, 422);
 
@@ -162,7 +172,8 @@ Deno.serve(async (req: Request) => {
       baseCents: partnerBaseCents,
       takeRateBps: company?.take_rate_bps ?? 0,
       moveparkRecipientId,
-      partnerRecipientId: recipient.external_recipient_id,
+      partnerRecipientId: recipient?.external_recipient_id ?? null,
+      requireRecipients: splitEnabled,
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
@@ -269,11 +280,13 @@ Deno.serve(async (req: Request) => {
 
   // 9b. Renova o hold enquanto pending (E0.3.1-a). Cartão aprovado inline vira confirmed (a RPC zera
   // o expires_at); cartão em análise (authorized/pending) mantém o hold vivo até o webhook.
+  // Mesmo helper das cobranças PIX: `Number(holdMin ?? 30)` virava NaN quando a RPC não respondia,
+  // e um `expires_at` inválido apaga o hold em vez de renovar.
   const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
-  const holdMinutes = Number(holdMin ?? 30);
+  const holdSeconds = pixExpiresInSeconds(holdMin);
   await admin
     .from("booking")
-    .update({ expires_at: new Date(Date.now() + holdMinutes * 60_000).toISOString() })
+    .update({ expires_at: new Date(Date.now() + holdSeconds * 1000).toISOString() })
     .eq("id", booking.id)
     .eq("status", "pending");
 

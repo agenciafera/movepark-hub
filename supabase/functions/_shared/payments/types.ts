@@ -134,7 +134,11 @@ export type ChargeStatus = "pending" | "authorized" | "paid" | "failed" | "refun
 
 /** Uma perna do split: quanto vai pra qual recebedor e quem arca taxa/risco. */
 export interface SplitRule {
-  recipientId: string;
+  /**
+   * Recebedor no gateway. `null` no modo de custódia: ali o split não é enviado, a perna existe
+   * só como razão do que devemos, e quem lê esse razão usa `liable` e o valor, nunca o id.
+   */
+  recipientId: string | null;
   /** Em centavos quando type='flat'; em % (0–100) quando type='percentage'. */
   amount: number;
   type: "flat" | "percentage";

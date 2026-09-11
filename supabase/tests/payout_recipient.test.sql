@@ -50,11 +50,11 @@ select is(
   array['draft','pending','action_required','active','refused','suspended'],
   'enum payout_recipient_status tem os 6 estados na ordem');
 
--- ── 2: take_rate_bps default 1500 ────────────────────────────────────────────
+-- ── 2: take_rate_bps default 2000 ────────────────────────────────────────────
 select is(
   (select take_rate_bps from public.company where id = current_setting('test.cid_a')::uuid),
-  1500,
-  'company.take_rate_bps default = 1500');
+  2000,
+  'company.take_rate_bps default = 2000 (20%), igual à produção');
 
 -- ── 3: unique (company, provider) onde deleted_at is null ────────────────────
 select throws_ok(

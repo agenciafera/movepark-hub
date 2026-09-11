@@ -117,13 +117,6 @@ Deno.serve(async (req: Request) => {
     .eq("provider", "pagarme")
     .is("deleted_at", null)
     .maybeSingle();
-  if (!recipient?.external_recipient_id) {
-    return jsonResponse(
-      { error: "O estacionamento ainda não tem recebedor ativo no gateway." },
-      409,
-    );
-  }
-
   // 3. Recebedor master da Movepark (configurável no Manager)
   const { data: settings } = await admin
     .from("app_setting")
@@ -134,6 +127,19 @@ Deno.serve(async (req: Request) => {
   );
   const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
   const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
+
+  // Com a custódia ligada o split NÃO vai ao gateway e a cobrança cai inteira na conta da Movepark,
+  // então o recebedor do parceiro não é pré-requisito para VENDER. Ele só faz falta na hora do
+  // repasse, e lá a RPC `payout_transfer_request` exige que esteja `active`. Exigir aqui recusava
+  // com 409 uma venda que o gateway aceita, e reamarrava "publicar no catálogo" a "estar apto a
+  // receber", que o E1.9 separou de propósito (o parceiro publica antes do KYC).
+  if (splitEnabled && !recipient?.external_recipient_id) {
+    return jsonResponse(
+      { error: "O estacionamento ainda não tem recebedor ativo no gateway." },
+      409,
+    );
+  }
+
 
   // 4. Split. A Tarifa (E2.8) é receita de serviço Movepark, FORA do split da vaga: o base do
   // parceiro exclui a tarifa, e o excedente (= tarifa) cai na perna da Movepark via buildSplit.
@@ -147,7 +153,8 @@ Deno.serve(async (req: Request) => {
       baseCents: partnerBaseCents,
       takeRateBps: company?.take_rate_bps ?? 0,
       moveparkRecipientId,
-      partnerRecipientId: recipient.external_recipient_id,
+      partnerRecipientId: recipient?.external_recipient_id ?? null,
+      requireRecipients: splitEnabled,
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);

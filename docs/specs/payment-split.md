@@ -158,6 +158,31 @@ consultas sequenciais. Com o default a Edge roda até o fim, mas o `pg_net` desi
 O job envia `timeout_milliseconds := 60000`. Os outros crons de reconciliação usam o default e têm
 o mesmo risco quando o lote cresce.
 
+### Corrigido em 11/09/2026: vender não depende mais de ter recebedor
+
+Com a custódia ligada o split **não** vai ao gateway e a cobrança cai inteira na conta da Movepark.
+Mesmo assim, `create-pix-charge` e `create-card-charge` recusavam com **409** qualquer unidade cujo
+parceiro não tivesse `payout_recipient.external_recipient_id`. Exigiam um recebedor que aquele
+caminho não usa.
+
+Isso contradizia duas decisões do próprio projeto: a separação entre "publicar no catálogo" e
+"estar apto a receber" (a razão de `payout_recipient.status` existir à parte do `onboarding_status`,
+logo abaixo), e o E1.9, que deixa o parceiro publicar **antes** do KYC de propósito. Na prática,
+todo parceiro que publicasse e recebesse reserva antes de concluir o KYC via o cliente chegar até a
+tela de pagamento e travar ali, depois de preencher tudo.
+
+O gate passou a ser condicional (`splitEnabled && !recipient`), e `buildSplit` ganhou
+`requireRecipients`: com o split indo ao gateway os ids seguem obrigatórios (ele precisa saber para
+quem mandar); em custódia a perna do parceiro nasce com `recipientId: null`. O snapshot continua
+sendo gravado, porque é o razão do que devemos, e quem lê esse razão (`payout_owed_cents`,
+`payout_statement`) usa `liable` e o valor, **nunca** o `recipientId`; o repasse pega o destino em
+`payout_recipient`. Resultado: vende agora, paga quando o KYC sair, e a
+[RPC do repasse](./repasse-ao-parceiro.md) continua exigindo recebedor `active` na hora de mover o
+dinheiro.
+
+Cinco unidades estavam nesse estado em produção (Airpark Faro e Lisboa, Redpark Lisboa, Skypark
+Lisboa e Moveparking Nova Iguaçu, todas do seed de 27/05/2026).
+
 ## Por que um estado próprio de "ficha para receber"
 
 `company.onboarding_status` (`pending_review→approved→in_progress→active→rejected`) é sobre
@@ -171,7 +196,7 @@ Separa três conceitos:
 
 | Tabela / coluna | Concern | Agnóstico ao gateway? |
 |---|---|---|
-| `company.take_rate_bps` | Comissão da Movepark retida no split (basis points; default global `app_setting.default_take_rate_bps` = `1500` = 15%). Por **empresa**. Editável em **Manager › Financeiro › Comissões** (`/manager/finance/commissions`), via RPC `set_company_take_rate` (gate `is_hub_admin`, valida 0..10000; migration `20260723000000`). O **Faturamento** (`finance-billing`) calcula a comissão com essa taxa real por empresa (não há mais taxa fixa). | ✅ |
+| `company.take_rate_bps` | Comissão da Movepark retida no split (basis points; default global `app_setting.default_take_rate_bps` = `2000` = **20%**, e o mesmo valor no default da coluna). Nasceu 1500 na migration `20260627000000` e foi para 2000 **à mão em produção**, sem migration; o repo só se alinhou em 11/09/2026 (`20261116093000`), até então um stack novo nascia cobrando 5 pontos a menos sem ninguém notar. Por **empresa**. Editável em **Manager › Financeiro › Comissões** (`/manager/finance/commissions`), via RPC `set_company_take_rate` (gate `is_hub_admin`, valida 0..10000; migration `20260723000000`). O **Faturamento** (`finance-billing`) calcula a comissão com essa taxa real por empresa (não há mais taxa fixa). | ✅ |
 | `company_payout_account` (1:1 com company) | Dados de **banco/KYC** do parceiro (CNPJ/CPF, conta, titular). Preenchido na UI da Movepark (E1.3). **Nunca** exposto ao front. | ✅ |
 | `payout_recipient` (único por `(company_id, provider)`) | Registro do recebedor **no gateway**: `external_recipient_id`, `status`, `last_provider_status` (cru), `kyc_url`, `requirements` (pendências). | ❌ (por provider) |
 | `payout_recipient_event` (append-only) | **Log** de cada interação com o gateway (`create`/`refresh`/`webhook`): `http_status`, `request` (redigido), `response` cru. Fonte das pendências a comunicar ao parceiro. | — |

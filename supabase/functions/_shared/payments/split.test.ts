@@ -140,3 +140,76 @@ Deno.test("isGatewaySplitEnabled: só 'false' desliga", () => {
   assertEquals(isGatewaySplitEnabled("true"), true);
   assertEquals(isGatewaySplitEnabled("qualquer coisa"), true);
 });
+
+// ── Custódia: o recebedor do parceiro não é pré-requisito para VENDER ────────
+// Com o split desligado, o pedido sai sem a chave `split` e a cobrança cai inteira na conta da
+// Movepark. Exigir o recebedor do parceiro nesse caminho recusava com 409 uma venda que o gateway
+// aceitaria, e contradiz a separação que a própria spec faz: publicar no catálogo é um concern,
+// estar apto a receber é outro (E1.9 deixa o parceiro publicar antes do KYC de propósito).
+//
+// O snapshot continua sendo gravado, porque é o razão do que devemos. Quem lê esse razão
+// (payout_owed_cents, payout_statement) usa `liable` e o valor, nunca o `recipientId`, e o repasse
+// pega o destino em `payout_recipient`. Por isso a perna pode nascer sem id.
+
+Deno.test("custódia: monta o razão sem recebedor do parceiro", () => {
+  const rules = buildSplit({
+    chargedCents: 10000,
+    baseCents: 10000,
+    takeRateBps: 2000,
+    moveparkRecipientId: "re_master",
+    partnerRecipientId: null,
+    requireRecipients: false,
+  });
+  assertEquals(rules.length, 2);
+  assertEquals(rules[0].amount, 8000);
+  assertEquals(rules[0].liable, true);
+  assertEquals(rules[0].recipientId, null);
+  assertEquals(rules[1].amount, 2000);
+  assertEquals(rules[1].liable, false);
+});
+
+Deno.test("custódia: a invariante da soma continua valendo", () => {
+  const rules = buildSplit({
+    chargedCents: 10290,
+    baseCents: 10290,
+    takeRateBps: 2000,
+    moveparkRecipientId: null,
+    partnerRecipientId: null,
+    requireRecipients: false,
+  });
+  assertEquals(rules.reduce((a, r) => a + r.amount, 0), 10290);
+});
+
+Deno.test("com split no gateway, o recebedor do parceiro segue obrigatório", () => {
+  let erro: string | null = null;
+  try {
+    buildSplit({
+      chargedCents: 10000,
+      baseCents: 10000,
+      takeRateBps: 2000,
+      moveparkRecipientId: "re_master",
+      partnerRecipientId: null,
+      requireRecipients: true,
+    });
+  } catch (e) {
+    erro = e instanceof Error ? e.message : String(e);
+  }
+  assertEquals(erro, "Recebedor do parceiro ausente.");
+});
+
+Deno.test("com split no gateway, o master segue obrigatório quando há comissão", () => {
+  let erro: string | null = null;
+  try {
+    buildSplit({
+      chargedCents: 10000,
+      baseCents: 10000,
+      takeRateBps: 2000,
+      moveparkRecipientId: null,
+      partnerRecipientId: "re_parceiro",
+      requireRecipients: true,
+    });
+  } catch (e) {
+    erro = e instanceof Error ? e.message : String(e);
+  }
+  assertEquals(erro, "Recebedor master da Movepark não configurado.");
+});
