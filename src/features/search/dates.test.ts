@@ -1,18 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { defaultSearchRange, resolveSearchDates, stretchParamsToMinStay } from "./dates";
+import {
+  defaultSearchDates,
+  defaultSearchRange,
+  resolveSearchDates,
+  stretchParamsToMinStay,
+} from "./dates";
 
 const NOW = new Date("2026-06-10T15:30:00.000Z");
 
 describe("defaultSearchRange", () => {
-  it("retorna amanhã às 10h por 1 diária", () => {
+  it("retorna amanhã às 22h, saindo às 8h cinco dias depois", () => {
     const { from, to } = defaultSearchRange(NOW);
     const f = new Date(from);
     const t = new Date(to);
     // dia seguinte ao 'now'
     expect(f.getDate()).toBe(new Date(NOW.getTime() + 86400000).getDate());
-    expect(f.getHours()).toBe(10);
-    // 1 diária
-    expect((t.getTime() - f.getTime()) / 86400000).toBe(1);
+    expect(f.getHours()).toBe(22);
+    expect(t.getHours()).toBe(8);
+    // 4 dias e 10 horas
+    expect((t.getTime() - f.getTime()) / 3600000).toBe(4 * 24 + 10);
+  });
+
+  /**
+   * A barra de busca e a lista de resultados respondiam a mesma pergunta com números
+   * diferentes: a barra propunha amanhã 22h por 5 diárias e a lista buscava amanhã 10h por 1.
+   * Em `/search` sem datas o cliente lia um período no topo e recebia o resultado de outro, e
+   * clicar na lupa sem mexer em nada saltava de 8 para 18 vagas, porque as 10 que somem têm
+   * estadia mínima de 2 ou 3 diárias e não vendem uma noite. Fonte única aqui.
+   */
+  it("é a mesma janela que a barra de busca propõe", () => {
+    const pill = defaultSearchDates(NOW);
+    const lista = defaultSearchRange(NOW);
+    expect(pill.from.toISOString()).toBe(lista.from);
+    expect(pill.to.toISOString()).toBe(lista.to);
   });
 });
 

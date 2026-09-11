@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { addDays, addHours, set } from "date-fns";
 import { Bicycle, Car, MagnifyingGlass } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +12,7 @@ import {
 import { DestinationCombobox } from "./DestinationCombobox";
 import { DateRangePicker } from "./DateRangePicker";
 import { buildSearchParams, type Vehicle } from "./SearchBarPill.logic";
+import { defaultSearchDates } from "./dates";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -31,15 +31,6 @@ type Props = {
   onSubmit?: () => void;
 };
 
-function nextWeekendDefaults(): { from: Date; to: Date } {
-  const now = new Date();
-  const from = addHours(set(now, { minutes: 0, seconds: 0, milliseconds: 0 }), 24);
-  // 22:00 next day
-  const fromAt22 = set(from, { hours: 22 });
-  const to = set(addDays(fromAt22, 5), { hours: 8 });
-  return { from: fromAt22, to };
-}
-
 export function SearchBarPill({
   variant = "hero",
   className,
@@ -53,7 +44,10 @@ export function SearchBarPill({
 }: Props) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaults = React.useMemo(nextWeekendDefaults, []);
+  // A mesma janela que a lista de resultados assume quando a URL não traz datas. As duas
+  // saem de `dates.ts` de propósito: com contas separadas, a barra propunha um período e a
+  // busca respondia por outro.
+  const defaults = React.useMemo(() => defaultSearchDates(new Date()), []);
   const [dest, setDest] = React.useState<string | null>(initialDest);
   const [point, setPoint] = React.useState<string | null>(initialPoint);
   const [from, setFrom] = React.useState<Date | null>(initialFrom ?? defaults.from);

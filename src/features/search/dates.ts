@@ -5,13 +5,32 @@
 
 export type ResolvedDates = { from: string; to: string; isEstimate: boolean };
 
-/** Período padrão: amanhã às 10h por 1 diária. */
-export function defaultSearchRange(now: Date): { from: string; to: string } {
+/**
+ * Período padrão da busca: amanhã às 22h, saindo às 8h cinco dias depois.
+ *
+ * É a MESMA janela que a barra de busca propõe, e tem que continuar sendo: até 11/09/2026 havia
+ * duas contas para a mesma pergunta, e a barra dizia amanhã 22h por 5 diárias enquanto a lista
+ * buscava amanhã 10h por 1 diária. Em `/search` sem datas o cliente lia um período no topo e
+ * recebia o resultado de outro, e clicar na lupa sem mexer em nada saltava de 8 para 18 vagas.
+ *
+ * O salto não era defeito do filtro: as 10 vagas que somem exigem 2 ou 3 diárias e realmente não
+ * vendem uma noite. O defeito era propor justamente a janela em que metade do catálogo não vende.
+ * A janela de viagem (sair à noite, voltar de manhã, cinco dias depois) é a que descreve quem
+ * procura estacionamento de aeroporto.
+ */
+export function defaultSearchDates(now: Date): { from: Date; to: Date } {
   const from = new Date(now);
-  from.setDate(from.getDate() + 1);
-  from.setHours(10, 0, 0, 0);
+  from.setHours(from.getHours() + 24, 0, 0, 0);
+  from.setHours(22);
   const to = new Date(from);
-  to.setDate(to.getDate() + 1);
+  to.setDate(to.getDate() + 5);
+  to.setHours(8);
+  return { from, to };
+}
+
+/** A mesma janela de `defaultSearchDates`, em ISO, que é como a query e a URL falam. */
+export function defaultSearchRange(now: Date): { from: string; to: string } {
+  const { from, to } = defaultSearchDates(now);
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
