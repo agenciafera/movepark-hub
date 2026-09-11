@@ -87,15 +87,40 @@ de pé. Payload sem split, razão preservado.
 
 ### Pontos abertos que a custódia expõe
 
-- `payout_balance` soma só `status = 'paid'` e **não desconta estorno**. Isso era inofensivo quando
-  o gateway revertia proporcionalmente do parceiro; com custódia, vira repasse indevido.
 - `payout_withdrawal` só é alimentada pelos webhooks `transfer.*`. Sem saldo do parceiro no
   gateway, ela para de receber linhas e o "já transferido" da tela do parceiro congela.
 - A taxa real do gateway nunca entrou no nosso banco: o desconto acontecia dentro do Pagar.me pelo
   flag `charge_processing_fee`. Com custódia, a taxa é custo nosso e precisa virar lançamento.
-- `create-fare-upgrade` e `change-booking-dates-paid` gravam split de uma perna só, 100% Movepark,
-  mas com `liable: true`. Como `payout_statement` classifica `liable = true` como parceiro, essas
-  receitas entram no extrato como repasse devido. É bug independente da custódia.
+- **Não existe código que execute o repasse.** Nada no repo chama `POST /transfers`. O extrato diz
+  quanto devemos, e a saída do dinheiro é operação manual fora do sistema.
+
+### Corrigido em 11/09/2026: o extrato passou a devolver só o que é devido
+
+Migration `20261114101500_extrato_repasse_so_o_que_e_devido.sql`, pgTAP
+`payout_statement_correcao.test.sql`. Duas contas erradas em `payout_statement`/`payout_balance`:
+
+**Receita de serviço da Movepark entrava como dívida com o parceiro.** `create-fare-upgrade` e
+`change-booking-dates-paid` cobram valor 100% nosso e gravam o split com **uma perna**, apontando
+para o recebedor master, com `liable: true`. Esse `true` é exigência do gateway (o split precisa de
+um responsável por chargeback), não titularidade do dinheiro. Como a leitura classificava parceiro
+por `liable`, a Tarifa e a diferença de datas viravam repasse devido. Quem separa os casos agora é
+**`payment.kind`**: só `booking` tem perna de parceiro. Comparar o `recipientId` com
+`app_setting.pagarme_movepark_recipient_id` foi descartado, porque trocar o recebedor master
+reescreveria o passado de todo extrato já emitido.
+
+Medido em produção no dia da correção: **R$ 224,00** saíram da coluna de devido (Motion Park R$
+149,40 em 6 upgrades; Virapark R$ 24,90 em 2 upgrades mais R$ 49,70 de uma troca de datas).
+
+**Estorno parcial não era descontado.** O total muda o status para `refunded` e some do líquido
+sozinho; o parcial (evento `charge.partial_canceled`, hoje feito no painel da Pagar.me) deixa o
+pagamento em `paid` com `refunded_amount` preenchido, e o valor seguia contando inteiro. Com
+custódia isso é repasse indevido em dinheiro. O desconto agora é **proporcional nas duas pernas**,
+espelhando a reversão do gateway, e a identidade `bruto − estornado = líquido` continua fechando.
+Medido: **R$ 87,60** a menos no saldo do Virapark, de uma reserva de R$ 149,50 com R$ 109,50
+estornados.
+
+A linha do extrato (`p_include_lines`) passou a mostrar o valor já líquido do estorno parcial. Os
+nomes dos campos do JSON não mudaram, então o front não muda.
 
 ## Por que um estado próprio de "ficha para receber"
 
@@ -294,8 +319,16 @@ service_role).
 > ser fixa em 1 h e passa a ser **a config única** `app_setting.booking_hold_minutes` (default 30,
 > via `get_booking_hold_minutes()`), a **mesma** que governa `booking.expires_at`. Gerar o
 > PIX/cartão **renova** `booking.expires_at = now() + hold`, então o hold sempre cobre a validade do
-> QR — fim do desencontro que deixava dinheiro capturado sem vaga. Ver
+> QR, e acaba o desencontro que deixava dinheiro capturado sem vaga. Ver
 > [booking-flow.md](./booking-flow.md).
+>
+> **Vale para as quatro cobranças desde 11/09/2026.** `create-fare-upgrade` e
+> `change-booking-dates-paid` tinham ficado para trás, com `PIX_EXPIRES_IN_SECONDS = 3600` cravado
+> no arquivo. Na troca de datas isso não era cosmético: o `payment.expires_at` que sai de lá é o que
+> o cron `expire-date-change-holds` usa para soltar a vaga nova, então o QR e o hold da vaga eram
+> dois relógios diferentes. A conversão vive em `_shared/payments/hold.ts`
+> (`pixExpiresInSeconds`), que espelha a faixa da RPC (5 a 1440 minutos, default 30) para uma RPC
+> sem resposta não virar `NaN` no `expires_in` da cobrança.
 
 > **Recebedor master da Movepark:** configurável em `app_setting.pagarme_movepark_recipient_id`
 > (Manager). Use o de staging agora; trocar para produção é só editar o valor.

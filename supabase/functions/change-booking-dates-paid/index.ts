@@ -17,6 +17,7 @@ import {
   getGateway,
   GatewayConfigError,
   isGatewaySplitEnabled,
+  pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
@@ -33,8 +34,6 @@ function jsonResponse(body: unknown, status = 200) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
-const PIX_EXPIRES_IN_SECONDS = 3600;
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -272,7 +271,12 @@ Deno.serve(async (req: Request) => {
     // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
     // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
     split: splitEnabled ? split : undefined,
-    expiresInSeconds: PIX_EXPIRES_IN_SECONDS,
+    // Validade do QR = a mesma config de hold da reserva (E0.3.1-a). Aqui isso não é cosmético: o
+    // `payment.expires_at` que sai daqui é o que o cron `expire-date-change-holds` usa para soltar
+    // a vaga nova, então QR e hold da vaga precisam ser o mesmo relógio.
+    expiresInSeconds: pixExpiresInSeconds(
+      (await admin.rpc("get_booking_hold_minutes")).data,
+    ),
     metadata: { booking_id: booking.id, booking_code: booking.code, kind: "date_change" },
   });
   if (!result.orderId || (result.httpStatus ?? 500) >= 400) {

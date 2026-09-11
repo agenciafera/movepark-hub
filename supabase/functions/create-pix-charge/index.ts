@@ -17,6 +17,7 @@ import {
   chargeStatusToPaymentStatus,
   getGateway,
   GatewayConfigError,
+  pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
 import { buildPixItems, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
@@ -191,7 +192,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
-  const holdMinutes = Number(holdMin ?? 30);
+  const holdSeconds = pixExpiresInSeconds(holdMin);
 
   const result = await gateway.createPixCharge({
     externalCode: booking.code,
@@ -207,7 +208,7 @@ Deno.serve(async (req: Request) => {
     // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark. O
     // snapshot logo abaixo continua gravando as pernas, que é o razão do que devemos ao parceiro.
     split: splitEnabled ? split : undefined,
-    expiresInSeconds: holdMinutes * 60,
+    expiresInSeconds: holdSeconds,
     metadata: { booking_id: booking.id, booking_code: booking.code },
   });
 
@@ -236,7 +237,7 @@ Deno.serve(async (req: Request) => {
 
   // 8. Renova o hold: o "relógio de pagar" começa quando o cliente gera o PIX (E0.3.1-a). O hold
   // passa a cobrir a validade do QR (mesmo valor). Countdown e o polling do checkout herdam sozinhos.
-  const newExpiry = new Date(Date.now() + holdMinutes * 60_000).toISOString();
+  const newExpiry = new Date(Date.now() + holdSeconds * 1000).toISOString();
   await admin
     .from("booking")
     .update({ expires_at: newExpiry })

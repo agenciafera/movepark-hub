@@ -10,6 +10,7 @@ export * from "./types.ts";
 // (503 em qualquer request, inclusive OPTIONS), não a chamada. Ao exportar algo novo em split.ts
 // e usar numa função, acrescente aqui no mesmo commit.
 export { buildSplit, isGatewaySplitEnabled } from "./split.ts";
+export { HOLD_MINUTES_FALLBACK, pixExpiresInSeconds } from "./hold.ts";
 
 /** ChargeStatus (gateway) → enum SQL `payment_status` ('canceled' vira 'cancelled'). */
 export function chargeStatusToPaymentStatus(status: ChargeStatus): string {
