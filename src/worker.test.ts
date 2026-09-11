@@ -902,3 +902,149 @@ describe("gêmeo markdown segue o mesmo mapa de consolidação do HTML", () => {
     expect(blogRedirect(new URL("https://movepark.co/blog/feed.xml"))).toBeNull();
   });
 });
+
+/**
+ * Ficha de estacionamento que não existe: 404 na borda (docs/specs/borda-cloudflare.md).
+ *
+ * `/estacionamentos/*` inteiro estava na lista de rotas de app, então qualquer par
+ * destino/lote respondia 200 com a casca do SPA. Medido em 11/09/2026: nove unidades com
+ * `is_listed = true` cuja empresa a RLS pública não enxerga respondiam 200 com o `<title>`
+ * genérico da Movepark e nenhum conteúdo, que é o soft 404 que a regra veio matar.
+ *
+ * Fica no fim do arquivo pelo mesmo motivo do bloco de 404: o cache do manifesto e o dos
+ * veredictos vivem no escopo do módulo.
+ */
+describe("ficha de estacionamento inexistente", () => {
+  const MANIFESTO = ["/", "/estacionamentos", "/estacionamentos/aeroporto-guarulhos/aeropark", "/404"];
+  const CORPO_404 = "<!DOCTYPE html><html><body>Essa página não existe</body></html>";
+
+  function envFicha() {
+    const files: Record<string, { body: string; type: string }> = {
+      "/paths-manifest.json": { body: JSON.stringify(MANIFESTO), type: "application/json" },
+      "/404": { body: CORPO_404, type: "text/html" },
+    };
+    const assets = {
+      fetch: vi.fn(async (request: Request) => {
+        const { pathname } = new URL(request.url);
+        const hit = files[pathname];
+        if (hit) return new Response(hit.body, { status: 200, headers: { "Content-Type": hit.type } });
+        return new Response(HTML, { status: 200, headers: { "Content-Type": "text/html" } });
+      }),
+    };
+    return { ASSETS: assets, ...SUPA };
+  }
+
+  /**
+   * Roteia o que o worker pergunta ao Supabase: o mapa de 301 (vazio, sem redirect) e as
+   * duas famílias da ficha. `unidades` e `mapeados` são os pares `destino/lote` que existem.
+   */
+  function stubBanco(
+    unidades: string[],
+    mapeados: string[] = [],
+    opts?: { forcaErro?: boolean },
+  ) {
+    const spy = vi.fn(async (input: unknown) => {
+      const alvo = new URL(input instanceof Request ? input.url : String(input));
+      if (alvo.pathname.includes("/rpc/url_legacy_map")) return linhasRpc([]);
+      if (opts?.forcaErro) return new Response("boom", { status: 500 });
+
+      const lote = (alvo.searchParams.get("public_slug") ?? "").replace("eq.", "");
+      const destino = (alvo.searchParams.get("destination.public_slug") ?? "").replace("eq.", "");
+      const lista = alvo.pathname.endsWith("/prospect_location") ? mapeados : unidades;
+      return linhasRpc(lista.includes(`${destino}/${lote}`) ? [{ public_slug: lote }] : []);
+    });
+    vi.stubGlobal("fetch", spy);
+    return spy;
+  }
+
+  beforeEach(() => __resetCachesDoWorker());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("par destino/lote que não existe em lugar nenhum responde 404", async () => {
+    stubBanco([]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lisboa-park"), envFicha());
+    expect(res.status).toBe(404);
+    expect(await res.text()).toContain("Essa página não existe");
+  });
+
+  it("ficha pré-renderizada continua 200 sem perguntar ao banco", async () => {
+    const spy = stubBanco([]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/aeropark"), envFicha());
+    expect(res.status).toBe(200);
+    const perguntas = spy.mock.calls.filter((c) => {
+      const u = new URL(c[0] instanceof Request ? c[0].url : String(c[0]));
+      return u.pathname.endsWith("/location") || u.pathname.endsWith("/prospect_location");
+    });
+    expect(perguntas).toHaveLength(0);
+  });
+
+  // O site é SSG: a unidade publicada agora só entra no manifesto no próximo build, e
+  // enterrá-la em 404 até lá é pior do que o 200 vazio que a regra veio corrigir.
+  it("unidade publicada depois do build abre na hora", async () => {
+    stubBanco(["aeroporto-confins/lote-novo"]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-confins/lote-novo"), envFicha());
+    expect(res.status).toBe(200);
+  });
+
+  it("lote mapeado (ADR-010) também conta como ficha que existe", async () => {
+    stubBanco([], ["aeroporto-brasilia/vagas-brb"]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-brasilia/vagas-brb"), envFicha());
+    expect(res.status).toBe(200);
+  });
+
+  it("lote certo no destino errado é 404, porque essa URL não existe", async () => {
+    stubBanco(["aeroporto-guarulhos/aeropark"]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-confins/aeropark"), envFicha());
+    expect(res.status).toBe(404);
+  });
+
+  // Mesmos dois segmentos da ficha, mas são páginas do DESTINO, não lote nenhum.
+  it.each([["/estacionamentos/aeroporto-guarulhos/precos"], ["/estacionamentos/aeroporto-guarulhos/mais-barato"]])(
+    "página do destino com dois segmentos continua 200: %s",
+    async (caminho) => {
+      stubBanco([]);
+      const res = await worker.fetch(req(caminho), envFicha());
+      expect(res.status).toBe(200);
+    },
+  );
+
+  it("destino fora do manifesto continua 200, que é a regra do catálogo", async () => {
+    stubBanco([]);
+    const res = await worker.fetch(req("/estacionamentos/destino-novo"), envFicha());
+    expect(res.status).toBe(200);
+  });
+
+  it("slug com caractere fora do padrão é 404 sem consultar o banco", async () => {
+    const spy = stubBanco([]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lote'ou1=1"), envFicha());
+    expect(res.status).toBe(404);
+    const perguntas = spy.mock.calls.filter((c) =>
+      new URL(c[0] instanceof Request ? c[0].url : String(c[0])).pathname.endsWith("/location"),
+    );
+    expect(perguntas).toHaveLength(0);
+  });
+
+  // FAIL-OPEN: banco fora do ar não pode enterrar ficha que existe.
+  it("Supabase fora do ar volta a responder 200", async () => {
+    stubBanco([], [], { forcaErro: true });
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lisboa-park"), envFicha());
+    expect(res.status).toBe(200);
+  });
+
+  it("o veredicto fica em cache: a mesma ficha não é consultada duas vezes", async () => {
+    const spy = stubBanco([]);
+    const env = envFicha();
+    await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lisboa-park"), env);
+    await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lisboa-park"), env);
+    const perguntas = spy.mock.calls.filter((c) =>
+      new URL(c[0] instanceof Request ? c[0].url : String(c[0])).pathname.endsWith("/location"),
+    );
+    expect(perguntas).toHaveLength(1);
+  });
+
+  it("o 404 da ficha também pede para não ser guardado em cache", async () => {
+    stubBanco([]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lisboa-park"), envFicha());
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+  });
+});

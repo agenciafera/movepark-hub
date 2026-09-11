@@ -117,11 +117,45 @@ Consequência prática: **nada precisa ser mexido no painel do Cloudflare.** A b
 | Manifesto dos caminhos que existem no build | [`scripts/write-paths-manifest.mjs`](../../scripts/write-paths-manifest.mjs), roda no `bun run build` |
 | Padrões de rota de app que continuam em 200 | `ROTAS_DE_APP` em [`src/worker.ts`](../../src/worker.ts) |
 | Checagem e resposta de 404 | `caminhosConhecidos` e `pagina404`, antes da negociação de markdown |
+| Ficha de estacionamento que não existe | `fichaPublicada` em [`src/worker.ts`](../../src/worker.ts), com segunda opinião no banco |
 | Página servida | [`src/routes/not-found.tsx`](../../src/routes/not-found.tsx), rota `/404` e catch-all, ambos dentro do `ConsumerAppShell` |
 | Cenários de navegador | `e2e/windup/pagina-404.json`, `rota-inexistente.json` e `rota-inexistente-jornada.json` |
 
 O manifesto tem 264 caminhos. Fora dele, por blocklist explícita, as oito telas que o SSG
 emite na raiz e os arquivos de configuração do Cloudflare (`_headers` e companhia).
+
+### A ficha de estacionamento é a exceção dentro do catálogo (11/09/2026)
+
+`ROTAS_DE_APP` mantém `/estacionamentos/*` inteiro em 200, porque o site é SSG e publicar um
+destino no Manager o deixaria em 404 até o próximo build. O efeito colateral dessa linha era que
+**qualquer** par destino/lote respondia 200 com a casca do SPA. Medido em 11/09/2026: nove
+unidades com `is_listed = true`, mas de empresa que a RLS pública não enxerga, respondiam 200
+com o `<title>` genérico da Movepark e nenhum conteúdo. Nenhuma delas tem link no site (não
+saem na busca nem na página do destino), então quem chega é crawler com URL velha, e é ele que
+registra o soft 404.
+
+A ficha passou a ter checagem própria, no mesmo desenho do blog:
+
+1. o manifesto responde primeiro, e a ficha pré-renderizada nunca consulta o banco;
+2. fora do manifesto, `fichaPublicada` pergunta ao banco pelas **duas famílias** da URL, a
+   unidade parceira e o lote mapeado (ADR-010), que dividem o mesmo endereço;
+3. quem o banco não conhece vira 404, com `no-store`.
+
+O corte da unidade repete, de propósito, o mesmo do `fetchAllFichaPaths` (lote listado, ativo,
+de empresa no ar, destino publicado): borda mais frouxa que o build devolveria 200 numa ficha
+que o SSG não gera e que a RLS esconde, que é o soft 404 de novo, por outro caminho.
+
+Duas coisas que a implementação precisa manter:
+
+- **`/estacionamentos/<destino>/precos` e `/mais-barato` têm a mesma forma de dois segmentos e
+  não são lote nenhum.** Vivem em `PAGINAS_DO_DESTINO`; esquecer disso derruba duas páginas
+  reais por destino.
+- **Slug fora de `[a-z0-9-]` não vai ao banco.** Vira 404 direto. O `public_slug` nasce por
+  trigger e é sempre dessa forma, e assim um slug com vírgula ou parêntese não consegue
+  desenhar filtro do PostgREST.
+
+O fail-open vale aqui também: Supabase fora do ar responde 200, porque enterrar ficha que
+existe é pior do que servir a casca.
 
 ### Armadilhas que a implementação precisa respeitar
 

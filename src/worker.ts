@@ -717,6 +717,91 @@ async function postPublicado(env: Env, slug: string): Promise<boolean> {
 }
 
 /**
+ * Páginas do DESTINO que ocupam a mesma forma da ficha (dois segmentos), e por isso não
+ * podem ser confundidas com lote nenhum. Ver `routes.tsx`.
+ */
+const PAGINAS_DO_DESTINO = new Set(["precos", "mais-barato"]);
+
+/** Slug do catálogo: o `public_slug` nasce por trigger e é sempre desta forma. */
+const SLUG_VALIDO = /^[a-z0-9][a-z0-9-]*$/;
+
+/**
+ * Segunda opinião para a ficha que o manifesto não conhece, nas DUAS famílias da URL.
+ *
+ * Mesmo desenho do `postPublicado`, e pelo mesmo motivo: o site é SSG, então unidade ou lote
+ * publicado depois do último build existe no banco e ainda não existe no manifesto, e essa
+ * URL tem que abrir na hora. Quem responde `false` vira 404.
+ *
+ * O corte da unidade é o MESMO do `fetchAllFichaPaths` (o que o build pré-renderiza): lote
+ * listado, ativo, de empresa no ar e destino publicado. Repetir o corte é de propósito: se a
+ * borda fosse mais frouxa que o build, ela devolveria 200 numa ficha que o SSG não gera e
+ * que a RLS esconde, que é exatamente o soft 404 que esta regra existe para matar. O lote
+ * MAPEADO (ADR-010) entra na segunda consulta, porque divide a mesma URL.
+ *
+ * Fail-open em qualquer erro: banco fora do ar não pode enterrar ficha que existe.
+ */
+const veredictoFicha = new Map<string, boolean>();
+
+async function fichaPublicada(env: Env, destino: string, lote: string): Promise<boolean> {
+  if (!SLUG_VALIDO.test(destino) || !SLUG_VALIDO.test(lote)) return false;
+
+  const chave = `${destino}/${lote}`;
+  const cacheado = veredictoFicha.get(chave);
+  if (cacheado !== undefined) return cacheado;
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return true;
+
+  const headers = {
+    apikey: env.SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+  };
+
+  const unidade = new URL("/rest/v1/location", env.SUPABASE_URL);
+  unidade.searchParams.set(
+    "select",
+    "public_slug,destination!inner(public_slug),company!inner(status)",
+  );
+  unidade.searchParams.set("public_slug", `eq.${lote}`);
+  unidade.searchParams.set("destination.public_slug", `eq.${destino}`);
+  unidade.searchParams.set("is_listed", "is.true");
+  unidade.searchParams.set("status", "eq.active");
+  unidade.searchParams.set("deleted_at", "is.null");
+  unidade.searchParams.set("destination.is_published", "is.true");
+  unidade.searchParams.set("company.status", "eq.active");
+  unidade.searchParams.set("company.onboarding_status", "eq.active");
+  unidade.searchParams.set("limit", "1");
+
+  const mapeado = new URL("/rest/v1/prospect_location", env.SUPABASE_URL);
+  mapeado.searchParams.set("select", "public_slug,destination!inner(public_slug)");
+  mapeado.searchParams.set("public_slug", `eq.${lote}`);
+  mapeado.searchParams.set("destination.public_slug", `eq.${destino}`);
+  mapeado.searchParams.set("is_published", "is.true");
+  mapeado.searchParams.set("converted_at", "is.null");
+  mapeado.searchParams.set("destination.is_published", "is.true");
+  mapeado.searchParams.set("limit", "1");
+
+  try {
+    const [resUnidade, resMapeado] = await Promise.all([
+      fetch(unidade, { headers }),
+      fetch(mapeado, { headers }),
+    ]);
+    // Supabase fora do ar não é resposta: melhor servir a shell do que enterrar uma URL que
+    // talvez exista. Este caso não entra em cache.
+    if (!resUnidade.ok || !resMapeado.ok) return true;
+
+    const [linhasUnidade, linhasMapeado] = (await Promise.all([
+      resUnidade.json(),
+      resMapeado.json(),
+    ])) as unknown[][];
+    const existe = linhasUnidade.length > 0 || linhasMapeado.length > 0;
+    if (veredictoFicha.size >= VEREDICTO_MAX) veredictoFicha.clear();
+    veredictoFicha.set(chave, existe);
+    return existe;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * O mapa de 301 da virada de URL, carregado UMA vez por isolate.
  *
  * Ele responde por todas as URLs antigas do próprio Hub: `/p/<empresa>/<unidade>/<tipo>`
@@ -826,6 +911,10 @@ const ROTAS_DE_APP: RegExp[] = [
   // Continua em 200 mesmo com HTML pré-renderizado, porque o manifesto nasce no build e o
   // site é SSG: publicar um destino no Manager o deixaria em 404 até alguém empurrar um
   // commit. Cobre também as URLs de aeroporto do WordPress, que agora são as nossas.
+  //
+  // A FICHA (`/estacionamentos/<destino>/<lote>`) é a exceção: ela tem checagem própria em
+  // `fichaPublicada`, com segunda opinião no banco, pelo mesmo desenho do blog. Sem isso o
+  // par inventado herdava o 200 desta linha e virava soft 404.
   /^\/estacionamentos(\/[^/]+){0,2}$/,
   // Mesma razão do catálogo: as páginas de pergunta (/faq/<slug>) são SSG, e uma FAQ
   // publicada no Manager depois do build precisa abrir antes do próximo deploy.
@@ -898,6 +987,7 @@ export function __resetCachesDoWorker(): void {
   caminhosCache = undefined;
   blogSlugsCache = undefined;
   veredictoSlug.clear();
+  veredictoFicha.clear();
   mapaLegado = undefined;
   mapaLegadoEm = 0;
 }
@@ -972,6 +1062,23 @@ async function serve(request: Request, env: Env): Promise<Response> {
   if (!/\.html?$/i.test(caminho) && !ehRotaDeApp(caminho)) {
     const conhecidos = await caminhosConhecidos(env, url);
     if (conhecidos && !conhecidos.has(caminho)) return pagina404(env, url);
+  }
+
+  /*
+    A ficha é a exceção dentro de `/estacionamentos/*`, que a lista de rotas de app mantém em
+    200 por inteiro. Medido em 11/09/2026: nove pares destino/lote com `is_listed = true`, mas
+    de empresa que a RLS pública não enxerga, respondiam 200 com o `<title>` genérico da
+    Movepark e nenhum conteúdo. Não há link para eles no site, então quem chega é crawler com
+    URL velha, e é ele que registra o soft 404.
+
+    A pergunta ao banco só acontece fora do manifesto, que é onde o build já respondeu.
+  */
+  const ficha = caminho.match(/^\/estacionamentos\/([^/]+)\/([^/]+)$/);
+  if (ficha && !PAGINAS_DO_DESTINO.has(ficha[2])) {
+    const conhecidos = await caminhosConhecidos(env, url);
+    if (conhecidos && !conhecidos.has(caminho) && !(await fichaPublicada(env, ficha[1], ficha[2]))) {
+      return pagina404(env, url);
+    }
   }
 
   // Content negotiation: serve markdown when agents request it
