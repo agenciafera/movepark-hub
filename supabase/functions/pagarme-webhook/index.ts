@@ -264,6 +264,31 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, matched: false });
     }
 
+    const wStatus = transferStatusToWithdrawalStatus(tr.rawStatus ?? ev.type.split(".")[1]);
+
+    // REPASSE primeiro. `POST /transfers` faz saque e repasse, e os dois chegam como `transfer.*`.
+    // Olhar o saque antes faria todo repasse nosso virar linha falsa de saque na tela do parceiro,
+    // inflando o "já transferido" com dinheiro que ele ainda não tirou.
+    const { data: repasse } = await admin
+      .from("payout_transfer")
+      .select("id")
+      .eq("provider", "pagarme")
+      .eq("external_transfer_id", tr.transferId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (repasse) {
+      const patch: Record<string, unknown> = { status: wStatus, raw: body };
+      if (wStatus === "paid") patch.paid_at = new Date().toISOString();
+      if (wStatus === "failed") patch.failed_reason = tr.rawStatus ?? ev.type;
+      const { error: trErr } = await admin
+        .from("payout_transfer")
+        .update(patch)
+        .eq("id", repasse.id);
+      if (trErr) return json({ error: trErr.message }, 500);
+      await markProcessed(admin, ev.eventId);
+      return json({ ok: true, payout_transfer: wStatus });
+    }
+
     const { data: rec } = await admin
       .from("payout_recipient")
       .select("company_id")
@@ -277,7 +302,6 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, matched: false });
     }
 
-    const wStatus = transferStatusToWithdrawalStatus(tr.rawStatus ?? ev.type.split(".")[1]);
     let feeCents = tr.feeCents;
     if (feeCents == null) {
       const { data: feeSetting } = await admin

@@ -89,8 +89,10 @@ de pé. Payload sem split, razão preservado.
 
 - `payout_withdrawal` só é alimentada pelos webhooks `transfer.*`. Sem saldo do parceiro no
   gateway, ela para de receber linhas e o "já transferido" da tela do parceiro congela.
-- **Não existe código que execute o repasse.** Nada no repo chama `POST /transfers`. O extrato diz
-  quanto devemos, e a saída do dinheiro é operação manual fora do sistema.
+- ~~Não existe código que execute o repasse.~~ **Resolvido em 11/09/2026:** o repasse entrou em
+  [repasse-ao-parceiro.md](./repasse-ao-parceiro.md) (E0.3.4). `payout_balance.balance_cents` mudou
+  de significado junto: deixou de ser "líquido menos saques" e passou a ser "quanto a Movepark ainda
+  deve", com o saque saindo da conta da dívida (ele é o parceiro tirando dinheiro que já é dele).
 
 ### Corrigido em 11/09/2026: o extrato passou a devolver só o que é devido
 

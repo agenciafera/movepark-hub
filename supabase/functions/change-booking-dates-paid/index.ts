@@ -302,6 +302,7 @@ Deno.serve(async (req: Request) => {
     pix_qr_code_url: result.qrCodeUrl,
     expires_at: result.expiresAt,
     split,
+    split_sent_to_gateway: splitEnabled,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
 

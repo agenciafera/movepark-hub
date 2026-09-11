@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import PrecosDestinoPage, { type PrecosDestinoData } from "@/routes/precos-destino";
@@ -138,10 +138,18 @@ describe("PrecosDestinoPage", () => {
     setup();
     await screen.findByRole("heading", { level: 1 });
 
-    const lista = [...document.querySelectorAll('script[type="application/ld+json"]')]
-      .map((s) => JSON.parse(s.textContent ?? "{}"))
-      .find((d) => d["@type"] === "ItemList");
-    const itens = lista.itemListElement as { item: { image?: string[] } }[];
+    // O JSON-LD vai para o `document.head` pelo Helmet, que injeta fora do ciclo de render. Ler o
+    // head direto depois do `findByRole` assume que a injeção já aconteceu, e nem sempre aconteceu:
+    // com a suíte cheia isso vira falha intermitente ("Cannot read properties of undefined"), que
+    // aparece e some conforme a ordem dos arquivos entre os workers. Espera a lista existir.
+    const lista = await waitFor(() => {
+      const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find((d) => d["@type"] === "ItemList");
+      expect(achado).toBeDefined();
+      return achado as { itemListElement: { item: { image?: string[] } }[] };
+    });
+    const itens = lista.itemListElement;
     expect(itens[0].item.image).toEqual([
       "https://movepark.co/Estacionamentos/aerovalet/guarulhos/capa.webp",
     ]);
@@ -167,9 +175,14 @@ describe("PrecosDestinoPage", () => {
     });
     await screen.findByRole("heading", { level: 1 });
 
-    const lista = [...document.querySelectorAll('script[type="application/ld+json"]')]
-      .map((s) => JSON.parse(s.textContent ?? "{}"))
-      .find((d) => d["@type"] === "ItemList");
+    // Mesma espera do caso acima: o Helmet injeta no head fora do ciclo de render.
+    const lista = await waitFor(() => {
+      const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find((d) => d["@type"] === "ItemList");
+      expect(achado).toBeDefined();
+      return achado as { itemListElement: unknown[] };
+    });
     expect(lista.itemListElement).toHaveLength(1);
     expect(JSON.stringify(lista)).not.toContain("Infinity");
     expect(JSON.stringify(lista)).not.toContain("Sem Preço");

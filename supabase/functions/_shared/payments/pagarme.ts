@@ -15,6 +15,7 @@ import type {
   PayablesResult,
   PaymentGateway,
   PixChargeInput,
+  RecipientBalance,
   RecipientInput,
   TransferSettings,
   RecipientKycAddress,
@@ -24,6 +25,8 @@ import type {
   RecipientStatus,
   RefundInput,
   RefundResult,
+  TransferInput,
+  TransferResult,
   SplitRule,
 } from "./types.ts";
 import { GatewayConfigError } from "./types.ts";
@@ -483,6 +486,61 @@ export function buildPayablesResult(httpStatus: number, body: unknown): Payables
   };
 }
 
+// ── Repasse entre recebedores + saldo ───────────────────────────────────────
+
+/**
+ * Corpo de `POST /transfers` para REPASSE. A mesma rota faz saque quando o corpo traz
+ * `recipient_id`, e aí o destino é a conta bancária do recebedor. Aqui a chave `recipient_id`
+ * nunca aparece: este caminho só move dinheiro entre recebedores.
+ *
+ * A chave de idempotência NÃO entra no corpo; ela vai no header `Idempotency-Key`.
+ */
+export function buildTransferBody(input: TransferInput): Record<string, unknown> {
+  return {
+    amount: input.amountCents,
+    source_id: input.sourceRecipientId,
+    target_id: input.targetRecipientId,
+    ...(input.metadata ? { metadata: input.metadata } : {}),
+  };
+}
+
+/** Normaliza a resposta de `POST /transfers`. Id vem numérico na v5. */
+export function buildTransferResult(httpStatus: number, body: unknown): TransferResult {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const id = b.id;
+  return {
+    transferId:
+      typeof id === "string" && id.trim()
+        ? id
+        : typeof id === "number" && Number.isFinite(id)
+          ? String(id)
+          : null,
+    status: typeof b.status === "string" ? b.status : null,
+    amountCents: typeof b.amount === "number" && Number.isFinite(b.amount) ? b.amount : null,
+    sourceId: typeof b.source_id === "string" ? b.source_id : null,
+    targetId: typeof b.target_id === "string" ? b.target_id : null,
+    raw: body,
+    httpStatus,
+  };
+}
+
+/**
+ * Normaliza `GET /recipients/{id}/balance`. Campo ausente vira null, não zero: no pré-voo do
+ * repasse, "não sei o saldo" e "saldo zero" levam a decisões diferentes.
+ */
+export function buildBalanceResult(httpStatus: number, body: unknown): RecipientBalance {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const num = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
+  return {
+    availableCents: num(b.available_amount),
+    waitingFundsCents: num(b.waiting_funds_amount),
+    transferredCents: num(b.transferred_amount),
+    raw: body,
+    httpStatus,
+  };
+}
+
 export class PagarmeGateway implements PaymentGateway {
   readonly provider = "pagarme";
   private readonly secretKey: string;
@@ -670,6 +728,38 @@ export class PagarmeGateway implements PaymentGateway {
    * paginar; a paginação por `page` está sendo descontinuada em favor de `forward_cursor`, e não
    * chegamos perto do limite.
    */
+  /**
+   * Repasse ao parceiro. O header `Idempotency-Key` é o que impede um retry de virar transferência
+   * duplicada, e a rota tem rate limit apertado (7), então quem chama não faz lote.
+   */
+  async createTransfer(input: TransferInput): Promise<TransferResult> {
+    const res = await fetch(`${pagarmeBaseUrl(this.secretKey)}/transfers`, {
+      method: "POST",
+      headers: {
+        Authorization: pagarmeAuthHeader(this.secretKey),
+        "Content-Type": "application/json",
+        "Idempotency-Key": input.idempotencyKey,
+      },
+      body: JSON.stringify(buildTransferBody(input)),
+    });
+    let parsed: unknown = null;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = null;
+    }
+    return buildTransferResult(res.status, parsed);
+  }
+
+  /** Saldo é POR RECEBEDOR: `GET /balance` no nível da conta responde 404. */
+  async getRecipientBalance(recipientId: string): Promise<RecipientBalance> {
+    const { httpStatus, parsed } = await this.rawFetch(
+      "GET",
+      `/recipients/${encodeURIComponent(recipientId)}/balance`,
+    );
+    return buildBalanceResult(httpStatus, parsed);
+  }
+
   async listPayables(chargeId: string): Promise<PayablesResult> {
     const { httpStatus, parsed } = await this.rawFetch(
       "GET",

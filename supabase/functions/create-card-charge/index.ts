@@ -241,6 +241,7 @@ Deno.serve(async (req: Request) => {
       status: "failed",
       installments: input.installments,
       split,
+      split_sent_to_gateway: splitEnabled,
     });
     return jsonResponse({ error: "Cartão recusado. Tente outro cartão." }, 402);
   }
@@ -262,6 +263,7 @@ Deno.serve(async (req: Request) => {
     status: chargeStatusToPaymentStatus(result.status),
     installments: input.installments,
     split,
+    split_sent_to_gateway: splitEnabled,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
 

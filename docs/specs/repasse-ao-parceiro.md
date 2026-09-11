@@ -1,7 +1,26 @@
 # Repasse ao parceiro (custódia) — E0.3.4
 
-> **Status:** especificado em 11/09/2026. Fecha o buraco entre o extrato dizer quanto devemos e o
-> dinheiro sair. Ver [payment-split.md](./payment-split.md) para o modelo de custódia.
+> **Status:** implementado e no ar em 11/09/2026, faltando só o primeiro repasse real, que é ato de
+> gente. Fecha o buraco entre o extrato dizer quanto devemos e o dinheiro sair. Ver
+> [payment-split.md](./payment-split.md) para o modelo de custódia.
+
+## Como ficou
+
+| Peça | Onde |
+|---|---|
+| Marca por cobrança | `payment.split_sent_to_gateway`, gravado pelas 4 Edges que cobram; migration `20261115090000` |
+| Quanto devemos | `payout_owed_cents(company)`; `payout_balance` ganhou `owed_cents`/`transferred_cents` |
+| Registro do repasse | `payout_transfer` + `payout_transferred_cents`; migration `20261115113000` |
+| Pedido server-authoritative | RPC `payout_transfer_request` (advisory lock, recalcula o devido, retoma o pendente) |
+| Visão do painel | RPC `payout_owed_overview`; migration `20261115140000` |
+| Gateway | `createTransfer` + `getRecipientBalance` na interface; `buildTransferBody` nunca emite `recipient_id` |
+| Disparo | Edge `create-payout-transfer` (JWT de hub_admin, pré-voo de saldo, `Idempotency-Key`) |
+| Webhook | ramo `transfer.*` casa `payout_transfer` antes de `payout_withdrawal` |
+| Tela | `PayoutTransferCard` em Manager › Repasses, com diálogo de confirmação |
+
+Testes: pgTAP `payout_owed.test.sql` (6) e `payout_transfer.test.sql` (19); Deno para o adapter, a
+lógica da Edge, o contrato de custódia das Edges de cobrança e a ordem do ramo `transfer.*`; Vitest
+para o card e o diálogo.
 
 ## O problema
 

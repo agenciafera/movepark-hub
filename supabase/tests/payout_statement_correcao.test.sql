@@ -117,10 +117,15 @@ select is(
   14000::bigint,
   'payout_balance: líquido corrigido = 14000');
 
+-- `balance_cents` mudou de significado em 11/09/2026: deixou de ser "líquido menos saques" e
+-- passou a ser "quanto a Movepark ainda deve", que é a pergunta que o botão Repassar precisa.
+-- Nesta fixture nenhuma cobrança está marcada como custódia (`split_sent_to_gateway` nulo, tratado
+-- como enviado ao gateway), então não devemos nada, mesmo com R$ 140,00 de líquido do parceiro.
+-- Ver payout_owed.test.sql para o caso em que a dívida existe.
 select is(
   ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'balance_cents')::bigint),
-  14000::bigint,
-  'payout_balance: sem saque, saldo = líquido');
+  0::bigint,
+  'payout_balance: sem cobrança em custódia, não devemos nada');
 
 -- ── 4. a linha do extrato mostra de quem é o dinheiro ────────────────────────
 select is(

@@ -350,3 +350,81 @@ export function usePayoutBalance(companyId: string | undefined) {
     },
   });
 }
+
+// ── Repasse ao parceiro (E0.3.4) ────────────────────────────────────────────
+
+/** Uma empresa com dívida aberta, como a RPC `payout_owed_overview` devolve. */
+export type PayoutOwedRow = {
+  company_id: string;
+  company_name: string;
+  /** Total devido pela Movepark (vendas em custódia, líquidas de estorno). */
+  owed_cents: number;
+  /** Já repassado (inclui o que está em curso). */
+  transferred_cents: number;
+  /** O que cabe repassar agora. */
+  available_cents: number;
+  target_recipient_id: string | null;
+  recipient_status: string | null;
+  em_andamento: boolean;
+};
+
+/** Quem está devendo repasse na rede. Só hub_admin (a RPC recusa o resto). */
+export function usePayoutOwed() {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "owed"] as const,
+    queryFn: async (): Promise<PayoutOwedRow[]> => {
+      // `payout_owed_overview` não está em `database.ts` porque o `supabase gen types` vem
+      // derrubando funções que existem no banco (marketing_rfm_*, manager_price_research_*,
+      // prospect_price_research), e regenerar aqui apagaria os tipos delas. O cast fica nesta
+      // linha só, e some quando a geração voltar a sair inteira.
+      const rpc = supabase.rpc as unknown as (
+        fn: string,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const { data, error } = await rpc("payout_owed_overview");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PayoutOwedRow[];
+    },
+  });
+}
+
+export type PayoutTransferArgs = { company_id: string; amount_cents: number };
+
+/**
+ * Dispara o repasse. MOVE DINHEIRO REAL: a tela só chama isto depois de confirmação explícita, e o
+ * valor é conferido de novo no servidor (a RPC recalcula o devido e recusa o que passar disso).
+ */
+async function callCreatePayoutTransfer(args: PayoutTransferArgs) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("Sessão expirada. Entre novamente.");
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payout-transfer`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: ANON,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(args),
+    },
+  );
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+  return body as {
+    ok: boolean;
+    reused: boolean;
+    external_transfer_id: string | null;
+    status: string | null;
+    amount_cents: number;
+  };
+}
+
+export function useRequestPayoutTransfer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: callCreatePayoutTransfer,
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}

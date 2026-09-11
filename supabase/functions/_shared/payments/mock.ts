@@ -3,6 +3,9 @@
 
 import type {
   PayablesResult,
+  RecipientBalance,
+  TransferInput,
+  TransferResult,
   CardChargeInput,
   ChargeResult,
   PaymentGateway,
@@ -106,6 +109,31 @@ export class MockGateway implements PaymentGateway {
   /** O mock não tem gateway, logo não tem recebível nem taxa. */
   listPayables(): Promise<PayablesResult> {
     return Promise.resolve({ payables: [], raw: null, httpStatus: 200 });
+  }
+
+
+  /** O mock não move dinheiro: devolve uma transferência sintética já concluída. */
+  createTransfer(input: TransferInput): Promise<TransferResult> {
+    return Promise.resolve({
+      transferId: `mock_tr_${input.idempotencyKey.slice(0, 8)}`,
+      status: "transferred",
+      amountCents: input.amountCents,
+      sourceId: input.sourceRecipientId,
+      targetId: input.targetRecipientId,
+      raw: null,
+      httpStatus: 200,
+    });
+  }
+
+  /** Saldo do mock é sempre suficiente; o pré-voo do repasse não trava em teste. */
+  getRecipientBalance(): Promise<RecipientBalance> {
+    return Promise.resolve({
+      availableCents: Number.MAX_SAFE_INTEGER,
+      waitingFundsCents: 0,
+      transferredCents: 0,
+      raw: null,
+      httpStatus: 200,
+    });
   }
 
 }

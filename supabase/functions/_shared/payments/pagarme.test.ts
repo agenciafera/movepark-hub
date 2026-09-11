@@ -7,6 +7,9 @@ import {
   buildRecipientResult,
   buildRefundResult,
   buildPayablesResult,
+  buildTransferBody,
+  buildTransferResult,
+  buildBalanceResult,
   extractKycUrl,
   mapChargeStatus,
   mapRecipientStatus,
@@ -518,4 +521,84 @@ Deno.test("totalGatewayFeeCents: sem recebível não inventa zero como se soubes
 Deno.test("totalGatewayFeeCents: recebível sem taxa conta como zero", () => {
   const r = buildPayablesResult(200, { data: [{ id: 1, charge_id: "ch_x", amount: 100 }] });
   assertEquals(totalGatewayFeeCents(r.payables), 0);
+});
+
+// ── Repasse entre recebedores (POST /transfers) ─────────────────────────────
+// A rota tem DUAS semânticas definidas pelo corpo: `{amount, recipient_id}` é saque para a conta
+// bancária, `{amount, source_id, target_id}` é repasse entre recebedores. Mandar a chave errada
+// manda o dinheiro para outro lugar, então o corpo tem teste próprio.
+
+Deno.test("buildTransferBody: as duas pernas, em centavos", () => {
+  const body = buildTransferBody({
+    amountCents: 7650,
+    sourceRecipientId: "re_master",
+    targetRecipientId: "re_parceiro",
+    idempotencyKey: "k1",
+  });
+  assertEquals(body.amount, 7650);
+  assertEquals(body.source_id, "re_master");
+  assertEquals(body.target_id, "re_parceiro");
+});
+
+Deno.test("buildTransferBody: NUNCA emite recipient_id (isso seria saque, não repasse)", () => {
+  const body = buildTransferBody({
+    amountCents: 100,
+    sourceRecipientId: "re_master",
+    targetRecipientId: "re_parceiro",
+    idempotencyKey: "k2",
+  });
+  assertEquals("recipient_id" in body, false);
+});
+
+Deno.test("buildTransferBody: a chave de idempotência não vai no corpo (é header)", () => {
+  const body = buildTransferBody({
+    amountCents: 100,
+    sourceRecipientId: "re_a",
+    targetRecipientId: "re_b",
+    idempotencyKey: "k3",
+  });
+  assertEquals("idempotency_key" in body, false);
+  assertEquals("idempotencyKey" in body, false);
+});
+
+Deno.test("buildTransferResult: lê a transferência criada", () => {
+  const r = buildTransferResult(200, {
+    id: 539328550,
+    amount: 7650,
+    status: "pending_transfer",
+    source_id: "re_master",
+    source_type: "recipient",
+    target_id: "re_parceiro",
+    target_type: "recipient",
+    created_at: "2026-09-11T12:00:00Z",
+  });
+  assertEquals(r.transferId, "539328550");
+  assertEquals(r.amountCents, 7650);
+  assertEquals(r.status, "pending_transfer");
+  assertEquals(r.sourceId, "re_master");
+  assertEquals(r.targetId, "re_parceiro");
+  assertEquals(r.httpStatus, 200);
+});
+
+Deno.test("buildTransferResult: recusa do gateway não inventa id", () => {
+  const r = buildTransferResult(422, { message: "saldo insuficiente" });
+  assertEquals(r.transferId, null);
+  assertEquals(r.amountCents, null);
+  assertEquals(r.httpStatus, 422);
+});
+
+Deno.test("buildBalanceResult: saldo do recebedor em centavos", () => {
+  const b = buildBalanceResult(200, {
+    currency: "BRL",
+    available_amount: 11329,
+    waiting_funds_amount: 500,
+    transferred_amount: 1000,
+  });
+  assertEquals(b.availableCents, 11329);
+  assertEquals(b.waitingFundsCents, 500);
+  assertEquals(b.transferredCents, 1000);
+});
+
+Deno.test("buildBalanceResult: sem corpo, saldo é desconhecido e não zero", () => {
+  assertEquals(buildBalanceResult(404, null).availableCents, null);
 });

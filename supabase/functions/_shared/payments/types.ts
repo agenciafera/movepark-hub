@@ -259,6 +259,41 @@ export interface PayablesResult {
   httpStatus: number | null;
 }
 
+// ── Repasse entre recebedores (custódia) ────────────────────────────────────
+
+/**
+ * Repasse da conta da Movepark para o recebedor do parceiro. Não confundir com saque: no gateway a
+ * mesma rota faz as duas coisas, e quem decide é o CORPO. Aqui só existe o repasse.
+ */
+export interface TransferInput {
+  amountCents: number;
+  sourceRecipientId: string;
+  targetRecipientId: string;
+  /** Vai no header `Idempotency-Key`; sem ela, um retry vira transferência duplicada. */
+  idempotencyKey: string;
+  metadata?: Record<string, string>;
+}
+
+export interface TransferResult {
+  transferId: string | null;
+  /** Status cru do gateway (created/pending_transfer/transferred/failed/...). */
+  status: string | null;
+  amountCents: number | null;
+  sourceId: string | null;
+  targetId: string | null;
+  raw: unknown;
+  httpStatus: number | null;
+}
+
+/** Saldo de um recebedor. Vale por recebedor: `GET /balance` no nível da conta responde 404. */
+export interface RecipientBalance {
+  availableCents: number | null;
+  waitingFundsCents: number | null;
+  transferredCents: number | null;
+  raw: unknown;
+  httpStatus: number | null;
+}
+
 /** Contrato que todo gateway de pagamento deve implementar. */
 export interface PaymentGateway {
   readonly provider: string;
@@ -281,6 +316,10 @@ export interface PaymentGateway {
   refundCharge(input: RefundInput): Promise<RefundResult>;
   /** Lista os recebíveis de uma cobrança (de onde sai a taxa real do gateway). */
   listPayables(chargeId: string): Promise<PayablesResult>;
+  /** Repassa da conta da Movepark para o recebedor do parceiro (custódia). */
+  createTransfer(input: TransferInput): Promise<TransferResult>;
+  /** Saldo de um recebedor, para o pré-voo do repasse. */
+  getRecipientBalance(recipientId: string): Promise<RecipientBalance>;
   /** Atualiza a cadência de transferência de um recebedor (PATCH transfer-settings). */
   updateTransferSettings(externalId: string, settings: TransferSettings): Promise<RecipientResult>;
   /** Atualiza a antecipação automática de um recebedor (PATCH automatic-anticipation-settings). */

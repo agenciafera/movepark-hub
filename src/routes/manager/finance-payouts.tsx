@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { usePayoutStatement } from "@/features/payouts/api";
+import { PayoutTransferCard } from "@/features/payouts/PayoutTransferCard";
 import { formatBRL } from "@/lib/format";
 
 function recentMonths(n: number) {
@@ -60,6 +61,8 @@ export default function ManagerFinancePayouts() {
         title="Repasses"
         description="Extrato reconciliado do split: quanto cada parceiro recebe (real, do pagamento)."
       />
+
+      <PayoutTransferCard />
 
       <Card>
         <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:items-end">

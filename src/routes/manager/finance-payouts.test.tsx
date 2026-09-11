@@ -23,6 +23,9 @@ const statement: PayoutStatement = {
 
 vi.mock("@/features/payouts/api", () => ({
   usePayoutStatement: () => ({ data: statement, isLoading: false }),
+  // A página passou a embutir o card de repasse (E0.3.4); sem dívida aberta ele não renderiza.
+  usePayoutOwed: () => ({ data: [], isLoading: false }),
+  useRequestPayoutTransfer: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 import ManagerFinancePayouts from "./finance-payouts";
