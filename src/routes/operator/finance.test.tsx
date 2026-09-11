@@ -5,7 +5,16 @@ import { renderWithProviders, mockAuth } from "@/test/utils";
 vi.mock("@/features/payouts/api", () => ({
   useRecipient: () => ({ data: { status: "active" } }),
   useUpdateRecipientPayout: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  usePayoutBalance: () => ({ data: { balance_cents: 25500, withdrawn_cents: 10000 }, isLoading: false }),
+  usePayoutBalance: () => ({
+    data: {
+      balance_cents: 25500,
+      owed_cents: 34000,
+      transferred_cents: 8500,
+      withdrawn_cents: 10000,
+      net_partner_cents: 44000,
+    },
+    isLoading: false,
+  }),
   usePayoutStatement: () => ({
     data: {
       period: { from: "2026-05-01T00:00:00Z", to: "2026-06-01T00:00:00Z" },
@@ -49,4 +58,15 @@ describe("OperatorFinance", () => {
     renderWithProviders(<OperatorFinance />, { auth: mockAuth({ effectiveCompanyIds: [] }) });
     expect(screen.getByText("Empresa não encontrada")).toBeInTheDocument();
   });
+
+  it("separa o que a Movepark já repassou do que o parceiro sacou", () => {
+    renderWithProviders(<OperatorFinance />, { auth: mockAuth({ effectiveCompanyIds: ["c1"] }) });
+    // Com o repasse existindo (E0.3.4), "já transferido" virou ambíguo: a Movepark repassa e o
+    // parceiro saca, e são dois movimentos diferentes do mesmo dinheiro.
+    // formatBRL usa espaço não separável; comparação crua de textContent não normaliza.
+    const norm = (s: string | null) => (s ?? "").replace(/\u00a0/g, " ");
+    expect(norm(screen.getByText(/repassado pela Movepark/i).textContent)).toContain("R$ 85,00");
+    expect(norm(screen.getByText(/sacado por você/i).textContent)).toContain("R$ 100,00");
+  });
+
 });

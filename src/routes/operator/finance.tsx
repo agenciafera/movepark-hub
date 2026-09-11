@@ -108,8 +108,12 @@ export default function OperatorFinance() {
             ) : (
               <div className="text-display-sm text-ink">{brl(balance.data?.balance_cents ?? 0)}</div>
             )}
-            <div className="mt-1 text-caption text-muted">
-              já transferido: {brl(balance.data?.withdrawn_cents ?? 0)}
+            {/* Com o repasse (E0.3.4) existem dois movimentos do mesmo dinheiro: a Movepark
+                repassa para o recebedor do parceiro, e o parceiro saca para o banco dele.
+                "já transferido" sozinho não dizia qual dos dois. */}
+            <div className="mt-1 flex flex-col gap-0.5 text-caption text-muted">
+              <span>repassado pela Movepark: {brl(balance.data?.transferred_cents ?? 0)}</span>
+              <span>sacado por você: {brl(balance.data?.withdrawn_cents ?? 0)}</span>
             </div>
           </CardContent>
         </Card>

@@ -107,6 +107,11 @@ menos é recuperável com um repasse novo; errar para mais paga duas vezes o mes
 O saque deixa de descontar a dívida porque é o parceiro tirando dinheiro que já é dele. Continua
 visível em `withdrawn_cents`, como informação da tela dele.
 
+**A tela do parceiro passou a separar os dois movimentos.** Ela dizia só "já transferido", e com o
+repasse existindo isso virou ambíguo: a Movepark repassa para o recebedor dele, e depois ele saca
+para o banco. São dois movimentos do mesmo dinheiro, e o rodapé do saldo em `/operator/finance`
+agora mostra os dois, "repassado pela Movepark" e "sacado por você".
+
 ## Fluxo
 
 1. hub_admin abre **Manager › Repasses** e vê, por empresa, quanto está devido.

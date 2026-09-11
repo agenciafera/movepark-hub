@@ -293,7 +293,13 @@ export type PayoutStatement = {
 
 export type PayoutBalance = {
   company_id: string;
+  /** Tudo que o parceiro ganhou, tenha o gateway creditado na hora ou não. */
   net_partner_cents: number;
+  /** Quanto a Movepark deve (vendas em custódia), antes de descontar o já repassado. */
+  owed_cents: number;
+  /** Já repassado pela Movepark ao recebedor do parceiro (inclui o que está em curso). */
+  transferred_cents: number;
+  /** Sacado pelo parceiro do recebedor dele para o banco. Não desconta a dívida. */
   withdrawn_cents: number;
   balance_cents: number;
 };
