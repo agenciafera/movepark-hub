@@ -22,6 +22,7 @@ const groups: FooterGroup[] = [
     title: "Estacionamentos",
     links: [
       { to: "/seja-parceiro", label: "Seja parceiro" },
+      { to: "/selo", label: "Selo de parceiro" },
       { to: "/operator", label: "Painel do estacionamento" },
     ],
   },

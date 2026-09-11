@@ -1,0 +1,13 @@
+{
+  "scenario_id": "selo",
+  "start_url": "/selo",
+  "task": "Verifique que a pagina exibe o texto Selo de parceiro Movepark, que existe um bloco de codigo contendo o texto Selo Movepark, e que o rodape exibe o texto Seja parceiro.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Tres verificacoes independentes: o titulo da pagina, o codigo gerado e o rodape.",
+    "O codigo aparece dentro de um elemento pre; o rodape e o <footer>."
+  ]
+}

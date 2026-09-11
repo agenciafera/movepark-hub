@@ -48,6 +48,7 @@ import MotorPreviewPage from "@/routes/motor-preview";
 import UnitPreviewPage from "@/routes/operator/unit-preview";
 import OperatorRecebimento from "@/routes/operator/recebimento";
 import SejaParceiroPage from "@/routes/seja-parceiro";
+import SeloPage from "@/routes/selo";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
@@ -831,6 +832,7 @@ export const routes: RouteRecord[] = [
           { path: "/metodologia", element: <MetodologiaPage /> },
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
+          { path: "/selo", element: <SeloPage /> },
           { path: "/motor-preview", element: <MotorPreviewPage /> },
           { path: "/blog", element: <BlogListingPage />, loader: blogListingLoader("index") },
           {

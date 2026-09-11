@@ -16,6 +16,7 @@ import {
   MapPin,
   Question,
   Scales,
+  Seal,
   SquaresFour,
   Storefront,
   Tag,
@@ -118,6 +119,7 @@ const GRUPOS_DO_SITE: GrupoDeMenu[] = [
     titulo: "Estacionamentos",
     itens: [
       { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
+      { to: "/selo", label: "Selo de parceiro", icone: Seal },
       { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
     ],
   },
