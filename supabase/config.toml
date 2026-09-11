@@ -446,6 +446,9 @@ verify_jwt = false
 [functions.reconcile-refunds]
 verify_jwt = false
 
+[functions.reconcile-gateway-fees]
+verify_jwt = false
+
 [functions.reconcile-confirmations]
 verify_jwt = false
 

@@ -28,7 +28,7 @@ export const DEFAULT_INSTALLMENT_POLICY: InstallmentPolicy = {
   enabled: true,
   maxInstallments: 12,
   interestFreeUpTo: 3,
-  monthlyInterestPct: 0,
+  monthlyInterestPct: 2.99,
   minInstallmentCents: 500,
   absorb: "customer",
 };

@@ -293,3 +293,49 @@ export function transferStatusToWithdrawalStatus(raw: string | null | undefined)
       return "created";
   }
 }
+
+// ── Cartão salvo (card.*) ───────────────────────────────────────────────────
+
+/** Cartão do payload de um evento `card.*` (objeto Card da Core v5). */
+export interface ParsedCard {
+  cardId: string | null;
+  brand: string | null;
+  last4: string | null;
+  holderName: string | null;
+  expMonth: number | null;
+  expYear: number | null;
+}
+
+/** Extrai o cartão de um evento `card.*`. Defensivo: campo ausente vira null, nunca chute. */
+export function parseCardEvent(body: unknown): ParsedCard {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const data = (b.data ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
+  const num = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
+  return {
+    cardId: str(data.id),
+    brand: str(data.brand),
+    last4: str(data.last_four_digits),
+    holderName: str(data.holder_name),
+    expMonth: num(data.exp_month),
+    expYear: num(data.exp_year),
+  };
+}
+
+/** O que fazer com o `payment_method` local diante de um evento `card.*`. */
+export type CardEventAction = "delete" | "update" | "ignore";
+
+/**
+ * O `card.deleted` é o que importa: o cartão morreu no gateway e o `payment_method` continua no
+ * nosso banco, então o cliente escolheria no checkout um cartão que a cobrança vai recusar.
+ * `card.updated` mantém bandeira, fim e validade em dia. `card.created` não interessa: o cartão
+ * salvo nasce em `create-card-charge`, com o id lido da própria resposta da cobrança.
+ * Tipo desconhecido é ignorado de propósito, para evento novo do gateway não virar escrita cega.
+ */
+export function cardEventAction(type: string | null | undefined): CardEventAction {
+  const action = (type ?? "").toLowerCase().split(".").slice(1).join(".");
+  if (action === "deleted") return "delete";
+  if (action === "updated") return "update";
+  return "ignore";
+}

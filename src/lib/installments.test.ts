@@ -61,3 +61,15 @@ describe("computeInstallmentPlan", () => {
     expect(plan.map((o) => o.installments)).toEqual([1, 2]);
   });
 });
+
+describe("coerência da política default", () => {
+  // Espelho do guarda que roda no Deno (supabase/functions/_shared/payments/installments.test.ts).
+  // A default vale quando o app_setting some: oferecer parcela longa sem juros com absorb
+  // 'customer' joga o custo de parcelamento do gateway na Movepark sem ninguém decidir.
+  it("não oferece parcela longa sem juros dizendo que o cliente paga", () => {
+    const d = DEFAULT_INSTALLMENT_POLICY;
+    if (d.absorb === "customer" && d.maxInstallments > d.interestFreeUpTo) {
+      expect(d.monthlyInterestPct).toBeGreaterThan(0);
+    }
+  });
+});

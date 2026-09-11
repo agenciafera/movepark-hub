@@ -2,6 +2,7 @@
 // Útil para testes da camada de vínculo e para ambientes sem credencial de gateway.
 
 import type {
+  PayablesResult,
   CardChargeInput,
   ChargeResult,
   PaymentGateway,
@@ -101,4 +102,10 @@ export class MockGateway implements PaymentGateway {
   updateAnticipationSettings(externalId: string): Promise<RecipientResult> {
     return this.getRecipient(externalId);
   }
+
+  /** O mock não tem gateway, logo não tem recebível nem taxa. */
+  listPayables(): Promise<PayablesResult> {
+    return Promise.resolve({ payables: [], raw: null, httpStatus: 200 });
+  }
+
 }

@@ -13,6 +13,7 @@ const statement: PayoutStatement = {
       refunded_partner_cents: 8500,
       net_partner_cents: 25500,
       movepark_commission_cents: 4500,
+      gateway_fee_cents: 330,
       paid_count: 2,
       refunded_count: 1,
       lines: null,
@@ -36,5 +37,12 @@ describe("ManagerFinancePayouts", () => {
     expect(screen.getAllByText("R$ 45,00").length).toBeGreaterThan(0);
     // estorno exibido com sinal negativo
     expect(screen.getByText("−R$ 85,00")).toBeInTheDocument();
+  });
+
+  it("mostra a taxa do gateway, que com a custódia é custo da Movepark", () => {
+    renderWithProviders(<ManagerFinancePayouts />);
+    // 330 centavos = R$ 3,30, exibido como custo (sinal negativo)
+    expect(screen.getAllByText("−R$ 3,30").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Taxa do gateway/i).length).toBeGreaterThan(0);
   });
 });

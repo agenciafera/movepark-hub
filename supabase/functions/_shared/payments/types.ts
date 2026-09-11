@@ -228,6 +228,37 @@ export interface RefundResult {
   httpStatus: number | null;
 }
 
+// ── Recebíveis / taxa do gateway ────────────────────────────────────────────
+
+/**
+ * Um recebível (payable) da cobrança: uma linha por parcela, por recebedor. É o ÚNICO lugar onde a
+ * taxa do gateway aparece: a order e a charge não trazem. Com a custódia ligada (split desligado),
+ * a cobrança inteira cai na Movepark e essa taxa é custo nosso.
+ */
+export interface GatewayPayable {
+  id: string | null;
+  chargeId: string | null;
+  recipientId: string | null;
+  /** Valor bruto do recebível, em centavos. */
+  amountCents: number | null;
+  /** Taxa de processamento (MDR), em centavos. */
+  feeCents: number | null;
+  anticipationFeeCents: number | null;
+  fraudCoverageFeeCents: number | null;
+  /** credit | refund | chargeback | chargeback_refund. */
+  type: string | null;
+  /** waiting_funds | paid. */
+  status: string | null;
+  installment: number | null;
+  paymentDate: string | null;
+}
+
+export interface PayablesResult {
+  payables: GatewayPayable[];
+  raw: unknown;
+  httpStatus: number | null;
+}
+
 /** Contrato que todo gateway de pagamento deve implementar. */
 export interface PaymentGateway {
   readonly provider: string;
@@ -248,6 +279,8 @@ export interface PaymentGateway {
   getCharge(orderId: string): Promise<ChargeResult>;
   /** Estorna uma cobrança (total ou parcial). O split é revertido proporcionalmente pelo gateway. */
   refundCharge(input: RefundInput): Promise<RefundResult>;
+  /** Lista os recebíveis de uma cobrança (de onde sai a taxa real do gateway). */
+  listPayables(chargeId: string): Promise<PayablesResult>;
   /** Atualiza a cadência de transferência de um recebedor (PATCH transfer-settings). */
   updateTransferSettings(externalId: string, settings: TransferSettings): Promise<RecipientResult>;
   /** Atualiza a antecipação automática de um recebedor (PATCH automatic-anticipation-settings). */

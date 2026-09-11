@@ -50,6 +50,9 @@ export default function ManagerFinancePayouts() {
   const companies = data?.companies ?? [];
   const totalNet = companies.reduce((acc, c) => acc + c.net_partner_cents, 0);
   const totalCommission = companies.reduce((acc, c) => acc + c.movepark_commission_cents, 0);
+  // Com a custódia ligada a cobrança inteira cai na Movepark, então a taxa do gateway é custo
+  // nosso. Sem ela ao lado da comissão, a margem da tela é sempre maior que a real.
+  const totalGatewayFee = companies.reduce((acc, c) => acc + c.gateway_fee_cents, 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +78,7 @@ export default function ManagerFinancePayouts() {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-6 tablet:ml-auto">
+          <div className="grid grid-cols-2 gap-6 tablet:ml-auto tablet:grid-cols-4">
             <div className="text-right">
               <div className="text-caption text-muted">Repasse líquido</div>
               <div className="text-display-sm text-ink">{brl(totalNet)}</div>
@@ -83,6 +86,18 @@ export default function ManagerFinancePayouts() {
             <div className="text-right">
               <div className="text-caption text-muted">Comissão Movepark</div>
               <div className="text-display-sm text-mp-primary">{brl(totalCommission)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-caption text-muted">Taxa do gateway</div>
+              <div className="text-display-sm text-warning">
+                {totalGatewayFee > 0 ? `−${brl(totalGatewayFee)}` : "-"}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-caption text-muted">Margem</div>
+              <div className="text-display-sm text-ink">
+                {brl(totalCommission - totalGatewayFee)}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -103,6 +118,7 @@ export default function ManagerFinancePayouts() {
                 <TableHead className="text-right">Estornos</TableHead>
                 <TableHead className="text-right">Líquido a repassar</TableHead>
                 <TableHead className="text-right">Comissão Movepark</TableHead>
+                <TableHead className="text-right">Taxa do gateway</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,6 +135,9 @@ export default function ManagerFinancePayouts() {
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-mp-primary">
                     {brl(c.movepark_commission_cents)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-warning">
+                    {c.gateway_fee_cents > 0 ? `−${brl(c.gateway_fee_cents)}` : "-"}
                   </TableCell>
                 </TableRow>
               ))}

@@ -22,9 +22,11 @@ import { sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts
 import { refundShouldCancelBooking } from "../_shared/refund.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
+  cardEventAction,
   decidePaymentStatus,
   isProductionKey,
   type MatchedPayment,
+  parseCardEvent,
   parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
@@ -161,7 +163,10 @@ Deno.serve(async (req: Request) => {
   // manutenção). Mantém o status "self-healing" sem depender do botão Sincronizar.
   if (ev.type.startsWith("recipient.")) {
     const rc = parseRecipientEvent(body);
-    if (!rc.recipientId) return json({ ok: true, matched: false });
+    if (!rc.recipientId) {
+      await markProcessed(admin, ev.eventId);
+      return json({ ok: true, matched: false });
+    }
     const { data: rec } = await admin
       .from("payout_recipient")
       .select("id, company_id, provider, external_recipient_id, kyc_url, kyc_url_expires_at")
@@ -171,6 +176,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!rec) {
       console.warn("[pagarme-webhook] recipient sem recebedor casado:", rc.recipientId);
+      await markProcessed(admin, ev.eventId);
       return json({ ok: true, matched: false });
     }
     const status = mapRecipientStatus(rc.rawStatus);
@@ -208,14 +214,55 @@ Deno.serve(async (req: Request) => {
         }
       })(),
     );
+    await markProcessed(admin, ev.eventId);
     return json({ ok: true, status });
+  }
+
+  // Evento de cartão salvo (card.*). Sem isso o `card.deleted` passava batido: o cartão morre no
+  // gateway e o `payment_method` fica no nosso banco, então o cliente escolhe no checkout um cartão
+  // que a cobrança vai recusar. `card.created` não interessa (o cartão salvo nasce em
+  // `create-card-charge`, com o id lido da resposta da própria cobrança).
+  if (ev.type.startsWith("card.")) {
+    const card = parseCardEvent(body);
+    const action = cardEventAction(ev.type);
+    if (!card.cardId || action === "ignore") {
+      await markProcessed(admin, ev.eventId);
+      return json({ ok: true, card: action });
+    }
+
+    const patch =
+      action === "delete"
+        ? { deleted_at: new Date().toISOString() }
+        : {
+            // Só sobrescreve o que veio no payload: campo ausente não apaga o que já temos.
+            ...(card.brand ? { brand: card.brand } : {}),
+            ...(card.last4 ? { last4: card.last4 } : {}),
+            ...(card.holderName ? { holder_name: card.holderName } : {}),
+            ...(card.expMonth ? { expiry_month: card.expMonth } : {}),
+            ...(card.expYear ? { expiry_year: card.expYear } : {}),
+          };
+    const { error: cardErr } = await admin
+      .from("payment_method")
+      .update(patch)
+      .eq("provider", "pagarme")
+      .eq("provider_token", card.cardId)
+      .is("deleted_at", null);
+    if (cardErr) {
+      console.error("[pagarme-webhook] card.* falhou:", action, cardErr.message);
+      return json({ ok: false, error: "card_write_failed" }, 500);
+    }
+    await markProcessed(admin, ev.eventId);
+    return json({ ok: true, card: action });
   }
 
   // Evento de transferência (saque do recebedor → banco do parceiro): registra em
   // payout_withdrawal (E0.3.3). Idempotente por (provider, external_transfer_id).
   if (ev.type.startsWith("transfer.")) {
     const tr = parseTransferEvent(body);
-    if (!tr.transferId || !tr.recipientId) return json({ ok: true, matched: false });
+    if (!tr.transferId || !tr.recipientId) {
+      await markProcessed(admin, ev.eventId);
+      return json({ ok: true, matched: false });
+    }
 
     const { data: rec } = await admin
       .from("payout_recipient")
@@ -226,6 +273,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!rec) {
       console.warn("[pagarme-webhook] transfer sem recebedor casado:", tr.recipientId);
+      await markProcessed(admin, ev.eventId);
       return json({ ok: true, matched: false });
     }
 
@@ -258,6 +306,7 @@ Deno.serve(async (req: Request) => {
       .from("payout_withdrawal")
       .upsert(row, { onConflict: "provider,external_transfer_id" });
     if (wErr) return json({ error: wErr.message }, 500);
+    await markProcessed(admin, ev.eventId);
     return json({ ok: true, withdrawal: wStatus });
   }
 
@@ -282,6 +331,7 @@ Deno.serve(async (req: Request) => {
   if (!payment) {
     // Ack mesmo sem casar (evita reentrega infinita); fica logado.
     console.warn("[pagarme-webhook] payment não encontrado:", ev.orderId, ev.chargeId);
+    await markProcessed(admin, ev.eventId);
     return json({ ok: true, matched: false });
   }
 

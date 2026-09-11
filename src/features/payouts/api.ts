@@ -265,6 +265,8 @@ export type PayoutStatementLine = {
   status: string;
   partner_cents: number;
   movepark_cents: number;
+  /** Taxa do gateway na cobrança. 0 quando ainda não apurada (ver reconcile-gateway-fees). */
+  gateway_fee_cents: number;
 };
 
 export type PayoutStatementCompany = {
@@ -274,6 +276,11 @@ export type PayoutStatementCompany = {
   refunded_partner_cents: number;
   net_partner_cents: number;
   movepark_commission_cents: number;
+  /**
+   * Taxa do gateway no período. Com a custódia ligada a cobrança inteira cai na Movepark, então
+   * isto é custo NOSSO: não desconta nada do parceiro, e a margem real é comissão menos esta taxa.
+   */
+  gateway_fee_cents: number;
   paid_count: number;
   refunded_count: number;
   lines: PayoutStatementLine[] | null;

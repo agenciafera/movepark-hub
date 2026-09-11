@@ -3,6 +3,8 @@ import {
   decidePaymentStatus,
   isProductionKey,
   type MatchedPayment,
+  cardEventAction,
+  parseCardEvent,
   parseRecipientEvent,
   parseTransferEvent,
   parseWebhookEvent,
@@ -342,4 +344,60 @@ Deno.test("resolvePayment: sem identificadores → null sem consultar nada", asy
   );
   assertEquals(got, null);
   assertEquals(consultou, false);
+});
+
+// ── Eventos de cartão salvo (card.*) ────────────────────────────────────────
+// Chegavam e caíam no vazio: 29 eventos recebidos até 11/09/2026, nenhum tratado. O que dói é o
+// `card.deleted`: o cartão morre no gateway e o `payment_method` continua no nosso banco, então o
+// cliente escolhe no checkout um cartão que a cobrança vai recusar.
+
+const cardBody = (type: string, card: Record<string, unknown> = {}) => ({
+  id: "hook_1",
+  type,
+  data: {
+    id: "card_abc123",
+    last_four_digits: "5548",
+    first_six_digits: "411111",
+    brand: "Mastercard",
+    holder_name: "Tony Stark",
+    exp_month: 7,
+    exp_year: 2030,
+    status: "active",
+    ...card,
+  },
+});
+
+Deno.test("parseCardEvent: lê o cartão do payload", () => {
+  const c = parseCardEvent(cardBody("card.updated"));
+  assertEquals(c.cardId, "card_abc123");
+  assertEquals(c.brand, "Mastercard");
+  assertEquals(c.last4, "5548");
+  assertEquals(c.holderName, "Tony Stark");
+  assertEquals(c.expMonth, 7);
+  assertEquals(c.expYear, 2030);
+});
+
+Deno.test("parseCardEvent: payload capenga não inventa dado", () => {
+  const c = parseCardEvent({ id: "hook_2", type: "card.updated", data: { id: "card_x" } });
+  assertEquals(c.cardId, "card_x");
+  assertEquals(c.brand, null);
+  assertEquals(c.last4, null);
+  assertEquals(c.expMonth, null);
+});
+
+Deno.test("parseCardEvent: sem corpo → cardId null", () => {
+  assertEquals(parseCardEvent(null).cardId, null);
+  assertEquals(parseCardEvent({ type: "card.updated" }).cardId, null);
+});
+
+Deno.test("cardEventAction: deleted apaga, updated atualiza, resto só confirma", () => {
+  assertEquals(cardEventAction("card.deleted"), "delete");
+  assertEquals(cardEventAction("card.updated"), "update");
+  assertEquals(cardEventAction("card.created"), "ignore");
+  assertEquals(cardEventAction("card.qualquer_coisa_nova"), "ignore");
+});
+
+Deno.test("cardEventAction: capitalização e tipo ausente não escapam", () => {
+  assertEquals(cardEventAction("CARD.DELETED"), "delete");
+  assertEquals(cardEventAction(null), "ignore");
 });

@@ -11,6 +11,8 @@ import type {
   CardChargeInput,
   ChargeResult,
   ChargeStatus,
+  GatewayPayable,
+  PayablesResult,
   PaymentGateway,
   PixChargeInput,
   RecipientInput,
@@ -446,6 +448,41 @@ export function buildRefundResult(httpStatus: number, body: unknown): RefundResu
   };
 }
 
+// ── Recebíveis (GET /payables) ──────────────────────────────────────────────
+
+/**
+ * Normaliza a resposta de `GET /payables`. Um recebível por PARCELA e por recebedor, e é o único
+ * lugar da API onde a taxa do gateway aparece (a order e a charge não trazem).
+ */
+export function buildPayablesResult(httpStatus: number, body: unknown): PayablesResult {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const rows = Array.isArray(b.data) ? (b.data as Record<string, unknown>[]) : [];
+  const num = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
+  const str = (v: unknown): string | null => {
+    if (typeof v === "string" && v.trim()) return v;
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+    return null;
+  };
+  return {
+    payables: rows.map((r) => ({
+      id: str(r.id),
+      chargeId: str(r.charge_id),
+      recipientId: str(r.recipient_id),
+      amountCents: num(r.amount),
+      feeCents: num(r.fee),
+      anticipationFeeCents: num(r.anticipation_fee),
+      fraudCoverageFeeCents: num(r.fraud_coverage_fee),
+      type: str(r.type),
+      status: str(r.status),
+      installment: num(r.installment),
+      paymentDate: str(r.payment_date),
+    })),
+    raw: body,
+    httpStatus,
+  };
+}
+
 export class PagarmeGateway implements PaymentGateway {
   readonly provider = "pagarme";
   private readonly secretKey: string;
@@ -626,5 +663,18 @@ export class PagarmeGateway implements PaymentGateway {
     const body = amountCents != null ? { amount: amountCents } : undefined;
     const { httpStatus, parsed } = await this.rawFetch("DELETE", `/charges/${chargeId}`, body);
     return buildRefundResult(httpStatus, parsed);
+  }
+
+  /**
+   * Recebíveis de uma cobrança. `size=1000` cobre qualquer parcelamento (teto de 24) sem precisar
+   * paginar; a paginação por `page` está sendo descontinuada em favor de `forward_cursor`, e não
+   * chegamos perto do limite.
+   */
+  async listPayables(chargeId: string): Promise<PayablesResult> {
+    const { httpStatus, parsed } = await this.rawFetch(
+      "GET",
+      `/payables?charge_id=${encodeURIComponent(chargeId)}&size=1000`,
+    );
+    return buildPayablesResult(httpStatus, parsed);
   }
 }

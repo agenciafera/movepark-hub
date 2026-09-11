@@ -89,8 +89,6 @@ de pé. Payload sem split, razão preservado.
 
 - `payout_withdrawal` só é alimentada pelos webhooks `transfer.*`. Sem saldo do parceiro no
   gateway, ela para de receber linhas e o "já transferido" da tela do parceiro congela.
-- A taxa real do gateway nunca entrou no nosso banco: o desconto acontecia dentro do Pagar.me pelo
-  flag `charge_processing_fee`. Com custódia, a taxa é custo nosso e precisa virar lançamento.
 - **Não existe código que execute o repasse.** Nada no repo chama `POST /transfers`. O extrato diz
   quanto devemos, e a saída do dinheiro é operação manual fora do sistema.
 
@@ -121,6 +119,42 @@ estornados.
 
 A linha do extrato (`p_include_lines`) passou a mostrar o valor já líquido do estorno parcial. Os
 nomes dos campos do JSON não mudaram, então o front não muda.
+
+### Corrigido em 11/09/2026: a taxa do gateway virou lançamento
+
+Migration `20261114143000_taxa_do_gateway_vira_lancamento.sql`, pgTAP `gateway_fee.test.sql`.
+
+Antes da custódia o desconto da taxa acontecia dentro do Pagar.me, pelo `charge_processing_fee` na
+perna do parceiro, e nunca precisou existir no nosso banco. Com o split desligado a cobrança
+inteira cai na Movepark e a taxa virou custo nosso, sem lançamento: o Faturamento mostrava comissão
+bruta e a margem real era sempre menor que a da tela.
+
+**A taxa não vem na order nem na charge.** O único lugar da Core v5 que traz é
+**`GET /payables?charge_id=…`**, um recebível por parcela, com `fee`, `anticipation_fee` e
+`fraud_coverage_fee` ([doc](https://docs.pagar.me/reference/retornando-receb%C3%ADveis)). O
+recebível também não nasce no mesmo instante do `charge.paid`, então a apuração é assíncrona.
+
+| Peça | Onde |
+|---|---|
+| Leitura no gateway | `listPayables(chargeId)` na interface `PaymentGateway`; `buildPayablesResult` no adapter |
+| Soma do custo | `_shared/payments/fees.ts` (`totalGatewayFeeCents`), fora do adapter porque opera no tipo agnóstico |
+| Persistência | `payment.gateway_fee_cents` + `gateway_fee_synced_at`, com índice parcial do que falta apurar |
+| Apuração | Edge `reconcile-gateway-fees`, cron de 30 min, lote de 25, janela de 10 min a 90 dias |
+| Exibição | Manager › Repasses: taxa e **margem** (comissão menos taxa) ao lado da comissão |
+
+**Nulo é "ainda não apurado", e isso não é detalhe.** Gravar zero quando o recebível não existe
+esconderia justamente o que falta apurar. A Edge carimba `gateway_fee_synced_at` na tentativa e
+deixa o valor nulo, e o extrato soma só o que tem valor.
+
+Provado na primeira execução: **MP-BE2E2B**, a venda real de R$ 102,90 de 31/07/2026, apurou
+**R$ 1,02**, ou 0,99%, exatamente a taxa medida por saldo de recebedor naquele dia. As outras 24
+cobranças do lote são da fase de sandbox e não têm recebível, então ficaram nulas.
+
+**Armadilha do cron:** o default de `timeout_milliseconds` do `pg_net` é 5 s, e o lote são até 25
+consultas sequenciais. Com o default a Edge roda até o fim, mas o `pg_net` desiste antes e grava
+`Timeout of 5000 ms reached` em `net._http_response`, deixando a apuração sem resposta para olhar.
+O job envia `timeout_milliseconds := 60000`. Os outros crons de reconciliação usam o default e têm
+o mesmo risco quando o lote cresce.
 
 ## Por que um estado próprio de "ficha para receber"
 
@@ -365,6 +399,18 @@ mora em `_shared/voucher/` (`fields.ts` puro + `pdf.ts` com `buildVoucherPdf`/`g
 **reutilizada** pela Edge `voucher-pdf` (download sob demanda, leitura RLS pelo dono/operador). Falha de
 voucher é logada e **não** derruba o webhook (status já refletido).
 
+**Cartão salvo (`card.*`), desde 11/09/2026.** Os eventos chegavam e caíam no vazio: 29 recebidos,
+nenhum tratado. `card.deleted` marca `payment_method.deleted_at`, porque cartão morto no gateway
+que continua na nossa lista faz o cliente escolher no checkout algo que a cobrança vai recusar;
+`card.updated` atualiza bandeira, fim e validade, e só sobrescreve o que veio no payload;
+`card.created` é ignorado de propósito (o cartão salvo nasce em `create-card-charge`, com o id lido
+da resposta da própria cobrança). Tipo desconhecido não vira escrita cega.
+
+**Idempotência de verdade em todos os ramos.** `recipient.*`, `transfer.*` e os casos de "não
+casou" retornavam sem gravar `processed_at`, então a idempotência ali era nominal: numa reentrega o
+evento era reprocessado inteiro. Agora todo caminho que decidiu alguma coisa carimba o evento; só
+falha de escrita (que devolve 500 e pede reentrega) segue sem carimbo.
+
 **Setup:** cadastrar a URL do webhook + Basic auth no painel do Pagar.me e setar o secret.
 
 ### Estorno / refund (E0.3.2)
@@ -399,6 +445,21 @@ informa o valor.
 **preço base** (`baseCents − comissão`); o **excedente** (juros, quando `absorb=customer`) vai pra
 Movepark. PIX passa `chargedCents == baseCents` → comportamento idêntico. Invariante: soma do split ==
 valor cobrado.
+
+> **Juros de 2,99% a.m. acima de 3x, desde 11/09/2026** (migration
+> `20261114120000_parcelamento_com_juros_acima_de_3x.sql`). A política estava em
+> `monthlyInterestPct: 0` com `maxInstallments: 12`, `interestFreeUpTo: 3` e `absorb: 'customer'`,
+> combinação que dizia cobrar juros do cliente e não cobrava de ninguém: eram 12x sem juros, com o
+> custo de parcelamento caindo na Movepark, e o `interestFreeUpTo` como config morta. Nunca doeu
+> porque nunca houve venda no cartão, mas era o que estava armado para a primeira. O default das
+> duas cópias de `installments.ts` subiu junto, para a política sumir do banco e o comportamento
+> não regredir, e um guarda nos dois espelhos (mais o pgTAP `card_installment_policy.test.sql`
+> sobre o valor gravado) reprova a combinação inerte. A taxa segue editável no Manager.
+>
+> **O `absorb` promete mais do que entrega.** Só `customer` muda alguma coisa: `movepark` e
+> `partner` se comportam igual, porque nada no código reduz a perna do parceiro pelos juros.
+> Decidido em 11/09/2026 manter os três valores e registrar aqui, em vez de implementar o desconto
+> no parceiro (que seria mudança de contrato comercial) ou remover o valor.
 
 **Config pública:** a Edge **`get-payment-config`** (sem auth, service_role) devolve `{ public_key,
 installment_policy }` — o `app_setting` é bloqueado por RLS pro consumidor. **Cartão salvo:** opt-in no

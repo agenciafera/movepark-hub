@@ -77,3 +77,18 @@ Deno.test("computeInstallmentPlan: base inválido → vazio", () => {
   assertEquals(computeInstallmentPlan(0, policy()), []);
   assertEquals(computeInstallmentPlan(-5, policy()), []);
 });
+
+// A política default é o que vale quando `app_setting.card_installment_policy` some ou vem
+// corrompida. Se ela oferecer parcela longa sem juros dizendo que quem paga é o cliente, o custo
+// de parcelamento do gateway cai na Movepark em silêncio, e nenhum relatório acusa.
+Deno.test("default não oferece parcela longa sem juros dizendo que o cliente paga", () => {
+  const d = DEFAULT_INSTALLMENT_POLICY;
+  if (d.absorb === "customer" && d.maxInstallments > d.interestFreeUpTo) {
+    assertEquals(
+      d.monthlyInterestPct > 0,
+      true,
+      `default oferece até ${d.maxInstallments}x com interestFreeUpTo ${d.interestFreeUpTo} e ` +
+        `absorb 'customer', mas monthlyInterestPct é ${d.monthlyInterestPct}: ninguém paga o juros`,
+    );
+  }
+});

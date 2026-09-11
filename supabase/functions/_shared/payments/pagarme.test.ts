@@ -6,6 +6,7 @@ import {
   buildOrderBody,
   buildRecipientResult,
   buildRefundResult,
+  buildPayablesResult,
   extractKycUrl,
   mapChargeStatus,
   mapRecipientStatus,
@@ -15,6 +16,7 @@ import {
   parseKycExpiresAt,
   recipientCanNeedKyc,
 } from "./pagarme.ts";
+import { totalGatewayFeeCents } from "./fees.ts";
 import type { CardChargeInput, PixChargeInput, RecipientInput } from "./types.ts";
 
 Deno.test("pagarmeBaseUrl: host único da Core v5 (a chave define o ambiente)", () => {
@@ -445,4 +447,75 @@ Deno.test("buildCardOrderBody: sem split, a chave é OMITIDA de credit_card", ()
   }) as Record<string, any>;
   assertEquals("split" in body.payments[0].credit_card, false);
   assertEquals(body.payments[0].credit_card.installments, 1);
+});
+
+// ── Recebíveis (GET /payables): a taxa real do gateway ──────────────────────
+// Com a custódia ligada a cobrança inteira cai na Movepark e a taxa do gateway virou custo nosso.
+// Ela não aparece na order nem na charge: só em `/payables`, um recebível por parcela.
+
+const payablesBody = {
+  data: [
+    {
+      id: 4304241393,
+      status: "waiting_funds",
+      amount: 3090,
+      fee: 155,
+      anticipation_fee: 0,
+      fraud_coverage_fee: 0,
+      installment: 1,
+      charge_id: "ch_abc",
+      recipient_id: "re_mp",
+      type: "credit",
+      payment_method: "credit_card",
+      payment_date: "2026-08-03T03:00:00Z",
+    },
+    {
+      id: 4304241394,
+      status: "waiting_funds",
+      amount: 3090,
+      fee: 140,
+      anticipation_fee: 12,
+      fraud_coverage_fee: 3,
+      installment: 2,
+      charge_id: "ch_abc",
+      recipient_id: "re_mp",
+      type: "credit",
+      payment_method: "credit_card",
+      payment_date: "2026-09-03T03:00:00Z",
+    },
+  ],
+  paging: {},
+};
+
+Deno.test("buildPayablesResult: lê os recebíveis da cobrança", () => {
+  const r = buildPayablesResult(200, payablesBody);
+  assertEquals(r.httpStatus, 200);
+  assertEquals(r.payables.length, 2);
+  assertEquals(r.payables[0].chargeId, "ch_abc");
+  assertEquals(r.payables[0].recipientId, "re_mp");
+  assertEquals(r.payables[0].amountCents, 3090);
+  assertEquals(r.payables[0].feeCents, 155);
+  assertEquals(r.payables[1].anticipationFeeCents, 12);
+  assertEquals(r.payables[1].fraudCoverageFeeCents, 3);
+  assertEquals(r.payables[1].type, "credit");
+});
+
+Deno.test("buildPayablesResult: corpo vazio ou inesperado não quebra", () => {
+  assertEquals(buildPayablesResult(200, null).payables, []);
+  assertEquals(buildPayablesResult(200, {}).payables, []);
+  assertEquals(buildPayablesResult(404, { message: "not found" }).payables, []);
+});
+
+Deno.test("totalGatewayFeeCents: soma as três taxas de todas as parcelas", () => {
+  // 155 + (140 + 12 + 3) = 310
+  assertEquals(totalGatewayFeeCents(buildPayablesResult(200, payablesBody).payables), 310);
+});
+
+Deno.test("totalGatewayFeeCents: sem recebível não inventa zero como se soubesse", () => {
+  assertEquals(totalGatewayFeeCents([]), null);
+});
+
+Deno.test("totalGatewayFeeCents: recebível sem taxa conta como zero", () => {
+  const r = buildPayablesResult(200, { data: [{ id: 1, charge_id: "ch_x", amount: 100 }] });
+  assertEquals(totalGatewayFeeCents(r.payables), 0);
 });
