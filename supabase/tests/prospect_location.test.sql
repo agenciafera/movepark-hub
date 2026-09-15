@@ -94,23 +94,31 @@ select hasnt_column('public','prospect_location','is_24h',
 -- pré-contrato do próprio lote mapeado, e ele guarda de qual ficha a reivindicação partiu
 -- (E0.17-g). Uma entrada nova aqui é uma decisão de arquitetura, não um detalhe de
 -- implementação, e é por isso que a lista é exata em vez de um teto.
+--
+-- `prospect_price_research` entrou em 12/11/2026 (`20261112090000_robo_de_pesquisa_de_preco`)
+-- e é a segunda, pelo mesmo critério: é a fila de PROPOSTAS de preço pesquisado, que o ADR-010
+-- autoriza explicitamente como a exceção que não é preço transacional. Ela não vira `Offer`,
+-- não entra em booking, fare, cupom ou payout, e o robô nem escreve na ficha: quem aplica é
+-- um hub_admin. Continua valendo que nenhuma tabela transacional pode aparecer aqui.
 select set_eq(
   $$ select c.conrelid::regclass::text
        from pg_constraint c
       where c.contype = 'f' and c.confrelid = 'public.prospect_location'::regclass $$,
-  array['company_onboarding'],
-  'ADR-010: só o lead aponta para prospect_location, e nenhuma tabela transacional');
+  array['company_onboarding', 'prospect_price_research'],
+  'ADR-010: só o lead e a fila de propostas apontam para cá, nenhuma tabela transacional');
 
--- E a FK que existe não pode custar a exclusão. "Excluir é delete de verdade" é uma
--- propriedade que o ADR-010 comprou de propósito (a URL tinha ranking, e apagar uma ficha
--- errada precisa ser possível); uma FK sem `on delete set null` transformaria isso em
--- "não dá para excluir enquanto houver lead".
+-- E nenhuma FK pode custar a exclusão. "Excluir é delete de verdade" é uma propriedade que o
+-- ADR-010 comprou de propósito (a URL tinha ranking, e apagar uma ficha errada precisa ser
+-- possível). O que quebra isso é `no action` ou `restrict`, que travam o delete enquanto
+-- houver filho. `set null` (o lead, que sobrevive à ficha) e `cascade` (as propostas, que só
+-- fazem sentido junto dela) preservam a propriedade, cada um do seu jeito. A asserção é sobre
+-- a propriedade, não sobre uma das formas de obtê-la.
 select is(
   (select count(*)::int from pg_constraint c
     where c.contype = 'f' and c.confrelid = 'public.prospect_location'::regclass
-      and c.confdeltype <> 'n'),
+      and c.confdeltype in ('a', 'r')),
   0,
-  'toda FK que aponta para cá é ON DELETE SET NULL: excluir a ficha segue possível');
+  'nenhuma FK trava a exclusão da ficha: não há no action nem restrict apontando para cá');
 
 -- ── 2. Geo: coluna gerada + PostGIS (ADR-001) ────────────────────────────────
 -- 0,0009 grau de latitude ≈ 100 m. A distância sai de ST_Distance na consulta; a única

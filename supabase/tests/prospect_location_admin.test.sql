@@ -71,9 +71,14 @@ begin
   values (lviva, cmp,'Unidade Viva E17H','unidade-e17h-viva',-50.0005,-30.0005, dest,'PLACE-E17H-VIVA');
 
   -- Unidade LISTADA: `is_listed` só sobrevive ao gate de foto com pelo menos uma foto.
-  insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id, is_listed, photos)
-  values (llist, cmp,'Unidade Listada E17H','unidade-e17h-listada',-50.0007,-30.0007, dest, true,
-          '["https://img.example/e17h.jpg"]'::jsonb);
+  -- O `public_slug` entra porque desde `20261104090000` a URL da ficha é
+  -- `/estacionamentos/<destino>/<lote>` e sai de `location_public_path`, que exige os dois slugs
+  -- públicos. Ele não é gerado por trigger: é campo de hub_admin (`location_guard_public_slug`).
+  -- Sem ele a unidade listada não tem URL, e o redirecionamento cai no destino.
+  insert into public.location(id, company_id, name, slug, public_slug, latitude, longitude,
+                              destination_id, is_listed, photos)
+  values (llist, cmp,'Unidade Listada E17H','unidade-e17h-listada','unidade-e17h-listada',
+          -50.0007,-30.0007, dest, true, '["https://img.example/e17h.jpg"]'::jsonb);
 
   -- Converter não publica oferta: a unidade nasce sem foto, sem tipo de vaga e não listada.
   insert into public.location(id, company_id, name, slug, latitude, longitude, destination_id)
@@ -434,12 +439,12 @@ select is(
 -- cravaria no cache do navegador e do Google um destino que ainda vai mudar.
 select results_eq(
   $$select target, permanent from public.prospect_redirect_target('destino-e17h','e17h-convertido')$$,
-  $$values ('/destinos/destino-e17h'::text, false)$$,
+  $$values ('/estacionamentos/destino-e17h'::text, false)$$,
   'unidade convertida e não listada: cai no destino, e o redirecionamento é temporário');
 
 select results_eq(
   $$select target, permanent from public.prospect_redirect_target('destino-e17h','e17h-convertido-listado')$$,
-  $$values ('/p/co-e17h/unidade-e17h-listada/e17h_coberta'::text, true)$$,
+  $$values ('/estacionamentos/destino-e17h/unidade-e17h-listada'::text, true)$$,
   'unidade listada com tipo de vaga ativo: vai para a single, e aí sim o redirecionamento é permanente');
 
 -- E o Worker consulta sem sessão nenhuma. A RLS esconde ficha convertida de quem tem a anon
@@ -448,7 +453,7 @@ select set_config('request.jwt.claims', '', true);
 set local role anon;
 select is(
   (select target from public.prospect_redirect_target('destino-e17h','e17h-convertido')),
-  '/destinos/destino-e17h',
+  '/estacionamentos/destino-e17h',
   'anon (o Worker) enxerga a ficha convertida que a RLS esconde dele, e só a URL pública');
 reset role;
 

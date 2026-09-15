@@ -582,3 +582,40 @@ update public.location
    set is_listed = true
  where deleted_at is null
    and status = 'active';
+
+-- ── os gatilhos voltam, e o que eles deveriam ter preenchido é preenchido ────────────────
+--
+-- Este arquivo abre com `SET session_replication_role = replica`, herdado do pg_dump. Ele existe
+-- para o restore não esbarrar em FK fora de ordem, e o efeito colateral é grande: **nenhum gatilho
+-- roda durante o seed inteiro**. Tudo que um trigger preencheria entra nulo.
+--
+-- Foi assim que 16 destinos nasceram sem `public_slug`: `destination_set_public_slug` (de
+-- `20261102090000`) deriva o slug do rótulo no INSERT, e nunca chegou a disparar. Em produção a
+-- coluna foi preenchida pelo backfill daquela migration, então ninguém viu; num stack novo a URL
+-- pública de 16 aeroportos simplesmente não existia, e `url_publica_estacionamentos.test.sql`
+-- cobrou ("have: 16, want: 0").
+--
+-- O conserto devolve o comportamento normal e deixa o próprio gatilho derivar, em vez de repetir a
+-- regra aqui: o `update` toca `short_name`, que está na lista de colunas que o disparam.
+SET session_replication_role = DEFAULT;
+
+update public.destination
+   set short_name = short_name
+ where public_slug is null or btrim(public_slug) = '';
+
+-- ── reatribuições que migrations fizeram no vivo e o seed desconhece ─────────────────────
+--
+-- Mesma armadilha de ordem do resto deste bloco: a migration roda ANTES do seed, então um
+-- `update` endereçado a uma linha que só o seed traz não encontra nada e morre em silêncio. Em
+-- produção funcionou (a linha já existia); num stack novo o dado nasce no estado velho.
+--
+-- `20260819203903_vaga_avulsa_parking_type` reatribuiu o único tipo de vaga da Garageinn de
+-- "uncovered" para "avulsa", porque ela vende vaga sem local fixo. Sem esta linha o stack novo
+-- mantém "uncovered" e `vaga_avulsa_parking_type.test.sql` cobra ("have: uncovered, want: avulsa").
+-- O `where` repete os ids da migration de propósito: é a mesma decisão, reafirmada, e não uma
+-- regra nova que valeria para outras empresas.
+update public.company_parking_type
+   set parking_type_id = (select id from public.parking_type where code = 'avulsa')
+ where id = '69462a09-e46d-4fc3-af0f-29536426af95'
+   and company_id = '2783dc63-0ece-47c9-aeeb-e7ea44e7c7dc'
+   and exists (select 1 from public.parking_type where code = 'avulsa');
