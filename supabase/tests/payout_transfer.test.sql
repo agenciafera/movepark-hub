@@ -7,7 +7,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(26);
+select plan(30);
 
 select has_table('public', 'payout_transfer', 'payout_transfer existe');
 select has_function('public', 'payout_transfer_request', 'a RPC de pedido existe');
@@ -181,6 +181,38 @@ select is(
   (select count(*)::int from public.payout_transfer
     where company_id = current_setting('test.cid')::uuid and status = 'created'),
   1, 'e existe exatamente um em andamento');
+
+-- ── estorno DEPOIS do repasse: pagamos a mais e isso não pode sumir ─────────
+-- Achado da varredura de 15/09/2026: `balance_cents` é travado em zero, então um estorno posterior
+-- ao repasse apagava do painel o fato de a Movepark ter pago a mais. Sem número, ninguém cobra.
+reset role;
+-- só a linha em andamento vira paga; a anterior ficou `failed` e não conta como repassada
+update public.payout_transfer set status = 'paid', paid_at = now()
+ where company_id = current_setting('test.cid')::uuid and status = 'created';
+update public.payment p set status = 'refunded', refunded_at = now()
+  from public.booking b, public.location l
+ where b.id = p.booking_id and l.id = b.location_id
+   and l.company_id = current_setting('test.cid')::uuid;
+set local role authenticated;
+select pg_temp.as_user(current_setting('test.adm'));
+
+select is(
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'owed_cents')::bigint),
+  0::bigint, 'estornado: não devemos mais nada');
+
+select is(
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'balance_cents')::bigint),
+  0::bigint, 'o saldo devido não fica negativo');
+
+select is(
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'overpaid_cents')::bigint),
+  8000::bigint, 'mas o que foi pago a mais aparece: 8000 repassados sobre dívida zero');
+
+select is(
+  (select (e->>'overpaid_cents')::bigint
+     from jsonb_array_elements(public.payout_owed_overview()) e
+    where (e->>'company_id')::uuid = current_setting('test.cid')::uuid),
+  8000::bigint, 'e a empresa segue no painel, com o valor a recuperar');
 
 select has_function('public', 'reconcile_payout_transfers_expected_key',
   'a chave do cron de conciliação existe');

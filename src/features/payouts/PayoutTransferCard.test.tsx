@@ -14,6 +14,7 @@ const linhas: PayoutOwedRow[] = [
     target_recipient_id: "re_parceiro",
     recipient_status: "active",
     em_andamento: false,
+    overpaid_cents: 0,
   },
   {
     company_id: "c2",
@@ -24,6 +25,7 @@ const linhas: PayoutOwedRow[] = [
     target_recipient_id: null,
     recipient_status: null,
     em_andamento: false,
+    overpaid_cents: 0,
   },
   {
     company_id: "c3",
@@ -34,6 +36,7 @@ const linhas: PayoutOwedRow[] = [
     target_recipient_id: "re_c3",
     recipient_status: "active",
     em_andamento: true,
+    overpaid_cents: 0,
     pendente: {
       id: "t3",
       status: "processing",
@@ -52,6 +55,7 @@ const linhas: PayoutOwedRow[] = [
     target_recipient_id: "re_c4",
     recipient_status: "active",
     em_andamento: true,
+    overpaid_cents: 0,
     pendente: {
       id: "t4",
       status: "created",
@@ -60,6 +64,18 @@ const linhas: PayoutOwedRow[] = [
       failed_reason: "incerto HTTP 504",
       requested_at: "2026-09-15T12:00:00Z",
     },
+  },
+  {
+    company_id: "c5",
+    company_name: "Pagou A Mais",
+    owed_cents: 0,
+    transferred_cents: 9000,
+    available_cents: 0,
+    overpaid_cents: 9000,
+    target_recipient_id: "re_c5",
+    recipient_status: "active",
+    em_andamento: false,
+    pendente: null,
   },
 ];
 
@@ -140,5 +156,15 @@ describe("PayoutTransferCard", () => {
     await waitFor(() =>
       expect(repassar).toHaveBeenCalledWith({ company_id: "c1", amount_cents: 7650 }),
     );
+  });
+
+  it("mostra o que foi repassado a mais, em vez de sumir no zero", () => {
+    // Estorno depois do repasse derrubava o devido, o repassado continuava lá, e a diferença
+    // desaparecia no `greatest(..., 0)`. Sem número na tela, ninguém cobra.
+    renderWithProviders(<PayoutTransferCard />);
+    const linha = screen.getByText("Pagou A Mais").closest("tr")!;
+    expect(norm(linha.textContent ?? "")).toContain("R$ 90,00");
+    expect(linha.textContent).toMatch(/a recuperar/i);
+    expect(linha.querySelector("button")).toBeNull();
   });
 });

@@ -369,6 +369,8 @@ export type PayoutOwedRow = {
   transferred_cents: number;
   /** O que cabe repassar agora. */
   available_cents: number;
+  /** Repassado a mais (tipicamente estorno depois do repasse). Zero no caminho normal. */
+  overpaid_cents: number;
   target_recipient_id: string | null;
   recipient_status: string | null;
   em_andamento: boolean;

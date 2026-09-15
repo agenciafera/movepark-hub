@@ -87,6 +87,7 @@ export function PayoutTransferCard() {
             <TableBody>
               {linhas.map((l) => {
                 const apto = l.recipient_status === "active" && !!l.target_recipient_id;
+                const temSaldo = l.available_cents > 0;
                 return (
                   <TableRow key={l.company_id}>
                     <TableCell className="text-ink">{l.company_name}</TableCell>
@@ -106,11 +107,20 @@ export function PayoutTransferCard() {
                         </Button>
                       ) : l.em_andamento ? (
                         <Badge tone="pending">Aguardando o gateway</Badge>
+                      ) : l.overpaid_cents > 0 ? (
+                        // Estorno depois do repasse: pagamos a mais. Aparece para alguém resolver,
+                        // em vez de sumir no zero do saldo.
+                        <Badge tone="cancelled" className="gap-1">
+                          <Warning />
+                          A recuperar {brl(l.overpaid_cents)}
+                        </Badge>
                       ) : !apto ? (
                         <Badge tone="cancelled" className="gap-1">
                           <Warning />
                           Sem recebedor apto
                         </Badge>
+                      ) : !temSaldo ? (
+                        <span className="text-caption text-muted">-</span>
                       ) : (
                         <Button size="sm" variant="outline" onClick={() => setAlvo(l)}>
                           Repassar

@@ -202,6 +202,17 @@ evento chegar antes de a Edge gravar o id.
 que não chegou mostra **Retomar repasse**, que reusa a mesma linha e a mesma chave; pendente que já
 chegou mostra "Aguardando o gateway", e quem fecha é a conciliação.
 
+**Repassado a mais deixa de sumir (migration `20261117090000`).** `balance_cents` é
+`greatest(devido - repassado, 0)`, e o travamento em zero existe para a tela do parceiro não mostrar
+saldo negativo. O efeito colateral: um estorno DEPOIS do repasse derruba o devido, o repassado
+continua lá, e a diferença desaparecia. A Movepark pagava a mais e o painel não dizia nada. Entra
+`overpaid_cents` no `payout_balance` e no `payout_owed_overview`, e a empresa continua na lista com
+o aviso **A recuperar**. Não vira cobrança automática: se houver venda nova, o próprio cálculo do
+devido já desconta, porque `payout_transferred_cents` segue contando o repasse antigo.
+
+Junto veio um defeito da tela que o teste revelou: com R$ 0,00 disponível ela ainda oferecia
+**Repassar**. Agora o botão só aparece com saldo a repassar.
+
 **Limite conhecido.** Uma linha em estado incerto que nunca consegue resposta do gateway (5xx
 permanente) fica retomável para sempre e não tem cancelamento pela tela, de propósito: cancelar sem
 saber se o dinheiro saiu é o único caminho para o repasse em dobro. Se acontecer, a resolução é
