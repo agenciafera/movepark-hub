@@ -17,7 +17,7 @@
 -- Roda em transação com rollback.
 
 begin;
-select plan(14);
+select plan(15);
 
 do $$
 declare
@@ -107,11 +107,19 @@ select throws_ok(
 );
 
 -- Vira hub_admin de verdade: a RPC lê o papel do profiles, não do JWT.
+--
+-- O usuário é criado aqui em vez de emprestado de `auth.users limit 1`: linha arbitrária, e se
+-- ela não tiver profile o `update` não acha nada e o teste segue como anônimo, levando
+-- "Sem permissão para a pesquisa de preço". `do update` porque o trigger `on_auth_user_created`
+-- já pode ter criado o profile como customer.
 do $$
-declare
-  u uuid := (select id from auth.users limit 1);
+declare u uuid := gen_random_uuid();
 begin
-  update public.profiles set role = 'hub_admin' where id = u;
+  insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+            'pesquisa-admin@ex.com', now(), now());
+  insert into public.profiles(id, role) values (u, 'hub_admin')
+    on conflict (id) do update set role = 'hub_admin';
   perform set_config('request.jwt.claims',
     json_build_object('sub', u::text, 'role', 'authenticated')::text, true);
 end $$;

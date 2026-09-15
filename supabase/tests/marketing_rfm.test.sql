@@ -8,7 +8,7 @@
 -- Roda com: supabase test db. Transação + rollback.
 
 begin;
-select plan(14);
+select plan(17);
 
 -- ── 1. Marca e origem a partir do campo livre ───────────────────────────────
 -- O campo é digitado, não escolhido: pegar a primeira palavra devolveria "ONIX" como marca.
@@ -82,20 +82,33 @@ select is(
   'contato não elegível não recebe score');
 
 -- ── 3. Os scores respeitam a ordem do comportamento ─────────────────────────
+--
+-- A janela entra EXPLÍCITA nestes três. O contato mais frio da fixture sumiu há 400 dias e a
+-- janela padrão é 365 (`app_setting.marketing_rfm_window_days`), então ele nem aparece no
+-- resultado: os três casos comparavam contra NULL e falhavam sem dizer por quê. O que eles
+-- precisam provar é a ORDEM dos scores, não o valor de uma configuração que o Manager edita.
 select ok(
-  (select r_score from public.marketing_contact_rfm() where contact_key = 'rfm-a@ex.com')
-  > (select r_score from public.marketing_contact_rfm() where contact_key = 'rfm-e@ex.com'),
+  (select r_score from public.marketing_contact_rfm(null, 500) where contact_key = 'rfm-a@ex.com')
+  > (select r_score from public.marketing_contact_rfm(null, 500) where contact_key = 'rfm-e@ex.com'),
   'quem comprou há 2 dias tem recência maior que quem sumiu há 400');
 
 select ok(
-  (select f_score from public.marketing_contact_rfm() where contact_key = 'rfm-a@ex.com')
-  > (select f_score from public.marketing_contact_rfm() where contact_key = 'rfm-e@ex.com'),
+  (select f_score from public.marketing_contact_rfm(null, 500) where contact_key = 'rfm-a@ex.com')
+  > (select f_score from public.marketing_contact_rfm(null, 500) where contact_key = 'rfm-e@ex.com'),
   'quem tem 10 reservas tem frequência maior que quem tem 1');
 
 select ok(
-  (select m_score from public.marketing_contact_rfm() where contact_key = 'rfm-a@ex.com')
-  > (select m_score from public.marketing_contact_rfm() where contact_key = 'rfm-e@ex.com'),
+  (select m_score from public.marketing_contact_rfm(null, 500) where contact_key = 'rfm-a@ex.com')
+  > (select m_score from public.marketing_contact_rfm(null, 500) where contact_key = 'rfm-e@ex.com'),
   'quem gerou mais receita tem monetário maior');
+
+-- E a janela padrão faz o que promete: quem sumiu além dela fica de fora do RFM. Isto era um
+-- efeito colateral que derrubava os casos acima em silêncio; agora é uma regra checada.
+select ok(
+  not exists (
+    select 1 from public.marketing_contact_rfm() where contact_key = 'rfm-e@ex.com'
+  ),
+  'contato mais velho que a janela padrão de 365 dias fica fora do RFM');
 
 -- ── 4. O M é a terceira dimensão: promove dentro da célula ──────────────────
 -- Um contato frio com M no topo vira "perdidos VIP" em vez de sumir junto dos "perdidos".

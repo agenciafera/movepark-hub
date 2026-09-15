@@ -1,0 +1,25 @@
+-- As duas colunas públicas do lote mapeado nasceram sem grant, e a vitrine sumia em ambiente novo.
+--
+-- Sequência que produziu o buraco:
+--
+--   1. `20260828140735` concedeu `select (public_slug, public_name)` a anon e authenticated.
+--   2. `20261009000000` abriu com `revoke select on public.prospect_location from anon,
+--      authenticated` e reconcedeu a lista da vitrine, que ainda não tinha as duas. O revoke
+--      apagou o grant do passo 1.
+--   3. `20261102090000` criou de fato as colunas na tabela (até ali elas só existiam no banco
+--      vivo, vindas da frente de white-label), sem grant nenhum.
+--   4. `20261111091500` passou a ler `p.public_slug` e `p.public_name` em
+--      `destination_prospect_cards`, que é SECURITY INVOKER de propósito (Q-021: o corte de
+--      colunas é o que esconde o telefone, e DEFINER contornaria justamente isso).
+--
+-- Em produção alguém concedeu à mão e ninguém percebeu. Num stack novo, `anon` lê a vitrine e
+-- leva `42501: permission denied for table prospect_location`: a lista de lotes mapeados some da
+-- página de destino inteira. O CI cobrou em `prospect_location.test.sql` e
+-- `prospect_cards_google_rating.test.sql`.
+--
+-- As duas são públicas por definição: compõem a URL e o título da ficha na vitrine. Nada aqui
+-- toca o telefone, `research_source` ou qualquer coluna que o Q-021 mantém escondida.
+--
+-- Estado replicado do que produção tem hoje, medido antes de escrever. Em produção é no-op.
+
+grant select (public_slug, public_name) on public.prospect_location to anon, authenticated;

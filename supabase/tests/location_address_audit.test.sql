@@ -174,23 +174,32 @@ select is(
   'veredito: pino colado mas porta diferente também vira divergente');
 
 -- ── 3. aplicar re-vincula o destino ───────────────────────────────────────────
+-- Assume o admin que o bloco abaixo cria. Antes esta função pegava `auth.users limit 1` por
+-- conta própria, ou seja, podia assumir um usuário DIFERENTE do que foi promovido a hub_admin.
+-- Num banco cheio as duas consultas caíam na mesma linha por sorte.
 create or replace function pg_temp.as_admin() returns void language plpgsql as $$
-declare uid uuid;
 begin
-  select id into uid from auth.users limit 1;
   perform set_config('request.jwt.claims',
-    json_build_object('sub', coalesce(uid::text, gen_random_uuid()::text), 'role', 'authenticated')::text, true);
+    json_build_object('sub', current_setting('test.admin'), 'role', 'authenticated')::text, true);
 end $$;
 
--- is_hub_admin lê o profile; para o teste, promove o usuário da fixture.
+-- is_hub_admin lê o profile, então o teste precisa de um hub_admin de verdade.
+--
+-- Antes isto pegava `select id from auth.users limit 1` e dava um `update` no profiles. Duas
+-- fragilidades num par de linhas: `limit 1` sem `order by` devolve linha arbitrária, e se aquele
+-- usuário não tiver profile o update não acha nada e segue em silêncio. Num banco cheio quase
+-- sempre funciona; num stack novo não, e a RPC recusa com "Apenas a equipe Movepark corrige
+-- endereço". O usuário agora é criado aqui, e o `do update` garante o papel mesmo quando o
+-- trigger `on_auth_user_created` já criou o profile como customer.
 do $$
-declare uid uuid;
+declare uid uuid := gen_random_uuid();
 begin
-  select id into uid from auth.users limit 1;
-  if uid is not null then
-    update public.profiles set role = 'hub_admin' where id = uid;
-    perform set_config('test.admin', uid::text, false);
-  end if;
+  insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+    values (uid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+            'audit-admin@ex.com', now(), now());
+  insert into public.profiles(id, role) values (uid, 'hub_admin')
+    on conflict (id) do update set role = 'hub_admin';
+  perform set_config('test.admin', uid::text, false);
 end $$;
 
 select pg_temp.as_admin();

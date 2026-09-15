@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(18);
 
 -- A tabela existe com a chave certa
 select has_table('public', 'google_place_snapshot', 'tabela google_place_snapshot existe');
@@ -30,11 +30,19 @@ select throws_ok(
   null,
   'anon nao insere snapshot'
 );
-select throws_ok(
+-- No UPDATE a asserção é sobre o EFEITO, não sobre o erro. A policy de escrita é `to
+-- authenticated`, então para `anon` a linha simplesmente não entra no conjunto alvo: o comando
+-- casa zero linhas e o Postgres não levanta nada. Exigir 42501 aqui dependia de `anon` não ter
+-- nem o privilégio de tabela, que o default privilege do Supabase concede sozinho a cada tabela
+-- nova. O que precisa ser verdade, e é o que se checa, é que a nota não muda.
+select lives_ok(
   $$ update public.google_place_snapshot set rating = 1.0 where place_id = 'ChIJ_fresco' $$,
-  '42501',
-  null,
-  'anon nao atualiza snapshot'
+  'anon tenta atualizar snapshot e o comando nao casa linha nenhuma'
+);
+select is(
+  (select rating from public.google_place_snapshot where place_id = 'ChIJ_fresco'),
+  4.6::numeric,
+  'anon nao altera a nota do snapshot'
 );
 reset role;
 
