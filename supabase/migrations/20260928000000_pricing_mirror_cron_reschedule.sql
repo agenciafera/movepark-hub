@@ -14,7 +14,11 @@
 -- O minuto 7 fica igual ao de antes (07:00 UTC = 04:00 em São Paulo), então a passada da
 -- madrugada segue existindo para alguém olhar o alarme de divergência antes do movimento do dia.
 
-select cron.unschedule('wl-price-mirror');
+-- Só desagenda se existir: num stack construído do baseline o job ainda não foi criado, e o
+-- `unschedule` de job inexistente aborta o `supabase db reset` (XX000), derrubando o job `db`
+-- do CI antes de qualquer pgTAP. Mesmo padrão já usado na 20261030140000.
+select cron.unschedule('wl-price-mirror')
+ where exists (select 1 from cron.job where jobname = 'wl-price-mirror');
 
 select cron.schedule(
   'wl-price-mirror', '0 1,4,7,10,13,16,19,22 * * *',

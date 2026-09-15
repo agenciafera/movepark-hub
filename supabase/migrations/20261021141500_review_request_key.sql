@@ -28,7 +28,11 @@ revoke all on function public.review_request_expected_key() from public, anon, a
 grant execute on function public.review_request_expected_key() to service_role;
 
 -- O cron passa a mandar o header, e para de mandar a anon key como se fosse credencial.
-select cron.unschedule('review-request-hourly');
+-- Só desagenda se existir: num stack construído do baseline o job ainda não foi criado, e o
+-- `unschedule` de job inexistente aborta o `supabase db reset` (XX000), derrubando o job `db`
+-- do CI antes de qualquer pgTAP. Mesmo padrão já usado na 20261030140000.
+select cron.unschedule('review-request-hourly')
+ where exists (select 1 from cron.job where jobname = 'review-request-hourly');
 select cron.schedule(
   'review-request-hourly',
   '15 * * * *',
