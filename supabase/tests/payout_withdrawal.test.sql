@@ -14,7 +14,7 @@ begin
     (op_b,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','w-b@ex.com',now(),now()),
     (adm ,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','w-adm@ex.com',now(),now());
   insert into public.profiles(id, role) values
-    (op_a,'company_operator'),(op_b,'company_operator'),(adm,'hub_admin') on conflict (id) do nothing;
+    (op_a,'company_operator'),(op_b,'company_operator'),(adm,'hub_admin') on conflict (id) do update set role = excluded.role;
   cid_a := public.submit_partner_lead('W Empresa A','Op A','w-a@ex.com','+5511999993001');
   cid_b := public.submit_partner_lead('W Empresa B','Op B','w-b@ex.com','+5511999993002');
   insert into public.profile_company(profile_id, company_id) values (op_a, cid_a), (op_b, cid_b);

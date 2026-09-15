@@ -23,7 +23,7 @@ begin
     (cust,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','rec-cust@ex.com',now(),now());
   insert into public.profiles(id, role) values
     (op_a,'company_operator'),(op_b,'company_operator'),(adm,'hub_admin'),(cust,'customer')
-    on conflict (id) do nothing;
+    on conflict (id) do update set role = excluded.role;
 
   cid_a := public.submit_partner_lead('Rec Empresa A','Op A','rec-a@ex.com','+5511999992001');
   cid_b := public.submit_partner_lead('Rec Empresa B','Op B','rec-b@ex.com','+5511999992002');

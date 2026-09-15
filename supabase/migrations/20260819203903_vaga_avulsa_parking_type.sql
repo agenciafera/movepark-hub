@@ -64,8 +64,14 @@ create policy "lpt_operator_insert" on public.location_parking_type for insert
 
 -- 5. FAQ da unidade explicando o que é vaga avulsa (ADR-002, scope location).
 -- Categoria "Reservas": é sobre o que o cliente está reservando, não sobre check-in.
+--
+-- O `where exists` não é decoração: os dois UUIDs abaixo são linhas de PRODUÇÃO, e num stack
+-- construído do baseline eles não existem. Sem a guarda, o `supabase db reset` aborta aqui com
+-- `faq_category_id_fkey`, e o job `db` do CI morre antes de rodar um pgTAP sequer, mascarando toda
+-- a suíte. Foi o que aconteceu, e a migration já estava aplicada em produção quando se descobriu
+-- (15/09/2026). Em produção isto é no-op: a linha já existe e a guarda só confirma o que há.
 insert into public.faq (scope, location_id, category_id, question, answer, sort_order)
-values (
+select
   'location',
   'c82d2dc0-7304-4bb3-9989-bf99886cd698', -- Garageinn · Aeroporto de Viracopos
   '7731a6c4-987a-4b5e-b0f0-8b1b651b4688', -- categoria "Reservas"
@@ -74,4 +80,8 @@ values (
   || 'dentro da capacidade contratada, mas a posição exata varia com a lotação no momento '
   || 'da sua chegada.',
   10
+where exists (
+  select 1 from public.location where id = 'c82d2dc0-7304-4bb3-9989-bf99886cd698'
+) and exists (
+  select 1 from public.faq_category where id = '7731a6c4-987a-4b5e-b0f0-8b1b651b4688'
 );
