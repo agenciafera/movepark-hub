@@ -33,6 +33,22 @@ begin;
 create or replace function pg_temp.dest(p_slug text) returns uuid language sql stable as $fn$
   select id from public.destination where slug = p_slug
 $fn$;
+-- A migration só escreve se os destinos e as categorias existirem. Num stack construído do baseline
+-- eles não existem, `pg_temp.dest(...)` devolve null e o insert quebra a CHECK `faq_check` do
+-- ADR-002 (escopo `destination` exige `destination_id`), abortando o `supabase db reset` e levando
+-- junto o job `db` do CI, que morre antes de rodar qualquer pgTAP. Em produção é no-op: os quatro
+-- destinos existem e o conteúdo entra igual.
+do $mig$
+begin
+  if pg_temp.dest('aeroporto-de-viracopos') is null
+     or pg_temp.dest('aeroporto-de-congonhas') is null
+     or pg_temp.dest('aeroporto-de-confins') is null
+     or pg_temp.dest('aeroporto-internacional-de-sao-paulo-guarulhos') is null
+     or not exists (select 1 from public.faq_category where slug in ('pagamentos', 'check-in'))
+  then
+    raise notice 'destinos/categorias ausentes: FAQ por aeroporto não aplicada (stack sem conteúdo)';
+    return;
+  end if;
 
 -- ---------------------------------------------------------------------------
 -- Viracopos (VCP)
@@ -440,5 +456,8 @@ where f.scope = 'destination'
     pg_temp.dest('aeroporto-de-congonhas')
   )
   and f.question like novo.padrao;
+
+end
+$mig$;
 
 commit;
