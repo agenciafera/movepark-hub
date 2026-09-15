@@ -297,6 +297,12 @@ export type PayoutBalance = {
   net_partner_cents: number;
   /** Quanto a Movepark deve (vendas em custódia), antes de descontar o já repassado. */
   owed_cents: number;
+  /**
+   * Creditado direto pelo gateway no recebedor do parceiro (venda com split enviado). Zero enquanto
+   * a custódia estiver ligada. É o complemento de `owed_cents` sobre o mesmo conjunto de vendas, e
+   * é o que impede a tela dele de mostrar zero no dia em que o split voltar.
+   */
+  gateway_credited_cents: number;
   /** Já repassado pela Movepark ao recebedor do parceiro (inclui o que está em curso). */
   transferred_cents: number;
   /** Sacado pelo parceiro do recebedor dele para o banco. Não desconta a dívida. */

@@ -11,7 +11,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(6);
+select plan(8);
 
 select has_column('public', 'payment', 'split_sent_to_gateway',
   'payment.split_sent_to_gateway existe');
@@ -106,6 +106,20 @@ select is(
 select is(
   ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'net_partner_cents')::bigint),
   30000::bigint, 'net_partner_cents não muda: 8000 (A) + 8000 (B) + 8000 (C) + 6000 (D)');
+
+-- O que o gateway creditou direto no recebedor do parceiro. Sem ele a tela dele mostra
+-- "Saldo a receber R$ 0,00" para quem vendeu com split ligado, que era o caso vivo da Virapark e
+-- da Motion Park em 15/09/2026.
+select is(
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'gateway_credited_cents')::bigint),
+  16000::bigint, 'gateway_credited_cents é o que foi ao gateway: 30000 total menos 14000 em custódia');
+
+-- Invariante: os dois potes somados dão tudo que o parceiro ganhou, sem sobra nem buraco.
+select is(
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'owed_cents')::bigint
+   + (public.payout_balance(current_setting('test.cid')::uuid) ->> 'gateway_credited_cents')::bigint),
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'net_partner_cents')::bigint),
+  'devido pela Movepark + creditado pelo gateway = líquido do parceiro');
 reset role;
 
 select * from finish();

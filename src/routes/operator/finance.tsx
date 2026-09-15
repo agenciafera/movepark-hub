@@ -30,6 +30,7 @@ import {
   useRecipient,
 } from "@/features/payouts/api";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
+import { resumoSaldo } from "@/features/payouts/saldo.logic";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { formatBRL, formatDate } from "@/lib/format";
 
@@ -71,6 +72,7 @@ export default function OperatorFinance() {
 
   const recipient = useRecipient(companyId);
   const balance = usePayoutBalance(companyId);
+  const saldo = resumoSaldo(balance.data);
   const statement = usePayoutStatement({
     from: period.from,
     to: period.to,
@@ -102,18 +104,18 @@ export default function OperatorFinance() {
       <div className="grid gap-4 tablet:grid-cols-3">
         <Card>
           <CardContent className="p-6">
-            <div className="text-caption text-muted">Saldo a receber</div>
+            <div className="text-caption text-muted">{saldo.titulo}</div>
             {balance.isLoading ? (
               <Skeleton className="mt-1 h-8 w-28" />
             ) : (
-              <div className="text-display-sm text-ink">{brl(balance.data?.balance_cents ?? 0)}</div>
+              <div className="text-display-sm text-ink">{brl(saldo.valorCents)}</div>
             )}
-            {/* Com o repasse (E0.3.4) existem dois movimentos do mesmo dinheiro: a Movepark
-                repassa para o recebedor do parceiro, e o parceiro saca para o banco dele.
-                "já transferido" sozinho não dizia qual dos dois. */}
             <div className="mt-1 flex flex-col gap-0.5 text-caption text-muted">
-              <span>repassado pela Movepark: {brl(balance.data?.transferred_cents ?? 0)}</span>
-              <span>sacado por você: {brl(balance.data?.withdrawn_cents ?? 0)}</span>
+              {saldo.linhas.map((l) => (
+                <span key={l.rotulo}>
+                  {l.rotulo}: {brl(l.valorCents)}
+                </span>
+              ))}
             </div>
           </CardContent>
         </Card>

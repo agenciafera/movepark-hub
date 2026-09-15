@@ -93,6 +93,15 @@ de pé. Payload sem split, razão preservado.
   [repasse-ao-parceiro.md](./repasse-ao-parceiro.md) (E0.3.4). `payout_balance.balance_cents` mudou
   de significado junto: deixou de ser "líquido menos saques" e passou a ser "quanto a Movepark ainda
   deve", com o saque saindo da conta da dívida (ele é o parceiro tirando dinheiro que já é dele).
+- ~~A tela do parceiro lê só a dívida, então venda com split enviado aparece como zero.~~
+  **Resolvido em 15/09/2026:** migration `20261117153000`. `payout_balance` ganhou
+  **`gateway_credited_cents`**, a parte do parceiro nas vendas que foram ao gateway, pelo mesmo
+  rateio proporcional de estorno do resto da função. É o complemento exato de `owed_cents` sobre o
+  mesmo conjunto, então `owed + gateway_credited = net_partner` (invariante coberta em
+  `payout_owed.test.sql`). O card de saldo passa a falar do recebedor quando há crédito do gateway
+  (`resumoSaldo`, em `saldo.logic.ts`), e fica idêntico ao de hoje enquanto a custódia estiver
+  ligada. O problema estava vivo, não latente: **Virapark (R$ 525,00) e Motion Park (R$ 283,05)**
+  vendiam com split enviado em jun/jul e a tela dos dois mostrava R$ 0,00.
 
 ### Corrigido em 11/09/2026: o extrato passou a devolver só o que é devido
 
