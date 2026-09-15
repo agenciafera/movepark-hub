@@ -141,7 +141,7 @@ recebível também não nasce no mesmo instante do `charge.paid`, então a apura
 | Leitura no gateway | `listPayables(chargeId)` na interface `PaymentGateway`; `buildPayablesResult` no adapter |
 | Soma do custo | `_shared/payments/fees.ts` (`totalGatewayFeeCents`), fora do adapter porque opera no tipo agnóstico |
 | Persistência | `payment.gateway_fee_cents` + `gateway_fee_synced_at`, com índice parcial do que falta apurar |
-| Apuração | Edge `reconcile-gateway-fees`, cron de 30 min, lote de 25, janela de 10 min a 90 dias |
+| Apuração | Edge `reconcile-gateway-fees`, cron de 30 min, lote de 25, janela de 10 min a 90 dias, **recuo de 6 h** entre tentativas da mesma cobrança e quem nunca foi tentado primeiro |
 | Exibição | Manager › Repasses: taxa e **margem** (comissão menos taxa) ao lado da comissão |
 
 **Nulo é "ainda não apurado", e isso não é detalhe.** Gravar zero quando o recebível não existe
@@ -151,6 +151,8 @@ deixa o valor nulo, e o extrato soma só o que tem valor.
 Provado na primeira execução: **MP-BE2E2B**, a venda real de R$ 102,90 de 31/07/2026, apurou
 **R$ 1,02**, ou 0,99%, exatamente a taxa medida por saldo de recebedor naquele dia. As outras 24
 cobranças do lote são da fase de sandbox e não têm recebível, então ficaram nulas.
+
+**Recuo entre tentativas (15/09/2026).** O filtro original ignorava `gateway_fee_synced_at`: as mesmas 25 cobranças sem recebível voltavam a cada 30 minutos (190 execuções, uns 4.750 `GET /payables` inúteis em quatro dias) e as outras pagas nunca entravam no lote. Agora só entra quem nunca foi tentado ou foi tentado há mais de 6 horas, com o nunca-tentado primeiro.
 
 **Armadilha do cron:** o default de `timeout_milliseconds` do `pg_net` é 5 s, e o lote são até 25
 consultas sequenciais. Com o default a Edge roda até o fim, mas o `pg_net` desiste antes e grava

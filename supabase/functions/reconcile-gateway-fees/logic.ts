@@ -19,3 +19,15 @@ export function feeWindowIso(nowMs: number): { since: string; until: string } {
     until: new Date(nowMs - ATRASO_MINUTOS * 60_000).toISOString(),
   };
 }
+
+/**
+ * Recuo entre tentativas. O filtro original ignorava `gateway_fee_synced_at`, e as mesmas cobranças
+ * sem recebível eram reconsultadas a cada volta do cron (30 min), enquanto as demais nunca entravam
+ * no lote (varredura de 15/09/2026: 190 execuções, uns 4.750 GET /payables inúteis).
+ */
+const RECUO_HORAS = 6;
+
+/** Só entra no lote quem nunca foi tentado ou foi tentado antes deste instante. */
+export function feeRetryCutoffIso(nowMs: number): string {
+  return new Date(nowMs - RECUO_HORAS * 60 * 60_000).toISOString();
+}

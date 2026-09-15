@@ -17,7 +17,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { totalGatewayFeeCents } from "../_shared/payments/fees.ts";
-import { BATCH_LIMIT, feeWindowIso } from "./logic.ts";
+import { BATCH_LIMIT, feeRetryCutoffIso, feeWindowIso } from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -59,6 +59,10 @@ Deno.serve(async (req: Request) => {
     .not("provider_charge_id", "is", null)
     .gte("paid_at", janela.since)
     .lt("paid_at", janela.until)
+    // Recuo: sem isto as mesmas cobranças sem recebível voltavam a cada 30 min e o resto do lote
+    // morria de fome. Quem nunca foi tentado vem primeiro.
+    .or(`gateway_fee_synced_at.is.null,gateway_fee_synced_at.lt.${feeRetryCutoffIso(Date.now())}`)
+    .order("gateway_fee_synced_at", { ascending: true, nullsFirst: true })
     .order("paid_at", { ascending: false })
     .limit(BATCH_LIMIT);
   if (error) return json({ error: error.message }, 500);

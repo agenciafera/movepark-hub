@@ -138,9 +138,13 @@ select is(
 select is(
   ((public.payout_balance(current_setting('test.cid_a')::uuid) ->> 'net_partner_cents')::int),
   25500, 'balance: líquido = 25500');
+-- `balance_cents` mudou de significado em 11/09/2026 (repasse ao parceiro, E0.3.4): deixou de ser
+-- "líquido menos saques" e passou a ser "quanto a Movepark ainda deve". Nenhuma cobrança desta
+-- fixture está marcada como custódia (`split_sent_to_gateway` nulo, tratado como enviado ao
+-- gateway), então não devemos nada. O saque continua exposto, só não desconta mais a dívida.
 select is(
   ((public.payout_balance(current_setting('test.cid_a')::uuid) ->> 'balance_cents')::int),
-  15500, 'balance: 25500 − 10000 (saque pago) = 15500');
+  0, 'balance: sem cobrança em custódia, a Movepark não deve nada');
 reset role;
 
 -- ── 6-8: escopo (operator) ───────────────────────────────────────────────────
