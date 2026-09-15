@@ -456,6 +456,10 @@ refletir). `charge.paid`/`order.paid` → `payment.paid` + confirma via **`confi
 reconfirma se há vaga, senão estorna automático no **caso 4c** — pago sobre reserva já expirada;
 idempotente, `noop` se já `confirmed`);
 `charge.refunded` → `payment.refunded` (**sem** cancelar o booking — estorno ≠ cancelamento);
+**`charge.chargedback`** (desde 15/09/2026) → mesmo trilho do estorno total, com `refund_reason =
+"chargeback (contestação no banco)"` e log de erro: é dinheiro que saiu sem ninguém pedir, estado
+final na Pagar.me, sem estorno por API depois. No razão o devido ao parceiro cai e, se já foi
+repassado, vira `overpaid_cents`. Até então o evento caía no default e era ignorado;
 `charge.partial_canceled` → registra `refunded_amount`. Idempotência **resiliente** por `processed_at`
 (evento que falhou reprocessa na reentrega). **Redes de segurança:** Edge **`reconcile-refunds`** (cron
 15 min) recupera estornos pendentes cujo webhook nunca chegou, e **`reconcile-confirmations`** (cron

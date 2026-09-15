@@ -425,3 +425,32 @@ Deno.test("parseTransferEvent: id numérico do gateway vira string", () => {
   const t = parseTransferEvent({ id: "hook_t3", type: "transfer.paid", data: { id: 539328550 } });
   assertEquals(t.transferId, "539328550");
 });
+
+// ── chargeback (15/09/2026) ──────────────────────────────────────────────────
+
+Deno.test("charge.chargedback tem intent própria: até então caía no default e era ignorado", () => {
+  assertEquals(webhookIntentFromType("charge.chargedback"), "chargeback");
+  assertEquals(webhookIntentFromType("order.chargedback"), "chargeback");
+});
+
+Deno.test("chargeback sobre pagamento pago vira refunded: é estorno total que ninguém pediu", () => {
+  const d = decidePaymentStatus({
+    intent: "chargeback",
+    currentStatus: "paid",
+    paidAt: "2026-09-01T10:00:00Z",
+    rawStatus: "chargedback",
+    eventType: "charge.chargedback",
+  });
+  assertEquals(d, { action: "update", chargeStatus: "refunded", paymentStatus: "refunded" });
+});
+
+Deno.test("chargeback não é barrado pela guarda de rebaixamento: paid -> refunded é a única saída legítima", () => {
+  const d = decidePaymentStatus({
+    intent: "chargeback",
+    currentStatus: "paid",
+    paidAt: "2026-09-01T10:00:00Z",
+    rawStatus: "paid",
+    eventType: "charge.chargedback",
+  });
+  assertEquals(d.action, "update");
+});

@@ -64,7 +64,7 @@ export interface ParsedEvent {
 }
 
 /** Intenção de um evento de cobrança/ordem, derivada do TIPO (não do data.status). */
-export type WebhookIntent = "paid" | "refund" | "partial_refund" | "cancel";
+export type WebhookIntent = "paid" | "refund" | "partial_refund" | "cancel" | "chargeback";
 
 /**
  * Decide a ação a partir do TIPO do evento — e NÃO do `data.status`. Crítico para estorno de PIX:
@@ -87,6 +87,12 @@ export function webhookIntentFromType(type: string | null | undefined): WebhookI
     case "canceled":
     case "cancelled":
       return "cancel";
+    // Chargeback (cartão): o cliente tomou o dinheiro de volta pelo banco. Estado FINAL na Pagar.me
+    // (`charge.chargedback`), que ainda bloqueia estorno depois. Para o nosso razão é um estorno
+    // total que ninguém pediu: o devido ao parceiro cai, e se já foi repassado vira `overpaid`.
+    // Até 15/09/2026 este evento caía no default e era ignorado.
+    case "chargedback":
+      return "chargeback";
     default:
       return null;
   }
@@ -198,8 +204,10 @@ export function decidePaymentStatus(input: StatusDecisionInput): StatusDecision 
     return { action: "noop", reason: "benign_event_on_terminal_payment" };
   }
 
+  // Chargeback anda pelo mesmo trilho do estorno total: mesma escrita monotônica, mesmo cancelamento
+  // da reserva que ainda não começou. O que o distingue fica no `refund_reason`, gravado pelo handler.
   const chargeStatus: ChargeStatus =
-    input.intent === "refund"
+    input.intent === "refund" || input.intent === "chargeback"
       ? "refunded"
       : input.intent === "cancel"
         ? "canceled"

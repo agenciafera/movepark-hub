@@ -535,14 +535,24 @@ Deno.serve(async (req: Request) => {
   if (status === "refunded") {
     const { data: pay } = await admin
       .from("payment")
-      .select("amount, refunded_at, refunded_amount")
+      .select("amount, refunded_at, refunded_amount, refund_reason")
       .eq("id", payment.id)
       .maybeSingle();
+    const chargeback = intent === "chargeback";
+    if (chargeback) {
+      // Grave por natureza: dinheiro saiu sem ninguém da Movepark pedir, e a Pagar.me não deixa
+      // contestar por API. O razão absorve (devido cai, repasse feito vira `overpaid`); a
+      // conversa com o parceiro e com o cliente é de gente.
+      console.error(
+        `[pagarme-webhook] CHARGEBACK: payment=${payment.id} booking=${payment.booking_id} valor=${pay?.amount}`,
+      );
+    }
     await admin
       .from("payment")
       .update({
         refunded_at: pay?.refunded_at ?? new Date().toISOString(),
         refunded_amount: pay?.refunded_amount ?? pay?.amount ?? null,
+        ...(chargeback && !pay?.refund_reason ? { refund_reason: "chargeback (contestação no banco)" } : {}),
       })
       .eq("id", payment.id);
 
