@@ -16,6 +16,7 @@ import {
   isGatewaySplitEnabled,
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
+import { effectiveSplitEnabled } from "../_shared/payments/split.ts";
 import {
   checkBookingUpgradable,
   checkUpgradeDelta,
@@ -108,7 +109,14 @@ Deno.serve(async (req: Request) => {
     ((setting ?? []) as { key: string; value: string | null }[]).map((s) => [s.key, s.value]),
   );
   const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
-  const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
+  // Global ligada OU empresa marcada (E0.3.5): a transição é por empresa.
+  const { data: locSplit } = await admin
+    .from("location")
+    .select("company:company_id(gateway_split_enabled)")
+    .eq("id", booking.location_id)
+    .maybeSingle();
+  const companySplitFlag = (locSplit?.company as { gateway_split_enabled?: boolean } | null)?.gateway_split_enabled ?? false;
+  const splitEnabled = effectiveSplitEnabled(settingMap.pagarme_split_enabled, companySplitFlag);
   if (!moveparkRecipientId) {
     return jsonResponse({ error: "Recebedor master da Movepark não configurado." }, 503);
   }

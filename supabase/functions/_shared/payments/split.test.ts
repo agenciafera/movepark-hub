@@ -1,6 +1,7 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
 import {
   buildSplit,
+  effectiveSplitEnabled,
   isGatewaySplitEnabled,
   maxDebtRecoveryCents,
   partnerRule,
@@ -298,4 +299,13 @@ Deno.test("refundSplitToMaster: uma regra só, no master, com o valor do estorno
   assertEquals([s[0].recipientId, s[0].amount, s[0].liable, s[0].role], ["re_mp", 20000, true, "movepark"]);
   assertThrows(() => refundSplitToMaster("", 100));
   assertThrows(() => refundSplitToMaster("re_mp", 0));
+});
+
+Deno.test("effectiveSplitEnabled: global ligada vale para todos; desligada, só quem está marcado", () => {
+  assertEquals(effectiveSplitEnabled("true", false), true);
+  assertEquals(effectiveSplitEnabled("true", null), true);
+  assertEquals(effectiveSplitEnabled("false", true), true, "empresa marcada entra no modelo novo");
+  assertEquals(effectiveSplitEnabled("false", false), false, "sem marca, custódia");
+  assertEquals(effectiveSplitEnabled("false", null), false, "empresa sem a coluna lida: custódia");
+  assertEquals(effectiveSplitEnabled(null, false), true, "chave ausente continua LIGADA por default");
 });

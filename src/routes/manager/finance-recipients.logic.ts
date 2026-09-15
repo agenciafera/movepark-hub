@@ -19,6 +19,10 @@ export interface RecipientOverviewRow {
   requirements: PayoutRequirement[];
   /** Empresa vende (catálogo) mas não está apta a receber → bloqueia o pagamento. */
   needsAttention: boolean;
+  /** A cobrança desta empresa vai com split (E0.3.5). */
+  splitEnabled: boolean;
+  /** O gateway respondeu que o recebedor não existe: não dá para ligar o split. */
+  recipientMissing: boolean;
 }
 
 /** Empresas que podem vender (e portanto precisam de recebedor apto). */
@@ -69,6 +73,8 @@ export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow 
     requirements,
     needsAttention:
       SELLABLE_ONBOARDING.includes(onboardingStatus) && recipientStatus !== "active",
+    splitEnabled: raw.gateway_split_enabled === true,
+    recipientMissing: !!rec?.gateway_missing_at,
   };
 }
 

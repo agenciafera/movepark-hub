@@ -21,6 +21,18 @@ export function isGatewaySplitEnabled(settingValue: string | null | undefined): 
   return settingValue.trim().toLowerCase() !== "false";
 }
 
+/**
+ * A cobrança desta empresa vai com split? Global ligada OU empresa marcada
+ * (`company.gateway_split_enabled`). Global desligada com empresas marcadas é o estado de transição
+ * do E0.3.5: quem tem recebedor válido entra no modelo novo, quem não tem segue em custódia.
+ */
+export function effectiveSplitEnabled(
+  globalSetting: string | null | undefined,
+  companyFlag: boolean | null | undefined,
+): boolean {
+  return isGatewaySplitEnabled(globalSetting) || companyFlag === true;
+}
+
 export interface BuildSplitArgs {
   /** Total efetivamente cobrado (com juros de parcelamento, se houver). */
   chargedCents: number;

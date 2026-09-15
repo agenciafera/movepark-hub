@@ -1,6 +1,7 @@
 # Split dinâmico e dívida do parceiro (fim da custódia) · E0.3.5
 
-> **Status:** decidido em 15/09/2026, em implementação. Substitui o modelo de custódia de
+> **Status:** decidido e implementado em 15/09/2026 (commits `88a0b890`, `cba8870b` e o do split
+> por empresa), no ar e inerte: chave global desligada, nenhuma empresa marcada. Substitui o modelo de custódia de
 > [repasse-ao-parceiro.md](./repasse-ao-parceiro.md), que fica desligado. Base do gateway em
 > [payment-split.md](./payment-split.md).
 
@@ -24,7 +25,7 @@ o parceiro já ter recebido. A resposta passa a ser um **controle de banco do no
 | 2 | Chargeback | **`liable` na perna da Movepark.** Mesmo trilho do estorno: o gateway debita o master e a perna do parceiro vira dívida |
 | 3 | Recebedores inexistentes (Gaita, Lisboa, Maxi, Motion, Virapark) | **Não recriar agora.** Empresa de teste é a **Agência Fera**, que já tem recebedor válido; só reativar a empresa |
 | 4 | Abatimento por venda | **Até 100% da perna do parceiro.** Vende, abate, só volta a receber quando quitar |
-| 5 | Venda de empresa sem recebedor com split ligado | **Bloqueia** (409 no checkout, como o código já faz). Recebedor que o gateway não reconhece conta como ausente |
+| 5 | Venda de empresa sem recebedor com split ligado | **Bloqueia** (409 no checkout). Recebedor que o gateway não reconhece conta como ausente. **Revisto no mesmo dia:** o interruptor passou a ser **por empresa** (`company.gateway_split_enabled`), porque a chave global ligada bloqueou oito parceiros ativos, sete deles sem recebedor nenhum. Global ligada OU empresa marcada = split; o resto segue em custódia e não para de vender |
 | 6 | Colchão no master (estorno exige saldo) | **Valor fixo em `app_setting`, com alerta no Manager** quando o saldo lido cai abaixo |
 | 7 | Estorno fora do prazo do gateway (PIX 90 d, cartão 180 d) ou recusado | **Fila de reembolso manual no Manager.** A reserva cancela e libera a vaga; a devolução é feita por fora e marcada como paga |
 | 8 | Taxa de estorno (PIX/gateway não voltam) | **Movepark absorve** |
@@ -163,16 +164,33 @@ lança, com nota. Reduz a dívida na fórmula.
 | `payout_balance` | ganha `debt_cents` e `debt_lines` |
 | `payout_statement` | linhas ganham `debt_recovered_cents` |
 
+## Interruptor por empresa (o que a primeira tentativa ensinou)
+
+Em 15/09/2026 a chave global foi ligada e desligada em minutos: com ela, **oito parceiros ativos**
+(Abbapark, Aeropark, Aerovalet, BePark, Garageinn, Nationpark, Plenty Park, Virapark) passaram a
+tomar 409 no checkout, porque sete deles nunca tiveram recebedor e vendiam em custódia sem
+precisar. Nenhuma cobrança passou na janela. O modelo novo não pode depender de todo mundo ter
+recebedor no mesmo dia.
+
+Migration `20261118113000`: `company.gateway_split_enabled` (nasce `false`), RPC
+`company_set_gateway_split` (só hub_admin; recusa ligar sem recebedor ativo e reconhecido) e a
+regra `effectiveSplitEnabled(global, empresa)` = global ligada OU empresa marcada, lida pelas
+quatro Edges de cobrança. Manager › Financeiro › Recebedores ganhou a coluna **Split** com o
+botão de ligar/desligar. Global desligada com empresas marcadas é o estado de transição: quem tem
+recebedor entra no modelo novo, quem não tem segue em custódia.
+
 ## Rollout
 
-1. Migrations, funções, adapter, Edges e telas entram **com o split ainda desligado**. Tudo é
-   inerte até o interruptor.
-2. Agência Fera volta a `active`.
-3. `pagarme_split_enabled = 'true'`. A partir daí só a Agência Fera vende (as outras cinco tomam
-   409 até recriarem o recebedor).
-4. Uma venda real de teste na Agência Fera, um cancelamento com estorno, e a conferência: o
-   estorno saiu do master, o recebedor dela não se moveu, a dívida apareceu, a venda seguinte
-   abateu.
+1. Migrations, funções, adapter, Edges e telas no ar, **global desligada e nenhuma empresa marcada**.
+   Tudo inerte. (Feito em 15/09/2026.)
+2. Quando uma empresa tiver recebedor ativo e reconhecido, ligar o split dela em Manager ›
+   Recebedores. A primeira candidata é a Agência Fera, que continua suspensa por decisão de
+   15/09/2026 (a unidade dela está listada e reativar a empresa a devolve ao site).
+3. Uma venda real de teste, um cancelamento com estorno, e a conferência: o estorno saiu do master,
+   o recebedor do parceiro não se moveu, a dívida apareceu no Manager e na tela dele, a venda
+   seguinte abateu.
+4. Colchão do master: `pagarme_master_float_cents = 300000` (R$ 3.000, decidido em 15/09/2026). O
+   master tinha R$ 185,15 na primeira leitura, então o alerta já dispara.
 
 ## O que fica de fora
 

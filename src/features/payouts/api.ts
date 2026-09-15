@@ -149,6 +149,8 @@ type RawRecipient = {
   kyc_url_expires_at: string | null;
   requirements: unknown;
   deleted_at: string | null;
+  /** O gateway respondeu que este recebedor não existe (E0.3.5). */
+  gateway_missing_at?: string | null;
 };
 type RawAccount = { deleted_at: string | null };
 
@@ -156,6 +158,8 @@ export type RawCompanyRecipient = {
   id: string;
   name: string;
   onboarding_status: string;
+  /** A cobrança desta empresa vai com split (E0.3.5). */
+  gateway_split_enabled?: boolean;
   // PostgREST devolve 1:N como array e 1:1 como objeto — aceitamos os dois (normalizado na lógica).
   payout_recipient: RawRecipient[] | RawRecipient | null;
   company_payout_account: RawAccount[] | RawAccount | null;
@@ -169,7 +173,7 @@ export function useRecipientsOverview() {
       const { data, error } = await supabase
         .from("company")
         .select(
-          "id, name, onboarding_status, payout_recipient(provider, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at), company_payout_account(deleted_at)",
+          "id, name, onboarding_status, gateway_split_enabled, payout_recipient(provider, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at, gateway_missing_at), company_payout_account(deleted_at)",
         )
         .is("deleted_at", null)
         .order("name");
@@ -184,6 +188,28 @@ type SyncArgs = {
   action: "create" | "refresh" | "reissue_kyc";
   provider?: string;
 };
+
+/**
+ * Liga ou desliga o split por empresa (E0.3.5). Só hub_admin; a RPC recusa ligar sem recebedor
+ * ativo e reconhecido pelo gateway.
+ */
+export function useSetCompanyGatewaySplit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; enabled: boolean }) => {
+      const rpc = supabase.rpc as unknown as (
+        fn: string,
+        a: Record<string, unknown>,
+      ) => Promise<{ error: { message: string } | null }>;
+      const { error } = await rpc("company_set_gateway_split", {
+        p_company_id: args.company_id,
+        p_enabled: args.enabled,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
 
 async function callSyncRecipient(args: SyncArgs) {
   const {

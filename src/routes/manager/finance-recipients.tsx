@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRecipientsOverview, useSyncRecipient } from "@/features/payouts/api";
+import { useRecipientsOverview, useSetCompanyGatewaySplit, useSyncRecipient } from "@/features/payouts/api";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { PayoutKycDialog } from "@/features/payouts/PayoutKycDialog";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
@@ -27,6 +27,7 @@ import {
 export default function ManagerFinanceRecipients() {
   const { data, isLoading } = useRecipientsOverview();
   const sync = useSyncRecipient();
+  const setSplit = useSetCompanyGatewaySplit();
   const [onlyPending, setOnlyPending] = React.useState(false);
   const [syncingId, setSyncingId] = React.useState<string | null>(null);
   const [kyc, setKyc] = React.useState<{ id: string; name: string } | null>(null);
@@ -50,6 +51,19 @@ export default function ManagerFinanceRecipients() {
       toast.error(err instanceof Error ? err.message : "Erro ao sincronizar recebedor");
     } finally {
       setSyncingId(null);
+    }
+  }
+
+  async function alternarSplit(row: RecipientOverviewRow) {
+    try {
+      await setSplit.mutateAsync({ company_id: row.companyId, enabled: !row.splitEnabled });
+      toast.success(
+        row.splitEnabled
+          ? `${row.companyName} voltou para a custódia.`
+          : `${row.companyName} passou a vender com split.`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não consegui mudar o split.");
     }
   }
 
@@ -114,6 +128,7 @@ export default function ManagerFinanceRecipients() {
                 <TableHead>Empresa</TableHead>
                 <TableHead>Recebedor</TableHead>
                 <TableHead>ID no gateway</TableHead>
+                <TableHead>Split</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,6 +167,29 @@ export default function ManagerFinanceRecipients() {
                     </TableCell>
                     <TableCell className="font-mono text-caption text-muted">
                       {row.externalRecipientId ?? "-"}
+                    </TableCell>
+                    <TableCell>
+                      {/* E0.3.5: quem está marcado vende com split e entra no razão de dívida; quem
+                          não está segue em custódia. Só liga com recebedor ativo e reconhecido. */}
+                      {row.splitEnabled ? (
+                        <div className="flex items-center gap-2">
+                          <Badge tone="confirmed">Com split</Badge>
+                          <Button size="sm" variant="ghost" onClick={() => alternarSplit(row)} disabled={setSplit.isPending}>
+                            Desligar
+                          </Button>
+                        </div>
+                      ) : row.recipientMissing ? (
+                        <Badge tone="cancelled">Recebedor não existe no gateway</Badge>
+                      ) : row.hasRecipient && row.recipientStatus === "active" ? (
+                        <div className="flex items-center gap-2">
+                          <Badge tone="neutral">Custódia</Badge>
+                          <Button size="sm" variant="outline" onClick={() => alternarSplit(row)} disabled={setSplit.isPending}>
+                            Ligar split
+                          </Button>
+                        </div>
+                      ) : (
+                        <Badge tone="neutral">Custódia</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap justify-end gap-2">

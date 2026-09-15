@@ -20,7 +20,7 @@ import {
   isGatewaySplitEnabled,
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
-import { maxDebtRecoveryCents, splitForGateway } from "../_shared/payments/split.ts";
+import { effectiveSplitEnabled, maxDebtRecoveryCents, splitForGateway } from "../_shared/payments/split.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
@@ -119,7 +119,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: company } = await admin
     .from("company")
-    .select("take_rate_bps")
+    .select("take_rate_bps, gateway_split_enabled")
     .eq("id", location.company_id)
     .maybeSingle();
 
@@ -137,7 +137,12 @@ Deno.serve(async (req: Request) => {
     .in("key", ["pagarme_movepark_recipient_id", "card_installment_policy", "pagarme_split_enabled"]);
   const settingMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]));
   const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
-  const splitEnabled = isGatewaySplitEnabled(settingMap.pagarme_split_enabled);
+  // Global ligada OU empresa marcada (E0.3.5): a transição é por empresa, quem não tem recebedor
+  // segue em custódia e não para de vender.
+  const splitEnabled = effectiveSplitEnabled(
+    settingMap.pagarme_split_enabled,
+    company?.gateway_split_enabled,
+  );
 
   // Com a custódia ligada o split NÃO vai ao gateway e a cobrança cai inteira na conta da Movepark,
   // então o recebedor do parceiro não é pré-requisito para VENDER. Ele só faz falta na hora do
