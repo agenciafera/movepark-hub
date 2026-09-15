@@ -379,6 +379,12 @@ export type PayoutOwedRow = {
   overpaid_cents: number;
   target_recipient_id: string | null;
   recipient_status: string | null;
+  /**
+   * O gateway respondeu que este recebedor não existe. Repassar para ele morre em 404, então a tela
+   * avisa e não oferece o botão. O `recipient_status` continua "active" de propósito: rebaixá-lo no
+   * banco deslistaria o parceiro do site por causa de uma leitura de API.
+   */
+  recipient_missing?: boolean;
   em_andamento: boolean;
   /**
    * O repasse em andamento, se houver. `enviado` = já tem id do gateway (quem fecha é a conciliação

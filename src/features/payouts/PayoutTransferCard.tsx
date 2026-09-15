@@ -86,7 +86,10 @@ export function PayoutTransferCard() {
             </TableHeader>
             <TableBody>
               {linhas.map((l) => {
-                const apto = l.recipient_status === "active" && !!l.target_recipient_id;
+                // `recipient_missing`: o status no nosso banco diz "active", mas o gateway responde
+                // que o recebedor não existe. Repassar morreria em 404, então ele não é apto.
+                const apto =
+                  l.recipient_status === "active" && !!l.target_recipient_id && !l.recipient_missing;
                 const temSaldo = l.available_cents > 0;
                 return (
                   <TableRow key={l.company_id}>
@@ -113,6 +116,11 @@ export function PayoutTransferCard() {
                         <Badge tone="cancelled" className="gap-1">
                           <Warning />
                           A recuperar {brl(l.overpaid_cents)}
+                        </Badge>
+                      ) : l.recipient_missing ? (
+                        <Badge tone="cancelled" className="gap-1">
+                          <Warning />
+                          Recebedor não existe no gateway
                         </Badge>
                       ) : !apto ? (
                         <Badge tone="cancelled" className="gap-1">

@@ -77,6 +77,18 @@ const linhas: PayoutOwedRow[] = [
     em_andamento: false,
     pendente: null,
   },
+  {
+    company_id: "c6",
+    company_name: "Recebedor Sumido",
+    owed_cents: 0,
+    transferred_cents: 0,
+    available_cents: 0,
+    target_recipient_id: "re_que_nao_existe",
+    recipient_status: "active",
+    recipient_missing: true,
+    em_andamento: false,
+    overpaid_cents: 0,
+  },
 ];
 
 const repassar = vi.fn().mockResolvedValue({ ok: true });
@@ -165,6 +177,15 @@ describe("PayoutTransferCard", () => {
     const linha = screen.getByText("Pagou A Mais").closest("tr")!;
     expect(norm(linha.textContent ?? "")).toContain("R$ 90,00");
     expect(linha.textContent).toMatch(/a recuperar/i);
+    expect(linha.querySelector("button")).toBeNull();
+  });
+
+  it("recebedor que o gateway não reconhece avisa e não oferece repasse", () => {
+    // O status no nosso banco diz "active", mas o gateway responde "Recipient not found.".
+    // Clicar em Repassar aqui morreria em 404, e a tela mostrava tudo verde.
+    renderWithProviders(<PayoutTransferCard />);
+    const linha = screen.getByText("Recebedor Sumido").closest("tr")!;
+    expect(linha.textContent).toContain("Recebedor não existe no gateway");
     expect(linha.querySelector("button")).toBeNull();
   });
 });

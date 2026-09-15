@@ -1,5 +1,13 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { autorizado, decidir, ehAtualizavel } from "./logic.ts";
+import {
+  autorizado,
+  BALANCE_TTL_MINUTES,
+  decidir,
+  decidirSaldo,
+  ehAtualizavel,
+  precisaSondarRecebedor,
+  saldoVencido,
+} from "./logic.ts";
 
 const RESULTADO = {
   externalId: "rp_123",
@@ -79,4 +87,70 @@ Deno.test("mudouStatus distingue mudança real de reconfirmação", () => {
   }
   assertEquals(mudou.mudouStatus, true);
   assertEquals(igual.mudouStatus, false);
+});
+
+// ── leitura de saldo (15/09/2026) ────────────────────────────────────────────
+
+Deno.test("saldo nunca lido está vencido, e leitura recente não", () => {
+  const agora = Date.parse("2026-09-15T12:00:00Z");
+  assertEquals(saldoVencido(null, agora), true);
+  assertEquals(saldoVencido("nao e data", agora), true);
+  assertEquals(saldoVencido("2026-09-15T11:59:00Z", agora), false);
+  assertEquals(saldoVencido("2026-09-15T10:30:00Z", agora), true);
+  assertEquals(BALANCE_TTL_MINUTES >= 15, true);
+});
+
+Deno.test("resposta boa vira patch com os três valores e o carimbo", () => {
+  assertEquals(
+    decidirSaldo(
+      { httpStatus: 200, availableCents: 52500, waitingFundsCents: 1200, transferredCents: 90000 },
+      "2026-09-15T12:00:00.000Z",
+    ),
+    {
+      balance_available_cents: 52500,
+      balance_waiting_cents: 1200,
+      balance_transferred_cents: 90000,
+      balance_synced_at: "2026-09-15T12:00:00.000Z",
+    },
+  );
+});
+
+Deno.test("resposta ruim NÃO vira zero: o parceiro leria que o dinheiro sumiu", () => {
+  for (const httpStatus of [401, 404, 429, 500, 0, null]) {
+    assertEquals(
+      decidirSaldo(
+        { httpStatus, availableCents: null, waitingFundsCents: null, transferredCents: null },
+        "2026-09-15T12:00:00.000Z",
+      ),
+      null,
+      `HTTP ${httpStatus}`,
+    );
+  }
+});
+
+Deno.test("200 com os três nulos é corpo em outro formato, não conta zerada", () => {
+  assertEquals(
+    decidirSaldo(
+      { httpStatus: 200, availableCents: null, waitingFundsCents: null, transferredCents: null },
+      "2026-09-15T12:00:00.000Z",
+    ),
+    null,
+  );
+});
+
+Deno.test("conta de verdade zerada é gravada: 200 com um valor conhecido basta", () => {
+  const p = decidirSaldo(
+    { httpStatus: 200, availableCents: 0, waitingFundsCents: null, transferredCents: 90000 },
+    "2026-09-15T12:00:00.000Z",
+  );
+  assertEquals(p?.balance_available_cents, 0);
+  assertEquals(p?.balance_waiting_cents, 0);
+  assertEquals(p?.balance_transferred_cents, 90000);
+});
+
+Deno.test("só 404 no saldo justifica perguntar se o recebedor existe", () => {
+  assertEquals(precisaSondarRecebedor(404), true);
+  for (const s of [200, 401, 429, 500, 0, null]) {
+    assertEquals(precisaSondarRecebedor(s), false, `HTTP ${s}`);
+  }
 });

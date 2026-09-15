@@ -106,10 +106,38 @@ de pé. Payload sem split, razão preservado.
   `payout_withdrawal` só é alimentada pelo webhook `transfer.*`, que nunca chegou nesta conta, e o
   recebedor da Virapark tem transferência automática mensal (dia 10), então o dinheiro vai para o
   banco dela sem passar por nós. Afirmar "no seu recebedor" seria afirmar um saldo que ninguém leu.
-- **Em aberto:** mostrar o saldo real do recebedor exige ler `GET /recipients/{id}/balance` (o
-  adapter já tem `getRecipientBalance`, hoje usado só no preflight do repasse) e guardar o valor com
-  o carimbo da leitura, provavelmente estendendo o cron `refresh-recipients`, que já percorre
-  recebedor e já fala com o gateway.
+- ~~Mostrar o saldo real do recebedor exige ler `GET /recipients/{id}/balance`.~~ **Feito em
+  15/09/2026:** migration `20261117170000`. O cron `refresh-recipients` passou a ler o saldo dos
+  recebedores ativos na mesma volta (recuo de 1h, `BALANCE_TTL_MINUTES`) e guarda os três números do
+  gateway em `payout_recipient`: `balance_available_cents`, `balance_waiting_cents` e
+  `balance_transferred_cents`, com `balance_synced_at`. O terceiro fecha o buraco do
+  `payout_withdrawal`, porque é o que o gateway já mandou para o banco do parceiro, inclusive por
+  transferência automática. Resposta ruim nunca vira zero (`decidirSaldo` devolve `null` e a foto
+  anterior fica), senão um 401 escreveria "disponível R$ 0,00" e o parceiro leria que o dinheiro
+  sumiu.
+
+### 15/09/2026: cinco dos seis recebedores não existem no gateway
+
+A primeira leitura de saldo devolveu **404 para 5 dos 6 recebedores ativos**. A sonda seguinte, em
+`GET /recipients/{id}`, respondeu `{"message": "Recipient not found."}` para os cinco:
+**Gaita Park, Lisboa Park, Maxi Park, Motion Park e Virapark**. O único que existe é o da Agência
+Fera (`re_cms7…`), que é também o único criado pela nossa Edge `sync-recipient`. Os cinco só têm
+evento de `webhook` no histórico de `payout_recipient_event`, ou seja, o id veio de fora.
+
+Por que importa: `payout_recipient.status = 'active'` é o que diz que o parceiro está pronto para
+receber. Com o recebedor inexistente, um repasse morre em 404 e uma venda com split apontaria para
+um id que o gateway não reconhece. A tela mostrava tudo verde, inclusive o botão **Repassar**.
+
+O que foi feito (migration `20261117183000`): a Edge grava `payout_recipient.gateway_missing_at`
+quando a sonda confirma o 404 e limpa o carimbo na primeira leitura boa; `payout_owed_overview`
+passa a trazer `recipient_missing` e a listar a empresa **mesmo sem dívida aberta** (senão o caso
+sumiria justamente de quem vende com split, que tem dívida zero por desenho); o card do Manager
+mostra "Recebedor não existe no gateway" e não oferece o botão.
+
+O que **não** foi feito, de propósito: o `status` continua `active`. A listagem pública depende de
+recebedor ativo, então rebaixá-lo tiraria cinco parceiros do ar por causa de uma leitura de API.
+Recriar o recebedor pela `sync-recipient` (`action: "create"`) é o caminho de conserto, mas envolve
+reenviar KYC ao gateway e avisar o parceiro por e-mail, então é decisão de quem toca o negócio.
 
 ### Corrigido em 11/09/2026: o extrato passou a devolver só o que é devido
 

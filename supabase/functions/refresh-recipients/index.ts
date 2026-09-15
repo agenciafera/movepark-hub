@@ -3,12 +3,23 @@
 // reflete o status em payout_recipient — complementa o webhook (push) com um poll de segurança.
 // Chamada interna pelo pg_cron (pg_net), protegida pelo header x-refresh-recipients-key.
 //
+// Na mesma volta lê o SALDO dos recebedores ativos (`GET /recipients/{id}/balance`, com recuo de 1h)
+// e guarda a foto com carimbo. É a única fonte confiável: o webhook `transfer.*` nunca chegou nesta
+// conta e a transferência automática do gateway não passa por nós.
+//
 // POST /functions/v1/refresh-recipients   (header: x-refresh-recipients-key: <REFRESH_RECIPIENTS_KEY>)
-// → { ok, checked, updated }
+// → { ok, checked, updated, balances }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { autorizado, decidir, REFRESHABLE } from "./logic.ts";
+import {
+  autorizado,
+  decidir,
+  decidirSaldo,
+  precisaSondarRecebedor,
+  REFRESHABLE,
+  saldoVencido,
+} from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -87,5 +98,63 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ ok: true, checked: recipients?.length ?? 0, updated });
+  // ── segunda passada: o saldo real no gateway ──────────────────────────────
+  // Por que aqui e não derivado dos nossos registros: `payout_withdrawal` só é alimentada pelo
+  // webhook `transfer.*`, que nunca chegou nesta conta, e recebedor com transferência automática
+  // (a Virapark é mensal, dia 10) manda o dinheiro para o banco sem passar por nós. Qualquer número
+  // que a gente deduzisse afirmaria um saldo que ninguém leu. Quem sabe é o gateway.
+  const agora = Date.now();
+  const { data: ativos } = await admin
+    .from("payout_recipient")
+    .select("id, external_recipient_id, balance_synced_at")
+    .eq("provider", "pagarme")
+    .eq("status", "active")
+    .not("external_recipient_id", "is", null)
+    .is("deleted_at", null);
+
+  let saldos = 0;
+  for (const rec of ativos ?? []) {
+    if (!saldoVencido(rec.balance_synced_at, agora)) continue;
+    try {
+      const b = await gateway.getRecipientBalance(rec.external_recipient_id!);
+      const patch = decidirSaldo(b, new Date().toISOString());
+      if (!patch) {
+        // Leitura ruim mantém a foto anterior, com a data antiga. Zerar aqui faria o parceiro ler
+        // que o dinheiro sumiu.
+        console.error("[refresh-recipients] saldo sem resposta boa:", rec.external_recipient_id, b.httpStatus);
+        if (precisaSondarRecebedor(b.httpStatus)) {
+          // 404 no saldo pode ser "recebedor sem movimento" ou "recebedor que a chave atual nem
+          // enxerga". A segunda é grave (repasse e split iriam falhar), então vale a pergunta.
+          const r = await gateway.getRecipient(rec.external_recipient_id!, { kycLink: false });
+          console.error(
+            `[refresh-recipients] recebedor ${rec.external_recipient_id}: saldo 404, GET /recipients devolveu ${r.httpStatus}`,
+          );
+          await admin.from("payout_recipient_event").insert({
+            payout_recipient_id: rec.id,
+            kind: "refresh",
+            http_status: r.httpStatus,
+            request: null,
+            response: r.raw,
+          });
+          // O carimbo fica na ficha para o painel da Movepark acusar e para o botão de repasse
+          // sumir. O `status` continua intocado: rebaixá-lo deslistaria o parceiro do site.
+          await admin
+            .from("payout_recipient")
+            .update({ gateway_missing_at: r.httpStatus === 404 ? new Date().toISOString() : null })
+            .eq("id", rec.id);
+        }
+        continue;
+      }
+      // Leitura boa é prova de que o recebedor existe: limpa o alerta se ele estava marcado.
+      await admin
+        .from("payout_recipient")
+        .update({ ...patch, gateway_missing_at: null })
+        .eq("id", rec.id);
+      saldos += 1;
+    } catch (e) {
+      console.error("[refresh-recipients] falha ao ler saldo de", rec.external_recipient_id, e);
+    }
+  }
+
+  return json({ ok: true, checked: recipients?.length ?? 0, updated, balances: saldos });
 });
