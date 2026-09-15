@@ -9,7 +9,19 @@
 -- O bloco é condicional porque as colunas white-label ainda não existem no stack do CI
 -- (a migration delas é live-only até a frente de white-label commitar): sem elas, a
 -- função do repo nem referencia public_slug e já funciona.
-alter function public.destination_prospect_cards(text) security invoker;
+-- Guarda pelo mesmo motivo da 20260828140521: no repo a função só nasce em
+-- `20261012000000_destination_prospect_cards.sql`, então num stack do baseline este `alter` quebra
+-- com 42883 antes de chegar no bloco abaixo. Em produção é no-op.
+do $$
+begin
+  if exists (
+    select 1 from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public' and p.proname = 'destination_prospect_cards'
+  ) then
+    alter function public.destination_prospect_cards(text) security invoker;
+  end if;
+end $$;
 
 do $$
 begin
