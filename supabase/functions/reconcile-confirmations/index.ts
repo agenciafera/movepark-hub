@@ -52,7 +52,11 @@ Deno.serve(async (req: Request) => {
     .select("id, provider_charge_id, booking_id, booking:booking_id!inner(status)")
     .eq("provider", "pagarme")
     .eq("status", "paid")
-    .in("booking.status", ["pending", "cancelled"])
+    // `expired` entra aqui porque é onde cai a reserva cujo pagamento só foi descoberto depois:
+    // o cron expirou a reserva enquanto o pagamento estava pendente, e o
+    // reconcile-pending-charges marcou pago depois. Sem este status, a linha ficaria paga e
+    // não entregue, contando como dívida com o parceiro e sem ninguém para estornar.
+    .in("booking.status", ["pending", "cancelled", "expired"])
     .lt("updated_at", cutoff)
     .limit(BATCH_LIMIT);
   if (error) return json({ error: error.message }, 500);

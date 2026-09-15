@@ -417,6 +417,23 @@ idempotente, `noop` se já `confirmed`);
 15 min) recupera confirmações perdidas (pago sem vaga → reconfirma ou estorna). O polling do checkout
 (`useCheckoutBooking`) detecta a confirmação no banco.
 
+> **O pagamento que fica em `pending` para sempre (varredura de 15/09/2026).** As duas redes acima
+> partem de um pagamento que o nosso banco JÁ tem como `paid`, ou de um estorno já pedido. Nenhuma
+> perguntava ao gateway o que houve com um pagamento **pendente**. Com o `charge.paid` perdido, o
+> cron expira a reserva e a linha fica pendente para sempre: se o cliente pagou, entrou dinheiro que
+> ninguém no sistema sabe que entrou, sem tela e sem rotina que olhe. Fecha a Edge
+> **`reconcile-pending-charges`** (cron `7 */6 * * *`, chave no Vault), que faz `GET /orders/{id}` e
+> escreve só status: **pago** vira `paid` pela mesma RPC monotônica do webhook, **recusada/cancelada/
+> estornada** encerram a linha, e **pendente com validade vencida** (mais 15 min de margem) vira
+> `failed`. Erro de consulta nunca encerra linha: não conseguir perguntar não é ouvir "não foi pago",
+> e marcar `failed` esconderia justamente o pagamento recebido. `POST` com `{"dry_run": true}` relata
+> sem escrever. Duas peças acompanham: `confirm_or_refund_booking` **não reconfirma estadia já
+> terminada** (devolver o dinheiro é o único desfecho quando a diária passou, senão a descoberta
+> viraria dívida com o parceiro por uma vaga que ninguém usou), e `reconcile-confirmations` passa a
+> olhar também reserva **`expired`**, que é onde essas linhas caem. Primeira execução: 5 PIX de
+> agosto, todos presos desde a criação; o gateway respondeu **nenhum pago**, e as 5 linhas foram
+> encerradas.
+
 > **`authorized` populado (E0.3.1-a).** O `mapChargeStatus` passa a emitir **`authorized`** para
 > cartão em análise/antifraude (`authorized`/`analyzing`/`in_analysis`/`pending_review`) — habilita a
 > blindagem do cron (ADR-005): `payment.status = authorized` = dinheiro comprometido, o cron não
