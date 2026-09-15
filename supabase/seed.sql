@@ -557,3 +557,28 @@ ON CONFLICT DO NOTHING;
 -- \unrestrict 7Gn0pcrLTPNXDQS9iaNSvYGej7bvuOt3NezIuYMHeAaRePTNVRhkvxQhSpMgOT2
 
 RESET ALL;
+
+-- Catálogo vendável no stack de teste (15/09/2026).
+--
+-- As unidades deste dump nascem com `photos = []` e `is_listed` no default `false`. Em produção o
+-- catálogo antigo foi liberado por um `update` único da migration `20260816000000_public_listing_gate`,
+-- mas no `db reset` as migrations rodam ANTES do seed, então aquela liberação não encontra linha
+-- nenhuma. Desde `20261029100000_close_catalog_definer_leak` a `simulate_price` (e a checagem de
+-- disponibilidade) exigem unidade listada, e toda fixture que reserva caía em
+-- "Preço indisponível para essa configuração": 21 arquivos pgTAP, 6 deles de pagamento.
+--
+-- Chega-se ao mesmo estado final que produção tem para o que vende: com foto E listada. Só listar
+-- violaria o piso de `20260818000000_photo_required_to_list` (sem foto, nunca listada), que em
+-- produção foi aplicado com backfill. O primeiro `update` mexe em `photos` e passa pelo trigger do
+-- piso; o segundo mexe só em `is_listed`, porque o trigger só lista sozinho com recebedor ativo e o
+-- seed não tem nenhum.
+update public.location
+   set photos = '["/Estacionamentos/seed/foto-de-teste.webp"]'::jsonb
+ where deleted_at is null
+   and status = 'active'
+   and (photos is null or jsonb_array_length(photos) = 0);
+
+update public.location
+   set is_listed = true
+ where deleted_at is null
+   and status = 'active';
