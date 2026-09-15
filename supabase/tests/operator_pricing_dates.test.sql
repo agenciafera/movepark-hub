@@ -18,7 +18,9 @@ begin
     (op_a,'company_operator'),(op_b,'company_operator'),(cust,'customer') on conflict (id) do nothing;
   cid_a := public.submit_partner_lead('Op Empresa A','Op A','op-a@ex.com','+5511999994001');
   cid_b := public.submit_partner_lead('Op Empresa B','Op B','op-b@ex.com','+5511999994002');
-  update public.company set status = 'active' where id = cid_a;  -- p/ simulate_price funcionar
+  -- `get_pricing_data` exige os DOIS: status e onboarding_status ativos. A empresa nasce como lead
+  -- pelo `submit_partner_lead`, e só o `status` não basta para o preço aparecer.
+  update public.company set status = 'active', onboarding_status = 'active' where id = cid_a;
   insert into public.profile_company(profile_id, company_id) values (op_a, cid_a), (op_b, cid_b);
 
   -- lpt da empresa A (pra testar edição de preço)
@@ -26,6 +28,13 @@ begin
   insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity, is_active)
     values (cid_a, v_pt, 50, 5, true) returning id into v_cpt;
   insert into public.location(id, company_id, name, slug) values (loc_a, cid_a, 'Op Loc A', 'op-loc-a');
+  -- Unidade nasce sem foto e não listada, e desde `20261029100000` o preço exige unidade listada:
+  -- sem isto a reserva do fim do arquivo morre em "Preço indisponível". A foto vem antes do
+  -- `is_listed` porque o piso de `20260818000000_photo_required_to_list` cobra foto para listar.
+  update public.location set photos = '["/Estacionamentos/seed/foto-de-teste.webp"]'::jsonb,
+                             status = 'active'
+   where id = loc_a;
+  update public.location set is_listed = true where id = loc_a;
   insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active)
     values (loc_a, v_cpt, 5, true) returning id into v_lpt;
 
@@ -38,6 +47,8 @@ begin
   perform set_config('test.cust', cust::text, false);
   perform set_config('test.lpt', v_lpt::text, false);
   perform set_config('test.seed_lpt', v_seed_lpt::text, false);
+  -- Data relativa: 10/10/2026 era futuro quando o arquivo nasceu e vira passado sozinho.
+  perform set_config('test.dia', (current_date + 25)::text, false);
 end $$;
 
 create or replace function pg_temp.as_user(p_uid text) returns void language plpgsql as $$
@@ -72,11 +83,11 @@ select throws_ok(
 reset role;
 
 -- ── E1.4.2: bloqueio de data + reserva (na unidade da empresa A) ─────────────
--- operador A bloqueia 2026-10-10
+-- operador A bloqueia a data do teste
 set local role authenticated;
 select pg_temp.as_user(current_setting('test.op_a'));
 select lives_ok(
-  format($$ select public.operator_set_date_blocked(%L::uuid, '2026-10-10'::date, true) $$, current_setting('test.lpt')),
+  format($$ select public.operator_set_date_blocked(%L::uuid, %L::date, true) $$, current_setting('test.lpt'), current_setting('test.dia')),
   'operador A bloqueia a data da própria unidade');
 reset role;
 
@@ -85,22 +96,25 @@ set local role authenticated;
 select pg_temp.as_user(current_setting('test.cust'));
 select throws_ok(
   format($$ select public.create_booking_atomic(%L::uuid, %L::uuid,
-    '2026-10-10T12:00:00Z'::timestamptz, '2026-10-11T12:00:00Z'::timestamptz) $$,
-    current_setting('test.cust'), current_setting('test.lpt')),
+    %L::timestamptz, %L::timestamptz) $$,
+    current_setting('test.cust'), current_setting('test.lpt'),
+    current_setting('test.dia') || 'T12:00:00Z',
+    (current_setting('test.dia')::date + 1) || 'T12:00:00Z'),
   'P0001', null, 'reserva em data bloqueada é rejeitada');
 reset role;
 
 -- operador A desbloqueia → reserva passa
 set local role authenticated;
 select pg_temp.as_user(current_setting('test.op_a'));
-select public.operator_set_date_blocked(current_setting('test.lpt')::uuid, '2026-10-10'::date, false);
+select public.operator_set_date_blocked(current_setting('test.lpt')::uuid, current_setting('test.dia')::date, false);
 reset role;
 
 set local role authenticated;
 select pg_temp.as_user(current_setting('test.cust'));
 select ok(
   (public.create_booking_atomic(current_setting('test.cust')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-10T12:00:00Z'::timestamptz, '2026-10-11T12:00:00Z'::timestamptz) ->> 'code') is not null,
+    (current_setting('test.dia') || 'T12:00:00Z')::timestamptz,
+    ((current_setting('test.dia')::date + 1) || 'T12:00:00Z')::timestamptz) ->> 'code') is not null,
   'após desbloquear, a reserva é criada');
 reset role;
 

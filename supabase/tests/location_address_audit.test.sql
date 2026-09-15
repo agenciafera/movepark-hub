@@ -11,7 +11,7 @@
 --   5. quem não é hub_admin não lê nem escreve nada disso.
 
 begin;
-select plan(17);
+select plan(16);
 
 -- ── fixtures ──────────────────────────────────────────────────────────────────
 -- Destinos no Atlântico Sul, longe do seed, para a distância medida ser só a nossa.
@@ -75,39 +75,56 @@ end $$;
 select public.location_address_scan();
 
 -- ── 1. triagem ────────────────────────────────────────────────────────────────
+-- `coalesce(subquery, '{}'::text[])` em vez da subquery crua: `'x' = any (select ...)` é a forma
+-- de SUBCONSULTA do ANY, que compara 'x' com cada LINHA devolvida, e a linha aqui é um text[].
+-- O Postgres então tenta ler 'sem_geo' como array e morre em "malformed array literal". Envolver
+-- num coalesce força a forma de ARRAY, que é a pretendida, e de quebra troca "linha inexistente"
+-- (NULL, que falha sem dizer por quê) por array vazio.
 select ok(
   'sem_geo' = any(
-    (select flags from public.location_address_audit where location_id = current_setting('test.l_sem_geo')::uuid)
+    coalesce(
+      (select flags from public.location_address_audit where location_id = current_setting('test.l_sem_geo')::uuid),
+      '{}'::text[])
   ),
   'triagem: unidade sem latitude/longitude é marcada com sem_geo');
 
 select ok(
   'sem_place_id' = any(
-    (select flags from public.location_address_audit where location_id = current_setting('test.l_sem_geo')::uuid)
+    coalesce(
+      (select flags from public.location_address_audit where location_id = current_setting('test.l_sem_geo')::uuid),
+      '{}'::text[])
   ),
   'triagem: unidade sem google_place_id é marcada');
 
 select ok(
   'place_id_nao_e_estabelecimento' = any(
-    (select flags from public.location_address_audit where location_id = current_setting('test.l_longe')::uuid)
+    coalesce(
+      (select flags from public.location_address_audit where location_id = current_setting('test.l_longe')::uuid),
+      '{}'::text[])
   ),
   'triagem: place_id que não começa por ChIJ é marcado como endereço, não estabelecimento');
 
 select ok(
   'longe_do_destino' = any(
-    (select flags from public.location_address_audit where location_id = current_setting('test.l_longe')::uuid)
+    coalesce(
+      (select flags from public.location_address_audit where location_id = current_setting('test.l_longe')::uuid),
+      '{}'::text[])
   ),
   'triagem: unidade a dezenas de km do aeroporto ancorado é marcada');
 
 select ok(
   'endereco_duplicado' = any(
-    (select flags from public.location_address_audit where location_id = current_setting('test.l_porta_a')::uuid)
+    coalesce(
+      (select flags from public.location_address_audit where location_id = current_setting('test.l_porta_a')::uuid),
+      '{}'::text[])
   ),
   'triagem: duas unidades na mesma porta são marcadas mesmo com o texto escrito diferente');
 
 select ok(
   not ('endereco_duplicado' = any(
-    (select flags from public.location_address_audit where location_id = current_setting('test.l_ok')::uuid)
+    coalesce(
+      (select flags from public.location_address_audit where location_id = current_setting('test.l_ok')::uuid),
+      '{}'::text[])
   )),
   'triagem: unidade com endereço próprio não é marcada como duplicada');
 

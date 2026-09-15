@@ -48,30 +48,35 @@ select is(
   'colisão de slug ganha sufixo numérico'
 );
 
--- FAQ de destino: o slug carrega o nome do aeroporto
+-- FAQ de destino: o slug carrega o nome do aeroporto.
+--
+-- O insert acontece aqui, e não dentro do `select is(...)`: CTE que escreve só vale no topo da
+-- instrução, e aninhada num subselect o Postgres recusa com "WITH clause containing a
+-- data-modifying statement must be at the top level". O teste vivia disso e nunca chegou a rodar.
+do $$
+declare s_traslado text; s_valet text;
+begin
+  insert into public.faq(scope, destination_id, question, answer, is_published)
+  values ('destination', current_setting('test.did')::uuid, 'Tem traslado?', 'Tem.', true)
+  returning slug into s_traslado;
+
+  insert into public.faq(scope, destination_id, question, answer, is_published)
+  values ('destination', current_setting('test.did')::uuid, 'O Slugteste tem valet?', 'Tem.', true)
+  returning slug into s_valet;
+
+  perform set_config('test.s_traslado', s_traslado, false);
+  perform set_config('test.s_valet', s_valet, false);
+end $$;
+
 select is(
-  (
-    with nova as (
-      insert into public.faq(scope, destination_id, question, answer, is_published)
-      values ('destination', current_setting('test.did')::uuid, 'Tem traslado?', 'Tem.', true)
-      returning slug
-    )
-    select slug from nova
-  ),
+  current_setting('test.s_traslado'),
   'tem-traslado-slugteste',
   'slug de FAQ de destino termina com o nome do aeroporto'
 );
 
 -- Pergunta que já menciona o aeroporto não ganha sufixo duplicado
 select is(
-  (
-    with nova as (
-      insert into public.faq(scope, destination_id, question, answer, is_published)
-      values ('destination', current_setting('test.did')::uuid, 'O Slugteste tem valet?', 'Tem.', true)
-      returning slug
-    )
-    select slug from nova
-  ),
+  current_setting('test.s_valet'),
   'o-slugteste-tem-valet',
   'pergunta que cita o aeroporto fica sem sufixo (comparação por palavra)'
 );
