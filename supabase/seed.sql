@@ -1,3 +1,8 @@
+-- Idempotente de propósito: várias tabelas deste dump (amenity, parking_type, faq_category...)
+-- também passaram a ser semeadas por migrations. Sem `ON CONFLICT DO NOTHING`, o seed batia em
+-- chave duplicada depois de todas as migrations aplicadas e o `supabase db reset` do job `db`
+-- do CI morria sem rodar um pgTAP sequer (15/09/2026).
+
 -- Seed de catálogo/pricing extraído do banco vivo (sem dados de cliente/PII).
 
 SET session_replication_role = replica;
@@ -42,7 +47,8 @@ INSERT INTO "public"."company" ("id", "name", "slug", "legal_name", "tax_id", "s
 	('e0b69229-08b9-4f67-9455-381f84649506', 'Redpark', 'redpark', 'Redpark Portugal', NULL, 'active', '2026-05-27 16:58:38.742614+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('55c3e046-ecac-4ead-99e1-483ecb2d3e6e', 'Skypark', 'skypark', 'Skypark Portugal', NULL, 'active', '2026-05-27 16:58:38.742614+00', '2026-06-03 17:27:57.689029+00', NULL, 'active', NULL),
 	('eed2420f-b1b4-436f-9f3b-945415c898fb', 'KallefPark', 'kallefpark', NULL, '12312312321313', 'inactive', '2026-06-03 20:07:53.95096+00', '2026-06-08 13:59:23.037421+00', NULL, 'approved', NULL),
-	('c54ce364-25c4-4c22-bbcd-1a97deb7715d', 'Go2Park Estacionamento', 'go2park-estacionamento', NULL, '17163995000104', 'inactive', '2026-06-08 13:51:51.325064+00', '2026-06-08 14:50:25.734145+00', NULL, 'approved', NULL);
+	('c54ce364-25c4-4c22-bbcd-1a97deb7715d', 'Go2Park Estacionamento', 'go2park-estacionamento', NULL, '17163995000104', 'inactive', '2026-06-08 13:51:51.325064+00', '2026-06-08 14:50:25.734145+00', NULL, 'approved', NULL)
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -74,7 +80,8 @@ INSERT INTO "public"."amenity" ("code", "name", "description", "icon", "category
 	('wifi', 'Wi-Fi gratuito', 'Internet sem fio na área de espera', 'Wifi', 'extras', 20),
 	('lounge', 'Área de espera', 'Sala de estar climatizada', 'Sofa', 'extras', 30),
 	('vending_machine', 'Máquina de snacks e bebidas', 'Snacks e bebidas à venda no local', 'Coffee', 'extras', 35),
-	('flight_insurance', 'Seguro voo', 'Cobertura para atraso ou cancelamento', 'PlaneTakeoff', 'extras', 40);
+	('flight_insurance', 'Seguro voo', 'Cobertura para atraso ou cancelamento', 'PlaneTakeoff', 'extras', 40)
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -87,7 +94,8 @@ INSERT INTO "public"."parking_type" ("id", "code", "name", "description", "creat
 	('c680867a-3dd4-4926-80df-f60b0a507ba2', 'valet', 'Valet', 'Operação valet: manobrista recebe e entrega o veículo', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
 	('c0e95498-b3da-4951-ae96-bcc6246ea170', 'premium', 'Vaga Premium', 'Vaga premium / VIP, próxima ao embarque ou diferenciada', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
 	('37b4a1e6-2559-4552-9dc3-6c127311d92b', 'garage', 'Garagem / Box', 'Garagem privativa ou box individual', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00'),
-	('19358bfb-5a45-4d10-8007-c9122cd2e0c4', 'motorcycle', 'Vaga de Moto', 'Vaga dedicada a motocicletas', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00');
+	('19358bfb-5a45-4d10-8007-c9122cd2e0c4', 'motorcycle', 'Vaga de Moto', 'Vaga dedicada a motocicletas', '2026-05-25 14:35:31.868846+00', '2026-05-25 14:35:31.868846+00')
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -120,7 +128,8 @@ INSERT INTO "public"."company_parking_type" ("id", "company_id", "parking_type_i
 	('f59e2eb9-5a21-40dd-8566-efc38d9cf517', 'fee1f0d3-ac69-44a6-b7d9-fcbdf7a6a21a', 'b76d7767-72a8-43ee-8039-3a208b933ba8', 0.00, 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00'),
 	('bb95148f-e7da-4570-90fa-cab91cb66f17', 'fee1f0d3-ac69-44a6-b7d9-fcbdf7a6a21a', '2a0e4481-fa03-409e-8093-076a77e2c1c6', 0.00, 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00'),
 	('eee4060d-291f-49b2-ad46-d8e374c18e6d', 'fee1f0d3-ac69-44a6-b7d9-fcbdf7a6a21a', 'c680867a-3dd4-4926-80df-f60b0a507ba2', 0.00, 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00'),
-	('53079988-429e-4c7e-95c2-8e9b1ee64698', '48a7af0a-3a0e-4660-8acf-d4df7698e4f1', 'b76d7767-72a8-43ee-8039-3a208b933ba8', 0.00, 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00');
+	('53079988-429e-4c7e-95c2-8e9b1ee64698', '48a7af0a-3a0e-4660-8acf-d4df7698e4f1', 'b76d7767-72a8-43ee-8039-3a208b933ba8', 0.00, 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00')
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -149,7 +158,8 @@ INSERT INTO "public"."destination" ("id", "code", "name", "slug", "short_name", 
 	('63dadc64-a3ba-4e87-8d70-1f3f9b06df8e', 'tiete', 'Terminal Rodoviário Tietê', 'terminal-rodoviario-tiete', 'Tietê', 'bus_terminal', 'São Paulo', 'SP', 'BR', -23.5158, -46.6258, false, 200, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
 	('d7bc75c4-9960-49df-a092-a31f79ff0751', 'centro-sp', 'Centro de São Paulo', 'centro-de-sao-paulo', 'Centro SP', 'city_center', 'São Paulo', 'SP', 'BR', -23.5505, -46.6333, false, 300, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
 	('9c6b2537-f712-4320-9143-ebae0a7a5c76', 'jardim-paulista', 'Jardim Paulista', 'jardim-paulista', 'Jardim Paulista', 'district', 'São Paulo', 'SP', 'BR', -23.5694, -46.6603, false, 310, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
-	('e87f47d2-36f1-477a-aed4-360f80d2197c', 'nova-iguacu', 'Centro de Nova Iguaçu', 'centro-de-nova-iguacu', 'Nova Iguaçu', 'city_center', 'Nova Iguaçu', 'RJ', 'BR', -22.7589, -43.4503, false, 320, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00');
+	('e87f47d2-36f1-477a-aed4-360f80d2197c', 'nova-iguacu', 'Centro de Nova Iguaçu', 'centro-de-nova-iguacu', 'Nova Iguaçu', 'city_center', 'Nova Iguaçu', 'RJ', 'BR', -22.7589, -43.4503, false, 320, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00')
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -178,7 +188,8 @@ INSERT INTO "public"."faq_category" ("id", "slug", "label", "sort_order", "creat
 	('f31d19cd-29a7-488d-8d55-5fd5605a33ec', 'pagamentos', 'Pagamentos', 2, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00'),
 	('9f0ee48d-97ef-4fea-99c2-792b3221ef21', 'cancelamento', 'Cancelamento', 3, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00'),
 	('cbb45b76-baa7-41a2-b0d3-3e005d931d26', 'check-in', 'Check-in / Acesso', 4, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00'),
-	('927df5ac-7737-47c1-b538-d7aa8db1bc95', 'veiculos', 'Veículos', 5, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00');
+	('927df5ac-7737-47c1-b538-d7aa8db1bc95', 'veiculos', 'Veículos', 5, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00')
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -201,7 +212,8 @@ INSERT INTO "public"."location" ("id", "company_id", "name", "slug", "address", 
 	('ee498126-1a0a-427f-945f-50b141b7bbcb', 'a73eec79-5c21-45fc-842f-58d552c93819', 'Nova Iguaçu', 'nova-iguacu', 'Av. Gov. Amaral Peixoto, 507 - Centro, Nova Iguaçu - RJ, 26210-060', -22.7530997, -43.4454083, 'America/Sao_Paulo', 'active', '2026-05-27 16:58:38.742614+00', '2026-05-28 18:59:59.355142+00', NULL, false, false, NULL, false, NULL, '+5521973212002', 'contato@moveparking.com.br', '[]'),
 	('4c7be617-e5ea-4f8f-b247-7d9475827663', 'f8f321cd-5265-4a6a-94f7-f1eae58d23a9', 'Estacionamento Av. 9 de Julho', 'estacionamento', 'Av. Nove de Julho, 3186 - Jardim Paulista, São Paulo - SP', -23.5734764, -46.6558784, 'America/Sao_Paulo', 'active', '2026-05-27 16:58:38.742614+00', '2026-05-28 18:59:59.355142+00', NULL, false, false, NULL, false, NULL, '+5519991104651', 'nine@garageinn.com.br', '[]'),
 	('54acabaa-2292-4999-9100-fc301cb3fad1', 'e0b69229-08b9-4f67-9455-381f84649506', 'Lisboa', 'lisboa', 'Rua Particular, nº 12 - Camarate, 2680-583', 38.7802933, -9.1320082, 'Europe/Lisbon', 'active', '2026-05-27 16:58:38.742614+00', '2026-05-28 18:59:59.355142+00', NULL, false, false, NULL, false, NULL, '+351966687677', NULL, '[]'),
-	('f4a03216-b186-4cf2-8202-fbb0238b22e3', '55c3e046-ecac-4ead-99e1-483ecb2d3e6e', 'Lisboa', 'lisboa', 'R. B 45, Quinta do Carmo - 2685-129 Sacavém', 38.7826706, -9.1402197, 'Europe/Lisbon', 'active', '2026-05-27 16:58:38.742614+00', '2026-05-28 18:59:59.355142+00', NULL, false, false, NULL, false, NULL, '+351962406952', NULL, '[]');
+	('f4a03216-b186-4cf2-8202-fbb0238b22e3', '55c3e046-ecac-4ead-99e1-483ecb2d3e6e', 'Lisboa', 'lisboa', 'R. B 45, Quinta do Carmo - 2685-129 Sacavém', 38.7826706, -9.1402197, 'Europe/Lisbon', 'active', '2026-05-27 16:58:38.742614+00', '2026-05-28 18:59:59.355142+00', NULL, false, false, NULL, false, NULL, '+351962406952', NULL, '[]')
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -216,7 +228,8 @@ INSERT INTO "public"."faq" ("id", "scope", "location_id", "category_id", "questi
 	('d2bcbf89-4916-4680-81e7-c79cf3866a5e', 'global', NULL, '9f0ee48d-97ef-4fea-99c2-792b3221ef21', 'Como cancelo uma reserva?', 'Se você reservou direto na Movepark: em "Minhas reservas", abra a reserva e clique em "Cancelar". Cancelamentos até 24h antes do check-in têm reembolso integral; depois desse prazo, fale com o suporte. Se você reservou no site ou WhatsApp do estacionamento parceiro, cancele direto com ele, pelo canal que ele indicou na confirmação.', 1, true, NULL, NULL, '2026-06-01 14:55:11.936422+00', '2026-08-19 14:21:03.251488+00', NULL),
 	('78966001-59a8-479b-b8d6-f251a9cee978', 'global', NULL, 'cbb45b76-baa7-41a2-b0d3-3e005d931d26', 'O que apresentar na chegada ao estacionamento?', 'Mostre o QR Code do voucher (em "Minhas reservas") ou informe o código MP- da reserva. Em alguns locais a leitura é automática pela placa.', 1, true, NULL, NULL, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00', NULL),
 	('870f5782-b012-4817-b7e9-f72fbdf8f7c7', 'global', NULL, 'cbb45b76-baa7-41a2-b0d3-3e005d931d26', 'Posso chegar antes ou sair depois do horário?', 'Se você reservou direto na Movepark: tolerância de 30 minutos antes e 60 minutos depois, sem cobrança adicional. Períodos maiores podem gerar diária adicional na saída. Se você reservou no site do estacionamento parceiro, a tolerância é a que ele informou no momento da reserva.', 2, true, NULL, NULL, '2026-06-01 14:55:11.936422+00', '2026-08-19 14:22:00+00', NULL),
-	('c0192e76-ff13-45a8-9236-56e521ffa5a6', 'global', NULL, '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Posso trocar o veículo depois da reserva?', 'Sim. Em "Minhas reservas" > "Editar veículo" você muda a placa até a hora do check-in.', 1, true, NULL, NULL, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00', NULL);
+	('c0192e76-ff13-45a8-9236-56e521ffa5a6', 'global', NULL, '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Posso trocar o veículo depois da reserva?', 'Sim. Em "Minhas reservas" > "Editar veículo" você muda a placa até a hora do check-in.', 1, true, NULL, NULL, '2026-06-01 14:55:11.936422+00', '2026-06-01 14:55:11.936422+00', NULL)
+ON CONFLICT DO NOTHING;
 
 -- FAQ por destino (scope='destination', GEO-07 / ADR-002) — Viracopos.
 -- Fonte do conteúdo: gestao/conteudo-onda1.md §2.1 (baseline, revisar com parceiro).
@@ -226,7 +239,8 @@ INSERT INTO "public"."faq" ("scope", "destination_id", "category_id", "question"
 	('destination', 'da58673f-5dfd-4130-999b-5c987f353330', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'As vagas em Viracopos são cobertas ou descobertas?', 'Varia por estacionamento e por tipo de vaga. Há opções cobertas (protegidas de sol e chuva) e descobertas, geralmente mais econômicas. O tipo de vaga e as comodidades aparecem na página de cada estacionamento — escolha pelo que preferir antes de reservar.', 3, true),
 	('destination', 'da58673f-5dfd-4130-999b-5c987f353330', 'cbb45b76-baa7-41a2-b0d3-3e005d931d26', 'Tem valet ou é self-park (você mesmo estaciona)?', 'Os dois modelos existem em Viracopos. No valet, a equipe estaciona o carro por você; no self-park, você mesmo deixa na vaga. Cada página de estacionamento indica o modelo e as comodidades (traslado, lavagem, etc.).', 4, true),
 	('destination', 'da58673f-5dfd-4130-999b-5c987f353330', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Os estacionamentos de Viracopos são seguros? Têm monitoramento?', 'Os estacionamentos parceiros listam suas comodidades de segurança — como monitoramento por câmeras (CCTV), controle de acesso e equipe no local — na própria página. Confira os itens de cada estacionamento antes de reservar.', 5, true),
-	('destination', 'da58673f-5dfd-4130-999b-5c987f353330', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Existe limite de altura (gabarito) para SUVs, vans ou furgões?', 'Vagas descobertas costumam não ter limite de altura; áreas cobertas podem ter gabarito. Se você dirige um veículo alto (SUV grande, van, furgão), confira as comodidades e observações do estacionamento ou fale com a unidade antes de reservar para garantir o encaixe.', 6, true);
+	('destination', 'da58673f-5dfd-4130-999b-5c987f353330', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Existe limite de altura (gabarito) para SUVs, vans ou furgões?', 'Vagas descobertas costumam não ter limite de altura; áreas cobertas podem ter gabarito. Se você dirige um veículo alto (SUV grande, van, furgão), confira as comodidades e observações do estacionamento ou fale com a unidade antes de reservar para garantir o encaixe.', 6, true)
+ON CONFLICT DO NOTHING;
 
 -- FAQ por destino — GRU, CGH, SDU, GIG (gestao/conteudo-onda1.md §2.2–2.5).
 INSERT INTO "public"."faq" ("scope", "destination_id", "category_id", "question", "answer", "sort_order", "is_published") VALUES
@@ -257,7 +271,8 @@ INSERT INTO "public"."faq" ("scope", "destination_id", "category_id", "question"
 	('destination', 'cdf91ad4-91b5-425d-9709-131e7421d2b2', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'As vagas no Galeão são cobertas ou descobertas?', 'Varia por estacionamento e por tipo de vaga. No Galeão há opções cobertas (protegidas de sol e chuva) e descobertas, geralmente mais econômicas. O tipo de vaga e as comodidades aparecem na página de cada estacionamento — escolha pelo que preferir antes de reservar.', 3, true),
 	('destination', 'cdf91ad4-91b5-425d-9709-131e7421d2b2', 'cbb45b76-baa7-41a2-b0d3-3e005d931d26', 'Tem valet ou é self-park (você mesmo estaciona)?', 'Os dois modelos existem no Galeão. No valet, a equipe estaciona o carro por você; no self-park, você mesmo deixa na vaga. Cada página de estacionamento indica o modelo e as comodidades (traslado, lavagem, etc.).', 4, true),
 	('destination', 'cdf91ad4-91b5-425d-9709-131e7421d2b2', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Os estacionamentos do Galeão são seguros? Têm monitoramento?', 'Os estacionamentos parceiros do Galeão listam suas comodidades de segurança — como monitoramento por câmeras (CCTV), controle de acesso e equipe no local — na própria página. Confira os itens de cada estacionamento antes de reservar.', 5, true),
-	('destination', 'cdf91ad4-91b5-425d-9709-131e7421d2b2', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Existe limite de altura (gabarito) para SUVs, vans ou furgões?', 'Vagas descobertas costumam não ter limite de altura; áreas cobertas podem ter gabarito. Se você dirige um veículo alto (SUV grande, van, furgão), confira as comodidades e observações do estacionamento ou fale com a unidade antes de reservar para garantir o encaixe.', 6, true);
+	('destination', 'cdf91ad4-91b5-425d-9709-131e7421d2b2', '927df5ac-7737-47c1-b538-d7aa8db1bc95', 'Existe limite de altura (gabarito) para SUVs, vans ou furgões?', 'Vagas descobertas costumam não ter limite de altura; áreas cobertas podem ter gabarito. Se você dirige um veículo alto (SUV grande, van, furgão), confira as comodidades e observações do estacionamento ou fale com a unidade antes de reservar para garantir o encaixe.', 6, true)
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -374,7 +389,8 @@ INSERT INTO "public"."location_amenity" ("location_id", "amenity_code", "notes")
 	('fd6290d0-615e-47c2-a9af-38b64d49448d', 'gated_access', NULL),
 	('fd6290d0-615e-47c2-a9af-38b64d49448d', 'restroom', NULL),
 	('fd6290d0-615e-47c2-a9af-38b64d49448d', 'shuttle_free', NULL),
-	('fd6290d0-615e-47c2-a9af-38b64d49448d', 'self_park', NULL);
+	('fd6290d0-615e-47c2-a9af-38b64d49448d', 'self_park', NULL)
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -411,7 +427,8 @@ INSERT INTO "public"."location_parking_type" ("id", "location_id", "company_park
 	('82d0d247-363d-4fe0-bfba-a0eed52ca93c', '70fd4973-b39c-497c-a423-541c8a3f148f', 'eddad237-7193-441f-bf49-7f72cda1489e', 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00', NULL, NULL, false, NULL, NULL, false, NULL),
 	('7c9d7b27-51e2-4f97-96cf-5d2cb15d8fbc', '0d9bf7bf-811f-42df-959d-8accbe92b76b', 'f59e2eb9-5a21-40dd-8566-efc38d9cf517', 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00', NULL, NULL, false, NULL, NULL, false, NULL),
 	('e04e65d0-fc1e-4aa1-ad34-2e5905c6785c', '0d9bf7bf-811f-42df-959d-8accbe92b76b', 'eee4060d-291f-49b2-ad46-d8e374c18e6d', 100, true, '2026-05-25 14:44:10.135186+00', '2026-05-27 16:58:38.742614+00', NULL, NULL, false, NULL, NULL, false, NULL),
-	('dcc2cdc2-e912-4345-98cc-0a5a90f56270', 'fd6290d0-615e-47c2-a9af-38b64d49448d', 'ba1f7cc3-b8ef-455f-9e83-a39603cc60f2', 100, true, '2026-05-27 16:58:38.742614+00', '2026-05-28 22:04:26.363266+00', NULL, NULL, false, NULL, NULL, false, NULL);
+	('dcc2cdc2-e912-4345-98cc-0a5a90f56270', 'fd6290d0-615e-47c2-a9af-38b64d49448d', 'ba1f7cc3-b8ef-455f-9e83-a39603cc60f2', 100, true, '2026-05-27 16:58:38.742614+00', '2026-05-28 22:04:26.363266+00', NULL, NULL, false, NULL, NULL, false, NULL)
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -454,7 +471,8 @@ INSERT INTO "public"."pricing_rule" ("id", "location_parking_type_id", "strategy
 	('59b9100c-2a01-435b-b5c7-2946484d1b2d', '9b346114-2a39-4149-a05c-7a0d472d5aef', 'monthly_remainder', 'any_extra', NULL, 'none', NULL, NULL, NULL, NULL, NULL, 220.00, 14.99, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-28 21:59:09.107586+00', '2026-05-28 21:59:09.107586+00'),
 	('b289120d-d15f-4d24-aa31-c15ae61e8e7b', '443e0a9c-14d8-4b9b-9e7a-f90d125c2790', 'hourly_capped', 'none', NULL, 'none', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 7.00, 10.00, 3.00, 20.00, 13, NULL, NULL, NULL, '{"sunday": null, "mon-fri": {"open": "07:00", "close": "20:00"}, "saturday": {"open": "08:00", "close": "17:00"}}', '2026-05-28 21:59:09.107586+00', '2026-05-28 21:59:09.107586+00'),
 	('b64dac3e-b06c-47e9-a270-9d1080dff6f5', '8e74a6c0-09db-4c39-8e2b-152d3a40a86e', 'hourly_capped', 'none', NULL, 'none', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.50, 5.00, 1.50, 10.00, 13, NULL, NULL, NULL, '{"sunday": null, "mon-fri": {"open": "07:00", "close": "20:00"}, "saturday": {"open": "08:00", "close": "17:00"}}', '2026-05-28 21:59:09.107586+00', '2026-05-28 21:59:09.107586+00'),
-	('c88e168e-8ac5-4cfa-ab88-dfaea50f86a6', 'c52c5553-5c92-43fb-bc6a-d0e4a3c72070', 'tiered_progressive', 'any_extra', NULL, 'none', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-28 21:59:09.107586+00', '2026-05-28 21:59:09.107586+00');
+	('c88e168e-8ac5-4cfa-ab88-dfaea50f86a6', 'c52c5553-5c92-43fb-bc6a-d0e4a3c72070', 'tiered_progressive', 'any_extra', NULL, 'none', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-28 21:59:09.107586+00', '2026-05-28 21:59:09.107586+00')
+ON CONFLICT DO NOTHING;
 
 
 --
@@ -528,7 +546,8 @@ INSERT INTO "public"."pricing_tier" ("id", "pricing_rule_id", "from_day", "to_da
 	('4c8ed13b-bab7-4219-8c75-8b4c7820cafd', 'c7b108c3-149c-41e6-8cdb-1a956225fccd', 16, NULL, 14.90, NULL, false),
 	('2ec3138a-7e56-4b78-be1f-e6db87976431', 'c88e168e-8ac5-4cfa-ab88-dfaea50f86a6', 1, 2, 28.00, NULL, false),
 	('347e7d12-2650-43ca-be88-7525bf2622c2', 'c88e168e-8ac5-4cfa-ab88-dfaea50f86a6', 3, 7, 22.00, NULL, false),
-	('5b1dc57a-386b-4782-aa18-c0f526323ff6', 'c88e168e-8ac5-4cfa-ab88-dfaea50f86a6', 8, NULL, 18.00, NULL, false);
+	('5b1dc57a-386b-4782-aa18-c0f526323ff6', 'c88e168e-8ac5-4cfa-ab88-dfaea50f86a6', 8, NULL, 18.00, NULL, false)
+ON CONFLICT DO NOTHING;
 
 
 --
