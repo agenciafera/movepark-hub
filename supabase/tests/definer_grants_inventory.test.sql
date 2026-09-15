@@ -79,9 +79,13 @@ select set_eq(
     -- vazio, um soft 404 na página que tinha ranking. O que ela revela é só a URL pública da
     -- unidade que nasceu dali, nada que a página do parceiro já não mostre. Nunca devolve
     -- telefone, place_id nem o estado da campanha B2B. Ver lote-mapeado-vitrine.md.
-    'prospect_redirect_target'
+    'prospect_redirect_target',
+    -- Mesma categoria de borda: o Cloudflare Worker consulta pela anon key, em src/worker.ts, para
+    -- resolver a URL legada do WordPress antes de a página existir. Definer porque a RLS não cobre
+    -- o mapa de redirecionamento, e o que ela devolve é só o destino público da URL pedida.
+    'url_legacy_map'
   ],
-  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 22'
+  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 23'
 );
 
 -- ── nenhuma rotina de cron é chamável pela anon key ──────────────────────────
