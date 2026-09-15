@@ -38,6 +38,9 @@ export function PayoutTransferCard() {
   const { data, isLoading } = usePayoutOwed();
   const repassar = useRequestPayoutTransfer();
   const [alvo, setAlvo] = React.useState<PayoutOwedRow | null>(null);
+  // Retomar é repassar o valor da linha pendente, não o disponível: a RPC devolve a mesma linha.
+  const retomando = !!alvo?.em_andamento && !!alvo.pendente && !alvo.pendente.enviado;
+  const valorAlvo = retomando ? (alvo?.pendente?.amount_cents ?? 0) : (alvo?.available_cents ?? 0);
 
   const linhas = data ?? [];
 
@@ -46,9 +49,9 @@ export function PayoutTransferCard() {
     try {
       await repassar.mutateAsync({
         company_id: alvo.company_id,
-        amount_cents: alvo.available_cents,
+        amount_cents: valorAlvo,
       });
-      toast.success(`Repasse de ${brl(alvo.available_cents)} enviado para ${alvo.company_name}.`);
+      toast.success(`Repasse de ${brl(valorAlvo)} enviado para ${alvo.company_name}.`);
       setAlvo(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não consegui enviar o repasse.");
@@ -95,8 +98,14 @@ export function PayoutTransferCard() {
                       {brl(l.available_cents)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {l.em_andamento ? (
-                        <Badge tone="pending">Repasse em andamento</Badge>
+                      {l.em_andamento && l.pendente && !l.pendente.enviado ? (
+                        // Não chegou ao gateway (resposta incerta ou queda no meio): retomar reusa
+                        // a mesma chave de idempotência, então não duplica.
+                        <Button size="sm" variant="outline" onClick={() => setAlvo(l)}>
+                          Retomar repasse
+                        </Button>
+                      ) : l.em_andamento ? (
+                        <Badge tone="pending">Aguardando o gateway</Badge>
                       ) : !apto ? (
                         <Badge tone="cancelled" className="gap-1">
                           <Warning />
@@ -119,10 +128,11 @@ export function PayoutTransferCard() {
       <Dialog open={!!alvo} onOpenChange={(aberto) => !aberto && setAlvo(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar repasse</DialogTitle>
+            <DialogTitle>{retomando ? "Retomar repasse" : "Confirmar repasse"}</DialogTitle>
             <DialogDescription>
-              O dinheiro sai da conta da Movepark e entra na do parceiro. Não dá para desfazer pelo
-              painel.
+              {retomando
+                ? "A tentativa anterior não foi confirmada pelo gateway. Retomar usa a mesma chave, então não duplica o repasse."
+                : "O dinheiro sai da conta da Movepark e entra na do parceiro. Não dá para desfazer pelo painel."}
             </DialogDescription>
           </DialogHeader>
           {alvo && (
@@ -137,7 +147,7 @@ export function PayoutTransferCard() {
               </div>
               <div className="flex items-baseline justify-between gap-4">
                 <dt className="text-muted">Valor</dt>
-                <dd className="text-display-sm text-ink">{brl(alvo.available_cents)}</dd>
+                <dd className="text-display-sm text-ink">{brl(valorAlvo)}</dd>
               </div>
             </dl>
           )}
@@ -146,7 +156,7 @@ export function PayoutTransferCard() {
               Cancelar
             </Button>
             <Button onClick={confirmar} disabled={repassar.isPending}>
-              {repassar.isPending ? "Enviando..." : "Confirmar repasse"}
+              {repassar.isPending ? "Enviando..." : retomando ? "Confirmar retomada" : "Confirmar repasse"}
             </Button>
           </DialogFooter>
         </DialogContent>

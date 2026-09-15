@@ -164,6 +164,49 @@ não sabe que `POST /transfers` tem dois corpos possíveis: quem sabe disso é o
 | Deno | `buildTransferBody` (as duas pernas, nunca `recipient_id`), `buildTransferResult`, header `Idempotency-Key`, `buildBalanceResult`; roteamento do webhook (repasse casa antes de saque) |
 | Vitest | gating do botão por papel, diálogo de confirmação, valor exibido |
 
+## Corrigido na varredura de 15/09/2026
+
+A releitura do repasse achou quatro jeitos de o dinheiro travar. Nenhum repasse real tinha sido
+feito ainda, então nada travou de fato.
+
+**1. Repasse fantasma no pré-voo.** A RPC grava a linha antes do pré-voo de saldo, e o 409 de saldo
+insuficiente deixava a linha em `created`: contava como repassado, ocupava o índice de um em
+andamento e travava a empresa sem saída pelo sistema. Agora a Edge **cancela** a linha no pré-voo,
+mas **só se ela nunca foi ao gateway** (`nuncaFoiAoGateway`). A que já tentou pode ter movido o
+dinheiro, e o saldo insuficiente de agora pode ser o reflexo dela; cancelar e abrir chave nova pagaria
+duas vezes. Para essa distinção valer mesmo se a Edge cair no meio, a tentativa é carimbada em `raw`
+**antes** da chamada.
+
+**2. Recusa definitiva nunca virava `failed`.** Toda falha deixava a linha em `created`. Agora
+`classifyTransferResponse` separa três casos pela pergunta que importa, "o dinheiro pode ter saído?":
+
+| Resposta | Classe | A linha |
+|---|---|---|
+| 2xx com id | enviado | status do gateway (`transferRowStatus`) |
+| 4xx, exceto 408/409/429 | recusa processada | `failed`, a empresa fica livre |
+| 5xx, rede, 408, 409, 429, 2xx sem id | incerto | fica em `created` para retomar com a **mesma** chave |
+
+**3. `failed` e `canceled` viravam `processing`.** Tudo que não era `transferred` caía em
+`processing`. A regra agora é única, em `_shared/payments/transfer.ts`, usada pela Edge, pelo webhook
+e pela conciliação: terminal nunca muda (evento fora de ordem não reabre repasse pago) e `created`
+não rebaixa `processing`.
+
+**4. O status dependia de um webhook que nunca chegou.** Zero eventos `transfer.*` em toda a história
+de `payment_webhook_event`, mesmo com um saque real em 31/07. Entrou a conciliação por polling (Edge
+`reconcile-payout-transfers`, `GET /transfers/{id}`, cron de 15 min), que só relê e aplica a mesma
+regra. Erro ao consultar nunca vira falha: não saber o status não é saber que falhou. O webhook
+continua valendo e agora casa também por `metadata.payout_transfer_id`, o que fecha a corrida de o
+evento chegar antes de a Edge gravar o id.
+
+**Retomar pela tela.** A visão do painel traz o `pendente` (valor e se já chegou ao gateway). Pendente
+que não chegou mostra **Retomar repasse**, que reusa a mesma linha e a mesma chave; pendente que já
+chegou mostra "Aguardando o gateway", e quem fecha é a conciliação.
+
+**Limite conhecido.** Uma linha em estado incerto que nunca consegue resposta do gateway (5xx
+permanente) fica retomável para sempre e não tem cancelamento pela tela, de propósito: cancelar sem
+saber se o dinheiro saiu é o único caminho para o repasse em dobro. Se acontecer, a resolução é
+conferir no painel do Pagar.me e ajustar a linha com SQL.
+
 ## Primeiro repasse real: pendente, por decisão
 
 Tudo está no ar e o caminho foi ensaiado com os dados reais em transação revertida: o painel lista

@@ -322,6 +322,8 @@ export interface PaymentGateway {
   listPayables(chargeId: string): Promise<PayablesResult>;
   /** Repassa da conta da Movepark para o recebedor do parceiro (custódia). */
   createTransfer(input: TransferInput): Promise<TransferResult>;
+  /** Relê uma transferência pelo id (conciliação do repasse quando o webhook não chega). */
+  getTransfer(transferId: string): Promise<TransferResult>;
   /** Saldo de um recebedor, para o pré-voo do repasse. */
   getRecipientBalance(recipientId: string): Promise<RecipientBalance>;
   /** Atualiza a cadência de transferência de um recebedor (PATCH transfer-settings). */

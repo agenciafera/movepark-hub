@@ -125,6 +125,19 @@ export class MockGateway implements PaymentGateway {
     });
   }
 
+  /** No mock toda transferência já está concluída. */
+  getTransfer(transferId: string): Promise<TransferResult> {
+    return Promise.resolve({
+      transferId,
+      status: "transferred",
+      amountCents: null,
+      sourceId: null,
+      targetId: null,
+      raw: null,
+      httpStatus: 200,
+    });
+  }
+
   /** Saldo do mock é sempre suficiente; o pré-voo do repasse não trava em teste. */
   getRecipientBalance(): Promise<RecipientBalance> {
     return Promise.resolve({

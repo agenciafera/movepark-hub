@@ -751,6 +751,18 @@ export class PagarmeGateway implements PaymentGateway {
     return buildTransferResult(res.status, parsed);
   }
 
+  /**
+   * Relê a transferência (`GET /transfers/{id}`). É a rede de segurança do repasse: nenhum evento
+   * `transfer.*` chegou ao webhook em toda a história da conta, então o status não pode depender dele.
+   */
+  async getTransfer(transferId: string): Promise<TransferResult> {
+    const { httpStatus, parsed } = await this.rawFetch(
+      "GET",
+      `/transfers/${encodeURIComponent(transferId)}`,
+    );
+    return buildTransferResult(httpStatus, parsed);
+  }
+
   /** Saldo é POR RECEBEDOR: `GET /balance` no nível da conta responde 404. */
   async getRecipientBalance(recipientId: string): Promise<RecipientBalance> {
     const { httpStatus, parsed } = await this.rawFetch(

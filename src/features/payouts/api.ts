@@ -372,6 +372,18 @@ export type PayoutOwedRow = {
   target_recipient_id: string | null;
   recipient_status: string | null;
   em_andamento: boolean;
+  /**
+   * O repasse em andamento, se houver. `enviado` = já tem id do gateway (quem fecha é a conciliação
+   * ou o webhook). Não enviado = retomável pela tela, e retomar reusa a MESMA linha e a mesma chave.
+   */
+  pendente?: {
+    id: string;
+    status: string;
+    amount_cents: number;
+    enviado: boolean;
+    failed_reason: string | null;
+    requested_at: string;
+  } | null;
 };
 
 /** Quem está devendo repasse na rede. Só hub_admin (a RPC recusa o resto). */

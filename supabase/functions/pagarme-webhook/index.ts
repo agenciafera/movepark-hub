@@ -13,6 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway } from "../_shared/payments/index.ts";
 import { mapRecipientStatus } from "../_shared/payments/pagarme.ts";
+import { nextTransferRowStatus } from "../_shared/payments/transfer.ts";
 import {
   issueKycLinkAndNotify,
   PROVIDER_STATUS_AWAITING_KYC,
@@ -268,25 +269,46 @@ Deno.serve(async (req: Request) => {
 
     // REPASSE primeiro. `POST /transfers` faz saque e repasse, e os dois chegam como `transfer.*`.
     // Olhar o saque antes faria todo repasse nosso virar linha falsa de saque na tela do parceiro,
-    // inflando o "já transferido" com dinheiro que ele ainda não tirou.
-    const { data: repasse } = await admin
-      .from("payout_transfer")
-      .select("id")
-      .eq("provider", "pagarme")
-      .eq("external_transfer_id", tr.transferId)
-      .is("deleted_at", null)
-      .maybeSingle();
+    // inflando o "já transferido" com dinheiro que ele ainda não tirou. Casa pelo id do gateway e,
+    // se o evento chegar antes de a Edge gravá-lo, pelo `metadata.payout_transfer_id`.
+    const repasseCols = "id, status, external_transfer_id";
+    let repasse: { id: string; status: string; external_transfer_id: string | null } | null = null;
+    {
+      const { data } = await admin
+        .from("payout_transfer")
+        .select(repasseCols)
+        .eq("provider", "pagarme")
+        .eq("external_transfer_id", tr.transferId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      repasse = data ?? null;
+    }
+    if (!repasse && tr.payoutTransferId) {
+      const { data } = await admin
+        .from("payout_transfer")
+        .select(repasseCols)
+        .eq("id", tr.payoutTransferId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      repasse = data ?? null;
+    }
     if (repasse) {
-      const patch: Record<string, unknown> = { status: wStatus, raw: body };
-      if (wStatus === "paid") patch.paid_at = new Date().toISOString();
-      if (wStatus === "failed") patch.failed_reason = tr.rawStatus ?? ev.type;
+      // Mesma regra da Edge e da conciliação: terminal não muda, `created` não rebaixa processing.
+      const next = nextTransferRowStatus(repasse.status, tr.rawStatus ?? ev.type.split(".")[1]);
+      const patch: Record<string, unknown> = { raw: body };
+      if (!repasse.external_transfer_id) patch.external_transfer_id = tr.transferId;
+      if (next) {
+        patch.status = next;
+        if (next === "paid") patch.paid_at = new Date().toISOString();
+        if (next === "failed" || next === "canceled") patch.failed_reason = `gateway: ${tr.rawStatus ?? ev.type}`;
+      }
       const { error: trErr } = await admin
         .from("payout_transfer")
         .update(patch)
         .eq("id", repasse.id);
       if (trErr) return json({ error: trErr.message }, 500);
       await markProcessed(admin, ev.eventId);
-      return json({ ok: true, payout_transfer: wStatus });
+      return json({ ok: true, payout_transfer: next ?? repasse.status });
     }
 
     const { data: rec } = await admin

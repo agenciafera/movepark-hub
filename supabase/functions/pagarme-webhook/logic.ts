@@ -232,6 +232,11 @@ export interface ParsedTransfer {
   amountCents: number | null;
   feeCents: number | null;
   rawStatus: string | null;
+  /**
+   * Id da NOSSA linha em `payout_transfer`, que a Edge manda no metadata do POST /transfers. Fecha a
+   * corrida de o evento chegar antes de a Edge gravar o `external_transfer_id`.
+   */
+  payoutTransferId: string | null;
 }
 
 /** Extrai os campos de um evento `transfer.*` do Pagar.me. */
@@ -239,10 +244,23 @@ export function parseTransferEvent(body: unknown): ParsedTransfer {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const data = (b.data ?? {}) as Record<string, unknown>;
   const recipient = (data.recipient ?? {}) as Record<string, unknown>;
+  const metadata = (data.metadata ?? {}) as Record<string, unknown>;
   const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  // O id da transferência vem numérico na v5. Comparado cru com a coluna texto, não casaria.
+  const rawId = data.id;
+  const transferId =
+    typeof rawId === "number" && Number.isFinite(rawId)
+      ? String(rawId)
+      : typeof rawId === "string" && rawId.trim()
+        ? rawId
+        : null;
   return {
     type: (b.type as string) ?? "",
-    transferId: (data.id as string) ?? null,
+    transferId,
+    payoutTransferId:
+      typeof metadata.payout_transfer_id === "string" && metadata.payout_transfer_id.trim()
+        ? metadata.payout_transfer_id
+        : null,
     recipientId: (data.recipient_id as string) ?? (recipient.id as string) ?? null,
     amountCents: num(data.amount),
     feeCents: num(data.fee) ?? num(data.funding_fee),

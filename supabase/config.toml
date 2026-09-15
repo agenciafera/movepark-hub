@@ -452,6 +452,9 @@ verify_jwt = false
 [functions.create-payout-transfer]
 verify_jwt = true
 
+[functions.reconcile-payout-transfers]
+verify_jwt = false
+
 [functions.reconcile-confirmations]
 verify_jwt = false
 

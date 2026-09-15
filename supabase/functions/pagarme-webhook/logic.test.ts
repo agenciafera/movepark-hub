@@ -401,3 +401,27 @@ Deno.test("cardEventAction: capitalização e tipo ausente não escapam", () => 
   assertEquals(cardEventAction("CARD.DELETED"), "delete");
   assertEquals(cardEventAction(null), "ignore");
 });
+
+// ── Repasse: o evento carrega o id da nossa linha no metadata ───────────────
+// A Edge manda `metadata.payout_transfer_id` no POST /transfers. Se o `transfer.*` chegar antes de
+// ela gravar o `external_transfer_id`, casar só pelo id do gateway não acha a linha, e o evento cai
+// no ramo do saque. O metadata fecha essa corrida.
+
+Deno.test("parseTransferEvent: lê o payout_transfer_id do metadata", () => {
+  const t = parseTransferEvent({
+    id: "hook_t1",
+    type: "transfer.paid",
+    data: { id: 539, amount: 7650, status: "transferred", metadata: { payout_transfer_id: "uuid-1" } },
+  });
+  assertEquals(t.payoutTransferId, "uuid-1");
+});
+
+Deno.test("parseTransferEvent: sem metadata, payoutTransferId é null", () => {
+  const t = parseTransferEvent({ id: "hook_t2", type: "transfer.paid", data: { id: 1 } });
+  assertEquals(t.payoutTransferId, null);
+});
+
+Deno.test("parseTransferEvent: id numérico do gateway vira string", () => {
+  const t = parseTransferEvent({ id: "hook_t3", type: "transfer.paid", data: { id: 539328550 } });
+  assertEquals(t.transferId, "539328550");
+});

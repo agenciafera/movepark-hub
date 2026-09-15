@@ -14,7 +14,12 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { decidePreflight, parseTransferInput } from "./logic.ts";
+import {
+  classifyTransferResponse,
+  decidePreflight,
+  nuncaFoiAoGateway,
+  parseTransferInput,
+} from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,47 +94,106 @@ Deno.serve(async (req: Request) => {
     throw e;
   }
 
-  const amountCents = Number(transfer.amount_cents);
-  const sourceId = String(transfer.source_recipient_id);
-  const targetId = String(transfer.target_recipient_id);
-
-  // Pré-voo: o saldo é POR RECEBEDOR (`GET /balance` da conta responde 404).
-  const saldo = await gateway.getRecipientBalance(sourceId);
-  const preflight = decidePreflight({ amountCents, availableCents: saldo.availableCents });
-  if (!preflight.ok) return json({ error: preflight.reason }, 409);
-
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } },
   );
 
-  const result = await gateway.createTransfer({
-    amountCents,
-    sourceRecipientId: sourceId,
-    targetRecipientId: targetId,
-    idempotencyKey: String(transfer.idempotency_key),
-    metadata: { company_id: input.companyId, payout_transfer_id: String(transfer.id) },
-  });
+  const amountCents = Number(transfer.amount_cents);
+  const sourceId = String(transfer.source_recipient_id);
+  const targetId = String(transfer.target_recipient_id);
+  const linha = {
+    external_transfer_id: (transfer.external_transfer_id as string | null) ?? null,
+    failed_reason: (transfer.failed_reason as string | null) ?? null,
+    raw: transfer.raw ?? null,
+  };
 
-  if (!result.transferId || (result.httpStatus ?? 500) >= 400) {
-    console.error("[create-payout-transfer] transferência falhou:", result.httpStatus, JSON.stringify(result.raw));
-    // A linha fica em `created` de propósito: a próxima tentativa reusa a mesma chave em vez de
-    // criar outra. Marcar `failed` aqui perderia a idempotência num erro que pode ser transitório.
+  // Pré-voo: o saldo é POR RECEBEDOR (`GET /balance` da conta responde 404).
+  const saldo = await gateway.getRecipientBalance(sourceId);
+  const preflight = decidePreflight({ amountCents, availableCents: saldo.availableCents });
+  if (!preflight.ok) {
+    // A RPC já gravou a linha antes do pré-voo. Deixá-la em `created` criava um repasse fantasma:
+    // contava como repassado, ocupava o índice de um em andamento e travava a empresa sem saída
+    // pelo sistema (achado da varredura de 15/09/2026). Só cancela a linha que NUNCA foi ao
+    // gateway; a que já tentou pode ter movido o dinheiro, e fica para retentar com a mesma chave.
+    if (nuncaFoiAoGateway(linha)) {
+      await admin
+        .from("payout_transfer")
+        .update({ status: "canceled", failed_reason: `pré-voo: ${preflight.reason}` })
+        .eq("id", transfer.id)
+        .eq("status", "created");
+    }
+    return json({ error: preflight.reason }, 409);
+  }
+
+  // Marca a tentativa ANTES de chamar o gateway. Se a Edge cair no meio da chamada, a linha já diz
+  // que foi tentada, e o pré-voo seguinte não a cancela achando que ela nunca saiu.
+  await admin
+    .from("payout_transfer")
+    .update({ raw: { tentativa_em: new Date().toISOString() } })
+    .eq("id", transfer.id);
+
+  let result;
+  try {
+    result = await gateway.createTransfer({
+      amountCents,
+      sourceRecipientId: sourceId,
+      targetRecipientId: targetId,
+      idempotencyKey: String(transfer.idempotency_key),
+      metadata: { company_id: input.companyId, payout_transfer_id: String(transfer.id) },
+    });
+  } catch (e) {
+    const motivo = e instanceof Error ? e.message : String(e);
+    console.error("[create-payout-transfer] rede na transferência:", transfer.id, motivo);
     await admin
       .from("payout_transfer")
-      .update({ failed_reason: `HTTP ${result.httpStatus}`, raw: result.raw })
+      .update({ failed_reason: `rede: ${motivo}`.slice(0, 500) })
       .eq("id", transfer.id);
-    return json({ error: "O gateway recusou a transferência." }, 502);
+    return json(
+      { error: "Não deu para confirmar com o gateway. Tente de novo: o repasse é retomado, não duplicado." },
+      502,
+    );
+  }
+
+  const outcome = classifyTransferResponse({
+    httpStatus: result.httpStatus,
+    transferId: result.transferId,
+    rawStatus: result.status,
+  });
+
+  if (outcome.kind === "rejected") {
+    // Recusa processada: nada saiu, então a linha falha e a empresa fica livre para outro pedido.
+    console.error("[create-payout-transfer] gateway recusou:", result.httpStatus, JSON.stringify(result.raw));
+    await admin
+      .from("payout_transfer")
+      .update({ status: "failed", failed_reason: `recusado HTTP ${result.httpStatus}`, raw: result.raw })
+      .eq("id", transfer.id);
+    return json({ error: "O gateway recusou a transferência." }, 422);
+  }
+
+  if (outcome.kind === "uncertain") {
+    // Pode ter saído. A linha fica em `created` com o motivo, e retentar reusa a MESMA chave.
+    console.error("[create-payout-transfer] resposta incerta:", result.httpStatus, JSON.stringify(result.raw));
+    await admin
+      .from("payout_transfer")
+      .update({ failed_reason: `incerto HTTP ${result.httpStatus}`, raw: result.raw })
+      .eq("id", transfer.id);
+    return json(
+      { error: "O gateway não confirmou. Tente de novo: o repasse é retomado, não duplicado." },
+      502,
+    );
   }
 
   const { error: upErr } = await admin
     .from("payout_transfer")
     .update({
       external_transfer_id: result.transferId,
-      status: result.status === "transferred" ? "paid" : "processing",
-      ...(result.status === "transferred" ? { paid_at: new Date().toISOString() } : {}),
-      failed_reason: null,
+      status: outcome.rowStatus,
+      ...(outcome.rowStatus === "paid" ? { paid_at: new Date().toISOString() } : {}),
+      failed_reason: outcome.rowStatus === "failed" || outcome.rowStatus === "canceled"
+        ? `gateway: ${result.status}`
+        : null,
       raw: result.raw,
     })
     .eq("id", transfer.id);
@@ -144,7 +208,7 @@ Deno.serve(async (req: Request) => {
       reused,
       transfer_id: transfer.id,
       external_transfer_id: result.transferId,
-      status: result.status,
+      status: outcome.rowStatus,
       amount_cents: amountCents,
     },
     201,

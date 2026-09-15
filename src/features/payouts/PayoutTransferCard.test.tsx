@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
@@ -34,6 +34,32 @@ const linhas: PayoutOwedRow[] = [
     target_recipient_id: "re_c3",
     recipient_status: "active",
     em_andamento: true,
+    pendente: {
+      id: "t3",
+      status: "processing",
+      amount_cents: 3000,
+      enviado: true,
+      failed_reason: null,
+      requested_at: "2026-09-15T12:00:00Z",
+    },
+  },
+  {
+    company_id: "c4",
+    company_name: "Travado",
+    owed_cents: 4000,
+    transferred_cents: 4000,
+    available_cents: 0,
+    target_recipient_id: "re_c4",
+    recipient_status: "active",
+    em_andamento: true,
+    pendente: {
+      id: "t4",
+      status: "created",
+      amount_cents: 4000,
+      enviado: false,
+      failed_reason: "incerto HTTP 504",
+      requested_at: "2026-09-15T12:00:00Z",
+    },
   },
 ];
 
@@ -52,6 +78,9 @@ vi.mock("@/features/payouts/api", async (orig) => ({
 import { PayoutTransferCard } from "./PayoutTransferCard";
 
 describe("PayoutTransferCard", () => {
+  // O spy é do módulo: sem limpar, a chamada de um teste vaza para o "não chamou" do seguinte.
+  beforeEach(() => repassar.mockClear());
+
   it("lista quem está devendo, com o valor devido", () => {
     renderWithProviders(<PayoutTransferCard />);
     expect(screen.getByText("Agência Fera")).toBeInTheDocument();
@@ -66,11 +95,31 @@ describe("PayoutTransferCard", () => {
     expect(linha.querySelector("button")).toBeNull();
   });
 
-  it("repasse em andamento mostra o estado, não o botão", () => {
+  it("repasse já no gateway mostra que aguarda, sem botão", () => {
     renderWithProviders(<PayoutTransferCard />);
     const linha = screen.getByText("Em Curso").closest("tr")!;
-    expect(linha.textContent).toMatch(/em andamento/i);
+    expect(linha.textContent).toMatch(/aguardando o gateway/i);
     expect(linha.querySelector("button")).toBeNull();
+  });
+
+  it("repasse que não chegou ao gateway oferece retomar, com o valor pendente", async () => {
+    // Achado da varredura de 15/09/2026: a linha que caiu em resposta incerta ficava sem caminho,
+    // porque a tela escondia o botão sempre que havia repasse em andamento.
+    const user = userEvent.setup();
+    renderWithProviders(<PayoutTransferCard />);
+    const linha = screen.getByText("Travado").closest("tr")!;
+    const botao = linha.querySelector("button")!;
+    expect(botao.textContent).toMatch(/retomar/i);
+
+    await user.click(botao);
+    const dialogo = await screen.findByRole("dialog");
+    expect(norm(dialogo.textContent ?? "")).toContain("R$ 40,00");
+    expect(norm(dialogo.textContent ?? "")).toMatch(/mesma chave|não duplica/i);
+
+    await user.click(screen.getByRole("button", { name: /confirmar/i }));
+    await waitFor(() =>
+      expect(repassar).toHaveBeenCalledWith({ company_id: "c4", amount_cents: 4000 }),
+    );
   });
 
   it("só dispara o repasse depois da confirmação, com empresa, destino e valor na tela", async () => {

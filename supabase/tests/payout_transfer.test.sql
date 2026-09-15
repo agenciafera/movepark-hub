@@ -7,7 +7,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(19);
+select plan(26);
 
 select has_table('public', 'payout_transfer', 'payout_transfer existe');
 select has_function('public', 'payout_transfer_request', 'a RPC de pedido existe');
@@ -140,6 +140,50 @@ select is(
      from jsonb_array_elements(public.payout_owed_overview()) e
     where (e->>'company_id')::uuid = current_setting('test.cid')::uuid),
   3000::bigint, 'e o que sobra depois do repasse em andamento');
+
+-- ── o pendente sai na visão, para a tela poder retomar ──────────────────────
+-- Achado da varredura de 15/09/2026: a tela escondia o botão quando havia repasse em andamento, e a
+-- linha que caiu em erro incerto (sem id do gateway) ficava sem caminho para retentar.
+select is(
+  (select e->'pendente'->>'status'
+     from jsonb_array_elements(public.payout_owed_overview()) e
+    where (e->>'company_id')::uuid = current_setting('test.cid')::uuid),
+  'created', 'a visão traz o repasse pendente');
+
+select is(
+  (select (e->'pendente'->>'amount_cents')::int
+     from jsonb_array_elements(public.payout_owed_overview()) e
+    where (e->>'company_id')::uuid = current_setting('test.cid')::uuid),
+  5000, 'com o valor que será retomado');
+
+select ok(
+  (select (e->'pendente'->>'enviado')::boolean is false
+     from jsonb_array_elements(public.payout_owed_overview()) e
+    where (e->>'company_id')::uuid = current_setting('test.cid')::uuid),
+  'pendente sem id do gateway aparece como não enviado (retomável)');
+
+-- ── repasse que falhou deixa de contar e libera a empresa ───────────────────
+reset role;
+update public.payout_transfer set status = 'failed', failed_reason = 'recusado HTTP 422'
+ where company_id = current_setting('test.cid')::uuid;
+set local role authenticated;
+select pg_temp.as_user(current_setting('test.adm'));
+
+select is(
+  ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'balance_cents')::bigint),
+  8000::bigint, 'repasse falho não conta como repassado');
+
+select ok(
+  ((public.payout_transfer_request(current_setting('test.cid')::uuid, 8000) ->> 'reused')::boolean) is false,
+  'com o anterior falho, um novo pedido nasce (não retoma o falho)');
+
+select is(
+  (select count(*)::int from public.payout_transfer
+    where company_id = current_setting('test.cid')::uuid and status = 'created'),
+  1, 'e existe exatamente um em andamento');
+
+select has_function('public', 'reconcile_payout_transfers_expected_key',
+  'a chave do cron de conciliação existe');
 
 reset role;
 
