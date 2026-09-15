@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { usePayoutStatement } from "@/features/payouts/api";
+import { useGatewayMasterBalance, usePayoutStatement } from "@/features/payouts/api";
+import { ManualRefundQueueCard } from "@/features/payouts/ManualRefundQueueCard";
+import { MasterBalanceCard } from "@/features/payouts/MasterBalanceCard";
+import { PayoutDebtCard } from "@/features/payouts/PayoutDebtCard";
 import { PayoutTransferCard } from "@/features/payouts/PayoutTransferCard";
 import { formatBRL } from "@/lib/format";
 
@@ -47,6 +50,11 @@ export default function ManagerFinancePayouts() {
   const [monthKey, setMonthKey] = React.useState(months[0].value);
   const period = months.find((m) => m.value === monthKey) ?? months[0];
   const { data, isLoading } = usePayoutStatement({ from: period.from, to: period.to });
+  // Com o split no gateway (E0.3.5) o repasse manual da custódia fica desligado: a rota de
+  // transferência entre recebedores não foi liberada pela Pagar.me. O card só aparece no modo
+  // custódia, onde ainda faz sentido.
+  const master = useGatewayMasterBalance();
+  const splitLigado = master.data?.split_enabled ?? true;
 
   const companies = data?.companies ?? [];
   const totalNet = companies.reduce((acc, c) => acc + c.net_partner_cents, 0);
@@ -62,7 +70,10 @@ export default function ManagerFinancePayouts() {
         description="Extrato reconciliado do split: quanto cada parceiro recebe (real, do pagamento)."
       />
 
-      <PayoutTransferCard />
+      <MasterBalanceCard />
+      <ManualRefundQueueCard />
+      <PayoutDebtCard />
+      {!splitLigado && <PayoutTransferCard />}
 
       <Card>
         <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:items-end">

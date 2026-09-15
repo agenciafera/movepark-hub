@@ -37,6 +37,8 @@ vi.mock("@/features/payouts/api", () => ({
     isLoading: false,
   }),
   usePayoutWithdrawals: () => ({ data: [], isLoading: false }),
+  // E0.3.5: sem dívida nem histórico, o card de acerto não renderiza.
+  usePayoutDebtLines: () => ({ data: { debt_cents: 0, debt_raw_cents: 0, origins: [], recoveries: [], settlements: [] }, isLoading: false }),
 }));
 
 import OperatorFinance from "./finance";

@@ -12,6 +12,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import {
   autorizado,
   decidir,
@@ -156,5 +157,39 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ ok: true, checked: recipients?.length ?? 0, updated, balances: saldos });
+  // ── terceira passada: o saldo do MASTER (E0.3.5) ──────────────────────────
+  // Estornar exige saldo no master, senão a Pagar.me recusa. O Manager compara com o colchão
+  // (`pagarme_master_float_cents`) e avisa. Mesmo recuo de 1h dos recebedores.
+  let master = false;
+  try {
+    const settings = await loadGatewaySettings(admin);
+    if (settings.moveparkRecipientId) {
+      const { data: atual } = await admin
+        .from("gateway_account_balance")
+        .select("synced_at")
+        .eq("provider", "pagarme")
+        .maybeSingle();
+      if (saldoVencido(atual?.synced_at, agora)) {
+        const b = await gateway.getRecipientBalance(settings.moveparkRecipientId);
+        const patch = decidirSaldo(b, new Date().toISOString());
+        if (patch) {
+          await admin.from("gateway_account_balance").upsert({
+            provider: "pagarme",
+            recipient_id: settings.moveparkRecipientId,
+            available_cents: patch.balance_available_cents,
+            waiting_cents: patch.balance_waiting_cents,
+            transferred_cents: patch.balance_transferred_cents,
+            synced_at: patch.balance_synced_at,
+          });
+          master = true;
+        } else {
+          console.error("[refresh-recipients] saldo do master sem resposta boa:", b.httpStatus);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[refresh-recipients] falha ao ler saldo do master", e);
+  }
+
+  return json({ ok: true, checked: recipients?.length ?? 0, updated, balances: saldos, master });
 });

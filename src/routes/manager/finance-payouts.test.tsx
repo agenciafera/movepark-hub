@@ -26,6 +26,12 @@ vi.mock("@/features/payouts/api", () => ({
   // A página passou a embutir o card de repasse (E0.3.4); sem dívida aberta ele não renderiza.
   usePayoutOwed: () => ({ data: [], isLoading: false }),
   useRequestPayoutTransfer: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  // E0.3.5: dívida, fila manual e saldo do master. Vazios, os cards não renderizam.
+  usePayoutDebtOverview: () => ({ data: [], isLoading: false }),
+  useSettlePayoutDebt: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useManualRefunds: () => ({ data: [], isLoading: false }),
+  useMarkManualRefundPaid: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useGatewayMasterBalance: () => ({ data: { balance: null, float_cents: 0, split_enabled: false }, isLoading: false }),
 }));
 
 import ManagerFinancePayouts from "./finance-payouts";

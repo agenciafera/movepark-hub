@@ -734,7 +734,7 @@ export class PagarmeGateway implements PaymentGateway {
    * automaticamente (não precisa de bank_account, ao contrário do boleto).
    */
   async refundCharge({ chargeId, amountCents, split }: RefundInput): Promise<RefundResult> {
-    const body = buildRefundBody({ chargeId, amountCents, split });
+    const body = buildRefundBody({ amountCents, split });
     const { httpStatus, parsed } = await this.rawFetch("DELETE", `/charges/${chargeId}`, body);
     return buildRefundResult(httpStatus, parsed);
   }

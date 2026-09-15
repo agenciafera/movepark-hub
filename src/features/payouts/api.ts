@@ -308,6 +308,10 @@ export type PayoutBalance = {
   /** Sacado pelo parceiro do recebedor dele para o banco. Não desconta a dívida. */
   withdrawn_cents: number;
   balance_cents: number;
+  /** Dívida do parceiro com a Movepark (split dinâmico, E0.3.5). Travada em zero. */
+  debt_cents?: number;
+  /** A mesma dívida sem travar: negativa quando o abatimento passou (assunto do Manager). */
+  debt_raw_cents?: number;
 };
 
 /** Extrato de repasse reconciliado do split (RPC payout_statement). */
@@ -458,5 +462,168 @@ export function useRequestPayoutTransfer() {
   return useMutation({
     mutationFn: callCreatePayoutTransfer,
     onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+// ── Dívida do parceiro e split dinâmico (E0.3.5) ────────────────────────────
+
+/** Uma linha do que o parceiro vê: origem, abatimento ou acerto. */
+export type PayoutDebtOrigin = { booking_code: string; at: string | null; reason: string | null; cents: number };
+export type PayoutDebtRecovery = { booking_code: string; at: string | null; cents: number; status: string };
+export type PayoutDebtSettlement = { at: string; cents: number; kind: "manual_payment" | "adjustment"; note: string | null };
+
+export type PayoutDebtLines = {
+  /** O que a tela mostra (travado em zero). */
+  debt_cents: number;
+  /** Pode ser negativo (abatimento a mais); assunto do Manager. */
+  debt_raw_cents: number;
+  origins: PayoutDebtOrigin[];
+  recoveries: PayoutDebtRecovery[];
+  settlements: PayoutDebtSettlement[];
+};
+
+// `payout_debt_*`, `payout_refund_manual_mark_paid` e `gateway_account_balance` não estão em
+// `database.ts` pelo mesmo motivo do `payout_owed_overview`: o `supabase gen types` vem derrubando
+// funções que existem no banco. O cast fica em `rpcSolto` só, e some quando a geração voltar.
+const rpcSolto = supabase.rpc as unknown as (
+  fn: string,
+  args?: Record<string, unknown>,
+) => Promise<{ data: unknown; error: { message: string } | null }>;
+
+/** Dívida e movimentos de uma empresa (parceiro dono ou hub_admin). */
+export function usePayoutDebtLines(companyId?: string) {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "debt-lines", companyId ?? "none"] as const,
+    enabled: !!companyId,
+    queryFn: async (): Promise<PayoutDebtLines> => {
+      const { data, error } = await rpcSolto("payout_debt_lines", { p_company_id: companyId });
+      if (error) throw new Error(error.message);
+      return data as PayoutDebtLines;
+    },
+  });
+}
+
+export type PayoutDebtOverviewRow = {
+  company_id: string;
+  company_name: string;
+  debt_cents: number;
+  debt_raw_cents: number;
+  since: string | null;
+  last_recovery_at: string | null;
+};
+
+/** Dívida por empresa na rede. Só hub_admin. */
+export function usePayoutDebtOverview() {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "debt-overview"] as const,
+    queryFn: async (): Promise<PayoutDebtOverviewRow[]> => {
+      const { data, error } = await rpcSolto("payout_debt_overview");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PayoutDebtOverviewRow[];
+    },
+  });
+}
+
+export type SettleDebtArgs = {
+  company_id: string;
+  amount_cents: number;
+  kind: "manual_payment" | "adjustment";
+  note?: string;
+};
+
+/** Acerto manual da dívida (parceiro pagou por fora, ou ajuste). Só hub_admin; a RPC recusa o resto. */
+export function useSettlePayoutDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: SettleDebtArgs) => {
+      const { error } = await rpcSolto("payout_debt_settle", {
+        p_company_id: args.company_id,
+        p_amount_cents: args.amount_cents,
+        p_kind: args.kind,
+        p_note: args.note ?? null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+export type ManualRefundRow = {
+  id: string;
+  booking_id: string;
+  payment_id: string;
+  amount_cents: number;
+  reason: "gateway_deadline" | "gateway_no_balance" | "gateway_refused";
+  status: "pending" | "paid" | "canceled";
+  note: string | null;
+  created_at: string;
+  paid_at: string | null;
+  booking: { code: string; customer_name: string | null; customer_email: string | null } | null;
+};
+
+/** Fila de reembolso manual (o gateway recusou de forma definitiva). Só hub_admin lê, por RLS. */
+export function useManualRefunds() {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "manual-refunds"] as const,
+    queryFn: async (): Promise<ManualRefundRow[]> => {
+      const from = supabase.from as unknown as (t: string) => {
+        select: (q: string) => {
+          order: (c: string, o: { ascending: boolean }) => Promise<{ data: unknown; error: { message: string } | null }>;
+        };
+      };
+      const { data, error } = await from("payout_refund_manual")
+        .select("id, booking_id, payment_id, amount_cents, reason, status, note, created_at, paid_at, booking:booking_id(code, customer_name, customer_email)")
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as ManualRefundRow[];
+    },
+  });
+}
+
+/** Marca um reembolso manual como pago: o `payment` vira `refunded` e a dívida do parceiro entra. */
+export function useMarkManualRefundPaid() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { id: string; note?: string }) => {
+      const { error } = await rpcSolto("payout_refund_manual_mark_paid", {
+        p_id: args.id,
+        p_note: args.note ?? null,
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+export type GatewayMasterBalance = {
+  available_cents: number;
+  waiting_cents: number;
+  transferred_cents: number;
+  synced_at: string;
+} | null;
+
+/** Saldo do master no gateway (lido pelo cron) e o colchão configurado. Só hub_admin, por RLS. */
+export function useGatewayMasterBalance() {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "master-balance"] as const,
+    queryFn: async (): Promise<{ balance: GatewayMasterBalance; float_cents: number; split_enabled: boolean }> => {
+      const from = supabase.from as unknown as (t: string) => {
+        select: (q: string) => {
+          eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }> };
+          in: (c: string, v: string[]) => Promise<{ data: unknown; error: { message: string } | null }>;
+        };
+      };
+      const [{ data: b }, { data: s }] = await Promise.all([
+        from("gateway_account_balance").select("available_cents, waiting_cents, transferred_cents, synced_at").eq("provider", "pagarme").maybeSingle(),
+        from("app_setting").select("key, value").in("key", ["pagarme_master_float_cents", "pagarme_split_enabled"]),
+      ]);
+      const settings = Object.fromEntries(((s ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]));
+      const float = Number(settings.pagarme_master_float_cents ?? 0);
+      return {
+        balance: (b as GatewayMasterBalance) ?? null,
+        float_cents: Number.isFinite(float) && float > 0 ? Math.round(float) : 0,
+        split_enabled: (settings.pagarme_split_enabled ?? "true").trim().toLowerCase() !== "false",
+      };
+    },
   });
 }

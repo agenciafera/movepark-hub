@@ -29,6 +29,7 @@ import {
   usePayoutWithdrawals,
   useRecipient,
 } from "@/features/payouts/api";
+import { PartnerDebtCard } from "@/features/payouts/PartnerDebtCard";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import { resumoSaldo } from "@/features/payouts/saldo.logic";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
@@ -147,6 +148,9 @@ export default function OperatorFinance() {
 
         <PayoutSettingsDialog companyId={companyId} open={payoutOpen} onOpenChange={setPayoutOpen} />
       </div>
+
+      {/* Dívida com a Movepark e o que cada reserva abateu (E0.3.5). Some quando não há nada. */}
+      <PartnerDebtCard companyId={companyId} />
 
       {/* Extrato do mês */}
       <Card>

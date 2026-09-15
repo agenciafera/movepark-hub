@@ -15,6 +15,12 @@ Regra fixa do projeto:
   (`supabase/functions/_shared/payments`); o Pagar.me existe só no adapter. Trocar de gateway no
   futuro = novo adapter, sem tocar no domínio.
 
+> **15/09/2026: a custódia acabou.** A Pagar.me não liberou a transferência entre recebedores,
+> então o modelo abaixo (split desligado + repasse manual) fica desligado no repo e o split volta a
+> ir ao gateway em toda cobrança. O que a custódia expunha passa a ser tratado pelo razão de dívida
+> e pelo split dinâmico: ver
+> [split-dinamico-e-divida-do-parceiro.md](./split-dinamico-e-divida-do-parceiro.md).
+
 ## Transição para custódia — o split no gateway virou interruptor (jul/2026)
 
 **Estado atual: o split NÃO é enviado ao Pagar.me.** A chave `app_setting.pagarme_split_enabled`

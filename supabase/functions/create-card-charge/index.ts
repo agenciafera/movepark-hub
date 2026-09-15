@@ -10,6 +10,7 @@
 //
 // Resposta (201): { payment_id, status, installments, charged_amount, interest_amount, saved_card }
 
+const EDGE_NAME = "create-card-charge";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   buildSplit,
@@ -19,6 +20,7 @@ import {
   isGatewaySplitEnabled,
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
+import { maxDebtRecoveryCents, splitForGateway } from "../_shared/payments/split.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
@@ -123,7 +125,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: recipient } = await admin
     .from("payout_recipient")
-    .select("external_recipient_id")
+    .select("external_recipient_id, gateway_missing_at")
     .eq("company_id", location.company_id)
     .eq("provider", "pagarme")
     .is("deleted_at", null)
@@ -142,7 +144,9 @@ Deno.serve(async (req: Request) => {
   // repasse, e lá a RPC `payout_transfer_request` exige que esteja `active`. Exigir aqui recusava
   // com 409 uma venda que o gateway aceita, e reamarrava "publicar no catálogo" a "estar apto a
   // receber", que o E1.9 separou de propósito (o parceiro publica antes do KYC).
-  if (splitEnabled && !recipient?.external_recipient_id) {
+  // Recebedor que o gateway não reconhece (`gateway_missing_at`) conta como ausente: a cobrança
+  // com split apontando para ele falharia na venda (decisão 5 do E0.3.5: bloqueia).
+  if (splitEnabled && (!recipient?.external_recipient_id || recipient.gateway_missing_at)) {
     return jsonResponse(
       { error: "O estacionamento ainda não tem recebedor ativo no gateway." },
       409,
@@ -177,6 +181,36 @@ Deno.serve(async (req: Request) => {
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
+  }
+
+  // 4b. Split dinâmico (E0.3.5): se o parceiro está devendo, esta venda abate até 100% da perna
+  // dele. O razão (`split`) guarda a perna NORMAL; o que vai ao gateway é a perna menos o
+  // abatimento, e o abatimento fica gravado na cobrança. A reserva fecha a corrida de duas vendas
+  // simultâneas: conta como abatido até esta cobrança existir (ou vencer em 15 min).
+  let debtRecoveryCents = 0;
+  let debtReservationId: string | null = null;
+  let gatewaySplit = split;
+  if (splitEnabled) {
+    const { data: reserva, error: reservaErr } = await admin.rpc("payout_debt_reserve", {
+      p_company_id: location.company_id,
+      p_max_cents: maxDebtRecoveryCents(split),
+    });
+    if (reservaErr) {
+      // Sem reserva não dá para saber quanto abater; cobrar sem abater deixaria a dívida para a
+      // próxima venda, o que é aceitável. Cobrar com abatimento errado, não.
+      console.error("[%s] payout_debt_reserve falhou:", EDGE_NAME, reservaErr.message);
+    } else {
+      const r = (Array.isArray(reserva) ? reserva[0] : reserva) as
+        | { reservation_id: string | null; amount_cents: number | string | null }
+        | null;
+      debtRecoveryCents = Number(r?.amount_cents ?? 0) || 0;
+      debtReservationId = r?.reservation_id ?? null;
+    }
+    try {
+      gatewaySplit = splitForGateway(split, debtRecoveryCents, moveparkRecipientId) as typeof split;
+    } catch (e) {
+      return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
+    }
   }
 
   // 6. Pagador: do snapshot do booking (o titular preencheu no checkout). Não lê profiles; o e-mail
@@ -233,7 +267,7 @@ Deno.serve(async (req: Request) => {
     items: buildCardItems(booking.code, baseCents, interestCents),
     // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
     // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
-    split: splitEnabled ? split : undefined,
+    split: splitEnabled ? gatewaySplit : undefined,
     card: cardRef,
     installments: input.installments,
     metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents) },
@@ -253,6 +287,8 @@ Deno.serve(async (req: Request) => {
       installments: input.installments,
       split,
       split_sent_to_gateway: splitEnabled,
+      debt_recovered_cents: debtRecoveryCents,
+      debt_reservation_id: debtReservationId,
     });
     return jsonResponse({ error: "Cartão recusado. Tente outro cartão." }, 402);
   }
@@ -275,8 +311,16 @@ Deno.serve(async (req: Request) => {
     installments: input.installments,
     split,
     split_sent_to_gateway: splitEnabled,
+    debt_recovered_cents: debtRecoveryCents,
+    debt_reservation_id: debtReservationId,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
+  if (debtReservationId) {
+    await admin
+      .from("payout_debt_reservation")
+      .update({ consumed_by_payment_id: paymentId })
+      .eq("id", debtReservationId);
+  }
 
   // 9b. Renova o hold enquanto pending (E0.3.1-a). Cartão aprovado inline vira confirmed (a RPC zera
   // o expires_at); cartão em análise (authorized/pending) mantém o hold vivo até o webhook.
