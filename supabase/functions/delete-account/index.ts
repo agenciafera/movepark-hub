@@ -20,6 +20,8 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { executeRefund, manualRefundReason } from "../_shared/payments/refund.ts";
+import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { refundDecision } from "../cancel-booking/logic.ts";
 import { anonymizedEmail, PERMANENT_BAN_DURATION, voucherObjectPath, isActiveBooking } from "./logic.ts";
 
@@ -95,7 +97,7 @@ Deno.serve(async (req: Request) => {
   for (const b of active) {
     const { data: payment } = await admin
       .from("payment")
-      .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at")
+      .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents")
       .eq("booking_id", b.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -127,23 +129,55 @@ Deno.serve(async (req: Request) => {
       if (!chargeId) {
         return jsonResponse({ error: "Não foi possível localizar a cobrança para estorno." }, 422);
       }
-      const refund = await gateway.refundCharge({ chargeId });
-      if (refund.httpStatus != null && refund.httpStatus >= 400) {
-        // NUNCA cancela sem estornar: aborta sem tocar no booking (idempotente ao repetir).
+      // E0.3.5: 100% master quando a cobrança foi com split; a perna do parceiro vira dívida.
+      const settings = await loadGatewaySettings(admin);
+      const totalCents = Math.round(Number(payment.amount) * 100);
+      const exec = await executeRefund({
+        gateway,
+        chargeId,
+        payment,
+        moveparkRecipientId: settings.moveparkRecipientId,
+        totalCents,
+      });
+      const refund = exec.result;
+      if (exec.outcome === "transient") {
+        // Não sei se saiu: aborta sem tocar no booking (idempotente ao repetir).
         console.error("[delete-account] estorno falhou:", refund.httpStatus, JSON.stringify(refund.raw));
         return jsonResponse({ error: "Falha ao estornar um pagamento. Tente novamente." }, 502);
       }
-      refunded += 1;
-      await admin
-        .from("payment")
-        .update({
-          status: refund.status !== "refunded" ? "paid" : "refunded",
-          refunded_at: new Date().toISOString(),
-          refunded_amount: payment.amount,
-          refund_reason: "exclusão de conta",
-          provider_charge_id: chargeId,
-        })
-        .eq("id", payment.id);
+      if (exec.outcome === "definitive") {
+        // Recusa processada: a exclusão segue e a devolução vai para a fila manual do Manager.
+        console.error("[delete-account] estorno recusado, vai para a fila manual:", refund.httpStatus, JSON.stringify(refund.raw));
+        const { error: filaErr } = await admin.from("payout_refund_manual").insert({
+          booking_id: b.id,
+          payment_id: payment.id,
+          amount_cents: totalCents,
+          reason: manualRefundReason(refund.raw),
+          gateway_response: refund.raw ?? null,
+          created_by: uid,
+        });
+        if (filaErr) {
+          console.error("[delete-account] fila manual falhou:", filaErr.message);
+          return jsonResponse({ error: "Falha ao registrar o reembolso. Tente novamente." }, 500);
+        }
+        await admin
+          .from("payment")
+          .update({ refund_reason: "exclusão de conta", provider_charge_id: chargeId })
+          .eq("id", payment.id);
+      } else {
+        refunded += 1;
+        await admin
+          .from("payment")
+          .update({
+            status: refund.status !== "refunded" ? "paid" : "refunded",
+            refunded_at: new Date().toISOString(),
+            refunded_amount: payment.amount,
+            refund_reason: "exclusão de conta",
+            provider_charge_id: chargeId,
+            refund_absorbed_by_master: exec.absorbedByMaster,
+          })
+          .eq("id", payment.id);
+      }
     }
 
     const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {

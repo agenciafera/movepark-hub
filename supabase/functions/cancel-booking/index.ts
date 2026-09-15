@@ -10,11 +10,18 @@
 // POST /functions/v1/cancel-booking
 // Authorization: Bearer <JWT>
 // { "booking_code": "MP-XXXX", "reason"?: "..." }
-// → { status: "cancelled", refunded: boolean, refund_pending: boolean }
+// → { status: "cancelled", refunded: boolean, refund_pending: boolean, refund_manual: boolean }
+//
+// Estorno (E0.3.5): sai 100% do master quando a cobrança foi com split, e a perna do parceiro vira
+// dívida no razão. Recusa DEFINITIVA do gateway (prazo vencido, sem saldo) não aborta mais: a
+// reserva cancela, libera a vaga, e a devolução entra na fila de reembolso manual do Manager.
+// Recusa incerta (rede, 5xx, rate limit) segue abortando, porque tentar de novo funciona.
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { executeRefund, manualRefundReason } from "../_shared/payments/refund.ts";
+import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -108,7 +115,7 @@ Deno.serve(async (req: Request) => {
   // Último payment do booking.
   const { data: payment } = await admin
     .from("payment")
-    .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at")
+    .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents")
     .eq("booking_id", booking.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -143,6 +150,7 @@ Deno.serve(async (req: Request) => {
 
   let refunded = false;
   let refundPending = false;
+  let refundManual = false;
 
   if (decision.action === "cancel_with_refund" && payment) {
     // Resolve o charge id: coluna → fallback via getCharge(order id).
@@ -163,25 +171,62 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Não foi possível localizar a cobrança para estorno." }, 422);
     }
 
-    const refund = await gateway.refundCharge({ chargeId });
-    if (refund.httpStatus != null && refund.httpStatus >= 400) {
-      // NUNCA cancelar sem estornar: aborta sem tocar no booking.
+    const settings = await loadGatewaySettings(admin);
+    const totalCents = Math.round(Number(payment.amount) * 100);
+    const exec = await executeRefund({
+      gateway,
+      chargeId,
+      payment,
+      moveparkRecipientId: settings.moveparkRecipientId,
+      totalCents,
+    });
+    const refund = exec.result;
+    const motivo = input.reason ?? `cancelamento (${actor})`;
+
+    if (exec.outcome === "transient") {
+      // Não sei se saiu: aborta sem tocar no booking, e tentar de novo faz sentido.
       console.error("[cancel-booking] estorno falhou:", refund.httpStatus, JSON.stringify(refund.raw));
       return jsonResponse({ error: "Falha ao estornar o pagamento. Tente novamente." }, 502);
     }
 
-    refunded = true;
-    refundPending = refund.status !== "refunded"; // PIX pode confirmar via webhook depois
-    await admin
-      .from("payment")
-      .update({
-        status: refundPending ? "paid" : "refunded",
-        refunded_at: new Date().toISOString(),
-        refunded_amount: payment.amount,
-        refund_reason: input.reason ?? `cancelamento (${actor})`,
-        provider_charge_id: chargeId,
-      })
-      .eq("id", payment.id);
+    if (exec.outcome === "definitive") {
+      // Recusa processada (prazo do meio de pagamento vencido, saldo insuficiente no master...).
+      // Insistir nunca vai funcionar. O cancelamento segue e a devolução vai para a fila manual;
+      // o payment fica `paid` até alguém marcar a linha como paga no Manager.
+      console.error("[cancel-booking] estorno recusado, vai para a fila manual:", refund.httpStatus, JSON.stringify(refund.raw));
+      const { error: filaErr } = await admin.from("payout_refund_manual").insert({
+        booking_id: booking.id,
+        payment_id: payment.id,
+        amount_cents: totalCents,
+        reason: manualRefundReason(refund.raw),
+        gateway_response: refund.raw ?? null,
+        created_by: userId,
+      });
+      if (filaErr) {
+        // Sem a linha na fila o cliente ficaria sem devolução e sem ninguém sabendo. Aí é abortar.
+        console.error("[cancel-booking] fila manual falhou:", filaErr.message);
+        return jsonResponse({ error: "Falha ao registrar o reembolso. Tente novamente." }, 500);
+      }
+      await admin
+        .from("payment")
+        .update({ refund_reason: motivo, provider_charge_id: chargeId })
+        .eq("id", payment.id);
+      refundManual = true;
+    } else {
+      refunded = true;
+      refundPending = refund.status !== "refunded"; // PIX pode confirmar via webhook depois
+      await admin
+        .from("payment")
+        .update({
+          status: refundPending ? "paid" : "refunded",
+          refunded_at: new Date().toISOString(),
+          refunded_amount: payment.amount,
+          refund_reason: motivo,
+          provider_charge_id: chargeId,
+          refund_absorbed_by_master: exec.absorbedByMaster,
+        })
+        .eq("id", payment.id);
+    }
   }
 
   // Cancela + libera capacidade (idempotente por status). Único ponto de liberação.
@@ -209,5 +254,10 @@ Deno.serve(async (req: Request) => {
   // O release Hub→WL é enfileirado pelo trigger booking_wl_release (status → cancelled) → outbox
   // wl_delivery → Edge wl-deliver (E2.5.2). Nada inline aqui.
 
-  return jsonResponse({ status: "cancelled", refunded, refund_pending: refundPending });
+  return jsonResponse({
+    status: "cancelled",
+    refunded,
+    refund_pending: refundPending,
+    refund_manual: refundManual,
+  });
 });

@@ -142,6 +142,12 @@ export interface SplitRule {
   /** Em centavos quando type='flat'; em % (0–100) quando type='percentage'. */
   amount: number;
   type: "flat" | "percentage";
+  /**
+   * De quem é a perna. É o que o razão usa para achar a perna do parceiro desde o split dinâmico
+   * (E0.3.5): `liable` deixou de marcar o parceiro quando o chargeback foi para a Movepark. Regras
+   * antigas, sem `role`, seguem lidas por `liable` (ver `split_rule_is_partner` no banco).
+   */
+  role?: "partner" | "movepark";
   /** Responsável por chargeback/estorno. */
   liable: boolean;
   /** Arca (parte d)a taxa de processamento do gateway. */
@@ -220,6 +226,12 @@ export interface RefundInput {
   /** charge.id do gateway (NÃO o order id). */
   chargeId: string;
   amountCents?: number;
+  /**
+   * De quem sai o estorno, quando a cobrança foi capturada com split. Sem isto o gateway segue o
+   * split da captura e debita o parceiro. Com uma regra só, no master, a Movepark absorve e a perna
+   * do parceiro vira dívida no razão (E0.3.5). Só pode ser enviado em cobrança capturada COM split.
+   */
+  split?: SplitRule[];
 }
 
 /** Resultado normalizado de um estorno. */

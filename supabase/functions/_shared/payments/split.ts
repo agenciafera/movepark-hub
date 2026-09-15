@@ -74,28 +74,35 @@ export function buildSplit({
   // Movepark fica com a comissão + o excedente cobrado (juros do parcelamento).
   const moveparkAmount = chargedCents - partnerAmount;
 
-  // Parceiro: absorve taxa e risco; recebe o líquido do preço base.
+  // Parceiro: absorve a taxa de processamento e recebe o líquido do preço base. O chargeback
+  // (`liable`) foi para a Movepark em 15/09/2026 (E0.3.5): o gateway debita o master e a perna do
+  // parceiro vira dívida no razão, o mesmo trilho do estorno. Só quando não existe perna da
+  // Movepark (take_rate 0 e sem excedente) é que o parceiro fica `liable`, porque o gateway exige
+  // um responsável.
+  const temPernaMovepark = moveparkAmount > 0;
   const rules: SplitRule[] = [
     {
+      role: "partner",
       recipientId: partnerRecipientId ?? null,
       amount: partnerAmount,
       type: "flat",
-      liable: true,
+      liable: !temPernaMovepark,
       chargeProcessingFee: true,
       chargeRemainderFee: true,
     },
   ];
 
-  // Movepark: comissão + excedente, sem taxa/risco.
-  if (moveparkAmount > 0) {
+  // Movepark: comissão + excedente, responsável pelo chargeback, sem taxa de processamento.
+  if (temPernaMovepark) {
     if (requireRecipients && !moveparkRecipientId) {
       throw new Error("Recebedor master da Movepark não configurado.");
     }
     rules.push({
+      role: "movepark",
       recipientId: moveparkRecipientId ?? null,
       amount: moveparkAmount,
       type: "flat",
-      liable: false,
+      liable: true,
       chargeProcessingFee: false,
       chargeRemainderFee: false,
     });
@@ -108,4 +115,100 @@ export function buildSplit({
   }
 
   return rules;
+}
+
+/** A perna do parceiro num split (novo por `role`, antigo por `liable`). */
+export function partnerRule(rules: SplitRule[]): SplitRule | undefined {
+  return rules.find((r) => (r.role ? r.role === "partner" : r.liable));
+}
+
+/**
+ * O que VAI ao gateway, dado o razão e o abatimento de dívida desta venda (split dinâmico, E0.3.5).
+ *
+ * O razão (`buildSplit`) guarda a perna NORMAL do parceiro; o abatimento fica em
+ * `payment.debt_recovered_cents`. Aqui a perna que sai é `normal − abatimento`, e o que foi
+ * abatido vai para a Movepark. Regra com zero centavos não pode ir (o gateway recusa), então:
+ *
+ * - parceiro zerado pelo abatimento: sobra só a Movepark, e "tudo para o principal" no Pagar.me é
+ *   NÃO mandar `split`. Devolve `undefined`;
+ * - Movepark sem perna no razão (take_rate 0) mas com abatimento: ganha uma perna aqui, e passa a
+ *   ser a `liable` (o gateway exige um responsável, e o parceiro zerado não pode ser).
+ *
+ * Nunca abate mais do que a perna do parceiro, e nunca mexe no total.
+ */
+export function splitForGateway(
+  rules: SplitRule[],
+  debtRecoveryCents: number,
+  moveparkRecipientId: string | null,
+): SplitRule[] | undefined {
+  const recovery = Math.max(0, Math.floor(debtRecoveryCents || 0));
+  if (recovery === 0) return rules;
+
+  const partner = partnerRule(rules);
+  if (!partner) return rules;
+  const abatido = Math.min(recovery, partner.amount);
+  if (abatido === 0) return rules;
+
+  const partnerLeft = partner.amount - abatido;
+  const movepark = rules.find((r) => r !== partner);
+  const out: SplitRule[] = [];
+
+  if (partnerLeft > 0) {
+    out.push({ ...partner, amount: partnerLeft, liable: false });
+  }
+  if (movepark) {
+    out.push({ ...movepark, amount: movepark.amount + abatido, liable: true });
+  } else {
+    if (!moveparkRecipientId) {
+      throw new Error("Recebedor master da Movepark não configurado.");
+    }
+    out.push({
+      role: "movepark",
+      recipientId: moveparkRecipientId,
+      amount: abatido,
+      type: "flat",
+      liable: true,
+      chargeProcessingFee: false,
+      chargeRemainderFee: false,
+    });
+  }
+
+  // Parceiro zerado: só a Movepark sobrou, e isso é "sem split" para o gateway.
+  if (out.length === 1 && out[0].role === "movepark") return undefined;
+
+  const total = rules.reduce((a, r) => a + r.amount, 0);
+  const soma = out.reduce((a, r) => a + r.amount, 0);
+  if (soma !== total) {
+    throw new Error(`Split dinâmico não fecha: soma ${soma} != total ${total}.`);
+  }
+  return out;
+}
+
+/**
+ * Quanto desta venda pode abater dívida: no máximo a perna normal do parceiro (decisão 4: até 100%).
+ */
+export function maxDebtRecoveryCents(rules: SplitRule[]): number {
+  return partnerRule(rules)?.amount ?? 0;
+}
+
+/**
+ * Estorno saindo 100% do master (E0.3.5, decisão 1). Uma regra só: a Movepark devolve tudo ao
+ * cliente, o parceiro fica intacto no gateway, e a perna dele entra no razão como dívida.
+ */
+export function refundSplitToMaster(moveparkRecipientId: string, amountCents: number): SplitRule[] {
+  if (!moveparkRecipientId) throw new Error("Recebedor master da Movepark não configurado.");
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new Error("Valor do estorno inválido.");
+  }
+  return [
+    {
+      role: "movepark",
+      recipientId: moveparkRecipientId,
+      amount: amountCents,
+      type: "flat",
+      liable: true,
+      chargeProcessingFee: true,
+      chargeRemainderFee: true,
+    },
+  ];
 }

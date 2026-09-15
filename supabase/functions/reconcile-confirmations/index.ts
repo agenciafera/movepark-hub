@@ -11,6 +11,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { executeRefund } from "../_shared/payments/refund.ts";
+import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { siteUrl } from "../_shared/site.ts";
@@ -49,7 +51,7 @@ Deno.serve(async (req: Request) => {
   const cutoff = confirmationCutoffIso(Date.now());
   const { data: payments, error } = await admin
     .from("payment")
-    .select("id, provider_charge_id, booking_id, booking:booking_id!inner(status)")
+    .select("id, provider_charge_id, booking_id, amount, split, split_sent_to_gateway, debt_recovered_cents, booking:booking_id!inner(status)")
     .eq("provider", "pagarme")
     .eq("status", "paid")
     // `expired` entra aqui porque é onde cai a reserva cujo pagamento só foi descoberto depois:
@@ -62,6 +64,7 @@ Deno.serve(async (req: Request) => {
   if (error) return json({ error: error.message }, 500);
 
   const site = siteUrl();
+  const settings = await loadGatewaySettings(admin);
   let confirmed = 0;
   let refunded = 0;
 
@@ -76,10 +79,21 @@ Deno.serve(async (req: Request) => {
       const acao = decidirAcao(r?.outcome, r?.charge_id, p.provider_charge_id);
 
       if (acao.tipo === "estornar") {
-        await gateway.refundCharge({ chargeId: acao.chargeId });
+        // E0.3.5: 100% master quando a cobrança foi com split; a perna do parceiro vira dívida.
+        const exec = await executeRefund({
+          gateway,
+          chargeId: acao.chargeId,
+          payment: p,
+          moveparkRecipientId: settings.moveparkRecipientId,
+          totalCents: Math.round(Number(p.amount) * 100),
+        });
+        if (exec.outcome !== "ok") {
+          console.error("[reconcile-confirmations] estorno recusado:", p.id, exec.result.httpStatus, JSON.stringify(exec.result.raw));
+          continue;
+        }
         await admin
           .from("payment")
-          .update({ refunded_at: new Date().toISOString() })
+          .update({ refunded_at: new Date().toISOString(), refund_absorbed_by_master: exec.absorbedByMaster })
           .eq("id", p.id);
         refunded += 1;
       } else if (acao.tipo === "confirmar") {

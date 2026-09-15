@@ -13,6 +13,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway } from "../_shared/payments/index.ts";
 import { mapRecipientStatus } from "../_shared/payments/pagarme.ts";
+import { chargebackAbsorbedByMaster, executeRefund } from "../_shared/payments/refund.ts";
+import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { nextTransferRowStatus } from "../_shared/payments/transfer.ts";
 import {
   issueKycLinkAndNotify,
@@ -492,11 +494,34 @@ Deno.serve(async (req: Request) => {
         (async () => {
           try {
             if (chargeId) {
-              await getGateway("pagarme").refundCharge({ chargeId });
-              await admin
-                .from("payment")
-                .update({ refunded_at: new Date().toISOString() })
-                .eq("id", payment!.id);
+              // E0.3.5: estorno 100% master quando a cobrança foi com split; a perna do parceiro
+              // vira dívida no razão.
+              const [{ data: row }, settings] = await Promise.all([
+                admin
+                  .from("payment")
+                  .select("amount, split, split_sent_to_gateway, debt_recovered_cents")
+                  .eq("id", payment!.id)
+                  .maybeSingle(),
+                loadGatewaySettings(admin),
+              ]);
+              const exec = await executeRefund({
+                gateway: getGateway("pagarme"),
+                chargeId,
+                payment: row ?? { split: null, split_sent_to_gateway: null },
+                moveparkRecipientId: settings.moveparkRecipientId,
+                totalCents: Math.round(Number(row?.amount ?? 0) * 100),
+              });
+              if (exec.outcome !== "ok") {
+                console.error("[pagarme-webhook] estorno pago-sem-vaga recusado:", exec.result.httpStatus, JSON.stringify(exec.result.raw));
+              } else {
+                await admin
+                  .from("payment")
+                  .update({
+                    refunded_at: new Date().toISOString(),
+                    refund_absorbed_by_master: exec.absorbedByMaster,
+                  })
+                  .eq("id", payment!.id);
+              }
             }
           } catch (e) {
             console.error("[pagarme-webhook] falha ao estornar pago-sem-vaga:", payment!.booking_id, e);
@@ -535,7 +560,7 @@ Deno.serve(async (req: Request) => {
   if (status === "refunded") {
     const { data: pay } = await admin
       .from("payment")
-      .select("amount, refunded_at, refunded_amount, refund_reason")
+      .select("amount, refunded_at, refunded_amount, refund_reason, split, split_sent_to_gateway")
       .eq("id", payment.id)
       .maybeSingle();
     const chargeback = intent === "chargeback";
@@ -553,6 +578,11 @@ Deno.serve(async (req: Request) => {
         refunded_at: pay?.refunded_at ?? new Date().toISOString(),
         refunded_amount: pay?.refunded_amount ?? pay?.amount ?? null,
         ...(chargeback && !pay?.refund_reason ? { refund_reason: "chargeback (contestação no banco)" } : {}),
+        // E0.3.5: com `liable` na Movepark, o gateway debitou o master e a perna do parceiro vira
+        // dívida no razão. Só o chargeback grava isto aqui; o estorno pedido por nós grava na hora.
+        ...(chargeback && pay && chargebackAbsorbedByMaster(pay)
+          ? { refund_absorbed_by_master: true }
+          : {}),
       })
       .eq("id", payment.id);
 

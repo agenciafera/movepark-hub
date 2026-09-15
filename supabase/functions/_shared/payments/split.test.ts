@@ -1,5 +1,12 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
-import { buildSplit, isGatewaySplitEnabled } from "./split.ts";
+import {
+  buildSplit,
+  isGatewaySplitEnabled,
+  maxDebtRecoveryCents,
+  partnerRule,
+  refundSplitToMaster,
+  splitForGateway,
+} from "./split.ts";
 
 // PIX/à vista: chargedCents == baseCents (regressão — comportamento original).
 Deno.test("buildSplit: comissão + parceiro somam o total; parceiro absorve taxas", () => {
@@ -16,10 +23,11 @@ Deno.test("buildSplit: comissão + parceiro somam o total; parceiro absorve taxa
   assertEquals(partner.amount, 8500);
   assertEquals(mp.amount, 1500);
   assertEquals(partner.amount + mp.amount, 10000);
-  assertEquals(partner.liable, true);
+  // E0.3.5: o chargeback (liable) passou para a Movepark; a taxa de processamento segue no parceiro.
+  assertEquals(partner.liable, false);
   assertEquals(partner.chargeProcessingFee, true);
   assertEquals(partner.chargeRemainderFee, true);
-  assertEquals(mp.liable, false);
+  assertEquals(mp.liable, true);
   assertEquals(mp.chargeProcessingFee, false);
 });
 
@@ -162,10 +170,11 @@ Deno.test("custódia: monta o razão sem recebedor do parceiro", () => {
   });
   assertEquals(rules.length, 2);
   assertEquals(rules[0].amount, 8000);
-  assertEquals(rules[0].liable, true);
+  assertEquals(rules[0].role, "partner");
   assertEquals(rules[0].recipientId, null);
   assertEquals(rules[1].amount, 2000);
-  assertEquals(rules[1].liable, false);
+  assertEquals(rules[1].role, "movepark");
+  assertEquals(rules[1].liable, true);
 });
 
 Deno.test("custódia: a invariante da soma continua valendo", () => {
@@ -212,4 +221,81 @@ Deno.test("com split no gateway, o master segue obrigatório quando há comissã
     erro = e instanceof Error ? e.message : String(e);
   }
   assertEquals(erro, "Recebedor master da Movepark não configurado.");
+});
+
+// ── E0.3.5: role, liable no master, split dinâmico e estorno 100% master ──────
+
+Deno.test("E0.3.5: a perna do parceiro leva role=partner e o chargeback (liable) vai para a Movepark", () => {
+  const rules = buildSplit({
+    chargedCents: 20000, baseCents: 20000, takeRateBps: 2000,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  const p = rules.find((r) => r.role === "partner")!;
+  const m = rules.find((r) => r.role === "movepark")!;
+  assertEquals([p.amount, p.liable, p.chargeProcessingFee], [16000, false, true]);
+  assertEquals([m.amount, m.liable, m.chargeProcessingFee], [4000, true, false]);
+  assertEquals(partnerRule(rules), p);
+});
+
+Deno.test("E0.3.5: sem perna da Movepark (take_rate 0), o parceiro fica liable, porque o gateway exige um", () => {
+  const rules = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 0,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  assertEquals(rules.length, 1);
+  assertEquals(rules[0].liable, true);
+});
+
+Deno.test("splitForGateway: sem dívida, o payload é o próprio razão", () => {
+  const rules = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 2000,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  assertEquals(splitForGateway(rules, 0, "re_mp"), rules);
+});
+
+Deno.test("splitForGateway: abatimento parcial reduz o parceiro e engorda a Movepark, total intacto", () => {
+  const rules = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 2000,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  const out = splitForGateway(rules, 3000, "re_mp")!;
+  assertEquals(out.map((r) => [r.role, r.amount]), [["partner", 5000], ["movepark", 5000]]);
+  assertEquals(out.reduce((a, r) => a + r.amount, 0), 10000);
+  // o razão não muda: a perna normal continua 8000
+  assertEquals(partnerRule(rules)!.amount, 8000);
+});
+
+Deno.test("splitForGateway: abatimento igual à perna zera o parceiro e vira 'sem split' (100% master)", () => {
+  const rules = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 2000,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  assertEquals(splitForGateway(rules, 8000, "re_mp"), undefined);
+  assertEquals(splitForGateway(rules, 99999, "re_mp"), undefined, "nunca abate mais que a perna");
+});
+
+Deno.test("splitForGateway: take_rate 0 com abatimento cria a perna da Movepark e ela vira liable", () => {
+  const rules = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 0,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  const out = splitForGateway(rules, 4000, "re_mp")!;
+  assertEquals(out.map((r) => [r.role, r.amount, r.liable]), [["partner", 6000, false], ["movepark", 4000, true]]);
+});
+
+Deno.test("maxDebtRecoveryCents: o teto é a perna normal do parceiro (decisão 4: até 100%)", () => {
+  const rules = buildSplit({
+    chargedCents: 11290, baseCents: 10000, takeRateBps: 2000,
+    moveparkRecipientId: "re_mp", partnerRecipientId: "re_p",
+  });
+  assertEquals(maxDebtRecoveryCents(rules), 8000);
+});
+
+Deno.test("refundSplitToMaster: uma regra só, no master, com o valor do estorno", () => {
+  const s = refundSplitToMaster("re_mp", 20000);
+  assertEquals(s.length, 1);
+  assertEquals([s[0].recipientId, s[0].amount, s[0].liable, s[0].role], ["re_mp", 20000, true, "movepark"]);
+  assertThrows(() => refundSplitToMaster("", 100));
+  assertThrows(() => refundSplitToMaster("re_mp", 0));
 });

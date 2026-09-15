@@ -355,6 +355,21 @@ export function buildOrderBody(input: PixChargeInput): Record<string, unknown> {
   };
 }
 
+/**
+ * Corpo de `DELETE /charges/{id}`. Sem nada = estorno total seguindo o split da captura. Com
+ * `split`, a Pagar.me estorna de quem a regra disser ("cancelar cobrança com split"): é assim que
+ * o estorno sai 100% do master e a perna do parceiro vira dívida no razão (E0.3.5). `role` não vai
+ * ao gateway: `mapGatewaySplit` só emite os campos dele.
+ */
+export function buildRefundBody(
+  input: Pick<RefundInput, "amountCents" | "split">,
+): Record<string, unknown> | undefined {
+  const body: Record<string, unknown> = {};
+  if (input.amountCents != null) body.amount = input.amountCents;
+  if (input.split?.length) body.split = mapGatewaySplit(input.split);
+  return Object.keys(body).length ? body : undefined;
+}
+
 /** Mapeia SplitRule[] (agnóstico) → o formato `split[]` do Pagar.me. */
 function mapGatewaySplit(split: SplitRule[]) {
   return split.map((s) => ({
@@ -713,12 +728,13 @@ export class PagarmeGateway implements PaymentGateway {
   }
 
   /**
-   * Estorna a cobrança: DELETE /charges/{chargeId}. body { amount } só no estorno parcial.
-   * NÃO envia split — a Pagar.me reverte o split proporcionalmente sozinha. PIX devolve ao
-   * pagador automaticamente (não precisa de bank_account, ao contrário do boleto).
+   * Estorna a cobrança: DELETE /charges/{chargeId}. `amount` só no estorno parcial. Sem `split`,
+   * a Pagar.me segue o split da captura e debita o parceiro; com `split` (E0.3.5), estorna de quem
+   * a regra disser, e é assim que o estorno sai 100% do master. PIX devolve ao pagador
+   * automaticamente (não precisa de bank_account, ao contrário do boleto).
    */
-  async refundCharge({ chargeId, amountCents }: RefundInput): Promise<RefundResult> {
-    const body = amountCents != null ? { amount: amountCents } : undefined;
+  async refundCharge({ chargeId, amountCents, split }: RefundInput): Promise<RefundResult> {
+    const body = buildRefundBody({ chargeId, amountCents, split });
     const { httpStatus, parsed } = await this.rawFetch("DELETE", `/charges/${chargeId}`, body);
     return buildRefundResult(httpStatus, parsed);
   }

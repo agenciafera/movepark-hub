@@ -20,6 +20,8 @@ import {
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
+import { executeRefund } from "../_shared/payments/refund.ts";
+import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { parseChangeDatesPaidInput } from "./logic.ts";
 
@@ -143,7 +145,7 @@ Deno.serve(async (req: Request) => {
       // Estorno PARCIAL da diferença na cobrança original da reserva.
       const { data: payment } = await admin
         .from("payment")
-        .select("id, provider, provider_payment_id, provider_charge_id, refunded_amount")
+        .select("id, provider, provider_payment_id, provider_charge_id, refunded_amount, amount, split, split_sent_to_gateway, debt_recovered_cents")
         .eq("booking_id", booking.id)
         .eq("kind", "booking")
         .eq("status", "paid")
@@ -164,8 +166,17 @@ Deno.serve(async (req: Request) => {
           chargeId = charge.chargeId;
         }
         if (chargeId) {
-          const refund = await gateway.refundCharge({ chargeId, amountCents: -deltaCents });
-          if (refund.httpStatus == null || refund.httpStatus < 400) {
+          // E0.3.5: o parcial também sai 100% do master quando a cobrança foi com split.
+          const exec = await executeRefund({
+            gateway,
+            chargeId,
+            payment,
+            moveparkRecipientId: (await loadGatewaySettings(admin)).moveparkRecipientId,
+            totalCents: Math.round(Number(payment.amount) * 100),
+            amountCents: -deltaCents,
+          });
+          const refund = exec.result;
+          if (exec.outcome === "ok") {
             refunded = true;
             refundPending = refund.status !== "refunded";
             await admin
@@ -174,6 +185,7 @@ Deno.serve(async (req: Request) => {
                 refunded_amount: (Number(payment.refunded_amount ?? 0) + -deltaCents / 100),
                 refunded_at: new Date().toISOString(),
                 provider_charge_id: chargeId,
+                refund_absorbed_by_master: exec.absorbedByMaster,
               })
               .eq("id", payment.id);
             await admin.rpc("log_booking_modification", {
