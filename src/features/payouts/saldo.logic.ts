@@ -9,9 +9,9 @@ import type { PayoutBalance } from "./api";
  *   importa é a dívida, `balance_cents`.
  * - **Split ligado**: o gateway credita o parceiro direto, a dívida da Movepark é zero e a tela
  *   diria "Saldo a receber R$ 0,00" para quem acabou de vender. O número que importa passa a ser o
- *   que está no recebedor dele.
+ *   que o gateway creditou.
  *
- * A regra é mecânica: se o gateway creditou alguma coisa, o card fala do recebedor; senão, fala da
+ * A regra é mecânica: se o gateway creditou alguma coisa, o card fala do crédito; senão, fala da
  * dívida, exatamente como antes. Enquanto a custódia estiver ligada, `gateway_credited_cents` é
  * zero e nada muda na tela.
  */
@@ -40,11 +40,15 @@ export function resumoSaldo(b: Partial<PayoutBalance> | null | undefined): Resum
     };
   }
 
-  // O recebedor é alimentado pelos dois caminhos: o split do gateway e o repasse da Movepark.
-  // O que sobra lá é o que entrou menos o que o parceiro já levou para o banco.
-  const noRecebedor = Math.max(creditado + repassado - sacado, 0);
-  const linhas = [{ rotulo: "sacado por você", valorCents: sacado }];
-  if (divida > 0) linhas.unshift({ rotulo: "a receber da Movepark", valorCents: divida });
+  // O título fala de CRÉDITO ACUMULADO, não de saldo parado no recebedor, e a diferença é
+  // deliberada: `payout_withdrawal` só é alimentada pelo webhook `transfer.*`, que nunca chegou
+  // nesta conta, e recebedor com transferência automática (a Virapark é mensal, dia 10) manda o
+  // dinheiro para o banco sem passar por nós. Dizer "no seu recebedor" afirmaria um saldo que não
+  // lemos. O que a Movepark consegue provar com os próprios registros é quanto o gateway creditou.
+  const linhas: { rotulo: string; valorCents: number }[] = [];
+  if (divida > 0) linhas.push({ rotulo: "a receber da Movepark", valorCents: divida });
+  if (repassado > 0) linhas.push({ rotulo: "repassado pela Movepark", valorCents: repassado });
+  if (sacado > 0) linhas.push({ rotulo: "sacado por você", valorCents: sacado });
 
-  return { titulo: "No seu recebedor", valorCents: noRecebedor, linhas };
+  return { titulo: "Creditado pelo gateway", valorCents: creditado, linhas };
 }

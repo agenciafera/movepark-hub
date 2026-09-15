@@ -98,10 +98,18 @@ de pé. Payload sem split, razão preservado.
   **`gateway_credited_cents`**, a parte do parceiro nas vendas que foram ao gateway, pelo mesmo
   rateio proporcional de estorno do resto da função. É o complemento exato de `owed_cents` sobre o
   mesmo conjunto, então `owed + gateway_credited = net_partner` (invariante coberta em
-  `payout_owed.test.sql`). O card de saldo passa a falar do recebedor quando há crédito do gateway
+  `payout_owed.test.sql`). O card de saldo passa a falar do crédito do gateway quando ele existe
   (`resumoSaldo`, em `saldo.logic.ts`), e fica idêntico ao de hoje enquanto a custódia estiver
   ligada. O problema estava vivo, não latente: **Virapark (R$ 525,00) e Motion Park (R$ 283,05)**
   vendiam com split enviado em jun/jul e a tela dos dois mostrava R$ 0,00.
+  **O título fala de crédito acumulado, de propósito, e não de saldo parado no recebedor:**
+  `payout_withdrawal` só é alimentada pelo webhook `transfer.*`, que nunca chegou nesta conta, e o
+  recebedor da Virapark tem transferência automática mensal (dia 10), então o dinheiro vai para o
+  banco dela sem passar por nós. Afirmar "no seu recebedor" seria afirmar um saldo que ninguém leu.
+- **Em aberto:** mostrar o saldo real do recebedor exige ler `GET /recipients/{id}/balance` (o
+  adapter já tem `getRecipientBalance`, hoje usado só no preflight do repasse) e guardar o valor com
+  o carimbo da leitura, provavelmente estendendo o cron `refresh-recipients`, que já percorre
+  recebedor e já fala com o gateway.
 
 ### Corrigido em 11/09/2026: o extrato passou a devolver só o que é devido
 

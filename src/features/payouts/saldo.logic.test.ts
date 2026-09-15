@@ -22,36 +22,35 @@ describe("resumoSaldo", () => {
     ]);
   });
 
-  it("com o split ligado o card fala do recebedor, em vez de dizer zero a quem vendeu", () => {
+  it("com o split ligado o card fala do crédito, em vez de dizer zero a quem vendeu", () => {
     const r = resumoSaldo({ ...base, net_partner_cents: 80000, gateway_credited_cents: 80000 });
-    expect(r.titulo).toBe("No seu recebedor");
+    expect(r.titulo).toBe("Creditado pelo gateway");
     expect(r.valorCents).toBe(80000);
   });
 
-  it("o que o parceiro já sacou sai do que está no recebedor", () => {
+  it("o número é o crédito acumulado, sem descontar saque que não temos como enxergar", () => {
+    // `payout_withdrawal` só é alimentada pelo webhook `transfer.*`, que nunca chegou, e recebedor
+    // com transferência automática manda o dinheiro ao banco sem passar por nós. Subtrair um zero
+    // que não sabemos se é zero fingiria um saldo que ninguém leu.
     const r = resumoSaldo({ ...base, gateway_credited_cents: 80000, withdrawn_cents: 30000 });
-    expect(r.valorCents).toBe(50000);
+    expect(r.valorCents).toBe(80000);
   });
 
-  it("o repasse da Movepark entra no recebedor, porque é para lá que ele vai", () => {
+  it("o repasse da Movepark aparece como linha, não somado ao crédito do gateway", () => {
     const r = resumoSaldo({ ...base, gateway_credited_cents: 10000, transferred_cents: 25000 });
-    expect(r.valorCents).toBe(35000);
+    expect(r.valorCents).toBe(10000);
+    expect(r.linhas).toContainEqual({ rotulo: "repassado pela Movepark", valorCents: 25000 });
   });
 
-  it("sacar mais do que entrou nunca vira número negativo na tela", () => {
-    const r = resumoSaldo({ ...base, gateway_credited_cents: 10000, withdrawn_cents: 99000 });
-    expect(r.valorCents).toBe(0);
-  });
-
-  it("nos dois modos ao mesmo tempo, a dívida aberta aparece como linha", () => {
+  it("nos dois modos ao mesmo tempo, a dívida aberta vem primeiro", () => {
     const r = resumoSaldo({ ...base, gateway_credited_cents: 40000, balance_cents: 15000 });
-    expect(r.titulo).toBe("No seu recebedor");
+    expect(r.titulo).toBe("Creditado pelo gateway");
     expect(r.linhas[0]).toEqual({ rotulo: "a receber da Movepark", valorCents: 15000 });
   });
 
-  it("dívida zerada não polui o card com uma linha de zero", () => {
+  it("linha zerada não polui o card", () => {
     const r = resumoSaldo({ ...base, gateway_credited_cents: 40000 });
-    expect(r.linhas.map((l) => l.rotulo)).toEqual(["sacado por você"]);
+    expect(r.linhas).toEqual([]);
   });
 
   it("sem dado nenhum não quebra nem inventa valor", () => {
