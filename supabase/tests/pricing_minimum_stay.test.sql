@@ -67,8 +67,16 @@ do $$
 declare
   v_company uuid; v_loc uuid; v_pt uuid; v_cpt uuid; v_lpt uuid;
 begin
-  insert into public.company(name, slug) values ('Piso Parceiro','piso-parceiro') returning id into v_company;
-  insert into public.location(company_id, name, slug) values (v_company, 'Piso Unidade','piso-unidade') returning id into v_loc;
+  -- Empresa e unidade precisam nascer VENDÁVEIS, senão `get_pricing_data` não acha nada e o caso
+  -- da faixa fechada compara contra uma fileira de NULL. O gate cobra quatro coisas: empresa com
+  -- `status` e `onboarding_status` ativos, e unidade ativa e listada. A foto vem antes do
+  -- `is_listed` por causa do piso de `20260818000000_photo_required_to_list`.
+  insert into public.company(name, slug, status, onboarding_status)
+    values ('Piso Parceiro','piso-parceiro','active','active') returning id into v_company;
+  insert into public.location(company_id, name, slug, status, photos)
+    values (v_company, 'Piso Unidade','piso-unidade','active',
+            '["/Estacionamentos/seed/foto-de-teste.webp"]'::jsonb) returning id into v_loc;
+  update public.location set is_listed = true where id = v_loc;
   insert into public.parking_type(code, name) values ('piso_coberta','Piso Coberta') returning id into v_pt;
   insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity)
     values (v_company, v_pt, 40, 10) returning id into v_cpt;
