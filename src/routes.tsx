@@ -90,6 +90,7 @@ import ManagerBookings from "@/routes/manager/bookings";
 import ManagerCompanies from "@/routes/manager/companies";
 import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
+import ManagerRascunho from "@/routes/manager/rascunho";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
@@ -1030,6 +1031,11 @@ export const routes: RouteRecord[] = [
               {
                 path: "companies/:companyId/locations/:locationId/parking-types",
                 element: <ParkingTypesPage />,
+              },
+              // Modo rascunho: a unidade não listada, reservável só por hub_admin (15/09/2026).
+              {
+                path: "companies/:companyId/locations/:locationId/rascunho",
+                element: <ManagerRascunho />,
               },
               { path: "users", element: <ManagerUsers /> },
               { path: "finance/billing", element: <ManagerFinanceBilling /> },

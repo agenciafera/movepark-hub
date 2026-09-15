@@ -156,18 +156,21 @@ export async function fetchListing(
   destinoSlug: string,
   loteSlug: string,
   vagaCode?: string,
+  opts: { rascunho?: boolean } = {},
 ): Promise<ListingDetail | null> {
-  const { data, error } = await supabase
+  let consulta = supabase
     .from("location_parking_type")
     .select(baseSelect)
     .eq("is_active", true)
-    // Só serve a ficha pública de unidades listadas (gate de recebedor ativo). A RLS
-    // pública já exige location.is_listed; este filtro deixa explícito. O preview do dono usa
-    // outra leitura (previewApi, RLS de dono), que ignora is_listed.
-    .eq("location.is_listed", true)
     .eq("location.public_slug", loteSlug)
-    .eq("location.destination.public_slug", destinoSlug)
-    .limit(20);
+    .eq("location.destination.public_slug", destinoSlug);
+  // Só serve a ficha pública de unidades listadas (gate de recebedor ativo). A RLS pública já
+  // exige location.is_listed; este filtro deixa explícito. O preview do dono usa outra leitura
+  // (previewApi, RLS de dono), que ignora is_listed. O modo rascunho (hub_admin testando uma
+  // unidade antes de listar) também dispensa o filtro: a RLS de admin enxerga a unidade, e as
+  // RPCs de preço/disponibilidade abrem exceção para `is_hub_admin()` (20261118140000).
+  if (!opts.rascunho) consulta = consulta.eq("location.is_listed", true);
+  const { data, error } = await consulta.limit(20);
   if (error) throw error;
 
   // deno-lint-ignore no-explicit-any
@@ -372,6 +375,35 @@ export function useListing(
     enabled: !!destinoSlug && !!loteSlug,
     staleTime: 60_000,
     initialData: options?.initialData,
+  });
+}
+
+/**
+ * A ficha em modo RASCUNHO, por id da unidade (Manager, só hub_admin). Serve para testar uma
+ * unidade de ponta a ponta antes de listar: a RLS de admin enxerga a unidade não listada, e as
+ * RPCs de preço/disponibilidade abrem exceção para `is_hub_admin()`. Para o público a unidade
+ * continua invisível (busca, sitemap, e o Worker devolve 404 na URL direta).
+ */
+export async function fetchListingDraft(locationId: string): Promise<ListingDetail | null> {
+  const { data: loc, error } = await supabase
+    .from("location")
+    .select("public_slug, destination:destination(public_slug)")
+    .eq("id", locationId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw error;
+  const destino = (loc?.destination as { public_slug: string | null } | null)?.public_slug ?? null;
+  const lote = loc?.public_slug ?? null;
+  if (!destino || !lote) return null;
+  return fetchListing(destino, lote, undefined, { rascunho: true });
+}
+
+export function useListingDraft(locationId: string | undefined) {
+  return useQuery({
+    queryKey: ["listing-draft", locationId ?? null] as const,
+    queryFn: () => fetchListingDraft(locationId!),
+    enabled: !!locationId,
+    staleTime: 0,
   });
 }
 

@@ -123,6 +123,14 @@ export default function ManagerLocations() {
                           Tipos de vaga
                         </Link>
                       </Button>
+                      {/* Modo rascunho: testar a unidade de ponta a ponta antes de listar. */}
+                      {!loc.is_listed && (
+                        <Button size="sm" variant="ghost" asChild>
+                          <Link to={`/manager/companies/${companyId}/locations/${loc.id}/rascunho`}>
+                            Testar rascunho
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

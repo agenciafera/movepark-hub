@@ -179,6 +179,22 @@ quatro Edges de cobrança. Manager › Financeiro › Recebedores ganhou a colun
 botão de ligar/desligar. Global desligada com empresas marcadas é o estado de transição: quem tem
 recebedor entra no modelo novo, quem não tem segue em custódia.
 
+## Modo rascunho (decidido em 15/09/2026)
+
+Testar uma unidade de ponta a ponta (preço, reserva, pagamento, cancelamento) sem listar. Três
+camadas travavam unidade não listada, e a resposta respeita cada uma:
+
+| Camada | Trava | Como o rascunho passa |
+|---|---|---|
+| Banco | `check_availability`, `get_pricing_data`, `availability_batch`, `simulate_price` exigem `is_listed` (20261029100000) | migration `20261118140000`: `(l.is_listed or public.is_hub_admin())`. Sem sessão a exceção é falsa: anon, build do SSG e Worker seguem sem ver nada. pgTAP `modo_rascunho.test.sql` |
+| Borda | o Worker devolve 404 na URL pública de unidade não listada, e não enxerga a sessão | a ficha em rascunho mora **dentro do Manager**: `/manager/companies/:companyId/locations/:locationId/rascunho`, navegação interna, nunca a URL pública |
+| Leitura | `fetchListing` filtra `location.is_listed` | `fetchListingDraft(locationId)` dispensa o filtro (a RLS de admin enxerga a unidade) |
+| Reserva | `ReservationCard` só deixava `customer` reservar | `hub_admin` também reserva; a reserva sai no nome do admin e o cancelamento é como staff, em Manager › Reservas |
+
+Rascunho é unidade **viva** (`status = 'active'`, empresa ativa) e **não listada**. Unidade inativa
+continua invisível até para hub_admin. O botão **Testar rascunho** aparece na lista de unidades da
+empresa só para unidade não listada.
+
 ## Rollout
 
 1. Migrations, funções, adapter, Edges e telas no ar, **global desligada e nenhuma empresa marcada**.

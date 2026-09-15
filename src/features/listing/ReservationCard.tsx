@@ -288,7 +288,9 @@ export function ReservationCard({
       navigate(`/login?next=${next}`);
       return;
     }
-    if (effectiveRole !== "customer") {
+    // hub_admin reserva também: é o modo rascunho (testar a unidade de ponta a ponta antes de
+    // listar). Operador de empresa continua fora, por desenho.
+    if (effectiveRole !== "customer" && effectiveRole !== "hub_admin") {
       toast.error("Faça login com uma conta de cliente pra reservar.");
       return;
     }
