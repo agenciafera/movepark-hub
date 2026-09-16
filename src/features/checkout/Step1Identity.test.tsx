@@ -4,13 +4,17 @@ import userEvent from "@testing-library/user-event";
 import { Step1Identity } from "./Step1Identity";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
-import { useAttachPhone, useUpdateBookingCustomer } from "./api";
+import { useAttachPhone, useSetEmailHint, useUpdateBookingCustomer } from "./api";
 
 vi.mock("@/features/profile/api", () => ({
   useProfile: vi.fn(),
   useUpdateProfile: vi.fn(),
 }));
-vi.mock("./api", () => ({ useUpdateBookingCustomer: vi.fn(), useAttachPhone: vi.fn() }));
+vi.mock("./api", () => ({
+  useUpdateBookingCustomer: vi.fn(),
+  useAttachPhone: vi.fn(),
+  useSetEmailHint: vi.fn(),
+}));
 // Espião no aceite: sem checkbox, é o submit que registra, e isso precisa de guarda.
 const aceitarTermos = vi.hoisted(() => vi.fn().mockResolvedValue({ ok: true }));
 vi.mock("@/features/legal/api", () => ({
@@ -71,6 +75,10 @@ beforeEach(() => {
   } as never);
   vi.mocked(useAttachPhone).mockReturnValue({
     mutateAsync: vi.fn().mockResolvedValue({ status: "attached" }),
+    isPending: false,
+  } as never);
+  vi.mocked(useSetEmailHint).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue(undefined),
     isPending: false,
   } as never);
 });
@@ -160,6 +168,44 @@ describe("Step1Identity", () => {
     expect(updateCustomer).toHaveBeenCalledWith(
       expect.objectContaining({ bookingId: "bk-1", customer_email: "diego@ex.com" }),
     );
+  });
+
+  it("login por telefone: o e-mail da compra anterior volta preenchido e o digitado vira dica", async () => {
+    // Bug de 16/09/2026: quem entrou por WhatsApp digitava o e-mail, comprava, e na compra
+    // seguinte o campo vinha vazio. A dica mora em profiles.preferences, como a do telefone.
+    setProfile({
+      first_name: "Kallef",
+      last_name: "Alexandre",
+      preferences: { unverified_email_hint: "kallef.alexandre@gmail.com" },
+    });
+    const gravaDica = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSetEmailHint).mockReturnValue({ mutateAsync: gravaDica, isPending: false } as never);
+
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({ session: mockSession("customer", { email: null, phone: "+5541988149449" }) }),
+    });
+
+    const emailInput = screen.getByLabelText("E-mail") as HTMLInputElement;
+    await waitFor(() => expect(emailInput.value).toBe("kallef.alexandre@gmail.com"));
+
+    await userEvent.clear(emailInput);
+    await userEvent.type(emailInput, "outro@ex.com");
+    await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+    await waitFor(() => expect(gravaDica).toHaveBeenCalledWith({ email: "outro@ex.com" }));
+  });
+
+  it("login por e-mail: a dica não se mete; o e-mail é o da conta e nada é gravado", async () => {
+    setProfile({ first_name: "A", last_name: "B", preferences: { unverified_email_hint: "x@y.co" } });
+    const gravaDica = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSetEmailHint).mockReturnValue({ mutateAsync: gravaDica, isPending: false } as never);
+    renderWithProviders(<Step1Identity {...defaultProps} />, {
+      auth: mockAuth({ session: mockSession("customer", { email: "conta@ex.com", phone: null }) }),
+    });
+    expect((screen.getByLabelText("E-mail") as HTMLInputElement).value).toBe("conta@ex.com");
+    await userEvent.type(screen.getByLabelText("Telefone"), "+5511999990000");
+    await userEvent.click(screen.getByRole("button", { name: /Continuar/i }));
+    await waitFor(() => expect(defaultProps.onNext).toHaveBeenCalled());
+    expect(gravaDica).not.toHaveBeenCalled();
   });
 
   it("login por e-mail: campo de e-mail fica read-only (identidade da conta) e telefone editável", () => {

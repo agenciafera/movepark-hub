@@ -179,6 +179,11 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
     `attach-identifier` com OTP próprio). Histórico: houve um anexo silencioso que promovia o número a
     credencial sem OTP; foi fechado (migration `20260820000000`) porque abria sequestro de conta quando o
     login por OTP de WhatsApp é o caminho principal (ex.: agente de reserva).
+  - **O e-mail do checkout segue a mesma regra (16/09/2026).** Quem entrou por WhatsApp não tem
+    e-mail na conta e digita um no passo 1; ele vai para o snapshot do booking e para a dica
+    `profiles.preferences.unverified_email_hint` (RPC `set_email_hint`, keyed em `auth.uid()`), que
+    pré-preenche a compra seguinte. **Nunca** vira credencial nem mescla com a conta que tem esse
+    e-mail: isso exige verificação por OTP.
 
 - **ADR-007 · Template de comunicação é canônico no código.** Os templates de e-mail (e de
   qualquer canal futuro) vivem em `supabase/functions/_shared/email.ts`, versionados em git e

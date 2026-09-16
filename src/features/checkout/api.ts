@@ -276,6 +276,25 @@ export function useAttachPhone() {
   });
 }
 
+/**
+ * Guarda o e-mail digitado no checkout como dica de pré-preenchimento (16/09/2026), espelho do
+ * telefone: quem entra por WhatsApp não tem e-mail na conta e, sem isso, digitava de novo a cada
+ * compra. Não é credencial (ADR-006): não mescla conta nem vira login. RPC `set_email_hint`,
+ * keyed em `auth.uid()`. Best-effort.
+ */
+export function useSetEmailHint() {
+  return useMutation({
+    mutationFn: async (args: { email: string }) => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "set_email_hint",
+        a: { p_email: string },
+      ) => PromiseLike<{ error: { message: string } | null }>;
+      const { error } = await rpc("set_email_hint", { p_email: args.email });
+      if (error) throw error;
+    },
+  });
+}
+
 export function useCancelBooking() {
   const qc = useQueryClient();
   return useMutation({

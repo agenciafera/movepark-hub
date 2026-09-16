@@ -6,6 +6,7 @@ import {
   useMockPayment,
   useRenewBookingHold,
   useSetBookingAddons,
+  useSetEmailHint,
 } from "./api";
 
 /**
@@ -166,5 +167,14 @@ describe("useSetBookingAddons", () => {
     await expect(
       result.current.mutateAsync({ code: "MP-1", addOnIds: ["a1"] }),
     ).rejects.toThrow(/antes do pagamento/);
+  });
+});
+
+describe("useSetEmailHint", () => {
+  it("grava a dica pela RPC set_email_hint, keyed em auth.uid()", async () => {
+    const chamada = rpc("set_email_hint", { json: null });
+    const { result } = renderMutation(() => useSetEmailHint());
+    await result.current.mutateAsync({ email: "kallef.alexandre@gmail.com" });
+    expect(chamada.ultimoBody).toEqual({ p_email: "kallef.alexandre@gmail.com" });
   });
 });

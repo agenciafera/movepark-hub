@@ -10,7 +10,7 @@ import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
 import { useAcceptTerms } from "@/features/legal/api";
 import { LegalDocumentModal } from "@/features/legal/LegalDocumentModal";
-import { useAttachPhone, useUpdateBookingCustomer } from "./api";
+import { useAttachPhone, useSetEmailHint, useUpdateBookingCustomer } from "./api";
 import { validateStep1Identity } from "./checkout.logic";
 
 type Props = {
@@ -39,6 +39,7 @@ export function Step1Identity({
   const updateProfile = useUpdateProfile();
   const updateCustomer = useUpdateBookingCustomer();
   const attachPhone = useAttachPhone();
+  const setEmailHint = useSetEmailHint();
   const acceptTerms = useAcceptTerms();
 
   // O titular é sempre a conta em sessão (o pagador). Quem entrou por e-mail (OTP/Google) tem o
@@ -66,12 +67,19 @@ export function Step1Identity({
       setFirstName(profileQ.data.first_name ?? "");
       setLastName(profileQ.data.last_name ?? "");
       // Telefone da conta (auth.users), se houver; senão a dica não-verificada guardada no perfil.
-      const hint = (profileQ.data.preferences as { unverified_phone_hint?: string } | null)
-        ?.unverified_phone_hint;
-      setPhone(session?.phone ?? hint ?? undefined);
+      const prefs = profileQ.data.preferences as {
+        unverified_phone_hint?: string;
+        unverified_email_hint?: string;
+      } | null;
+      setPhone(session?.phone ?? prefs?.unverified_phone_hint ?? undefined);
+      // Quem entrou por telefone não tem e-mail na conta: a dica da compra anterior evita digitar
+      // de novo. O booking (customerEmail) vence, porque é desta reserva.
+      if (!session?.email && !customerEmail && prefs?.unverified_email_hint) {
+        setEmail(prefs.unverified_email_hint);
+      }
       initialized.current = true;
     }
-  }, [profileQ.data, session?.phone]);
+  }, [profileQ.data, session?.phone, session?.email, customerEmail]);
 
   if (!session) return null;
   if (profileQ.isLoading) return <Skeleton className="h-64 w-full" />;
@@ -142,6 +150,14 @@ export function Step1Identity({
       if (!session.phone && titularPhone) {
         try {
           await attachPhone.mutateAsync({ phone: titularPhone });
+        } catch {
+          // não bloqueia o checkout
+        }
+      }
+      // Idem para o e-mail de quem entrou por telefone (16/09/2026): dica, não credencial.
+      if (!loggedInWithEmail && titularEmail) {
+        try {
+          await setEmailHint.mutateAsync({ email: titularEmail });
         } catch {
           // não bloqueia o checkout
         }
@@ -291,7 +307,7 @@ export function Step1Identity({
         onOpenChange={setTermsOpen}
       />
 
-      {/* Botão desktop — no mobile a barra fixa do checkout.tsx submete o form */}
+      {/* Botão desktop; no mobile a barra fixa do checkout.tsx submete o form */}
       <div className="hidden justify-end desktop:flex">
         <Button type="submit" disabled={busy}>
           {busy ? "Salvando…" : "Continuar"}
