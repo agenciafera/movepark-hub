@@ -32,9 +32,9 @@ escondida dentro do bloco Catálogo Movepark confundiu quem opera.
 - `public.is_tester()`: `is_hub_admin()` OR `auth.uid()` em `tester_user`. Estável,
   security definer, executável por `authenticated`.
 - RPC `admin_set_tester(user_id, enabled)`: só hub_admin; insere/remove e grava quem.
-- Leitura do flag: `profiles` ganha a vista pela RPC `get_my_session`/sessão? Não. O
-  front lê `is_tester` por RPC `is_tester()` na sessão (AuthProvider) e a lista de
-  Usuários lê `tester_user` (RLS: hub_admin lê tudo; o próprio lê a própria linha).
+- Leitura do flag: o front chama a RPC `is_tester()` ao carregar a sessão
+  (`Session.isTester`) e a lista de Usuários lê `tester_user` (RLS: hub_admin lê tudo;
+  o próprio lê a própria linha).
 
 ## Visibilidade
 
@@ -47,8 +47,9 @@ Todo corte `l.is_listed` passa a ser `(l.is_listed or (l.is_draft and public.is_
    correr como o usuário; o filtro explícito `if (!r.location.is_listed)` passa a
    aceitar `is_draft` (a RLS já decidiu quem vê) e devolve `is_draft` no resultado.
 4. Front `fetchListing`: sai o `.eq("location.is_listed", true)` fixo, entra
-   `.or("is_listed.eq.true,is_draft.eq.true", { foreignTable: "location" })`; anônimo
-   segue cortado pela RLS. Página do destino (units) idem.
+   `.or("is_listed.eq.true,is_draft.eq.true", { referencedTable: "location" })`; anônimo
+   segue cortado pela RLS. A página do destino NÃO entra: a lista de unidades dela é só
+   do loader SSG (pré-renderizada no build), e o caminho do testador é a busca.
 5. Selo "Rascunho" no card da busca e na ficha, só quando `is_draft` vem verdadeiro
    (só chega para quem pode ver).
 
