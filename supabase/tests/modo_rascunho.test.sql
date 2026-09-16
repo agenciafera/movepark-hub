@@ -1,5 +1,5 @@
--- pgTAP: modo rascunho (15/09/2026). Unidade viva e NÃO listada: invisível para anon e para
--- cliente, visível para hub_admin nas quatro funções de preço/disponibilidade. A trava da
+-- pgTAP: modo rascunho (15/09/2026, testadores em 16/09). Unidade em RASCUNHO: invisível para anon e para
+-- cliente, visível para hub_admin (testador por definição) nas quatro funções. A trava da
 -- 20261029100000 continua inteira para quem não é da Movepark.
 -- Transação com rollback.
 
@@ -21,9 +21,9 @@ begin
   insert into public.company(id, name, slug, status, onboarding_status)
     values (cid, 'Rascunho Empresa', 'rascunho-empresa', 'active', 'active');
   -- Viva, com foto, mas NÃO listada: é o rascunho.
-  insert into public.location(id, company_id, name, slug, status, photos, is_listed)
+  insert into public.location(id, company_id, name, slug, status, photos, is_draft)
     values (loc, cid, 'Rascunho Unidade', 'rascunho-unidade', 'active',
-            '["/Estacionamentos/seed/foto-de-teste.webp"]'::jsonb, false);
+            '["/Estacionamentos/seed/foto-de-teste.webp"]'::jsonb, true);
   insert into public.parking_type(id, code, name) values (pt, 'rascunho_coberta', 'Rascunho Coberta');
   insert into public.company_parking_type(id, company_id, parking_type_id, base_price, default_capacity)
     values (cpt, cid, pt, 40, 10);
