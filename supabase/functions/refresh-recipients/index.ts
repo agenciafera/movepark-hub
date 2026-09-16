@@ -23,10 +23,17 @@ import {
   ttlDaChamada,
 } from "./logic.ts";
 
+// CORS porque, desde 16/09/2026, o Manager chama esta Edge do navegador (leitura forçada).
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-refresh-recipients-key",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
@@ -53,6 +60,7 @@ async function ehHubAdmin(req: Request): Promise<boolean> {
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const pelaChave = autorizado(
