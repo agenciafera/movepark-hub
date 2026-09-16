@@ -109,16 +109,18 @@ Deno.serve(async (req: Request) => {
   }).eq("id", recipient.id);
   const { data: teto, error: tetoErr } = await admin.rpc("payout_withdrawable", { p_company_id: input.companyId });
   if (tetoErr || !teto) return jsonResponse({ error: "Não foi possível calcular o disponível para saque." }, 500);
+  const tetoJson = teto as { available_cents?: number; withdrawal_fee_cents?: number };
   const cap = withdrawCap({
     amountCents: input.amountCents,
-    availableCents: Number((teto as { available_cents?: number }).available_cents ?? 0),
+    availableCents: Number(tetoJson.available_cents ?? 0),
+    feeCents: Number(tetoJson.withdrawal_fee_cents ?? 0),
     gatewayAvailableCents: saldo.availableCents,
     isHubAdmin,
     force: input.force,
   });
   if (!cap.ok) {
     return jsonResponse(
-      { error: cap.reason, available_cents: (teto as { available_cents?: number }).available_cents ?? 0 },
+      { error: cap.reason, available_cents: tetoJson.available_cents ?? 0, withdrawal_fee_cents: tetoJson.withdrawal_fee_cents ?? 0 },
       cap.status,
     );
   }

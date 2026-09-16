@@ -49,18 +49,27 @@ export function withdrawPreflight(
  * continua sendo o teto físico para todo mundo.
  */
 export function withdrawCap(
-  args: { amountCents: number; availableCents: number; gatewayAvailableCents: number | null; isHubAdmin: boolean; force: boolean },
+  args: {
+    amountCents: number;
+    availableCents: number;
+    /** Taxa por saque, que o gateway cobra do saldo além do valor: conta no teto. */
+    feeCents: number;
+    gatewayAvailableCents: number | null;
+    isHubAdmin: boolean;
+    force: boolean;
+  },
 ): { ok: true } | { ok: false; reason: string; status: number } {
-  if (args.amountCents <= args.availableCents) return { ok: true };
+  const total = args.amountCents + Math.max(0, args.feeCents);
+  if (total <= args.availableCents) return { ok: true };
   if (args.isHubAdmin && args.force) {
-    if (args.gatewayAvailableCents != null && args.amountCents > args.gatewayAvailableCents) {
-      return { ok: false, reason: `O gateway só tem ${args.gatewayAvailableCents} centavos disponíveis.`, status: 409 };
+    if (args.gatewayAvailableCents != null && total > args.gatewayAvailableCents) {
+      return { ok: false, reason: `O gateway só tem ${args.gatewayAvailableCents} centavos disponíveis (valor mais taxa de ${args.feeCents}).`, status: 409 };
     }
     return { ok: true };
   }
   return {
     ok: false,
-    reason: `Disponível para saque é ${args.availableCents} centavos; o pedido foi de ${args.amountCents}.`,
+    reason: `Dá para sacar até ${Math.max(0, args.availableCents - args.feeCents)} centavos (disponível ${args.availableCents} menos a taxa de saque de ${args.feeCents}); o pedido foi de ${args.amountCents}.`,
     status: 409,
   };
 }

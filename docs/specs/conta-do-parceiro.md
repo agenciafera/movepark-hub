@@ -107,6 +107,13 @@ recusa (409) o que passa dele; `force` só para hub_admin.
 A conta mostra "Disponível para saque" (nosso), "Retido pelo prazo" (com o prazo), "A liberar
 pelo gateway" (cartão) e a dívida; o saldo bruto da Pagar.me fica como referência pequena.
 
+**No saque, o custo fica explícito:** o diálogo mostra o disponível, a taxa por saque
+(`app_setting.payout_withdrawal_fee_cents`, devolvida pela RPC em `withdrawal_fee_cents`) e o
+máximo que dá para pedir (`max_withdraw_cents` = disponível − taxa, porque a Pagar.me cobra a
+taxa do saldo além do valor). O parceiro digita o valor que quiser até esse máximo ou usa
+"Sacar o máximo"; o resumo diz quanto cai na conta e quanto sai do saldo. A Edge aplica o mesmo
+teto com a taxa (migration `20261120030000`).
+
 ## Fora do escopo agora
 
 Antecipação por venda, exportação do extrato e o extrato de operações de saldo do gateway

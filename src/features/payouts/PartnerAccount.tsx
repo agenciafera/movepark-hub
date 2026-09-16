@@ -77,14 +77,18 @@ export function PartnerAccount({
   const moves = statement.data?.movements ?? [];
   const totals = summarizeMovements(moves);
 
+  const feeCents = w?.withdrawal_fee_cents ?? 0;
+  const maxCents = w?.max_withdraw_cents ?? 0;
+  const amountCents = Math.round((amount ?? 0) * 100);
+
   async function confirmarSaque() {
-    const cents = Math.round((amount ?? 0) * 100);
+    const cents = amountCents;
     if (cents <= 0) {
       toast.error("Informe o valor do saque.");
       return;
     }
-    if (w && cents > w.available_cents && !(canRefund && force)) {
-      toast.error(`Disponível para saque é ${brl(w.available_cents)}.`);
+    if (w && cents > maxCents && !(canRefund && force)) {
+      toast.error(`Dá para sacar até ${brl(maxCents)} (disponível menos a taxa de saque).`);
       return;
     }
     try {
@@ -227,12 +231,42 @@ export function PartnerAccount({
             <DialogTitle>Repassar para o banco</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
-            <p className="text-body-sm text-muted">
-              Disponível para saque: <strong>{w ? brl(w.available_cents) : "…"}</strong>. Vai para a conta bancária
-              cadastrada do estacionamento; a taxa de saque é descontada do saldo pelo gateway.
-            </p>
-            <Label htmlFor="saque-valor">Valor</Label>
-            <CurrencyInput id="saque-valor" value={amount} onChange={setAmount} />
+            {/* O custo do saque fica explícito antes de confirmar: a Pagar.me cobra a taxa do saldo
+                além do valor pedido, então o máximo que dá para pedir é o disponível menos a taxa. */}
+            <div className="rounded-md border border-hairline bg-surface-soft p-3 text-body-sm">
+              <div className="flex justify-between">
+                <span className="text-muted">Disponível para saque</span>
+                <span className="text-ink" data-testid="saque-disponivel">{w ? brl(w.available_cents) : "…"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Taxa por saque (Pagar.me)</span>
+                <span className="text-ink" data-testid="saque-taxa">−{brl(feeCents)}</span>
+              </div>
+              <div className="mt-1 flex justify-between border-t border-hairline pt-1">
+                <span className="text-muted">Máximo que dá para sacar</span>
+                <span className="text-ink" data-testid="saque-maximo">{brl(maxCents)}</span>
+              </div>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="saque-valor">Valor a sacar</Label>
+                <CurrencyInput id="saque-valor" value={amount} onChange={setAmount} />
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setAmount(maxCents / 100)}
+                disabled={maxCents <= 0}
+              >
+                Sacar o máximo
+              </Button>
+            </div>
+            {amountCents > 0 && (
+              <p className="text-caption text-muted" data-testid="saque-resumo">
+                Cai na conta: <strong>{brl(amountCents)}</strong> · sai do saldo: {brl(amountCents + feeCents)}
+                {amountCents > maxCents && !(canRefund && force) ? " · acima do máximo" : ""}
+              </p>
+            )}
             {canRefund && (
               <label className="flex items-start gap-2 text-caption text-muted">
                 <Checkbox checked={force} onCheckedChange={(v) => setForce(v === true)} aria-label="Passar do teto" />

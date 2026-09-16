@@ -809,6 +809,10 @@ export type PayoutWithdrawable = {
   recipient_missing: boolean;
   /** O teto do saque: liberado − dívida − saques, limitado ao disponível real na Pagar.me. */
   available_cents: number;
+  /** Taxa por saque, cobrada do saldo além do valor (app_setting.payout_withdrawal_fee_cents). */
+  withdrawal_fee_cents: number;
+  /** O maior valor que dá para pedir: disponível menos a taxa. */
+  max_withdraw_cents: number;
 };
 
 /**

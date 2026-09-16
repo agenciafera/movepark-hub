@@ -19,9 +19,10 @@ Deno.test("withdrawPreflight: leitura ruim aborta em 502, saldo curto em 409, sa
   assertEquals(withdrawPreflight({ httpStatus: 200, availableCents: 100 }, 100).ok, true);
 });
 
-Deno.test("withdrawCap: parceiro para no teto nosso; hub_admin passa só com force e até o gateway", () => {
-  const base = { amountCents: 6000, availableCents: 5000, gatewayAvailableCents: 12849 };
-  assertEquals(withdrawCap({ ...base, amountCents: 5000, isHubAdmin: false, force: false }).ok, true);
+Deno.test("withdrawCap: parceiro para no teto nosso (com a taxa); hub_admin passa só com force e até o gateway", () => {
+  const base = { amountCents: 6000, availableCents: 5000, feeCents: 367, gatewayAvailableCents: 12849 };
+  assertEquals(withdrawCap({ ...base, amountCents: 4633, isHubAdmin: false, force: false }).ok, true, "valor + taxa = disponível");
+  assertEquals(withdrawCap({ ...base, amountCents: 5000, isHubAdmin: false, force: false }).ok, false, "a taxa não cabe");
   assertEquals(withdrawCap({ ...base, isHubAdmin: false, force: true }).ok, false, "parceiro não força");
   assertEquals(withdrawCap({ ...base, isHubAdmin: true, force: false }).ok, false, "hub_admin sem force respeita o teto");
   assertEquals(withdrawCap({ ...base, isHubAdmin: true, force: true }).ok, true);
