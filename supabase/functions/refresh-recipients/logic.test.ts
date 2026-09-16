@@ -7,6 +7,8 @@ import {
   ehAtualizavel,
   precisaSondarRecebedor,
   saldoVencido,
+  ttlDaChamada,
+  FORCED_TTL_MINUTES,
 } from "./logic.ts";
 
 const RESULTADO = {
@@ -153,4 +155,14 @@ Deno.test("só 404 no saldo justifica perguntar se o recebedor existe", () => {
   for (const s of [200, 401, 429, 500, 0, null]) {
     assertEquals(precisaSondarRecebedor(s), false, `HTTP ${s}`);
   }
+});
+
+Deno.test("saldoVencido: chamada forçada relê depois de 30 s; a de rotina espera 1 h", () => {
+  const agora = Date.parse("2026-09-16T18:00:00Z");
+  const ha45s = "2026-09-16T17:59:15Z";
+  assertEquals(saldoVencido(ha45s, agora, ttlDaChamada(true)), true);
+  assertEquals(saldoVencido(ha45s, agora, ttlDaChamada(false)), false);
+  assertEquals(saldoVencido("2026-09-16T17:59:50Z", agora, ttlDaChamada(true)), false, "10 s atrás ainda não relê");
+  assertEquals(ttlDaChamada(true), FORCED_TTL_MINUTES);
+  assertEquals(ttlDaChamada(false), BALANCE_TTL_MINUTES);
 });

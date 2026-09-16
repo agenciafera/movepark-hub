@@ -4,8 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { formatBRL, formatDate } from "@/lib/format";
+import { ArrowsClockwise } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { formatBRL, formatDateTime } from "@/lib/format";
 import { useGatewayMasterBalance, useSetRefundHybrid } from "./api";
+import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
@@ -17,6 +20,8 @@ const brl = (cents: number) => formatBRL(cents / 100);
 export function MasterBalanceCard() {
   const { data, isLoading } = useGatewayMasterBalance();
   const setHybrid = useSetRefundHybrid();
+  // Tempo real: lê o gateway ao abrir e no botão; o cron fica de reserva.
+  const refresh = useAutoRefreshBalances();
   if (isLoading) return <Skeleton className="h-24 w-full" />;
   if (!data) return null;
 
@@ -46,9 +51,20 @@ export function MasterBalanceCard() {
           </div>
           {saldo && (
             <div className="text-caption text-muted">
-              a liberar {brl(saldo.waiting_cents)} · lido em {formatDate(saldo.synced_at)}
+              a liberar {brl(saldo.waiting_cents)} · lido em {formatDateTime(saldo.synced_at)}
             </div>
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="mt-1 -ml-2 gap-1"
+            onClick={() => refresh.mutate()}
+            disabled={refresh.isPending}
+            aria-label="Atualizar saldos do gateway"
+          >
+            <ArrowsClockwise className={refresh.isPending ? "animate-spin" : undefined} />
+            {refresh.isPending ? "Lendo o gateway…" : "Atualizar saldos"}
+          </Button>
         </div>
         <div className="flex flex-col items-start gap-1 tablet:items-end">
           <div className="text-caption text-muted">Colchão para estornos</div>

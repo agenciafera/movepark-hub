@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { RawCompanyRecipient } from "@/features/payouts/api";
 import {
   buildRecipientOverview,
+  latestBalanceSync,
   mapRecipientRow,
   summarizeRecipients,
 } from "./finance-recipients.logic";
@@ -120,5 +121,32 @@ describe("summarizeRecipients", () => {
       raw({ id: "c", name: "C", onboarding_status: "pending_review" }),
     ]);
     expect(summarizeRecipients(rows)).toEqual({ total: 3, active: 1, needsAttention: 1 });
+  });
+
+  it("traz o saldo real do gateway quando houve leitura, e null sem ela", () => {
+    const com = mapRecipientRow(
+      raw({
+        id: "c1",
+        name: "Agência Fera",
+        payout_recipient: {
+          provider: "pagarme",
+          status: "active",
+          external_recipient_id: "re_1",
+          kyc_url: null,
+          kyc_url_expires_at: null,
+          requirements: [],
+          deleted_at: null,
+          balance_available_cents: 11427,
+          balance_waiting_cents: 0,
+          balance_transferred_cents: 2000,
+          balance_synced_at: "2026-09-16T17:11:06Z",
+        },
+      }),
+    );
+    expect(com.balance).toEqual({ availableCents: 11427, waitingCents: 0, transferredCents: 2000, syncedAt: "2026-09-16T17:11:06Z" });
+    const sem = mapRecipientRow(raw({ id: "c2", name: "Sem leitura" }));
+    expect(sem.balance).toBeNull();
+    expect(latestBalanceSync([com, sem])).toBe("2026-09-16T17:11:06Z");
+    expect(latestBalanceSync([sem])).toBeNull();
   });
 });

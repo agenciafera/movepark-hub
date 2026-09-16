@@ -20,6 +20,7 @@ import {
   precisaSondarRecebedor,
   REFRESHABLE,
   saldoVencido,
+  ttlDaChamada,
 } from "./logic.ts";
 
 function json(body: unknown, status = 200) {
@@ -29,17 +30,48 @@ function json(body: unknown, status = 200) {
   });
 }
 
+/**
+ * Segunda porta (16/09/2026): o Manager chama com o JWT de um hub_admin e `{ force: true }` para
+ * ler o saldo do gateway agora, em vez de esperar o cron. A porta do cron (header) continua.
+ */
+async function ehHubAdmin(req: Request): Promise<boolean> {
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return false;
+  try {
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { auth: { persistSession: false }, global: { headers: { Authorization: auth } } },
+    );
+    const { data: userData } = await userClient.auth.getUser();
+    if (!userData?.user) return false;
+    const { data } = await userClient.rpc("is_hub_admin");
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  if (
-    !autorizado(
-      Deno.env.get("REFRESH_RECIPIENTS_KEY"),
-      req.headers.get("x-refresh-recipients-key"),
-    )
-  ) {
+  const pelaChave = autorizado(
+    Deno.env.get("REFRESH_RECIPIENTS_KEY"),
+    req.headers.get("x-refresh-recipients-key"),
+  );
+  if (!pelaChave && !(await ehHubAdmin(req))) {
     return json({ error: "unauthorized" }, 401);
   }
+
+  // `force` só faz sentido para quem está olhando a tela; o cron nunca manda.
+  let force = false;
+  try {
+    const body = await req.json();
+    force = body?.force === true && !pelaChave;
+  } catch {
+    force = false;
+  }
+  const ttl = ttlDaChamada(force);
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -65,7 +97,9 @@ Deno.serve(async (req: Request) => {
   if (error) return json({ error: error.message }, 500);
 
   let updated = 0;
-  for (const rec of recipients ?? []) {
+  // A chamada forçada do Manager é sobre SALDO; reler a ficha/KYC de cada recebedor é a passada
+  // cara e fica com o cron.
+  for (const rec of force ? [] : recipients ?? []) {
     try {
       // `kycLink: false` de propósito: emitir link no gateway INVALIDA o anterior e reinicia a
       // validade de 20 minutos. Se o cron emitisse a cada volta, o contador do parceiro voltaria
@@ -115,7 +149,7 @@ Deno.serve(async (req: Request) => {
 
   let saldos = 0;
   for (const rec of ativos ?? []) {
-    if (!saldoVencido(rec.balance_synced_at, agora)) continue;
+    if (!saldoVencido(rec.balance_synced_at, agora, ttl)) continue;
     try {
       const b = await gateway.getRecipientBalance(rec.external_recipient_id!);
       const patch = decidirSaldo(b, new Date().toISOString());
@@ -169,7 +203,7 @@ Deno.serve(async (req: Request) => {
         .select("synced_at")
         .eq("provider", "pagarme")
         .maybeSingle();
-      if (saldoVencido(atual?.synced_at, agora)) {
+      if (saldoVencido(atual?.synced_at, agora, ttl)) {
         const b = await gateway.getRecipientBalance(settings.moveparkRecipientId);
         const patch = decidirSaldo(b, new Date().toISOString());
         if (patch) {
@@ -191,5 +225,5 @@ Deno.serve(async (req: Request) => {
     console.error("[refresh-recipients] falha ao ler saldo do master", e);
   }
 
-  return json({ ok: true, checked: recipients?.length ?? 0, updated, balances: saldos, master });
+  return json({ ok: true, checked: recipients?.length ?? 0, updated, balances: saldos, master, forced: force });
 });

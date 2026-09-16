@@ -11,6 +11,7 @@ import {
   useSyncRecipient,
   useGatewayMasterBalance,
   useManualRefunds,
+  useRefreshGatewayBalances,
 } from "./api";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -276,5 +277,15 @@ describe("hooks com `from` por cast ficam amarrados ao client", () => {
     const { result } = renderQuery(() => useManualRefunds());
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
+  });
+});
+
+describe("useRefreshGatewayBalances", () => {
+  it("chama a Edge refresh-recipients com force: true e o JWT do usuário", async () => {
+    const chamada = edge("refresh-recipients", { json: { ok: true, balances: 2, master: true, forced: true } });
+    const { result } = renderMutation(() => useRefreshGatewayBalances());
+    const r = await result.current.mutateAsync();
+    expect(chamada.ultimoBody).toEqual({ force: true });
+    expect(r.forced).toBe(true);
   });
 });

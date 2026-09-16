@@ -23,6 +23,8 @@ export interface RecipientOverviewRow {
   splitEnabled: boolean;
   /** O gateway respondeu que o recebedor não existe: não dá para ligar o split. */
   recipientMissing: boolean;
+  /** Saldo real no gateway (disponível, a receber, já transferido), ou null sem leitura. */
+  balance: { availableCents: number; waitingCents: number; transferredCents: number; syncedAt: string } | null;
 }
 
 /** Empresas que podem vender (e portanto precisam de recebedor apto). */
@@ -75,7 +77,26 @@ export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow 
       SELLABLE_ONBOARDING.includes(onboardingStatus) && recipientStatus !== "active",
     splitEnabled: raw.gateway_split_enabled === true,
     recipientMissing: !!rec?.gateway_missing_at,
+    balance:
+      rec?.balance_synced_at && rec.balance_available_cents != null
+        ? {
+            availableCents: rec.balance_available_cents,
+            waitingCents: rec.balance_waiting_cents ?? 0,
+            transferredCents: rec.balance_transferred_cents ?? 0,
+            syncedAt: rec.balance_synced_at,
+          }
+        : null,
   };
+}
+
+/** A leitura de saldo mais recente entre as linhas, para o rodapé "lido às". */
+export function latestBalanceSync(rows: RecipientOverviewRow[]): string | null {
+  let best: string | null = null;
+  for (const r of rows) {
+    const at = r.balance?.syncedAt;
+    if (at && (!best || at > best)) best = at;
+  }
+  return best;
 }
 
 /** Pendências primeiro, depois por nome (pt-BR). */

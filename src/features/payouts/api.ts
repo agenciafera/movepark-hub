@@ -8,6 +8,7 @@ export type PayoutAccountPayload = ReturnType<typeof toPayoutAccountPayload>;
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-recipient`;
 const UPDATE_PAYOUT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-recipient-payout`;
+const REFRESH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-recipients`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -151,6 +152,11 @@ type RawRecipient = {
   deleted_at: string | null;
   /** O gateway respondeu que este recebedor não existe (E0.3.5). */
   gateway_missing_at?: string | null;
+  /** Saldo real no gateway, lido pelo cron ou pela atualização do Manager (16/09/2026). */
+  balance_available_cents?: number | null;
+  balance_waiting_cents?: number | null;
+  balance_transferred_cents?: number | null;
+  balance_synced_at?: string | null;
 };
 type RawAccount = { deleted_at: string | null };
 
@@ -173,7 +179,7 @@ export function useRecipientsOverview() {
       const { data, error } = await supabase
         .from("company")
         .select(
-          "id, name, onboarding_status, gateway_split_enabled, payout_recipient(provider, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at, gateway_missing_at), company_payout_account(deleted_at)",
+          "id, name, onboarding_status, gateway_split_enabled, payout_recipient(provider, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at, gateway_missing_at, balance_available_cents, balance_waiting_cents, balance_transferred_cents, balance_synced_at), company_payout_account(deleted_at)",
         )
         .is("deleted_at", null)
         .order("name");
@@ -677,6 +683,37 @@ export function useSetRefundHybrid() {
         .from("app_setting")
         .upsert({ key: "pagarme_refund_hybrid_enabled", value: enabled ? "true" : "false" }, { onConflict: "key" });
       if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+/**
+ * Lê AGORA os saldos no gateway (recebedores ativos e master), em vez de esperar o cron
+ * (16/09/2026). Chama a Edge `refresh-recipients` com o JWT do hub_admin e `force: true`; a
+ * Edge relê o que tem mais de 30 s. As telas de Repasses e Recebedores chamam ao abrir e no
+ * botão "Atualizar saldos", e o que aparece é o saldo da Pagar.me daquele instante.
+ */
+export function useRefreshGatewayBalances() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(REFRESH_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: ANON,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ force: true }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body as { ok: boolean; balances: number; master: boolean; forced: boolean };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
   });

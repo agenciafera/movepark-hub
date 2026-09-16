@@ -14,18 +14,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRecipientsOverview, useSetCompanyGatewaySplit, useSyncRecipient } from "@/features/payouts/api";
+import { ArrowsClockwise } from "@phosphor-icons/react";
+import {
+  usePayoutOwed,
+  useRecipientsOverview,
+  useSetCompanyGatewaySplit,
+  useSyncRecipient,
+} from "@/features/payouts/api";
+import { useAutoRefreshBalances } from "@/features/payouts/useAutoRefreshBalances";
+import { formatBRL, formatDateTime } from "@/lib/format";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { PayoutKycDialog } from "@/features/payouts/PayoutKycDialog";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import {
   buildRecipientOverview,
+  latestBalanceSync,
   summarizeRecipients,
   type RecipientOverviewRow,
 } from "./finance-recipients.logic";
 
 export default function ManagerFinanceRecipients() {
   const { data, isLoading } = useRecipientsOverview();
+  // Tempo real (16/09/2026): saldo do gateway lido ao abrir e no botão; "a repassar" vem do razão.
+  const refresh = useAutoRefreshBalances();
+  const owed = usePayoutOwed();
   const sync = useSyncRecipient();
   const setSplit = useSetCompanyGatewaySplit();
   const [onlyPending, setOnlyPending] = React.useState(false);
@@ -36,6 +48,12 @@ export default function ManagerFinanceRecipients() {
   const rows = React.useMemo(() => buildRecipientOverview(data ?? []), [data]);
   const summary = React.useMemo(() => summarizeRecipients(rows), [rows]);
   const visible = onlyPending ? rows.filter((r) => r.needsAttention) : rows;
+  const owedByCompany = React.useMemo(
+    () => new Map((owed.data ?? []).map((o) => [o.company_id, o])),
+    [owed.data],
+  );
+  const lidoEm = latestBalanceSync(rows);
+  const brl = (cents: number) => formatBRL(cents / 100);
 
   async function run(row: RecipientOverviewRow, action: "create" | "refresh") {
     setSyncingId(row.companyId);
@@ -100,13 +118,29 @@ export default function ManagerFinanceRecipients() {
           “Precisa de atenção” = empresa publicada que ainda não está apta a receber — o checkout dela
           falha sem recebedor ativo.
         </p>
-        <Button
-          size="sm"
-          variant={onlyPending ? "primary" : "secondary"}
-          onClick={() => setOnlyPending((v) => !v)}
-        >
-          {onlyPending ? "Mostrar todas" : "Só pendências"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {lidoEm && (
+            <span className="text-caption text-muted">saldos lidos em {formatDateTime(lidoEm)}</span>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1"
+            onClick={() => refresh.mutate()}
+            disabled={refresh.isPending}
+            aria-label="Atualizar saldos do gateway"
+          >
+            <ArrowsClockwise className={refresh.isPending ? "animate-spin" : undefined} />
+            {refresh.isPending ? "Lendo o gateway…" : "Atualizar saldos"}
+          </Button>
+          <Button
+            size="sm"
+            variant={onlyPending ? "primary" : "secondary"}
+            onClick={() => setOnlyPending((v) => !v)}
+          >
+            {onlyPending ? "Mostrar todas" : "Só pendências"}
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -129,6 +163,8 @@ export default function ManagerFinanceRecipients() {
                 <TableHead>Recebedor</TableHead>
                 <TableHead>ID no gateway</TableHead>
                 <TableHead>Split</TableHead>
+                <TableHead className="text-right">Saldo no gateway</TableHead>
+                <TableHead className="text-right">A repassar</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -190,6 +226,37 @@ export default function ManagerFinanceRecipients() {
                       ) : (
                         <Badge tone="neutral">Custódia</Badge>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {/* O que a Pagar.me diz que o recebedor tem agora: disponível para saque e a
+                          liberar (cartão, D+30). Sem leitura, a tela diz isso em vez de mostrar zero. */}
+                      {row.balance ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-ink" data-testid={`saldo-${row.companyId}`}>
+                            {brl(row.balance.availableCents)}
+                          </span>
+                          {row.balance.waitingCents > 0 && (
+                            <span className="text-caption text-muted">
+                              a liberar {brl(row.balance.waitingCents)}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-caption text-muted-soft">
+                          {row.hasRecipient ? "sem leitura" : "-"}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {/* Do nosso razão: o que a Movepark ainda deve repassar (custódia) a esta
+                          empresa. Com split ligado tende a zero, porque o gateway já dividiu. */}
+                      {(() => {
+                        const o = owedByCompany.get(row.companyId);
+                        if (!o || o.available_cents <= 0) {
+                          return <span className="text-caption text-muted-soft">-</span>;
+                        }
+                        return <span className="text-ink">{brl(o.available_cents)}</span>;
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap justify-end gap-2">

@@ -19,11 +19,27 @@ export const REFRESHABLE = ["pending", "action_required"] as const;
  */
 export const BALANCE_TTL_MINUTES = 60;
 
-export function saldoVencido(syncedAt: string | null | undefined, nowMs: number): boolean {
+/**
+ * Recuo mínimo quando a leitura é FORÇADA pelo Manager (16/09/2026): a tela pede o saldo ao
+ * abrir e no botão "Atualizar", então o número que o hub_admin vê é o do gateway agora. Meio
+ * minuto é o piso que protege o rate limit da rota de saldo se alguém ficar recarregando.
+ */
+export const FORCED_TTL_MINUTES = 0.5;
+
+export function saldoVencido(
+  syncedAt: string | null | undefined,
+  nowMs: number,
+  ttlMinutes: number = BALANCE_TTL_MINUTES,
+): boolean {
   if (!syncedAt) return true;
   const t = Date.parse(syncedAt);
   if (!Number.isFinite(t)) return true;
-  return nowMs - t >= BALANCE_TTL_MINUTES * 60_000;
+  return nowMs - t >= ttlMinutes * 60_000;
+}
+
+/** Qual recuo vale para esta chamada: forçada (Manager) ou de rotina (cron). */
+export function ttlDaChamada(force: boolean): number {
+  return force ? FORCED_TTL_MINUTES : BALANCE_TTL_MINUTES;
 }
 
 /**
