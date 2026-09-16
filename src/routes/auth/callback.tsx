@@ -4,6 +4,7 @@ import { CircleNotch } from "@phosphor-icons/react";
 import { Wordmark } from "@/components/shared/Brand";
 import { useAuth } from "@/auth/context";
 import { postLoginPath } from "@/auth/postLoginRedirect";
+import { recordLoginChannel } from "@/auth/loginChannel";
 
 /**
  * Recebe o callback do OAuth provider (Google).
@@ -19,6 +20,8 @@ export default function AuthCallbackPage() {
 
   React.useEffect(() => {
     if (!session || !effectiveRole) return;
+    // Esta página só existe no retorno do Google: é o único lugar que sabe o canal.
+    void recordLoginChannel("google");
     navigate(postLoginPath(effectiveRole, next), { replace: true });
   }, [session, effectiveRole, navigate, next]);
 

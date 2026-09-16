@@ -323,25 +323,32 @@ Badge de cobrança: `pending` · `invoiced` · `paid` · `overdue`
 
 ### 4.8 Usuários
 
-**Rota:** `/manager/users`
+**Rota:** `/manager/users` ✅ implementado (refeito em 16/09/2026).
 
-**Objetivo:** gerenciar usuários da plataforma (hub_admin e operadores das empresas).
+**Objetivo:** reconhecer uma conta e decidir o que ela pode: papel de plataforma, vínculo com
+empresa e se é testador (vê unidade em Rascunho no site).
 
-#### Tabela de Usuários
+#### Tabela
 
-Colunas: `Nome` · `E-mail` · `Role` · `Empresa` · `Último Acesso` · `Status`
+Paginada **no servidor** pela RPC `admin_list_users(p_search, p_limit, p_offset)` (só hub_admin,
+migration `20261119140000`), 25 por página, busca por nome, e-mail, telefone (ignora máscara) ou
+prefixo do id, com 300 ms de espera depois de digitar. Saiu da leitura direta de `profiles`
+porque e-mail e telefone moram em `auth.users` (ADR-006: contato de terceiros só por RPC) e
+porque 200 linhas no navegador truncam a lista.
 
-Roles visíveis: `hub_admin` · `company_operator`
+Colunas: `Pessoa` (nome, e-mail, telefone, id curto) · `Papel` (select) · `Empresas` (badges,
+clique remove o vínculo) · `Testador` (interruptor; hub_admin mostra "sempre") · `Último login`
+(data e canal: E-mail, WhatsApp ou Google) · `Criado em` · `Ações` (Vincular empresa).
 
-#### Formulário — Criar / Editar Usuário
+**Último canal de login:** o front registra a cada login pela RPC `record_login_channel`
+(`profiles.last_login_channel`/`last_login_at`): OTP de e-mail, OTP de WhatsApp ou retorno do
+Google. Para logins anteriores a 16/09/2026 a RPC dá um palpite: sessão OAuth é Google; OTP com
+uma só identidade (e-mail ou telefone) é ela; senão a tela mostra "canal não registrado". O
+Supabase não guarda o canal por sessão e `auth.identities.last_sign_in_at` não acompanha cada
+login, por isso o registro é nosso.
 
-Campos:
-- `name`
-- `email`
-- `role` — select
-- `company_id` — select (se role = company_operator)
-- `status` — toggle (active/inactive)
-- Botão "Reenviar convite"
+Não existe formulário de criar usuário: a conta nasce no `/login` (passwordless) e o convite de
+operador vai pela Edge `invite-company-member`.
 
 ---
 

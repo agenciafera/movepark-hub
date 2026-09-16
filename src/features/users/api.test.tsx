@@ -1,6 +1,36 @@
 import { describe, expect, it } from "vitest";
 import { falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
-import { useLinkUserCompany, useSetTester, useUnlinkUserCompany, useUpdateUserRole } from "./api";
+import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as React from "react";
+import {
+  useLinkUserCompany,
+  useSetTester,
+  useUnlinkUserCompany,
+  useUpdateUserRole,
+  useUsers,
+} from "./api";
+
+describe("useUsers", () => {
+  it("lista pela RPC admin_list_users com busca, limite e offset da página", async () => {
+    // A lista saiu do PostgREST: e-mail e telefone moram em auth.users (ADR-006), e a paginação
+    // no navegador truncava em 200. Se alguém voltar a `.from("profiles")`, a busca por e-mail
+    // some em silêncio, e é este teste que avisa.
+    const chamada = rpc("admin_list_users", { json: { total: 1, rows: [] } });
+    const get = tabela("profiles", "get", { json: [] });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useUsers({ search: " maria ", page: 3, pageSize: 25 }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(chamada.ultimoBody).toEqual({ p_search: "maria", p_limit: 25, p_offset: 50 });
+    expect(get.chamadas).toHaveLength(0);
+    expect(result.current.data).toEqual({ total: 1, rows: [] });
+  });
+});
 
 /**
  * Contrato de rede da gestão de usuários do Manager. São as três escritas que definem

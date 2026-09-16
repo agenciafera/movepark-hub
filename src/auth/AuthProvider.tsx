@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { storedPhoneToE164 } from "@/lib/identifiers";
 import type { CompanyRole, Session, UserRole } from "@/types/domain";
 import { AuthContext, type AuthContextValue } from "./context";
+import { recordLoginChannel } from "./loginChannel";
 
 const IMPERSONATION_KEY = "mp:impersonated-company-id";
 
@@ -165,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           type: "email",
         });
         if (error) throw error;
+        void recordLoginChannel("email");
       },
       async sendWhatsappOtp(phoneE164) {
         const { error } = await supabase.auth.signInWithOtp({
@@ -183,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           type: "sms",
         });
         if (error) throw error;
+        void recordLoginChannel("whatsapp");
       },
       async signOut() {
         setImpersonatedCompanyId(null);

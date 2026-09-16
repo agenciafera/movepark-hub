@@ -1,70 +1,62 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { CompanyRole, Profile, UserRole } from "@/types/domain";
+import type { CompanyRole, UserRole } from "@/types/domain";
 
-export type UserListItem = Profile & {
-  companies: { id: string; name: string }[];
+export type LoginChannel = "email" | "whatsapp" | "google";
+
+/** Uma linha de Manager › Usuários, como a RPC `admin_list_users` devolve. */
+export type UserListItem = {
+  id: string;
+  full_name: string | null;
+  role: UserRole;
+  created_at: string;
+  /** Contato vivo, lido de auth.users pela RPC (ADR-006). */
+  email: string | null;
+  phone: string | null;
+  /** Último login: o nosso registro, ou `auth.users.last_sign_in_at`. */
+  last_login_at: string | null;
+  /** Canal do último login: registrado pelo front; palpite do banco para logins antigos. */
+  last_login_channel: LoginChannel | null;
   /** Testador: enxerga unidade em rascunho no site e compra como cliente (16/09/2026). */
   is_tester: boolean;
+  companies: { id: string; name: string }[];
 };
+
+export type UsersPage = { total: number; rows: UserListItem[] };
+
+export type UsersQuery = { search: string; page: number; pageSize: number };
 
 export const usersKeys = {
   all: ["users"] as const,
-  list: () => [...usersKeys.all, "list"] as const,
+  list: (q: UsersQuery) => [...usersKeys.all, "list", q] as const,
 };
 
-export function useUsers() {
+/**
+ * Lista paginada NO SERVIDOR (16/09/2026). A tela carregava 200 perfis e filtrava no navegador,
+ * o que trunca a lista quando a base cresce e não acha ninguém por e-mail ou telefone: esses
+ * dois moram em auth.users, fora do alcance do PostgREST (ADR-006). A RPC de hub_admin busca,
+ * pagina e traz contato, empresas, testador e o último canal de login numa ida só.
+ */
+export function useUsers(q: UsersQuery) {
   return useQuery({
-    queryKey: usersKeys.list(),
-    queryFn: async (): Promise<UserListItem[]> => {
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(200);
+    queryKey: usersKeys.list(q),
+    queryFn: async (): Promise<UsersPage> => {
+      // `admin_list_users` ainda não está em `database.ts`; cast com o rpc amarrado ao client.
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "admin_list_users",
+        args: { p_search: string | null; p_limit: number; p_offset: number },
+      ) => PromiseLike<{ data: UsersPage | null; error: { message: string } | null }>;
+      const { data, error } = await rpc("admin_list_users", {
+        p_search: q.search.trim() || null,
+        p_limit: q.pageSize,
+        p_offset: (q.page - 1) * q.pageSize,
+      });
       if (error) throw error;
-      if (!profiles?.length) return [];
-
-      const ids = profiles.map((p) => p.id);
-      const [{ data: links }, { data: testers }] = await Promise.all([
-        supabase
-          .from("profile_company")
-          .select("profile_id, company:company(id, name)")
-          .in("profile_id", ids),
-        // `tester_user` ainda não está em `database.ts` (gen types incompleto); cast na tabela.
-        (
-          supabase.from.bind(supabase) as unknown as (t: "tester_user") => {
-            select: (q: "user_id") => {
-              in: (c: "user_id", v: string[]) => PromiseLike<{ data: unknown }>;
-            };
-          }
-        )("tester_user")
-          .select("user_id")
-          .in("user_id", ids),
-      ]);
-      const testerIds = new Set(
-        ((testers ?? []) as unknown as Array<{ user_id: string }>).map((t) => t.user_id),
-      );
-
-      const byProfile = new Map<string, { id: string; name: string }[]>();
-      for (const link of (links ?? []) as unknown as Array<{
-        profile_id: string;
-        company: { id: string; name: string } | null;
-      }>) {
-        const company = link.company;
-        if (!company) continue;
-        const list = byProfile.get(link.profile_id) ?? [];
-        list.push(company);
-        byProfile.set(link.profile_id, list);
-      }
-
-      return profiles.map((p) => ({
-        ...(p as Profile),
-        companies: byProfile.get(p.id) ?? [],
-        is_tester: testerIds.has(p.id),
-      }));
+      return data ?? { total: 0, rows: [] };
     },
+    // Trocar de página ou digitar na busca mantém a tabela anterior na tela até a nova chegar,
+    // em vez de piscar o esqueleto a cada tecla.
+    placeholderData: (previous) => previous,
   });
 }
 
