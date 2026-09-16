@@ -218,6 +218,12 @@ O que não muda: `fetchAllFichaPaths` (build SSG) e `fichaPublicada` (Worker) se
 unidades dela é só do loader SSG). O atalho "Testar rascunho" do Manager, a página
 `/manager/.../rascunho` e a exceção de hub_admin no `ReservationCard` saíram em 16/09/2026.
 
+## Próximo passo: estorno híbrido (E0.3.6)
+
+Spec aprovada em 16/09/2026, não implementada: quando o recebedor do parceiro tem saldo
+disponível que cobre a parte dele, o estorno vai com split e o gateway debita o parceiro; a
+dívida só nasce quando o saldo não cobre. Ver [estorno-hibrido.md](./estorno-hibrido.md).
+
 ## Rollout
 
 1. Migrations, funções, adapter, Edges e telas no ar, **global desligada e nenhuma empresa marcada**.
