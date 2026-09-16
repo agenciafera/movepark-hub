@@ -32,6 +32,7 @@ import { CaretLeft, CaretRight, EnvelopeSimple, GoogleLogo, WhatsappLogo } from 
 import { formatPhoneBR, LOGIN_CHANNEL_LABEL, pageInfo } from "./users.logic";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { CompanyCombobox } from "@/components/shared/CompanyCombobox";
 import {
   useUsers,
   useUpdateUserRole,
@@ -315,18 +316,12 @@ export default function ManagerUsers() {
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <Label htmlFor="user-company">Empresa</Label>
-            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-              <SelectTrigger id="user-company">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {companies.data?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CompanyCombobox
+              id="user-company"
+              companies={(companies.data ?? []).map((c) => ({ id: c.id, name: c.name }))}
+              value={selectedCompany}
+              onChange={setSelectedCompany}
+            />
             <Label htmlFor="user-role">Papel na empresa</Label>
             <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as CompanyRole)}>
               <SelectTrigger id="user-role">

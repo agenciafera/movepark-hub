@@ -3,7 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { rpc } from "@/test/msw/supabase";
+import { rpc, tabela } from "@/test/msw/supabase";
 import { renderWithProviders } from "@/test/utils";
 import ManagerUsers from "./users";
 
@@ -30,8 +30,13 @@ function linha(n: number, extra: Record<string, unknown> = {}) {
   };
 }
 
+const EMPRESAS = [
+  { id: "c1", name: "Agência Fera", slug: "agencia-fera" },
+  { id: "c2", name: "Aeropark", slug: "aeropark" },
+];
+
 function montaTela(total: number, rows: ReturnType<typeof linha>[]) {
-  server.use(http.get(`${BASE}/rest/v1/company`, () => HttpResponse.json([])));
+  server.use(http.get(`${BASE}/rest/v1/company`, () => HttpResponse.json(EMPRESAS)));
   const chamada = rpc("admin_list_users", { json: { total, rows } });
   renderWithProviders(<ManagerUsers />);
   return chamada;
@@ -70,6 +75,23 @@ describe("Manager · Usuários", () => {
     await userEvent.type(screen.getByRole("textbox", { name: "Buscar usuário" }), "maria");
     await waitFor(() =>
       expect(chamada.ultimoBody).toEqual({ p_search: "maria", p_limit: 25, p_offset: 0 }),
+    );
+  });
+
+  it("Vincular empresa: o seletor tem busca e o vínculo sai com a empresa escolhida", async () => {
+    montaTela(1, [linha(1)]);
+    const upsert = tabela("profile_company", "post", { json: [] });
+    expect(await screen.findByText("Pessoa 1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vincular empresa" }));
+    await userEvent.click(await screen.findByRole("combobox", { name: /Empresa/ }));
+    await userEvent.type(screen.getByPlaceholderText("Busque pelo nome da empresa"), "fera");
+    expect(screen.queryByText("Aeropark")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText("Agência Fera"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Vincular" }));
+    await waitFor(() =>
+      expect(upsert.ultimoBody).toMatchObject({ profile_id: linha(1).id, company_id: "c1" }),
     );
   });
 });
