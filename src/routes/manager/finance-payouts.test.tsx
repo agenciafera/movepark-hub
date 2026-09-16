@@ -31,7 +31,9 @@ vi.mock("@/features/payouts/api", () => ({
   useSettlePayoutDebt: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useManualRefunds: () => ({ data: [], isLoading: false }),
   useMarkManualRefundPaid: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useGatewayMasterBalance: () => ({ data: { balance: null, float_cents: 0, split_enabled: false }, isLoading: false }),
+  useGatewayMasterBalance: () => ({ data: { balance: null, float_cents: 0, split_enabled: false, refund_hybrid_enabled: false }, isLoading: false }),
+  // E0.3.6: o interruptor do estorno híbrido mora no card do master.
+  useSetRefundHybrid: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 import ManagerFinancePayouts from "./finance-payouts";

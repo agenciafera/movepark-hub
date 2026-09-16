@@ -13,7 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway } from "../_shared/payments/index.ts";
 import { mapRecipientStatus } from "../_shared/payments/pagarme.ts";
-import { chargebackAbsorbedByMaster, executeRefund } from "../_shared/payments/refund.ts";
+import { chargebackAbsorbedByMaster, executeRefund, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { nextTransferRowStatus } from "../_shared/payments/transfer.ts";
 import {
@@ -499,18 +499,22 @@ Deno.serve(async (req: Request) => {
               const [{ data: row }, settings] = await Promise.all([
                 admin
                   .from("payment")
-                  .select("amount, split, split_sent_to_gateway, debt_recovered_cents")
+                  .select("amount, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
                   .eq("id", payment!.id)
                   .maybeSingle(),
                 loadGatewaySettings(admin),
               ]);
+              const pagamento = row ?? { split: null, split_sent_to_gateway: null };
               const exec = await executeRefund({
                 gateway: getGateway("pagarme"),
                 chargeId,
-                payment: row ?? { split: null, split_sent_to_gateway: null },
+                payment: pagamento,
                 moveparkRecipientId: settings.moveparkRecipientId,
                 totalCents: Math.round(Number(row?.amount ?? 0) * 100),
+                hybridEnabled: settings.refundHybridEnabled,
+                partnerRecipientMissing: await partnerRecipientMissing(admin, pagamento),
               });
+              await persistPartnerBalance(admin, exec);
               if (exec.outcome !== "ok") {
                 console.error("[pagarme-webhook] estorno pago-sem-vaga recusado:", exec.result.httpStatus, JSON.stringify(exec.result.raw));
               } else {
@@ -519,6 +523,9 @@ Deno.serve(async (req: Request) => {
                   .update({
                     refunded_at: new Date().toISOString(),
                     refund_absorbed_by_master: exec.absorbedByMaster,
+                    refund_split: exec.splitSent ?? null,
+                    refund_partner_cents: exec.partnerCents,
+                    refund_partner_balance_cents: exec.partnerBalanceCents,
                   })
                   .eq("id", payment!.id);
               }

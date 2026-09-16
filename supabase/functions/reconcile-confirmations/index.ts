@@ -11,7 +11,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { executeRefund } from "../_shared/payments/refund.ts";
+import { executeRefund, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
@@ -86,14 +86,23 @@ Deno.serve(async (req: Request) => {
           payment: p,
           moveparkRecipientId: settings.moveparkRecipientId,
           totalCents: Math.round(Number(p.amount) * 100),
+          hybridEnabled: settings.refundHybridEnabled,
+          partnerRecipientMissing: await partnerRecipientMissing(admin, p),
         });
+        await persistPartnerBalance(admin, exec);
         if (exec.outcome !== "ok") {
           console.error("[reconcile-confirmations] estorno recusado:", p.id, exec.result.httpStatus, JSON.stringify(exec.result.raw));
           continue;
         }
         await admin
           .from("payment")
-          .update({ refunded_at: new Date().toISOString(), refund_absorbed_by_master: exec.absorbedByMaster })
+          .update({
+            refunded_at: new Date().toISOString(),
+            refund_absorbed_by_master: exec.absorbedByMaster,
+            refund_split: exec.splitSent ?? null,
+            refund_partner_cents: exec.partnerCents,
+            refund_partner_balance_cents: exec.partnerBalanceCents,
+          })
           .eq("id", p.id);
         refunded += 1;
       } else if (acao.tipo === "confirmar") {

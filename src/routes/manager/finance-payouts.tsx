@@ -126,6 +126,13 @@ export default function ManagerFinancePayouts() {
                   <TableCell className="text-right tabular-nums">{brl(c.gross_partner_cents)}</TableCell>
                   <TableCell className="text-right tabular-nums text-warning">
                     {c.refunded_partner_cents > 0 ? `−${brl(c.refunded_partner_cents)}` : "-"}
+                    {/* E0.3.6: a parte do estorno que o gateway debitou do próprio parceiro, e por
+                        isso não virou dívida. Só aparece quando houve. */}
+                    {(c.refunded_by_partner_cents ?? 0) > 0 && (
+                      <div className="text-caption text-muted">
+                        {brl(c.refunded_by_partner_cents ?? 0)} debitados do parceiro
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-ink">
                     {brl(c.net_partner_cents)}

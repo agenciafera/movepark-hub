@@ -5,6 +5,7 @@ import {
   isGatewaySplitEnabled,
   maxDebtRecoveryCents,
   partnerRule,
+  refundSplitHybrid,
   refundSplitToMaster,
   splitForGateway,
 } from "./split.ts";
@@ -308,4 +309,27 @@ Deno.test("effectiveSplitEnabled: global ligada vale para todos; desligada, só 
   assertEquals(effectiveSplitEnabled("false", false), false, "sem marca, custódia");
   assertEquals(effectiveSplitEnabled("false", null), false, "empresa sem a coluna lida: custódia");
   assertEquals(effectiveSplitEnabled(null, false), true, "chave ausente continua LIGADA por default");
+});
+
+Deno.test("refundSplitHybrid: parceiro devolve o líquido, master o resto com liable e taxas; soma exata", () => {
+  const s = refundSplitHybrid("re_mp", "re_p", 2832, 4890);
+  assertEquals(s.map((r) => [r.role, r.recipientId, r.amount]), [
+    ["partner", "re_p", 2832],
+    ["movepark", "re_mp", 2058],
+  ]);
+  assertEquals([s[0].liable, s[0].chargeProcessingFee, s[0].chargeRemainderFee], [false, false, false]);
+  assertEquals([s[1].liable, s[1].chargeProcessingFee, s[1].chargeRemainderFee], [true, true, true]);
+  assertEquals(s[0].amount + s[1].amount, 4890);
+});
+
+Deno.test("refundSplitHybrid: recusa parte do parceiro zero, negativa ou igual ao total", () => {
+  for (const partner of [0, -1, 4890, 5000]) {
+    let erro = "";
+    try {
+      refundSplitHybrid("re_mp", "re_p", partner, 4890);
+    } catch (e) {
+      erro = (e as Error).message;
+    }
+    assertEquals(erro.length > 0, true, `parceiro=${partner} deveria ser recusado`);
+  }
 });

@@ -300,6 +300,8 @@ export type PayoutStatementCompany = {
   company_name: string;
   gross_partner_cents: number;
   refunded_partner_cents: number;
+  /** Dos estornos, quanto o gateway debitou do próprio parceiro (E0.3.6; não virou dívida). */
+  refunded_by_partner_cents?: number;
   net_partner_cents: number;
   movepark_commission_cents: number;
   /**
@@ -593,7 +595,7 @@ export function useManualRefunds() {
   return useQuery({
     queryKey: [...payoutKeys.all, "manual-refunds"] as const,
     queryFn: async (): Promise<ManualRefundRow[]> => {
-      const from = supabase.from as unknown as (t: string) => {
+      const from = supabase.from.bind(supabase) as unknown as (t: string) => {
         select: (q: string) => {
           order: (c: string, o: { ascending: boolean }) => Promise<{ data: unknown; error: { message: string } | null }>;
         };
@@ -633,8 +635,14 @@ export type GatewayMasterBalance = {
 export function useGatewayMasterBalance() {
   return useQuery({
     queryKey: [...payoutKeys.all, "master-balance"] as const,
-    queryFn: async (): Promise<{ balance: GatewayMasterBalance; float_cents: number; split_enabled: boolean }> => {
-      const from = supabase.from as unknown as (t: string) => {
+    queryFn: async (): Promise<{
+      balance: GatewayMasterBalance;
+      float_cents: number;
+      split_enabled: boolean;
+      /** Estorno híbrido (E0.3.6): o gateway debita o parceiro quando o saldo dele cobre. */
+      refund_hybrid_enabled: boolean;
+    }> => {
+      const from = supabase.from.bind(supabase) as unknown as (t: string) => {
         select: (q: string) => {
           eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }> };
           in: (c: string, v: string[]) => Promise<{ data: unknown; error: { message: string } | null }>;
@@ -642,7 +650,7 @@ export function useGatewayMasterBalance() {
       };
       const [{ data: b }, { data: s }] = await Promise.all([
         from("gateway_account_balance").select("available_cents, waiting_cents, transferred_cents, synced_at").eq("provider", "pagarme").maybeSingle(),
-        from("app_setting").select("key, value").in("key", ["pagarme_master_float_cents", "pagarme_split_enabled"]),
+        from("app_setting").select("key, value").in("key", ["pagarme_master_float_cents", "pagarme_split_enabled", "pagarme_refund_hybrid_enabled"]),
       ]);
       const settings = Object.fromEntries(((s ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]));
       const float = Number(settings.pagarme_master_float_cents ?? 0);
@@ -650,7 +658,26 @@ export function useGatewayMasterBalance() {
         balance: (b as GatewayMasterBalance) ?? null,
         float_cents: Number.isFinite(float) && float > 0 ? Math.round(float) : 0,
         split_enabled: (settings.pagarme_split_enabled ?? "true").trim().toLowerCase() !== "false",
+        refund_hybrid_enabled: (settings.pagarme_refund_hybrid_enabled ?? "false").trim().toLowerCase() === "true",
       };
     },
+  });
+}
+
+/**
+ * Liga ou desliga o estorno híbrido (E0.3.6). Escreve `app_setting.pagarme_refund_hybrid_enabled`
+ * pela RLS de hub_admin; as Edges leem a chave a cada estorno, então o efeito é imediato e desligar
+ * volta ao 100% master na hora.
+ */
+export function useSetRefundHybrid() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { error } = await supabase
+        .from("app_setting")
+        .upsert({ key: "pagarme_refund_hybrid_enabled", value: enabled ? "true" : "false" }, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
   });
 }

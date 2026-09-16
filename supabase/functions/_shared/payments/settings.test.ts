@@ -26,3 +26,15 @@ Deno.test("parseGatewaySettings: colchão inválido ou negativo vira zero, nunca
   assertEquals(parseGatewaySettings([{ key: "pagarme_master_float_cents", value: "-5" }]).masterFloatCents, 0);
   assertEquals(parseGatewaySettings([{ key: "pagarme_split_enabled", value: "false" }]).splitEnabled, false);
 });
+
+Deno.test("parseGatewaySettings: estorno híbrido nasce desligado e só liga com 'true'", () => {
+  assertEquals(parseGatewaySettings([]).refundHybridEnabled, false);
+  assertEquals(
+    parseGatewaySettings([{ key: "pagarme_refund_hybrid_enabled", value: " TRUE " }]).refundHybridEnabled,
+    true,
+  );
+  assertEquals(
+    parseGatewaySettings([{ key: "pagarme_refund_hybrid_enabled", value: "1" }]).refundHybridEnabled,
+    false,
+  );
+});

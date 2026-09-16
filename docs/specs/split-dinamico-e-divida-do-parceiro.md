@@ -220,7 +220,7 @@ unidades dela é só do loader SSG). O atalho "Testar rascunho" do Manager, a p�
 
 ## Próximo passo: estorno híbrido (E0.3.6)
 
-Spec aprovada em 16/09/2026, não implementada: quando o recebedor do parceiro tem saldo
+Implementado em 16/09/2026 com a chave desligada: quando o recebedor do parceiro tem saldo
 disponível que cobre a parte dele, o estorno vai com split e o gateway debita o parceiro; a
 dívida só nasce quando o saldo não cobre. Ver [estorno-hibrido.md](./estorno-hibrido.md).
 

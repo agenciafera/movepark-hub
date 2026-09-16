@@ -1,7 +1,9 @@
 # Estorno híbrido: o gateway debita o parceiro quando ele tem saldo
 
 **Épico:** E0.3.6 (continuação de [split-dinamico-e-divida-do-parceiro.md](./split-dinamico-e-divida-do-parceiro.md)).
-**Estado:** spec aprovada em 16/09/2026, não implementada. Chave nasce desligada.
+**Estado:** implementada em 16/09/2026 (migration `20261119190000`, Edges no ar). Chave
+`pagarme_refund_hybrid_enabled` nasce desligada; liga no card do master em Financeiro › Repasses
+depois do teste real.
 **Decidido por:** Kallef, por AskUserQuestion, nas quatro perguntas abaixo (todas na opção recomendada).
 
 ## Por que existe
@@ -99,9 +101,9 @@ A leitura ao vivo do saldo grava também em `payout_recipient.balance_*` (mesmo 
   `payout_statement` com a origem do estorno, `payout_debt_lines` inalterada (já lê a flag).
 - Manager: Financeiro › Repasses mostra na linha estornada quem pagou; o card do master ganha o
   interruptor "Estorno híbrido" (só hub_admin, RPC `app_setting_set_bool`), ao lado do colchão.
-- Alerta novo: recebedor com saldo negativo no gateway (deveria ser impossível com a decisão 1;
-  se aparecer, é corrida entre a leitura e o débito, e alguém precisa olhar). Entra no
-  `refresh-recipients` e no card de recebedores.
+- Alerta de recebedor com saldo negativo no gateway (deveria ser impossível com a decisão 1;
+  se aparecer, é corrida entre a leitura e o débito): **ainda não feito**; fica para depois do
+  primeiro mês com a chave ligada, quando se sabe se o caso existe.
 
 ## Corrida entre a leitura e o débito
 

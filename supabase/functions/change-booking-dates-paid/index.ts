@@ -21,7 +21,7 @@ import {
 } from "../_shared/payments/index.ts";
 import { effectiveSplitEnabled } from "../_shared/payments/split.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
-import { executeRefund } from "../_shared/payments/refund.ts";
+import { executeRefund, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { parseChangeDatesPaidInput } from "./logic.ts";
@@ -146,7 +146,7 @@ Deno.serve(async (req: Request) => {
       // Estorno PARCIAL da diferença na cobrança original da reserva.
       const { data: payment } = await admin
         .from("payment")
-        .select("id, provider, provider_payment_id, provider_charge_id, refunded_amount, amount, split, split_sent_to_gateway, debt_recovered_cents")
+        .select("id, provider, provider_payment_id, provider_charge_id, refunded_amount, amount, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
         .eq("booking_id", booking.id)
         .eq("kind", "booking")
         .eq("status", "paid")
@@ -168,14 +168,18 @@ Deno.serve(async (req: Request) => {
         }
         if (chargeId) {
           // E0.3.5: o parcial também sai 100% do master quando a cobrança foi com split.
+          const settings = await loadGatewaySettings(admin);
           const exec = await executeRefund({
             gateway,
             chargeId,
             payment,
-            moveparkRecipientId: (await loadGatewaySettings(admin)).moveparkRecipientId,
+            moveparkRecipientId: settings.moveparkRecipientId,
             totalCents: Math.round(Number(payment.amount) * 100),
             amountCents: -deltaCents,
+            hybridEnabled: settings.refundHybridEnabled,
+            partnerRecipientMissing: await partnerRecipientMissing(admin, payment),
           });
+          await persistPartnerBalance(admin, exec);
           const refund = exec.result;
           if (exec.outcome === "ok") {
             refunded = true;
@@ -187,6 +191,9 @@ Deno.serve(async (req: Request) => {
                 refunded_at: new Date().toISOString(),
                 provider_charge_id: chargeId,
                 refund_absorbed_by_master: exec.absorbedByMaster,
+                refund_split: exec.splitSent ?? null,
+                refund_partner_cents: exec.partnerCents,
+                refund_partner_balance_cents: exec.partnerBalanceCents,
               })
               .eq("id", payment.id);
             await admin.rpc("log_booking_modification", {

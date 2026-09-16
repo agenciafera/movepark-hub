@@ -11,6 +11,12 @@ export interface GatewaySettings {
   splitEnabled: boolean;
   /** Piso de saldo no master para honrar estornos (`pagarme_master_float_cents`). Zero = sem piso. */
   masterFloatCents: number;
+  /**
+   * Estorno híbrido (E0.3.6, `pagarme_refund_hybrid_enabled`): o gateway debita o parceiro quando
+   * o saldo disponível dele cobre o líquido que recebeu. Default DESLIGADO: nasce inerte e só
+   * liga depois de um teste.
+   */
+  refundHybridEnabled: boolean;
   /** Chaves cruas, para quem precisar de outra (ex.: `card_installment_policy`). */
   raw: Record<string, string | null>;
 }
@@ -19,6 +25,7 @@ export const GATEWAY_SETTING_KEYS = [
   "pagarme_movepark_recipient_id",
   "pagarme_split_enabled",
   "pagarme_master_float_cents",
+  "pagarme_refund_hybrid_enabled",
 ] as const;
 
 /** Converte as linhas de `app_setting` já lidas. Pura, para teste. */
@@ -31,6 +38,7 @@ export function parseGatewaySettings(
     moveparkRecipientId: (raw.pagarme_movepark_recipient_id ?? "").trim(),
     splitEnabled: isGatewaySplitEnabled(raw.pagarme_split_enabled),
     masterFloatCents: Number.isFinite(float) && float > 0 ? Math.round(float) : 0,
+    refundHybridEnabled: (raw.pagarme_refund_hybrid_enabled ?? "false").trim().toLowerCase() === "true",
     raw,
   };
 }

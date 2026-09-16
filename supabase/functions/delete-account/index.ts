@@ -20,7 +20,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { executeRefund, manualRefundReason } from "../_shared/payments/refund.ts";
+import { executeRefund, manualRefundReason, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { refundDecision } from "../cancel-booking/logic.ts";
 import { anonymizedEmail, PERMANENT_BAN_DURATION, voucherObjectPath, isActiveBooking } from "./logic.ts";
@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
   for (const b of active) {
     const { data: payment } = await admin
       .from("payment")
-      .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents")
+      .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
       .eq("booking_id", b.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -138,7 +138,10 @@ Deno.serve(async (req: Request) => {
         payment,
         moveparkRecipientId: settings.moveparkRecipientId,
         totalCents,
+        hybridEnabled: settings.refundHybridEnabled,
+        partnerRecipientMissing: await partnerRecipientMissing(admin, payment),
       });
+      await persistPartnerBalance(admin, exec);
       const refund = exec.result;
       if (exec.outcome === "transient") {
         // Não sei se saiu: aborta sem tocar no booking (idempotente ao repetir).
@@ -175,6 +178,9 @@ Deno.serve(async (req: Request) => {
             refund_reason: "exclusão de conta",
             provider_charge_id: chargeId,
             refund_absorbed_by_master: exec.absorbedByMaster,
+            refund_split: exec.splitSent ?? null,
+            refund_partner_cents: exec.partnerCents,
+            refund_partner_balance_cents: exec.partnerBalanceCents,
           })
           .eq("id", payment.id);
       }

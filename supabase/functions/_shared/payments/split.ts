@@ -224,3 +224,42 @@ export function refundSplitToMaster(moveparkRecipientId: string, amountCents: nu
     },
   ];
 }
+
+/**
+ * Regras do estorno HÍBRIDO (E0.3.6): o parceiro devolve `partnerCents` (o líquido que recebeu
+ * naquela venda) e o master devolve o resto, ficando com `liable` e com as taxas do estorno, como
+ * a decisão de 15/09 manda. As duas somam exatamente o valor estornado.
+ */
+export function refundSplitHybrid(
+  moveparkRecipientId: string,
+  partnerRecipientId: string,
+  partnerCents: number,
+  amountCents: number,
+): SplitRule[] {
+  if (!moveparkRecipientId) throw new Error("Recebedor master da Movepark não configurado.");
+  if (!partnerRecipientId) throw new Error("Recebedor do parceiro ausente no split.");
+  if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error("Valor do estorno inválido.");
+  if (!Number.isInteger(partnerCents) || partnerCents <= 0 || partnerCents >= amountCents) {
+    throw new Error("Parte do parceiro no estorno fora do intervalo.");
+  }
+  return [
+    {
+      role: "partner",
+      recipientId: partnerRecipientId,
+      amount: partnerCents,
+      type: "flat",
+      liable: false,
+      chargeProcessingFee: false,
+      chargeRemainderFee: false,
+    },
+    {
+      role: "movepark",
+      recipientId: moveparkRecipientId,
+      amount: amountCents - partnerCents,
+      type: "flat",
+      liable: true,
+      chargeProcessingFee: true,
+      chargeRemainderFee: true,
+    },
+  ];
+}

@@ -7,8 +7,26 @@ import {
   useSavePayoutAccountAdmin,
   useSavePayoutAccountSelf,
   useSetCompanyGatewaySplit,
+  useSetRefundHybrid,
   useSyncRecipient,
+  useGatewayMasterBalance,
+  useManualRefunds,
 } from "./api";
+import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as React from "react";
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/msw/server";
+
+const BASE = import.meta.env.VITE_SUPABASE_URL;
+
+function renderQuery<T>(hook: () => T) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  );
+  return renderHook(hook, { wrapper });
+}
 
 /**
  * Contrato de rede do repasse. É a área que decide para onde o dinheiro do parceiro
@@ -213,5 +231,50 @@ describe("useSetCompanyGatewaySplit", () => {
 
     const { result } = renderMutation(() => useSetCompanyGatewaySplit());
     await expect(result.current.mutateAsync({ company_id: "c1", enabled: true })).rejects.toThrow(/recebedor ativo/);
+  });
+});
+
+describe("useSetRefundHybrid", () => {
+  it("grava a chave em app_setting por upsert, como texto 'true'/'false'", async () => {
+    const chamada = tabela("app_setting", "post", { json: [] });
+    const { result } = renderMutation(() => useSetRefundHybrid());
+    await result.current.mutateAsync(true);
+    expect(chamada.ultimoBody).toEqual({ key: "pagarme_refund_hybrid_enabled", value: "true" });
+    await result.current.mutateAsync(false);
+    expect(chamada.ultimoBody).toEqual({ key: "pagarme_refund_hybrid_enabled", value: "false" });
+  });
+});
+
+// Regressão (16/09/2026): `supabase.from` era passado por cast SEM `bind`, e o método usa `this`.
+// O card do master e a fila manual falhavam em silêncio ("Cannot read properties of undefined
+// (reading 'rest')"), o card devolvia null e ninguém via o saldo do master em produção.
+describe("hooks com `from` por cast ficam amarrados ao client", () => {
+  it("useGatewayMasterBalance lê saldo e chaves de verdade", async () => {
+    server.use(
+      http.get(`${BASE}/rest/v1/gateway_account_balance`, () =>
+        HttpResponse.json({ available_cents: 15635, waiting_cents: 0, transferred_cents: 0, synced_at: "2026-09-16T17:11:07Z" }),
+      ),
+      http.get(`${BASE}/rest/v1/app_setting`, () =>
+        HttpResponse.json([
+          { key: "pagarme_master_float_cents", value: "300000" },
+          { key: "pagarme_refund_hybrid_enabled", value: "true" },
+        ]),
+      ),
+    );
+    const { result } = renderQuery(() => useGatewayMasterBalance());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({
+      balance: { available_cents: 15635, waiting_cents: 0, transferred_cents: 0, synced_at: "2026-09-16T17:11:07Z" },
+      float_cents: 300000,
+      split_enabled: true,
+      refund_hybrid_enabled: true,
+    });
+  });
+
+  it("useManualRefunds lista a fila de verdade", async () => {
+    server.use(http.get(`${BASE}/rest/v1/payout_refund_manual`, () => HttpResponse.json([])));
+    const { result } = renderQuery(() => useManualRefunds());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
   });
 });
