@@ -46,6 +46,9 @@ select set_eq(
   array[
     -- helpers usados dentro de policies RLS (fechar quebra o SELECT anônimo)
     'is_hub_admin',
+    -- 16/09/2026: a policy de leitura de `location` chama `is_tester()` para abrir rascunho
+    -- a testador. Roda como o chamador, então anon precisa executar; sem sessão devolve falso.
+    'is_tester',
     'current_company_ids',
     'current_owner_company_ids',
     'current_user_role',
@@ -85,7 +88,7 @@ select set_eq(
     -- o mapa de redirecionamento, e o que ela devolve é só o destino público da URL pedida.
     'url_legacy_map'
   ],
-  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 23'
+  'as SECURITY DEFINER alcançáveis por anon são exatamente estas 24'
 );
 
 -- ── nenhuma rotina de cron é chamável pela anon key ──────────────────────────
