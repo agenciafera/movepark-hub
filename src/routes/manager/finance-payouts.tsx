@@ -1,6 +1,4 @@
 import * as React from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -26,22 +24,7 @@ import { MasterBalanceCard } from "@/features/payouts/MasterBalanceCard";
 import { PayoutDebtCard } from "@/features/payouts/PayoutDebtCard";
 import { PayoutTransferCard } from "@/features/payouts/PayoutTransferCard";
 import { formatBRL } from "@/lib/format";
-
-function recentMonths(n: number) {
-  const out: { value: string; label: string; from: string; to: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < n; i++) {
-    const start = new Date(Date.UTC(now.getFullYear(), now.getMonth() - i, 1));
-    const end = new Date(Date.UTC(now.getFullYear(), now.getMonth() - i + 1, 1));
-    out.push({
-      value: start.toISOString().slice(0, 7),
-      label: format(start, "MMMM yyyy", { locale: ptBR }),
-      from: start.toISOString(),
-      to: end.toISOString(),
-    });
-  }
-  return out;
-}
+import { recentMonths } from "./finance-payouts.logic";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
