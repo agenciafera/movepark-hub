@@ -271,8 +271,11 @@ Campos:
 - Empresa (multi-select)
 - Localização (multi-select)
 - Status
-- Período (date range picker — estilo `{component.date-picker-day}`)
-- Busca por ID ou nome do cliente
+- Período (date range picker — estilo `{component.date-picker-day}`). **Recorta pela data da
+  compra (`created_at`), não pelo check-in** (decidido em 16/09/2026): todos os presets olham
+  para trás, e a reserva feita hoje para a semana que vem sumia da lista até o dia de chegar. O
+  painel do operador segue por check-in, que é o que o pátio precisa (`BookingFilters.dateField`).
+- Busca por ID ou nome do cliente (a busca por código passa por cima do período)
 
 #### Tabela de Reservas
 

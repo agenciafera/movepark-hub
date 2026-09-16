@@ -39,6 +39,8 @@ export default function ManagerBookings() {
 
   // Buscar por código atravessa o período: quem digita um código quer AQUELA
   // reserva, não a reserva se ela por acaso cair no recorte da tela.
+  // O recorte é pela data da COMPRA, não do check-in: todos os presets olham para trás, e a
+  // reserva feita hoje para a semana que vem sumia da lista até o dia de chegar (16/09/2026).
   const filters: BookingFilters = React.useMemo(
     () => ({
       status: status === "all" ? undefined : [status],
@@ -46,6 +48,7 @@ export default function ManagerBookings() {
       locationIds: scopedLocationIds,
       from: search ? undefined : range.from.toISOString(),
       to: search ? undefined : range.to.toISOString(),
+      dateField: "created_at",
     }),
     [status, search, scopedLocationIds, range],
   );
@@ -59,7 +62,7 @@ export default function ManagerBookings() {
         description={
           search
             ? "Busca por código, sem recorte de período."
-            : `Reservas com check-in em ${periodLabel(period, range).toLowerCase()}.`
+            : `Reservas feitas em ${periodLabel(period, range).toLowerCase()}.`
         }
         actions={<ManagerFilterBar showCompare={false} />}
       />

@@ -11,6 +11,13 @@ export type BookingFilters = {
   locationIds?: string[];
   from?: string;
   to?: string;
+  /**
+   * Qual data o `from`/`to` recorta. Padrão `check_in_at` (o pátio olha quem chega). O Manager
+   * usa `created_at`, a data da compra: reserva feita hoje para a semana que vem aparece hoje
+   * (decidido em 16/09/2026, quando a primeira reserva de teste sumiu da lista por ter check-in
+   * amanhã). A ordenação acompanha o campo.
+   */
+  dateField?: "check_in_at" | "created_at";
   search?: string;
 };
 
@@ -30,16 +37,17 @@ async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelati
   // `deleted_at` aqui: a RLS de `booking` já restringe às reservas da empresa e o filtro de
   // status resolve o resto. Filtrar deleted_at deixava o filtro "Cancelada" natimorto.
   // Ver docs/testes/furos-visao-dono.md (F1).
+  const dateField = filters.dateField ?? "check_in_at";
   let query = supabase
     .from("booking")
     .select(baseSelect)
-    .order("check_in_at", { ascending: false })
+    .order(dateField, { ascending: false })
     .limit(100);
 
   if (filters.status?.length) query = query.in("status", filters.status);
   if (filters.locationIds?.length) query = query.in("location_id", filters.locationIds);
-  if (filters.from) query = query.gte("check_in_at", filters.from);
-  if (filters.to) query = query.lte("check_in_at", filters.to);
+  if (filters.from) query = query.gte(dateField, filters.from);
+  if (filters.to) query = query.lte(dateField, filters.to);
   if (filters.search) {
     query = query.or(`code.ilike.%${filters.search}%`);
   }

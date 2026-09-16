@@ -42,4 +42,50 @@ describe("useBookings", () => {
     expect(decodeURIComponent(capturedUrl)).not.toContain("deleted_at");
     expect(result.current.data?.[0]?.code).toBe("MP-CANCEL");
   });
+
+  // Manager › Reservas recorta pela data da COMPRA (decidido em 16/09/2026): reserva feita
+  // hoje para a semana que vem tem que aparecer hoje. O operador segue por check-in, que é o
+  // que o pátio precisa; por isso o campo é escolha de quem chama, com check-in como padrão.
+  it("dateField=created_at recorta e ordena pela data da compra", async () => {
+    let capturedUrl = "";
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
+        capturedUrl = request.url;
+        return HttpResponse.json([]);
+      }),
+    );
+    const { result } = renderHook(
+      () =>
+        useBookings({
+          from: "2026-09-01T00:00:00.000Z",
+          to: "2026-09-16T23:59:59.000Z",
+          dateField: "created_at",
+        }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const url = decodeURIComponent(capturedUrl);
+    expect(url).toContain("created_at=gte.2026-09-01");
+    expect(url).toContain("created_at=lte.2026-09-16");
+    expect(url).toContain("order=created_at.desc");
+    expect(url).not.toContain("check_in_at=gte");
+  });
+
+  it("sem dateField, o recorte continua pelo check-in", async () => {
+    let capturedUrl = "";
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
+        capturedUrl = request.url;
+        return HttpResponse.json([]);
+      }),
+    );
+    const { result } = renderHook(
+      () => useBookings({ from: "2026-09-01T00:00:00.000Z", to: "2026-09-16T23:59:59.000Z" }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const url = decodeURIComponent(capturedUrl);
+    expect(url).toContain("check_in_at=gte.2026-09-01");
+    expect(url).toContain("order=check_in_at.desc");
+  });
 });

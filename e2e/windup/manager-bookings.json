@@ -1,7 +1,7 @@
 {
   "scenario_id": "manager-bookings",
   "start_url": "/manager/bookings",
-  "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: verifique que a pagina exibe o texto \"Reservas com check-in em\". Passo 3: verifique que a pagina exibe o texto \"Todas as unidades\".",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reservas\". Passo 2: verifique que a pagina exibe o texto \"Reservas feitas em\". Passo 3: verifique que a pagina exibe o texto \"Todas as unidades\".",
   "tags": [
     "smoke",
     "leitura",
