@@ -29,6 +29,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callerAuthorization } from "./authHeader.ts";
 import {
   availabilityFor,
   buildAvailabilityMap,
@@ -91,12 +92,18 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
+  // @ts-expect-error - Deno env
+  const anonKey: string = Deno.env.get("SUPABASE_ANON_KEY")!;
+  // Corre como o usuário quando ele mandou o JWT: é assim que a RLS deixa o testador ver
+  // unidade em rascunho (ver authHeader.ts). Anon segue vendo só o listado.
   const supabase = createClient(
     // @ts-expect-error - Deno env
     Deno.env.get("SUPABASE_URL")!,
-    // @ts-expect-error - Deno env
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { auth: { persistSession: false } },
+    anonKey,
+    {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: callerAuthorization(req, anonKey) } },
+    },
   );
 
   let params: SearchParams;
@@ -194,7 +201,7 @@ Deno.serve(async (req: Request) => {
       `
       id, capacity, is_active,
       location:location!inner(
-        id, slug, public_slug, public_name, name, address, latitude, longitude, status, deleted_at, is_listed,
+        id, slug, public_slug, public_name, name, address, latitude, longitude, status, deleted_at, is_listed, is_draft,
         review_avg, review_count, photos, google_place_id, go2park_enabled,
         company:company!inner(id, slug, name, status),
         destination:destination(code, name, type, public_slug),
@@ -227,8 +234,9 @@ Deno.serve(async (req: Request) => {
   let filtered: any[] = (rows ?? []).filter((r: any) => {
     if (!r.location || r.location.deleted_at) return false;
     if (r.location.status !== "active") return false;
-    // Só listadas publicamente (gate de recebedor ativo). A RLS anon já exige is_listed; explícito aqui.
-    if (!r.location.is_listed) return false;
+    // Só listadas publicamente (gate de recebedor ativo), ou rascunho: se um rascunho chegou até
+    // aqui é porque a RLS já decidiu que quem pergunta é testador. Explícito de propósito.
+    if (!r.location.is_listed && !r.location.is_draft) return false;
     if (!r.location.company || r.location.company.status !== "active") return false;
     return true;
   });
@@ -492,6 +500,9 @@ Deno.serve(async (req: Request) => {
       // Transfer com rastreio ao vivo (Go2Park). Fato da unidade, não promessa de transação
       // (ADR-009): vale inclusive nas unidades de checkout externo, que são as três que o têm.
       go2park: r.location.go2park_enabled === true,
+      // Rascunho: só chega para testador; o card e a ficha mostram o selo para não confundir
+      // com unidade publicada.
+      is_draft: r.location.is_draft === true,
     },
     parking_type: {
       code: r.company_parking_type.parking_type.code,
