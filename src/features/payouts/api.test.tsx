@@ -6,6 +6,7 @@ import {
   useAcceptContract,
   useSavePayoutAccountAdmin,
   useSavePayoutAccountSelf,
+  useSetCompanyGatewaySplit,
   useSyncRecipient,
 } from "./api";
 
@@ -192,5 +193,25 @@ describe("useSyncRecipient", () => {
     await expect(
       result.current.mutateAsync({ company_id: "c1", action: "create" }),
     ).rejects.toThrow(/documento inválido/);
+  });
+});
+
+describe("useSetCompanyGatewaySplit", () => {
+  it("chama a RPC com a empresa e o valor, para ligar e para desligar", async () => {
+    const espiao = rpc("company_set_gateway_split", { json: null });
+
+    const { result } = renderMutation(() => useSetCompanyGatewaySplit());
+    await result.current.mutateAsync({ company_id: "c1", enabled: true });
+    expect(espiao.ultimoBody).toMatchObject({ p_company_id: "c1", p_enabled: true });
+
+    await result.current.mutateAsync({ company_id: "c1", enabled: false });
+    expect(espiao.ultimoBody).toMatchObject({ p_company_id: "c1", p_enabled: false });
+  });
+
+  it("propaga a recusa da RPC (sem recebedor ativo ela nao liga)", async () => {
+    falha("rpc", "company_set_gateway_split", 400, "A empresa precisa de recebedor ativo no gateway antes de ligar o split.");
+
+    const { result } = renderMutation(() => useSetCompanyGatewaySplit());
+    await expect(result.current.mutateAsync({ company_id: "c1", enabled: true })).rejects.toThrow(/recebedor ativo/);
   });
 });

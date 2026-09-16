@@ -197,7 +197,7 @@ export function useSetCompanyGatewaySplit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (args: { company_id: string; enabled: boolean }) => {
-      const rpc = supabase.rpc as unknown as (
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
         a: Record<string, unknown>,
       ) => Promise<{ error: { message: string } | null }>;
@@ -439,7 +439,8 @@ export function usePayoutOwed() {
       // derrubando funções que existem no banco (marketing_rfm_*, manager_price_research_*,
       // prospect_price_research), e regenerar aqui apagaria os tipos delas. O cast fica nesta
       // linha só, e some quando a geração voltar a sair inteira.
-      const rpc = supabase.rpc as unknown as (
+      // `.bind(supabase)`: sem isso o método sai desamarrado do cliente e quebra no `this`.
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
       ) => Promise<{ data: unknown; error: { message: string } | null }>;
       const { data, error } = await rpc("payout_owed_overview");
@@ -511,7 +512,7 @@ export type PayoutDebtLines = {
 // `payout_debt_*`, `payout_refund_manual_mark_paid` e `gateway_account_balance` não estão em
 // `database.ts` pelo mesmo motivo do `payout_owed_overview`: o `supabase gen types` vem derrubando
 // funções que existem no banco. O cast fica em `rpcSolto` só, e some quando a geração voltar.
-const rpcSolto = supabase.rpc as unknown as (
+const rpcSolto = supabase.rpc.bind(supabase) as unknown as (
   fn: string,
   args?: Record<string, unknown>,
 ) => Promise<{ data: unknown; error: { message: string } | null }>;
