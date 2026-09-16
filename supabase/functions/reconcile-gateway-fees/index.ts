@@ -56,7 +56,9 @@ Deno.serve(async (req: Request) => {
     .select("id, provider_charge_id, split")
     .eq("provider", "pagarme")
     .eq("status", "paid")
-    .is("gateway_fee_cents", null)
+    // Entra quem ainda não tem a taxa OU ainda não tem a data de liberação da parte do parceiro
+    // (E0.3.7): a coluna nova nasceu depois de muita cobrança já apurada.
+    .or("gateway_fee_cents.is.null,partner_release_at.is.null")
     .not("provider_charge_id", "is", null)
     .gte("paid_at", janela.since)
     .lt("paid_at", janela.until)
