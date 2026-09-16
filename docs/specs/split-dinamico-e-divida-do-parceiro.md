@@ -195,8 +195,12 @@ Inativa e Suspensa. Rascunho grava `status = 'active'` + `location.is_draft = tr
 gatilhos que listam (foto e recebedor ativo); voltar para Ativa publica de novo se a unidade tem
 foto e a empresa pode receber. Na lista de unidades o badge é um só: "Rascunho".
 
-**Quem vê:** `public.is_tester()` = `is_hub_admin()` ou linha em `tester_user` (migration
-`20261119093000`). A RPC `admin_set_tester(uuid, boolean)` (só hub_admin) é a coluna **Testador**
+**Quem vê:** `public.is_tester()` = service role (o nosso backend), `is_hub_admin()` ou linha
+em `tester_user` (migrations `20261119093000` e `20261119170000`). A service role entra porque
+as Edges de reserva e de mudança de data chamam o banco sem sessão de usuário, e sem isso o
+`simulate_price` dentro de `_create_booking_core` devolvia "Preço indisponível" na primeira
+compra de teste; quem decide o que o público vê é a RLS e as tools de leitura do chat e do MCP,
+que correm com a anon key e o JWT do usuário. A RPC `admin_set_tester(uuid, boolean)` (só hub_admin) é a coluna **Testador**
 em Manager › Usuários; hub_admin aparece como "sempre". O front lê `is_tester()` ao carregar a
 sessão (`Session.isTester`). Um corte em todo lugar: `is_listed or (is_draft and is_tester())`.
 

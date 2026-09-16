@@ -4,7 +4,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(14);
+select plan(16);
 
 select has_table('public', 'tester_user', 'tester_user existe');
 select has_function('public', 'is_tester', 'is_tester() existe');
@@ -85,6 +85,15 @@ select is((select count(*) from public.location where id = current_setting('test
   'testador lê a unidade em rascunho pela policy');
 select is((public.simulate_price('tester-empresa','tester-unidade','tester_coberta', 2) ->> 'price')::numeric, 60.00,
   'testador precifica a unidade em rascunho (2 diárias a R$ 30)');
+reset role;
+
+-- service role (nossas Edges, sem sessão): conta como testador, senão a reserva do testador
+-- morre em "Preço indisponível" dentro de _create_booking_core
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+select is(public.is_tester(), true, 'service role conta como testador (é o backend)');
+select is((public.simulate_price('tester-empresa','tester-unidade','tester_coberta', 2) ->> 'price')::numeric, 60.00,
+  'service role precifica a unidade em rascunho (reserva do testador fecha)');
 reset role;
 
 select * from finish();
