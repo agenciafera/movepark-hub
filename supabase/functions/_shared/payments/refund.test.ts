@@ -155,9 +155,17 @@ Deno.test("decideRefundSplit: cobrança sem split no gateway continua sem regra 
   assertEquals(d.rules, undefined);
 });
 
-function gatewayFake(opts: { saldo: number; recusaParceiro?: boolean }) {
+function gatewayFake(opts: { saldo: number; recusaParceiro?: boolean; payablesFee?: number | null }) {
   const chamadas: RefundInput[] = [];
   const gateway = {
+    listPayables(id: string) {
+      const fee = opts.payablesFee;
+      return Promise.resolve({
+        payables: fee == null ? [] : [{ feeCents: fee, anticipationFeeCents: 0, fraudCoverageFeeCents: 0, id }],
+        raw: {},
+        httpStatus: 200,
+      });
+    },
     getRecipientBalance(id: string): Promise<RecipientBalance> {
       return Promise.resolve({ availableCents: opts.saldo, waitingFundsCents: 0, transferredCents: 0, raw: { id }, httpStatus: 200 });
     },
@@ -214,4 +222,23 @@ Deno.test("executeRefund com a chave desligada: não lê saldo, comportamento de
   assertEquals(exec.mode, "master");
   assertEquals(exec.absorbedByMaster, true);
   assertEquals(partnerBalancePatch(exec, "x"), null);
+});
+
+Deno.test("executeRefund híbrido: sem taxa apurada, lê os recebíveis ao vivo e ainda debita o parceiro", async () => {
+  const { gateway, chamadas } = gatewayFake({ saldo: 50000, payablesFee: 100 });
+  const semTaxa = { ...pagamentoHibrido, gateway_fee_cents: null };
+  const exec = await executeRefund({ gateway, chargeId: "ch_1", payment: semTaxa, moveparkRecipientId: "re_mp", totalCents: 10000, hybridEnabled: true });
+  assertEquals(exec.mode, "partner");
+  assertEquals(exec.partnerCents, 7900);
+  assertEquals(exec.gatewayFeeCents, 100, "a taxa lida ao vivo volta para o chamador gravar");
+  assertEquals(chamadas.length, 1);
+});
+
+Deno.test("executeRefund híbrido: recebível ainda não existe, taxa segue desconhecida e vai 100% master", async () => {
+  const { gateway } = gatewayFake({ saldo: 50000, payablesFee: null });
+  const semTaxa = { ...pagamentoHibrido, gateway_fee_cents: null };
+  const exec = await executeRefund({ gateway, chargeId: "ch_1", payment: semTaxa, moveparkRecipientId: "re_mp", totalCents: 10000, hybridEnabled: true });
+  assertEquals(exec.mode, "master");
+  assertEquals(exec.gatewayFeeCents, null);
+  assertEquals(exec.reason, "taxa do gateway ainda não apurada");
 });

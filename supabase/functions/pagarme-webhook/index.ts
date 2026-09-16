@@ -526,6 +526,7 @@ Deno.serve(async (req: Request) => {
                     refund_split: exec.splitSent ?? null,
                     refund_partner_cents: exec.partnerCents,
                     refund_partner_balance_cents: exec.partnerBalanceCents,
+...(exec.gatewayFeeCents == null ? {} : { gateway_fee_cents: exec.gatewayFeeCents }),
                   })
                   .eq("id", payment!.id);
               }

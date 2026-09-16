@@ -51,8 +51,10 @@ O gateway debita o parceiro **se, e só se**:
 - a chave está ligada;
 - `devolve_parceiro > 0`;
 - a leitura ao vivo do saldo do recebedor devolveu `availableCents >= devolve_parceiro`;
-- `gateway_fee_cents` está sincronizado (o `reconcile-gateway-fees` roda de hora em hora; sem
-  ele, o cálculo do líquido é impossível e a regra cai no fallback);
+- a taxa do gateway é conhecida: `gateway_fee_cents` já apurado pelo `reconcile-gateway-fees`
+  (a cada 30 min, e só dez minutos depois do pago) ou, quando ainda não está, lida ao vivo em
+  `GET /payables` na hora do estorno (o valor lido é gravado). Só sem recebível nenhum a regra
+  cai no fallback;
 - o recebedor não está marcado `gateway_missing_at`.
 
 Qualquer condição falsa, leitura de saldo com erro, ou recusa do gateway ao estorno com split:

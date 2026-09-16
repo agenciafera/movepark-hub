@@ -9,6 +9,7 @@
 
 import type { PaymentGateway, RecipientBalance, RefundResult, SplitRule } from "./types.ts";
 import { partnerRule, refundSplitHybrid, refundSplitToMaster } from "./split.ts";
+import { totalGatewayFeeCents } from "./fees.ts";
 
 /** O que o helper precisa saber da linha de `payment`. */
 export interface RefundablePayment {
@@ -210,6 +211,11 @@ export interface RefundExecution {
   partnerRecipientId: string | null;
   /** A leitura crua do saldo, quando houve, para o chamador atualizar `payout_recipient`. */
   partnerBalance: RecipientBalance | null;
+  /**
+   * Taxa do gateway usada na decisão. Quando a apuração de hora em hora ainda não tinha passado,
+   * foi lida ao vivo em `GET /payables`; o chamador grava em `payment.gateway_fee_cents`.
+   */
+  gatewayFeeCents: number | null;
   /** Por que a decisão foi essa, para o log. */
   reason: string;
 }
@@ -226,16 +232,29 @@ export async function executeRefund(a: RefundArgs): Promise<RefundExecution> {
   const cents = a.amountCents ?? a.totalCents;
   const partner = partnerRule(a.payment.split ?? []);
   let balance: RecipientBalance | null = null;
-  if (a.hybridEnabled && chargeWentWithSplit(a.payment) && partner?.recipientId && !a.partnerRecipientMissing) {
+  let payment: RefundablePayment = a.payment;
+  const tentaHibrido = a.hybridEnabled && chargeWentWithSplit(a.payment) && !!partner?.recipientId && !a.partnerRecipientMissing;
+  if (tentaHibrido) {
+    // A taxa é apurada de hora em hora e só dez minutos depois do pago, então o cancelamento
+    // logo depois da compra chegaria aqui sem ela e cairia no master à toa. Lê ao vivo.
+    if (payment.gateway_fee_cents == null) {
+      try {
+        const r = await a.gateway.listPayables(a.chargeId);
+        const fee = totalGatewayFeeCents(r.payables);
+        if (fee != null) payment = { ...payment, gateway_fee_cents: fee };
+      } catch (e) {
+        console.error("[refund] leitura da taxa ao vivo falhou; decisão segue sem ela:", e);
+      }
+    }
     try {
-      balance = await a.gateway.getRecipientBalance(partner.recipientId);
+      balance = await a.gateway.getRecipientBalance(partner!.recipientId!);
     } catch (e) {
       console.error("[refund] leitura do saldo do parceiro falhou; vai 100% master:", e);
       balance = null;
     }
   }
   const decision = decideRefundSplit({
-    payment: a.payment,
+    payment,
     moveparkRecipientId: a.moveparkRecipientId,
     amountCents: cents,
     totalCents: a.totalCents,
@@ -247,6 +266,7 @@ export async function executeRefund(a: RefundArgs): Promise<RefundExecution> {
   const base = {
     partnerRecipientId: partner?.recipientId ?? null,
     partnerBalance: balance,
+    gatewayFeeCents: payment.gateway_fee_cents ?? null,
   };
 
   if (decision.mode === "partner") {
@@ -271,7 +291,7 @@ export async function executeRefund(a: RefundArgs): Promise<RefundExecution> {
     console.error("[refund] gateway recusou o estorno com a perna do parceiro; vai 100% master:", tentativa.httpStatus, JSON.stringify(tentativa.raw));
   }
 
-  const split = refundSplitFor(a.payment, a.moveparkRecipientId, cents);
+  const split = refundSplitFor(payment, a.moveparkRecipientId, cents);
   const result = await a.gateway.refundCharge({
     chargeId: a.chargeId,
     amountCents: a.amountCents,
