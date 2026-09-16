@@ -112,11 +112,25 @@ export function ResultCard({
   // Sobre a imagem (topo-esquerdo): esgotado tem prioridade; senão, os diferenciais comparativos
   // e a promessa do transfer ao vivo, que é da mesma natureza (o que separa esta unidade das
   // vizinhas do mesmo aeroporto). Esgotado engole tudo: não há o que prometer de um lote cheio.
-  const overlay = soldOut ? (
-    <span className="rounded-full bg-badge-cancelled-bg px-3 py-1 text-[12px] font-bold text-badge-cancelled-fg">
-      Esgotado pro seu período
+  // Rascunho só chega para testador (a RLS corta o resto), e ele precisa saber que está
+  // olhando uma unidade que o público não vê. O selo vai junto dos outros, nunca sozinho
+  // esconde o "Esgotado".
+  const draftPill = item.location.is_draft ? (
+    <span
+      data-testid="draft-pill"
+      className="rounded-full bg-badge-pending-bg px-3 py-1 text-[12px] font-bold text-badge-pending-fg"
+    >
+      Rascunho
     </span>
-  ) : comparativeBadges.length > 0 || item.location.go2park ? (
+  ) : null;
+  const overlay = soldOut ? (
+    <>
+      <span className="rounded-full bg-badge-cancelled-bg px-3 py-1 text-[12px] font-bold text-badge-cancelled-fg">
+        Esgotado pro seu período
+      </span>
+      {draftPill}
+    </>
+  ) : comparativeBadges.length > 0 || item.location.go2park || draftPill ? (
     <>
       {comparativeBadges.map((badge) => (
         <ParkingCardBadge key={badge.kind} icon={BADGE_ICON[badge.kind]}>
@@ -124,6 +138,7 @@ export function ResultCard({
         </ParkingCardBadge>
       ))}
       {item.location.go2park && <Go2ParkLivePill />}
+      {draftPill}
     </>
   ) : undefined;
 

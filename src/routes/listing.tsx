@@ -384,6 +384,15 @@ export default function ListingPage() {
           <h1 className="text-balance text-display-xl text-ink">
             {seoArgs ? listingHeading(seoArgs) : parkingTitle(listing.company.name, listing.location.name)}
           </h1>
+          {/* Rascunho só abre para testador (RLS), e ele precisa saber que o público não vê. */}
+          {listing.location.is_draft && (
+            <span
+              data-testid="draft-pill"
+              className="inline-flex rounded-full bg-badge-pending-bg px-3 py-1 text-[12px] font-bold text-badge-pending-fg"
+            >
+              Rascunho: o público ainda não vê esta unidade
+            </span>
+          )}
           {/* O tipo de vaga é escolha dentro da ficha, não uma página por tipo: as três da
               mesma unidade repetiam endereço, fotos, FAQ e avaliações. Com um tipo só, o
               seletor não existe e a linha vira o rótulo de sempre. */}

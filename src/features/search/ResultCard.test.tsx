@@ -331,4 +331,28 @@ describe("ResultCard", () => {
     expect(screen.queryByTestId("go2park-pill")).not.toBeInTheDocument();
     expect(screen.queryByTestId("go2park-card-credit")).not.toBeInTheDocument();
   });
+
+  it("rascunho: selo \"Rascunho\" sobre a imagem (só chega para testador, e ele precisa saber)", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item({}, { is_draft: true })}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByTestId("draft-pill")).toHaveTextContent("Rascunho");
+  });
+
+  it("unidade publicada: sem selo de rascunho", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.queryByTestId("draft-pill")).not.toBeInTheDocument();
+  });
 });

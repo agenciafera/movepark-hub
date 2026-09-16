@@ -358,6 +358,8 @@ export type Session = {
   companyRoles: Record<string, CompanyRole>;
   /** Escopos efetivos do usuário em cada empresa (ADR-005). Dono → todos. */
   companyScopes: Record<string, string[]>;
+  /** Testador (tester_user, ou hub_admin): enxerga unidade em rascunho no site. */
+  isTester: boolean;
 };
 
 /** Membro de uma empresa (retorno de company_list_members). */

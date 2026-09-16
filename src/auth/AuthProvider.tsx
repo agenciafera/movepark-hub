@@ -11,16 +11,20 @@ async function loadSession(): Promise<Session | null> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;
 
-  const [{ data: profile }, { data: links }, { data: roleScopes }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, full_name, first_name, last_name, role")
-      .eq("id", auth.user.id)
-      .maybeSingle(),
-    supabase.from("profile_company").select("company_id, role").eq("profile_id", auth.user.id),
-    // Presets fixos papel→escopo (ADR-005). Tabela pequena, leitura pública p/ authenticated.
-    supabase.from("company_role_scope").select("role, scope"),
-  ]);
+  const [{ data: profile }, { data: links }, { data: roleScopes }, { data: isTester }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, first_name, last_name, role")
+        .eq("id", auth.user.id)
+        .maybeSingle(),
+      supabase.from("profile_company").select("company_id, role").eq("profile_id", auth.user.id),
+      // Presets fixos papel→escopo (ADR-005). Tabela pequena, leitura pública p/ authenticated.
+      supabase.from("company_role_scope").select("role, scope"),
+      // Testador enxerga rascunho no site (16/09/2026). `is_tester` ainda não está em
+      // `database.ts` (o gen types vem saindo incompleto), por isso o cast.
+      (supabase.rpc.bind(supabase) as unknown as (fn: "is_tester") => PromiseLike<{ data: boolean | null }>)("is_tester"),
+    ]);
 
   // Mapa papel → escopos (dono já vem com todos no seed).
   const scopesByRole: Record<string, string[]> = {};
@@ -45,6 +49,7 @@ async function loadSession(): Promise<Session | null> {
     companyIds: (links ?? []).map((l) => l.company_id),
     companyRoles,
     companyScopes,
+    isTester: isTester === true,
   };
 }
 

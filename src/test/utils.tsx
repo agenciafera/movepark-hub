@@ -22,6 +22,7 @@ export function mockSession(role: UserRole, overrides?: Partial<Session>): Sessi
     companyIds: role === "company_operator" ? ["company-1"] : [],
     companyRoles: role === "company_operator" ? { "company-1": "owner" } : {},
     companyScopes: {},
+    isTester: false,
     ...overrides,
   };
 }

@@ -59,6 +59,8 @@ export type SearchResultItem = {
     high_demand_today: boolean;
     /** Transfer com rastreio ao vivo (Go2Park). Fato da unidade, vale também no checkout externo. */
     go2park?: boolean;
+    /** Unidade em rascunho: só chega para testador (RLS). O card mostra o selo. */
+    is_draft?: boolean;
   };
   parking_type: { code: string; name: string };
   capacity: number;
