@@ -8,21 +8,20 @@
  * Conta do consumidor: favoritar, "Entrar" e os atalhos de conta na topbar, no
  * menu mobile e no checkout.
  *
- * **Desligada por padrão.** No lançamento o site sobe sem nenhuma unidade que
- * feche reserva no Hub, e toda unidade responde por checkout externo. Um botão
- * que empurra o visitante a criar conta cobra um cadastro e não entrega nada em
- * troca: gera suporte, não reserva. Some agora, volta na primeira unidade
- * transacionável.
+ * **Ligada por padrão desde 16/09/2026.** No lançamento (20/08/2026) o site subiu
+ * sem nenhuma unidade que fechasse reserva no Hub, e o "Entrar" ficou escondido
+ * atrás de `VITE_CONSUMER_ACCOUNTS=on`, para não cobrar cadastro sem entregar
+ * nada em troca. Com a primeira unidade transacionável em teste (Agência Fera, em
+ * rascunho para testadores) a chave inverteu: o padrão é mostrar, e quem quiser
+ * esconder de novo crava `VITE_CONSUMER_ACCOUNTS=off` no build. A inversão foi
+ * feita no código, e não na variável do Cloudflare, porque a variável só é
+ * editável no painel (o token do wrangler não alcança Workers Builds) e o botão
+ * precisava voltar sem depender disso.
  *
- * **Por que é chave de build e não config de banco.** Ela vira uma vez só, num
- * dia que já tem deploy. Vindo do banco, o HTML do SSG sairia sem os controles e
- * eles apareceriam depois da hidratação, então o visitante veria o "Entrar"
- * piscar na tela justamente enquanto a decisão é escondê-lo. Cravada no build,
- * o bundle nem carrega o caminho desligado.
- *
- * **Para ligar:** `VITE_CONSUMER_ACCOUNTS=on` no ambiente de build (no
- * Cloudflare, em Settings › Build › Variables and Secrets, escopos Production e
- * Preview) e publique. Nenhum componente precisa ser tocado.
+ * **Por que é chave de build e não config de banco.** Vindo do banco, o HTML do
+ * SSG sairia sem os controles e eles apareceriam depois da hidratação, então o
+ * visitante veria o "Entrar" piscar. Cravada no build, o bundle nem carrega o
+ * caminho desligado.
  *
  * O que ela **não** desliga, de propósito: a rota `/login`, que continua
  * respondendo por URL direta porque é por onde o time entra no Manager e no
@@ -30,7 +29,7 @@
  * de equipe e não CTA de consumidor.
  */
 export function contasDoConsumidorLigadas(): boolean {
-  return import.meta.env.VITE_CONSUMER_ACCOUNTS === "on";
+  return import.meta.env.VITE_CONSUMER_ACCOUNTS !== "off";
 }
 
 /**

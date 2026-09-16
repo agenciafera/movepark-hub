@@ -14,10 +14,11 @@ import { AccountSidebar } from "@/components/shared/AccountSidebar";
 /**
  * O `setup.ts` liga a chave para toda a suíte, porque os testes existentes
  * cobrem o comportamento da funcionalidade. Aqui ela desce, que é o estado com
- * que o site foi ao ar em 20/08/2026.
+ * que o site foi ao ar em 20/08/2026. Desde 16/09/2026 o padrão é ligado, e só
+ * o valor exato `off` desliga.
  */
 function desligarContas() {
-  vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "");
+  vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "off");
 }
 
 const cardBase = {
@@ -41,16 +42,16 @@ describe("contasDoConsumidorLigadas", () => {
     vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "on");
   });
 
-  it("só o valor exato `on` liga", () => {
-    vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "on");
-    expect(contasDoConsumidorLigadas()).toBe(true);
+  it("só o valor exato `off` desliga", () => {
+    vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "off");
+    expect(contasDoConsumidorLigadas()).toBe(false);
   });
 
-  /** Var ausente no build tem que cair no lado seguro, que é escondido. */
-  it("qualquer outro valor, ou a ausência, mantém desligado", () => {
-    for (const valor of ["", "true", "1", "ON", "yes", "off"]) {
+  /** Var ausente no build (o caso do Cloudflare hoje) tem que mostrar o "Entrar". */
+  it("qualquer outro valor, ou a ausência, mantém ligado", () => {
+    for (const valor of ["", "on", "true", "1", "OFF", "no"]) {
       vi.stubEnv("VITE_CONSUMER_ACCOUNTS", valor);
-      expect(contasDoConsumidorLigadas()).toBe(false);
+      expect(contasDoConsumidorLigadas()).toBe(true);
     }
   });
 });
