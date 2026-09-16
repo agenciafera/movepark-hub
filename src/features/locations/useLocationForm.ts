@@ -54,6 +54,30 @@ export function mensagemDeErro(err: unknown): string {
  * Minutos onde ZERO é resposta legítima (tolerância de saída: 0 = sem tolerância).
  * Diferente de `parsePositiveInt`, que trata 0 como ausência. Vazio e lixo viram 0.
  */
+/**
+ * Na tela, Rascunho é um STATUS ao lado de Ativa/Inativa/Suspensa. No banco não: `status` é o
+ * enum `entity_status`, compartilhado com empresa, e todo corte do catálogo checa
+ * `status = 'active'`; o rascunho mora em `location.is_draft` (16/09/2026). Este par de
+ * funções é a tradução, num lugar só: Rascunho = ativa por baixo, com `is_draft`.
+ */
+export type StatusField = EntityStatus | "draft";
+
+export function statusFieldFrom(
+  location: { status: EntityStatus; is_draft?: boolean } | null,
+): StatusField {
+  if (!location) return "active";
+  if (location.status === "active" && location.is_draft) return "draft";
+  return location.status;
+}
+
+export function statusFieldToPayload(value: StatusField): {
+  status: EntityStatus;
+  is_draft: boolean;
+} {
+  if (value === "draft") return { status: "active", is_draft: true };
+  return { status: value, is_draft: false };
+}
+
 export function parseNonNegativeInt(value: string): number {
   const n = Number.parseInt(value, 10);
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -108,9 +132,8 @@ type Snapshot = {
   businessHours: BusinessHours;
   toleranceMinutes: string;
   timezone: string;
-  status: EntityStatus;
-  /** Rascunho: nunca listada pelos gatilhos; hub_admin testa antes de publicar (16/09/2026). */
-  isDraft: boolean;
+  /** Ativa, Inativa, Suspensa ou Rascunho (ver statusFieldFrom). */
+  status: StatusField;
   phone: string;
   email: string;
   notice: string;
@@ -153,8 +176,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [businessHours, setBusinessHours] = React.useState<BusinessHours>(emptyBusinessHours);
   const [toleranceMinutes, setToleranceMinutes] = React.useState("");
   const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
-  const [status, setStatus] = React.useState<EntityStatus>("active");
-  const [isDraft, setIsDraft] = React.useState(false);
+  const [status, setStatus] = React.useState<StatusField>("active");
   const [phone, setPhone] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [notice, setNotice] = React.useState("");
@@ -194,9 +216,15 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
           : ""
         : String(DEFAULT_TOLERANCE_MINUTES),
       timezone: location?.timezone ?? "America/Sao_Paulo",
-      status: (location?.status ?? "active") as EntityStatus,
       // `is_draft` ainda não está em `database.ts` (o `gen types` vem saindo incompleto); lido por cast.
-      isDraft: (location as { is_draft?: boolean } | null)?.is_draft ?? false,
+      status: statusFieldFrom(
+        location
+          ? {
+              status: location.status as EntityStatus,
+              is_draft: (location as { is_draft?: boolean }).is_draft,
+            }
+          : null,
+      ),
       phone: location?.phone ?? "",
       email: location?.email ?? "",
       notice: location?.notice ?? "",
@@ -232,7 +260,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setToleranceMinutes(baseline.toleranceMinutes);
     setTimezone(baseline.timezone);
     setStatus(baseline.status);
-    setIsDraft(baseline.isDraft);
     setPhone(baseline.phone);
     setEmail(baseline.email);
     setNotice(baseline.notice);
@@ -269,7 +296,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     toleranceMinutes,
     timezone,
     status,
-    isDraft,
     phone,
     email,
     notice,
@@ -346,8 +372,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       business_hours: is24h || !hasAnyHours(businessHours) ? null : businessHours,
       tolerance_minutes: parseNonNegativeInt(toleranceMinutes),
       timezone,
-      status,
-      is_draft: isDraft,
+      ...statusFieldToPayload(status),
       phone: phone || null,
       email: email || null,
       notice: notice || null,
@@ -458,8 +483,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setTimezone,
       status,
       setStatus,
-      isDraft,
-      setIsDraft,
       phone,
       setPhone,
       email,

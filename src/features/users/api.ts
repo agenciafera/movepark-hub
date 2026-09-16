@@ -4,6 +4,8 @@ import type { CompanyRole, Profile, UserRole } from "@/types/domain";
 
 export type UserListItem = Profile & {
   companies: { id: string; name: string }[];
+  /** Testador: enxerga unidade em rascunho no site e compra como cliente (16/09/2026). */
+  is_tester: boolean;
 };
 
 export const usersKeys = {
@@ -25,10 +27,25 @@ export function useUsers() {
       if (!profiles?.length) return [];
 
       const ids = profiles.map((p) => p.id);
-      const { data: links } = await supabase
-        .from("profile_company")
-        .select("profile_id, company:company(id, name)")
-        .in("profile_id", ids);
+      const [{ data: links }, { data: testers }] = await Promise.all([
+        supabase
+          .from("profile_company")
+          .select("profile_id, company:company(id, name)")
+          .in("profile_id", ids),
+        // `tester_user` ainda não está em `database.ts` (gen types incompleto); cast na tabela.
+        (
+          supabase.from.bind(supabase) as unknown as (t: "tester_user") => {
+            select: (q: "user_id") => {
+              in: (c: "user_id", v: string[]) => PromiseLike<{ data: unknown }>;
+            };
+          }
+        )("tester_user")
+          .select("user_id")
+          .in("user_id", ids),
+      ]);
+      const testerIds = new Set(
+        ((testers ?? []) as unknown as Array<{ user_id: string }>).map((t) => t.user_id),
+      );
 
       const byProfile = new Map<string, { id: string; name: string }[]>();
       for (const link of (links ?? []) as unknown as Array<{
@@ -45,6 +62,7 @@ export function useUsers() {
       return profiles.map((p) => ({
         ...(p as Profile),
         companies: byProfile.get(p.id) ?? [],
+        is_tester: testerIds.has(p.id),
       }));
     },
   });
@@ -106,6 +124,28 @@ export function useUnlinkUserCompany() {
         .delete()
         .eq("profile_id", profileId)
         .eq("company_id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: usersKeys.all }),
+  });
+}
+
+/**
+ * Marca ou desmarca um testador (16/09/2026). Testador enxerga unidade em RASCUNHO no site,
+ * na busca e na ficha, e compra como cliente comum; é o "test user" do Facebook. Vai por RPC
+ * gateada por `is_hub_admin()` no servidor, e a RLS de `tester_user` só deixa hub_admin
+ * escrever, então uma conta comum não se promove a testadora.
+ */
+export function useSetTester() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      // `admin_set_tester` ainda não está em `database.ts`; cast com o rpc amarrado ao client.
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "admin_set_tester",
+        args: { p_user_id: string; p_enabled: boolean },
+      ) => PromiseLike<{ error: { message: string } | null }>;
+      const { error } = await rpc("admin_set_tester", { p_user_id: id, p_enabled: enabled });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: usersKeys.all }),

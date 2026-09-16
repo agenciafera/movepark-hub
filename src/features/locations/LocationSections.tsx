@@ -6,7 +6,6 @@ import { BusinessHoursField } from "./BusinessHoursField";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -20,8 +19,13 @@ import { useAdminDestinations } from "@/features/destinations/api";
 import { uuidOuNulo } from "./useLocationForm";
 import { AmenityPicker } from "@/features/amenities/AmenityPicker";
 import { useNearestDestination } from "./api";
-import { googleMapsUrlFromPlaceId, slugify, type LocationFormApi } from "./useLocationForm";
-import type { EntityStatus, Location } from "@/types/domain";
+import {
+  googleMapsUrlFromPlaceId,
+  slugify,
+  type LocationFormApi,
+  type StatusField,
+} from "./useLocationForm";
+import type { Location } from "@/types/domain";
 
 // Sentinela do <Select> para "sem âncora" (o Radix Select não aceita value="").
 const NO_DESTINATION = "__none__";
@@ -350,37 +354,30 @@ export function LocationSections({
             />
           </Field>
           <Field label="Status" htmlFor="status">
-            <Select value={f.status} onValueChange={(v) => f.setStatus(v as EntityStatus)}>
+            <Select value={f.status} onValueChange={(v) => f.setStatus(v as StatusField)}>
               <SelectTrigger id="status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Ativa</SelectItem>
+                {/* Rascunho (16/09/2026): fora da busca e da URL pública para todo mundo, menos
+                    para as contas marcadas como testador em Usuários (e hub_admin), que veem e
+                    compram como cliente. Voltar para Ativa publica de novo, se a unidade tem
+                    foto e a empresa pode receber. */}
+                <SelectItem value="draft">Rascunho</SelectItem>
                 <SelectItem value="inactive">Inativa</SelectItem>
                 <SelectItem value="suspended">Suspensa</SelectItem>
               </SelectContent>
             </Select>
+            {f.status === "draft" && (
+              <span className="text-caption text-muted">
+                Só testadores (Manager › Usuários) veem esta unidade no site.
+              </span>
+            )}
           </Field>
           <Field label="Fuso horário" htmlFor="tz">
             <Input id="tz" value={f.timezone} onChange={(e) => f.setTimezone(e.target.value)} />
           </Field>
-          {/* Rascunho (16/09/2026): a unidade fica fora da vitrine mesmo com foto e recebedor ativo,
-              porque os gatilhos de listagem respeitam a flag. Só a Movepark vê e reserva, pela
-              página "Testar rascunho". Desmarcar devolve a listagem automática. */}
-          <div className="flex items-start gap-2 tablet:col-span-2">
-            <Checkbox
-              id="is-draft"
-              checked={f.isDraft}
-              onCheckedChange={(v) => f.setIsDraft(v === true)}
-            />
-            <div className="flex flex-col gap-0.5">
-              <Label htmlFor="is-draft">Rascunho: não publicar na vitrine</Label>
-              <span className="text-caption text-muted">
-                Fica fora da busca e da URL pública. A Movepark testa reserva e pagamento pelo
-                Manager antes de publicar.
-              </span>
-            </div>
-          </div>
           <Field
             label="Código no sistema de pátio (WPS)"
             htmlFor="external-ref"

@@ -99,10 +99,13 @@ export default function ManagerLocations() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    {/* Rascunho é status na tela (o banco guarda status ativo + is_draft):
+                        um badge só, senão "Ativa" ao lado de "Rascunho" confunde. */}
+                    {(loc as { is_draft?: boolean }).is_draft ? (
+                      <Badge tone="pending">Rascunho</Badge>
+                    ) : (
                       <EntityStatusBadge status={loc.status} />
-                      {(loc as { is_draft?: boolean }).is_draft && <Badge tone="neutral">Rascunho</Badge>}
-                    </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -126,14 +129,6 @@ export default function ManagerLocations() {
                           Tipos de vaga
                         </Link>
                       </Button>
-                      {/* Modo rascunho: testar a unidade de ponta a ponta antes de listar. */}
-                      {!loc.is_listed && (
-                        <Button size="sm" variant="ghost" asChild>
-                          <Link to={`/manager/companies/${companyId}/locations/${loc.id}/rascunho`}>
-                            Testar rascunho
-                          </Link>
-                        </Button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>

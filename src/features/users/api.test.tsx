@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
-import { useLinkUserCompany, useUnlinkUserCompany, useUpdateUserRole } from "./api";
+import { useLinkUserCompany, useSetTester, useUnlinkUserCompany, useUpdateUserRole } from "./api";
 
 /**
  * Contrato de rede da gestão de usuários do Manager. São as três escritas que definem
@@ -72,5 +72,33 @@ describe("useUnlinkUserCompany", () => {
 
     expect(del.chamadas[0].url).toContain("profile_id=eq.u9");
     expect(del.chamadas[0].url).toContain("company_id=eq.c1");
+  });
+});
+
+describe("useSetTester", () => {
+  it("marca pela RPC admin_set_tester, nunca por insert direto na tabela", async () => {
+    // A RLS de tester_user até deixaria hub_admin inserir, mas a RPC é o caminho que grava
+    // quem marcou e recusa conta comum com mensagem, em vez de 42501 seco.
+    const chamada = rpc("admin_set_tester", { json: null });
+    const insercao = tabela("tester_user", "post", { json: [] });
+
+    const { result } = renderMutation(() => useSetTester());
+    await result.current.mutateAsync({ id: "u9", enabled: true });
+
+    expect(chamada.ultimoBody).toEqual({ p_user_id: "u9", p_enabled: true });
+    expect(insercao.chamadas).toHaveLength(0);
+  });
+
+  it("desmarcar manda enabled false", async () => {
+    const chamada = rpc("admin_set_tester", { json: null });
+    const { result } = renderMutation(() => useSetTester());
+    await result.current.mutateAsync({ id: "u9", enabled: false });
+    expect(chamada.ultimoBody).toEqual({ p_user_id: "u9", p_enabled: false });
+  });
+
+  it("propaga a recusa do servidor", async () => {
+    falha("rpc", "admin_set_tester", 403, "Só hub_admin marca testador.");
+    const { result } = renderMutation(() => useSetTester());
+    await expect(result.current.mutateAsync({ id: "u9", enabled: true })).rejects.toThrow();
   });
 });

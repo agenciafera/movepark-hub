@@ -28,12 +28,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/shared/EmptyState";
 import {
   useUsers,
   useUpdateUserRole,
   useLinkUserCompany,
   useUnlinkUserCompany,
+  useSetTester,
   type UserListItem,
 } from "@/features/users/api";
 import { useCompanies } from "@/features/companies/api";
@@ -47,6 +49,7 @@ export default function ManagerUsers() {
   const updateRole = useUpdateUserRole();
   const linkCompany = useLinkUserCompany();
   const unlinkCompany = useUnlinkUserCompany();
+  const setTester = useSetTester();
   const [search, setSearch] = React.useState("");
   const [linkingUser, setLinkingUser] = React.useState<UserListItem | null>(null);
   const [selectedCompany, setSelectedCompany] = React.useState<string>("");
@@ -64,6 +67,15 @@ export default function ManagerUsers() {
     try {
       await updateRole.mutateAsync({ id, role });
       toast.success("Papel atualizado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro");
+    }
+  }
+
+  async function handleTester(id: string, enabled: boolean) {
+    try {
+      await setTester.mutateAsync({ id, enabled });
+      toast.success(enabled ? "Agora é testador: vê rascunho no site" : "Deixou de ser testador");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     }
@@ -99,7 +111,7 @@ export default function ManagerUsers() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Usuários"
-        description="Gerencie papéis e vínculos com empresas."
+        description="Papéis, vínculos com empresas e quem testa rascunho no site."
       />
 
       <Card>
@@ -125,6 +137,7 @@ export default function ManagerUsers() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Papel</TableHead>
                 <TableHead>Empresas</TableHead>
+                <TableHead>Testador</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -169,6 +182,19 @@ export default function ManagerUsers() {
                           </button>
                         ))}
                       </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {/* Testador vê unidade em Rascunho no site e compra como cliente. hub_admin
+                        já é testador por definição, então o interruptor não se aplica. */}
+                    {u.role === "hub_admin" ? (
+                      <span className="text-caption text-muted">sempre</span>
+                    ) : (
+                      <Switch
+                        aria-label={`Testador: ${u.full_name ?? u.id.slice(0, 8)}`}
+                        checked={u.is_tester}
+                        onCheckedChange={(v) => handleTester(u.id, v)}
+                      />
                     )}
                   </TableCell>
                   <TableCell className="text-muted">{formatDate(u.created_at)}</TableCell>

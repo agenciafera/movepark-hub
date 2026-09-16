@@ -6,7 +6,27 @@ import {
   parseNonNegativeInt,
   uuidOuNulo,
   mensagemDeErro,
+  statusFieldFrom,
+  statusFieldToPayload,
 } from "./useLocationForm";
+
+describe("statusFieldFrom / statusFieldToPayload (Rascunho como status na tela)", () => {
+  // O banco guarda `status` (enum compartilhado com empresa) + `is_draft`. Na tela é UM
+  // select: Ativa, Inativa, Suspensa, Rascunho. Rascunho = ativa por baixo, com is_draft.
+  it("unidade ativa em rascunho aparece como Rascunho", () => {
+    expect(statusFieldFrom({ status: "active", is_draft: true })).toBe("draft");
+  });
+  it("unidade ativa sem rascunho aparece como Ativa; sem unidade, nasce Ativa", () => {
+    expect(statusFieldFrom({ status: "active", is_draft: false })).toBe("active");
+    expect(statusFieldFrom({ status: "suspended" })).toBe("suspended");
+    expect(statusFieldFrom(null)).toBe("active");
+  });
+  it("Rascunho grava status ativo + is_draft; os outros limpam o is_draft", () => {
+    expect(statusFieldToPayload("draft")).toEqual({ status: "active", is_draft: true });
+    expect(statusFieldToPayload("active")).toEqual({ status: "active", is_draft: false });
+    expect(statusFieldToPayload("inactive")).toEqual({ status: "inactive", is_draft: false });
+  });
+});
 
 describe("parseNonNegativeInt", () => {
   it("vazio e lixo viram 0 (sem tolerância), não null", () => {
