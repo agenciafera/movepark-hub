@@ -290,6 +290,15 @@ export interface TransferInput {
   metadata?: Record<string, string>;
 }
 
+/** Saque: do saldo do recebedor para a conta bancária dele (`POST /transfers` com `recipient_id`). */
+export interface WithdrawalInput {
+  recipientId: string;
+  amountCents: number;
+  /** Vai no header `Idempotency-Key`; sem ela, um retry vira saque duplicado. */
+  idempotencyKey: string;
+  metadata?: Record<string, string>;
+}
+
 export interface TransferResult {
   transferId: string | null;
   /** Status cru do gateway (created/pending_transfer/transferred/failed/...). */
@@ -336,6 +345,8 @@ export interface PaymentGateway {
   createTransfer(input: TransferInput): Promise<TransferResult>;
   /** Relê uma transferência pelo id (conciliação do repasse quando o webhook não chega). */
   getTransfer(transferId: string): Promise<TransferResult>;
+  /** Saque do recebedor para a conta bancária dele (E0.3.7). Mesma rota e mesma resposta do repasse. */
+  createWithdrawal(input: WithdrawalInput): Promise<TransferResult>;
   /** Saldo de um recebedor, para o pré-voo do repasse. */
   getRecipientBalance(recipientId: string): Promise<RecipientBalance>;
   /** Atualiza a cadência de transferência de um recebedor (PATCH transfer-settings). */

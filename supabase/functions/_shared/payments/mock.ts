@@ -2,18 +2,19 @@
 // Útil para testes da camada de vínculo e para ambientes sem credencial de gateway.
 
 import type {
-  PayablesResult,
-  RecipientBalance,
-  TransferInput,
-  TransferResult,
   CardChargeInput,
   ChargeResult,
+  PayablesResult,
   PaymentGateway,
   PixChargeInput,
+  RecipientBalance,
   RecipientInput,
   RecipientResult,
   RefundInput,
   RefundResult,
+  TransferInput,
+  TransferResult,
+  WithdrawalInput,
 } from "./types.ts";
 
 export class MockGateway implements PaymentGateway {
@@ -113,6 +114,18 @@ export class MockGateway implements PaymentGateway {
 
 
   /** O mock não move dinheiro: devolve uma transferência sintética já concluída. */
+  createWithdrawal(input: WithdrawalInput): Promise<TransferResult> {
+    return Promise.resolve({
+      transferId: `mock_wd_${input.idempotencyKey}`,
+      status: "created",
+      amountCents: input.amountCents,
+      sourceId: input.recipientId,
+      targetId: null,
+      raw: {},
+      httpStatus: 201,
+    } as TransferResult);
+  }
+
   createTransfer(input: TransferInput): Promise<TransferResult> {
     return Promise.resolve({
       transferId: `mock_tr_${input.idempotencyKey.slice(0, 8)}`,

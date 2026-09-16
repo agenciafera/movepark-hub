@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -298,6 +299,11 @@ export default function ManagerFinanceRecipients() {
                                 onClick={() => setPayoutId(row.companyId)}
                               >
                                 Configurar repasse
+                              </Button>
+                            )}
+                            {row.hasRecipient && (
+                              <Button size="sm" variant="ghost" asChild>
+                                <Link to={`/manager/companies/${row.companyId}/conta`}>Conta</Link>
                               </Button>
                             )}
                           </>

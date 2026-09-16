@@ -29,6 +29,7 @@ import {
   usePayoutWithdrawals,
   useRecipient,
 } from "@/features/payouts/api";
+import { PartnerAccount } from "@/features/payouts/PartnerAccount";
 import { PartnerDebtCard } from "@/features/payouts/PartnerDebtCard";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import { resumoSaldo } from "@/features/payouts/saldo.logic";
@@ -100,6 +101,9 @@ export default function OperatorFinance() {
         title="Repasses"
         description="Quanto você recebe de cada reserva (líquido do split, já descontada a comissão da Movepark)."
       />
+
+      {/* Conta do estacionamento (E0.3.7): o mesmo extrato que a Movepark vê. */}
+      <PartnerAccount companyId={companyId} canWithdraw={canConfigurePayout} canRefund={false} />
 
       {/* Saldo + status do recebedor */}
       <div className="grid gap-4 tablet:grid-cols-3">

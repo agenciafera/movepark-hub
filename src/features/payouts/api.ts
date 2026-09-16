@@ -9,6 +9,7 @@ export type PayoutAccountPayload = ReturnType<typeof toPayoutAccountPayload>;
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-recipient`;
 const UPDATE_PAYOUT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-recipient-payout`;
 const REFRESH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-recipients`;
+const WITHDRAW_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recipient-withdraw`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -716,5 +717,75 @@ export function useRefreshGatewayBalances() {
       return body as { ok: boolean; balances: number; master: boolean; forced: boolean };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+// ── Conta do parceiro (E0.3.7) ───────────────────────────────────────────────
+
+import type { AccountStatement } from "./account.logic";
+
+export const accountKeys = {
+  all: ["partner-account"] as const,
+  statement: (companyId: string, from: string, to: string) =>
+    [...accountKeys.all, companyId, from, to] as const,
+};
+
+/**
+ * Extrato estilo conta bancária de uma empresa (RPC `partner_account_statement`): cabeçalho com
+ * saldo real do gateway, ciclo de transferência e dívida; movimentos com venda, estorno, dívida,
+ * acerto, repasse e saque. hub_admin lê qualquer empresa; membro precisa de `finance:read`.
+ */
+export function usePartnerAccountStatement(args: { companyId?: string; from: string; to: string }) {
+  return useQuery({
+    queryKey: accountKeys.statement(args.companyId ?? "none", args.from, args.to),
+    enabled: !!args.companyId,
+    queryFn: async (): Promise<AccountStatement> => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "partner_account_statement",
+        a: { p_company_id: string; p_from: string; p_to: string },
+      ) => PromiseLike<{ data: AccountStatement | null; error: { message: string } | null }>;
+      const { data, error } = await rpc("partner_account_statement", {
+        p_company_id: args.companyId!,
+        p_from: args.from,
+        p_to: args.to,
+      });
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Extrato vazio.");
+      return data;
+    },
+    placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * Saque do saldo do recebedor para a conta bancária do parceiro (Edge `recipient-withdraw`).
+ * hub_admin ou o Dono (`payouts:write`). A Edge lê o saldo ao vivo antes e recusa se não cobre.
+ */
+export function useWithdraw() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; amount_cents: number }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(WITHDRAW_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: ANON,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(args),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body as { ok: boolean; withdrawal_id: string | null; status: string; amount_cents: number; fee_cents: number };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: accountKeys.all });
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
+      qc.invalidateQueries({ queryKey: ["payout-withdrawals"] });
+    },
   });
 }

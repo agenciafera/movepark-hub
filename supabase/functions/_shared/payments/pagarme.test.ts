@@ -1,15 +1,16 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  buildBalanceResult,
   buildCardOrderBody,
   buildChargeResult,
   buildCreateRecipientBody,
   buildOrderBody,
+  buildPayablesResult,
   buildRecipientResult,
   buildRefundResult,
-  buildPayablesResult,
   buildTransferBody,
   buildTransferResult,
-  buildBalanceResult,
+  buildWithdrawalBody,
   extractKycUrl,
   mapChargeStatus,
   mapRecipientStatus,
@@ -19,7 +20,7 @@ import {
   parseKycExpiresAt,
   recipientCanNeedKyc,
 } from "./pagarme.ts";
-import { totalGatewayFeeCents } from "./fees.ts";
+import { partnerReleaseAt, totalGatewayFeeCents } from "./fees.ts";
 import type { CardChargeInput, PixChargeInput, RecipientInput } from "./types.ts";
 
 Deno.test("pagarmeBaseUrl: host único da Core v5 (a chave define o ambiente)", () => {
@@ -601,4 +602,21 @@ Deno.test("buildBalanceResult: saldo do recebedor em centavos", () => {
 
 Deno.test("buildBalanceResult: sem corpo, saldo é desconhecido e não zero", () => {
   assertEquals(buildBalanceResult(404, null).availableCents, null);
+});
+
+Deno.test("buildWithdrawalBody: saque leva amount e recipient_id, nunca source/target", () => {
+  const b = buildWithdrawalBody({ recipientId: "re_p", amountCents: 5000, idempotencyKey: "k", metadata: { company_id: "c1" } });
+  assertEquals(b, { amount: 5000, recipient_id: "re_p", metadata: { company_id: "c1" } });
+});
+
+Deno.test("partnerReleaseAt: a última payment_date dos créditos do recebedor do parceiro", () => {
+  const payables = [
+    { id: "1", chargeId: "ch", recipientId: "re_p", amountCents: 100, feeCents: 1, anticipationFeeCents: 0, fraudCoverageFeeCents: 0, type: "credit", status: "waiting_funds", installment: 1, paymentDate: "2026-10-16" },
+    { id: "2", chargeId: "ch", recipientId: "re_p", amountCents: 100, feeCents: 1, anticipationFeeCents: 0, fraudCoverageFeeCents: 0, type: "credit", status: "waiting_funds", installment: 2, paymentDate: "2026-11-16" },
+    { id: "3", chargeId: "ch", recipientId: "re_mp", amountCents: 20, feeCents: 0, anticipationFeeCents: 0, fraudCoverageFeeCents: 0, type: "credit", status: "paid", installment: 1, paymentDate: "2026-12-01" },
+    { id: "4", chargeId: "ch", recipientId: "re_p", amountCents: -100, feeCents: 0, anticipationFeeCents: 0, fraudCoverageFeeCents: 0, type: "refund", status: "paid", installment: 1, paymentDate: "2027-01-01" },
+  ];
+  assertEquals(partnerReleaseAt(payables, "re_p"), "2026-11-16");
+  assertEquals(partnerReleaseAt(payables, "re_x"), null);
+  assertEquals(partnerReleaseAt(payables, null), null);
 });

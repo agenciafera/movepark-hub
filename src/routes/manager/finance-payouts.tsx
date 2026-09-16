@@ -24,7 +24,7 @@ import { MasterBalanceCard } from "@/features/payouts/MasterBalanceCard";
 import { PayoutDebtCard } from "@/features/payouts/PayoutDebtCard";
 import { PayoutTransferCard } from "@/features/payouts/PayoutTransferCard";
 import { formatBRL } from "@/lib/format";
-import { recentMonths } from "./finance-payouts.logic";
+import { recentMonths } from "@/features/payouts/months.logic";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 

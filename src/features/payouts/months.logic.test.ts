@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recentMonths } from "./finance-payouts.logic";
+import { recentMonths } from "./months.logic";
 
 describe("recentMonths", () => {
   it("o rótulo é o mesmo mês do valor e do recorte (bug de 16/09/2026: dizia agosto mostrando setembro)", () => {

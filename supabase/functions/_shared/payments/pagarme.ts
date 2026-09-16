@@ -17,7 +17,6 @@ import type {
   PixChargeInput,
   RecipientBalance,
   RecipientInput,
-  TransferSettings,
   RecipientKycAddress,
   RecipientKycPhone,
   RecipientRequirement,
@@ -25,9 +24,11 @@ import type {
   RecipientStatus,
   RefundInput,
   RefundResult,
+  SplitRule,
   TransferInput,
   TransferResult,
-  SplitRule,
+  TransferSettings,
+  WithdrawalInput,
 } from "./types.ts";
 import { GatewayConfigError } from "./types.ts";
 
@@ -519,6 +520,18 @@ export function buildTransferBody(input: TransferInput): Record<string, unknown>
   };
 }
 
+/**
+ * Corpo de `POST /transfers` para SAQUE: com `recipient_id` o destino é a conta bancária do
+ * recebedor. É a outra cara da mesma rota do repasse (que usa source/target).
+ */
+export function buildWithdrawalBody(input: WithdrawalInput): Record<string, unknown> {
+  return {
+    amount: input.amountCents,
+    recipient_id: input.recipientId,
+    ...(input.metadata ? { metadata: input.metadata } : {}),
+  };
+}
+
 /** Normaliza a resposta de `POST /transfers`. Id vem numérico na v5. */
 export function buildTransferResult(httpStatus: number, body: unknown): TransferResult {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
@@ -757,6 +770,26 @@ export class PagarmeGateway implements PaymentGateway {
         "Idempotency-Key": input.idempotencyKey,
       },
       body: JSON.stringify(buildTransferBody(input)),
+    });
+    let parsed: unknown = null;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = null;
+    }
+    return buildTransferResult(res.status, parsed);
+  }
+
+  /** Saque para o banco do recebedor. Mesma rota, mesmo header de idempotência do repasse. */
+  async createWithdrawal(input: WithdrawalInput): Promise<TransferResult> {
+    const res = await fetch(`${pagarmeBaseUrl(this.secretKey)}/transfers`, {
+      method: "POST",
+      headers: {
+        Authorization: pagarmeAuthHeader(this.secretKey),
+        "Content-Type": "application/json",
+        "Idempotency-Key": input.idempotencyKey,
+      },
+      body: JSON.stringify(buildWithdrawalBody(input)),
     });
     let parsed: unknown = null;
     try {

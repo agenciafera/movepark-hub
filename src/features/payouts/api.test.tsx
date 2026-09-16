@@ -12,6 +12,7 @@ import {
   useGatewayMasterBalance,
   useManualRefunds,
   useRefreshGatewayBalances,
+  useWithdraw,
 } from "./api";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -287,5 +288,21 @@ describe("useRefreshGatewayBalances", () => {
     const r = await result.current.mutateAsync();
     expect(chamada.ultimoBody).toEqual({ force: true });
     expect(r.forced).toBe(true);
+  });
+});
+
+describe("useWithdraw", () => {
+  it("pede o saque à Edge recipient-withdraw com empresa e valor em centavos", async () => {
+    const chamada = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", amount_cents: 5000, fee_cents: 367 } });
+    const { result } = renderMutation(() => useWithdraw());
+    const r = await result.current.mutateAsync({ company_id: "c1", amount_cents: 5000 });
+    expect(chamada.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000 });
+    expect(r.status).toBe("created");
+  });
+
+  it("propaga a recusa do pré-voo (saldo não cobre)", async () => {
+    falha("edge", "recipient-withdraw", 409, "Saldo disponível não cobre o saque.");
+    const { result } = renderMutation(() => useWithdraw());
+    await expect(result.current.mutateAsync({ company_id: "c1", amount_cents: 5000 })).rejects.toThrow(/não cobre/);
   });
 });

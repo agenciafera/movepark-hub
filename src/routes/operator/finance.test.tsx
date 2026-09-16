@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders, mockAuth } from "@/test/utils";
 
+vi.mock("@/features/payouts/PartnerAccount", () => ({
+  // A conta tem teste próprio (PartnerAccount.test.tsx); aqui só o resto da página.
+  PartnerAccount: () => <div data-testid="partner-account-stub" />,
+}));
 vi.mock("@/features/payouts/api", () => ({
   useRecipient: () => ({ data: { status: "active" } }),
   useUpdateRecipientPayout: () => ({ mutateAsync: vi.fn(), isPending: false }),

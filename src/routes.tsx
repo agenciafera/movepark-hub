@@ -90,6 +90,7 @@ import ManagerBookings from "@/routes/manager/bookings";
 import ManagerCompanies from "@/routes/manager/companies";
 import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
+import ManagerCompanyAccount from "@/routes/manager/company-account";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
@@ -1031,6 +1032,8 @@ export const routes: RouteRecord[] = [
                 path: "companies/:companyId/locations/:locationId/parking-types",
                 element: <ParkingTypesPage />,
               },
+              // Conta do parceiro (E0.3.7): extrato estilo conta bancária, com saque e estorno.
+              { path: "companies/:companyId/conta", element: <ManagerCompanyAccount /> },
               { path: "users", element: <ManagerUsers /> },
               { path: "finance/billing", element: <ManagerFinanceBilling /> },
               { path: "finance/commissions", element: <ManagerFinanceCommissions /> },
