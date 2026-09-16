@@ -179,30 +179,40 @@ quatro Edges de cobrança. Manager › Financeiro › Recebedores ganhou a colun
 botão de ligar/desligar. Global desligada com empresas marcadas é o estado de transição: quem tem
 recebedor entra no modelo novo, quem não tem segue em custódia.
 
-## Modo rascunho (decidido em 15/09/2026)
+## Modo rascunho e testadores (decidido em 15/09/2026, refeito em 16/09/2026)
 
-Testar uma unidade de ponta a ponta (preço, reserva, pagamento, cancelamento) sem listar. Três
-camadas travavam unidade não listada, e a resposta respeita cada uma:
+Testar uma unidade de ponta a ponta (busca, filtros, ficha, pagamento, cancelamento) sem
+publicar, **com conta de cliente**, porque a conta do Manager não fecha compra. O desenho é o dos
+test users do Facebook: a equipe marca contas como **testador** e, logadas no site, elas veem a
+unidade em rascunho como qualquer outra. Design e decisões em
+`docs/superpowers/specs/2026-09-16-rascunho-e-testadores-design.md`.
 
-| Camada | Trava | Como o rascunho passa |
+**Rascunho é status na tela e flag no banco.** O select Status da unidade tem Ativa, Rascunho,
+Inativa e Suspensa. Rascunho grava `status = 'active'` + `location.is_draft = true`
+(`statusFieldFrom`/`statusFieldToPayload` em `useLocationForm.ts`). Não entra valor no enum
+`entity_status`: ele é compartilhado com `company`, e todo corte do catálogo checa
+`status = 'active'`. `is_draft` (migration `20261118160000`) mantém `is_listed = false` nos dois
+gatilhos que listam (foto e recebedor ativo); voltar para Ativa publica de novo se a unidade tem
+foto e a empresa pode receber. Na lista de unidades o badge é um só: "Rascunho".
+
+**Quem vê:** `public.is_tester()` = `is_hub_admin()` ou linha em `tester_user` (migration
+`20261119093000`). A RPC `admin_set_tester(uuid, boolean)` (só hub_admin) é a coluna **Testador**
+em Manager › Usuários; hub_admin aparece como "sempre". O front lê `is_tester()` ao carregar a
+sessão (`Session.isTester`). Um corte em todo lugar: `is_listed or (is_draft and is_tester())`.
+
+| Camada | Trava | Como o rascunho passa para o testador |
 |---|---|---|
-| Banco | `check_availability`, `get_pricing_data`, `availability_batch`, `simulate_price` exigem `is_listed` (20261029100000) | migration `20261118140000`: `(l.is_listed or public.is_hub_admin())`. Sem sessão a exceção é falsa: anon, build do SSG e Worker seguem sem ver nada. pgTAP `modo_rascunho.test.sql` |
-| Borda | o Worker devolve 404 na URL pública de unidade não listada, e não enxerga a sessão | a ficha em rascunho mora **dentro do Manager**: `/manager/companies/:companyId/locations/:locationId/rascunho`, navegação interna, nunca a URL pública |
-| Leitura | `fetchListing` filtra `location.is_listed` | `fetchListingDraft(locationId)` dispensa o filtro (a RLS de admin enxerga a unidade) |
-| Reserva | `ReservationCard` só deixava `customer` reservar | `hub_admin` também reserva; a reserva sai no nome do admin e o cancelamento é como staff, em Manager › Reservas |
+| RLS | `catalog_read_location` exigia `is_listed` | recriada com o corte acima; `is_tester()` é executável por `anon` porque a policy roda como o chamador, e sem sessão devolve falso |
+| Funções | `check_availability`, `get_pricing_data`, `availability_batch`, `simulate_price` | `(l.is_listed or (l.is_draft and public.is_tester()))`. Unidade não listada que não é rascunho fica invisível até para hub_admin. pgTAP `modo_rascunho.test.sql` (8) e `tester_user.test.sql` (14) |
+| Busca | a Edge `search` lia com a anon key e ignorava o JWT que o front já mandava | `callerAuthorization(req, anon)` repassa o header, a RLS corre como o usuário; o resultado traz `location.is_draft` e o card mostra o selo "Rascunho" |
+| Ficha | `fetchListing` filtrava `location.is_listed` | `.or("is_listed.eq.true,is_draft.eq.true")` na relação; a página mostra "Rascunho: o público ainda não vê esta unidade" ao lado do H1 |
+| Reserva | `ReservationCard` | só `customer` reserva, como sempre; o testador É cliente |
 
-Rascunho é unidade **viva** (`status = 'active'`, empresa ativa) e **não listada**. Unidade inativa
-continua invisível até para hub_admin. O botão **Testar rascunho** aparece na lista de unidades da
-empresa só para unidade não listada.
-
-**A flag é explícita: `location.is_draft` (migration `20261118160000`, 16/09/2026).** O rascunho
-de 15/09 existia por acidente de ordem: `is_listed` desligada à mão antes de reativar a empresa, e
-nada impedia o gatilho de religar. `enforce_photo_gate_on_location` dispara em qualquer update de
-`photos`/`status`/`deleted_at` e lista sozinho quando há foto, unidade ativa e empresa apta; um
-Salvar em "Editar unidade" publicaria a Agência Fera. Com `is_draft = true` os dois gatilhos que
-listam (o de foto e o de recebedor ativo) não listam, e marcar deslista na hora. O campo mora no
-bloco "Catálogo Movepark" do formulário da unidade ("Rascunho: não publicar na vitrine"), só para
-hub_admin. pgTAP `location_is_draft.test.sql` (7).
+O que não muda: `fetchAllFichaPaths` (build SSG) e `fichaPublicada` (Worker) seguem só com
+`is_listed`. Rascunho não é pré-renderizado, não entra no sitemap e a URL direta devolve a casca
+404; o testador chega pela busca. A página do destino também não lista rascunho (a lista de
+unidades dela é só do loader SSG). O atalho "Testar rascunho" do Manager, a página
+`/manager/.../rascunho` e a exceção de hub_admin no `ReservationCard` saíram em 16/09/2026.
 
 ## Rollout
 
