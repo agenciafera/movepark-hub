@@ -18,7 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRecipient, useUpdateRecipientPayout } from "./api";
+import { useRecipient, useSetCompanyPayoutReleaseDays, useUpdateRecipientPayout } from "./api";
+import { useCompanies } from "@/features/companies/api";
+import { Input } from "@/components/ui/input";
 import {
   coerceDay,
   dayOptions,
@@ -40,7 +42,16 @@ type Props = {
  */
 export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
   const update = useUpdateRecipientPayout();
+  const setReleaseDays = useSetCompanyPayoutReleaseDays();
+  const companies = useCompanies();
   const { data: recipient } = useRecipient(open ? companyId : undefined);
+  // E0.3.8: prazo de liberação do saque desta empresa; vazio herda o global.
+  const companyDays = (companies.data?.find((c) => c.id === companyId) as { payout_release_days?: number | null } | undefined)
+    ?.payout_release_days;
+  const [releaseDays, setReleaseDaysState] = React.useState<string>("");
+  React.useEffect(() => {
+    if (open) setReleaseDaysState(companyDays == null ? "" : String(companyDays));
+  }, [open, companyDays]);
 
   // NULL nas colunas = herda o default global (app_setting `payout_transfer_*`); refletimos isso na
   // dica "herdado" e no fallback do formulário, pra não exibir uma cadência que a empresa não tem.
@@ -72,6 +83,10 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
         company_id: companyId,
         transfer: { enabled, interval, day: coerceDay(interval, day) },
       });
+      const dias = releaseDays.trim() === "" ? null : Math.min(365, Math.max(0, Math.round(Number(releaseDays))));
+      if (dias !== (companyDays ?? null)) {
+        await setReleaseDays.mutateAsync({ company_id: companyId, days: Number.isFinite(dias as number) ? dias : null });
+      }
       toast.success("Configuração de repasse salva");
       if (res.warning) toast.warning(res.warning);
       onOpenChange(false);
@@ -130,6 +145,23 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
               </Select>
             </div>
           )}
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="release-days">Prazo de liberação do saque (dias)</Label>
+            <Input
+              id="release-days"
+              type="number"
+              min={0}
+              max={365}
+              value={releaseDays}
+              onChange={(e) => setReleaseDaysState(e.target.value)}
+              placeholder="herda o global"
+            />
+            <span className="text-caption text-muted">
+              Dias depois do pagamento para a venda entrar no disponível para saque. Vazio herda o
+              padrão global de Configurações.
+            </span>
+          </div>
 
           {/* Antecipação — desabilitada até liberação da Pagar.me (E0.3.3, decisão de produto). */}
           <div className="space-y-2 rounded-md border border-hairline bg-surface-soft p-3 opacity-80">

@@ -5,7 +5,7 @@
 // repasse da custódia (create-payout-transfer), que move dinheiro entre recebedores.
 //
 // POST /functions/v1/recipient-withdraw   Authorization: Bearer <JWT>
-// { "company_id": "uuid", "amount_cents": 5000 }
+// { "company_id": "uuid", "amount_cents": 5000, "force"?: true }
 // → { ok, withdrawal_id, external_transfer_id, status, amount_cents, fee_cents }
 //
 // Permissão: hub_admin OU membro da empresa com `payouts:write` (o Dono, ADR-005).
@@ -16,7 +16,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { transferStatusToWithdrawalStatus } from "../pagarme-webhook/logic.ts";
-import { parseWithdrawInput, withdrawPreflight } from "./logic.ts";
+import { parseWithdrawInput, withdrawCap, withdrawPreflight } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -98,6 +98,30 @@ Deno.serve(async (req: Request) => {
   const saldo = await gateway.getRecipientBalance(recipient.external_recipient_id);
   const pre = withdrawPreflight(saldo, input.amountCents);
   if (!pre.ok) return jsonResponse({ error: pre.reason, available_cents: saldo.availableCents }, pre.status);
+
+  // E0.3.8: o teto é o NOSSO disponível (vendas liberadas pelo prazo, menos dívida e saques),
+  // calculado no banco com o saldo que acabou de ser lido.
+  await admin.from("payout_recipient").update({
+    balance_available_cents: saldo.availableCents ?? 0,
+    balance_waiting_cents: saldo.waitingFundsCents ?? 0,
+    balance_transferred_cents: saldo.transferredCents ?? 0,
+    balance_synced_at: new Date().toISOString(),
+  }).eq("id", recipient.id);
+  const { data: teto, error: tetoErr } = await admin.rpc("payout_withdrawable", { p_company_id: input.companyId });
+  if (tetoErr || !teto) return jsonResponse({ error: "Não foi possível calcular o disponível para saque." }, 500);
+  const cap = withdrawCap({
+    amountCents: input.amountCents,
+    availableCents: Number((teto as { available_cents?: number }).available_cents ?? 0),
+    gatewayAvailableCents: saldo.availableCents,
+    isHubAdmin,
+    force: input.force,
+  });
+  if (!cap.ok) {
+    return jsonResponse(
+      { error: cap.reason, available_cents: (teto as { available_cents?: number }).available_cents ?? 0 },
+      cap.status,
+    );
+  }
 
   const idempotencyKey = `wd-${crypto.randomUUID()}`;
   const result = await gateway.createWithdrawal({

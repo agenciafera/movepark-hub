@@ -428,6 +428,70 @@ export function BookingHoldSettings() {
   );
 }
 
+/**
+ * Saque dos parceiros (E0.3.8): o disponível para saque é nosso, e a venda só entra nele N dias
+ * depois do pagamento. Este é o padrão global; cada empresa pode sobrescrever em Recebedores ›
+ * Configurar repasse. A transferência automática da Pagar.me fica desligada: saque é manual.
+ */
+export function PayoutReleaseSettings() {
+  const { data, isLoading } = useAppSettings();
+  const update = useUpdateAppSettings();
+  const [days, setDays] = React.useState(30);
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data && !ready) {
+      const n = Number(data.payout_release_days ?? 30);
+      setDays(Number.isFinite(n) ? n : 30);
+      setReady(true);
+    }
+  }, [data, ready]);
+
+  async function save() {
+    const clamped = Math.min(365, Math.max(0, Math.round(days)));
+    try {
+      await update.mutateAsync({ payout_release_days: String(clamped) });
+      setDays(clamped);
+      toast.success("Prazo de liberação salvo");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Saque dos parceiros</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="payout-release-days">Prazo de liberação (dias depois do pagamento)</Label>
+          <Input
+            id="payout-release-days"
+            type="number"
+            min={0}
+            max={365}
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            disabled={isLoading}
+            className="max-w-[10rem]"
+          />
+          <span className="text-caption text-muted">
+            A venda só entra no disponível para saque do parceiro depois desse prazo. Padrão para
+            todas as empresas; cada uma pode ter o seu em Recebedores › Configurar repasse. O saque
+            é sempre manual: a transferência automática da Pagar.me fica desligada.
+          </span>
+        </div>
+        <div>
+          <Button onClick={save} disabled={update.isPending || isLoading}>
+            {update.isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ManagerSettings() {
   const [twoFactor, setTwoFactor] = React.useState(false);
   return (
@@ -467,6 +531,7 @@ export default function ManagerSettings() {
 
         <TabsContent value="payments" className="flex flex-col gap-6">
           <PaymentsSettings />
+          <PayoutReleaseSettings />
           <BookingHoldSettings />
           <InstallmentPolicySettings />
         </TabsContent>

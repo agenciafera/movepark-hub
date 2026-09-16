@@ -75,6 +75,38 @@ movimento com os efeitos no saldo e na dívida. Deno: `buildWithdrawalBody`, `pa
 ciclo, dívida, efeitos, Estornar e o saque em centavos), hooks `usePartnerAccountStatement`
 e `useWithdraw`.
 
+## Saque controlado pela Movepark (E0.3.8, 16/09/2026)
+
+Decidido pelo Kallef na sequência: **saque sempre manual** e **o disponível para saque é
+nosso, não o saldo bruto da Pagar.me**. O saldo da Pagar.me continua sendo o cofre (o dinheiro
+está no recebedor do parceiro, em nome dele) e o teto físico; o nosso razão decide quanto e
+quando pode sair. Migration `20261120010000`.
+
+| Decisão | Escolha |
+|---|---|
+| Quando a venda libera | N dias depois do pagamento. Padrão global `app_setting.payout_release_days` (30), sobrescrito por `company.payout_release_days` (Recebedores › Configurar repasse) |
+| Quem saca | O Dono pelo Operator, até o disponível nosso; a Movepark pelo Manager, e só passa do teto com "Passar do disponível calculado" marcado (o gateway continua sendo o teto físico) |
+| Taxa de saque | Do parceiro, descontada do saldo pelo gateway |
+| Transferência automática | Desligada em todo recebedor (`transfer_enabled = false`); Agência Fera já está |
+
+`payout_withdrawable(company)`:
+
+```
+liberado    = Σ líquido das vendas com paid_at + N dias <= agora e partner_release_at <= agora
+              + repasses da custódia pagos
+retido      = Σ líquido das vendas ainda dentro do prazo
+disponível  = max(0, min(liberado − dívida − saques (pagos ou em curso, com taxa),
+                         disponível real na Pagar.me))
+```
+
+Líquido da venda = perna do parceiro − taxa que ele paga − abatimento de dívida − o que o
+gateway já debitou dele em estorno híbrido. Estorno absorvido pela Movepark não sai daqui: entra
+pela dívida. A Edge `recipient-withdraw` lê o saldo ao vivo, grava, recalcula o teto no banco e
+recusa (409) o que passa dele; `force` só para hub_admin.
+
+A conta mostra "Disponível para saque" (nosso), "Retido pelo prazo" (com o prazo), "A liberar
+pelo gateway" (cartão) e a dívida; o saldo bruto da Pagar.me fica como referência pequena.
+
 ## Fora do escopo agora
 
 Antecipação por venda, exportação do extrato e o extrato de operações de saldo do gateway

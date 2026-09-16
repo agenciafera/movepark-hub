@@ -13,6 +13,7 @@ import {
   useManualRefunds,
   useRefreshGatewayBalances,
   useWithdraw,
+  useSetCompanyPayoutReleaseDays,
 } from "./api";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -304,5 +305,16 @@ describe("useWithdraw", () => {
     falha("edge", "recipient-withdraw", 409, "Saldo disponível não cobre o saque.");
     const { result } = renderMutation(() => useWithdraw());
     await expect(result.current.mutateAsync({ company_id: "c1", amount_cents: 5000 })).rejects.toThrow(/não cobre/);
+  });
+});
+
+describe("useSetCompanyPayoutReleaseDays", () => {
+  it("grava o prazo da empresa pela RPC, e null volta a herdar o global", async () => {
+    const chamada = rpc("company_set_payout_release_days", { json: null });
+    const { result } = renderMutation(() => useSetCompanyPayoutReleaseDays());
+    await result.current.mutateAsync({ company_id: "c1", days: 7 });
+    expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_days: 7 });
+    await result.current.mutateAsync({ company_id: "c1", days: null });
+    expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_days: null });
   });
 });

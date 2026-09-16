@@ -6,8 +6,13 @@ vi.mock("@/features/payouts/PartnerAccount", () => ({
   // A conta tem teste próprio (PartnerAccount.test.tsx); aqui só o resto da página.
   PartnerAccount: () => <div data-testid="partner-account-stub" />,
 }));
+vi.mock("@/features/companies/api", () => ({
+  useCompanies: () => ({ data: [] }),
+}));
 vi.mock("@/features/payouts/api", () => ({
   useRecipient: () => ({ data: { status: "active" } }),
+  // E0.3.8: prazo de liberação por empresa, dentro do diálogo de repasse.
+  useSetCompanyPayoutReleaseDays: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateRecipientPayout: () => ({ mutateAsync: vi.fn(), isPending: false }),
   usePayoutBalance: () => ({
     data: {

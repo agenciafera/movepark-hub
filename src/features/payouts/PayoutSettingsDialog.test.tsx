@@ -14,9 +14,15 @@ const recipient = {
 } as unknown as PayoutRecipient;
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() } }));
+const setReleaseDays = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock("./api", () => ({
   useUpdateRecipientPayout: () => ({ mutateAsync, isPending: false }),
   useRecipient: () => ({ data: recipient }),
+  // E0.3.8: prazo de liberação por empresa.
+  useSetCompanyPayoutReleaseDays: () => ({ mutateAsync: setReleaseDays, isPending: false }),
+}));
+vi.mock("@/features/companies/api", () => ({
+  useCompanies: () => ({ data: [{ id: "c1", name: "Empresa", payout_release_days: null }] }),
 }));
 
 import { PayoutSettingsDialog } from "./PayoutSettingsDialog";

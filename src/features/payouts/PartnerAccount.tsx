@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
-import { usePartnerAccountStatement, useWithdraw } from "./api";
+import { usePartnerAccountStatement, usePayoutWithdrawable, useWithdraw } from "./api";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MOVEMENT_LABEL, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
@@ -66,10 +67,13 @@ export function PartnerAccount({
   const statement = usePartnerAccountStatement({ companyId, from: period.from, to: period.to });
   const refresh = useAutoRefreshBalances();
   const withdraw = useWithdraw();
+  const withdrawable = usePayoutWithdrawable(companyId);
   const [withdrawOpen, setWithdrawOpen] = React.useState(false);
   const [amount, setAmount] = React.useState<number | null>(null);
+  const [force, setForce] = React.useState(false);
 
   const h = statement.data?.header;
+  const w = withdrawable.data;
   const moves = statement.data?.movements ?? [];
   const totals = summarizeMovements(moves);
 
@@ -79,11 +83,16 @@ export function PartnerAccount({
       toast.error("Informe o valor do saque.");
       return;
     }
+    if (w && cents > w.available_cents && !(canRefund && force)) {
+      toast.error(`Disponível para saque é ${brl(w.available_cents)}.`);
+      return;
+    }
     try {
-      const r = await withdraw.mutateAsync({ company_id: companyId, amount_cents: cents });
+      const r = await withdraw.mutateAsync({ company_id: companyId, amount_cents: cents, force: canRefund && force });
       toast.success(`Saque de ${brl(r.amount_cents)} pedido ao gateway (${STATUS_LABEL[r.status] ?? r.status}).`);
       setWithdrawOpen(false);
       setAmount(null);
+      setForce(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao pedir o saque");
     }
@@ -101,33 +110,37 @@ export function PartnerAccount({
 
   return (
     <div className="flex flex-col gap-4" data-testid="partner-account">
-      {/* Cabeçalho: o que o gateway diz que ele tem, quando vai para o banco, e o que deve. */}
+      {/* Cabeçalho (E0.3.8): o disponível para saque é o NOSSO número (vendas liberadas pelo prazo,
+          menos dívida e saques, limitado ao saldo real). O gateway aparece como referência. */}
       <div className="grid gap-4 tablet:grid-cols-4">
         <Card>
           <CardContent className="p-5">
-            <div className="text-caption text-muted">Disponível no gateway</div>
+            <div className="text-caption text-muted">Disponível para saque</div>
             <div className="text-display-sm text-ink" data-testid="conta-disponivel">
-              {h?.available_cents != null ? brl(h.available_cents) : "sem leitura"}
+              {w ? brl(w.available_cents) : "…"}
             </div>
-            {h?.balance_synced_at && (
-              <div className="text-caption text-muted">lido em {formatDateTime(h.balance_synced_at)}</div>
-            )}
+            <div className="text-caption text-muted">
+              {h?.available_cents != null ? `no gateway ${brl(h.available_cents)}` : "gateway sem leitura"}
+              {h?.balance_synced_at ? ` · lido em ${formatDateTime(h.balance_synced_at)}` : ""}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-            <div className="text-caption text-muted">A liberar</div>
+            <div className="text-caption text-muted">Retido pelo prazo</div>
+            <div className="text-display-sm text-ink" data-testid="conta-retido">{w ? brl(w.retained_cents) : "…"}</div>
+            <div className="text-caption text-muted">
+              {w ? `cada venda libera ${w.release_days} dias depois do pagamento` : ""}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="text-caption text-muted">A liberar pelo gateway</div>
             <div className="text-display-sm text-ink">{h?.waiting_cents != null ? brl(h.waiting_cents) : "-"}</div>
-            <div className="text-caption text-muted">cartão libera em 30 dias; PIX na hora</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <div className="text-caption text-muted">Vai para o banco</div>
-            <div className="text-body text-ink">{h ? transferCycleLabel(h) : "-"}</div>
-            {h?.transferred_cents != null && (
-              <div className="text-caption text-muted">já transferido {brl(h.transferred_cents)}</div>
-            )}
+            <div className="text-caption text-muted">
+              cartão em 30 dias, PIX na hora · {h ? transferCycleLabel(h) : "-"}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -173,7 +186,7 @@ export function PartnerAccount({
             <Button
               size="sm"
               onClick={() => setWithdrawOpen(true)}
-              disabled={!h?.available_cents || h.recipient_missing || h.recipient_status !== "active"}
+              disabled={!w || (w.available_cents <= 0 && !canRefund) || w.recipient_missing || w.recipient_status !== "active"}
             >
               Repassar para o banco
             </Button>
@@ -215,11 +228,17 @@ export function PartnerAccount({
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <p className="text-body-sm text-muted">
-              Saque do saldo disponível no gateway ({h?.available_cents != null ? brl(h.available_cents) : "sem leitura"}) para a
-              conta bancária cadastrada do estacionamento. A taxa de saque é descontada pelo gateway.
+              Disponível para saque: <strong>{w ? brl(w.available_cents) : "…"}</strong>. Vai para a conta bancária
+              cadastrada do estacionamento; a taxa de saque é descontada do saldo pelo gateway.
             </p>
             <Label htmlFor="saque-valor">Valor</Label>
             <CurrencyInput id="saque-valor" value={amount} onChange={setAmount} />
+            {canRefund && (
+              <label className="flex items-start gap-2 text-caption text-muted">
+                <Checkbox checked={force} onCheckedChange={(v) => setForce(v === true)} aria-label="Passar do teto" />
+                <span>Passar do disponível calculado (só a Movepark; o teto físico continua sendo o gateway).</span>
+              </label>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="secondary" onClick={() => setWithdrawOpen(false)} disabled={withdraw.isPending}>
                 Cancelar

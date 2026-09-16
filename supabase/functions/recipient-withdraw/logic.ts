@@ -3,6 +3,8 @@
 export interface WithdrawInput {
   companyId: string;
   amountCents: number;
+  /** hub_admin passando do teto nosso, com confirmação explícita na tela. */
+  force: boolean;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -15,7 +17,7 @@ export function parseWithdrawInput(body: unknown): { input: WithdrawInput | null
   if (typeof amount !== "number" || !Number.isInteger(amount) || amount <= 0) {
     return { input: null, error: "amount_cents precisa ser um inteiro positivo (centavos)" };
   }
-  return { input: { companyId, amountCents: amount } };
+  return { input: { companyId, amountCents: amount, force: b.force === true } };
 }
 
 /**
@@ -39,4 +41,26 @@ export function withdrawPreflight(
     };
   }
   return { ok: true };
+}
+
+/**
+ * Teto do saque (E0.3.8): o disponível é o NOSSO número (`payout_withdrawable`), não o saldo bruto
+ * da Pagar.me. O parceiro nunca passa dele; hub_admin só com `force`, e o que o gateway tem
+ * continua sendo o teto físico para todo mundo.
+ */
+export function withdrawCap(
+  args: { amountCents: number; availableCents: number; gatewayAvailableCents: number | null; isHubAdmin: boolean; force: boolean },
+): { ok: true } | { ok: false; reason: string; status: number } {
+  if (args.amountCents <= args.availableCents) return { ok: true };
+  if (args.isHubAdmin && args.force) {
+    if (args.gatewayAvailableCents != null && args.amountCents > args.gatewayAvailableCents) {
+      return { ok: false, reason: `O gateway só tem ${args.gatewayAvailableCents} centavos disponíveis.`, status: 409 };
+    }
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    reason: `Disponível para saque é ${args.availableCents} centavos; o pedido foi de ${args.amountCents}.`,
+    status: 409,
+  };
 }

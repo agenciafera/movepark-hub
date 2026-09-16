@@ -764,7 +764,7 @@ export function usePartnerAccountStatement(args: { companyId?: string; from: str
 export function useWithdraw() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { company_id: string; amount_cents: number }) => {
+    mutationFn: async (args: { company_id: string; amount_cents: number; force?: boolean }) => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -789,3 +789,65 @@ export function useWithdraw() {
     },
   });
 }
+
+/** O que `payout_withdrawable` devolve: o disponível para saque calculado do nosso lado (E0.3.8). */
+export type PayoutWithdrawable = {
+  company_id: string;
+  /** Dias depois do pagamento para a venda liberar (global, ou o da empresa). */
+  release_days: number;
+  /** Vendas já liberadas pelo prazo (líquidas) mais repasses da custódia. */
+  released_cents: number;
+  /** Vendas pagas ainda dentro do prazo. */
+  retained_cents: number;
+  debt_cents: number;
+  /** Saques pagos ou em curso, com a taxa. */
+  withdrawn_cents: number;
+  gateway_available_cents: number | null;
+  gateway_waiting_cents: number | null;
+  gateway_synced_at: string | null;
+  recipient_status: string | null;
+  recipient_missing: boolean;
+  /** O teto do saque: liberado − dívida − saques, limitado ao disponível real na Pagar.me. */
+  available_cents: number;
+};
+
+/**
+ * Disponível para saque (E0.3.8): o número é nosso, não o saldo bruto da Pagar.me. O parceiro saca
+ * até ele; a Movepark também, e só passa dele com confirmação explícita.
+ */
+export function usePayoutWithdrawable(companyId: string | undefined) {
+  return useQuery({
+    queryKey: [...accountKeys.all, "withdrawable", companyId ?? "none"] as const,
+    enabled: !!companyId,
+    queryFn: async (): Promise<PayoutWithdrawable> => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "payout_withdrawable",
+        a: { p_company_id: string },
+      ) => PromiseLike<{ data: PayoutWithdrawable | null; error: { message: string } | null }>;
+      const { data, error } = await rpc("payout_withdrawable", { p_company_id: companyId! });
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Sem saldo calculado.");
+      return data;
+    },
+  });
+}
+
+/** Prazo de liberação de UMA empresa (dias depois do pagamento). `null` volta a herdar o global. */
+export function useSetCompanyPayoutReleaseDays() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; days: number | null }) => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "company_set_payout_release_days",
+        a: { p_company_id: string; p_days: number | null },
+      ) => PromiseLike<{ error: { message: string } | null }>;
+      const { error } = await rpc("company_set_payout_release_days", { p_company_id: args.company_id, p_days: args.days });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: accountKeys.all });
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
+    },
+  });
+}
+

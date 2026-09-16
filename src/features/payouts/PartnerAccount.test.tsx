@@ -34,6 +34,13 @@ function monta(props: { canWithdraw: boolean; canRefund: boolean }) {
     error: null,
   } as never);
   rpc("partner_account_statement", { json: extrato });
+  rpc("payout_withdrawable", {
+    json: {
+      company_id: "c1", release_days: 30, released_cents: 5000, retained_cents: 1422, debt_cents: 2880,
+      withdrawn_cents: 0, gateway_available_cents: 12849, gateway_waiting_cents: 0, gateway_synced_at: "2026-09-16T18:33:13Z",
+      recipient_status: "active", recipient_missing: false, available_cents: 2120,
+    },
+  });
   edge("refresh-recipients", { json: { ok: true } });
   const saque = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", amount_cents: 5000, fee_cents: 367 } });
   renderWithProviders(<PartnerAccount companyId="c1" {...props} />);
@@ -43,8 +50,10 @@ function monta(props: { canWithdraw: boolean; canRefund: boolean }) {
 describe("PartnerAccount", () => {
   it("mostra saldo, ciclo, dívida e os movimentos com o efeito no saldo", async () => {
     monta({ canWithdraw: false, canRefund: false });
-    expect(await screen.findByTestId("conta-disponivel")).toHaveTextContent("R$ 128,49");
-    expect(screen.getByText("Automático, todo dia 10")).toBeInTheDocument();
+    // O disponível é o NOSSO (liberado − dívida − saques, no teto do gateway), não o saldo bruto.
+    expect(await screen.findByTestId("conta-disponivel")).toHaveTextContent("R$ 21,20");
+    expect(screen.getByTestId("conta-retido")).toHaveTextContent("R$ 14,22");
+    expect(screen.getByText(/cada venda libera 30 dias/)).toBeInTheDocument();
     expect(screen.getByTestId("conta-divida")).toHaveTextContent("R$ 28,80");
     // formatBRL usa espaço não-quebrável entre R$ e o número; normaliza antes de comparar.
     const efeitos = screen.getAllByTestId("mov-no-saldo").map((e) => e.textContent?.replace(/\u00a0/g, " "));
@@ -60,8 +69,19 @@ describe("PartnerAccount", () => {
     expect(estornar).toHaveAttribute("href", "/manager/bookings?q=MP-4DA019");
 
     await userEvent.click(screen.getByRole("button", { name: "Repassar para o banco" }));
+    await userEvent.type(screen.getByLabelText("Valor"), "2000");
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
+    await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 2000, force: false }));
+  });
+
+  it("acima do disponível nosso o saque não sai; hub_admin passa só marcando o force", async () => {
+    const { saque } = monta({ canWithdraw: true, canRefund: true });
+    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
     await userEvent.type(screen.getByLabelText("Valor"), "5000");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
-    await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000 }));
+    expect(saque.chamadas).toHaveLength(0);
+    await userEvent.click(screen.getByRole("checkbox", { name: "Passar do teto" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
+    await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000, force: true }));
   });
 });
