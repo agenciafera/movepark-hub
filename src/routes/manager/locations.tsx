@@ -99,7 +99,10 @@ export default function ManagerLocations() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <EntityStatusBadge status={loc.status} />
+                    <div className="flex items-center gap-2">
+                      <EntityStatusBadge status={loc.status} />
+                      {(loc as { is_draft?: boolean }).is_draft && <Badge tone="neutral">Rascunho</Badge>}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

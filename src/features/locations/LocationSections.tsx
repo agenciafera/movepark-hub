@@ -6,6 +6,7 @@ import { BusinessHoursField } from "./BusinessHoursField";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -363,6 +364,23 @@ export function LocationSections({
           <Field label="Fuso horário" htmlFor="tz">
             <Input id="tz" value={f.timezone} onChange={(e) => f.setTimezone(e.target.value)} />
           </Field>
+          {/* Rascunho (16/09/2026): a unidade fica fora da vitrine mesmo com foto e recebedor ativo,
+              porque os gatilhos de listagem respeitam a flag. Só a Movepark vê e reserva, pela
+              página "Testar rascunho". Desmarcar devolve a listagem automática. */}
+          <div className="flex items-start gap-2 tablet:col-span-2">
+            <Checkbox
+              id="is-draft"
+              checked={f.isDraft}
+              onCheckedChange={(v) => f.setIsDraft(v === true)}
+            />
+            <div className="flex flex-col gap-0.5">
+              <Label htmlFor="is-draft">Rascunho: não publicar na vitrine</Label>
+              <span className="text-caption text-muted">
+                Fica fora da busca e da URL pública. A Movepark testa reserva e pagamento pelo
+                Manager antes de publicar.
+              </span>
+            </div>
+          </div>
           <Field
             label="Código no sistema de pátio (WPS)"
             htmlFor="external-ref"

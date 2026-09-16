@@ -109,6 +109,8 @@ type Snapshot = {
   toleranceMinutes: string;
   timezone: string;
   status: EntityStatus;
+  /** Rascunho: nunca listada pelos gatilhos; hub_admin testa antes de publicar (16/09/2026). */
+  isDraft: boolean;
   phone: string;
   email: string;
   notice: string;
@@ -152,6 +154,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [toleranceMinutes, setToleranceMinutes] = React.useState("");
   const [timezone, setTimezone] = React.useState("America/Sao_Paulo");
   const [status, setStatus] = React.useState<EntityStatus>("active");
+  const [isDraft, setIsDraft] = React.useState(false);
   const [phone, setPhone] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [notice, setNotice] = React.useState("");
@@ -192,6 +195,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
         : String(DEFAULT_TOLERANCE_MINUTES),
       timezone: location?.timezone ?? "America/Sao_Paulo",
       status: (location?.status ?? "active") as EntityStatus,
+      // `is_draft` ainda não está em `database.ts` (o `gen types` vem saindo incompleto); lido por cast.
+      isDraft: (location as { is_draft?: boolean } | null)?.is_draft ?? false,
       phone: location?.phone ?? "",
       email: location?.email ?? "",
       notice: location?.notice ?? "",
@@ -227,6 +232,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setToleranceMinutes(baseline.toleranceMinutes);
     setTimezone(baseline.timezone);
     setStatus(baseline.status);
+    setIsDraft(baseline.isDraft);
     setPhone(baseline.phone);
     setEmail(baseline.email);
     setNotice(baseline.notice);
@@ -263,6 +269,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     toleranceMinutes,
     timezone,
     status,
+    isDraft,
     phone,
     email,
     notice,
@@ -340,6 +347,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       tolerance_minutes: parseNonNegativeInt(toleranceMinutes),
       timezone,
       status,
+      is_draft: isDraft,
       phone: phone || null,
       email: email || null,
       notice: notice || null,
@@ -450,6 +458,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setTimezone,
       status,
       setStatus,
+      isDraft,
+      setIsDraft,
       phone,
       setPhone,
       email,

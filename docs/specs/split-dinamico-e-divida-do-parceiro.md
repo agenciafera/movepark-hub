@@ -195,6 +195,15 @@ Rascunho é unidade **viva** (`status = 'active'`, empresa ativa) e **não lista
 continua invisível até para hub_admin. O botão **Testar rascunho** aparece na lista de unidades da
 empresa só para unidade não listada.
 
+**A flag é explícita: `location.is_draft` (migration `20261118160000`, 16/09/2026).** O rascunho
+de 15/09 existia por acidente de ordem: `is_listed` desligada à mão antes de reativar a empresa, e
+nada impedia o gatilho de religar. `enforce_photo_gate_on_location` dispara em qualquer update de
+`photos`/`status`/`deleted_at` e lista sozinho quando há foto, unidade ativa e empresa apta; um
+Salvar em "Editar unidade" publicaria a Agência Fera. Com `is_draft = true` os dois gatilhos que
+listam (o de foto e o de recebedor ativo) não listam, e marcar deslista na hora. O campo mora no
+bloco "Catálogo Movepark" do formulário da unidade ("Rascunho: não publicar na vitrine"), só para
+hub_admin. pgTAP `location_is_draft.test.sql` (7).
+
 ## Rollout
 
 1. Migrations, funções, adapter, Edges e telas no ar, **global desligada e nenhuma empresa marcada**.
