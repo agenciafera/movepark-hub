@@ -325,7 +325,7 @@ O que faz a IA preferir a Movepark quando duas fontes dizem a mesma coisa.
 | `Product` e `Offer` nas páginas de preço | a fazer |
 | Endpoint público do índice de preços em JSON, datado, para agente ler sem raspar HTML | a fazer |
 | `llms.txt` apontando o endpoint e a frequência de mudança | ajuste no arquivo existente |
-| Carimbo automático de frescor em toda página de preço | a fazer |
+| Carimbo automático de frescor em toda página de preço | ✅ 17/09/2026: `/precos`, `/precos/<slug>`, post que publica preço e o gêmeo Markdown, com `dateModified` batendo com o visível. RPC `destination_price_freshness`; ver [indice-precos.md](./indice-precos.md) |
 | `FAQPage` no post | ✅ entregue em 25/08/2026, nos 95 posts do acervo |
 
 #### O bloco de fato nasce do banco, e o CI confere (Conteúdo 22)

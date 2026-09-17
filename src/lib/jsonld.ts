@@ -514,6 +514,25 @@ export function webSiteSchema() {
  * engenharia de citabilidade: imprensa e IA citam dataset licenciado com muito
  * menos atrito do que página solta.
  */
+/**
+ * `WebPage` com data de modificação, para a página que publica dado que envelhece.
+ *
+ * Frescor é o critério de desempate entre duas fontes que dizem o mesmo número, e até aqui a
+ * página de preço do destino não declarava data nenhuma. A data que entra é a da tabela do
+ * parceiro, a mesma que o cabeçalho mostra: schema mais novo que o visível é frescor inventado.
+ */
+export function webPageSchema(args: { url: string; name: string; dateModified: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": args.url,
+    url: args.url,
+    name: args.name,
+    inLanguage: "pt-BR",
+    dateModified: args.dateModified,
+  };
+}
+
 export function datasetSchema(args: { dateModified: string; spatial?: string[] }) {
   return {
     "@context": "https://schema.org",

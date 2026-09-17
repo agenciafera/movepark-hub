@@ -38,7 +38,10 @@ precificada ganha página.
 - **Moto compara com moto.** `parking_type_code = motorcycle` sai da tabela de carro e
   dos resumos; ganha seção própria quando existe.
 - **Data à vista.** "Conferido no motor de reservas em <data do build>" e a data da
-  tabela de parceiro mais recente (`max(pricing_rule.updated_at)`).
+  tabela de parceiro mais recente (`max(pricing_rule.updated_at)`), nas duas páginas e no
+  rodapé de metodologia do índice. Essa segunda data é a que o `dateModified` do schema
+  publica, e as duas saem do mesmo valor: schema mais novo que o visível é frescor
+  inventado. Ver "Carimbo de frescor" abaixo.
 - **ADR-009:** preço exibido é fato da tabela do parceiro (o mesmo da vitrine/busca); o
   CTA "Reservar" leva para `/p/...`, onde as promessas de transação já são gateadas por
   capacidade. Esta página não promete cancelamento, vaga garantida nem serviço.
@@ -225,6 +228,39 @@ gate `bun run test` (o projeto `unit` do Vitest passou a incluir
   que não existe caía no `index.html`, a guarda `type.includes("text/html")` do worker
   deixava de reconhecer o HTML, e a resposta saía com 200, content-type de JSON e 94 KB
   da casca do app. O tipo certo já vem da extensão do asset.
+
+## Carimbo de frescor (Conteúdo 26, 17/09/2026)
+
+Frescor é o critério de desempate quando duas fontes publicam o mesmo número, e o carimbo
+do concorrente é feito à mão. O nosso sai do banco, então acompanha a revisão do parceiro
+sem ninguém editar texto.
+
+| Superfície | O que aparece | O que o schema declara |
+| --- | --- | --- |
+| `/precos` | Data do build, mais a tabela de parceiro mais recente do índice inteiro | `Dataset.dateModified` = a tabela mais recente (`lastPriceUpdate`), com a data do build como reserva |
+| `/precos/<slug>` | Data do build, mais a tabela mais recente daquele destino | `WebPage.dateModified` = a mesma data do cabeçalho (`webPageSchema`) |
+| Post do blog que publica preço | "Preços conferidos no motor de reservas em <data>", no cabeçalho, com link para a tabela de hoje | `BlogPosting.dateModified` = a data mais recente entre a edição do texto e essa tabela |
+| `blog/<slug>.md` (gêmeo que a IA lê) | Linha "Preços conferidos no motor de reservas em" no cabeçalho | (o gêmeo não emite JSON-LD) |
+
+O dado sai da RPC `destination_price_freshness(p_destination)`
+(migration `20261120190000_carimbo_de_frescor_do_preco.sql`), que devolve
+`max(pricing_rule.updated_at)` por destino publicado **com o mesmo corte do
+`destination_price_index`**. São duas funções porque o índice roda o motor de preço inteiro
+para montar a matriz, e o post só precisa da data: pagar a matriz em cada um dos 95 loaders
+do build seria caro à toa. O pgTAP de `price_index.test.sql` tranca a igualdade entre as
+duas, para elas nunca datarem a página por tabelas diferentes.
+
+Duas regras que evitam frescor inventado:
+
+- **Só post que publica preço ganha carimbo** (`publicaPreco`, valor em reais no corpo). Num
+  guia de aeroporto sem tabela a linha seria ruído, e o `dateModified` passaria a se mexer a
+  cada revisão de parceiro em post que não fala de preço.
+- **O carimbo é cortado no dia.** A tabela é tocada várias vezes por dia pela sincronização,
+  e o visitante lê data, não hora. Cortar no dia faz o schema bater exatamente com o texto.
+
+A página se atualiza sozinha porque `pricing_rule` já tem trigger `site_rebuild` (ver
+[deploy-automatico.md](./deploy-automatico.md)): preço novo enfileira rebuild, o build
+refaz o HTML e o carimbo acompanha.
 
 ## Atualização
 

@@ -422,7 +422,23 @@ async function blogPostLoader({ params }: LoaderFunctionArgs) {
     .eq("is_published", true)
     .is("deleted_at", null)
     .maybeSingle();
-  return data ? flattenTags([data])[0] : null;
+  if (!data) return null;
+
+  const post = flattenTags([data])[0];
+  /*
+    Carimbo de frescor do preço, buscado aqui para sair no HTML pré-renderizado: crawler de
+    IA não executa JS, e uma data que só aparece no cliente não data nada. Uma linha por
+    post, e só para post com destino. A falha não derruba a página: sem carimbo o post
+    renderiza como antes.
+  */
+  const destinoSlug = post?.destination?.slug as string | undefined;
+  if (destinoSlug) {
+    const { data: frescor } = await supabase
+      .rpc("destination_price_freshness", { p_destination: destinoSlug })
+      .maybeSingle();
+    post.price_updated_at = frescor?.price_updated_at ?? null;
+  }
+  return post;
 }
 
 /**

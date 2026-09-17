@@ -204,6 +204,64 @@ describe("BlogPostPage: FAQPage", () => {
   });
 });
 
+describe("BlogPostPage: carimbo de frescor do preço", () => {
+  const CORPO_COM_PRECO = "A semana sai por R$ 118,30 na vaga descoberta.";
+
+  async function schemas() {
+    const { waitFor } = await import("@testing-library/react");
+    return waitFor(() => {
+      const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map(
+        (s) => JSON.parse(s.textContent ?? "{}"),
+      );
+      expect(blocos.length).toBeGreaterThan(0);
+      return blocos;
+    });
+  }
+
+  it("post que publica preço mostra a data da tabela, vinda do motor", async () => {
+    const { findByText } = renderPost({
+      body_md: CORPO_COM_PRECO,
+      price_updated_at: "2026-09-17T16:02:05Z",
+    });
+
+    expect(await findByText(/Preços conferidos no motor de reservas em/i)).toBeInTheDocument();
+    expect(await findByText("17/09/2026")).toBeInTheDocument();
+  });
+
+  /** A linha é fato do dado, não promessa: guia sem tabela não ganha carimbo de preço. */
+  it("post sem preço no corpo não ganha o carimbo", async () => {
+    const { queryByText, findByRole } = renderPost({
+      body_md: "O terminal tem três pisos.",
+      price_updated_at: "2026-09-17T16:02:05Z",
+    });
+    await findByRole("article");
+
+    expect(queryByText(/Preços conferidos no motor/i)).toBeNull();
+  });
+
+  it("o dateModified do BlogPosting bate com a data visível", async () => {
+    renderPost({ body_md: CORPO_COM_PRECO, price_updated_at: "2026-09-17T16:02:05Z" });
+    const post = (await schemas()).find((b) => b["@type"] === "BlogPosting");
+
+    expect(post?.dateModified).toBe("2026-09-17");
+  });
+
+  /**
+   * Sem esta regra, uma revisão de parceiro declararia modificado todo post do acervo, o que é
+   * frescor inventado e o Google trata como tal.
+   */
+  it("post sem preço mantém o dateModified do texto", async () => {
+    renderPost({
+      body_md: "O terminal tem três pisos.",
+      updated_at: "2026-04-06T12:00:00Z",
+      price_updated_at: "2026-09-17T16:02:05Z",
+    });
+    const post = (await schemas()).find((b) => b["@type"] === "BlogPosting");
+
+    expect(post?.dateModified).toBe("2026-04-06T12:00:00Z");
+  });
+});
+
 /** O RouterProvider resolve o loader num tick; o artigo só existe depois dele. */
 async function waitForArticle(container: HTMLElement) {
   const { waitFor } = await import("@testing-library/react");

@@ -5933,6 +5933,13 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      destination_price_freshness: {
+        Args: { p_destination?: string }
+        Returns: {
+          destination_slug: string
+          price_updated_at: string
+        }[]
+      }
       destination_price_index: {
         Args: { p_days?: number[]; p_destination?: string }
         Returns: Json

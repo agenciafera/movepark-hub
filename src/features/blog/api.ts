@@ -68,6 +68,27 @@ export function useBlogPost(slug: string | undefined) {
 }
 
 /**
+ * Público: a data da tabela de preço mais recente do destino (`destination_price_freshness`).
+ *
+ * Existe para a navegação pelo cliente, quando o leitor chega ao post por um link interno e o
+ * loader do SSG não rodou. No HTML pré-renderizado o carimbo já vem do loader.
+ */
+export function useDestinationPriceFreshness(slug: string | null | undefined) {
+  return useQuery({
+    queryKey: [...blogKeys.all, "price-freshness", slug ?? "none"] as const,
+    enabled: !!slug,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .rpc("destination_price_freshness", { p_destination: slug! })
+        .maybeSingle();
+      if (error) throw error;
+      return data?.price_updated_at ?? null;
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+/**
  * Colunas da listagem. NÃO traz `body_md`.
  *
  * Com `*`, os 93 posts vinham em 593 KB, quase tudo markdown que a listagem nem

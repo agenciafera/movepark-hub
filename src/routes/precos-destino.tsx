@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { formatBRL, formatDate } from "@/lib/format";
-import { breadcrumbSchema, priceTableOffersSchema, type PriceTableItem } from "@/lib/jsonld";
+import {
+  breadcrumbSchema,
+  priceTableOffersSchema,
+  webPageSchema,
+  type PriceTableItem,
+} from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import { OgImage } from "@/lib/ogImage";
 import {
@@ -111,6 +116,19 @@ export default function PrecosDestinoPage() {
     generatedAt,
   });
 
+  /*
+    `dateModified` com a data da tabela de parceiro, a mesma que o cabeçalho mostra.
+
+    Sem isto a página não declarava modificação nenhuma, e frescor é o critério de desempate
+    quando duas fontes publicam o mesmo número. O fallback é a data do build, para a página
+    sem carimbo de preço não sair sem data.
+  */
+  const pagina = webPageSchema({
+    url: canonical,
+    name: titulo,
+    dateModified: summary.lastUpdated ?? generatedAt,
+  });
+
   return (
     <>
       <Helmet>
@@ -125,6 +143,7 @@ export default function PrecosDestinoPage() {
         {produtos && (
           <script type="application/ld+json">{JSON.stringify(produtos)}</script>
         )}
+        <script type="application/ld+json">{JSON.stringify(pagina)}</script>
       </Helmet>
       <OgImage area="precos" />
 

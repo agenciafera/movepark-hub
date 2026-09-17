@@ -103,6 +103,26 @@ describe("PrecosDestinoPage", () => {
     expect(resposta.textContent).toContain("Aerovalet");
   });
 
+  /**
+   * A página não declarava data de modificação nenhuma, e o carimbo visível ficava sozinho no
+   * cabeçalho. O `WebPage` publica a mesma data, para a máquina ler o que o humano lê.
+   */
+  it("emite WebPage com dateModified igual à data da tabela de parceiro", async () => {
+    setup();
+    await screen.findByRole("heading", { level: 1 });
+
+    const pagina = await waitFor(() => {
+      const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find((d) => d?.["@type"] === "WebPage");
+      expect(achado).toBeDefined();
+      return achado as { dateModified: string; url: string };
+    });
+
+    expect(pagina.dateModified).toBe("2026-08-14T10:00:00Z");
+    expect(pagina.url).toContain("/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/precos");
+  });
+
   it("a tabela sai no HTML com balcão riscado e economia calculada", async () => {
     setup();
     const tabela = await screen.findByRole("table");

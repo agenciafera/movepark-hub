@@ -1017,6 +1017,21 @@ for (const d of destinations) {
 // ---------------------------------------------------------------------------
 {
   const destinoPorId = new Map(destinations.map((d) => [d.id, d]));
+  /*
+    Data da tabela de preço por destino, do mesmo índice que alimenta /precos. O gêmeo é o que
+    a IA lê, e frescor é o critério de desempate quando duas fontes publicam o mesmo número:
+    sem o carimbo aqui, o dado datado ficava só no HTML.
+  */
+  const precoEmPorDestino = new Map(
+    destinosComPreco.map((d) => [
+      d.slug,
+      (d.units ?? [])
+        .map((u) => u.price_updated_at)
+        .filter(Boolean)
+        .sort()
+        .at(-1) ?? null,
+    ]),
+  );
   fs.mkdirSync(path.join(DIST, "blog"), { recursive: true });
 
   for (const p of posts) {
@@ -1026,6 +1041,11 @@ for (const d of destinations) {
     if (resumo) linhas.push(`> ${resumo}`, "");
     linhas.push(`- Publicado em: ${String(p.published_at).slice(0, 10)}`);
     linhas.push(`- URL: ${SITE_URL}/blog/${p.slug}/`);
+    // Só no post que publica preço: num guia sem tabela, a data dataria o que a página não diz.
+    const precoEm = dest ? precoEmPorDestino.get(dest.slug) : null;
+    if (precoEm && /R\$\s?\d/.test(p.body_md ?? "")) {
+      linhas.push(`- Preços conferidos no motor de reservas em: ${String(precoEm).slice(0, 10)}`);
+    }
     // Só quando o destino tem página no ar: Portugal tem parceiro e `is_published = false`,
     // e apontar para lá seria anunciar endereço que o build não gera.
     if (dest) linhas.push(`- Estacionamentos deste aeroporto: ${SITE_URL}${cDestino(dest)}`);

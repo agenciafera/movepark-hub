@@ -33,6 +33,7 @@ import {
   listingPath,
   matchesAirportFilter,
   minPerDay,
+  lastPriceUpdate,
   overallStats,
   periodLabel,
   sortRowsByPeriod,
@@ -433,6 +434,8 @@ export default function PrecosPage() {
   const grupos = groupAirports(visiveis);
 
   const stats = overallStats(data);
+  // Data da tabela mais recente do índice: o que o visitante lê no rodapé e o que o schema declara.
+  const precoEm = lastPriceUpdate(data);
   const menorDiaria = minPerDay(data, periodo);
   const listados = sections.reduce((acc, s) => {
     const locais = new Set(s.rows.map((r) => `${r.unit.company_slug}/${r.unit.location_slug}`));
@@ -488,7 +491,14 @@ export default function PrecosPage() {
         {produtos && (
           <script type="application/ld+json">{JSON.stringify(produtos)}</script>
         )}
-        <script type="application/ld+json">{JSON.stringify(datasetSchema({ dateModified: generatedAt, spatial: aeroportos.map((a) => a.name) }))}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(
+            datasetSchema({
+              dateModified: precoEm ?? generatedAt,
+              spatial: aeroportos.map((a) => a.name),
+            }),
+          )}
+        </script>
       </Helmet>
       <OgImage area="precos" />
 
@@ -814,7 +824,14 @@ export default function PrecosPage() {
           </Accordion>
           <p className="mt-5 text-pretty text-caption-sm text-muted">
             Conferido no motor de reservas em{" "}
-            <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>.
+            <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>
+            {precoEm && (
+              <>
+                {" · tabela de parceiro mais recente de "}
+                <time dateTime={precoEm}>{formatDate(precoEm)}</time>
+              </>
+            )}
+            .
           </p>
           {/* Engenharia de citabilidade: licença clara reduz o atrito de imprensa
               e IA citarem o número com o nosso nome junto. */}

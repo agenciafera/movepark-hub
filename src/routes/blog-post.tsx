@@ -14,7 +14,18 @@ import { PostProgress } from "@/features/blog/PostProgress";
 import { PostShare } from "@/features/blog/PostShare";
 import { PostSidebar } from "@/features/blog/PostSidebar";
 import { PostSummary } from "@/features/blog/PostSummary";
-import { useBlogPost, useLatestPosts, useRelatedPosts } from "@/features/blog/api";
+import { PriceFreshness } from "@/features/blog/PriceFreshness";
+import {
+  useBlogPost,
+  useDestinationPriceFreshness,
+  useLatestPosts,
+  useRelatedPosts,
+} from "@/features/blog/api";
+import {
+  dateModifiedDoPost,
+  diaDoCarimbo,
+  publicaPreco,
+} from "@/features/blog/priceFreshness.logic";
 import {
   faqPairsFrom,
   leadFrom,
@@ -67,6 +78,17 @@ export default function BlogPostPage() {
      texto, que é pior que não ter lateral. */
   const temSidebar = Boolean(post?.destination) || relacionados.length > 0;
   const ultimos = useLatestPosts(post?.slug).data ?? [];
+  /*
+    Carimbo de frescor: a data da tabela de preço que o post exibe, vinda do motor.
+
+    O loader do SSG já traz o valor, e é ele que sai no HTML. A consulta abaixo só cobre a
+    navegação pelo cliente, quando o leitor chega por link interno e nenhum loader rodou.
+  */
+  const temPreco = publicaPreco(post?.body_md);
+  const frescorDoCliente = useDestinationPriceFreshness(
+    temPreco && post && post.price_updated_at === undefined ? post.destination?.slug : undefined,
+  );
+  const precoEm = diaDoCarimbo(post?.price_updated_at ?? frescorDoCliente.data);
   const secoes = React.useMemo(() => (post ? sectionsFrom(post.body_md) : []), [post]);
   /*
     `FAQPage` do post, montado do bloco de FAQ que ele já traz escrito.
@@ -176,7 +198,17 @@ export default function BlogPostPage() {
               description,
               image: post.cover_image_url,
               publishedAt: post.published_at,
-              updatedAt: post.updated_at,
+              /*
+                `dateModified` acompanha o carimbo visível: quando a tabela de preço é mais
+                recente que a última edição do texto, é ela que data a página, porque é ela
+                que mudou na tela. Ver priceFreshness.logic.ts.
+              */
+              updatedAt: dateModifiedDoPost({
+                publishedAt: post.published_at,
+                updatedAt: post.updated_at,
+                priceUpdatedAt: precoEm,
+                publicaPreco: temPreco,
+              }),
               authorName: post.author?.name ?? post.author_name,
               wordCount: plainText(post.body_md).split(/\s+/).filter(Boolean).length,
             }),
@@ -252,6 +284,10 @@ export default function BlogPostPage() {
                       </>
                     )}
                   </p>
+
+                  {temPreco && precoEm && (
+                    <PriceFreshness dia={precoEm} destinoSlug={post.destination?.public_slug} />
+                  )}
 
                   {/*
                     Ouvir e compartilhar ficam no cabeçalho, acima da dobra. No pé

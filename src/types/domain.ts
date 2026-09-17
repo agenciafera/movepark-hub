@@ -243,6 +243,13 @@ export type BlogPostListItem = Pick<
 };
 /** Post com as relações que a listagem e a página usam. */
 export type BlogPostWithDestination = BlogPost & {
+  /**
+   * Data da tabela de preço mais recente do destino (`destination_price_freshness`).
+   *
+   * Não é coluna de `blog_post`: entra no loader e no hook, ao lado do post, porque o carimbo
+   * de frescor da página sai do motor de preço e não do texto. Ver `priceFreshness.logic.ts`.
+   */
+  price_updated_at?: string | null;
   destination: Pick<
     Destination,
     "id" | "name" | "short_name" | "slug" | "public_slug" | "is_published"

@@ -416,6 +416,25 @@ export function overallStats(data: PriceIndexData): OverallStats {
   };
 }
 
+/**
+ * A tabela de parceiro mais recente do índice inteiro (ISO), ou `null` sem nenhuma.
+ *
+ * É o `dateModified` do `Dataset`: o índice muda quando o preço de algum parceiro muda, e não
+ * quando o build roda. Datar pelo build faria a página se declarar nova a cada deploy, que é
+ * frescor inventado.
+ */
+export function lastPriceUpdate(data: PriceIndexData): string | null {
+  let ultimo: string | null = null;
+  for (const dest of data.destinations) {
+    for (const u of dest.units) {
+      if (u.price_updated_at && (!ultimo || u.price_updated_at > ultimo)) {
+        ultimo = u.price_updated_at;
+      }
+    }
+  }
+  return ultimo;
+}
+
 export function durationLabel(days: number): string {
   return days === 1 ? "1 diária" : `${days} diárias`;
 }

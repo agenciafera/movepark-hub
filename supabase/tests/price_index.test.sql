@@ -7,7 +7,7 @@
 -- deixar de ter uma entrada por duração pedida, o front quebra a tabela em silêncio.
 
 begin;
-select plan(14);
+select plan(20);
 
 -- ── Existência e superfície ──────────────────────────────────────────────────
 
@@ -149,6 +149,50 @@ select is((
   from jsonb_array_elements(public.destination_price_index() -> 'destinations') d
   where d ->> 'slug' = 'pgtap-indice-oculto'), 0,
   'destino não publicado fica fora da chamada geral');
+
+-- ── Carimbo de frescor (destination_price_freshness) ─────────────────────────
+--
+-- O carimbo existe para a página se datar sozinha, e a data TEM que ser a mesma que o índice
+-- mostra: dois cortes diferentes datariam a página por uma tabela que ela não exibe.
+
+select has_function('public', 'destination_price_freshness', array['text'],
+  'destination_price_freshness(text) existe');
+
+select ok(has_function_privilege('anon', 'public.destination_price_freshness(text)', 'execute'),
+  'anon executa o carimbo (ele sai no HTML pré-renderizado e na página do post)');
+
+select is(
+  (select price_updated_at from public.destination_price_freshness('pgtap-indice-destino')),
+  (select max((u ->> 'price_updated_at')::timestamptz)
+     from jsonb_array_elements(pg_temp.idx() -> 'destinations' -> 0 -> 'units') u),
+  'o carimbo é o mesmo max(pricing_rule.updated_at) que o índice publica');
+
+select is((
+  select count(*)::int from public.destination_price_freshness()
+  where destination_slug = 'pgtap-indice-oculto'), 0,
+  'destino não publicado não ganha carimbo');
+
+-- A unidade escondida ganha preço mais NOVO que as listadas: se o corte vazasse, o carimbo
+-- ficaria mais fresco que a tabela exibida, que é a forma silenciosa de mentir a data.
+--
+-- O `set_updated_at` é BEFORE UPDATE e carimbaria `now()` por cima, e `now()` é o mesmo instante
+-- para a transação inteira. Desligar o trigger aqui é o que deixa as duas datas divergirem de
+-- verdade; o rollback do teste devolve tudo no fim.
+alter table public.pricing_rule disable trigger set_updated_at_pricing_rule;
+update public.pricing_rule set updated_at = now() + interval '1 day'
+  where location_parking_type_id in (
+    select lpt.id from public.location_parking_type lpt
+    join public.location l on l.id = lpt.location_id
+    where l.slug = 'pgtap-indice-escondida');
+alter table public.pricing_rule enable trigger set_updated_at_pricing_rule;
+
+select ok(
+  (select price_updated_at from public.destination_price_freshness('pgtap-indice-destino')) < now() + interval '1 day',
+  'preço de unidade não listada não avança o carimbo');
+
+select is((
+  select count(*)::int from public.destination_price_freshness('pgtap-indice-destino')), 1,
+  'um destino, uma linha: o carimbo não multiplica por unidade');
 
 -- ── anon: a mesma leitura passa pela RLS de catálogo ─────────────────────────
 

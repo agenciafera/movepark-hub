@@ -275,6 +275,34 @@ describe("PrecosPage", () => {
    * O índice mostra preço de verdade, então ele tem que sair legível por máquina também.
    * O bloco espelha a tabela: mesmo valor, mesma unidade, e nada além disso.
    */
+  /**
+   * Frescor é o critério de desempate quando duas fontes publicam o mesmo número. O `Dataset`
+   * datava pelo build, então cada deploy declarava o índice novo mesmo sem preço ter mudado.
+   */
+  it("o Dataset data pela tabela de parceiro mais recente, não pelo build", async () => {
+    setup();
+    await screen.findByRole("heading", { level: 1 });
+
+    const dataset = await waitFor(() => {
+      const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find((d) => d?.["@type"] === "Dataset");
+      expect(achado).toBeDefined();
+      return achado as { dateModified: string };
+    });
+
+    expect(dataset.dateModified).toBe("2026-08-14T10:00:00Z");
+    expect(dataset.dateModified).not.toBe("2026-08-14T15:00:00Z");
+  });
+
+  it("a metodologia mostra a mesma data que o Dataset declara", async () => {
+    setup();
+    await screen.findByRole("heading", { level: 1 });
+
+    const carimbo = await screen.findByText(/tabela de parceiro mais recente de/i);
+    expect(carimbo).toHaveTextContent("14/08/2026");
+  });
+
   it("emite Product com AggregateOffer do mesmo preço que a tabela mostra", async () => {
     setup();
     await screen.findByRole("heading", { level: 1 });
