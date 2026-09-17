@@ -467,8 +467,7 @@ Posts corrigidos no banco em 17/09/2026: `preco-estacionamento-aeroporto-guarulh
 `estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade`. A data da coleta do
 oficial passou de 27/08 para 17/09 nos quatro.
 
-**As três páginas novas**, uma por terminal, gravadas como rascunho (`is_published = false`) à espera
-do "pode publicar":
+**As três páginas novas**, uma por terminal, **publicadas em 17/09/2026** com autorização do usuário:
 
 | Slug | Palavras | O que só ela tem |
 | --- | --- | --- |
