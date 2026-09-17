@@ -73,6 +73,14 @@ conta da dívida, em TS: `_shared/debt-email.ts`) e o total a abater. Unicidade 
 do envio. Quem manda: `cancel-booking` na hora, e a varredura do cron `reconcile-payout-transfers`
 (a cada 15 min) para chargeback, webhook e o que ficou para trás.
 
+**Piso do abatimento (17/09/2026, migration `20261120210000_abatimento_com_piso.sql`).** A taxa de
+processamento fica na perna do parceiro. Se o abatimento deixasse a perna menor que a taxa, o
+recebedor ficaria negativo no gateway (medido no MP-62A79F: perna de R$ 0,18 pagando taxa de
+R$ 0,18, zero por sorte). `payout_debt_reserve(company, max, provider, floor)` garante que a perna
+que sobra é zero (abateu tudo, 100% master) ou pelo menos o piso; na faixa entre os dois, abate
+menos e o resto fica para a próxima venda. O piso vem da Edge (`debtFloorCents`: PIX 3%, cartão
+15% do total, mínimo R$ 1), com folga de propósito.
+
 Dívida nunca é negativa na tela; se o cálculo cru ficar negativo (abatimento a mais por corrida
 de duas vendas simultâneas, ver reserva abaixo), o excedente aparece no Manager como "a devolver".
 

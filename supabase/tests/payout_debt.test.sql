@@ -8,7 +8,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(29);
+select plan(32);
 
 -- ── schema ──────────────────────────────────────────────────────────────────
 select has_column('public', 'payment', 'debt_recovered_cents', 'payment.debt_recovered_cents existe');
@@ -189,7 +189,7 @@ select throws_ok(
   format($$ select public.payout_debt_settle(%L::uuid, 5000, 'manual_payment') $$, current_setting('test.cid')),
   '42501', null, 'cliente não lança acerto de dívida');
 select ok(
-  not has_function_privilege('authenticated', 'public.payout_debt_reserve(uuid, bigint, text)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.payout_debt_reserve(uuid, bigint, text, bigint)', 'EXECUTE'),
   'a reserva de abatimento é só do service_role (a Edge), nunca do usuário');
 reset role;
 
@@ -209,6 +209,32 @@ begin
 end $$;
 select is(public.payout_debt_cents(current_setting('test.cid')::uuid) - (select d from _antes), 7900::bigint,
   'dívida líquida da taxa: perna 8000 menos os 100 que o parceiro pagou na captura');
+
+-- G) Piso do abatimento (17/09/2026): a perna que sobra é zero ou pelo menos o piso, nunca na
+--    faixa entre os dois (o recebedor ficaria negativo pagando a taxa). Empresa própria, com
+--    dívida de 7950 (perna 8000 menos taxa 50).
+do $$
+declare cid uuid := gen_random_uuid(); loc uuid := gen_random_uuid(); bk uuid := gen_random_uuid();
+  split_100 jsonb := '[{"role":"partner","recipientId":"re_p2","amount":8000,"liable":false,"chargeProcessingFee":true,"chargeRemainderFee":true,"type":"flat"},
+                       {"role":"movepark","recipientId":"re_mp","amount":2000,"liable":true,"chargeProcessingFee":false,"chargeRemainderFee":false,"type":"flat"}]'::jsonb;
+begin
+  insert into public.company(id, name, slug) values (cid, 'Piso Empresa', 'piso-empresa');
+  insert into public.location(id, company_id, name, slug) values (loc, cid, 'Piso Loc', 'piso-loc');
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (bk,'MP-PISO-1',current_setting('test.cust')::uuid,loc,'2026-12-22T12:00:00Z','2026-12-23T12:00:00Z','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, split, gateway_fee_cents)
+    values (bk,'pagarme','pix','booking',100,'refunded','2026-11-22T13:00:00Z','2026-11-23T10:00:00Z',100,'cancelamento (staff)', true, true, split_100, 50);
+  perform set_config('test.cid_piso', cid::text, false);
+end $$;
+select is(public.payout_debt_cents(current_setting('test.cid_piso')::uuid), 7950::bigint, 'dívida da empresa do piso = 7950');
+-- perna 8000, dívida 7950, piso 300: sobraria 50 (< piso) → abate 7700 e deixa 300
+select is(
+  (select amount_cents from public.payout_debt_reserve(current_setting('test.cid_piso')::uuid, 8000, 'pagarme', 300)),
+  7700::bigint, 'na faixa proibida, abate menos e deixa o piso para o parceiro');
+-- o que sobrou da dívida (250) numa venda de perna 8000 com piso 300: sobra 7750 (≥ piso), abate tudo
+select is(
+  (select amount_cents from public.payout_debt_reserve(current_setting('test.cid_piso')::uuid, 8000, 'pagarme', 300)),
+  250::bigint, 'fora da faixa, abate a dívida inteira que sobrou');
 
 select * from finish();
 rollback;

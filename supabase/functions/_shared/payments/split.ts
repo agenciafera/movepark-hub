@@ -204,6 +204,18 @@ export function maxDebtRecoveryCents(rules: SplitRule[]): number {
 }
 
 /**
+ * Piso da perna do parceiro quando há abatimento (17/09/2026). A taxa de processamento fica na
+ * perna dele; se o abatimento deixasse a perna menor que a taxa, o recebedor ficaria negativo no
+ * gateway. `payout_debt_reserve` garante que a perna que sobra é zero ou pelo menos isto. Folga
+ * de propósito: PIX custa ~1%, cartão até ~5% mais parcelas; o que não abateu fica para a próxima
+ * venda.
+ */
+export function debtFloorCents(method: "pix" | "card", totalCents: number): number {
+  const pct = method === "card" ? 0.15 : 0.03;
+  return Math.max(100, Math.ceil(Math.max(0, totalCents) * pct));
+}
+
+/**
  * Estorno saindo 100% do master (E0.3.5, decisão 1). Uma regra só: a Movepark devolve tudo ao
  * cliente, o parceiro fica intacto no gateway, e a perna dele entra no razão como dívida.
  */

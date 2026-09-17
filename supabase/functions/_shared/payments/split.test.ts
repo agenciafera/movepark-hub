@@ -1,5 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
 import {
+  debtFloorCents,
   buildSplit,
   effectiveSplitEnabled,
   isGatewaySplitEnabled,
@@ -332,4 +333,11 @@ Deno.test("refundSplitHybrid: recusa parte do parceiro zero, negativa ou igual a
     }
     assertEquals(erro.length > 0, true, `parceiro=${partner} deveria ser recusado`);
   }
+});
+
+Deno.test("debtFloorCents: piso por método, nunca abaixo de R$ 1", () => {
+  assertEquals(debtFloorCents("pix", 1800), 100); // 3% = 54, sobe para o mínimo
+  assertEquals(debtFloorCents("pix", 20000), 600);
+  assertEquals(debtFloorCents("card", 20000), 3000);
+  assertEquals(debtFloorCents("card", 0), 100);
 });

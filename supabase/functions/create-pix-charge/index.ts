@@ -20,7 +20,7 @@ import {
   GatewayConfigError,
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
-import { effectiveSplitEnabled, maxDebtRecoveryCents, splitForGateway } from "../_shared/payments/split.ts";
+import { debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, splitForGateway } from "../_shared/payments/split.ts";
 import { buildPixItems, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
@@ -181,6 +181,8 @@ Deno.serve(async (req: Request) => {
     const { data: reserva, error: reservaErr } = await admin.rpc("payout_debt_reserve", {
       p_company_id: location.company_id,
       p_max_cents: maxDebtRecoveryCents(split),
+      // A perna que sobra é zero ou pelo menos o piso: nunca menor que a taxa que ela paga.
+      p_floor_cents: debtFloorCents("pix", split.reduce((a, r) => a + r.amount, 0)),
     });
     if (reservaErr) {
       // Sem reserva não dá para saber quanto abater; cobrar sem abater deixaria a dívida para a
