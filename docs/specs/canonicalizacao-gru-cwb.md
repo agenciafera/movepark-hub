@@ -198,7 +198,7 @@ mínima e a comparação com o estacionamento oficial.
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.475 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, reescrita em 17/09/2026 |
 | `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.645 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, revista em 17/09/2026 |
 | `estacionamento-barato-aeroporto-curitiba` | 4.170 (tabela de 27/08/2026) | ✅ verde, 0 bloqueio, conferida e ampliada em 17/09/2026 |
-| `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.025 | ✅ verde, 0 bloqueio |
+| `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.196 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, revista em 17/09/2026 |
 
 **As seis âncoras estão no padrão desde 27/08/2026.** Todas em verde no analisador da skill, com
 zero bloqueio, e a única atenção remanescente em cada uma é a densidade da frase-chave. A
@@ -230,6 +230,24 @@ oficial, coletada em 27/08/2026 e marcada como tal; ela entra na revisão mensal
 As duas atenções do analisador são as mesmas das outras âncoras: densidade da frase-chave em 0,3%
 e frase-chave em 7 dos 25 títulos. Forçar qualquer uma pioraria o texto, e a justificativa é a que
 já está registrada acima.
+
+### Conteúdo 17: a canônica de proximidade de CWB fecha na âncora
+
+A atividade [Conteúdo 17, página canônica de proximidade do Afonso Pena](https://app.clickup.com/t/86ak6h804)
+também não virou post novo. O ângulo que ela pedia (distância quase não muda o tempo, o que pesa é a
+espera pela van, e só o Nationpark publica a frequência) já era o eixo da âncora desde 28/08. Em
+17/09/2026 ela tinha quatro defeitos, corrigidos no banco:
+
+| Defeito | O que foi feito |
+| --- | --- |
+| Dois bloqueios no analisador: capa com nome de hash e imagem do corpo sem variação | Duas imagens novas do Higgsfield, com nome e alt próprios (`estacionamento-mais-proximo-do-aeroporto-afonso-pena` e `estacionamento-perto-aeroporto-curitiba-espera-van`), em `public/images/blog/<slug>/` |
+| "Em linha de rota": a distância sai de `ST_Distance` em geography, que é linha reta. Achado pela sessão do Conteúdo 15 | Trocado por "linha reta", e a conta de tempo deixou de converter 1,2 km em minutos de estrada. O argumento passou a vir da ficha: os dois declaram o mesmo traslado de 5 minutos |
+| O mesmo erro em mais três posts publicados de CWB | Corrigido na dona de preço, na dona de barato e no TOP 3, só essa expressão |
+| Datas de 27/08 | Preços conferidos de novo contra o motor, sem mudança, e datados de 17/09. A tabela ganhou a linha de 3 diárias, a estadia mínima (R$ 9,00 de diferença) |
+
+Analisador em verde, 0 bloqueio. Atenções: densidade da frase-chave (0,3%), frase-chave em 10 de 34
+títulos (29,4%) e 6 itens de lista; as duas primeiras têm a justificativa das outras âncoras, e a
+terceira não justifica lista artificial num texto que já tem sete tabelas.
 
 ### Conteúdo 09: a canônica de preço de CWB também fecha na âncora
 
