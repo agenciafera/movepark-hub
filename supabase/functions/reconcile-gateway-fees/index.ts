@@ -17,6 +17,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { partnerReleaseAt, totalGatewayFeeCents } from "../_shared/payments/fees.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { partnerRule } from "../_shared/payments/split.ts";
 import { BATCH_LIMIT, feeRetryCutoffIso, feeWindowIso } from "./logic.ts";
 
@@ -53,7 +54,7 @@ Deno.serve(async (req: Request) => {
   const janela = feeWindowIso(Date.now());
   const { data: payments, error } = await admin
     .from("payment")
-    .select("id, provider_charge_id, split")
+    .select("id, booking_id, provider_charge_id, split")
     .eq("provider", "pagarme")
     .eq("status", "paid")
     // Entra quem ainda não tem a taxa OU ainda não tem a data de liberação da parte do parceiro
@@ -76,6 +77,16 @@ Deno.serve(async (req: Request) => {
     try {
       const result = await gateway.listPayables(p.provider_charge_id);
       const fee = totalGatewayFeeCents(result.payables);
+      // Rastro do gateway (E0.3.9): o que os recebíveis disseram, com taxa e data de liberação.
+      await logGatewayEvent(admin, {
+        paymentId: p.id,
+        bookingId: p.booking_id ?? null,
+        kind: "payables",
+        httpStatus: result.httpStatus,
+        request: { charge_id: p.provider_charge_id },
+        response: result.raw,
+        note: `taxa ${fee ?? "?"} c · ${result.payables.length} recebível(is)`,
+      });
       // E0.3.7: junto com a taxa, quando o gateway libera a parte do parceiro (conta do parceiro).
       const release = partnerReleaseAt(result.payables, partnerRule((p.split ?? []) as never)?.recipientId ?? null);
       // Sem recebível ainda: carimba a tentativa e deixa o valor nulo para a próxima volta.

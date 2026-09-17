@@ -430,9 +430,11 @@ export function buildCardOrderBody(input: CardChargeInput): Record<string, unkno
           installments: input.installments,
           statement_descriptor: input.statementDescriptor ?? "MOVEPARK",
           ...cardRef,
-          // Mesma regra do PIX: sem split a chave é omitida, nunca enviada vazia.
-          ...(input.split?.length ? { split: mapGatewaySplit(input.split) } : {}),
         },
+        // O split mora em `payments[].split`, como no PIX. Dentro de `credit_card` a Pagar.me
+        // ignora em silêncio: a cobrança passa e o valor inteiro cai no master (medido no
+        // MP-6CFA4B, 17/09/2026). Sem split a chave é omitida, nunca enviada vazia.
+        ...(input.split?.length ? { split: mapGatewaySplit(input.split) } : {}),
       },
     ],
     metadata: input.metadata,

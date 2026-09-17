@@ -155,8 +155,11 @@ Deno.test("buildCardOrderBody: cartão novo (token) com parcelas + split", () =>
   // O adquirente exige `code` no item (412 sem ele); cai no código do pedido.
   assertEquals(body.items[0].code, "MP-CARD1");
   assertEquals(body.payments[0].credit_card.card_id, undefined);
-  assertEquals(body.payments[0].credit_card.split.length, 2);
-  assertEquals(body.payments[0].credit_card.split[0].recipient_id, "rp_partner");
+  // Regressão (17/09/2026): o split ia dentro de `credit_card` e a Pagar.me ignorava em silêncio,
+  // com a cobrança inteira caindo no master. O lugar é `payments[].split`, como no PIX.
+  assertEquals(body.payments[0].credit_card.split, undefined);
+  assertEquals(body.payments[0].split.length, 2);
+  assertEquals(body.payments[0].split[0].recipient_id, "rp_partner");
 });
 
 Deno.test("buildCardOrderBody: cartão salvo usa card_id (não token)", () => {
