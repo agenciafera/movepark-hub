@@ -126,6 +126,32 @@ histórico.
 | Guarulhos | 26 | 9 | 17 |
 | Afonso Pena | 10 | 5 | 5 |
 
+### Conteúdo 20: os 301 conferidos contra o banco e a borda, em 17/09/2026
+
+A atividade [Conteúdo 20, executar os 301 de Guarulhos e Afonso Pena](https://app.clickup.com/t/86ak6h8n4)
+foi fechada por verificação, sem código novo: os redirects entraram em `b6cda875` (27/08/2026) e
+nas inversões de 28/08. O que foi conferido:
+
+| Critério | Resultado |
+| --- | --- |
+| Todo post despublicado da praça tem 301 | 36 de 36 (GRU 26 de 35 posts, CWB 9 de 14), somando esta rodada e a de 15/08 |
+| Todo alvo de 301 é post publicado e fora do mapa | sim, nenhuma cadeia |
+| Resposta em produção | 301 para a dona nas formas `/blog/<slug>/`, sem barra e `.md`; as 14 donas respondem 200 |
+| Sitemap, índice do blog e links internos dos posts publicados | nenhum aponta para slug absorvido |
+| Pátio fora de operação (Ponce Park, Urban Park, Decolar Park, Stop Park) em post publicado | zero, no acervo inteiro. Só aparecem nos 15 absorvidos, que não renderizam |
+| `bun run test`, com `blog-urls.contract.test.ts` | verde, 3.412 testes |
+
+O `public/blog/<slug>.md` que a atividade citava saiu do repo em 01/09/2026; o gêmeo markdown do
+slug absorvido segue o mesmo 301 pelo worker. Os logs de borda não foram lidos (sem credencial do
+Cloudflare nesta verificação), e a janela de 72h já tinha passado; no lugar deles, as quatro formas
+de URL dos 36 slugs foram testadas em produção.
+
+**Fica em aberto, fora do escopo:** a árvore `/pt/` do WordPress multisite. O baseline de 29/08
+tem 39 URLs `/pt/` com 71.661 impressões e 108 cliques em 16 meses, 11 delas de posts absorvidos
+de GRU (a maior, `/pt/qual-e-o-valor-da-diaria-estacionamento-aeroporto-guarulhos/`, com 8.725
+impressões). Todas respondem 404 hoje, e já respondiam antes da consolidação. É a decisão 4 da
+planilha, registrada em `blog.md` como dívida conhecida.
+
 ## A cadeia de redirect que foi fechada junto
 
 URL legada da raiz do domínio que aponta para post depois consolidado gastava dois 301: um para
