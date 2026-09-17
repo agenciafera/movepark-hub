@@ -46,3 +46,14 @@
 
 /.well-known/oauth-authorization-server
   Content-Type: application/json
+
+# Índice de preços em JSON: dado público de referência, feito para agente e para
+# ferramenta de terceiro ler. Sem CORS ele não abre de dentro de um navegador, que
+# é metade dos consumidores que queremos. Ver docs/specs/indice-precos.md.
+/precos.json
+  Content-Type: application/json; charset=utf-8
+  Access-Control-Allow-Origin: *
+
+/estacionamentos/:destino/precos.json
+  Content-Type: application/json; charset=utf-8
+  Access-Control-Allow-Origin: *

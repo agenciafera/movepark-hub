@@ -537,6 +537,13 @@ export function datasetSchema(args: { dateModified: string; spatial?: string[] }
       url: SITE_URL,
     },
     distribution: [
+      // JSON primeiro: é a forma mais rica do mesmo dado, e quem lê o Dataset para
+      // consumir programaticamente vai atrás dela antes do Markdown.
+      {
+        "@type": "DataDownload",
+        encodingFormat: "application/json",
+        contentUrl: `${SITE_URL}/precos.json`,
+      },
       {
         "@type": "DataDownload",
         encodingFormat: "text/markdown",

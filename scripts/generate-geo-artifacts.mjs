@@ -8,6 +8,8 @@
  *  - `precos.md`       : índice Markdown do índice de preços (/precos);
  *  - `precos/<slug>.md`: a tabela de preços de cada destino em Markdown, com a
  *                        mesma ordem de blocos da página React;
+ *  - `precos.json`     : o índice inteiro em JSON datado, para agente consumir sem
+ *                        raspar HTML, mais um por destino ao lado do `precos.md`;
  *  - `llms-full.txt`   : conteúdo integral do FAQ + preços + destinos + índice
  *                        do blog, inline num arquivo só, pra leitura de ponta a ponta;
  *  - `llms.txt`        : refresh da linha "Última atualização" na cópia do dist.
@@ -21,6 +23,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
+import { buildPriceIndexJson } from "./price-index-json.mjs";
 
 // Host canônico: mesma fonte do front e do sitemap. Este script escreve o corpus que as IAs
 // leem (llms-full.txt, faq/*.md, precos/*.md, destinos/*.md), então host errado aqui é o site
@@ -636,6 +639,40 @@ function tabelaTopMarkdown(dest, limit = 5) {
   }
   linhas.push(`Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
   fs.writeFileSync(path.join(DIST, "precos.md"), linhas.join("\n"));
+}
+
+// ---------------------------------------------------------------------------
+// precos.json + estacionamentos/<destino>/precos.json: o índice pronto para
+// agente ler, sem raspar HTML e sem chave de API.
+//
+// Asset estático em vez de rota da Public API, e isso é decisão registrada, não
+// atalho: o gateway exige `Authorization: Bearer mp_*` em toda rota, e quem
+// procuramos aqui (crawler de IA, agente que leu o llms.txt) não tem chave. O
+// mesmo retrato do build que alimenta a página e o gêmeo Markdown alimenta o
+// JSON, então os três nunca divergem. Ver docs/specs/indice-precos.md.
+// ---------------------------------------------------------------------------
+{
+  // Uma marca de tempo para todos os arquivos deste build: dois números com datas
+  // diferentes no mesmo retrato seria o oposto do que o índice promete.
+  const geradoEm = new Date().toISOString();
+  const comum = {
+    priceIndex,
+    destinations,
+    siteUrl: SITE_URL,
+    generatedAt: geradoEm,
+    urlDestino: cDestino,
+    urlPrecos: cPrecos,
+  };
+
+  fs.writeFileSync(
+    path.join(DIST, "precos.json"),
+    `${JSON.stringify(buildPriceIndexJson(comum), null, 2)}\n`,
+  );
+
+  for (const dest of destinosComPreco) {
+    const payload = buildPriceIndexJson({ ...comum, scope: pubSlug(dest) });
+    escreverNoDestino(dest, "precos.json", `${JSON.stringify(payload, null, 2)}\n`);
+  }
 }
 
 // ---------------------------------------------------------------------------

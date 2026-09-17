@@ -9,6 +9,11 @@
           "title": "Movepark Public API — OpenAPI 3.1"
         },
         {
+          "href": "https://movepark.co/precos.json",
+          "type": "application/json",
+          "title": "Índice Movepark de Preços (JSON datado, leitura pública sem chave)"
+        },
+        {
           "href": "https://movepark.co/.well-known/mcp/server-card.json",
           "type": "application/json",
           "title": "Movepark MCP Server Card (consumidor) — https://mcp.movepark.co"

@@ -711,6 +711,21 @@ describe("datasetSchema", () => {
     );
   });
 
+  it("distribui o mesmo índice em JSON, Markdown e texto, com o JSON na frente", () => {
+    const s = datasetSchema({ dateModified: "2026-08-26" });
+    const urls = s.distribution?.map((d: { contentUrl: string }) => d.contentUrl);
+    // O JSON é a forma mais rica: quem lê o Dataset para consumir precisa achar ele primeiro.
+    expect(urls?.[0]).toBe("https://movepark.co/precos.json");
+    expect(urls).toEqual([
+      "https://movepark.co/precos.json",
+      "https://movepark.co/precos.md",
+      "https://movepark.co/llms-full.txt",
+    ]);
+    expect(
+      s.distribution?.find((d: { contentUrl: string }) => d.contentUrl.endsWith(".json")),
+    ).toMatchObject({ encodingFormat: "application/json" });
+  });
+
   it("declara onde e quando o dado vale: spatialCoverage e temporalCoverage", () => {
     const s = datasetSchema({
       dateModified: "2026-08-28",

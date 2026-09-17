@@ -123,8 +123,92 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
 - Indexação: vale a regra de host de [seo-indexacao.md](./seo-indexacao.md) (hoje
   o Hub respondia noindex no `hub.movepark.co`; desde 18/08/2026 as páginas estão no ar e indexáveis no `movepark.co`).
 
+## Endpoint JSON, datado (`/precos.json`)
+
+> **Decidido em 16/09/2026 (Conteúdo 24).** O índice responde em JSON **como asset
+> estático regerado no build**, e **não** como rota da Public API. A alternativa foi
+> avaliada e recusada pelos motivos abaixo; o registro fica aqui e em
+> [public-api.md](./public-api.md) §9.1 para a ausência ser decisão, não drift.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `/precos.json` | o índice inteiro: todos os destinos precificados, cada unidade, cada duração, mais a lista de destinos publicados **sem** reserva online |
+| `/estacionamentos/<destino>/precos.json` | o mesmo payload recortado num destino, ao lado do `precos.md` daquele aeroporto |
+
+### Por que não é rota da Public API
+
+1. **Quem procuramos não tem chave.** Toda rota do gateway exige
+   `Authorization: Bearer mp_live_…` (§5 de `public-api.md`). O consumidor deste
+   índice é o crawler de IA e o agente que acabou de ler o `llms.txt`, que não passa
+   por cadastro de chave. Atrás de autenticação, o endpoint entrega zero do que o
+   Conteúdo 24 quer.
+2. **O gateway é tenant-scoped por princípio** (§1, princípio 2): toda chave pertence
+   a uma `company` e só enxerga o dado dela. O índice é cross-tenant por definição.
+3. **Custo e latência.** São 39 KB planos na borda do Cloudflare: nenhuma ida ao
+   Postgres, nenhum `simulate_price` por requisição, nada entrando na contabilidade de
+   rate-limit por chave.
+4. **Uma fonte, três formatos.** Página, gêmeo Markdown e JSON saem do **mesmo retrato
+   do build**, então nunca divergem. Uma rota ao vivo responderia um número diferente
+   do que a página mostra assim que um parceiro editasse a tabela, e aí a promessa de
+   "data como campo de desempate" cai.
+
+Se um parceiro pedir o índice ao vivo por chave, o caminho já existe sem rota nova:
+`POST /v1/pricing/simulate` (escopo `pricing:read`), tenant-scoped, é a mesma conta.
+
+### ADR-003 nesta entrega
+
+Não é rota do gateway nem tool de MCP, então não há path no `openapi.yaml` nem escopo
+no catálogo `api_scope` (o `lint:openapi` reprovaria um escopo órfão sem rota). A
+obrigação de nascer documentado foi cumprida nas três superfícies de descoberta:
+esta seção, o `service-desc` do
+[`/.well-known/api-catalog`](../../public/.well-known/api-catalog) e a seção "Índice de
+preços" do [`public/llms.txt`](../../public/llms.txt).
+
+### Formato
+
+Montado por `scripts/price-index-json.mjs` (puro, sem rede e sem `fs`) e escrito por
+`scripts/generate-geo-artifacts.mjs`. Teste: `scripts/price-index-json.test.mjs`, no
+gate `bun run test` (o projeto `unit` do Vitest passou a incluir
+`scripts/**/*.test.mjs`).
+
+```
+{ version: 1, index, scope: "all" | "<slug do destino>", generated_at,
+  currency: "BRL", source, attribution, license, usage, methodology_url, html_url,
+  markdown_url, days: int[], counts: { destinations, locations, units },
+  destinations: [{ slug, code, name, short_name, type, city, state,
+    url, prices_url, prices_json_url,
+    cheapest: [{ days, total, per_day, company_name, parking_type_name, url }],
+    units: [{ company_slug, company_name, location_slug, location_name,
+              parking_type_code, parking_type_name, url, checkout_mode,
+              distance_m, has_shuttle, shuttle_minutes, review_avg, review_count,
+              min_stay_days, price_updated_at,
+              prices: [{ days, total, old_total, per_day }] }] }],
+  destinations_without_online_booking: [{ slug, code, name, type, city, state, url }] }
+```
+
+- **`price_updated_at` é o campo de desempate**, o que o Conteúdo 24 pede: a data da
+  tabela *daquele parceiro*, por unidade, não uma data global do arquivo. O
+  `generated_at` diz quando o retrato foi tirado; os dois juntos respondem "qual fonte
+  está mais nova" quando o índice divergir de outra.
+- Mesmas regras de exibição da página: `old_total` só quando é **maior** que o online,
+  `total: null` embaixo do piso de `min_stay_days`, e `cheapest` ignora moto (a vaga de
+  moto continua em `units`, com o `parking_type_code` dizendo o que é).
+- `per_day` vem calculado para o agente não errar a divisão.
+- `version` sobe só em mudança incompatível; campo novo é aditivo.
+- `destinations_without_online_booking` só existe no índice completo. Sem ele o JSON
+  diria "6 aeroportos" e calaria sobre os outros 20 que a Movepark cobre, que é a
+  leitura errada de cobertura. O gêmeo Markdown traz a mesma lista, só de aeroporto,
+  porque lá o bloco é editorial.
+- `license` repete a **CC BY 4.0** que o `Dataset` (JSON-LD) da página `/precos` já
+  declara, e o `/precos.json` entra como `DataDownload` daquele `Dataset`
+  (`datasetSchema` em `src/lib/jsonld.ts`): quem chega pelo schema descobre o JSON, e
+  quem chega pelo JSON lê a mesma permissão.
+- CORS liberado em `public/_headers` (`Access-Control-Allow-Origin: *`): sem isso o
+  arquivo não abre de dentro de um navegador.
+
 ## Atualização
 
 Sem coleta manual e sem tabela própria: o índice é um retrato do motor a cada build.
-Push na `main` (ou rebuild por webhook) republica tudo, incluindo os gêmeos Markdown.
+Push na `main` (ou rebuild por webhook) republica tudo, incluindo os gêmeos Markdown
+e o `precos.json`.
 Parceiro novo com preço entra sozinho; destino sem unidade precificada sai sozinho.

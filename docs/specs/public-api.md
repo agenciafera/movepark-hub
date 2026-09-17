@@ -309,6 +309,28 @@ tool/card, teste, drift).
 
 ---
 
+### 9.2 · Índice de preços: dado público que fica FORA do gateway (decidido em 16/09/2026)
+
+O índice de preços (`destination_price_index`) responde em JSON, mas **como asset estático do
+build** (`/precos.json` e `/estacionamentos/<destino>/precos.json`), não como rota `/v1`. Também
+registrado aqui para a ausência ser decisão, não drift.
+
+O motivo é o público: quem consome esse índice é crawler de IA e agente que leu o `llms.txt`, e
+nenhum dos dois tem chave `mp_live_…`. Atrás da autenticação de §5 o endpoint não entrega nada do
+que foi pedido. Somado a isso, ele é **cross-tenant** por definição, o oposto do princípio 2 (§1),
+e serve 39 KB planos da borda sem tocar no Postgres.
+
+Consequência prática para o ADR-003: **não** existe path no `openapi.yaml` nem escopo no catálogo
+`api_scope` para ele (escopo sem rota é justamente o que o `lint:openapi` reprova). A doc-as-you-build
+foi cumprida em [indice-precos.md](./indice-precos.md), no `service-desc` do
+`/.well-known/api-catalog` e no `public/llms.txt`.
+
+Parceiro que quiser preço ao vivo por chave já tem `POST /v1/pricing/simulate` (`pricing:read`),
+tenant-scoped, rodando a mesma conta. Se um dia o índice cross-tenant precisar de rota autenticada,
+ela nasce pelo checklist de §12.
+
+---
+
 ## 10. Convenções transversais
 
 **Versionamento:** `/v1`. Aditivo (campo novo) não quebra versão; remoção/rename ⇒ `/v2` + período
