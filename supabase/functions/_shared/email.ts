@@ -486,6 +486,33 @@ export function tplWithdrawalFailed(w: WithdrawalMail): { subject: string; html:
   };
 }
 
+export interface DebtMail {
+  contactName: string;
+  companyName: string;
+  bookingCode: string;
+  /** O que esta cobrança acrescentou à dívida (líquido da taxa que o parceiro pagou). */
+  debtCents: number;
+  /** Dívida total da empresa depois desta. */
+  totalDebtCents: number;
+  reason: string | null;
+}
+
+/**
+ * Estorno pago pela Movepark: o recebedor do parceiro não cobria, o cliente foi reembolsado pelo
+ * master e a parte do parceiro vira abatimento nas próximas vendas. Nada a fazer da parte dele.
+ */
+export function tplPartnerDebtCreated(d: DebtMail): { subject: string; html: string } {
+  return {
+    subject: `Reserva ${d.bookingCode} cancelada: ${cents(d.debtCents)} serão abatidos das próximas vendas`,
+    html: shell("Um estorno vai ser abatido", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(d.contactName))}. A reserva <strong>${escapeHtml(d.bookingCode)}</strong> de <strong>${escapeHtml(d.companyName)}</strong> foi cancelada${d.reason ? ` (${escapeHtml(d.reason)})` : ""} e a Movepark devolveu o valor ao cliente.</p>
+      <p style="margin:0 0 14px">Como a sua parte dessa venda já tinha saído do saldo, <strong>${cents(d.debtCents)}</strong> ficam como abatimento: as próximas vendas cobrem esse valor antes de liberar saque. Você não precisa fazer nada.</p>
+      <p style="margin:0 0 22px">Total a abater hoje: <strong>${cents(d.totalDebtCents)}</strong>.</p>
+      <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver o extrato")}</p>
+      <p style="margin:0;font-size:14px;color:${BRAND.muted}">O abatimento é líquido da taxa de processamento: você devolve só o que recebeu.</p>`),
+  };
+}
+
 export function tplReviewRequest(
   contactName: string,
   locationName: string,

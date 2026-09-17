@@ -66,6 +66,13 @@ perna inteira restaura o abatimento junto. A conta fecha sozinha: dívida antes 
 `L` abate `R` (`D − R`), estorno total devolve `+L`, resultado `D + L − R`, que é exatamente o que o
 parceiro ficou com a mais (`L − R`) somado ao abatimento desfeito (`R`).
 
+**E-mail ao parceiro (17/09/2026).** Cada cobrança que vira dívida gera um e-mail
+(`tplPartnerDebtCreated`, pela guarda de silêncio): reserva, motivo, quanto será abatido (a mesma
+conta da dívida, em TS: `_shared/debt-email.ts`) e o total a abater. Unicidade por
+`payment.debt_email_sent_at` (migration `20261120190000_email_de_divida.sql`), reivindicado antes
+do envio. Quem manda: `cancel-booking` na hora, e a varredura do cron `reconcile-payout-transfers`
+(a cada 15 min) para chargeback, webhook e o que ficou para trás.
+
 Dívida nunca é negativa na tela; se o cálculo cru ficar negativo (abatimento a mais por corrida
 de duas vendas simultâneas, ver reserva abaixo), o excedente aparece no Manager como "a devolver".
 

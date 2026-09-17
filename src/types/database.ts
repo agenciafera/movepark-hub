@@ -3755,6 +3755,7 @@ export type Database = {
           provider: string
           provider_charge_id: string | null
           provider_payment_id: string | null
+          debt_email_sent_at: string | null
           refund_reason: string | null
           refunded_amount: number | null
           refunded_at: string | null
@@ -3781,6 +3782,7 @@ export type Database = {
           provider: string
           provider_charge_id?: string | null
           provider_payment_id?: string | null
+          debt_email_sent_at?: string | null
           refund_reason?: string | null
           refunded_amount?: number | null
           refunded_at?: string | null
@@ -3807,6 +3809,7 @@ export type Database = {
           provider?: string
           provider_charge_id?: string | null
           provider_payment_id?: string | null
+          debt_email_sent_at?: string | null
           refund_reason?: string | null
           refunded_amount?: number | null
           refunded_at?: string | null

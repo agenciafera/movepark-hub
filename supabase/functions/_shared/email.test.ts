@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
-import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest, tplWithdrawalRequested, tplWithdrawalPaid, tplWithdrawalFailed } from "./email.ts";
+import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest, tplWithdrawalRequested, tplWithdrawalPaid, tplWithdrawalFailed, tplPartnerDebtCreated } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
 
@@ -169,4 +169,14 @@ Deno.test("e-mails de saque: valor, taxa, previsão, data e motivo, sem travess�
     assert(!m.html.includes("—") && !m.html.includes("–") && !m.subject.includes("—"), "sem travessão");
     assert(!m.html.includes("\n"), "sem quebra de linha");
   }
+});
+
+Deno.test("e-mail de dívida: reserva, valor abatido, total e motivo, sem travessão", () => {
+  const m = tplPartnerDebtCreated({ contactName: "Pedro Araujo", companyName: "Agência Fera", bookingCode: "MP-F65005", debtCents: 1422, totalDebtCents: 1422, reason: "cancelamento (staff)" });
+  assertStringIncludes(m.subject, "MP-F65005");
+  assertStringIncludes(m.subject, "14,22");
+  assertStringIncludes(m.html, "Olá, Pedro.");
+  assertStringIncludes(m.html, "cancelamento (staff)");
+  assertStringIncludes(m.html, "Total a abater hoje");
+  assert(!m.html.includes("—") && !m.html.includes("–") && !m.html.includes("\n"), "sem travessão nem quebra");
 });

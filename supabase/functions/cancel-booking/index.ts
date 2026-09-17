@@ -23,6 +23,7 @@ import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { executeRefund, manualRefundReason, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import { sweepDebtEmails } from "../_shared/debt-email.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -152,6 +153,7 @@ Deno.serve(async (req: Request) => {
   let refunded = false;
   let refundPending = false;
   let refundManual = false;
+  let absorvidoPeloMaster = false;
 
   if (decision.action === "cancel_with_refund" && payment) {
     // Resolve o charge id: coluna → fallback via getCharge(order id).
@@ -229,6 +231,7 @@ Deno.serve(async (req: Request) => {
     } else {
       refunded = true;
       refundPending = refund.status !== "refunded"; // PIX pode confirmar via webhook depois
+      absorvidoPeloMaster = exec.absorbedByMaster === true;
       await admin
         .from("payment")
         .update({
@@ -253,6 +256,10 @@ Deno.serve(async (req: Request) => {
     p_reason: input.reason ?? `cancelamento (${actor})`,
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 500);
+
+  // Estorno pago pelo master vira dívida do parceiro: avisa na hora (a varredura do cron cobre o
+  // resto). Best-effort.
+  if (refunded && absorvidoPeloMaster) await sweepDebtEmails(admin);
 
   // Histórico de alteração (best-effort: não bloqueia a resposta se o log falhar).
   await admin

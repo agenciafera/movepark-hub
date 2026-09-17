@@ -83,6 +83,7 @@ const PARTNER_TEMPLATES = [
   "tplWithdrawalRequested",
   "tplWithdrawalPaid",
   "tplWithdrawalFailed",
+  "tplPartnerDebtCreated",
 ];
 
 // email.ts é o lugar onde os templates nascem e onde sendEmail é definido; é a única exceção.

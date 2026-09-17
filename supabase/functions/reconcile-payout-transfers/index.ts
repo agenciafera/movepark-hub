@@ -16,12 +16,13 @@
 // Segunda porta: o Manager chama com o JWT de um hub_admin ("Conferir no gateway").
 //
 // POST /functions/v1/reconcile-payout-transfers   (header: x-reconcile-payout-transfers-key | Authorization: Bearer <jwt hub_admin>)
-// → { ok, checked, updated, withdrawals: { checked, updated }, emails: { checked, sent } }
+// → { ok, checked, updated, withdrawals: { checked, updated }, emails: { checked, sent }, debt_emails: { checked, sent } }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { withdrawalPatch } from "../_shared/payments/withdrawal.ts";
 import { sweepWithdrawalEmails } from "../_shared/withdrawal-email.ts";
+import { sweepDebtEmails } from "../_shared/debt-email.ts";
 import { BATCH_LIMIT, decideReconcileTransfer } from "./logic.ts";
 
 const corsHeaders = {
@@ -159,6 +160,8 @@ Deno.serve(async (req: Request) => {
   // E-mails de saque (pedido ainda não avisado, desfecho sem aviso): a varredura pega o que a
   // Edge do saque não conseguiu mandar e o que acabou de fechar acima.
   const emails = await sweepWithdrawalEmails(admin);
+  // E-mail de dívida: estorno pago pelo master que ainda não avisou o parceiro.
+  const debtEmails = await sweepDebtEmails(admin);
 
   return json({
     ok: true,
@@ -166,5 +169,6 @@ Deno.serve(async (req: Request) => {
     updated,
     withdrawals: { checked: saques?.length ?? 0, updated: saquesAtualizados },
     emails,
+    debt_emails: debtEmails,
   });
 });
