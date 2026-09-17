@@ -143,7 +143,7 @@ ON CONFLICT DO NOTHING;
 --
 
 INSERT INTO "public"."destination" ("id", "code", "name", "slug", "short_name", "type", "city", "state", "country", "latitude", "longitude", "is_popular", "sort_order", "created_at", "updated_at") VALUES
-	('3a572f42-24ee-4aa8-b209-afada25d14ec', 'GRU', 'Aeroporto Internacional de São Paulo–Guarulhos', 'aeroporto-internacional-de-sao-paulo-guarulhos', 'Guarulhos (GRU)', 'airport', 'Guarulhos', 'SP', 'BR', -23.4356, -46.4731, true, 10, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
+	('3a572f42-24ee-4aa8-b209-afada25d14ec', 'GRU', 'Aeroporto Internacional de São Paulo/Guarulhos', 'aeroporto-internacional-de-sao-paulo-guarulhos', 'Guarulhos (GRU)', 'airport', 'Guarulhos', 'SP', 'BR', -23.4356, -46.4731, true, 10, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
 	('ede0de4e-bdc9-4c36-96c8-a7a9e72a4edc', 'CGH', 'Aeroporto de Congonhas', 'aeroporto-de-congonhas', 'Congonhas (CGH)', 'airport', 'São Paulo', 'SP', 'BR', -23.6261, -46.6564, true, 20, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
 	('da58673f-5dfd-4130-999b-5c987f353330', 'VCP', 'Aeroporto de Viracopos', 'aeroporto-de-viracopos', 'Viracopos (VCP)', 'airport', 'Campinas', 'SP', 'BR', -23.0072, -47.1346, true, 30, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),
 	('3b386587-5fa0-45a1-b2b5-c7ebc71ea1c6', 'SDU', 'Aeroporto Santos Dumont', 'aeroporto-santos-dumont', 'Santos Dumont (SDU)', 'airport', 'Rio de Janeiro', 'RJ', 'BR', -22.9106, -43.1633, false, 40, '2026-05-28 18:31:15.592092+00', '2026-05-28 18:31:15.592092+00'),

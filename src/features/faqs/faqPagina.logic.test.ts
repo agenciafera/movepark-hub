@@ -7,7 +7,7 @@ import {
 } from "./faqPagina.logic";
 
 const GRU = {
-  name: "Aeroporto Internacional de São Paulo–Guarulhos",
+  name: "Aeroporto Internacional de São Paulo/Guarulhos",
   short_name: "Guarulhos (GRU)",
   slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
   code: "GRU",

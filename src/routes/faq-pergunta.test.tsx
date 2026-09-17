@@ -17,7 +17,7 @@ const DATA: FaqPerguntaData = {
     category: null,
     destination: {
       id: "gru",
-      name: "Aeroporto Internacional de São Paulo–Guarulhos",
+      name: "Aeroporto Internacional de São Paulo/Guarulhos",
       short_name: "Guarulhos (GRU)",
       slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
       public_slug: "aeroporto-guarulhos",
