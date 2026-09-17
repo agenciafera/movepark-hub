@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -28,7 +29,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { usePartnerAccountStatement, usePayoutWithdrawable, useWithdraw } from "./api";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MOVEMENT_LABEL, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
+import { MOVEMENT_LABEL, maxWithdrawReason, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
 
@@ -86,6 +87,8 @@ export function PartnerAccount({
 
   const feeCents = w?.withdrawal_fee_cents ?? 0;
   const maxCents = w?.max_withdraw_cents ?? 0;
+  // Botão desabilitado sem explicação é botão quebrado: o tooltip diz por que não há o que sacar.
+  const maxReason = maxCents <= 0 ? maxWithdrawReason(w, brl) : null;
   const amountCents = Math.round((amount ?? 0) * 100);
 
   async function confirmarSaque() {
@@ -272,14 +275,27 @@ export function PartnerAccount({
                 <Label htmlFor="saque-valor">Valor a sacar</Label>
                 <CurrencyInput id="saque-valor" value={amount} onChange={setAmount} />
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setAmount(maxCents / 100)}
-                disabled={maxCents <= 0}
-              >
-                Sacar o máximo
-              </Button>
+              {maxReason ? (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    {/* Botão disabled não recebe eventos de ponteiro; o span focável é o gatilho. */}
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="inline-flex" data-testid="saque-maximo-bloqueado">
+                        <Button type="button" variant="secondary" disabled>
+                          Sacar o máximo
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-pretty">
+                      {maxReason}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button type="button" variant="secondary" onClick={() => setAmount(maxCents / 100)}>
+                  Sacar o máximo
+                </Button>
+              )}
             </div>
             {amountCents > 0 && (
               <p className="text-caption text-muted" data-testid="saque-resumo">

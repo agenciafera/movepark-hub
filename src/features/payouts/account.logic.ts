@@ -83,3 +83,42 @@ export function summarizeMovements(ms: AccountMovement[]) {
   }
   return { in_cents, out_cents, debt_delta };
 }
+
+/** O que o `payout_withdrawable` devolve e que decide se dá para sacar. */
+export interface WithdrawableSnapshot {
+  release_days: number;
+  released_cents: number;
+  retained_cents: number;
+  debt_cents: number;
+  withdrawn_cents: number;
+  gateway_available_cents: number | null;
+  recipient_status: string | null;
+  recipient_missing: boolean;
+  available_cents: number;
+}
+
+/**
+ * Por que o botão "Sacar o máximo" está desabilitado, em uma frase para o tooltip.
+ * Devolve null quando há o que sacar. A ordem segue a do cálculo do teto: recebedor, prazo,
+ * dívida, saldo físico no gateway.
+ */
+export function maxWithdrawReason(
+  w: WithdrawableSnapshot | undefined,
+  brl: (cents: number) => string,
+): string | null {
+  if (!w) return "Calculando o disponível para saque…";
+  if (w.recipient_missing) return "O recebedor desta empresa ainda não existe no gateway.";
+  if (w.recipient_status !== "active") return "O recebedor ainda não está apto a receber.";
+  if (w.available_cents > 0) return null;
+  const liberadoLiquido = w.released_cents - w.withdrawn_cents;
+  if (liberadoLiquido <= 0 && w.retained_cents > 0) {
+    return `Nada liberado ainda: cada venda libera ${w.release_days} dias depois do pagamento. Retido: ${brl(w.retained_cents)}.`;
+  }
+  if (w.debt_cents > 0 && liberadoLiquido <= w.debt_cents) {
+    return `A dívida com a Movepark (${brl(w.debt_cents)}) consome o que está liberado.`;
+  }
+  if (w.gateway_available_cents != null && w.gateway_available_cents <= 0) {
+    return "O saldo no gateway está zerado.";
+  }
+  return "Nada disponível para saque.";
+}

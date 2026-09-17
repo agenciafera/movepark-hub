@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
+import { maxWithdrawReason, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 
 const base: AccountMovement = {
   kind: "sale", at: "2026-09-16T18:31:00Z", booking_code: "MP-1", gross_cents: 1440, fee_cents: 18,
@@ -35,5 +35,53 @@ describe("summarizeMovements", () => {
       { ...base, kind: "settlement", net_cents: 0, debt_delta_cents: -1000 },
     ]);
     expect(r).toEqual({ in_cents: 1422, out_cents: 1422, debt_delta: 1880 });
+  });
+});
+
+describe("maxWithdrawReason", () => {
+  const brl = (c: number) => `R$ ${(c / 100).toFixed(2).replace(".", ",")}`;
+  const base = {
+    release_days: 30,
+    released_cents: 0,
+    retained_cents: 0,
+    debt_cents: 0,
+    withdrawn_cents: 0,
+    gateway_available_cents: 12849,
+    recipient_status: "active",
+    recipient_missing: false,
+    available_cents: 0,
+  };
+
+  it("sem cálculo ainda, avisa que está calculando", () => {
+    expect(maxWithdrawReason(undefined, brl)).toMatch(/Calculando/);
+  });
+
+  it("com disponível, não há motivo (botão habilitado)", () => {
+    expect(maxWithdrawReason({ ...base, released_cents: 2120, available_cents: 2120 }, brl)).toBeNull();
+  });
+
+  it("recebedor inexistente ou não apto vem antes de qualquer conta", () => {
+    expect(maxWithdrawReason({ ...base, recipient_missing: true }, brl)).toMatch(/não existe no gateway/);
+    expect(maxWithdrawReason({ ...base, recipient_status: "affiliation" }, brl)).toMatch(/não está apto/);
+  });
+
+  it("tudo retido pelo prazo: diz o prazo e quanto está retido", () => {
+    expect(maxWithdrawReason({ ...base, retained_cents: 1422 }, brl)).toBe(
+      "Nada liberado ainda: cada venda libera 30 dias depois do pagamento. Retido: R$ 14,22.",
+    );
+  });
+
+  it("dívida consome o liberado", () => {
+    expect(maxWithdrawReason({ ...base, released_cents: 2000, debt_cents: 2880 }, brl)).toBe(
+      "A dívida com a Movepark (R$ 28,80) consome o que está liberado.",
+    );
+  });
+
+  it("liberado no nosso lado mas gateway zerado", () => {
+    expect(maxWithdrawReason({ ...base, released_cents: 2000, gateway_available_cents: 0 }, brl)).toMatch(/gateway está zerado/);
+  });
+
+  it("nada em lugar nenhum", () => {
+    expect(maxWithdrawReason(base, brl)).toBe("Nada disponível para saque.");
   });
 });

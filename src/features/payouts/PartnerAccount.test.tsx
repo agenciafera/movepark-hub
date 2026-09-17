@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { supabase } from "@/lib/supabase";
 import { edge, rpc } from "@/test/msw/supabase";
@@ -88,6 +88,34 @@ describe("PartnerAccount", () => {
     expect(screen.getByTestId("saque-resumo")).toHaveTextContent("cai na conta: R$ 17,53");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
     await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 2120, force: false }));
+  });
+
+  it("com nada disponível, Sacar o máximo fica desabilitado e o tooltip diz por quê", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "jwt" } as never },
+      error: null,
+    } as never);
+    rpc("partner_account_statement", { json: extrato });
+    // Tudo retido pelo prazo de 30 dias: liberado 0, retido 14,22.
+    rpc("payout_withdrawable", {
+      json: {
+        company_id: "c1", release_days: 30, released_cents: 0, retained_cents: 1422, debt_cents: 0,
+        withdrawn_cents: 0, gateway_available_cents: 12849, gateway_waiting_cents: 0, gateway_synced_at: null,
+        recipient_status: "active", recipient_missing: false, available_cents: 0,
+        withdrawal_fee_cents: 367, max_withdraw_cents: 0,
+      },
+    });
+    edge("refresh-recipients", { json: { ok: true } });
+    // hub_admin (canRefund) abre o diálogo mesmo sem disponível, por causa do force.
+    renderWithProviders(<PartnerAccount companyId="c1" canWithdraw canRefund />);
+    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
+    const botao = screen.getByRole("button", { name: "Sacar o máximo" });
+    expect(botao).toBeDisabled();
+    // Radix abre o tooltip no foco do gatilho (o span ao redor do botão desabilitado).
+    await act(async () => screen.getByTestId("saque-maximo-bloqueado").focus());
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Nada liberado ainda: cada venda libera 30 dias depois do pagamento. Retido: R$ 14,22.",
+    );
   });
 
   it("acima do disponível nosso o saque não sai; hub_admin passa só marcando o force", async () => {
