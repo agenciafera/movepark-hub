@@ -28,7 +28,6 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { usePartnerAccountStatement, usePayoutWithdrawable, useWithdraw } from "./api";
-import { Checkbox } from "@/components/ui/checkbox";
 import { MOVEMENT_LABEL, maxWithdrawReason, negativeRecipientAlert, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
@@ -79,7 +78,6 @@ export function PartnerAccount({
   const withdrawable = usePayoutWithdrawable(companyId);
   const [withdrawOpen, setWithdrawOpen] = React.useState(false);
   const [amount, setAmount] = React.useState<number | null>(null);
-  const [force, setForce] = React.useState(false);
 
   const h = statement.data?.header;
   const w = withdrawable.data;
@@ -87,10 +85,21 @@ export function PartnerAccount({
   const totals = summarizeMovements(moves);
 
   const feeCents = w?.withdrawal_fee_cents ?? 0;
+  // O disponível NOSSO (liberado pelo prazo, menos dívida e saques) é o teto do parceiro. A Movepark
+  // (canRefund) vê os dois números e pode passar do nosso: o teto dela é o saldo físico na Pagar.me,
+  // e o diálogo avisa quando o valor passa do que o parceiro já liberou.
   const maxCents = w?.max_withdraw_cents ?? 0;
+  const gatewayCents = Math.max(0, w?.gateway_available_cents ?? 0);
+  const capCents = canRefund ? gatewayCents : maxCents;
   // Botão desabilitado sem explicação é botão quebrado: o tooltip diz por que não há o que sacar.
-  const maxReason = maxCents <= 0 ? maxWithdrawReason(w, brl) : null;
+  const withdrawReason = maxWithdrawReason(w, brl);
+  const maxReason = capCents > 0
+    ? null
+    : canRefund && w && !w.recipient_missing && w.recipient_status === "active"
+      ? "O saldo na Pagar.me está zerado."
+      : withdrawReason ?? "Nada disponível para saque.";
   const amountCents = Math.round((amount ?? 0) * 100);
+  const acimaDoNosso = canRefund && amountCents > maxCents;
 
   async function confirmarSaque() {
     const cents = amountCents;
@@ -102,16 +111,20 @@ export function PartnerAccount({
       toast.error(`O saque precisa ser maior que a taxa de ${brl(feeCents)}.`);
       return;
     }
-    if (w && cents > maxCents && !(canRefund && force)) {
-      toast.error(`Disponível para saque é ${brl(maxCents)}.`);
+    if (w && cents > capCents) {
+      toast.error(
+        canRefund
+          ? `A Pagar.me só tem ${brl(gatewayCents)} no recebedor.`
+          : `Disponível para saque é ${brl(maxCents)}.`,
+      );
       return;
     }
     try {
-      const r = await withdraw.mutateAsync({ company_id: companyId, amount_cents: cents, force: canRefund && force });
+      // `force` só quando a Movepark passa do disponível calculado; o parceiro nunca manda.
+      const r = await withdraw.mutateAsync({ company_id: companyId, amount_cents: cents, force: acimaDoNosso });
       toast.success(`Saque pedido: ${brl(r.amount_cents)} caem na conta (taxa de ${brl(r.fee_cents)} descontada).`);
       setWithdrawOpen(false);
       setAmount(null);
-      setForce(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao pedir o saque");
     }
@@ -226,15 +239,32 @@ export function PartnerAccount({
               {refresh.isPending ? "Lendo o gateway…" : "Atualizar saldos"}
             </Button>
           )}
-          {canWithdraw && (
-            <Button
-              size="sm"
-              onClick={() => setWithdrawOpen(true)}
-              disabled={!w || (w.available_cents <= 0 && !canRefund) || w.recipient_missing || w.recipient_status !== "active"}
-            >
-              Repassar para o banco
-            </Button>
-          )}
+          {canWithdraw && (() => {
+            const bloqueado = !w || (w.available_cents <= 0 && !canRefund) || w.recipient_missing || w.recipient_status !== "active";
+            if (!bloqueado) {
+              return (
+                <Button size="sm" onClick={() => setWithdrawOpen(true)}>
+                  Repassar para o banco
+                </Button>
+              );
+            }
+            return (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="inline-flex" data-testid="repassar-bloqueado">
+                      <Button size="sm" disabled>
+                        Repassar para o banco
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-pretty">
+                    {withdrawReason ?? "Nada disponível para saque."}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })()}
         </div>
       </div>
 
@@ -279,9 +309,15 @@ export function PartnerAccount({
                 recebedor (não há como mandar para o master), e ela entra no razão como custo. */}
             <div className="rounded-md border border-hairline bg-surface-soft p-3 text-body-sm">
               <div className="flex justify-between">
-                <span className="text-muted">Disponível para saque</span>
+                <span className="text-muted">{canRefund ? "Disponível pela Movepark" : "Disponível para saque"}</span>
                 <span className="text-ink" data-testid="saque-disponivel">{w ? brl(w.available_cents) : "…"}</span>
               </div>
+              {canRefund && (
+                <div className="flex justify-between">
+                  <span className="text-muted">Saldo no recebedor (Pagar.me)</span>
+                  <span className="text-ink" data-testid="saque-gateway">{w ? brl(gatewayCents) : "…"}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted">Taxa por saque</span>
                 <span className="text-ink" data-testid="saque-taxa">{brl(feeCents)}</span>
@@ -289,6 +325,7 @@ export function PartnerAccount({
               <p className="mt-1 text-caption text-muted">
                 A taxa é descontada do valor sacado, uma vez por saque. Quem saca toda hora paga mais;
                 juntar em um saque paga uma taxa só.
+                {canRefund && w && ` O parceiro só saca até ${brl(w.available_cents)} (liberado em ${w.release_days} dias); a Movepark pode ir até o saldo do recebedor.`}
               </p>
             </div>
             <div className="flex items-end gap-2">
@@ -313,7 +350,7 @@ export function PartnerAccount({
                   </Tooltip>
                 </TooltipProvider>
               ) : (
-                <Button type="button" variant="secondary" onClick={() => setAmount(maxCents / 100)}>
+                <Button type="button" variant="secondary" onClick={() => setAmount(capCents / 100)}>
                   Sacar o máximo
                 </Button>
               )}
@@ -322,14 +359,22 @@ export function PartnerAccount({
               <p className="text-caption text-muted" data-testid="saque-resumo">
                 Sai do saldo: {brl(amountCents)} · taxa: {brl(feeCents)} · cai na conta:{" "}
                 <strong>{brl(Math.max(0, amountCents - feeCents))}</strong>
-                {amountCents > maxCents && !(canRefund && force) ? " · acima do disponível" : ""}
+                {!canRefund && amountCents > maxCents ? " · acima do disponível" : ""}
+                {canRefund && amountCents > capCents ? " · acima do saldo na Pagar.me" : ""}
               </p>
             )}
-            {canRefund && (
-              <label className="flex items-start gap-2 text-caption text-muted">
-                <Checkbox checked={force} onCheckedChange={(v) => setForce(v === true)} aria-label="Passar do teto" />
-                <span>Passar do disponível calculado (só a Movepark; o teto físico continua sendo o gateway).</span>
-              </label>
+            {acimaDoNosso && amountCents <= capCents && (
+              <p
+                role="alert"
+                data-testid="saque-acima-movepark"
+                className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 p-2 text-caption text-amber-900"
+              >
+                <Warning className="mt-0.5 shrink-0" />
+                <span>
+                  Sacando mais que o disponível pela Movepark ({brl(maxCents)}): {brl(amountCents - maxCents)} desse
+                  valor ainda não liberou pelo prazo do parceiro. Sai do recebedor mesmo assim.
+                </span>
+              </p>
             )}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="secondary" onClick={() => setWithdrawOpen(false)} disabled={withdraw.isPending}>

@@ -90,7 +90,7 @@ describe("PartnerAccount", () => {
     await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 2120, force: false }));
   });
 
-  it("com nada disponível, Sacar o máximo fica desabilitado e o tooltip diz por quê", async () => {
+  it("parceiro sem nada liberado: Repassar fica desabilitado e o tooltip diz por quê", async () => {
     vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
       data: { session: { access_token: "jwt" } as never },
       error: null,
@@ -106,27 +106,40 @@ describe("PartnerAccount", () => {
       },
     });
     edge("refresh-recipients", { json: { ok: true } });
-    // hub_admin (canRefund) abre o diálogo mesmo sem disponível, por causa do force.
-    renderWithProviders(<PartnerAccount companyId="c1" canWithdraw canRefund />);
-    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
-    const botao = screen.getByRole("button", { name: "Sacar o máximo" });
-    expect(botao).toBeDisabled();
+    renderWithProviders(<PartnerAccount companyId="c1" canWithdraw canRefund={false} showGateway={false} />);
+    expect(await screen.findByRole("button", { name: "Repassar para o banco" })).toBeDisabled();
     // Radix abre o tooltip no foco do gatilho (o span ao redor do botão desabilitado).
-    await act(async () => screen.getByTestId("saque-maximo-bloqueado").focus());
+    await act(async () => screen.getByTestId("repassar-bloqueado").focus());
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
       "Nada liberado ainda: cada venda libera 30 dias depois do pagamento. Retido: R$ 14,22.",
     );
   });
 
-  it("acima do disponível nosso o saque não sai; hub_admin passa só marcando o force", async () => {
+  it("Movepark vê os dois saldos, saca até o da Pagar.me e é avisada quando passa do nosso", async () => {
     const { saque } = monta({ canWithdraw: true, canRefund: true });
     await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
-    await userEvent.type(screen.getByLabelText("Valor a sacar"), "5000");
+    expect(screen.getByTestId("saque-disponivel")).toHaveTextContent("R$ 21,20");
+    expect(screen.getByTestId("saque-gateway")).toHaveTextContent("R$ 128,49");
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    // "Sacar o máximo" da Movepark é o saldo físico do recebedor, com o aviso do que passa do nosso.
+    await userEvent.click(screen.getByRole("button", { name: "Sacar o máximo" }));
+    expect(screen.getByTestId("saque-acima-movepark")).toHaveTextContent("Sacando mais que o disponível pela Movepark (R$ 21,20)");
+    await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
+    await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 12849, force: true }));
+  });
+
+  it("Movepark não passa do saldo na Pagar.me; dentro do nosso disponível não manda force", async () => {
+    const { saque } = monta({ canWithdraw: true, canRefund: true });
+    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
+    await userEvent.type(screen.getByLabelText("Valor a sacar"), "20000");
+    expect(screen.getByTestId("saque-resumo")).toHaveTextContent("acima do saldo na Pagar.me");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
     expect(saque.chamadas).toHaveLength(0);
-    await userEvent.click(screen.getByRole("checkbox", { name: "Passar do teto" }));
+    await userEvent.clear(screen.getByLabelText("Valor a sacar"));
+    await userEvent.type(screen.getByLabelText("Valor a sacar"), "1000");
+    expect(screen.queryByTestId("saque-acima-movepark")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
-    await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000, force: true }));
+    await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 1000, force: false }));
   });
 
   it("recebedor negativo no gateway acende o alerta, com a consequência certa para cada audiência", async () => {

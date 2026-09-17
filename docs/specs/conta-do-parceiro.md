@@ -110,6 +110,13 @@ gateway já debitou dele em estorno híbrido. Estorno absorvido pela Movepark n�
 pela dívida. A Edge `recipient-withdraw` lê o saldo ao vivo, grava, recalcula o teto no banco e
 recusa (409) o que passa dele; `force` só para hub_admin.
 
+**A Movepark pode passar do disponível calculado (17/09/2026).** No diálogo do Manager aparecem
+os dois números, "Disponível pela Movepark" (o nosso) e "Saldo no recebedor (Pagar.me)"; "Sacar
+o máximo" preenche o saldo do recebedor e o teto é ele. Quando o valor passa do nosso, o diálogo
+avisa em âmbar quanto ainda não liberou pelo prazo do parceiro e manda `force: true` sozinho; não
+há mais checkbox. O parceiro segue limitado ao nosso disponível, e o botão "Repassar para o banco"
+desabilitado explica o motivo num tooltip (prazo, dívida, recebedor ou gateway zerado).
+
 A conta mostra "Disponível para saque" (nosso), "Retido pelo prazo" (com o prazo), "A liberar
 pelo gateway" (cartão) e a dívida; o saldo bruto da Pagar.me fica como referência pequena.
 
