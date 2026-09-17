@@ -537,7 +537,9 @@ export default function DestinoPage() {
             ]),
           )}
         </script>
-        {offersSchema && <script type="application/ld+json">{JSON.stringify(offersSchema)}</script>}
+        {offersSchema && offersSchema.length > 0 && (
+          <script type="application/ld+json">{JSON.stringify(offersSchema)}</script>
+        )}
         {faqItems.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
         )}

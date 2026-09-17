@@ -348,7 +348,7 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
       partners: [{ name: "Sem Preço", url: "/p/x/y/covered", price: null }],
       mapped: [],
     });
-    const item = s.itemListElement[0].item as { "@type": string; offers?: unknown };
+    const item = s[0] as { "@type": string; offers?: unknown };
     expect(item["@type"]).toBe("ParkingFacility");
     expect(item.offers).toBeUndefined();
   });
@@ -358,18 +358,18 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
       partners: [{ ...comPreco, image: "/Estacionamentos/x/1.webp" }],
       mapped: [],
     });
-    const item = s.itemListElement[0].item as { image?: string[] };
+    const item = s[0] as { image?: string[] };
     expect(item.image).toEqual(["https://movepark.co/Estacionamentos/x/1.webp"]);
   });
 
   it("sem capa cadastrada, omite image em vez de publicar caminho vazio", () => {
     const s = destinationOffersSchema({ partners: [{ ...comPreco, image: null }], mapped: [] });
-    expect((s.itemListElement[0].item as { image?: string[] }).image).toBeUndefined();
+    expect((s[0] as { image?: string[] }).image).toBeUndefined();
   });
 
   it("quem tem preço segue como Product com AggregateOffer", () => {
     const s = destinationOffersSchema({ partners: [comPreco], mapped: [] });
-    const item = s.itemListElement[0].item as { "@type": string; offers?: { lowPrice: string } };
+    const item = s[0] as { "@type": string; offers?: { lowPrice: string } };
     expect(item["@type"]).toBe("Product");
     expect(item.offers?.lowPrice).toBe("18.90");
   });
@@ -390,8 +390,8 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
       mapped: [],
     });
 
-    expect(s.itemListElement).toHaveLength(1);
-    const item = s.itemListElement[0].item as { name: string; offers?: { lowPrice: string; highPrice: string; offerCount: number } };
+    expect(s).toHaveLength(1);
+    const item = s[0] as { name: string; offers?: { lowPrice: string; highPrice: string; offerCount: number } };
     expect(item.name).toBe("Aeropark");
     expect(item.offers?.lowPrice).toBe("15.90");
     expect(item.offers?.highPrice).toBe("447.00");
@@ -403,7 +403,7 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
       partners: [comPreco],
       mapped: [{ name: "Aeropark", url: "/p/aeropark/gru/covered" }],
     });
-    expect(s.itemListElement).toHaveLength(1);
+    expect(s).toHaveLength(1);
   });
 
   it("nenhum item da lista fica sem offers, review nem aggregateRating", () => {
@@ -411,10 +411,9 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
       partners: [comPreco, { name: "Sem Preço", url: "/p/x/y/covered", price: null }],
       mapped: [{ name: "Lote mapeado", url: "/estacionamento/z" }],
     });
-    const produtosMudos = s.itemListElement.filter((e) => {
-      const item = e.item as { "@type": string; offers?: unknown };
-      return item["@type"] === "Product" && !item.offers;
-    });
+    const produtosMudos = (s as { "@type": string; offers?: unknown }[]).filter(
+      (item) => item["@type"] === "Product" && !item.offers,
+    );
     expect(produtosMudos).toHaveLength(0);
   });
 });

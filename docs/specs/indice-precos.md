@@ -119,9 +119,9 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
     janela). Dois `Product` com a mesma URL são a mesma entidade dita duas vezes; no
     formato de lista o Google chegava a reprovar com "Identical property values given, but
     unique values are required", e a página do destino publicava 19 itens para 15 fichas.
-    O `destinationOffersSchema` (que segue em `ItemList`, porque mistura parceiro e lote
-    mapeado) recebeu a mesma junção, e o guard `bun run lint:schema` passou a reprovar URL
-    repetida em `ItemList`.
+    O `destinationOffersSchema` (vitrine do destino) recebeu a mesma junção e também perdeu
+    o invólucro de lista, e o guard `bun run lint:schema` passou a reprovar URL repetida em
+    `ItemList`, para o caso voltar a aparecer onde a lista ainda existe.
   - A página do destino (`/estacionamentos/<slug>`) usa o `destinationOffersSchema`, que é
     outro bloco (mistura parceiro e lote mapeado), e ganhou a mesma validade.
   - A **calculadora** fica de fora de propósito: o que ela mostra muda com o que a pessoa

@@ -415,6 +415,15 @@ sustenta.
 > garantida, e em `checkout_mode = external` quem controla o estoque é o parceiro (ADR-009).
 > A **lista** sai da vitrine, não da matriz, para o schema seguir descrevendo a tela quando o
 > motor não responde no build; nesse caso o item fica sem `offers`, em vez de chutar preço.
+>
+> **Em 17/09/2026 o invólucro `ItemList` saiu, e ficou o array de nós.** O teste de resultados
+> ricos lia a lista como tentativa de **carrossel**, que só existe para Course, Movie, Recipe e
+> Restaurant, e a página aparecia com "Carousels: 1 invalid item" mesmo com os `Product`
+> válidos ao lado. Junto saiu a duplicata: o card é por VAGA e a ficha é do LOTE, então
+> Guarulhos publicava 19 itens para 15 fichas; as vagas do mesmo lote viram um nó só, com a
+> faixa cobrindo as duas tabelas, e o `guaranteedSpot` só sobrevive se valer para todas. A
+> oferta passou a carregar `validFrom` e `priceValidUntil` (90 dias), como as páginas de preço.
+> Ver [indice-precos.md](./indice-precos.md).
 
 Implementação: `fetchDestinationUnits` em [`src/features/destinations/api.ts`](../../src/features/destinations/api.ts)
 (duas leituras: `location_parking_type` com a tabela de preço aninhada, e a RPC
@@ -568,7 +577,7 @@ Auditoria contra os dois concorrentes na praça de Viracopos, medida no HTML pub
 | Perguntas como cabeçalho com prosa | 0 seções (só accordion) | 7 | **10** |
 | Tamanho médio da resposta do destino | ~290 caracteres | seção inteira | seção inteira |
 | Palavras visíveis | 2.334 | 2.570 | 2.620 |
-| Schema | Airport, Breadcrumb, ItemList+AggregateOffer, FAQPage | Airport, Breadcrumb, FAQPage, ItemList | só Organization |
+| Schema | Airport, Breadcrumb, Product+AggregateOffer, FAQPage | Airport, Breadcrumb, FAQPage, ItemList | só Organization |
 | `llms.txt` | 5,9 KB, 9 seções | 16 KB, 16 seções (por aeroporto) | 9,1 KB |
 
 Recuperação em LLM é por **passagem**, e a passagem mais citável é a que tem a pergunta do

@@ -482,6 +482,15 @@ function ldJson(): Record<string, unknown>[] {
   );
 }
 
+/**
+ * A vitrine do destino em dado estruturado: um array de `Product` e `ParkingFacility`.
+ * Era um `ItemList` até 17/09/2026, quando o teste de resultados ricos passou a reprovar o
+ * invólucro como carrossel de tipo não suportado.
+ */
+function ldVitrine(): Record<string, unknown>[] | undefined {
+  return ldJson().find((b) => Array.isArray(b)) as Record<string, unknown>[] | undefined;
+}
+
 describe("DestinoPage · preço pesquisado do lote mapeado (E0.17-k)", () => {
   /** Um lote mapeado com preço conferido por nós, como o guia de Confins traz. */
   function comPreco() {
@@ -581,7 +590,7 @@ describe("lista de unidades no HTML do build", () => {
     expect(screen.getAllByText(/Abbapark/i).length).toBeGreaterThan(0);
   });
 
-  it("emite ItemList com as unidades e com os lotes mapeados, na ordem visível", async () => {
+  it("emite a vitrine com as unidades e com os lotes mapeados, na ordem visível", async () => {
     loaderData.mockReturnValue({
       destination: dest(),
       prospects: [
@@ -604,15 +613,11 @@ describe("lista de unidades no HTML do build", () => {
 
     render();
 
-    const lista = await waitFor(() => {
-      const achado = ldJson().find((s) => s["@type"] === "ItemList");
+    const itens = (await waitFor(() => {
+      const achado = ldVitrine();
       expect(achado).toBeTruthy();
       return achado!;
-    });
-    const itens = lista.itemListElement as {
-      position: number;
-      item: { "@type": string; name: string; url: string };
-    }[];
+    })) as unknown as { "@type": string; name: string; url: string }[];
     expect(itens).toHaveLength(2);
     // Vendável primeiro, mapeado depois: é a mesma ordem da tela, e a separação é o produto
     // que o parceiro compra (ADR-010). A URL separa os dois em qualquer caso: vendável aponta
@@ -620,13 +625,13 @@ describe("lista de unidades no HTML do build", () => {
     // consegue afirmar: sem matriz do motor não há oferta, e `Product` sem oferta é item
     // inválido, então quem não tem preço sai como `ParkingFacility`. Esta fixture não tem
     // matriz, por isso os dois vêm como lugar. O caso com matriz está logo abaixo.
-    expect(itens[0].item["@type"]).toBe("ParkingFacility");
-    expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
-    expect(itens[0].item.url).toContain("/estacionamentos/aeroporto-curitiba/abbapark");
-    expect(itens[1].item["@type"]).toBe("ParkingFacility");
-    expect(itens[1].item.name).toBe("Talentos Park");
+    expect(itens[0]["@type"]).toBe("ParkingFacility");
+    expect(itens[0].name).toBe("Abbapark · Vaga Coberta");
+    expect(itens[0].url).toContain("/estacionamentos/aeroporto-curitiba/abbapark");
+    expect(itens[1]["@type"]).toBe("ParkingFacility");
+    expect(itens[1].name).toBe("Talentos Park");
     // Slug público dos dois lados, aqui também: o schema descreve a URL que existe.
-    expect(itens[1].item.url).toContain("/estacionamentos/aeroporto-guarulhos/talentos-park");
+    expect(itens[1].url).toContain("/estacionamentos/aeroporto-guarulhos/talentos-park");
   });
 
   it("sem matriz do motor, o item vendável descreve o lugar em vez de chutar preço", async () => {
@@ -641,17 +646,16 @@ describe("lista de unidades no HTML do build", () => {
 
     render();
 
-    const lista = await waitFor(() => {
-      const achado = ldJson().find((s) => s["@type"] === "ItemList");
+    const itens = (await waitFor(() => {
+      const achado = ldVitrine();
       expect(achado).toBeTruthy();
       return achado!;
-    });
-    const itens = lista.itemListElement as { item: Record<string, unknown> }[];
+    })) as unknown as Record<string, unknown>[];
     expect(itens).toHaveLength(1);
-    expect(itens[0].item.name).toBe("Abbapark · Vaga Coberta");
-    expect(itens[0].item["@type"]).toBe("ParkingFacility");
-    expect(itens[0].item.offers).toBeUndefined();
-    expect(JSON.stringify(lista)).not.toContain("InStock");
+    expect(itens[0].name).toBe("Abbapark · Vaga Coberta");
+    expect(itens[0]["@type"]).toBe("ParkingFacility");
+    expect(itens[0].offers).toBeUndefined();
+    expect(JSON.stringify(itens)).not.toContain("InStock");
   });
 
   it("com matriz, emite AggregateOffer e cala sobre disponibilidade no checkout externo", async () => {
@@ -698,15 +702,12 @@ describe("lista de unidades no HTML do build", () => {
 
     render();
 
-    const lista = await waitFor(() => {
-      const achado = ldJson().find((s) => s["@type"] === "ItemList");
+    const itens = (await waitFor(() => {
+      const achado = ldVitrine();
       expect(achado).toBeTruthy();
       return achado!;
-    });
-    const itens = lista.itemListElement as {
-      item: { offers?: Record<string, unknown> };
-    }[];
-    expect(itens[0].item.offers).toMatchObject({
+    })) as unknown as { offers?: Record<string, unknown> }[];
+    expect(itens[0].offers).toMatchObject({
       "@type": "AggregateOffer",
       priceCurrency: "BRL",
       lowPrice: "30.00",
@@ -717,7 +718,7 @@ describe("lista de unidades no HTML do build", () => {
       validFrom: "2026-08-17",
       priceValidUntil: "2026-11-15",
     });
-    expect(JSON.stringify(lista)).not.toContain("InStock");
+    expect(JSON.stringify(itens)).not.toContain("InStock");
   });
 
   it("destino sem unidade diz isso, em vez de mandar skeleton para o crawler", () => {

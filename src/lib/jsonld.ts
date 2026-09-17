@@ -617,6 +617,14 @@ export function breadcrumbSchema(
  * visível resolve para quem lê a tela, e não para quem lê só o JSON-LD. A janela e o motivo
  * estão em `janelaDeValidade`.
  *
+ * **Uma lista de nós, e não um `ItemList`, desde 17/09/2026.** O invólucro de lista o teste
+ * de resultados ricos lê como tentativa de **carrossel**, que só existe para Course, Movie,
+ * Recipe e Restaurant: a página aparecia com "Carousels: 1 invalid item" mesmo com os
+ * produtos válidos ao lado. O mesmo conteúdo, solto num array, o Google lê como os produtos
+ * e os lugares que a página descreve, que é o que ele é. (O `ItemList` de nome e URL do
+ * índice de preços continua válido: lá os itens são links para outras páginas, que é o
+ * formato de carrossel que o Google aceita.)
+ *
  * **Uma entrada por URL, desde 16/09/2026.** O card é por VAGA e a ficha é do LOTE, então a
  * lista de Guarulhos saía com 19 itens para 15 fichas, e o teste de resultados ricos reprova
  * a lista inteira nisso ("Identical property values given, but unique values are required"):
@@ -716,18 +724,7 @@ export function destinationOffersSchema(args: {
       })),
   ];
 
-  return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    numberOfItems: itens.length,
-    itemListElement: itens.map((item, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: item.url,
-      name: item.name,
-      item,
-    })),
-  };
+  return itens.map((item) => ({ "@context": "https://schema.org", ...item }));
 }
 
 /** Uma linha da tabela de preço: o estacionamento e o total de cada duração visível. */
