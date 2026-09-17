@@ -168,7 +168,7 @@ mínima e a comparação com o estacionamento oficial.
 | Âncora | Palavras | Analisador |
 | --- | --- | --- |
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.794 (tabela de 11/09/2026) | ✅ verde, 0 bloqueio, conferida em 17/09/2026 |
-| `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
+| `como-estacionar-barato-no-aeroporto-de-guarulhos` | 4.216 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, reescrita em 17/09/2026 |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.645 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, revista em 17/09/2026 |
 | `estacionamento-barato-aeroporto-curitiba` | 4.170 (tabela de 27/08/2026) | ✅ verde, 0 bloqueio, conferida e ampliada em 17/09/2026 |
@@ -246,6 +246,48 @@ batia com o motor, e o que faltava da atividade entrou no próprio post:
 A tarifa do oficial segue sendo a coleta manual de 27/08/2026, marcada como tal, e entra na revisão
 mensal da Fase 3. A única atenção do analisador é a densidade da frase-chave (0,2%), com a mesma
 justificativa das outras âncoras.
+
+### Conteúdo 11: a canônica de economia de GRU fecha nesta âncora
+
+A atividade [Conteúdo 11, página canônica de economia de Guarulhos](https://app.clickup.com/t/86ak6h6eu)
+também pedia página nova, e pelo mesmo motivo do Conteúdo 07 ela não foi escrita: a dona do
+cluster barato, economia e desconto já existia, com o histórico de URL e três redirects. O que
+mudou foi o conteúdo da dona, que **estava errado desde 11/09/2026**. Ela ainda trazia a tabela de
+27/08, e a revisão de preço de setembro inverteu três conclusões do texto.
+
+| O que a versão de agosto dizia | O que o motor diz em 17/09/2026 |
+| --- | --- |
+| Trocar de pátio devolve R$ 45,00 em 15 diárias | Devolve zero: de 7 diárias em diante os dois cobram igual em cada tipo de vaga |
+| Esticar a reserva além de 15 diárias não devolve nada | A tabela tem degraus aos 7, 13 e 18 dias, e 12 diárias custam mais que 18 |
+| Em 30 diárias o valet sai mais barato que a coberta | Não sai em nenhuma faixa |
+| Menor quinzena R$ 223,50, economia contra o oficial de 56% | R$ 152,70, economia de 70% |
+
+A atividade trazia as quatro alavancas medidas em agosto; elas foram remedidas na mesma faixa de 15
+diárias, e entrou uma quinta, que é a maior novidade da página: **reservar mais dias na véspera de
+um degrau**. Viagem de 6 dias paga menos reservando 7, de 11 ou 12 reservando 13, de 15 a 17
+reservando 18. Na vaga coberta, numa viagem de 17 dias, acertar o degrau devolve R$ 35,30.
+
+| O que a atividade exigia | Onde está na âncora |
+| --- | --- |
+| O menor total por duração, com quem pratica | Tabela de 1 a 30 diárias, com o pátio e o tipo de vaga de cada linha |
+| Quanto se economiza contra o balcão, em reais | Tabela por duração nas vagas descoberta e coberta, de R$ 3,70 a R$ 57,48 |
+| O que se abre mão para chegar no mais barato | Seção própria, degrau a degrau, mais a consequência de que o pátio mais perto custa o mesmo de 7 diárias em diante |
+| Alerta sobre piso de permanência em viagem curta | Seção própria: mínimo de 2 diárias do Aeropark, faixa mais cara da tabela e o oficial por hora |
+| FAQ que emite `FAQPage`, zero promessa | 8 perguntas em `###` terminadas em "?", de 44 a 53 palavras; analisador sem bloqueio |
+
+A regra de retirada antecipada não entrou no texto como fato, porque nenhuma ficha a declara: o
+post manda conferir na unidade e linka a FAQ da praça. A tarifa do oficial segue a de 27/08/2026,
+marcada como coleta manual, igual à âncora de preço.
+
+As três atenções do analisador são as de sempre: densidade da frase-chave em 0,2%, frase-chave em
+7 dos 31 títulos e palavras de transição em 24%. As duas primeiras têm a justificativa já
+registrada; a terceira ficou abaixo do piso porque as frases que faltam são linhas de tabela e
+itens curtos de lista, e enfiar conectivo nelas pioraria a leitura.
+
+**Pendência operacional encontrada na entrega:** `site_rebuild_health()` respondeu
+`sem_deploy_hook` em 17/09/2026, com 767 pedidos na fila desde 19/08. O segredo
+`cloudflare_deploy_hook_url` não está no Vault, então edição de conteúdo só vai ao ar com build de
+código. Ver [deploy-automatico.md](./deploy-automatico.md).
 
 ### O molde, definido pela âncora de preço de GRU
 
