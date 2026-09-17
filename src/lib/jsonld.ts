@@ -21,8 +21,6 @@ function urlDaFicha(listing: ListingDetail): string {
  * de diárias, com `eligibleQuantity` dizendo a faixa em que aquela diária vale.
  * É a tabela inteira legível por máquina: quem compara preço por IA lê "1 a 6
  * dias custa X/dia, 7 a 14 custa Y/dia" em vez de só a faixa low/high.
- * `priceValidUntil` segue fora (ver destinationOffersSchema): validade cravada
- * ninguém garante; o que sustenta o número é a regeração a cada build.
  */
 function escadaDePreco(porDuracao: { days: number; total: number }[]) {
   if (porDuracao.length < 2) return undefined;
@@ -41,6 +39,42 @@ function escadaDePreco(porDuracao: { days: number; total: number }[]) {
       },
     };
   });
+}
+
+/**
+ * Quanto tempo um preço publicado por nós continua valendo como referência.
+ *
+ * 90 dias é o mesmo teto de frescor que o projeto já aplica a preço pesquisado
+ * (`preco_pesquisado_fresco`, na vitrine do lote mapeado): passado o prazo, o número é
+ * velho por regra nossa, e não por acidente.
+ */
+const VALIDADE_DE_PRECO_DIAS = 90;
+
+/**
+ * A validade do número, para o schema dizer até quando ele vale.
+ *
+ * `validFrom` é o dia em que a página consultou o motor, o mesmo que sai visível em
+ * "Conferido no motor de reservas em". `priceValidUntil` é ele mais os 90 dias acima.
+ *
+ * Isto não é congelamento de preço: a tabela do parceiro pode mudar antes, e quando muda
+ * a publicação automática regera a página (ver `deploy-automatico.md`) com uma janela
+ * nova. O campo existe porque modelo de linguagem não tem como saber a idade do número
+ * que está lendo, e sem ele a citação de preço envelhece sem aviso nenhum. É a mesma
+ * razão por que a data de conferência aparece na tela: o que muda é o leitor.
+ *
+ * Substitui a decisão anterior de deixar `priceValidUntil` fora. Ela protegia contra
+ * cravar validade que ninguém garante, e o que resolve isso é a janela ser larga e
+ * declarada, não o campo sumir: sem ele, quem lê assume que o preço é de hoje.
+ */
+function janelaDeValidade(geradoEm: string) {
+  const inicio = new Date(geradoEm);
+  if (Number.isNaN(inicio.getTime())) return undefined;
+  const fim = new Date(inicio);
+  fim.setUTCDate(fim.getUTCDate() + VALIDADE_DE_PRECO_DIAS);
+  return {
+    validFrom: inicio.toISOString().slice(0, 10),
+    priceValidUntil: fim.toISOString().slice(0, 10),
+  };
 }
 
 /** Dígitos verificadores do CNPJ: módulo 11 sobre os 12 e depois os 13 primeiros. */
@@ -572,9 +606,9 @@ export function breadcrumbSchema(
  * - **preço no lote mapeado.** Ele não vende nada aqui, então não tem `offers` nem
  *   `priceRange`.
  *
- * `priceValidUntil` não entra: a tabela é regerada a cada build e a data de conferência
- * fica visível na página, que é o que sustenta o número sem cravar validade que ninguém
- * garante.
+ * `priceValidUntil` entrou em 16/09/2026, junto das páginas de preço: a data de conferência
+ * visível resolve para quem lê a tela, e não para quem lê só o JSON-LD. A janela e o motivo
+ * estão em `janelaDeValidade`.
  */
 export function destinationOffersSchema(args: {
   partners: {
@@ -592,7 +626,10 @@ export function destinationOffersSchema(args: {
     } | null;
   }[];
   mapped: { name: string; url: string }[];
+  /** Carimbo do "conferido em" da página. Sem ele a oferta sai sem validade. */
+  generatedAt?: string;
 }) {
+  const validade = args.generatedAt ? janelaDeValidade(args.generatedAt) : undefined;
   const itens = [
     ...args.partners.map((p) =>
       // Sem preço na matriz do build, o parceiro entra como `ParkingFacility`, e não como
@@ -613,6 +650,7 @@ export function destinationOffersSchema(args: {
               highPrice: p.price.highPrice.toFixed(2),
               offerCount: p.price.offerCount,
               availability: p.price.guaranteedSpot ? "https://schema.org/InStock" : undefined,
+              ...validade,
               url: absoluta(p.url),
             },
           }
@@ -639,6 +677,93 @@ export function destinationOffersSchema(args: {
       position: i + 1,
       item,
     })),
+  };
+}
+
+/** Uma linha da tabela de preço: o estacionamento e o total de cada duração visível. */
+export type PriceTableItem = {
+  /** O nome da linha, como a tabela escreve ("Aerovalet · Vaga Descoberta"). */
+  name: string;
+  /** Ficha do estacionamento. Caminho relativo vira absoluto aqui. */
+  url: string;
+  description?: string | null;
+  /** Capa da unidade. O Google pede `image` no `Product`. */
+  image?: string | null;
+  /** Total cobrado por duração. Só as durações que a página mostra com preço. */
+  porDuracao: { days: number; total: number }[];
+};
+
+/**
+ * A tabela de preço em dado estruturado: um `Product` por linha, com `AggregateOffer`
+ * e a escada de tarifa por duração.
+ *
+ * Nasceu como função local da página `/precos/<slug>` e subiu para cá em 16/09/2026,
+ * quando as outras páginas de preço (o índice `/precos` e a de "mais barato") passaram a
+ * precisar do mesmo bloco. Schema de preço em três cópias divergiria na primeira correção;
+ * aqui a regra é uma só e tem teste.
+ *
+ * As três decisões que o bloco carrega:
+ *
+ * - **Linha sem preço em nenhuma duração fica fora da lista.** A página mostra a linha,
+ *   porque "consulte na página" é informação; o schema não, porque `Product` sem `offers`
+ *   válida o Google reprova como item inválido e derruba a lista inteira junto. Lista sem
+ *   nenhum item precificado devolve `null`: `ItemList` vazia também é item inválido.
+ * - **Sem `availability`.** Afirmar `InStock` é prometer vaga garantida, e quem controla o
+ *   estoque da unidade externa é o parceiro (ADR-009). O preço é fato da tabela; o estoque
+ *   não é nosso para afirmar.
+ * - **Sem `aggregateRating`.** A nota é da unidade e mora na página dela. Agregar nota num
+ *   item de lista de preço infla estrela em página que não é a do produto.
+ *
+ * `lowPrice`/`highPrice` são o menor e o maior TOTAL da linha, não a diária: é o que a
+ * célula mostra. Quem quiser a diária lê a escada, que traz preço por dia com a faixa de
+ * diárias em que ele vale.
+ */
+export function priceTableOffersSchema(args: {
+  itens: PriceTableItem[];
+  /** Carimbo do "conferido em" da página, que vira a validade da oferta. */
+  generatedAt: string;
+}) {
+  const comPreco = args.itens
+    .map((item) => ({
+      ...item,
+      porDuracao: item.porDuracao
+        .filter((d) => Number.isFinite(d.total) && d.total > 0)
+        .sort((a, b) => a.days - b.days),
+    }))
+    .filter((item) => item.porDuracao.length > 0);
+
+  if (comPreco.length === 0) return null;
+  const validade = janelaDeValidade(args.generatedAt);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    numberOfItems: comPreco.length,
+    itemListElement: comPreco.map((item, i) => {
+      const totais = item.porDuracao.map((d) => d.total);
+      const url = absoluta(item.url);
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Product",
+          name: item.name,
+          description: item.description ?? undefined,
+          image: item.image ? [absoluta(item.image)] : undefined,
+          url,
+          offers: {
+            "@type": "AggregateOffer",
+            priceCurrency: "BRL",
+            lowPrice: Math.min(...totais).toFixed(2),
+            highPrice: Math.max(...totais).toFixed(2),
+            offerCount: totais.length,
+            priceSpecification: escadaDePreco(item.porDuracao),
+            ...validade,
+            url,
+          },
+        },
+      };
+    }),
   };
 }
 

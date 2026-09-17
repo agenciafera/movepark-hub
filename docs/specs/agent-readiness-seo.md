@@ -140,7 +140,9 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
 
 - **Escada de tarifa progressiva** no `AggregateOffer` das páginas de unidade:
   `UnitPriceSpecification` por janela de diárias com `eligibleQuantity`, do
-  `PriceShowcase.porDuracao` (motor). Sem `priceValidUntil`, de propósito.
+  `PriceShowcase.porDuracao` (motor). Desde 16/09/2026 a mesma escada sai nas páginas de
+  preço, que também carimbam `validFrom` e `priceValidUntil` (janela de 90 dias; ver
+  [indice-precos.md](./indice-precos.md)).
 - **`Dataset` CC-BY-4.0** + bloco visível "Para imprensa e citação" no `/precos`.
 - **`Organization` com lastro**: `sameAs` (redes de `src/lib/redes.ts`), contato e
   slogan da garantia. `taxID`/`foundingDate` aguardam fonte verificável.

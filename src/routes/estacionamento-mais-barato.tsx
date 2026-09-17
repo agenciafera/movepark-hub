@@ -4,10 +4,14 @@ import { CaretRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { aeroportoEmProsa, shortSemCodigo } from "@/features/faqs/faqPagina.logic";
-import { mesAnoAtual, type MaisBaratoLinha } from "@/features/price-index/maisBarato.logic";
+import {
+  mesAnoAtual,
+  vagasDoRanking,
+  type MaisBaratoLinha,
+} from "@/features/price-index/maisBarato.logic";
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { formatBRL } from "@/lib/format";
-import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, faqSchema, priceTableOffersSchema } from "@/lib/jsonld";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
@@ -23,6 +27,8 @@ export type MaisBaratoData = {
   unitCount: number;
   /** Lotes mapeados da região (inclusive o oficial), sem preço (ADR-010). */
   mapeados?: { name: string; slug: string }[];
+  /** Momento do build em que o motor foi consultado. Vira a validade da oferta. */
+  generatedAt?: string;
 } | null;
 
 /**
@@ -51,7 +57,7 @@ export default function EstacionamentoMaisBaratoPage() {
     );
   }
 
-  const { destino, linhas, unitCount, mapeados = [] } = data;
+  const { destino, linhas, unitCount, mapeados = [], generatedAt } = data;
   const curto = shortSemCodigo(destino.short_name, destino.name);
   const prosa = aeroportoEmProsa(destino);
   const mesAno = mesAnoAtual();
@@ -90,6 +96,22 @@ export default function EstacionamentoMaisBaratoPage() {
       : []),
   ];
 
+  // O preço da tabela em dado estruturado: um `Product` por vaga que aparece no ranking,
+  // com o total de cada duração em que ela aparece. Mesmo bloco de /precos, mesma regra:
+  // sem preço não há oferta, e sem oferta o item não existe.
+  const produtos = generatedAt
+    ? priceTableOffersSchema({
+        itens: vagasDoRanking(linhas).map(({ opcao, porDuracao }) => ({
+          name: `${opcao.label} · ${opcao.parkingTypeName}`,
+          url: opcao.path,
+          description: `Estacionamento perto do ${prosa}, com reserva online pela Movepark.`,
+          image: opcao.photo,
+          porDuracao,
+        })),
+        generatedAt,
+      })
+    : null;
+
   const title = `Estacionamento mais barato em ${curto} (${destino.code}): ${mesAno} | Movepark`;
   const description = `${durationLabel(diaria.days)} a partir de ${formatBRL(diaria.vencedor.total)} perto do ${prosa}. Vencedor e segunda opção por duração, com o preço do motor de reservas.`;
 
@@ -104,6 +126,9 @@ export default function EstacionamentoMaisBaratoPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(faqSchema(perguntasRapidas.map((p) => ({ question: p.q, answer: p.a }))))}</script>
+        {produtos && (
+          <script type="application/ld+json">{JSON.stringify(produtos)}</script>
+        )}
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([

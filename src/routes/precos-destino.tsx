@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { formatBRL, formatDate } from "@/lib/format";
-import { breadcrumbSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, priceTableOffersSchema, type PriceTableItem } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import { OgImage } from "@/lib/ogImage";
 import {
@@ -39,52 +39,24 @@ function distanciaLabel(dest: PriceDestination, m: number | null): string | null
   return dest.type === "airport" || dest.type === "bus_terminal" ? `${d} do terminal` : d;
 }
 
-/** Host na frente do caminho relativo do legado, que o buscador não resolve em JSON-LD. */
-function absolutaSite(url: string): string {
-  return /^https?:\/\//i.test(url) ? url : `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
-}
-
 /**
- * JSON-LD: um Product por vaga, com a faixa de preço real das durações.
- *
- * Linha sem preço em nenhuma duração fica de fora da lista. A matriz aceita a linha muda de
- * propósito (quem não tem preço na duração de referência vai para o fim da tabela), mas aqui
- * ela daria `Math.min()` de lista vazia, que é `Infinity`, e um `Product` sem `offers` válida,
- * que o Google reprova como item inválido. A linha continua visível na tabela.
+ * As linhas da tabela como itens de preço do JSON-LD: nome, ficha, capa e o total de cada
+ * duração. A conversão mora aqui, e não no `jsonld.ts`, porque `MatrixRow` é o formato da
+ * tabela desta página; o schema em si é o mesmo do índice e da página de mais barato.
  */
-function produtosSchema(dest: PriceDestination, rows: MatrixRow[]) {
+function itensDePreco(dest: PriceDestination, rows: MatrixRow[]): PriceTableItem[] {
   const nome = dest.short_name ?? dest.name;
-  const comPreco = rows
-    .map((row) => ({
-      row,
-      totais: row.cells.map((c) => c.total).filter((t): t is number => t != null),
-    }))
-    .filter((r) => r.totais.length > 0);
-  return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    itemListElement: comPreco.map(({ row, totais }, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      item: {
-        "@type": "Product",
-        name: `${row.label} · ${row.unit.parking_type_name}`,
-        description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
-        // `image` é recomendado pelo Google no Product, e sem ele o Search Console acusa aviso
-        // na lista inteira. É a mesma capa que a busca e a página da unidade usam; absoluta,
-        // porque metade das unidades guarda caminho relativo do legado.
-        image: row.unit.photo ? [absolutaSite(row.unit.photo)] : undefined,
-        offers: {
-          "@type": "AggregateOffer",
-          priceCurrency: "BRL",
-          lowPrice: Math.min(...totais).toFixed(2),
-          highPrice: Math.max(...totais).toFixed(2),
-          offerCount: totais.length,
-          url: `${SITE_URL}${listingPath(row.unit)}`,
-        },
-      },
-    })),
-  };
+  return rows.map((row) => ({
+    name: `${row.label} · ${row.unit.parking_type_name}`,
+    url: listingPath(row.unit),
+    description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
+    // A mesma capa que a busca e a página da unidade usam. Metade das unidades guarda
+    // caminho relativo do legado, e o `priceTableOffersSchema` absolutiza.
+    image: row.unit.photo,
+    porDuracao: row.cells
+      .filter((c): c is typeof c & { total: number } => c.total != null)
+      .map((c) => ({ days: c.days, total: c.total })),
+  }));
 }
 
 /**
@@ -131,6 +103,13 @@ export default function PrecosDestinoPage() {
     { name: nome, url: canonical },
   ]);
 
+  // Nulo quando nenhuma linha tem preço em duração nenhuma: `ItemList` vazia é item
+  // inválido para o Google, e o bloco some em vez de sair oco.
+  const produtos = priceTableOffersSchema({
+    itens: itensDePreco(destination, matrix.rows),
+    generatedAt,
+  });
+
   return (
     <>
       <Helmet>
@@ -142,9 +121,9 @@ export default function PrecosDestinoPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
-        <script type="application/ld+json">
-          {JSON.stringify(produtosSchema(destination, matrix.rows))}
-        </script>
+        {produtos && (
+          <script type="application/ld+json">{JSON.stringify(produtos)}</script>
+        )}
       </Helmet>
       <OgImage area="precos" />
 

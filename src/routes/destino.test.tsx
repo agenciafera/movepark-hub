@@ -712,6 +712,10 @@ describe("lista de unidades no HTML do build", () => {
       lowPrice: "30.00",
       highPrice: "175.00",
       offerCount: 2,
+      // A mesma data de conferência que a nota de procedência mostra, mais os 90 dias de
+      // validade: quem lê só o JSON-LD precisa saber a idade do número.
+      validFrom: "2026-08-17",
+      priceValidUntil: "2026-11-15",
     });
     expect(JSON.stringify(lista)).not.toContain("InStock");
   });

@@ -591,6 +591,7 @@ async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
     linhas,
     unitCount: resumo.unitCount,
     mapeados,
+    generatedAt: new Date().toISOString(),
   };
 }
 

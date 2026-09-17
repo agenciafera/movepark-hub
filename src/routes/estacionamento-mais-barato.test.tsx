@@ -14,6 +14,7 @@ const DATA: MaisBaratoData = {
     code: "VCP",
   },
   unitCount: 4,
+  generatedAt: "2026-09-16T12:00:00Z",
   linhas: [
     {
       days: 1,
@@ -23,6 +24,8 @@ const DATA: MaisBaratoData = {
         total: 40,
         perDay: 40,
         path: "/p/virapark/matriz/uncovered",
+        photo: "/Estacionamentos/virapark/capa.webp",
+        key: "virapark/matriz/uncovered",
       },
       vice: {
         label: "Garageinn",
@@ -30,6 +33,8 @@ const DATA: MaisBaratoData = {
         total: 45,
         perDay: 45,
         path: "/p/garageinn/matriz/uncovered",
+        photo: null,
+        key: "garageinn/matriz/uncovered",
       },
     },
     {
@@ -40,6 +45,8 @@ const DATA: MaisBaratoData = {
         total: 174.3,
         perDay: 24.9,
         path: "/p/virapark/matriz/covered",
+        photo: "/Estacionamentos/virapark/capa.webp",
+        key: "virapark/matriz/covered",
       },
       vice: null,
     },
@@ -148,5 +155,51 @@ describe("EstacionamentoMaisBaratoPage", () => {
   it("sem preço no destino, explica e aponta pro índice", async () => {
     setup(null);
     expect(await screen.findByText("Ainda não temos preços neste destino")).toBeInTheDocument();
+  });
+
+  /**
+   * A página responde com número, e número só vale para máquina quando sai estruturado.
+   * O `Product` é a vaga, não a linha: a mesma unidade vence em mais de uma duração.
+   */
+  it("emite Product com AggregateOffer por vaga do ranking, sem repetir a unidade", async () => {
+    setup();
+    await screen.findByRole("heading", { level: 1 });
+
+    const lista = await waitFor(() => {
+      const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find(
+          (d) =>
+            d["@type"] === "ItemList" &&
+            d.itemListElement?.[0]?.item?.["@type"] === "Product",
+        );
+      expect(achado).toBeDefined();
+      return achado as {
+        numberOfItems: number;
+        itemListElement: {
+          item: {
+            name: string;
+            image?: string[];
+            offers: { lowPrice: string; offerCount: number; priceValidUntil?: string };
+          };
+        }[];
+      };
+    });
+
+    // Virapark descoberta, Garageinn descoberta e Virapark coberta: três vagas, não quatro
+    // linhas de ranking.
+    expect(lista.numberOfItems).toBe(3);
+    const nomes = lista.itemListElement.map((e) => e.item.name);
+    expect(nomes).toEqual([
+      "Virapark · Vaga Descoberta",
+      "Garageinn · Vaga Descoberta",
+      "Virapark · Vaga Coberta",
+    ]);
+
+    const vencedor = lista.itemListElement[0].item;
+    expect(vencedor.offers.lowPrice).toBe("40.00");
+    expect(vencedor.offers.offerCount).toBe(1);
+    expect(vencedor.offers.priceValidUntil).toBe("2026-12-15");
+    expect(vencedor.image).toEqual(["https://movepark.co/Estacionamentos/virapark/capa.webp"]);
   });
 });

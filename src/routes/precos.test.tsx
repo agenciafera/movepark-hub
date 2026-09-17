@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
@@ -25,6 +25,7 @@ const UNIT: PriceUnit = {
   distance_m: 477,
   min_stay_days: null,
   price_updated_at: "2026-08-14T10:00:00Z",
+  photo: "/Estacionamentos/aerovalet/guarulhos/capa.webp",
   prices: [
     { days: 1, total: 18.9, old_total: 22.68 },
     { days: 7, total: 111.3, old_total: 133.56 },
@@ -268,6 +269,61 @@ describe("PrecosPage", () => {
 
     expect(screen.getByText("Nenhum aeroporto com esse filtro")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Limpar filtros" })).toBeInTheDocument();
+  });
+
+  /**
+   * O índice mostra preço de verdade, então ele tem que sair legível por máquina também.
+   * O bloco espelha a tabela: mesmo valor, mesma unidade, e nada além disso.
+   */
+  it("emite Product com AggregateOffer do mesmo preço que a tabela mostra", async () => {
+    setup();
+    await screen.findByRole("heading", { level: 1 });
+
+    // O Helmet injeta no head fora do ciclo de render; ler direto dá falha intermitente.
+    const produtos = await waitFor(() => {
+      const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find(
+          (d) =>
+            d["@type"] === "ItemList" &&
+            d.itemListElement?.[0]?.item?.["@type"] === "Product",
+        );
+      expect(achado).toBeDefined();
+      return achado as {
+        numberOfItems: number;
+        itemListElement: {
+          item: {
+            name: string;
+            url: string;
+            image?: string[];
+            offers: {
+              lowPrice: string;
+              highPrice: string;
+              offerCount: number;
+              priceValidUntil?: string;
+              availability?: string;
+            };
+          };
+        }[];
+      };
+    });
+
+    // Só a vaga de parceiro de Guarulhos tem preço: lote mapeado não vende nada aqui.
+    expect(produtos.numberOfItems).toBe(1);
+    const item = produtos.itemListElement[0].item;
+    expect(item.name).toBe("Aerovalet · Vaga Descoberta");
+    expect(item.url).toBe("https://movepark.co/estacionamentos/aeroporto-guarulhos/aerovalet");
+    expect(item.image).toEqual([
+      "https://movepark.co/Estacionamentos/aerovalet/guarulhos/capa.webp",
+    ]);
+    // As três durações renderizadas no documento (1, 7 e 15 diárias), do menor ao maior.
+    expect(item.offers.offerCount).toBe(3);
+    expect(item.offers.lowPrice).toBe("18.90");
+    expect(item.offers.highPrice).toBe("223.50");
+    // Validade do número: 90 dias depois da conferência que a página mostra.
+    expect(item.offers.priceValidUntil).toBe("2026-11-12");
+    // Estoque de unidade externa não é nosso para afirmar (ADR-009).
+    expect(item.offers.availability).toBeUndefined();
   });
 
   it("sem dado, explica e aponta para a busca", async () => {

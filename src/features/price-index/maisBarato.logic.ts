@@ -2,6 +2,7 @@ import {
   carUnits,
   listingPath,
   priceFor,
+  unitKey,
   unitLabel,
   type PriceDestination,
 } from "./priceIndex.logic";
@@ -21,6 +22,10 @@ export type MaisBaratoOpcao = {
   total: number;
   perDay: number;
   path: string;
+  /** Capa da unidade, a mesma da busca. Vira `image` no `Product` do JSON-LD. */
+  photo?: string | null;
+  /** Identidade da vaga, para juntar as durações da mesma unidade num `Product` só. */
+  key: string;
 };
 
 export type MaisBaratoLinha = {
@@ -51,6 +56,8 @@ export function maisBaratoPorDuracao(dest: PriceDestination, days: number[]): Ma
       total: x.total,
       perDay: x.total / d,
       path: listingPath(x.u),
+      photo: x.u.photo ?? null,
+      key: unitKey(x.u),
     });
 
     linhas.push({
@@ -67,4 +74,30 @@ export function maisBaratoPorDuracao(dest: PriceDestination, days: number[]): Ma
 export function mesAnoAtual(agora: Date = new Date()): string {
   const mes = agora.toLocaleDateString("pt-BR", { month: "long" });
   return `${mes}/${agora.getFullYear()}`;
+}
+
+/**
+ * As opções da página agrupadas por vaga, uma entrada por unidade com o total de cada
+ * duração em que ela aparece.
+ *
+ * O ranking é por duração e a mesma unidade repete entre as linhas; `Product` é a vaga,
+ * não a linha. Sem agrupar, a página publicaria o mesmo estacionamento quatro vezes, com
+ * uma oferta cada, que é lista inflada dizendo a mesma coisa.
+ */
+export function vagasDoRanking(linhas: MaisBaratoLinha[]) {
+  const porVaga = new Map<
+    string,
+    { opcao: MaisBaratoOpcao; porDuracao: { days: number; total: number }[] }
+  >();
+
+  for (const linha of linhas) {
+    for (const opcao of [linha.vencedor, linha.vice]) {
+      if (!opcao) continue;
+      const atual = porVaga.get(opcao.key);
+      if (atual) atual.porDuracao.push({ days: linha.days, total: opcao.total });
+      else porVaga.set(opcao.key, { opcao, porDuracao: [{ days: linha.days, total: opcao.total }] });
+    }
+  }
+
+  return [...porVaga.values()];
 }

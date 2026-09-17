@@ -88,8 +88,30 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
 
 - Title/H1 com a consulta ("Preços de estacionamento em Guarulhos (GRU): diária, 7, 15
   e 30 dias"); meta description derivada do dado (menor diária + 7 dias).
-- JSON-LD: `BreadcrumbList` + `ItemList` de `Product` com `AggregateOffer` (faixa real
-  entre as durações) por unidade; no índice, `ItemList` das páginas.
+- JSON-LD: `BreadcrumbList` + `ItemList` de `Product` com `AggregateOffer` por vaga, nas
+  **três** páginas de preço (`/precos`, `/precos/<slug>` e
+  `/estacionamento-mais-barato/<slug>`), de uma função só: `priceTableOffersSchema`, em
+  `src/lib/jsonld.ts` (testes em `jsonld.test.ts`). O índice mantém, ao lado, o `ItemList`
+  de links das páginas e o `Dataset`. O que o bloco publica e o que ele cala:
+  - `lowPrice`/`highPrice` são o menor e o maior **total** da linha, que é o número que a
+    célula mostra; `priceSpecification` traz a **escada** (`UnitPriceSpecification` com a
+    diária de cada janela e o `eligibleQuantity` de dias em que ela vale).
+  - `validFrom` é a data de conferência que a página exibe, e `priceValidUntil` é ela mais
+    **90 dias**, o mesmo teto de frescor que o projeto já aplica a preço pesquisado
+    (`preco_pesquisado_fresco`). Não é congelamento: mudou a tabela do parceiro, a
+    publicação automática regera a página com janela nova. O campo existe porque quem lê
+    só o JSON-LD não enxerga a data na tela, e citação de preço envelhece sem aviso. Isto
+    substitui a decisão anterior de deixar `priceValidUntil` fora.
+  - Sem `availability`: afirmar `InStock` é prometer vaga garantida, e quem controla o
+    estoque da unidade externa é o parceiro (ADR-009). Sem `aggregateRating`: a nota é da
+    unidade e mora na página dela.
+  - Linha sem preço em duração nenhuma fica fora da lista (segue visível na tabela), e
+    lista sem nenhum item precificado não emite bloco: `Product` sem `offers` e `ItemList`
+    vazia são itens inválidos para o Google.
+  - A página do destino (`/estacionamentos/<slug>`) usa o `destinationOffersSchema`, que é
+    outro bloco (mistura parceiro e lote mapeado), e ganhou a mesma validade.
+  - A **calculadora** fica de fora de propósito: o que ela mostra muda com o que a pessoa
+    digita, e schema tem que espelhar a tela. Ela emite `WebApplication`.
 - Gêmeo Markdown no build (`scripts/generate-geo-artifacts.mjs`): `dist/precos.md` e
   `dist/precos/<slug>.md` com a mesma ordem de blocos e a tabela em Markdown; servidos
   pelo worker via `Accept: text/markdown`. O `precos.md` fecha com a lista de aeroportos

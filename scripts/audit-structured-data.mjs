@@ -31,6 +31,7 @@ function htmls(dir) {
 }
 
 const absoluta = (u) => typeof u === "string" && /^https?:\/\//i.test(u);
+const HOJE = new Date().toISOString().slice(0, 10);
 const lista = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 
 function visita(no, rota, caminho = "$", pai = null) {
@@ -72,6 +73,19 @@ function visita(no, rota, caminho = "$", pai = null) {
       );
     }
     if (!no.priceCurrency) err("Offer sem priceCurrency");
+  }
+  // Validade do preço: data mal formada o buscador ignora, e data no passado ele lê como
+  // oferta expirada, o que derruba o rich result inteiro. O build é o único momento em que
+  // dá para conferir isso antes de publicar.
+  if (ts.includes("Offer") || ts.includes("AggregateOffer")) {
+    for (const campo of ["priceValidUntil", "validFrom"]) {
+      const v = no[campo];
+      if (v == null) continue;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v))) err(`${campo} fora do formato AAAA-MM-DD: ${v}`);
+      else if (campo === "priceValidUntil" && String(v) < HOJE) {
+        err(`priceValidUntil no passado (${v}): o Google trata a oferta como expirada`);
+      }
+    }
   }
   if (ts.includes("AggregateOffer")) {
     if (no.lowPrice == null || no.lowPrice === "" || Number(no.lowPrice) <= 0) {

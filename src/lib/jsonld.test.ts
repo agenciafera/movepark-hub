@@ -10,6 +10,7 @@ import {
   itemListSchema,
   parkingFacilitySchema,
   localBusinessSchema,
+  priceTableOffersSchema,
   productOfferSchema,
   youTubeVideoSchema,
   datasetSchema,
@@ -863,5 +864,145 @@ describe("perfil local da unidade no LocalBusiness", () => {
     const externa = localBusinessSchema(makeListing({ checkout_mode: "external" }));
     expect(externa.paymentAccepted).toBeUndefined();
     expect(externa.currenciesAccepted).toBeUndefined();
+  });
+});
+
+
+/**
+ * O bloco de preço das páginas de preço (/precos, /precos/<slug> e a de mais barato).
+ * O que ele publica é o que a tabela mostra, e o que ele cala é promessa que não é nossa.
+ */
+describe("priceTableOffersSchema", () => {
+  const GERADO_EM = "2026-09-16T12:00:00Z";
+
+  const item = (over: Partial<Parameters<typeof priceTableOffersSchema>[0]["itens"][number]> = {}) => ({
+    name: "Aerovalet · Vaga Descoberta",
+    url: "/estacionamentos/aeroporto-guarulhos/aerovalet",
+    description: "Estacionamento perto de Guarulhos (GRU), com reserva online pela Movepark.",
+    image: "/Estacionamentos/aerovalet/capa.webp",
+    porDuracao: [
+      { days: 1, total: 18.9 },
+      { days: 7, total: 111.3 },
+      { days: 30, total: 447 },
+    ],
+    ...over,
+  });
+
+  type Produto = {
+    "@type": string;
+    name: string;
+    url: string;
+    image?: string[];
+    offers: {
+      lowPrice: string;
+      highPrice: string;
+      offerCount: number;
+      priceCurrency: string;
+      availability?: string;
+      validFrom?: string;
+      priceValidUntil?: string;
+      priceSpecification?: { price: string; eligibleQuantity: { minValue: number; maxValue?: number } }[];
+    };
+  };
+
+  const produtos = (s: ReturnType<typeof priceTableOffersSchema>) =>
+    (s?.itemListElement ?? []).map((e) => e.item as unknown as Produto);
+
+  it("publica um Product com AggregateOffer por linha da tabela", () => {
+    const s = priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM });
+    expect(s?.["@type"]).toBe("ItemList");
+    expect(s?.numberOfItems).toBe(1);
+    const [p] = produtos(s);
+    expect(p["@type"]).toBe("Product");
+    expect(p.name).toBe("Aerovalet · Vaga Descoberta");
+    expect(p.offers.priceCurrency).toBe("BRL");
+  });
+
+  it("a faixa é o menor e o maior total da linha, que é o que a célula mostra", () => {
+    const [p] = produtos(priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM }));
+    expect(p.offers.lowPrice).toBe("18.90");
+    expect(p.offers.highPrice).toBe("447.00");
+    expect(p.offers.offerCount).toBe(3);
+  });
+
+  it("a escada traz a diária de cada janela, com a faixa de dias em que ela vale", () => {
+    const [p] = produtos(priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM }));
+    expect(p.offers.priceSpecification).toEqual([
+      expect.objectContaining({
+        price: "18.90",
+        eligibleQuantity: expect.objectContaining({ minValue: 1, maxValue: 6 }),
+      }),
+      expect.objectContaining({
+        price: "15.90",
+        eligibleQuantity: expect.objectContaining({ minValue: 7, maxValue: 29 }),
+      }),
+      // A última janela não tem teto: acima dela a diária segue a mesma.
+      expect.objectContaining({
+        price: "14.90",
+        eligibleQuantity: expect.not.objectContaining({ maxValue: expect.anything() }),
+      }),
+    ]);
+  });
+
+  it("carimba a validade do preço: 90 dias a partir da conferência", () => {
+    const [p] = produtos(priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM }));
+    expect(p.offers.validFrom).toBe("2026-09-16");
+    expect(p.offers.priceValidUntil).toBe("2026-12-15");
+  });
+
+  it("não afirma disponibilidade: estoque de unidade externa não é nosso (ADR-009)", () => {
+    const [p] = produtos(priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM }));
+    expect(p.offers.availability).toBeUndefined();
+    expect(JSON.stringify(p)).not.toContain("InStock");
+  });
+
+  it("absolutiza URL e capa, que o buscador não resolve em caminho relativo", () => {
+    const [p] = produtos(priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM }));
+    expect(p.url).toBe("https://movepark.co/estacionamentos/aeroporto-guarulhos/aerovalet");
+    expect(p.image).toEqual(["https://movepark.co/Estacionamentos/aerovalet/capa.webp"]);
+  });
+
+  it("sem capa cadastrada, omite image em vez de publicar caminho vazio", () => {
+    const [p] = produtos(
+      priceTableOffersSchema({ itens: [item({ image: null })], generatedAt: GERADO_EM }),
+    );
+    expect(p.image).toBeUndefined();
+  });
+
+  it("linha sem preço em duração nenhuma fica fora da lista", () => {
+    // A linha continua visível na tabela ("ver na página"); Product sem offers válida o
+    // Google reprova como item inválido e derruba a lista inteira junto.
+    const s = priceTableOffersSchema({
+      itens: [item(), item({ name: "Sem Preço · Vaga Coberta", porDuracao: [] })],
+      generatedAt: GERADO_EM,
+    });
+    expect(s?.numberOfItems).toBe(1);
+    expect(JSON.stringify(s)).not.toContain("Sem Preço");
+  });
+
+  it("duração sem preço não vira oferta de R$ 0,00", () => {
+    const [p] = produtos(
+      priceTableOffersSchema({
+        itens: [item({ porDuracao: [{ days: 1, total: 0 }, { days: 7, total: 111.3 }] })],
+        generatedAt: GERADO_EM,
+      }),
+    );
+    expect(p.offers.offerCount).toBe(1);
+    expect(p.offers.lowPrice).toBe("111.30");
+  });
+
+  it("nada precificado devolve null, porque ItemList vazia é item inválido", () => {
+    expect(priceTableOffersSchema({ itens: [], generatedAt: GERADO_EM })).toBeNull();
+    expect(
+      priceTableOffersSchema({ itens: [item({ porDuracao: [] })], generatedAt: GERADO_EM }),
+    ).toBeNull();
+  });
+
+  it("posição segue a ordem da tabela", () => {
+    const s = priceTableOffersSchema({
+      itens: [item(), item({ name: "Aeropark · Vaga Coberta" })],
+      generatedAt: GERADO_EM,
+    });
+    expect(s?.itemListElement.map((e) => e.position)).toEqual([1, 2]);
   });
 });

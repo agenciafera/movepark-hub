@@ -349,6 +349,9 @@ export default function DestinoPage() {
             name: p.name,
             url: p.public_path ?? caminhoFicha(destinoSlug, p.public_slug ?? p.slug),
           })),
+          // O mesmo carimbo que a nota de procedência mostra na tela. Sem ele a oferta
+          // sai sem validade, e quem lê só o JSON-LD não sabe a idade do número.
+          generatedAt: generatedAt ?? undefined,
         })
       : null;
 

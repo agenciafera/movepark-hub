@@ -13,7 +13,13 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHero } from "@/components/shared/PageHero";
 import { formatBRL, formatDate } from "@/lib/format";
-import { datasetSchema, breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import {
+  datasetSchema,
+  breadcrumbSchema,
+  itemListSchema,
+  priceTableOffersSchema,
+  type PriceTableItem,
+} from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import { OgImage } from "@/lib/ogImage";
 import {
@@ -141,6 +147,31 @@ const PROXIMOS = [
 
 function nomeDoAeroporto(meta: AirportMeta): string {
   return meta.short_name ?? meta.name;
+}
+
+/**
+ * As vagas de parceiro de todos os aeroportos como itens de preço do JSON-LD.
+ *
+ * Vai sobre `sections`, e não sobre o que o filtro deixou na tela, pelo mesmo motivo do
+ * `itemListSchema` ao lado: o HTML pré-renderizado nasce sem filtro, e é ele que o
+ * buscador lê. As três durações entram porque as três são renderizadas no documento; o
+ * seletor de período troca o que se lê, não o que existe.
+ *
+ * Lote mapeado não entra: ele não vende nada aqui e não tem preço (ADR-010).
+ */
+function itensDePreco(sections: AirportSection[]): PriceTableItem[] {
+  return sections.flatMap((section) => {
+    const nome = nomeDoAeroporto(section.meta);
+    return section.rows.map((row) => ({
+      name: `${row.label} · ${row.unit.parking_type_name}`,
+      url: listingPath(row.unit),
+      description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
+      image: row.unit.photo,
+      porDuracao: row.cells
+        .filter((c): c is typeof c & { total: number } => c.total != null)
+        .map((c) => ({ days: c.days, total: c.total })),
+    }));
+  });
 }
 
 /**
@@ -418,6 +449,9 @@ export default function PrecosPage() {
     { name: "Início", url: SITE_URL },
     { name: "Índice de preços", url: canonical },
   ]);
+  // Um `Product` por vaga de parceiro precificada, com a mesma tabela que a página
+  // mostra. Nulo quando nenhum aeroporto tem preço, e aí o bloco não sai.
+  const produtos = priceTableOffersSchema({ itens: itensDePreco(sections), generatedAt });
   const lista = itemListSchema(
     sections.map((s) => ({
       name: `Preços de estacionamento em ${nomeDoAeroporto(s.meta)}`,
@@ -450,6 +484,9 @@ export default function PrecosPage() {
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(lista)}</script>
+        {produtos && (
+          <script type="application/ld+json">{JSON.stringify(produtos)}</script>
+        )}
         <script type="application/ld+json">{JSON.stringify(datasetSchema({ dateModified: generatedAt, spatial: aeroportos.map((a) => a.name) }))}</script>
       </Helmet>
       <OgImage area="precos" />
