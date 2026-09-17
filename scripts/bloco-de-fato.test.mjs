@@ -6,6 +6,7 @@ import {
   extrairBloco,
   frasePatio,
   numerosDaFrase,
+  periodoDaNota,
   patiosDoDestino,
   TITULO,
 } from "./bloco-de-fato.mjs";
@@ -29,6 +30,60 @@ const aeropark = {
   tipo: "descoberta",
 };
 const extrasAeropark = { frequencia: 30, tolerancia: 60, vinteQuatroHoras: true };
+
+describe("periodoDaNota", () => {
+  it("meses diferentes no mesmo ano", () => {
+    expect(periodoDaNota({ desde: "2026-03-04T10:00:00Z", ate: "2026-09-17T10:00:00Z" })).toBe(
+      "de março a setembro de 2026",
+    );
+  });
+  it("tudo no mesmo mês vira uma data só", () => {
+    expect(periodoDaNota({ desde: "2026-09-02T10:00:00Z", ate: "2026-09-17T10:00:00Z" })).toBe(
+      "em setembro de 2026",
+    );
+  });
+  it("sem avaliação não inventa período", () => {
+    expect(periodoDaNota(null)).toBeNull();
+    expect(periodoDaNota({ desde: null, ate: "2026-09-17T10:00:00Z" })).toBeNull();
+  });
+});
+
+describe("frasePatio · avaliação (Conteúdo 30)", () => {
+  const comNota = (nota) => ({ ...extrasAeropark, nota });
+
+  it("publica nota, contagem e período juntos quando há volume", () => {
+    const f = frasePatio(
+      aeropark,
+      GRU,
+      comNota({ avg: 4.7, count: 38, periodo: "de março a setembro de 2026" }),
+      "setembro de 2026",
+    );
+    expect(f).toContain("**4,7** em **38 avaliações** de clientes Movepark");
+    expect(f).toContain("de março a setembro de 2026");
+  });
+
+  /** O erro que a atividade mandou fechar: nota 5,0 apoiada em uma opinião. */
+  it("cala abaixo do piso de volume, mesmo com nota cheia", () => {
+    const f = frasePatio(
+      aeropark,
+      GRU,
+      comNota({ avg: 5, count: 2, periodo: "em setembro de 2026" }),
+      "setembro de 2026",
+    );
+    expect(f).not.toContain("avaliações de clientes");
+    expect(f).not.toContain("**5,0**");
+  });
+
+  it("sem período a nota não sai, porque os três andam juntos", () => {
+    const f = frasePatio(
+      aeropark,
+      GRU,
+      comNota({ avg: 4.9, count: 120, periodo: null }),
+      "setembro de 2026",
+    );
+    expect(f).not.toContain("avaliações de clientes");
+  });
+});
 
 describe("frasePatio", () => {
   it("põe entidade, distância, traslado, preço e condição na mesma frase", () => {

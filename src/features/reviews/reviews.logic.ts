@@ -2,6 +2,7 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatRating } from "@/lib/format";
+import { MIN_AVALIACOES_PARA_NOTA, temVolumeParaNota } from "@/lib/reviews-volume.mjs";
 
 /**
  * Contexto de estadia do card de avaliação (PRD-08.8): "Estacionou de DD/MM a DD/MM"
@@ -67,22 +68,67 @@ export function buildSubmitReviewArgs(bookingId: string, v: ReviewFormValues): S
 }
 
 /**
- * Filtra itens de busca que têm avaliação (count > 0) — usado na curadoria
- * "Mais bem avaliados em [aeroporto]" (08.6), que só mostra unidades já avaliadas.
+ * Filtra itens de busca cuja nota já tem volume para valer como afirmação, usado na
+ * curadoria "Mais bem avaliados em [aeroporto]" (08.6). Chamar de "mais bem avaliado" um
+ * lote com uma opinião é o mesmo erro do selo, só que com um superlativo em cima.
  */
 export function topRated<T extends { location: { review_count: number | null } }>(items: T[]): T[] {
-  return items.filter((i) => (i.location.review_count ?? 0) > 0);
+  return items.filter((i) => temVolumeParaNota(i.location.review_count));
 }
 
 /**
- * Rótulo do rating agregado: "4,8 · 248 avaliações". `null` quando não há
- * avaliações (a UI esconde o rating, não mostra "sem avaliações").
+ * Rótulo do rating agregado: "4,8 · 248 avaliações". `null` quando a nota ainda não pode
+ * ser publicada, e aí a UI esconde o rating em vez de mostrar "sem avaliações".
+ *
+ * O piso de volume (`MIN_AVALIACOES_PARA_NOTA`) mora aqui porque este é o caminho por onde
+ * quase toda nota chega à tela: selo do card, topo da ficha, lista de destino e a nota do
+ * Google. Gatear na origem é o que evita uma quinta marcação nascer sem o piso.
  */
 export function ratingLabel(avg: number | null | undefined, count: number | null | undefined): string | null {
-  if (!count || avg == null) return null;
+  if (!temVolumeParaNota(count) || avg == null) return null;
   const n = count === 1 ? "avaliação" : "avaliações";
   return `${formatRating(avg)} · ${count} ${n}`;
 }
+
+/**
+ * O período que a nota cobre: "de mar a set de 2026", ou "em set de 2026" quando tudo caiu
+ * no mesmo mês. `null` sem datas.
+ *
+ * Nota e contagem sem período dizem quanto, não quando. Uma média de 4,9 fechada há dois
+ * anos descreve um pátio que talvez nem exista mais, e é justamente essa a diferença entre
+ * o nosso número e o do comparador, que publica nota sem dizer de quando ela é.
+ */
+export function periodoDaNota(desde: string | null | undefined, ate: string | null | undefined): string | null {
+  if (!desde || !ate) return null;
+  const a = new Date(desde);
+  const b = new Date(ate);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
+
+  const mes = (d: Date) => MESES[d.getMonth()];
+  const mesmoMes = a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  if (mesmoMes) return `em ${mes(b)} de ${b.getFullYear()}`;
+  if (a.getFullYear() === b.getFullYear()) {
+    return `de ${mes(a)} a ${mes(b)} de ${b.getFullYear()}`;
+  }
+  return `de ${mes(a)} de ${a.getFullYear()} a ${mes(b)} de ${b.getFullYear()}`;
+}
+
+const MESES = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+
+export { MIN_AVALIACOES_PARA_NOTA, temVolumeParaNota };
 
 export type ReviewSort = "recent" | "best";
 

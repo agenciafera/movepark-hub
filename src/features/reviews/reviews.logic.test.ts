@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildSubmitReviewArgs,
   EMPTY_REVIEW_FORM,
+  MIN_AVALIACOES_PARA_NOTA,
+  periodoDaNota,
   ratingLabel,
   sortReviews,
   stayContextLabel,
@@ -49,12 +51,14 @@ describe("topRated", () => {
     { id: "a", location: { review_count: 0 } },
     { id: "b", location: { review_count: 3 } },
     { id: "c", location: { review_count: null } },
+    { id: "d", location: { review_count: 12 } },
   ];
-  it("mantém só itens com avaliação (count > 0)", () => {
-    expect(topRated(items).map((i) => i.id)).toEqual(["b"]);
+  /** Chamar de "mais bem avaliado" quem tem três opiniões é superlativo sobre ruído. */
+  it("mantém só quem passou do piso de volume", () => {
+    expect(topRated(items).map((i) => i.id)).toEqual(["d"]);
   });
-  it("vazio quando nenhum tem avaliação", () => {
-    expect(topRated([{ id: "x", location: { review_count: 0 } }])).toEqual([]);
+  it("vazio quando ninguém passou do piso", () => {
+    expect(topRated([{ id: "x", location: { review_count: 4 } }])).toEqual([]);
   });
 });
 
@@ -98,11 +102,40 @@ describe("stayContextLabel", () => {
 describe("ratingLabel", () => {
   it("formata avg + contagem (pt-BR)", () => {
     expect(ratingLabel(4.8, 248)).toBe("4,8 · 248 avaliações");
-    expect(ratingLabel(5, 1)).toBe("5,0 · 1 avaliação");
+    expect(ratingLabel(4.6, MIN_AVALIACOES_PARA_NOTA)).toBe("4,6 · 5 avaliações");
   });
   it("null quando não há avaliações", () => {
     expect(ratingLabel(null, 0)).toBeNull();
     expect(ratingLabel(4.5, 0)).toBeNull();
     expect(ratingLabel(null, 3)).toBeNull();
+  });
+  /**
+   * O caso que a atividade Conteúdo 30 mandou fechar: uma opinião não sustenta nota. A IA
+   * repete o 5,0, o leitor decide por ele, e a avaliação seguinte derruba tudo.
+   */
+  it("null abaixo do piso de volume, mesmo com nota cheia", () => {
+    expect(ratingLabel(5, 1)).toBeNull();
+    expect(ratingLabel(5, 2)).toBeNull();
+    expect(ratingLabel(4.9, MIN_AVALIACOES_PARA_NOTA - 1)).toBeNull();
+  });
+});
+
+describe("periodoDaNota", () => {
+  it("mês a mês no mesmo ano", () => {
+    expect(periodoDaNota("2026-03-04T10:00:00Z", "2026-09-17T10:00:00Z")).toBe(
+      "de mar a set de 2026",
+    );
+  });
+  it("tudo no mesmo mês vira uma data só", () => {
+    expect(periodoDaNota("2026-09-02T10:00:00Z", "2026-09-17T10:00:00Z")).toBe("em set de 2026");
+  });
+  it("anos diferentes carregam os dois anos", () => {
+    expect(periodoDaNota("2025-11-02T10:00:00Z", "2026-02-17T10:00:00Z")).toBe(
+      "de nov de 2025 a fev de 2026",
+    );
+  });
+  it("sem data não inventa período", () => {
+    expect(periodoDaNota(null, "2026-09-17T10:00:00Z")).toBeNull();
+    expect(periodoDaNota("ontem", "hoje")).toBeNull();
   });
 });

@@ -66,7 +66,9 @@ function linha(
       has_pcd_config: false,
       has_passenger_quantity: false,
       review_avg: 5,
-      review_count: 1,
+      // Volume acima do piso (reviews-volume.mjs): é o caso em que a unidade PRÓPRIA publica
+      // nota, e o teste da externa prova que a capacidade continua calando mesmo assim.
+      review_count: 9,
       photos,
       company: {
         id: "c-1",
@@ -243,7 +245,8 @@ describe("single da unidade EXTERNA", () => {
   });
 
   it("não mostra nota nem bloco de avaliação, mesmo com avaliação histórica", async () => {
-    // A linha tem review_count = 1 e review_avg = 5, de reserva feita durante os testes.
+    // A linha tem review_count = 9 e review_avg = 5: volume suficiente, e mesmo assim a
+    // unidade externa cala, porque quem manda aqui é a capacidade declarada (ADR-009).
     montaPagina("external");
     await screen.findAllByText(/Virapark/i);
     expect(screen.queryByText(/avaliaç/i)).not.toBeInTheDocument();

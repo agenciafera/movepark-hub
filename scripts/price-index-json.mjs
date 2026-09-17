@@ -16,6 +16,8 @@
  * Ver docs/specs/indice-precos.md.
  */
 
+import { temVolumeParaNota } from "../src/lib/reviews-volume.mjs";
+
 /** Versão do formato. Campo novo não sobe; remoção ou troca de significado sobe. */
 export const PRICE_INDEX_VERSION = 1;
 
@@ -39,7 +41,12 @@ function unidadeJson(u, siteUrl) {
     distance_m: u.distance_m ?? null,
     has_shuttle: u.has_shuttle ?? false,
     shuttle_minutes: u.shuttle_minutes ?? null,
-    review_avg: u.review_avg ?? null,
+    /*
+      Nota só com volume (Conteúdo 30). O artefato é o que agente lê sem raspar HTML, e
+      publicar 5,0 de uma avaliação aqui é pior que na tela: ninguém vê a contagem ao lado.
+      A contagem continua saindo sempre, porque ela é o que explica a nota ausente.
+    */
+    review_avg: temVolumeParaNota(u.review_count) ? (u.review_avg ?? null) : null,
     review_count: u.review_count ?? 0,
     // Piso de estadia: abaixo dele o motor não vende, e a duração sai sem total.
     min_stay_days: u.min_stay_days ?? null,

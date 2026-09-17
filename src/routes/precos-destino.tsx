@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { formatBRL, formatDate } from "@/lib/format";
+import { temVolumeParaNota } from "@/lib/reviews-volume.mjs";
 import {
   breadcrumbSchema,
   priceTableOffersSchema,
@@ -263,7 +264,8 @@ export default function PrecosDestinoPage() {
                         )}
                         {row.unit.has_shuttle && <> · traslado</>}
                       </span>
-                      {row.unit.review_count > 0 && row.unit.review_avg != null && (
+                      {/* Piso de volume, igual ao do selo: ver reviews-volume.mjs. */}
+                      {temVolumeParaNota(row.unit.review_count) && row.unit.review_avg != null && (
                         <span className="text-caption-sm text-muted">
                           ★ {Number(row.unit.review_avg).toFixed(1).replace(".", ",")} (
                           {row.unit.review_count})

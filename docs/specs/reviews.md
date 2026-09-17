@@ -24,9 +24,47 @@ Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md
   recomputado pelo trigger `review_bump_rating` a cada insert/update/delete de review.
 - `booking.review_request_sent_at` — idempotência da coleta.
 
+## 1b. Piso de volume para publicar nota (Conteúdo 30, 17/09/2026)
+
+**Nenhuma superfície publica nota agregada abaixo de `MIN_AVALIACOES_PARA_NOTA = 5`.** O
+número mora em [`src/lib/reviews-volume.mjs`](../../src/lib/reviews-volume.mjs), com cópia
+para o Deno em `supabase/functions/_shared/reviews.ts`; as duas são soldadas por
+`src/features/reviews/volume.contract.test.ts`, do mesmo jeito que o host canônico.
+
+**Por quê.** Com 2 avaliações, uma nota 3 derruba um 5,0 para 4,0; com 4 ainda derruba 0,5.
+A partir de 5 a média se move devagar o bastante para ser afirmação. Publicar "nota 5,0"
+sobre uma opinião é pior que não publicar: a IA repete o número, o leitor decide por ele, e a
+avaliação seguinte desmente. Vale igual para a nota da Movepark e para a do Google.
+
+**Onde o piso entra:**
+
+| Superfície | Antes | Agora |
+| --- | --- | --- |
+| Selo do card, topo da ficha, lista do destino (`ratingLabel`) | `count > 0` | piso |
+| Resumo da seção de avaliações (`RatingSummary`) | `count > 0` | piso, e com o **período** ao lado da contagem |
+| `aggregateRating` + `review[]` no `productOfferSchema` | `count > 0` | piso |
+| Curadoria "Mais bem avaliados" (`topRated`) | `count > 0` | piso |
+| Busca: `sort=rating_desc` e `min_rating` | sem piso, sem desempate | piso, e desempate por contagem |
+| Artefato `precos.json` | nota crua | nota só com piso; a contagem sai sempre |
+| Bloco de fato das 12 donas (`scripts/bloco-de-fato.mjs`) | não falava de nota | frase com nota, contagem e período, só com piso |
+
+**Nota, contagem e período andam sempre juntos.** Média sem período diz quanto, não quando, e
+uma nota fechada há dois anos descreve um pátio que talvez tenha mudado de dono. O período sai
+das próprias avaliações (`periodoDaNota`), no formato "de mar a set de 2026".
+
+**O que o piso NÃO esconde:** as avaliações individuais. Cada comentário é fato de quem
+escreveu, com data ao lado, e continua na seção da unidade abaixo do piso. O que não se
+sustenta é a estatística em cima de duas opiniões.
+
+**Estado em 17/09/2026: a base tem zero avaliação publicada**, então nenhuma superfície
+mostra nota hoje. O caminho para sair disso é aumentar volume (PRD-08.7, coleta por
+WhatsApp além do e-mail), e é ele que destrava a exibição: quando uma unidade passar de 5,
+tudo acima acende sozinho, sem deploy.
+
 ## 2. Escala & exibição
 - **5 estrelas**, estrela em **ink** (não amarela), número com vírgula (`formatRating`).
-- Card de busca e topo do detalhe: selo `★ 4,8 · 248 avaliações` (`RatingBadge`). **Some sem avaliações**.
+- Card de busca e topo do detalhe: selo `★ 4,8 · 248 avaliações` (`RatingBadge`). **Some sem avaliações
+  e abaixo do piso de volume** (§1b).
 - Bloco na unidade (`ReviewsBlock`): grid 2-col (autor, data, nota, comentário, resposta do dono) + modal "ver todas".
   O card mostra o **contexto de estadia** ("Estacionou de DD/MM a DD/MM" / "Estacionou em DD/MM" no mesmo dia)
   quando há `stay_check_in/out` — PRD-08.8, `reviews.logic.ts → stayContextLabel` (some sem datas).
@@ -62,8 +100,9 @@ Relacionado: [booking-flow.md](./booking-flow.md) · [customer/listing-detail.md
   Some quando não há unidades avaliadas.
 
 ## 6. JSON-LD (SEO/GEO)
-- `productOfferSchema` (Product/Offer — regra "self-serving" do Google) ganha **`aggregateRating`**
-  (ratingValue/reviewCount/bestRating 5) + **`review[]`** (top N), **só quando `review_count > 0`**.
+- `productOfferSchema` (Product/Offer, regra "self-serving" do Google) ganha **`aggregateRating`**
+  (ratingValue/reviewCount/bestRating 5) + **`review[]`** (top N), **só a partir do piso de volume**
+  (§1b; até 17/09/2026 bastava `review_count > 0`).
   Habilita rich snippet de estrela e alimenta citação por IA.
 
 ## 7. Testes

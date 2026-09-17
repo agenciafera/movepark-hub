@@ -72,13 +72,21 @@ describe("RatingBadge", () => {
   });
 
   it("sem sufixo, mostra só a nota e a contagem", () => {
-    const { container } = render(<RatingBadge avg={5} count={1} />);
-    expect(container.textContent).toBe("5,0 · 1 avaliação");
+    const { container } = render(<RatingBadge avg={5} count={8} />);
+    expect(container.textContent).toBe("5,0 · 8 avaliações");
   });
 
   it("some sem avaliações", () => {
     const { container } = render(<RatingBadge avg={null} count={0} suffix="no Google" />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  /** Conteúdo 30: abaixo do piso o selo some, e some também para a nota do Google. */
+  it("some abaixo do piso de volume, com nota cheia", () => {
+    const { container } = render(<RatingBadge avg={5} count={1} />);
+    expect(container).toBeEmptyDOMElement();
+    const { container: google } = render(<RatingBadge avg={5} count={2} suffix="no Google" />);
+    expect(google).toBeEmptyDOMElement();
   });
 });
 
@@ -99,8 +107,17 @@ describe("RatingSummary", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("usa singular com uma avaliação", () => {
-    render(<RatingSummary avg={5} count={1} />);
-    expect(screen.getByText("1 avaliação")).toBeInTheDocument();
+  it("some abaixo do piso de volume, mesmo com nota cheia", () => {
+    const { container } = render(<RatingSummary avg={5} count={1} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  /** Nota, contagem e período andam juntos: sem o terceiro o número não diz de quando é. */
+  it("mostra o período ao lado da contagem, e o leitor de tela ouve os três", () => {
+    render(<RatingSummary avg={4.7} count={38} periodo="de mar a set de 2026" />);
+    expect(
+      screen.getByRole("img", { name: "Nota 4,7 de 5, 38 avaliações, de mar a set de 2026" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("38 avaliações · de mar a set de 2026")).toBeInTheDocument();
   });
 });

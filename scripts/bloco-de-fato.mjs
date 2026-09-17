@@ -31,6 +31,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { temVolumeParaNota } from "../src/lib/reviews-volume.mjs";
 
 function env(chave) {
   for (const arquivo of [".env.local", ".env"]) {
@@ -92,6 +93,26 @@ const MESES = [
   "novembro",
   "dezembro",
 ];
+
+/**
+ * O período que a nota cobre, por extenso: "de março a setembro de 2026".
+ *
+ * O bloco fala no presente e a nota é o único número dele que descreve passado, então ela
+ * não sai sem dizer de quando é. `null` quando a unidade não tem avaliação publicada.
+ */
+export function periodoDaNota(janela) {
+  if (!janela?.desde || !janela?.ate) return null;
+  const a = new Date(janela.desde);
+  const b = new Date(janela.ate);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
+  const mes = (d) => MESES[d.getUTCMonth()];
+  if (a.getUTCFullYear() === b.getUTCFullYear()) {
+    return a.getUTCMonth() === b.getUTCMonth()
+      ? `em ${mes(b)} de ${b.getUTCFullYear()}`
+      : `de ${mes(a)} a ${mes(b)} de ${b.getUTCFullYear()}`;
+  }
+  return `de ${mes(a)} de ${a.getUTCFullYear()} a ${mes(b)} de ${b.getUTCFullYear()}`;
+}
 
 /** "R$ 1.377,00", no formato que o resto do acervo usa. */
 export const brl = (v) =>
@@ -183,6 +204,18 @@ export function frasePatio(patio, destino, extras, referencia) {
     precos.length > 1 ? `${precos.slice(0, -1).join(", ")} e ${precos.at(-1)}` : precos[0];
   partes.push(`e cobra ${lista} na vaga ${patio.tipo}, em ${referencia}`);
 
+  /*
+    Avaliação com número e data é o que o comparador não tem, e é a última frase do pátio,
+    porque é a que envelhece mais rápido. Abaixo do piso de volume ela não existe: nota sobre
+    uma ou duas opiniões é o número que a IA repete e que a avaliação seguinte desmente
+    (Conteúdo 30, ver src/lib/reviews-volume.mjs).
+  */
+  const nota = extras?.nota;
+  const avaliacao =
+    nota && temVolumeParaNota(nota.count) && nota.avg != null && nota.periodo
+      ? ` Tem **${String(nota.avg).replace(".", ",")}** em **${nota.count} avaliações** de clientes Movepark, ${nota.periodo}.`
+      : "";
+
   const condicoes = [];
   if (extras?.vinteQuatroHoras) condicoes.push("Opera 24 horas");
   if (extras?.tolerancia) condicoes.push(`com tolerância de **${extras.tolerancia} minutos**`);
@@ -191,7 +224,7 @@ export function frasePatio(patio, destino, extras, referencia) {
       ? `e estadia mínima de **${patio.minimo} diárias**`
       : "e sem estadia mínima declarada",
   );
-  return `${partes.join(", ")}. ${condicoes.join(" ")}.`;
+  return `${partes.join(", ")}. ${condicoes.join(" ")}.${avaliacao}`;
 }
 
 /** O bloco inteiro de uma praça, do título ao parágrafo de origem. */
@@ -317,18 +350,33 @@ async function main() {
   }
 
   const slugs = Object.keys(DONAS);
-  const [indice, unidades, posts, ...medicoes] = await Promise.all([
+  const [indice, unidades, avaliacoes, posts, ...medicoes] = await Promise.all([
     rpc("destination_price_index", { p_days: [1, 7, 30] }),
     rest(
-      "location?select=public_name,shuttle_frequency_minutes,tolerance_minutes,is_24h," +
-        "destination:destination!inner(slug)&is_listed=eq.true&status=eq.active&deleted_at=is.null",
+      "location?select=id,public_name,shuttle_frequency_minutes,tolerance_minutes,is_24h," +
+        "review_avg,review_count,destination:destination!inner(slug)" +
+        "&is_listed=eq.true&status=eq.active&deleted_at=is.null",
     ),
+    // As datas das avaliações publicadas, para o período que acompanha a nota. Nota e
+    // contagem sem período dizem quanto, não quando.
+    rest("review?select=location_id,created_at&is_published=eq.true"),
     rest(
       `blog_post?select=slug,body_md&is_published=eq.true&deleted_at=is.null&slug=in.(${Object.values(DONAS).flat().join(",")})`,
     ),
     ...slugs.map((slug) => rpc("destination_unit_distances", { p_destination_slug: slug })),
   ]);
   const distanciasPorDestino = new Map(slugs.map((slug, i) => [slug, medicoes[i] ?? []]));
+
+  /** Primeira e última avaliação publicada de cada unidade. */
+  const janelaPorLocation = new Map();
+  for (const a of avaliacoes ?? []) {
+    const atual = janelaPorLocation.get(a.location_id);
+    if (atual == null) janelaPorLocation.set(a.location_id, { desde: a.created_at, ate: a.created_at });
+    else {
+      if (a.created_at < atual.desde) atual.desde = a.created_at;
+      if (a.created_at > atual.ate) atual.ate = a.created_at;
+    }
+  }
 
   const extras = new Map();
   for (const u of unidades) {
@@ -338,6 +386,11 @@ async function main() {
       frequencia: u.shuttle_frequency_minutes,
       tolerancia: u.tolerance_minutes,
       vinteQuatroHoras: u.is_24h,
+      nota: {
+        avg: u.review_avg,
+        count: u.review_count ?? 0,
+        periodo: periodoDaNota(janelaPorLocation.get(u.id)),
+      },
     });
   }
 

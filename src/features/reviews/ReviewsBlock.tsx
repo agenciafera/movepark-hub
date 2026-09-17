@@ -5,7 +5,7 @@ import { formatDate } from "@/lib/format";
 import type { ReviewWithAuthor } from "@/types/domain";
 import { useLocationReviews } from "./api";
 import { RatingStars, RatingSummary } from "./RatingStars";
-import { type ReviewSort, sortReviews, stayContextLabel } from "./reviews.logic";
+import { periodoDaNota, type ReviewSort, sortReviews, stayContextLabel } from "./reviews.logic";
 
 const PAGE_SIZE = 6;
 
@@ -54,6 +54,15 @@ export function ReviewsBlock({
   const reviews = React.useMemo(() => data ?? [], [data]);
 
   const sorted = React.useMemo(() => sortReviews(reviews, sort), [reviews, sort]);
+  /*
+    O período que a nota cobre, das próprias avaliações carregadas. Nota e contagem sem ele
+    dizem quanto, não quando, e média fechada há dois anos descreve um pátio que mudou.
+  */
+  const periodo = React.useMemo(() => {
+    if (reviews.length === 0) return null;
+    const datas = reviews.map((r) => r.created_at).sort();
+    return periodoDaNota(datas[0], datas[datas.length - 1]);
+  }, [reviews]);
 
   if (reviews.length === 0) return null;
 
@@ -64,7 +73,7 @@ export function ReviewsBlock({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-4">
           <h2 className="text-display-sm text-ink">Avaliações</h2>
-          <RatingSummary avg={avg} count={totalCount} />
+          <RatingSummary avg={avg} count={totalCount} periodo={periodo} />
         </div>
         {reviews.length > 1 && (
           <div className="flex gap-1" role="group" aria-label="Ordenar avaliações">

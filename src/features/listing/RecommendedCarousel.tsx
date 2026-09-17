@@ -6,6 +6,7 @@ import { formatBRL } from "@/lib/format";
 import { tituloDaUnidade } from "@/lib/parkingName";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { temVolumeParaNota } from "@/lib/reviews-volume.mjs";
 
 type Props = {
   currentLocationId: string;
@@ -153,7 +154,8 @@ export function RecommendedCarousel({
                     </p>
                     <p className="truncate text-caption text-muted">{item.parking_type.name}</p>
 
-                    {item.location.review_avg != null && item.location.review_count > 0 && (
+                    {/* Piso de volume, igual ao do selo: ver reviews-volume.mjs. */}
+                    {item.location.review_avg != null && temVolumeParaNota(item.location.review_count) && (
                       <div className="mt-1.5 flex items-center gap-1">
                         <Star weight="fill" className="h-3 w-3 text-ink" />
                         <span className="text-caption font-medium text-ink">

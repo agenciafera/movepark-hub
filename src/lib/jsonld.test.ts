@@ -166,8 +166,20 @@ describe("productOfferSchema", () => {
     });
   });
 
-  it("inclui review[] quando há reviews e avaliações", () => {
+  /**
+   * Piso de volume (Conteúdo 30): `AggregateRating` com `reviewCount: 1` acende a estrela do
+   * Google sobre uma opinião, e é esse número que a IA repete depois.
+   */
+  it("abaixo do piso de volume não publica nota nem review[]", () => {
     const s = produto(makeListing({ review_avg: 5, review_count: 2 }), [
+      { author: "Ana", rating: 5, comment: "Ótimo", date: "2026-06-01T10:00:00Z" },
+    ]);
+    expect(s.aggregateRating).toBeUndefined();
+    expect(s.review).toBeUndefined();
+  });
+
+  it("inclui review[] quando há reviews e avaliações", () => {
+    const s = produto(makeListing({ review_avg: 5, review_count: 9 }), [
       { author: "Ana", rating: 5, comment: "Ótimo", date: "2026-06-01T10:00:00Z" },
     ]);
     expect(s.review).toHaveLength(1);

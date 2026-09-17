@@ -30,6 +30,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callerAuthorization } from "./authHeader.ts";
+import { temVolumeParaNota } from "../_shared/reviews.ts";
 import {
   availabilityFor,
   buildAvailabilityMap,
@@ -272,8 +273,13 @@ Deno.serve(async (req: Request) => {
     );
   }
   if (params.min_rating != null) {
+    // Nota sem volume não filtra: sem o piso, um lote com uma avaliação 5,0 passava em
+    // `min_rating=4.5` e ficava lado a lado de quem tem trezentas. Ver _shared/reviews.ts.
     distanceFiltered = distanceFiltered.filter(
-      (r) => r.location.review_avg != null && Number(r.location.review_avg) >= params.min_rating!,
+      (r) =>
+        r.location.review_avg != null &&
+        temVolumeParaNota(r.location.review_count) &&
+        Number(r.location.review_avg) >= params.min_rating!,
     );
   }
 
@@ -400,7 +406,12 @@ Deno.serve(async (req: Request) => {
     if (sort === "price_asc") return (ap ?? Infinity) - (bp ?? Infinity);
     if (sort === "price_desc") return (bp ?? -Infinity) - (ap ?? -Infinity);
     if (sort === "rating_desc") {
-      return (Number(b.location.review_avg) || 0) - (Number(a.location.review_avg) || 0);
+      // Só nota com volume ordena, e o desempate é a contagem: um 5,0 de uma avaliação
+      // ficava acima de um 4,9 de trezentas, que é ranking premiando quem mal foi avaliado.
+      const an = temVolumeParaNota(a.location.review_count) ? Number(a.location.review_avg) || 0 : 0;
+      const bn = temVolumeParaNota(b.location.review_count) ? Number(b.location.review_avg) || 0 : 0;
+      if (bn !== an) return bn - an;
+      return (b.location.review_count ?? 0) - (a.location.review_count ?? 0);
     }
     if (sort === "distance_asc") {
       const ad = a._distance ?? Infinity;

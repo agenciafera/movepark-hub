@@ -3,6 +3,7 @@ import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reserv
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoFicha } from "@/lib/urls";
+import { temVolumeParaNota } from "@/lib/reviews-volume.mjs";
 import { REDES } from "@/lib/redes";
 import { EMAIL_SUPORTE } from "@/lib/suporte";
 
@@ -240,7 +241,12 @@ export function productOfferSchema(
   const caps = getLocationCapabilities(listing.location);
   const count = caps.reviews ? (listing.location.review_count ?? 0) : 0;
   const avg = caps.reviews ? listing.location.review_avg : null;
-  const hasRating = count > 0 && avg != null;
+  /*
+    Piso de volume, e não `count > 0` (Conteúdo 30). `AggregateRating` com `reviewCount: 1`
+    habilita a estrela no resultado do Google sobre uma opinião só, e é o número que a IA
+    repete depois. Abaixo do piso a nota simplesmente não é publicada, nem na tela nem aqui.
+  */
+  const hasRating = temVolumeParaNota(count) && avg != null;
   // Zero não é preço, e `Offer` sem `price` é inválido para o Google. Então sem preço não há
   // oferta: some o bloco inteiro, em vez de publicar R$ 0,00 como se fosse o valor da diária.
   const price = showcaseFromPrice(listing.company_parking_type.base_price);

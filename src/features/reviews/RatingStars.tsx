@@ -1,7 +1,7 @@
 import { Star } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatRating } from "@/lib/format";
-import { ratingLabel } from "./reviews.logic";
+import { ratingLabel, temVolumeParaNota } from "./reviews.logic";
 
 const SIZE = { sm: "h-3.5 w-3.5", md: "h-5 w-5", lg: "h-7 w-7" };
 
@@ -121,26 +121,33 @@ export function RatingBadge({
 export function RatingSummary({
   avg,
   count,
+  periodo,
   className,
 }: {
   avg: number | null | undefined;
   count: number | null | undefined;
+  /** Período que a nota cobre ("de mar a set de 2026"), de `periodoDaNota`. */
+  periodo?: string | null;
   className?: string;
 }) {
-  if (avg == null || !count) return null;
+  if (avg == null || !temVolumeParaNota(count)) return null;
   const countLabel = `${count} ${count === 1 ? "avaliação" : "avaliações"}`;
   return (
     <div
       className={cn("flex items-center gap-4", className)}
       role="img"
-      aria-label={`Nota ${formatRating(avg)} de 5, ${countLabel}`}
+      aria-label={`Nota ${formatRating(avg)} de 5, ${countLabel}${periodo ? `, ${periodo}` : ""}`}
     >
       <span className="text-rating-display leading-none text-ink tabular-nums" aria-hidden>
         {formatRating(avg)}
       </span>
       <div className="space-y-1" aria-hidden>
         <RatingStars value={Math.round(avg)} size="md" />
-        <p className="text-body-sm text-muted">{countLabel}</p>
+        {/* Nota, contagem e período andam juntos: sem o terceiro, o número não diz de quando é. */}
+        <p className="text-body-sm text-muted">
+          {countLabel}
+          {periodo ? ` · ${periodo}` : ""}
+        </p>
       </div>
     </div>
   );

@@ -360,6 +360,13 @@ demais páginas ele é opcional, e a ausência nunca reprova.
 | Prova social | Post por aeroporto sobre "é seguro deixar o carro", com o que verificar e o que acontece quando dá problema | A busca por "reddit", sinal de quem não confia no conteúdo comercial |
 | Frescor mensal | Carimbo e valores revistos por mês nas doze páginas de cabeça | O carimbo mensal do Bandeira Park |
 | Avaliação real | Publicar avaliação com data e volume, em vez de adjetivo | O comparador que fala de qualidade sem dado |
+
+**Avaliação real, estado em 17/09/2026 (Conteúdo 30).** O critério ficou escrito e ligado: nenhuma
+superfície publica nota com menos de **5 avaliações**, e onde ela aparece vem com contagem e período
+juntos. O piso vale para o selo, a ficha, o schema, a busca, o artefato de preços e o bloco de fato
+das 12 donas, que ganha uma frase de avaliação quando o volume chegar. **A base tem zero avaliação
+publicada hoje**, então nada disso mostra número: o que destrava é a coleta (PRD-08.7), e aí a
+exibição acende sozinha, sem deploy. Regra completa em [reviews.md](./reviews.md) §1b.
 | Metodologia aberta | Página explicando de onde vem cada número e com que frequência muda | A coleta à mão do xpark |
 
 ### Fase 4: a cauda longa órfã (semanas 15 a 20)
