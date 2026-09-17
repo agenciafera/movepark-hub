@@ -1,4 +1,4 @@
-// Montador de split — lógica de negócio agnóstica ao gateway. A comissão da Movepark
+// Montador de split: lógica de negócio agnóstica ao gateway. A comissão da Movepark
 // (take_rate) é calculada sobre o PREÇO BASE da reserva; o parceiro recebe o restante do base.
 // Quando o valor cobrado é maior que o base (juros de parcelamento repassado ao cliente, E0.1.3),
 // o EXCEDENTE vai para a Movepark. Decisão (E0.1.2): o PARCEIRO absorve as taxas do gateway.
@@ -36,7 +36,7 @@ export function effectiveSplitEnabled(
 export interface BuildSplitArgs {
   /** Total efetivamente cobrado (com juros de parcelamento, se houver). */
   chargedCents: number;
-  /** Preço base da reserva — base do repasse ao parceiro e da comissão. */
+  /** Preço base da reserva, base do repasse ao parceiro e da comissão. */
   baseCents: number;
   takeRateBps: number; // basis points (1500 = 15%)
   moveparkRecipientId: string | null;
