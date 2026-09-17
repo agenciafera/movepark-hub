@@ -11,7 +11,7 @@ import { documentMask } from "@/lib/masks";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
 import { useCancelBookingStaff, useUpdateBookingStatus } from "./api";
 import { useChangeBookingVehicle } from "./customerApi";
-import { paymentState } from "./payment.logic";
+import { paymentLine, paymentState } from "./payment.logic";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -149,6 +149,9 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
             <Field label="Check-in" value={formatDateTime(booking.check_in_at)} />
             <Field label="Check-out" value={formatDateTime(booking.check_out_at)} />
             <Field label="Total" value={formatBRL(booking.total_amount)} />
+            {/* O parceiro vê o estado do dinheiro sem o gateway: pago, estornando, devolvido, ou
+                devolução pendente com a Movepark (o gateway recusou e caiu na fila manual). */}
+            <Field label="Pagamento" value={<span data-testid="ficha-pagamento">{paymentLine(booking.payments, booking.status)}</span>} />
             {booking.notes && <Field label="Notas" value={booking.notes} />}
           </section>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lastPayment, paymentState, refundWindow } from "./payment.logic";
+import { lastPayment, paymentLine, paymentState, refundWindow } from "./payment.logic";
 
 const pay = (over: Partial<{ status: string | null; refunded_at: string | null; created_at: string }>) => ({
   status: "paid",
@@ -64,5 +64,24 @@ describe("refundWindow", () => {
     expect(refundWindow([], agora)).toBeNull();
     expect(refundWindow([{ status: "pending", method: "pix", paid_at: null, created_at: "2026-09-01T12:00:00Z" }], agora)).toBeNull();
     expect(refundWindow([{ status: "paid", method: "boleto", paid_at: "2026-09-01T12:00:00Z", created_at: "2026-09-01T12:00:00Z" }], agora)).toBeNull();
+  });
+});
+
+describe("paymentLine", () => {
+  it("diz o meio e o estado do dinheiro em uma frase", () => {
+    expect(paymentLine([pay({ status: "paid", method: "pix" } as never)], "confirmed")).toBe("Pago no PIX");
+    expect(paymentLine([pay({ status: "refunded", method: "card" } as never)], "cancelled")).toBe("Pago no cartão, devolvido ao cliente");
+    expect(paymentLine([pay({ status: "paid", refunded_at: "2026-09-17T00:00:00Z", method: "pix" } as never)], "cancelled")).toBe("Pago no PIX, estorno em processamento");
+  });
+
+  it("cancelada com pagamento pago e sem estorno: a devolução está com a Movepark (fila manual)", () => {
+    expect(paymentLine([pay({ status: "paid", method: "card" } as never)], "cancelled")).toBe("Pago no cartão, devolução pendente com a Movepark");
+  });
+
+  it("sem pagamento, pendente ou recusado", () => {
+    expect(paymentLine([], "pending")).toBe("Aguardando pagamento");
+    expect(paymentLine([], "cancelled")).toBe("Sem pagamento");
+    expect(paymentLine([pay({ status: "failed" })], "pending")).toBe("Pagamento recusado");
+    expect(paymentLine([pay({ status: "pending" })], "pending")).toBe("Aguardando pagamento");
   });
 });

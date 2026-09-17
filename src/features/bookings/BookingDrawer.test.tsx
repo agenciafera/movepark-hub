@@ -28,6 +28,13 @@ function booking(status: string): BookingWithRelations {
 }
 
 describe("BookingDrawer", () => {
+  it("a ficha diz o estado do dinheiro: cancelada e paga sem estorno é devolução pendente com a Movepark", () => {
+    const b = { ...booking("cancelled"), payments: [{ id: "p1", status: "paid", refunded_at: null, created_at: "2026-09-17T20:38:09Z", paid_at: "2026-09-17T20:38:21Z", method: "card" }] } as never;
+    renderWithProviders(<BookingDrawer booking={b} open onOpenChange={() => {}} />);
+    expect(screen.getByTestId("ficha-pagamento")).toHaveTextContent("Pago no cartão, devolução pendente com a Movepark");
+  });
+
+
   it("reserva confirmada oferece 'Não compareceu' (no-show) e dispara a transição", () => {
     renderWithProviders(<BookingDrawer booking={booking("confirmed")} open onOpenChange={vi.fn()} />);
     const btn = screen.getByRole("button", { name: /Não compareceu/i });

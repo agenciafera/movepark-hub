@@ -6,6 +6,7 @@ type PaymentLike = {
   status: string | null;
   refunded_at?: string | null;
   created_at: string;
+  method?: string | null;
 };
 
 /** Payment mais recente da reserva (por created_at). */
@@ -37,6 +38,28 @@ export function paymentState(payments: PaymentLike[] | null | undefined): Paymen
   }
   if (p.status === "paid") return { canRefund: true, badge: null };
   return { canRefund: false, badge: null };
+}
+
+/**
+ * A linha "Pagamento" da ficha (17/09/2026), para o parceiro entender o dinheiro sem ver o
+ * gateway. Cancelada com pagamento pago e sem estorno = a devolução está com a equipe da
+ * Movepark (fila manual: o gateway recusou o estorno). O parceiro nunca precisa agir.
+ */
+export function paymentLine(
+  payments: PaymentLike[] | null | undefined,
+  bookingStatus: string,
+): string {
+  const p = lastPayment(payments);
+  const meio = p?.method === "card" ? "cartão" : p?.method === "pix" ? "PIX" : null;
+  const pago = meio ? `Pago no ${meio}` : "Pago";
+  if (!p) return bookingStatus === "pending" ? "Aguardando pagamento" : "Sem pagamento";
+  if (p.status === "refunded") return `${pago}, devolvido ao cliente`;
+  if (p.status === "paid" && p.refunded_at) return `${pago}, estorno em processamento`;
+  if (p.status === "paid" && bookingStatus === "cancelled") return `${pago}, devolução pendente com a Movepark`;
+  if (p.status === "paid") return pago;
+  if (p.status === "failed") return "Pagamento recusado";
+  if (p.status === "pending" || p.status === "authorized") return "Aguardando pagamento";
+  return "Sem pagamento";
 }
 
 // ── Janela de estorno do gateway (17/09/2026) ────────────────────────────────
