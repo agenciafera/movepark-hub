@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { withdrawalPatch } from "../_shared/payments/withdrawal.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import { sendWithdrawalEmails } from "../_shared/withdrawal-email.ts";
 import { parseWithdrawInput, withdrawCap, withdrawPreflight } from "./logic.ts";
 
 const corsHeaders = {
@@ -166,9 +167,12 @@ Deno.serve(async (req: Request) => {
       },
       { onConflict: "provider,external_transfer_id" },
     )
-    .select("id")
+    .select("id, company_id, amount_cents, fee_cents, status, expected_at, paid_at, failure_reason, requested_email_sent_at, settled_email_sent_at, raw")
     .maybeSingle();
   if (rowErr) console.error("[recipient-withdraw] saque pedido mas a linha não gravou:", rowErr.message);
+
+  // Avisa o parceiro que o saque está a caminho (a conciliação avisa quando cair).
+  if (row) await sendWithdrawalEmails(admin, row);
 
   // Rastro do gateway: o saque não tem reserva, mas a chamada fica registrada como as outras.
   await logGatewayEvent(admin, {

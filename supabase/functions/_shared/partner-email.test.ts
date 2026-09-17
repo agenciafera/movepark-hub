@@ -80,6 +80,9 @@ const PARTNER_TEMPLATES = [
   "tplTeamInvite",
   "tplKycLinkIssued",
   "tplWentLive",
+  "tplWithdrawalRequested",
+  "tplWithdrawalPaid",
+  "tplWithdrawalFailed",
 ];
 
 // email.ts é o lugar onde os templates nascem e onde sendEmail é definido; é a única exceção.

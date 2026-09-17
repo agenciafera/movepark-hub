@@ -169,7 +169,20 @@ aparece na conta de cada estacionamento (Manager e Operator, o parceiro vê o me
 Financeiro › Repasses com todas as empresas e o botão de conferir. No extrato, a linha do saque
 traz a mesma informação na coluna Liberação (`release_at`/`release_status` do movimento).
 
-**Testes.** Deno `withdrawal.test.ts` (regra das 15h, patch, terminal); pgTAP
+**E-mails ao parceiro (17/09/2026).** Dois por saque, sempre pela guarda de silêncio
+(`sendPartnerEmail`): "Seu saque está a caminho" quando o saque é pedido (valor que cai, taxa,
+previsão da Pagar.me, conta final) e "Caiu na conta" quando o gateway confirma, ou "O saque não
+foi concluído" com o motivo do banco. Destinatário: e-mail da ficha de KYC, com o contato do
+onboarding como reserva. A unicidade vem de `payout_withdrawal.requested_email_sent_at` e
+`settled_email_sent_at`, reivindicados por UPDATE condicional antes do envio (migration
+`20261120110000_email_de_saque.sql`); falha de transporte devolve o marcador para a próxima
+varredura. Quem manda: a Edge do saque (o primeiro) e a conciliação a cada 15 min
+(`sweepWithdrawalEmails`, que também pega o que ficou para trás). Templates em
+`_shared/email.ts` (ADR-007), lógica em `_shared/withdrawal-email.ts`.
+
+**Testes.** Deno `withdrawal.test.ts` (regra das 15h, patch, terminal), `withdrawal-email.test.ts`
+(quais e-mails o saque deve, final da conta, reivindicação perdida não manda), `email.test.ts`
+(os três templates); pgTAP
 `partner_account_statement.test.sql` (15: saque pago, em curso com previsão, falhado com motivo);
 Vitest `withdrawal.logic.test.ts`, `WithdrawalsCard.test.tsx`.
 

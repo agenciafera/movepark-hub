@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
-import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest } from "./email.ts";
+import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest, tplWithdrawalRequested, tplWithdrawalPaid, tplWithdrawalFailed } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
 
@@ -150,4 +150,23 @@ Deno.test("shell: casco da marca (hero, régua, banda de ajuda, redes, rodapé l
   assertStringIncludes(html, "/termos");
   assertStringIncludes(html, "/privacidade");
   assertStringIncludes(html, "/contato");
+});
+
+Deno.test("e-mails de saque: valor, taxa, previsão, data e motivo, sem travessão", () => {
+  const base = { contactName: "Kallef Souza", companyName: "Agência Fera", amountCents: 633, feeCents: 367, expectedAt: "2026-09-18T03:00:00.000Z", accountTail: "5482-1" };
+  const pedido = tplWithdrawalRequested(base);
+  assertStringIncludes(pedido.subject, "6,33");
+  assertStringIncludes(pedido.html, "Olá, Kallef.");
+  assertStringIncludes(pedido.html, "final 5482-1");
+  assertStringIncludes(pedido.html, "18/09/2026");
+  assertStringIncludes(pedido.html, "3,67");
+  const caiu = tplWithdrawalPaid({ ...base, paidAt: "2026-09-18T13:05:00.000Z" });
+  assertStringIncludes(caiu.subject, "Caiu na conta");
+  assertStringIncludes(caiu.html, "em 18/09/2026");
+  const falhou = tplWithdrawalFailed({ ...base, failureReason: "conta encerrada" });
+  assertStringIncludes(falhou.html, "conta encerrada");
+  for (const m of [pedido, caiu, falhou]) {
+    assert(!m.html.includes("—") && !m.html.includes("–") && !m.subject.includes("—"), "sem travessão");
+    assert(!m.html.includes("\n"), "sem quebra de linha");
+  }
 });

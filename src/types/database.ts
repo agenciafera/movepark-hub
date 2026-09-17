@@ -4043,6 +4043,8 @@ export type Database = {
           provider: string
           raw: Json | null
           requested_at: string | null
+          requested_email_sent_at: string | null
+          settled_email_sent_at: string | null
           status: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at: string | null
           updated_at: string
@@ -4063,6 +4065,8 @@ export type Database = {
           provider?: string
           raw?: Json | null
           requested_at?: string | null
+          requested_email_sent_at?: string | null
+          settled_email_sent_at?: string | null
           synced_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           updated_at?: string
@@ -4083,6 +4087,8 @@ export type Database = {
           provider?: string
           raw?: Json | null
           requested_at?: string | null
+          requested_email_sent_at?: string | null
+          settled_email_sent_at?: string | null
           synced_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           updated_at?: string

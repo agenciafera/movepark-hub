@@ -102,7 +102,7 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
   });
 
   try {
-    // HTML enviado como base64 (não quoted-printable) — ver htmlToBase64: evita que o
+    // HTML enviado como base64 (não quoted-printable), ver htmlToBase64: evita que o
     // dot-stuffing do SMTP coma o ponto do domínio em links longos (magic link → NXDOMAIN).
     await client.send({
       from,
@@ -421,6 +421,68 @@ export function tplWentLive(contactName: string): { subject: string; html: strin
       <p>Olá, ${escapeHtml(firstName(contactName))}!</p>
       <p>Seu estacionamento já aparece na busca da Movepark e está pronto para receber reservas.</p>
       <p>${button(`${siteUrl()}/operator`, "Acessar meu painel")}</p>`),
+  };
+}
+
+/** Data civil de Brasília (dd/mm/aaaa) para e-mail. */
+function brDate(iso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso));
+}
+
+function cents(v: number): string {
+  return formatBRL(v / 100);
+}
+
+export interface WithdrawalMail {
+  contactName: string;
+  companyName: string;
+  /** O que vai cair na conta (já sem a taxa). */
+  amountCents: number;
+  feeCents: number;
+  /** Previsão de crédito (ISO), quando houver. */
+  expectedAt: string | null;
+  /** Quando caiu (ISO), no e-mail de confirmação. */
+  paidAt?: string | null;
+  /** Motivo do banco, no e-mail de falha. */
+  failureReason?: string | null;
+  /** Conta de destino, só os últimos dígitos. */
+  accountTail?: string | null;
+}
+
+/** Saque pedido: em processamento, com a previsão de queda (E0.3.10). */
+export function tplWithdrawalRequested(w: WithdrawalMail): { subject: string; html: string } {
+  const previsao = w.expectedAt ? `A previsão da Pagar.me é cair até <strong>${brDate(w.expectedAt)}</strong>.` : "Assim que o banco confirmar, você recebe outro e-mail.";
+  return {
+    subject: `Saque de ${cents(w.amountCents)} a caminho da sua conta`,
+    html: shell("Seu saque está a caminho", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. O saque de <strong>${escapeHtml(w.companyName)}</strong> saiu do saldo e está em processamento no banco.</p>
+      <p style="margin:0 0 14px"><strong>${cents(w.amountCents)}</strong> vão cair na conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}. A taxa de saque foi de ${cents(w.feeCents)}, descontada do valor pedido.</p>
+      <p style="margin:0 0 22px">${previsao}</p>
+      <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver meus saques")}</p>
+      <p style="margin:0;font-size:14px;color:${BRAND.muted}">Saque pedido até as 15h em dia útil cai no mesmo dia; depois disso, no próximo dia útil.</p>`),
+  };
+}
+
+/** O banco confirmou: caiu na conta. */
+export function tplWithdrawalPaid(w: WithdrawalMail): { subject: string; html: string } {
+  return {
+    subject: `Caiu na conta: ${cents(w.amountCents)}`,
+    html: shell("Dinheiro na conta", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. O banco confirmou: <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> caíram na conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}${w.paidAt ? ` em ${brDate(w.paidAt)}` : ""}.</p>
+      <p style="margin:0 0 22px">Taxa de saque: ${cents(w.feeCents)}. O extrato completo está no seu painel.</p>
+      <p style="margin:0;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver o extrato")}</p>`),
+  };
+}
+
+/** O banco recusou ou o saque foi cancelado. O dinheiro volta ao saldo do recebedor. */
+export function tplWithdrawalFailed(w: WithdrawalMail): { subject: string; html: string } {
+  return {
+    subject: `Seu saque de ${cents(w.amountCents)} não foi concluído`,
+    html: shell("O saque não foi concluído", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. O saque de <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> não chegou à conta.</p>
+      <p style="margin:0 0 14px">${w.failureReason ? `Motivo informado pelo banco: <strong>${escapeHtml(w.failureReason)}</strong>.` : "O banco não informou o motivo."} O valor volta ao seu saldo e você pode pedir de novo pelo painel.</p>
+      <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver meus saques")}</p>
+      <p style="margin:0;font-size:14px;color:${BRAND.muted}">Se os dados bancários mudaram, atualize o cadastro antes de tentar de novo.</p>`),
   };
 }
 
