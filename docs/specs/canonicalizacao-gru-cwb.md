@@ -384,6 +384,49 @@ superfícies:
 - **As fotos do Aeropark** moram em `/Estacionamentos/bandeirapark/`. Com o item anterior, vale
   confirmar a relação entre as marcas antes de qualquer conteúdo comparativo citar alguma delas.
 
+### Conteúdo 28: o post de prova social das duas praças (Fase 3)
+
+A atividade [Conteúdo 28, post "é seguro deixar o carro" em Guarulhos e Afonso Pena](https://app.clickup.com/t/86ak6hagb)
+caiu em dois cenários diferentes, e por isso teve dois tratamentos:
+
+| Praça | O que existia | O que foi feito |
+| --- | --- | --- |
+| Guarulhos | `estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade`, dona de segurança desde a consolidação, com 4.048 caracteres de dicas genéricas de 2023 e uma FAQ com preços de agosto | Reescrita no molde do Conteúdo 27, com 3.893 palavras e a tabela de 17/09/2026. Slug preservado, e ele segue recebendo o 301 de `como-evitar-problemas-no-estacionamento-do-aeroporto-guarulhos` |
+| Afonso Pena | nenhum post de prova social, publicado ou não | Post novo, `e-seguro-deixar-o-carro-no-aeroporto-afonso-pena`, 4.149 palavras, espelhando o slug de Viracopos. **Gravado como rascunho** (`is_published = false`), aguardando o "pode publicar" |
+
+O que os dois posts têm, além do checklist da atividade (o que verificar, o que fazer quando dá
+problema, chave com você ou com o pátio, zero promessa de ADR-009):
+
+1. **A camada jurídica**, que é o que separa este conteúdo do folheto: Súmula 130 do STJ,
+   o limite que o próprio STJ fixou em 2019 para estacionamento aberto e gratuito, e os artigos 14
+   e 30 do CDC, cada um com link para a fonte oficial.
+2. **A tabela de nota do Google dos lotes mapeados**, com a data da coleta, que é dado público do
+   próprio Hub. Em GRU são 12 lotes, de 2,5 a 5,0, com amostras de 19 a 36.955 avaliações. Em CWB
+   são 5, todos dentro de 1,6 km e entre 4,1 e 5,0, o que torna a nota pouco discriminante na praça.
+3. **O bloco do que a Movepark não verifica** (câmera, perímetro, apólice), porque prometer
+   auditoria que não existe é o superlativo que manda o leitor procurar relato em fórum.
+
+Quatro correções de fato que a apuração impôs, contra o que a atividade dizia:
+
+1. **São dois parceiros em GRU, não três.** A atividade falava de "os três parceiros". O terceiro
+   registro listado é o Lisboa Park, que é a pendência de vínculo já descrita abaixo.
+2. **O Aerovalet não declara estacionamento segurado**, e o Aeropark declara. A tabela de GRU
+   mostra só o que difere entre os dois, justamente para esse contraste não se perder.
+3. **Bateria é o oposto entre as praças.** Abbapark e Nationpark declaram manutenção de bateria;
+   nenhum dos dois de GRU declara. Está dito nos dois posts, em favor de Curitiba.
+4. **Chave:** em CWB os dois declaram self-park e nenhum opera valet, então lá a chave fica sempre
+   com o cliente. Em GRU o valet existe como tipo de vaga, e custa R$ 363,41 mais que a coberta na
+   semana, o que o põe como conveniência e não como segurança.
+
+Imagens: cinco geradas no Higgsfield, três descartadas na revisão (letreiro embaralhado numa,
+máscara cirúrgica em duas tentativas de retrato, e uma quarta que saiu com cara de carro
+abandonado). Ficaram a cancela e a câmera em GRU, mais a capa e a vistoria em CWB, todas em
+`.webp` com a palavra-chave e variação própria no nome e no alt. A capa de GRU é a foto real que
+já estava no Storage, renomeada para o padrão da skill.
+
+Atenções do analisador: densidade e frase-chave nos títulos nos dois, mais frases longas em 26,7%
+no de Curitiba, que é o preço de manter o bloco jurídico legível sem picar cada frase.
+
 ### O molde, definido pela âncora de preço de GRU
 
 A primeira expansão fixou o formato que as outras cinco seguem:
