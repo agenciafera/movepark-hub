@@ -254,19 +254,37 @@ slug fora deles é recusado na escrita. `destination` é o slug do aeroporto em
    dois-pontos e fragmento indireto ("Voo atrasou: o que fazer") continuam sem
    "?", porque não são pergunta. O portão `Pergunta sem "?"` do
    [`analisar-post.mjs`](scripts/analisar-post.mjs) reprova o meio-caminho.
-3. **Tabela sempre que houver dado comparável.** Preço por diária, comparativo
+3. **Bloco de fato, uma frase por unidade.** É o trecho que a visão geral de IA
+   copia, porque traz **entidade, número, unidade e condição na mesma frase**.
+   Adjetivo não sobrevive à extração: "seguro" e "ótimo custo-benefício" somem, e
+   quem escreveu o número é quem aparece citado. O molde:
+
+   `> **<Unidade>** fica a **<X,XX km>** do <terminal> do <Aeroporto> (<IATA>),
+   declara traslado de **<N> minutos**, com van a cada **<N> minutos**, e cobra
+   **<R$ X>** por 7 diárias e **<R$ Y>** por 30 na vaga <tipo>, em <mês> de <ano>.
+   Opera 24 horas com tolerância de **<N> minutos** e estadia mínima de **<N> diárias**.`
+
+   Regras do bloco: uma citação `>` por pátio, logo depois da tabela de resposta
+   rápida; campo que a ficha não declara vira "não declara o tempo de traslado na
+   ficha", nunca estimativa; nada de promessa de transação (ADR-009), então só fato
+   da unidade; e a distância sai do PostGIS (ADR-001), em linha reta, a mesma que o
+   corpo do post cita. **Você não escreve o bloco à mão:**
+   `bun run lint:bloco-fato -- --print <IATA>` monta ele a partir do motor, e o
+   modo padrão do mesmo script confere no CI se o publicado ainda bate com a ficha.
+   Nas 12 donas da Fase 1 o bloco é obrigatório; no resto do acervo é opcional.
+4. **Tabela sempre que houver dado comparável.** Preço por diária, comparativo
    entre opções, distância e tempo de traslado. Tabela é o formato que o modelo
    consegue ler inteiro e que o Google usa em rich result. Em aeroporto sem
    parceiro a tabela também vai, montada com o preço que você conferiu na fonte,
    e ganha uma coluna de **Fonte e data** (portão 1.4). Coluna vazia é pior que
    coluna ausente: se não conseguiu o número de um lote, tire a linha e diga no
    texto que aquele pátio não publica tarifa.
-4. **Números com unidade e fonte.** "12 minutos de traslado", "capacidade de 400
+5. **Números com unidade e fonte.** "12 minutos de traslado", "capacidade de 400
    vagas", "R$ 89,90 a diária em agosto de 2026". Adjetivo não é citável, número é.
-5. **FAQ no fim**, 5 a 8 perguntas reais, em `###` terminado em `?`, resposta de
+6. **FAQ no fim**, 5 a 8 perguntas reais, em `###` terminado em `?`, resposta de
    40 a 60 palavras cada no parágrafo logo abaixo. É esse formato que emite o
    `FAQPage` da página, e cada pergunta precisa ser própria do post.
-6. **CTA para `/estacionamentos/<slug>`**, sem prometer nada que a unidade não declare.
+7. **CTA para `/estacionamentos/<slug>`**, sem prometer nada que a unidade não declare.
 
 **Tom: jovem e moderno, sem virar caricatura.** Segunda pessoa ("você chega no
 aeroporto e..."), frases curtas, verbo no presente, zero jargão corporativo. Sem

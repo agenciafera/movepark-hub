@@ -26,6 +26,8 @@
  */
 
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 function env(chave) {
   for (const arquivo of [".env.local", ".env"]) {
@@ -202,4 +204,4 @@ if (problemas.length > 0) {
 }
 
 // Só roda a checagem quando chamado direto; o teste importa as funções puras.
-if (import.meta.url === `file://${process.argv[1]}`) process.exit(await main());
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? "")) process.exit(await main());

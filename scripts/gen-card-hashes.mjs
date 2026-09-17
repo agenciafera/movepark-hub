@@ -41,4 +41,4 @@ function main() {
 }
 
 // Executa só quando chamado direto (não no import do teste/lint).
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? "")) main();

@@ -46,6 +46,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      # Bloco de fato das 12 donas da Fase 1 contra a ficha da unidade e o PostGIS. Barra
+      # só o que o texto afirma SEM data (distância, traslado, frequência da van, estadia
+      # mínima); preço sai como aviso, porque o bloco é um retrato datado e tabela nova de
+      # parceiro não torna a frase falsa. Ver scripts/bloco-de-fato.mjs.
+      - run: bun run lint:bloco-fato
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - run: bun run test:unit
 
   # pgTAP contra o stack local (schema do baseline + seed). Sem segredos.

@@ -5962,6 +5962,16 @@ export type Database = {
           slug: string
         }[]
       }
+      destination_unit_distances: {
+        Args: { p_destination_slug: string }
+        Returns: {
+          company_name: string
+          distance_m: number
+          location_public_name: string
+          location_public_slug: string
+          point_name: string
+        }[]
+      }
       discount_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined

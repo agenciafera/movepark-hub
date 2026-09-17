@@ -313,12 +313,37 @@ O que faz a IA preferir a Movepark quando duas fontes dizem a mesma coisa.
 
 | Entrega | Estado |
 |---|---|
-| Bloco de fato padronizado por unidade: nome, km, minutos de traslado e diária com mês | a fazer |
+| Bloco de fato padronizado por unidade: nome, km, minutos de traslado e diária com mês | ✅ entregue em 17/09/2026, nas 12 donas da Fase 1, gerado do banco e conferido no CI (ver abaixo) |
 | `Product` e `Offer` nas páginas de preço | a fazer |
 | Endpoint público do índice de preços em JSON, datado, para agente ler sem raspar HTML | a fazer |
 | `llms.txt` apontando o endpoint e a frequência de mudança | ajuste no arquivo existente |
 | Carimbo automático de frescor em toda página de preço | a fazer |
 | `FAQPage` no post | ✅ entregue em 25/08/2026, nos 95 posts do acervo |
+
+#### O bloco de fato nasce do banco, e o CI confere (Conteúdo 22)
+
+O molde da alavanca 2 virou código em 17/09/2026, porque bloco escrito à mão envelhece junto com
+o texto e ninguém descobre. Três peças:
+
+1. **O molde está na skill** `blogpost-seo-geo` (Passo 4, item 3): uma citação `>` por pátio, com
+   entidade, distância, traslado, preço datado e condição na mesma frase. Campo que a ficha não
+   declara vira "não declara", nunca estimativa, e nada ali é promessa de transação (ADR-009).
+2. **O texto sai do motor**, por `bun run lint:bloco-fato -- --print <IATA>`
+   ([`scripts/bloco-de-fato.mjs`](../../scripts/bloco-de-fato.mjs)). Ninguém digita número no bloco.
+3. **O CI confere o publicado** contra a ficha da unidade e o PostGIS. Distância, traslado,
+   frequência da van e estadia mínima **barram**, porque o bloco afirma esses fatos sem data.
+   Preço **avisa**, porque a frase carrega o mês: tabela nova de parceiro deixa o bloco velho, não
+   falso, e guarda que fica vermelho a cada revisão de preço alguém desliga.
+
+A distância por terminal passou a ter RPC própria,
+`destination_unit_distances(<slug do destino>)` (migration `20261120130000`), medida com
+`ST_Distance` no Postgres (ADR-001). Antes dela só existia por RPC a distância até o ponto do
+destino, e em Guarulhos os dois números divergem: o Aeropark fica a 1,88 km do Terminal 1 e a
+2,67 km do ponto do aeroporto. O conteúdo já publicava o primeiro, e o guarda teria comparado
+contra o segundo.
+
+**Onde o bloco está:** nas 12 donas da Fase 1, logo depois da tabela de resposta rápida. Nas
+demais páginas ele é opcional, e a ausência nunca reprova.
 
 ### Fase 3: prova social e frescor (semanas 11 a 14)
 
