@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
+import { buildCardItems, extractCardId, parseBillingAddress, parseCardInput, reaisToCents } from "./logic.ts";
 
 Deno.test("reaisToCents arredonda corretamente", () => {
   assertEquals(reaisToCents(159.5), 15950);
@@ -34,6 +34,7 @@ Deno.test("parseCardInput: cartão novo válido normaliza os campos", () => {
     last4: "1234",
     exp_month: 12,
     exp_year: 2030,
+    billing_address: { zip_code: "80020-310", line_1: "123, Rua XV, Centro", city: "Curitiba", state: "pr" },
   });
   assertEquals(input, {
     bookingCode: "MP-9",
@@ -41,6 +42,7 @@ Deno.test("parseCardInput: cartão novo válido normaliza os campos", () => {
     paymentMethodId: null,
     installments: 3,
     saveCard: true,
+    billingAddress: { zip_code: "80020310", line_1: "123, Rua XV, Centro", city: "Curitiba", state: "PR", country: "BR" },
     card: { holderName: "Tony Stark", brand: "visa", last4: "1234", expMonth: 12, expYear: 2030 },
   });
 });
@@ -69,4 +71,22 @@ Deno.test("extractCardId: lê charges[0].last_transaction.card.id; defensivo", (
   );
   assertEquals(extractCardId({ mock: true }), null);
   assertEquals(extractCardId(null), null);
+});
+
+Deno.test("parseBillingAddress: normaliza CEP e UF, exige número/rua e cidade", () => {
+  const ok = parseBillingAddress({ zip_code: "80020-310", line_1: "123, Rua XV, Centro", line_2: "sala 4", city: "Curitiba", state: "pr", country: "BR" });
+  assertEquals(ok.address, { zip_code: "80020310", line_1: "123, Rua XV, Centro", line_2: "sala 4", city: "Curitiba", state: "PR", country: "BR" });
+  assertEquals(parseBillingAddress({ zip_code: "800", line_1: "x", city: "C", state: "PR" }).address, null);
+  assertEquals(parseBillingAddress({ zip_code: "80020310", line_1: "", city: "C", state: "PR" }).address, null);
+  assertEquals(parseBillingAddress({ zip_code: "80020310", line_1: "1, R", city: "", state: "PR" }).address, null);
+  assertEquals(parseBillingAddress(null), { address: null });
+});
+
+Deno.test("parseCardInput: cartão novo exige endereço de cobrança; cartão salvo não", () => {
+  const semEndereco = parseCardInput({ booking_code: "MP-1", installments: 1, card_token: "tok" });
+  assertEquals(semEndereco.input, null);
+  const com = parseCardInput({ booking_code: "MP-1", installments: 1, card_token: "tok", billing_address: { zip_code: "80020310", line_1: "1, Rua", city: "Curitiba", state: "PR" } });
+  assertEquals(com.input?.billingAddress?.zip_code, "80020310");
+  const salvo = parseCardInput({ booking_code: "MP-1", installments: 1, payment_method_id: "pm_1" });
+  assertEquals(salvo.input?.billingAddress, null);
 });

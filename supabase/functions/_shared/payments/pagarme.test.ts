@@ -140,10 +140,13 @@ Deno.test("buildCardOrderBody: cartão novo (token) com parcelas + split", () =>
       { recipientId: "rp_mp", amount: 4500, type: "flat", liable: false, chargeProcessingFee: false, chargeRemainderFee: false },
     ],
     card: { cardToken: "token_abc" },
+    billingAddress: { zip_code: "80020310", line_1: "123, Rua XV, Centro", city: "Curitiba", state: "PR", country: "BR" },
     installments: 6,
     metadata: { booking_id: "b9" },
   };
   const body = buildCardOrderBody(input) as Record<string, any>;
+  // O antifraude exige o endereço junto do token.
+  assertEquals(body.payments[0].credit_card.card.billing_address.zip_code, "80020310");
   assertEquals(body.code, "MP-CARD1");
   assertEquals(body.payments[0].payment_method, "credit_card");
   assertEquals(body.payments[0].credit_card.installments, 6);

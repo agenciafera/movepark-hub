@@ -528,6 +528,8 @@ export type CardChargeArgs = {
   last4?: string;
   exp_month?: number;
   exp_year?: number;
+  /** Endereço de cobrança (antifraude da Pagar.me exige em cartão novo). */
+  billing_address?: { zip_code: string; line_1: string; line_2?: string; city: string; state: string; country: "BR" };
 };
 
 export type CardChargeResponse = {

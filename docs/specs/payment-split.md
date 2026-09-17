@@ -533,6 +533,19 @@ card:{token} | card_id, split[] } }`. **Tokenização é client-side** (`src/lib
 `POST api.pagar.me/core/v5/tokens?appId=<pk>`): o PAN **nunca** toca nosso backend; trafegamos só o token
 (single-use) ou o `card_id` (cartão salvo).
 
+**Endereço de cobrança (17/09/2026).** O antifraude da Pagar.me exige `billing_address` em todo
+pedido de cartão, e o endereço não entra no token: vai em `credit_card.card.billing_address`
+(`line_1` = "número, rua, bairro", `zip_code`, `city`, `state`, `country`). Sem ele a transação
+volta `validation_error | billing | "value" is required` (e, antes disso, `412 The item Code is
+required` sem `code` nos itens); nenhuma venda no cartão tinha passado em produção até então. O
+checkout pede só **CEP e número** (mais complemento) no formulário do cartão novo; rua, bairro,
+cidade e UF vêm do ViaCEP (`src/features/checkout/billingAddress.logic.ts`), aparecem para
+conferir e ficam em `profiles.preferences.billing_address` para pré-preencher a próxima compra.
+A Edge (`parseBillingAddress`) exige o endereço com `card_token` e dispensa com
+`payment_method_id`, porque o cartão salvo já carrega o endereço no gateway. Falha do adquirente
+por validação (`chargeFailureDetail`: 400/412/422) é erro nosso e o cliente lê "Não conseguimos
+processar o pagamento agora", nunca "cartão recusado"; o gateway trail guarda o motivo.
+
 **Parcelamento — política dinâmica (resolve a Q-001):** vive em `app_setting.card_installment_policy`
 (JSON), editável no **Manager → Configurações → Pagamentos** sem code change: `enabled`, `maxInstallments`,
 `interestFreeUpTo`, `monthlyInterestPct` (PMT/Price), `minInstallmentCents`, `absorb`

@@ -6,7 +6,7 @@
 //
 // POST /functions/v1/create-card-charge
 // Authorization: Bearer <JWT>
-// { booking_code, card_token? | payment_method_id?, installments, save_card?, holder_name?, brand?, last4?, exp_month?, exp_year? }
+// { booking_code, card_token? | payment_method_id?, installments, save_card?, holder_name?, brand?, last4?, exp_month?, exp_year?, billing_address? (obrigatório com card_token) }
 //
 // Resposta (201): { payment_id, status, installments, charged_amount, interest_amount, saved_card }
 
@@ -278,6 +278,7 @@ Deno.serve(async (req: Request) => {
     // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
     split: splitEnabled ? gatewaySplit : undefined,
     card: cardRef,
+    billingAddress: input.billingAddress ?? undefined,
     installments: input.installments,
     metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents) },
   });

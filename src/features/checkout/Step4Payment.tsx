@@ -28,6 +28,14 @@ import { documentMask, onlyDigits } from "@/lib/masks";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
+import {
+  addressPartsFrom,
+  buildBillingAddress,
+  formatCep,
+  normalizeCep,
+  parseViaCep,
+  viaCepUrl,
+} from "./billingAddress.logic";
 import { useMyPaymentMethods } from "@/features/payment-methods/api";
 
 type Props = {
@@ -98,6 +106,55 @@ export function Step4Payment({
   const [installments, setInstallments] = React.useState(1);
   const [saveCard, setSaveCard] = React.useState(false);
 
+  // Endereço de cobrança (17/09/2026): o antifraude da Pagar.me exige em cartão novo. Só CEP e
+  // número são digitados; o resto vem do ViaCEP e fica salvo no perfil para a próxima compra.
+  const [cep, setCep] = React.useState("");
+  const [addrNumber, setAddrNumber] = React.useState("");
+  const [addrComplement, setAddrComplement] = React.useState("");
+  const [addr, setAddr] = React.useState({ street: "", neighborhood: "", city: "", state: "" });
+  const [cepStatus, setCepStatus] = React.useState<"idle" | "loading" | "ok" | "notfound">("idle");
+  const addrInit = React.useRef(false);
+  React.useEffect(() => {
+    if (addrInit.current || !profileQ.data) return;
+    const saved = addressPartsFrom(profileQ.data.preferences?.billing_address);
+    if (saved) {
+      setCep(formatCep(saved.cep));
+      setAddrNumber(saved.number);
+      setAddrComplement(saved.complement ?? "");
+      setAddr({ street: saved.street, neighborhood: saved.neighborhood, city: saved.city, state: saved.state });
+      setCepStatus(saved.city ? "ok" : "idle");
+    }
+    addrInit.current = true;
+  }, [profileQ.data]);
+  const cepDigits = normalizeCep(cep);
+  React.useEffect(() => {
+    if (!cepDigits) {
+      setCepStatus("idle");
+      return;
+    }
+    let vivo = true;
+    setCepStatus("loading");
+    fetch(viaCepUrl(cepDigits))
+      .then((r) => r.json())
+      .then((j) => {
+        if (!vivo) return;
+        const parsed = parseViaCep(j);
+        if (!parsed) {
+          setAddr({ street: "", neighborhood: "", city: "", state: "" });
+          setCepStatus("notfound");
+          return;
+        }
+        setAddr(parsed);
+        setCepStatus("ok");
+      })
+      .catch(() => {
+        if (vivo) setCepStatus("notfound");
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [cepDigits]);
+
   const policy = config.data?.installment_policy;
   const totalCents = Math.round(totalAmount * 100);
   const options = React.useMemo(
@@ -129,6 +186,13 @@ export function Step4Payment({
           toast.error("Validade inválida (use MM/AA).");
           return;
         }
+        // Endereço antes de tokenizar: sem ele o antifraude recusa, e o token é de uso único.
+        const parts = { cep, number: addrNumber, complement: addrComplement, ...addr };
+        const cobranca = buildBillingAddress(parts);
+        if (cobranca.error) {
+          toast.error(cobranca.error);
+          return;
+        }
         const tok = await tokenizeCard(config.data!.public_key, {
           number: cardNumber,
           holder_name: cardName,
@@ -146,7 +210,17 @@ export function Step4Payment({
           last4: tok.last4,
           exp_month: validade.mes,
           exp_year: validade.ano,
+          billing_address: cobranca.address,
         });
+        // Guarda para a próxima compra (best-effort: não atrapalha o pagamento que já passou).
+        if (session?.userId) {
+          updateProfile
+            .mutateAsync({
+              id: session.userId,
+              preferences: { ...(profileQ.data?.preferences ?? {}), billing_address: parts },
+            })
+            .catch(() => {});
+        }
       }
       toast.success("Pagamento aprovado. Confirmando…");
     } catch (err) {
@@ -326,6 +400,50 @@ export function Step4Payment({
                       />
                     </div>
                   </div>
+                  {/* Endereço de cobrança: o antifraude exige; só CEP e número são digitados. */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="card-cep">CEP do endereço do cartão</Label>
+                      <Input
+                        id="card-cep"
+                        inputMode="numeric"
+                        placeholder="00000-000"
+                        value={cep}
+                        onChange={(e) => setCep(formatCep(e.target.value))}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="card-addr-number">Número</Label>
+                      <Input
+                        id="card-addr-number"
+                        placeholder="123"
+                        value={addrNumber}
+                        onChange={(e) => setAddrNumber(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="card-addr-complement">Complemento (opcional)</Label>
+                    <Input
+                      id="card-addr-complement"
+                      placeholder="apto, bloco, sala"
+                      value={addrComplement}
+                      onChange={(e) => setAddrComplement(e.target.value)}
+                    />
+                  </div>
+                  {cepStatus === "loading" && <p className="text-caption text-muted">Buscando o endereço…</p>}
+                  {cepStatus === "notfound" && (
+                    <p className="text-caption text-error" data-testid="cep-nao-encontrado">Não achamos esse CEP. Confira os dígitos.</p>
+                  )}
+                  {cepStatus === "ok" && (
+                    <p className="text-caption text-muted" data-testid="cep-endereco">
+                      {[addr.street, addr.neighborhood].filter(Boolean).join(", ")}
+                      {addr.street || addr.neighborhood ? " · " : ""}
+                      {addr.city}/{addr.state}
+                    </p>
+                  )}
                   <label className="flex cursor-pointer items-center gap-2 text-body-sm text-body">
                     <input
                       type="checkbox"

@@ -164,6 +164,17 @@ export interface ChargeCustomer {
   phone?: { ddd: string; number: string } | null;
 }
 
+export interface BillingAddress {
+  zip_code: string;
+  /** "Número, Rua, Bairro", como a Pagar.me pede. */
+  line_1: string;
+  line_2?: string;
+  city: string;
+  /** UF com 2 letras. */
+  state: string;
+  country: string;
+}
+
 export interface ChargeItem {
   amount: number; // centavos
   description: string;
@@ -205,6 +216,11 @@ export interface CardChargeInput {
   split?: SplitRule[];
   /** token (tokenização client-side, single-use) OU cardId (cartão salvo). */
   card: { cardToken?: string; cardId?: string };
+  /**
+   * Endereço de cobrança. O antifraude exige em cartão (`validation_error | billing`, medido em
+   * 17/09/2026) e ele não entra no token: vai junto do token no pedido. Cartão salvo já tem o dele.
+   */
+  billingAddress?: BillingAddress;
   installments: number;
   statementDescriptor?: string;
   metadata?: Record<string, string>;

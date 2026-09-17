@@ -392,7 +392,13 @@ export function buildCardOrderBody(input: CardChargeInput): Record<string, unkno
   // Cartão novo → token (single-use); cartão salvo → card_id.
   const cardRef = input.card.cardId
     ? { card_id: input.card.cardId }
-    : { card: { token: input.card.cardToken } };
+    : {
+        card: {
+          token: input.card.cardToken,
+          // O endereço não entra no token; sem ele aqui o antifraude recusa o pedido.
+          ...(input.billingAddress ? { billing_address: input.billingAddress } : {}),
+        },
+      };
   return {
     code: input.externalCode,
     customer: {

@@ -58,17 +58,28 @@ vi.mock("./api", async (importOriginal) => {
   };
 });
 
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/msw/server";
 import { Step4Payment } from "./Step4Payment";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { toast } from "sonner";
 
-function preencheCartao(validade: string) {
+async function preencheCartao(validade: string) {
   fireEvent.change(screen.getByLabelText("Número do cartão"), {
     target: { value: "4111111111111111" },
   });
   fireEvent.change(screen.getByLabelText("Nome no cartão"), { target: { value: "Tony Stark" } });
   fireEvent.change(screen.getByLabelText("Validade (MM/AA)"), { target: { value: validade } });
   fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "123" } });
+  // Endereço de cobrança (antifraude): CEP e número, o resto vem do ViaCEP.
+  server.use(
+    http.get("https://viacep.com.br/ws/:cep/json/", () =>
+      HttpResponse.json({ logradouro: "Rua XV de Novembro", bairro: "Centro", localidade: "Curitiba", uf: "PR" }),
+    ),
+  );
+  fireEvent.change(screen.getByLabelText("CEP do endereço do cartão"), { target: { value: "80020310" } });
+  fireEvent.change(screen.getByLabelText("Número"), { target: { value: "123" } });
+  await screen.findByTestId("cep-endereco");
 }
 
 describe("Step4Payment", () => {
@@ -114,15 +125,50 @@ describe("Step4Payment", () => {
     fireEvent.change(screen.getByLabelText("Validade (MM/AA)"), { target: { value: "12/30" } });
     fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "123" } });
     expect(screen.getByLabelText("Parcelas")).toBeInTheDocument();
+    // Endereço de cobrança: CEP e número; o resto vem do ViaCEP.
+    server.use(
+      http.get("https://viacep.com.br/ws/:cep/json/", () =>
+        HttpResponse.json({ logradouro: "Rua XV de Novembro", bairro: "Centro", localidade: "Curitiba", uf: "PR" }),
+      ),
+    );
+    fireEvent.change(screen.getByLabelText("CEP do endereço do cartão"), { target: { value: "80020310" } });
+    fireEvent.change(screen.getByLabelText("Número"), { target: { value: "123" } });
+    expect(await screen.findByTestId("cep-endereco")).toHaveTextContent("Rua XV de Novembro, Centro · Curitiba/PR");
 
     fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
 
     await waitFor(() => expect(tokenizeCard).toHaveBeenCalled());
     await waitFor(() =>
       expect(cardMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ booking_code: "MP-ABC123", card_token: "token_1", installments: 1 }),
+        expect.objectContaining({
+          booking_code: "MP-ABC123",
+          card_token: "token_1",
+          installments: 1,
+          billing_address: { zip_code: "80020310", line_1: "123, Rua XV de Novembro, Centro", city: "Curitiba", state: "PR", country: "BR" },
+        }),
       ),
     );
+  });
+
+  it("sem CEP válido o cartão não vai ao gateway: o antifraude recusaria", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Step4Payment bookingId="bk-1" bookingCode="MP-ABC123" totalAmount={100} customerTaxId="04810388417" paymentStatus={null} onBack={() => {}} />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+    fireEvent.change(screen.getByLabelText("Número do cartão"), { target: { value: "4111111111111111" } });
+    fireEvent.change(screen.getByLabelText("Nome no cartão"), { target: { value: "Tony Stark" } });
+    fireEvent.change(screen.getByLabelText("Validade (MM/AA)"), { target: { value: "12/30" } });
+    fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "123" } });
+    server.use(http.get("https://viacep.com.br/ws/:cep/json/", () => HttpResponse.json({ erro: true })));
+    fireEvent.change(screen.getByLabelText("CEP do endereço do cartão"), { target: { value: "99999999" } });
+    fireEvent.change(screen.getByLabelText("Número"), { target: { value: "1" } });
+    expect(await screen.findByTestId("cep-nao-encontrado")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(tokenizeCard).not.toHaveBeenCalled();
+    expect(cardMutate).not.toHaveBeenCalled();
   });
 
   // Regressão: a validade era conferida só na faixa do mês, sem comparar com
@@ -143,7 +189,7 @@ describe("Step4Payment", () => {
     await user.click(screen.getByRole("tab", { name: /Cartão/i }));
     await screen.findByLabelText("Número do cartão");
 
-    preencheCartao("01/20");
+    await preencheCartao("01/20");
     fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Validade inválida (use MM/AA)."));
@@ -168,7 +214,7 @@ describe("Step4Payment", () => {
     await user.click(screen.getByRole("tab", { name: /Cartão/i }));
     await screen.findByLabelText("Número do cartão");
 
-    preencheCartao("1230");
+    await preencheCartao("1230");
     fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
 
     await waitFor(() =>

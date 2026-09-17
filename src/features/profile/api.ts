@@ -18,6 +18,16 @@ export type Preferences = {
     marketing?: boolean;
     accepted_at?: string;
   };
+  /** Endereço de cobrança do último cartão (só o que o cliente digitou e o ViaCEP devolveu), para pré-preencher. */
+  billing_address?: {
+    cep: string;
+    number: string;
+    complement?: string;
+    street: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  };
 };
 
 export type Profile = Omit<ProfileRow, "preferences"> & {
