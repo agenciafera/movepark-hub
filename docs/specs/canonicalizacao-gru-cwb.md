@@ -170,7 +170,7 @@ mínima e a comparação com o estacionamento oficial.
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.794 (tabela de 11/09/2026) | ✅ verde, 0 bloqueio, conferida em 17/09/2026 |
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
-| `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.120 | ✅ verde, 0 bloqueio |
+| `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.645 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, revista em 17/09/2026 |
 | `estacionamento-barato-aeroporto-curitiba` | 3.114 | ✅ verde, 0 bloqueio |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.025 | ✅ verde, 0 bloqueio |
 
@@ -204,6 +204,28 @@ oficial, coletada em 27/08/2026 e marcada como tal; ela entra na revisão mensal
 As duas atenções do analisador são as mesmas das outras âncoras: densidade da frase-chave em 0,3%
 e frase-chave em 7 dos 25 títulos. Forçar qualquer uma pioraria o texto, e a justificativa é a que
 já está registrada acima.
+
+### Conteúdo 09: a canônica de preço de CWB também fecha na âncora
+
+A atividade [Conteúdo 09, página canônica de preço do Afonso Pena](https://app.clickup.com/t/86ak6h5t5)
+seguiu o mesmo caminho da de Guarulhos: a dona já existia, e post novo reabriria a canibalização.
+Aqui, porém, a âncora não passava como estava. Em 17/09/2026 ela tinha três defeitos:
+
+| Defeito | O que foi feito |
+| --- | --- |
+| Bloqueio no analisador: a imagem do corpo e a capa apontavam para o arquivo do slug morto (`quanto-custa-um-...`), sem variação própria | Capa trazida para `public/images/blog/<slug>/`, duas imagens novas do Higgsfield (`vaga-coberta` e `traslado-van`), cada uma com alt fiel ao que mostra |
+| Comparação com Guarulhos errada desde 11/09, quando GRU baixou a tabela: o post dizia R$ 7,00 de diferença na semana e R$ 30,00 no mês | Refeita com a tabela nova: R$ 25,13 na semana e R$ 237,60 no mês, com a data da revisão de GRU |
+| O piso de três diárias, que é o ângulo da atividade, aparecia sem o valor dele | Seção própria com a estadia mínima dos seis tipos de vaga (de R$ 56,70 a R$ 83,70), coluna de 3 diárias nas duas tabelas e a explicação do porquê do piso |
+
+Os preços dos dois parceiros não mudaram entre 27/08 e 17/09; todo valor foi conferido de novo
+contra o motor, inclusive o de balcão (`old_total`), e as datas do corpo passaram para 17/09. A
+tarifa do oficial segue com a data da coleta, 27/08/2026, e está marcada como tal em cada lugar
+onde aparece. A diferença de preço por dia entre as faixas, que o post chamava de R$ 1,00, agora
+mostra os três degraus (R$ 18,90, R$ 16,90 e R$ 15,90 na descoberta do Abbapark).
+
+Analisador em verde, 0 bloqueio. As três atenções são densidade da frase-chave (0,3%), frase-chave
+em 8 de 29 títulos e palavras de transição a 29,5% contra o piso de 30%; as duas primeiras têm a
+justificativa das outras âncoras e a terceira está a meia frase do piso.
 
 ### O molde, definido pela âncora de preço de GRU
 
