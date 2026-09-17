@@ -44,32 +44,35 @@ export function withdrawPreflight(
 }
 
 /**
- * Teto do saque (E0.3.8): o disponível é o NOSSO número (`payout_withdrawable`), não o saldo bruto
- * da Pagar.me. O parceiro nunca passa dele; hub_admin só com `force`, e o que o gateway tem
- * continua sendo o teto físico para todo mundo.
+ * Teto do saque (E0.3.8, corrigido em 17/09/2026): o parceiro pede até o NOSSO disponível inteiro;
+ * a taxa de saque não é descontada dele antes, é cobrada pela Pagar.me do saldo do recebedor no
+ * ato (sempre do recebedor, não há API para mandar para o master) e entra no razão como custo do
+ * saque. O que continua valendo para todo mundo é o teto físico: valor mais taxa precisam caber
+ * no saldo real do gateway. hub_admin passa do teto nosso só com `force`.
  */
 export function withdrawCap(
   args: {
     amountCents: number;
     availableCents: number;
-    /** Taxa por saque, que o gateway cobra do saldo além do valor: conta no teto. */
     feeCents: number;
     gatewayAvailableCents: number | null;
     isHubAdmin: boolean;
     force: boolean;
   },
 ): { ok: true } | { ok: false; reason: string; status: number } {
-  const total = args.amountCents + Math.max(0, args.feeCents);
-  if (total <= args.availableCents) return { ok: true };
-  if (args.isHubAdmin && args.force) {
-    if (args.gatewayAvailableCents != null && total > args.gatewayAvailableCents) {
-      return { ok: false, reason: `O gateway só tem ${args.gatewayAvailableCents} centavos disponíveis (valor mais taxa de ${args.feeCents}).`, status: 409 };
-    }
-    return { ok: true };
+  const fee = Math.max(0, args.feeCents);
+  if (args.gatewayAvailableCents != null && args.amountCents + fee > args.gatewayAvailableCents) {
+    return {
+      ok: false,
+      reason: `O saldo no gateway (${args.gatewayAvailableCents} centavos) não cobre o saque mais a taxa de ${fee}.`,
+      status: 409,
+    };
   }
+  if (args.amountCents <= args.availableCents) return { ok: true };
+  if (args.isHubAdmin && args.force) return { ok: true };
   return {
     ok: false,
-    reason: `Dá para sacar até ${Math.max(0, args.availableCents - args.feeCents)} centavos (disponível ${args.availableCents} menos a taxa de saque de ${args.feeCents}); o pedido foi de ${args.amountCents}.`,
+    reason: `Disponível para saque é ${args.availableCents} centavos; o pedido foi de ${args.amountCents}.`,
     status: 409,
   };
 }

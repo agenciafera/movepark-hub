@@ -3,7 +3,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(13);
+select plan(14);
 
 select is((select value from public.app_setting where key = 'payout_release_days'), '30', 'prazo global nasce em 30 dias');
 select has_column('public', 'company', 'payout_release_days', 'company.payout_release_days existe');
@@ -63,9 +63,11 @@ select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 're
 select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'debt_cents')::int, 8000, 'dívida do estorno absorvido');
 -- disponível = 15800 − 8000 − 1367 = 6433, e o gateway (20000) cobre
 select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'available_cents')::int, 6433, 'disponível = liberado − dívida − saques');
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'max_withdraw_cents')::int,
-  6433 - (select nullif(trim(value), '')::int from public.app_setting where key = 'payout_withdrawal_fee_cents'),
-  'o máximo do pedido desconta a taxa de saque, que sai do saldo junto');
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'max_withdraw_cents')::int, 6433,
+  'o máximo do pedido é o disponível inteiro: a taxa só é cobrada no saque (e entra pelos saques feitos)');
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'withdrawal_fee_cents')::int,
+  (select nullif(trim(value), '')::int from public.app_setting where key = 'payout_withdrawal_fee_cents'),
+  'a taxa por saque vem informativa, para a tela');
 -- override por empresa: prazo 3 dias libera a venda 2 também
 select lives_ok(format('select public.company_set_payout_release_days(%L::uuid, 3)', current_setting('test.cid')), 'hub_admin muda o prazo da empresa');
 select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'available_cents')::int, 14333, 'com prazo 3, a venda de 5 dias entra: 23700 − 8000 − 1367');

@@ -88,7 +88,7 @@ export function PartnerAccount({
       return;
     }
     if (w && cents > maxCents && !(canRefund && force)) {
-      toast.error(`Dá para sacar até ${brl(maxCents)} (disponível menos a taxa de saque).`);
+      toast.error(`Disponível para saque é ${brl(maxCents)}.`);
       return;
     }
     try {
@@ -231,21 +231,22 @@ export function PartnerAccount({
             <DialogTitle>Repassar para o banco</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
-            {/* O custo do saque fica explícito antes de confirmar: a Pagar.me cobra a taxa do saldo
-                além do valor pedido, então o máximo que dá para pedir é o disponível menos a taxa. */}
+            {/* O custo do saque fica explícito antes de confirmar. A taxa NÃO é descontada do
+                disponível: a Pagar.me cobra do saldo do recebedor no ato do saque, sempre do
+                recebedor (não há como mandar para o master), e ela entra no razão como custo. */}
             <div className="rounded-md border border-hairline bg-surface-soft p-3 text-body-sm">
               <div className="flex justify-between">
                 <span className="text-muted">Disponível para saque</span>
                 <span className="text-ink" data-testid="saque-disponivel">{w ? brl(w.available_cents) : "…"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted">Taxa por saque (Pagar.me)</span>
-                <span className="text-ink" data-testid="saque-taxa">−{brl(feeCents)}</span>
+                <span className="text-muted">Taxa por saque</span>
+                <span className="text-ink" data-testid="saque-taxa">{brl(feeCents)}</span>
               </div>
-              <div className="mt-1 flex justify-between border-t border-hairline pt-1">
-                <span className="text-muted">Máximo que dá para sacar</span>
-                <span className="text-ink" data-testid="saque-maximo">{brl(maxCents)}</span>
-              </div>
+              <p className="mt-1 text-caption text-muted">
+                A taxa é cobrada pela Pagar.me do saldo do estacionamento na hora do saque, uma vez por
+                saque. Quem saca toda hora paga mais; juntar em um saque paga uma taxa só.
+              </p>
             </div>
             <div className="flex items-end gap-2">
               <div className="flex flex-1 flex-col gap-1.5">
@@ -263,8 +264,8 @@ export function PartnerAccount({
             </div>
             {amountCents > 0 && (
               <p className="text-caption text-muted" data-testid="saque-resumo">
-                Cai na conta: <strong>{brl(amountCents)}</strong> · sai do saldo: {brl(amountCents + feeCents)}
-                {amountCents > maxCents && !(canRefund && force) ? " · acima do máximo" : ""}
+                Cai na conta: <strong>{brl(amountCents)}</strong> · taxa cobrada do saldo no saque: {brl(feeCents)}
+                {amountCents > maxCents && !(canRefund && force) ? " · acima do disponível" : ""}
               </p>
             )}
             {canRefund && (

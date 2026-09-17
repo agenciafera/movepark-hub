@@ -19,12 +19,12 @@ Deno.test("withdrawPreflight: leitura ruim aborta em 502, saldo curto em 409, sa
   assertEquals(withdrawPreflight({ httpStatus: 200, availableCents: 100 }, 100).ok, true);
 });
 
-Deno.test("withdrawCap: parceiro para no teto nosso (com a taxa); hub_admin passa só com force e até o gateway", () => {
-  const base = { amountCents: 6000, availableCents: 5000, feeCents: 367, gatewayAvailableCents: 12849 };
-  assertEquals(withdrawCap({ ...base, amountCents: 4633, isHubAdmin: false, force: false }).ok, true, "valor + taxa = disponível");
-  assertEquals(withdrawCap({ ...base, amountCents: 5000, isHubAdmin: false, force: false }).ok, false, "a taxa não cabe");
-  assertEquals(withdrawCap({ ...base, isHubAdmin: false, force: true }).ok, false, "parceiro não força");
-  assertEquals(withdrawCap({ ...base, isHubAdmin: true, force: false }).ok, false, "hub_admin sem force respeita o teto");
-  assertEquals(withdrawCap({ ...base, isHubAdmin: true, force: true }).ok, true);
-  assertEquals(withdrawCap({ ...base, amountCents: 20000, isHubAdmin: true, force: true }).ok, false, "nem com force passa do gateway");
+Deno.test("withdrawCap: o parceiro pede até o disponível inteiro; a taxa só precisa caber no saldo do gateway", () => {
+  const base = { availableCents: 5000, feeCents: 367, gatewayAvailableCents: 12849, isHubAdmin: false, force: false };
+  assertEquals(withdrawCap({ ...base, amountCents: 5000 }).ok, true, "disponível inteiro, taxa cabe no gateway");
+  assertEquals(withdrawCap({ ...base, amountCents: 5001 }).ok, false, "acima do disponível nosso");
+  assertEquals(withdrawCap({ ...base, amountCents: 5000, gatewayAvailableCents: 5000 }).ok, false, "gateway não cobre valor mais taxa");
+  assertEquals(withdrawCap({ ...base, amountCents: 6000, isHubAdmin: true, force: false }).ok, false, "hub_admin sem force respeita o teto");
+  assertEquals(withdrawCap({ ...base, amountCents: 6000, isHubAdmin: true, force: true }).ok, true);
+  assertEquals(withdrawCap({ ...base, amountCents: 12600, isHubAdmin: true, force: true }).ok, false, "nem com force passa do gateway");
 });
