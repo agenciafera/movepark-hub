@@ -29,7 +29,7 @@ cliente nada muda: o dinheiro volta do mesmo jeito e no mesmo prazo.
 | # | Pergunta | Decisão | Por quê |
 |---|---|---|---|
 | 1 | Que saldo conta | **Só o disponível** (`available`), lido ao vivo na hora do estorno | Nunca deixa recebedor negativo, que é o que a Pagar.me pede. Custo aceito: cartão estornado dentro dos 30 dias quase sempre cai na dívida, porque a parte do parceiro ainda está "a receber" |
-| 2 | Quanto o parceiro devolve | **O líquido que recebeu**: parte dele menos a taxa de processamento que ele pagou na captura | Mantém a decisão de 15/09 de a Movepark absorver as taxas do estorno. O parceiro fecha a venda cancelada em zero, sem centavos negativos que geram pergunta |
+| 2 | Quanto o parceiro devolve | **O líquido que recebeu**: parte dele menos a taxa de processamento que ele pagou na captura | Mantém a decisão de 15/09 de a Movepark absorver as taxas do estorno. O parceiro fecha a venda cancelada em zero, sem centavos negativos que geram pergunta. Desde 17/09/2026 a dívida (caminho do master) segue a mesma conta: ver [split-dinamico-e-divida-do-parceiro.md](./split-dinamico-e-divida-do-parceiro.md) |
 | 3 | Chargeback | **Fica 100% no master**, como hoje | O `liable` é fixado na captura e o gateway debita sem olhar saldo; não há como escolher na hora |
 | 4 | Ativação | **Chave global `pagarme_refund_hybrid_enabled`**, nasce `false` | Sobe inerte, um teste com a chave ligada, depois liga para todos. Desligar volta ao 100% master na hora |
 

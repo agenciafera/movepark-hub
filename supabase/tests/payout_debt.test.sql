@@ -8,7 +8,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(28);
+select plan(29);
 
 -- ── schema ──────────────────────────────────────────────────────────────────
 select has_column('public', 'payment', 'debt_recovered_cents', 'payment.debt_recovered_cents existe');
@@ -192,6 +192,23 @@ select ok(
   not has_function_privilege('authenticated', 'public.payout_debt_reserve(uuid, bigint, text)', 'EXECUTE'),
   'a reserva de abatimento é só do service_role (a Edge), nunca do usuário');
 reset role;
+
+-- F) A dívida é líquida da taxa que o parceiro pagou na captura (17/09/2026): venda de R$ 100
+--    com perna 8000, taxa apurada 100 e charge_processing_fee no parceiro, estornada inteira,
+--    sobe a dívida em 7900, não em 8000.
+create temporary table _antes as select public.payout_debt_cents(current_setting('test.cid')::uuid) as d;
+do $$
+declare bk uuid := gen_random_uuid();
+  split_100 jsonb := '[{"role":"partner","recipientId":"re_p","amount":8000,"liable":false,"chargeProcessingFee":true,"chargeRemainderFee":true,"type":"flat"},
+                       {"role":"movepark","recipientId":"re_mp","amount":2000,"liable":true,"chargeProcessingFee":false,"chargeRemainderFee":false,"type":"flat"}]'::jsonb;
+begin
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (bk,'MP-DEBT-F',current_setting('test.cust')::uuid,current_setting('test.loc')::uuid,'2026-12-20T12:00:00Z','2026-12-21T12:00:00Z','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, split, gateway_fee_cents)
+    values (bk,'pagarme','pix','booking',100,'refunded','2026-11-20T13:00:00Z','2026-11-21T10:00:00Z',100,'cancelamento (staff)', true, true, split_100, 100);
+end $$;
+select is(public.payout_debt_cents(current_setting('test.cid')::uuid) - (select d from _antes), 7900::bigint,
+  'dívida líquida da taxa: perna 8000 menos os 100 que o parceiro pagou na captura');
 
 select * from finish();
 rollback;

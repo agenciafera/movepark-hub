@@ -39,7 +39,8 @@ o parceiro já ter recebido. A resposta passa a ser um **controle de banco do no
 
 ```
 dívida(empresa) =
-    Σ perna do parceiro × fração estornada      nas cobranças que FORAM ao gateway
+    Σ (perna do parceiro − taxa que ele pagou) × fração estornada
+                                                 nas cobranças que FORAM ao gateway
                                                  (estorno total, parcial ou chargeback)
   − Σ payment.debt_recovered_cents               abatimentos gravados nas cobranças
   − Σ payout_debt_settlement.amount_cents        acertos manuais (parceiro pagou por fora)
@@ -48,6 +49,16 @@ dívida(empresa) =
 Perna do parceiro é a regra do `payment.split` com `role = 'partner'` (regras antigas, sem `role`,
 caem em `liable = true`, que era a marca do parceiro até esta spec). A fração estornada é
 `refunded_amount / amount`, o mesmo rateio proporcional do extrato.
+
+**Líquida da taxa (17/09/2026, migration `20261120150000_divida_liquida_da_taxa.sql`).** A taxa
+de processamento que o parceiro pagou na captura (`gateway_fee_cents`, quando a perna dele tem
+`charge_processing_fee`) sai da dívida: ele devolve o que recebeu, e a Movepark absorve a taxa da
+Pagar.me da venda cancelada. É a mesma regra do estorno híbrido (decisão 2 de
+[estorno-hibrido.md](./estorno-hibrido.md)); antes, o mesmo cancelamento custava a taxa a mais
+ao parceiro quando ele não tinha saldo (medido no MP-F65005: dívida R$ 14,40 contra R$ 14,22
+recebidos). Enquanto a taxa não foi apurada pelo `reconcile-gateway-fees` (até 30 min depois do
+pagamento), a dívida conta a perna inteira e cai sozinha na apuração. Vale em `payout_debt_cents`,
+`payout_debt_lines` (origens) e no movimento `debt` do `partner_account_statement`.
 
 Por que `Σ perna × fração` e não `Σ (perna − abatimento) × fração`: quando uma venda que abateu
 dívida é estornada, o abatimento foi pago com dinheiro do cliente, que voltou para ele. Contar a

@@ -42,8 +42,8 @@ end $$;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
 
-select is(public.payout_debt_cents(current_setting('test.cid')::uuid), 8000::bigint,
-  'só o estorno absorvido pela Movepark vira dívida (a venda debitada do parceiro não conta)');
+select is(public.payout_debt_cents(current_setting('test.cid')::uuid), 7900::bigint,
+  'só o estorno absorvido pela Movepark vira dívida, líquida da taxa que o parceiro pagou (8000 - 100)');
 
 select is(
   ((public.payout_statement('2026-11-01T00:00:00Z','2026-12-01T00:00:00Z', current_setting('test.cid')::uuid, true) -> 'companies' -> 0) ->> 'refunded_by_partner_cents')::int,

@@ -67,7 +67,7 @@ create temporary table _st as
 
 select is((select (j -> 'header' ->> 'available_cents')::int from _st), 12849, 'cabeçalho traz o saldo disponível do gateway');
 select is((select j -> 'header' ->> 'transfer_interval' from _st), 'Monthly', 'cabeçalho traz o ciclo de transferência');
-select is((select (j -> 'header' ->> 'debt_cents')::int from _st), 5000, 'dívida = 8000 absorvidos menos 3000 de acerto');
+select is((select (j -> 'header' ->> 'debt_cents')::int from _st), 4900, 'dívida = 7900 absorvidos (8000 menos a taxa de 100) menos 3000 de acerto');
 select is((select jsonb_array_length(j -> 'movements') from _st), 9, 'nove movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 3 saques');
 
 select is(
@@ -78,7 +78,7 @@ select is(
   'released', 'venda PIX já liberada');
 select is(
   (select (m ->> 'debt_delta_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'debt'),
-  8000, 'estorno absorvido pela Movepark vira dívida de 8000 e não mexe no saldo');
+  7900, 'estorno absorvido pela Movepark vira dívida líquida da taxa (7900) e não mexe no saldo');
 select is(
   (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'refund'),
   -7900, 'estorno híbrido debita 7900 do saldo do parceiro');
