@@ -195,7 +195,7 @@ mínima e a comparação com o estacionamento oficial.
 | --- | --- | --- |
 | `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.794 (tabela de 11/09/2026) | ✅ verde, 0 bloqueio, conferida em 17/09/2026 |
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 4.216 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, reescrita em 17/09/2026 |
-| `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
+| `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.475 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, reescrita em 17/09/2026 |
 | `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.645 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, revista em 17/09/2026 |
 | `estacionamento-barato-aeroporto-curitiba` | 4.170 (tabela de 27/08/2026) | ✅ verde, 0 bloqueio, conferida e ampliada em 17/09/2026 |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.025 | ✅ verde, 0 bloqueio |
@@ -314,6 +314,57 @@ itens curtos de lista, e enfiar conectivo nelas pioraria a leitura.
 `sem_deploy_hook` em 17/09/2026, com 767 pedidos na fila desde 19/08. O segredo
 `cloudflare_deploy_hook_url` não está no Vault, então edição de conteúdo só vai ao ar com build de
 código. Ver [deploy-automatico.md](./deploy-automatico.md).
+
+### Conteúdo 15: a canônica de proximidade de GRU fecha nesta âncora
+
+A atividade [Conteúdo 15, página canônica de proximidade de Guarulhos](https://app.clickup.com/t/86ak6h7jh)
+também fechou na dona existente, pelo mesmo motivo dos Conteúdos 07 e 11. A conta central que a
+atividade pedia ("estar 1,8 km mais perto custa R$ 21,00 na semana") **deixou de ser verdade em
+11/09/2026**: de 7 diárias em diante Aeropark e Aerovalet cobram igual em cada tipo de vaga, então
+ficar mais perto custa zero nessa faixa. Na vaga descoberta, de 2 a 6 diárias, custa de R$ 3,18 a
+R$ 9,54 no total; em 1 diária o Aeropark nem aceita a reserva.
+
+| O que a atividade exigia | Onde está na âncora |
+| --- | --- |
+| Distância em km medida no motor (PostGIS) | Tabela por terminal dos dois parceiros, mais a tabela "seu embarque" com a diferença em cada terminal |
+| Minutos de traslado e frequência da van, da ficha | Aeropark 10 min e van a cada 30; Aerovalet dito como não declarado |
+| O pior caso de tempo | Tabela porta a porta, de 15 a 50 minutos, média de 40 |
+| A resposta honesta sobre caminhar | Seção e FAQ próprias, ver a ressalva abaixo |
+| FAQ que emite `FAQPage`, zero promessa | 8 perguntas em `###` terminadas em "?", de 43 a 52 palavras; analisador sem bloqueio |
+
+Quatro decisões de conteúdo que divergem da atividade, e por quê:
+
+1. **"Linha de rota" virou "linha reta", aqui e em mais três posts de GRU.** `ST_Distance` em
+   `geography` é distância geodésica, não percurso por via. Os textos diziam "em linha de rota",
+   o que afirmava um cálculo que não existe. Corrigido no banco na dona de preço, na de barato e no
+   guia de melhores. Os posts de CWB têm o mesmo erro e ficaram para a sessão que revisa a praça.
+2. **Lisboa Park saiu da página.** A unidade está `is_listed` no destino de GRU, mas o endereço é
+   R. Tibério, 158, Água Branca, São Paulo, a 24,12 km, e ela não aparece no índice de preços. É a
+   mesma pendência de vínculo já registrada abaixo; publicar isso como opção de proximidade seria
+   afirmar um fato que o cadastro provavelmente erra.
+3. **A calçada não foi afirmada.** "Via de acesso sem calçada contínua" não é dado que a Movepark
+   tenha medido. O texto diz o que é verificável: 1,88 km em linha reta, trajeto real mais longo,
+   mais de 20 minutos a pé só na linha reta, e nenhum pátio declara rota a pé.
+4. **Os lotes mapeados entraram, sem nome.** Três lotes sem parceria ficam entre 1,57 km e 1,82 km
+   do Terminal 1, mais perto que o Aeropark. Omitir isso numa página que responde "qual o mais
+   próximo" seria a resposta errada. Eles aparecem só como fato de distância, com link para a
+   página do destino, sem nome, sem link próprio e sem preço (ADR-010).
+
+As imagens foram renomeadas para o padrão da skill e passaram do Storage para
+`public/images/blog/<slug>/`. O alt antigo da imagem de corpo descrevia uma van que a foto não tem;
+o novo descreve o pátio descoberto com sombreadores.
+
+Atenções do analisador: densidade da frase-chave em 0,2%, frase-chave em 7 dos 32 títulos e
+palavras de transição em 26%, com a mesma justificativa das outras âncoras.
+
+**Pendências de cadastro encontradas nesta entrega**, nenhuma corrigida aqui por afetar outras
+superfícies:
+
+- **Bandeira Park e MultiPark**, lotes mapeados, estão com o mesmo endereço e as mesmas coordenadas
+  do Aerovalet (Av. Novo Brasil, 954). Ou é o mesmo pátio com três marcas, ou dois cadastros estão
+  errados, e a vitrine do destino mostra os três.
+- **As fotos do Aeropark** moram em `/Estacionamentos/bandeirapark/`. Com o item anterior, vale
+  confirmar a relação entre as marcas antes de qualquer conteúdo comparativo citar alguma delas.
 
 ### O molde, definido pela âncora de preço de GRU
 
