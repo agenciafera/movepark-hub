@@ -118,11 +118,20 @@ eleição do vencedor é delas. O que esta rodada entrega é o número que decid
 5. Antes de consolidar qualquer par, **meça os dois lados na janela mais recente**. O vencedor é o
    que tem impressão, e não o que foi escrito por último.
 
-## Armadilha de coleta, registrada para não repetir
+## Armadilha de coleta, agora fechada no código
 
-O coletor do Search Console nomeia a pasta pela data final da janela, então duas coletas que terminam
-no mesmo dia colidem. Nesta rodada eu rodei `seo:gsc-baseline` sem argumento e sobrescrevi a coleta
-de 15 dias que outra sessão havia gravado duas horas antes em
-`docs/specs/dados/gsc-baseline-2026-09-14` para o Conteúdo 21. O arquivo foi restaurado com
-`git checkout` e nada se perdeu, mas a lição fica: **antes de coletar, olhe se a pasta da data final
-já existe**, e passe `--inicio` e `--fim` explícitos quando a janela for diferente.
+O coletor nomeia a pasta pela data final da janela, então duas coletas que terminam no mesmo dia
+disputam o mesmo diretório. Nesta rodada eu rodei `seo:gsc-baseline` sem argumento e sobrescrevi a
+coleta de 15 dias que outra sessão havia gravado duas horas antes em
+`docs/specs/dados/gsc-baseline-2026-09-14`, para o Conteúdo 21. Restaurei com `git checkout` e nada
+se perdeu.
+
+**O buraco foi fechado no mesmo dia, no commit `58129099`.** O coletor compara o `meta.json` que já
+está na pasta com a janela da rodada e para **antes de qualquer chamada de rede** quando elas
+diferem. Reproduzi o meu próprio erro depois do fix: a rodada sem argumento recusa gravar sobre a
+janela de 31/08 a 14/09, sai com código 1 e não toca na pasta. A regra pura é `conflitoDeJanela` em
+`scripts/gsc-baseline.logic.mjs`, com teste, e está documentada em
+[baseline-search-console.md](./baseline-search-console.md).
+
+Ou seja, a rotina não depende mais de alguém lembrar de olhar o `git status`. Quem quer outra janela
+passa `--inicio` e `--fim`; quem quer substituir de propósito passa `--force`.
