@@ -149,3 +149,67 @@ export function useCancelBookingStaff() {
     },
   });
 }
+
+// ── Rastro do gateway (E0.3.9) ───────────────────────────────────────────────
+
+export type GatewayTrailPayment = {
+  id: string;
+  kind: string;
+  method: string | null;
+  status: string;
+  amount: number;
+  installments: number | null;
+  provider_payment_id: string | null;
+  provider_charge_id: string | null;
+  created_at: string;
+  paid_at: string | null;
+  expires_at: string | null;
+  refunded_at: string | null;
+  refunded_amount: number | null;
+  refund_reason: string | null;
+  refund_absorbed_by_master: boolean;
+  refund_partner_cents: number;
+  refund_partner_balance_cents: number | null;
+  refund_split: unknown;
+  split: { role?: string; recipientId?: string | null; amount: number; liable?: boolean }[] | null;
+  split_sent_to_gateway: boolean | null;
+  debt_recovered_cents: number;
+  gateway_fee_cents: number | null;
+  gateway_fee_synced_at: string | null;
+  partner_release_at: string | null;
+  pix_qr_code_url: string | null;
+};
+
+export type GatewayTrailEvent = {
+  id: string;
+  payment_id: string | null;
+  kind: string;
+  http_status: number | null;
+  request: unknown;
+  response: unknown;
+  note: string | null;
+  created_at: string;
+};
+
+export type GatewayTrail = { payments: GatewayTrailPayment[]; events: GatewayTrailEvent[] };
+
+/**
+ * O que a Pagar.me devolveu para esta reserva (RPC `booking_gateway_trail`): os pagamentos com
+ * order e charge, split, estorno, taxa e liberação, e o rastro de cada chamada (cobrança,
+ * estorno, webhooks) com a resposta crua. Só hub_admin; para os outros a RPC devolve nulo.
+ */
+export function useBookingGatewayTrail(bookingId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "gateway-trail", bookingId ?? "none"] as const,
+    enabled: enabled && !!bookingId,
+    queryFn: async (): Promise<GatewayTrail | null> => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "booking_gateway_trail",
+        a: { p_booking_id: string },
+      ) => PromiseLike<{ data: GatewayTrail | null; error: { message: string } | null }>;
+      const { data, error } = await rpc("booking_gateway_trail", { p_booking_id: bookingId! });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+}

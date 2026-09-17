@@ -16,6 +16,7 @@ import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { siteUrl } from "../_shared/site.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -90,6 +91,15 @@ Deno.serve(async (req: Request) => {
           partnerRecipientMissing: await partnerRecipientMissing(admin, p),
         });
         await persistPartnerBalance(admin, exec);
+        await logGatewayEvent(admin, {
+          paymentId: p.id,
+          bookingId: p.booking_id ?? null,
+          kind: "refund",
+          httpStatus: exec.result.httpStatus,
+          request: { amount_cents: Math.round(Number(p.amount) * 100), split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
+          response: exec.result.raw,
+          note: "pago sem vaga (conciliação)",
+        });
         if (exec.outcome !== "ok") {
           console.error("[reconcile-confirmations] estorno recusado:", p.id, exec.result.httpStatus, JSON.stringify(exec.result.raw));
           continue;

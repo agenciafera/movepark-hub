@@ -11,6 +11,7 @@ import type { BookingWithRelations } from "@/types/domain";
 import { useAuth } from "@/auth/context";
 import { useCancelBookingStaff } from "./api";
 import { paymentState } from "./payment.logic";
+import { GatewayTrail } from "./GatewayTrail";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -19,7 +20,7 @@ type Props = {
 };
 
 export function BookingModal({ booking, open, onOpenChange }: Props) {
-  const { hasScope } = useAuth();
+  const { hasScope, effectiveRole } = useAuth();
   const cancelMutation = useCancelBookingStaff();
   const [confirming, setConfirming] = React.useState(false);
 
@@ -102,6 +103,17 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
             )}
           </ol>
         </div>
+
+        {/* Rastro do gateway (E0.3.9): a equipe sempre vê o que a Pagar.me devolveu. */}
+        {effectiveRole === "hub_admin" && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <h4 className="text-title-md">Gateway (Pagar.me)</h4>
+              <GatewayTrail bookingId={booking.id} />
+            </div>
+          </>
+        )}
 
         {canCancel && (
           <div className="flex flex-col items-end gap-2 pt-2">

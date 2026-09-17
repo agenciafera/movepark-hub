@@ -24,6 +24,7 @@ import { effectiveSplitEnabled, maxDebtRecoveryCents, splitForGateway } from "..
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -295,6 +296,15 @@ Deno.serve(async (req: Request) => {
       debt_recovered_cents: debtRecoveryCents,
       debt_reservation_id: debtReservationId,
     });
+    await logGatewayEvent(admin, {
+      paymentId: null,
+      bookingId: booking.id,
+      kind: "charge_failed",
+      httpStatus: result.httpStatus,
+      request: { method: "card", amount_cents: chargedCents, installments: input.installments },
+      response: result.raw,
+      note: "cartão recusado pelo emissor",
+    });
     return jsonResponse({ error: "Cartão recusado. Tente outro cartão." }, 402);
   }
   if (!result.orderId || (result.httpStatus ?? 500) >= 400) {
@@ -320,6 +330,20 @@ Deno.serve(async (req: Request) => {
     debt_reservation_id: debtReservationId,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
+  // Rastro do gateway (E0.3.9). O cartão nunca entra aqui: só ids, valor, parcelas e split.
+  await logGatewayEvent(admin, {
+    paymentId,
+    bookingId: booking.id,
+    kind: "charge_created",
+    httpStatus: result.httpStatus,
+    request: {
+      method: "card",
+      amount_cents: chargedCents,
+      installments: input.installments,
+      split: splitEnabled ? gatewaySplit : null,
+    },
+    response: result.raw,
+  });
   if (debtReservationId) {
     await admin
       .from("payout_debt_reservation")

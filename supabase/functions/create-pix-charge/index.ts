@@ -24,6 +24,7 @@ import { effectiveSplitEnabled, maxDebtRecoveryCents, splitForGateway } from "..
 import { buildPixItems, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -283,6 +284,20 @@ Deno.serve(async (req: Request) => {
     debt_reservation_id: debtReservationId,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
+  // Rastro do gateway (E0.3.9): o que a Pagar.me devolveu ao criar a cobrança, para o Manager.
+  await logGatewayEvent(admin, {
+    paymentId,
+    bookingId: booking.id,
+    kind: "charge_created",
+    httpStatus: result.httpStatus,
+    request: {
+      method: "pix",
+      amount_cents: Math.round(Number(booking.total_amount) * 100),
+      split: splitEnabled ? gatewaySplit : null,
+      expires_in_seconds: holdSeconds,
+    },
+    response: result.raw,
+  });
   if (debtReservationId) {
     await admin
       .from("payout_debt_reservation")

@@ -6,6 +6,8 @@ import type { BookingWithRelations } from "@/types/domain";
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("./api", () => ({
   useCancelBookingStaff: () => ({ mutate: vi.fn(), isPending: false }),
+  // Rastro do gateway (E0.3.9) tem teste próprio em GatewayTrail.test.tsx.
+  useBookingGatewayTrail: () => ({ data: null, isLoading: false, isError: false }),
 }));
 
 import { BookingModal } from "./BookingModal";

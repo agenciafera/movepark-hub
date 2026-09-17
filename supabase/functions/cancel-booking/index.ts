@@ -22,6 +22,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { executeRefund, manualRefundReason, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -184,6 +185,15 @@ Deno.serve(async (req: Request) => {
       partnerRecipientMissing: await partnerRecipientMissing(admin, payment),
     });
     await persistPartnerBalance(admin, exec);
+    await logGatewayEvent(admin, {
+      paymentId: payment.id,
+      bookingId: booking.id,
+      kind: "refund",
+      httpStatus: exec.result.httpStatus,
+      request: { amount_cents: totalCents, split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
+      response: exec.result.raw,
+      note: input.reason ?? `cancelamento (${actor})`,
+    });
     const refund = exec.result;
     const motivo = input.reason ?? `cancelamento (${actor})`;
 

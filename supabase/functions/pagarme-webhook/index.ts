@@ -39,6 +39,7 @@ import {
   webhookIntentFromType,
 } from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 
 /**
  * Notifica a confirmação por WhatsApp — só Tarifas Flex+ (`fare_benefits.notifications_sms`).
@@ -383,6 +384,16 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, matched: false });
   }
 
+  // Rastro do gateway (E0.3.9): todo webhook que casou com um pagamento fica visível no Manager.
+  await logGatewayEvent(admin, {
+    paymentId: payment.id,
+    bookingId: payment.booking_id ?? null,
+    kind: `webhook:${ev.type}`,
+    httpStatus: null,
+    request: null,
+    response: body,
+  });
+
   // Decide a ação pelo TIPO do evento (não pelo data.status — PIX manda `charge.refunded` com
   // data.status "paid", o refund fica em last_transaction). Sem intent reconhecida, cai no
   // mapeamento genérico por status.
@@ -515,6 +526,15 @@ Deno.serve(async (req: Request) => {
                 partnerRecipientMissing: await partnerRecipientMissing(admin, pagamento),
               });
               await persistPartnerBalance(admin, exec);
+              await logGatewayEvent(admin, {
+                paymentId: payment!.id,
+                bookingId: payment!.booking_id ?? null,
+                kind: "refund",
+                httpStatus: exec.result.httpStatus,
+                request: { amount_cents: Math.round(Number(row?.amount ?? 0) * 100), split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
+                response: exec.result.raw,
+                note: "pago sem vaga (webhook)",
+              });
               if (exec.outcome !== "ok") {
                 console.error("[pagarme-webhook] estorno pago-sem-vaga recusado:", exec.result.httpStatus, JSON.stringify(exec.result.raw));
               } else {

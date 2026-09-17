@@ -24,6 +24,7 @@ import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/docu
 import { executeRefund, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { parseChangeDatesPaidInput } from "./logic.ts";
 
 const corsHeaders = {
@@ -180,6 +181,15 @@ Deno.serve(async (req: Request) => {
             partnerRecipientMissing: await partnerRecipientMissing(admin, payment),
           });
           await persistPartnerBalance(admin, exec);
+          await logGatewayEvent(admin, {
+            paymentId: payment.id,
+            bookingId: booking.id,
+            kind: "refund",
+            httpStatus: exec.result.httpStatus,
+            request: { amount_cents: -deltaCents, split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
+            response: exec.result.raw,
+            note: "estorno parcial por mudança de datas",
+          });
           const refund = exec.result;
           if (exec.outcome === "ok") {
             refunded = true;
