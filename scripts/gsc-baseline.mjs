@@ -150,6 +150,12 @@ const colunasDeMetrica = [
 ];
 
 /** Tabela markdown do recorte: é o que alguém abre daqui a 90 dias sem rodar nada. */
+/** Dias entre as duas pontas da janela, inclusive, para a legenda do resumo. */
+function diasDaJanela(inicio, fim) {
+  const ms = new Date(`${fim}T00:00:00Z`) - new Date(`${inicio}T00:00:00Z`);
+  return Math.round(ms / 86400000) + 1;
+}
+
 function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, paginas }) {
   const porAeroporto = AEROPORTOS.map((aeroporto) => {
     const linhas = CLUSTERS.map((cluster) => {
@@ -192,9 +198,11 @@ function resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, pagina
   return [
     `# Baseline do Search Console - ${fim}`,
     "",
-    `Propriedade: \`${propriedade}\` · Janela: **${inicio} a ${fim}** (16 meses, dado final).`,
+    // A janela nem sempre é a cheia: a comparação pós-consolidação (Conteúdo 21) roda
+    // recortes de 15 dias, e dizer "16 meses" ali era uma legenda errada no artefato.
+    `Propriedade: \`${propriedade}\` · Janela: **${inicio} a ${fim}** (${diasDaJanela(inicio, fim)} dias, dado final).`,
     "",
-    "Este arquivo é o marco zero da Fase 1 do plano de conteúdo. Não edite os números: para",
+    "Retrato congelado desta janela. Não edite os números: para",
     "atualizar, rode `bun run seo:gsc-baseline` de novo, que grava uma pasta nova com a data nova.",
     "",
     "## Total da propriedade",

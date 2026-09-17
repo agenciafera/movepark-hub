@@ -307,6 +307,14 @@ disputam a mesma consulta são redirecionados para ela.
 Regra da fase: **cada dona absorve de dois a seis posts existentes**, por 301. Slug publicado que
 vira redirect não é slug apagado, é slug que passou a apontar para quem responde melhor.
 
+**A Fase 1 foi medida no Search Console em 17/09/2026, e liberou a Fase 2.** Em duas janelas
+iguais de 15 dias, uma de cada lado dos 301, as impressões das donas foram de 12.649 para 19.660
+enquanto as dos 59 slugs redirecionados caíram de 8.288 para 3.222, e o total das 12 células de
+cabeça subiu 34%. Onze das 12 ganharam impressão. As duas quedas de posição foram investigadas e
+nenhuma é dona perdendo terreno. O relatório, com o método e as dívidas que sobraram, está em
+[pos-consolidacao-search-console.md](./pos-consolidacao-search-console.md); a comparação se refaz
+com `bun run seo:gsc-comparar`.
+
 ### Fase 2: a camada de máquina (semanas 7 a 10)
 
 O que faz a IA preferir a Movepark quando duas fontes dizem a mesma coisa.
