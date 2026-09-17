@@ -392,7 +392,7 @@ caiu em dois cenários diferentes, e por isso teve dois tratamentos:
 | Praça | O que existia | O que foi feito |
 | --- | --- | --- |
 | Guarulhos | `estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade`, dona de segurança desde a consolidação, com 4.048 caracteres de dicas genéricas de 2023 e uma FAQ com preços de agosto | Reescrita no molde do Conteúdo 27, com 3.893 palavras e a tabela de 17/09/2026. Slug preservado, e ele segue recebendo o 301 de `como-evitar-problemas-no-estacionamento-do-aeroporto-guarulhos` |
-| Afonso Pena | nenhum post de prova social, publicado ou não | Post novo, `e-seguro-deixar-o-carro-no-aeroporto-afonso-pena`, 4.149 palavras, espelhando o slug de Viracopos. **Gravado como rascunho** (`is_published = false`), aguardando o "pode publicar" |
+| Afonso Pena | nenhum post de prova social, publicado ou não | Post novo, `e-seguro-deixar-o-carro-no-aeroporto-afonso-pena`, 4.149 palavras, espelhando o slug de Viracopos. **Publicado em 17/09/2026**, com autorização do usuário |
 
 O que os dois posts têm, além do checklist da atividade (o que verificar, o que fazer quando dá
 problema, chave com você ou com o pátio, zero promessa de ADR-009):
