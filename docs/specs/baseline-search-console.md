@@ -88,6 +88,18 @@ lança, então sem a flag o coletor morre em "Falta a credencial" mesmo com a cr
 configurada certa. A variante `-if-exists` é de propósito: quem não tem `.env.local` cai na
 mensagem de erro do próprio script, que explica o que fazer, em vez de num crash do node.
 
+**Janela diferente não sobrescreve coleta versionada (17/09/2026).** A pasta leva a data FINAL
+no nome, então duas janelas que terminam no mesmo dia disputam o mesmo diretório. Foi o que
+aconteceu com o recorte de 15 dias do Conteúdo 21: uma rodada sem argumento, com a janela cheia
+de 16 meses terminando no mesmo 14/09, gravou por cima da coleta que estava commitada. Nada se
+perdeu, porque o estrago apareceu no `git status` e foi desfeito com `git checkout`, mas só por
+sorte de alguém ter olhado. Agora o coletor compara o `meta.json` que já está na pasta com a
+janela desta rodada e **para antes de qualquer chamada de rede** quando elas diferem, explicando
+o conflito. Re-rodar a MESMA janela continua liberado, que é como um baseline se atualiza, e
+`--force` existe para quem realmente quer substituir. A regra pura é `conflitoDeJanela` em
+[`gsc-baseline.logic.mjs`](../../scripts/gsc-baseline.logic.mjs), com teste em
+[`gsc-baseline.test.mjs`](../../scripts/gsc-baseline.test.mjs).
+
 Aceita `--inicio`, `--fim` e `--property` para recortes fora do padrão. Sem argumento, a janela
 é de 16 meses terminando três dias atrás: o Search Console leva alguns dias para fechar o dado,
 e o script pede `dataState: "final"` de propósito, porque baseline que muda depois de gravado

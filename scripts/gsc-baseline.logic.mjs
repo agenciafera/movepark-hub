@@ -46,17 +46,51 @@ export const CLUSTERS = [
   {
     id: "proximidade",
     nome: "proximidade, perto",
-    termos: ["perto", "proximo", "proxima", "proximidade", "dentro", "ao lado", "vizinho", "distancia", "em frente", "colado"],
+    termos: [
+      "perto",
+      "proximo",
+      "proxima",
+      "proximidade",
+      "dentro",
+      "ao lado",
+      "vizinho",
+      "distancia",
+      "em frente",
+      "colado",
+    ],
   },
   {
     id: "barato",
     nome: "barato, economia, desconto",
-    termos: ["barato", "barata", "economia", "economizar", "economico", "desconto", "cupom", "promocao", "em conta", "custo beneficio"],
+    termos: [
+      "barato",
+      "barata",
+      "economia",
+      "economizar",
+      "economico",
+      "desconto",
+      "cupom",
+      "promocao",
+      "em conta",
+      "custo beneficio",
+    ],
   },
   {
     id: "preco",
     nome: "preço, valor, diária",
-    termos: ["preco", "precos", "valor", "valores", "diaria", "diarias", "tarifa", "quanto custa", "quanto fica", "custo", "tabela"],
+    termos: [
+      "preco",
+      "precos",
+      "valor",
+      "valores",
+      "diaria",
+      "diarias",
+      "tarifa",
+      "quanto custa",
+      "quanto fica",
+      "custo",
+      "tabela",
+    ],
   },
 ];
 
@@ -105,7 +139,9 @@ export function aeroportoDaUrl(url) {
  */
 export function clustersDaConsulta(consulta) {
   const texto = normalizar(consulta);
-  const todos = CLUSTERS.filter((c) => c.termos.some((t) => contemTermo(texto, t))).map((c) => c.id);
+  const todos = CLUSTERS.filter((c) => c.termos.some((t) => contemTermo(texto, t))).map(
+    (c) => c.id,
+  );
   return { principal: todos[0] ?? null, todos };
 }
 
@@ -202,7 +238,10 @@ export function numero(valor, casas = 2) {
  */
 export function emPtBr(valor, casas = 0) {
   if (valor === null || valor === undefined || Number.isNaN(valor)) return "";
-  return valor.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  return valor.toLocaleString("pt-BR", {
+    minimumFractionDigits: casas,
+    maximumFractionDigits: casas,
+  });
 }
 
 /**
@@ -243,4 +282,22 @@ export function metaComCarimboEstavel(metaNovo, metaAnterior) {
   const { geradoEm: carimboAnterior, ...restoAnterior } = metaAnterior;
   const igual = JSON.stringify(canonico(restoNovo)) === JSON.stringify(canonico(restoAnterior));
   return igual ? { ...metaNovo, geradoEm: carimboAnterior } : metaNovo;
+}
+
+/**
+ * A coleta que já está na pasta cobre outra janela que a desta rodada?
+ *
+ * A pasta é nomeada pela data FINAL da janela, então duas janelas que terminam no mesmo dia
+ * disputam o mesmo diretório. Em 17/09/2026 isso apagou a coleta de 15 dias do Conteúdo 21:
+ * alguém rodou o coletor sem argumento, a janela cheia de 16 meses terminava no mesmo 14/09
+ * e sobrescreveu o recorte curto que estava versionado. Foi restaurado por `git checkout`,
+ * mas só porque o estrago apareceu no `git status` de quem viu.
+ *
+ * Re-rodar a MESMA janela continua liberado, que é o caso de atualizar um baseline; o que
+ * passa a exigir `--force` é gravar por cima de uma janela diferente.
+ */
+export function conflitoDeJanela(metaAnterior, inicio, fim) {
+  if (!metaAnterior?.inicio || !metaAnterior?.fim) return null;
+  if (metaAnterior.inicio === inicio && metaAnterior.fim === fim) return null;
+  return { de: `${metaAnterior.inicio} a ${metaAnterior.fim}`, para: `${inicio} a ${fim}` };
 }

@@ -24,6 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
+  conflitoDeJanela,
   AEROPORTOS,
   CLUSTERS,
   aeroportoDaUrl,
@@ -243,6 +244,21 @@ async function principal() {
   const inicio = argumento("inicio", janela.inicio);
   const fim = argumento("fim", janela.fim);
 
+  // Antes de qualquer chamada de rede: a pasta é nomeada pela data final, então janela
+  // diferente que termina no mesmo dia disputaria o mesmo diretório e apagaria o que está
+  // versionado. Aconteceu em 17/09/2026 com o recorte de 15 dias do Conteúdo 21.
+  const destino = path.join("docs", "specs", "dados", `gsc-baseline-${fim}`);
+  const conflito = conflitoDeJanela(lerMetaAnterior(destino), inicio, fim);
+  if (conflito && !process.argv.includes("--force")) {
+    console.error(
+      `A pasta ${destino} já guarda a coleta de ${conflito.de}, e esta rodada é de ${conflito.para}.\n` +
+        "A pasta leva a data final no nome, então as duas disputam o mesmo lugar, e gravar aqui\n" +
+        "apagaria a coleta versionada. Rode com --inicio e --fim da janela que você quer, ou\n" +
+        "passe --force se a intenção é mesmo substituir o que está lá.",
+    );
+    return 1;
+  }
+
   console.log(`Baseline do Search Console`);
   console.log(`  propriedade: ${propriedade}`);
   console.log(`  janela: ${inicio} a ${fim}`);
@@ -260,7 +276,6 @@ async function principal() {
   });
   const datas = await consultar({ token, propriedade, inicio, fim, dimensoes: ["date"] });
 
-  const destino = path.join("docs", "specs", "dados", `gsc-baseline-${fim}`);
   fs.mkdirSync(destino, { recursive: true });
 
   const gravar = (nome, conteudo) => {
@@ -347,17 +362,19 @@ async function principal() {
   };
   // Re-rodada que devolve os mesmos números mantém o carimbo original, senão o único diff
   // seria o relógio e a pasta congelada apareceria modificada sem dado novo.
-  gravar("meta.json", JSON.stringify(metaComCarimboEstavel(meta, lerMetaAnterior(destino)), null, 2) + "\n");
-
   gravar(
-    "RESUMO.md",
-    resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, paginas }),
+    "meta.json",
+    JSON.stringify(metaComCarimboEstavel(meta, lerMetaAnterior(destino)), null, 2) + "\n",
   );
+
+  gravar("RESUMO.md", resumoEmMarkdown({ propriedade, inicio, fim, recorte, consultas, paginas }));
 
   console.log("\nBaseline congelado. Comite a pasta para o marco zero ficar versionado.");
 }
 
-principal().catch((erro) => {
-  console.error(`\n${erro.message}`);
-  process.exit(1);
-});
+principal()
+  .then((codigo) => process.exit(codigo ?? 0))
+  .catch((erro) => {
+    console.error(`\n${erro.message}`);
+    process.exit(1);
+  });
