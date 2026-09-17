@@ -427,6 +427,67 @@ já estava no Storage, renomeada para o padrão da skill.
 Atenções do analisador: densidade e frase-chave nos títulos nos dois, mais frases longas em 26,7%
 no de Curitiba, que é o preço de manter o bloco jurídico legível sem picar cada frase.
 
+### Conteúdo 31: a cauda longa de terminal e setor, e a tarifa do oficial que estava errada
+
+A atividade [Conteúdo 31, cauda longa de terminal e setor](https://app.clickup.com/t/86ak6hb84) pedia
+uma página por terminal em Guarulhos, onde estão 61 dos 79 termos do cluster. A apuração começou
+pela fonte, e foi ela que virou a entrega mais importante do dia.
+
+**A tabela do oficial de GRU cobra por faixa de permanência, e não por diária.** Ela é publicada
+como imagem no site do aeroporto, e foi lida em 17/09/2026:
+
+| Faixa | Standard (T1 e T2) | Premium, edifício garagem (T2 e T3) e Flex (T3) |
+| --- | --- | --- |
+| Até 1 hora | R$ 31,00 | R$ 38,00 |
+| Até 1 diária | R$ 79,00 | R$ 107,00 |
+| 5 diárias | R$ 360,00 | R$ 535,00 |
+| De 6 a 10 diárias | R$ 460,00 | R$ 565,00 |
+| De 11 a 17 diárias | R$ 480,00 | R$ 610,00 |
+| De 18 a 30 diárias | R$ 505,00 | R$ 690,00 |
+| Acima de 30 diárias | pacote de 30 mais R$ 19,90 por diária | pacote de 30 mais R$ 22,90 por diária |
+
+**O que estava publicado errado.** Desde 27/08/2026 as âncoras de GRU diziam que o oficial cobrava
+"diária a partir de R$ 33,60 nos Terminais 1 e 2", o que dava R$ 504,00 em quinze diárias, e
+R$ 42,70 no Terminal 3, ou R$ 640,50. A tabela do operador não tem esses números: quinze diárias
+caem na faixa de 11 a 17 e custam **R$ 480,00** no Standard e **R$ 610,00** no Premium. A economia
+do parceiro na quinzena caiu de R$ 351,30 para **R$ 327,30** (68%), e contra o setor do T3 ela é de
+R$ 457,30 (75%).
+
+Duas correções de fato entraram junto, e as duas invertem afirmação que estava no ar:
+
+1. **O oficial não é mais barato em permanência curta.** A primeira hora custa R$ 31,00 no Standard,
+   acima da diária avulsa de R$ 18,49 do Aerovalet. Os textos diziam que "para poucas horas o
+   oficial ganha", o que só vale em tempo, não em dinheiro. Corrigido nas quatro âncoras.
+2. **O T3 não tem setor Standard.** Quem embarca lá começa a comparar de R$ 107,00 na diária, e é
+   por isso que a diferença contra o pátio de fora é maior naquele terminal. Nenhum texto dizia isso.
+
+Posts corrigidos no banco em 17/09/2026: `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui`,
+`como-estacionar-barato-no-aeroporto-de-guarulhos`,
+`estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` e
+`estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade`. A data da coleta do
+oficial passou de 27/08 para 17/09 nos quatro.
+
+**As três páginas novas**, uma por terminal, gravadas como rascunho (`is_published = false`) à espera
+do "pode publicar":
+
+| Slug | Palavras | O que só ela tem |
+| --- | --- | --- |
+| `estacionamento-terminal-1-aeroporto-guarulhos` | 3.045 | O T1 só tem Standard, então não existe vaga coberta oficial ali; as três alternativas cobertas comparadas |
+| `estacionamento-terminal-2-aeroporto-guarulhos` | 3.044 | Único terminal com os dois setores; a escolha Standard contra Premium vale de R$ 7,00 a R$ 185,00 |
+| `estacionamento-terminal-3-aeroporto-guarulhos` | 3.000 | Sem Standard; até o valet do parceiro (R$ 554,40) sai abaixo do oficial do T3 (R$ 610,00) na quinzena |
+
+Duas decisões de escopo que valem registro:
+
+- **A tarifa é do setor em que o carro fica, não do terminal do voo.** Isso virou seção nas três
+  páginas, porque é a única forma honesta de responder "estacionamento GRU Terminal 3 preço" sem
+  fingir que existe tarifa por terminal.
+- **CNF, CWB e VCP ficaram fora.** São 18 dos 79 termos, e os setores internos de lá (P1, P3, E1,
+  E3, área B, área C, bolsão F) não estão no sistema nem foram conferidos na fonte. Publicar sem
+  isso seria inventar geografia interna. Ficam para quem responde por cada praça.
+
+Atenções do analisador nas três: densidade, frase-chave nos títulos e palavras de transição, todas
+com a justificativa já registrada acima.
+
 ### O molde, definido pela âncora de preço de GRU
 
 A primeira expansão fixou o formato que as outras cinco seguem:
