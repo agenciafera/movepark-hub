@@ -1,6 +1,6 @@
 // Estado de pagamento/estorno derivado dos payments de uma reserva: lógica pura (testável).
 // Usado para mostrar o badge de estorno (Estornado / em processamento) no Manager/Operator.
-// (O estorno não é mais uma ação à parte: reembolsar = cancelar antes do check-in — E0.3.2.)
+// (O estorno não é mais uma ação à parte: reembolsar = cancelar antes do check-in, E0.3.2.)
 
 type PaymentLike = {
   status: string | null;
@@ -25,7 +25,7 @@ export type PaymentState = {
 /**
  * Deriva o estado de estorno do último payment:
  * - `refunded` → Estornado (não pode estornar de novo);
- * - `paid` + `refunded_at` → PIX estornando (aguardando webhook) — não pode reestornar;
+ * - `paid` + `refunded_at` → PIX estornando (aguardando webhook), não pode reestornar;
  * - `paid` sem `refunded_at` → pode estornar;
  * - resto (pending/failed/sem payment) → não pode, sem badge.
  */
