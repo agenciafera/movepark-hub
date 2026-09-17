@@ -56,6 +56,9 @@ describe("PartnerAccount", () => {
     expect(screen.getByTestId("conta-retido")).toHaveTextContent("R$ 14,22");
     expect(screen.getByText(/cada venda libera 30 dias/)).toBeInTheDocument();
     expect(screen.getByTestId("conta-divida")).toHaveTextContent("R$ 28,80");
+    // A dívida é o "saldo negativo" do parceiro: o recebedor nunca fica abaixo de zero na
+    // Pagar.me, e o que ele deve aparece aqui, abatendo antes de qualquer saque.
+    expect(screen.getByTestId("conta-divida-abate")).toHaveTextContent("dívida de R$ 28,80 abate antes");
     // formatBRL usa espaço não-quebrável entre R$ e o número; normaliza antes de comparar.
     const efeitos = screen.getAllByTestId("mov-no-saldo").map((e) => e.textContent?.replace(/\u00a0/g, " "));
     expect(efeitos).toEqual(["+R$ 14,22", "-", "−R$ 53,67"]);

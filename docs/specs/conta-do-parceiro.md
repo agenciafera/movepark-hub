@@ -95,7 +95,9 @@ quando pode sair. Migration `20261120010000`.
 | Recebedor negativo | A Pagar.me pede para nunca deixar (arrasta o saldo do master e pode travar estorno). Quando a leitura do gateway vem abaixo de zero, Recebedores mostra um alerta no topo com as empresas e o buraco somado, a linha fica em vermelho com o selo "Saldo negativo", e a conta da empresa abre com o alerta: o Manager lê o efeito no master, o parceiro lê que as próximas vendas cobrem antes de qualquer saque (`negativeRecipientAlert`) |
 | Transferência automática | Desligada em todo recebedor (`transfer_enabled = false`, default global `payout_transfer_enabled = 'false'` no create). Desde 17/09/2026 o diálogo de repasse não oferece mais ligar, recorrência nem dia; o Operator perdeu o botão "Configurar recebimento" |
 
-`payout_withdrawable(company)`:
+`payout_withdrawable(company)` (desde 17/09/2026 a fração estornada pelo master conta como
+liberada na hora, migration `20261120170000`: o dinheiro já ficou com o parceiro e virou dívida,
+então não há o que reter; sem isso uma venda cancelada aparecia em "Retido pelo prazo"):
 
 ```
 liberado    = Σ líquido das vendas com paid_at + N dias <= agora e partner_release_at <= agora

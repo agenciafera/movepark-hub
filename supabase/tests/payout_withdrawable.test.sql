@@ -3,7 +3,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(14);
+select plan(15);
 
 select is((select value from public.app_setting where key = 'payout_release_days'), '30', 'prazo global nasce em 30 dias');
 select has_column('public', 'company', 'payout_release_days', 'company.payout_release_days existe');
@@ -40,6 +40,12 @@ begin
     values (b3,'MP-WD-3',cust,loc,now() - interval '50 days',now() - interval '49 days','cancelled',100);
   insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, split_sent_to_gateway, refund_absorbed_by_master, split, gateway_fee_cents, partner_release_at)
     values (b3,'pagarme','pix','booking',100,'refunded',now() - interval '60 days', now() - interval '55 days', 100, true, true, split_novo, 100, now() - interval '60 days');
+  -- 4: paga há 2 dias e estornada pela Movepark (recebedor sem saldo): o líquido ficou com ele e
+  --    virou dívida; NÃO fica retida pelo prazo, libera na hora (17/09/2026)
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (gen_random_uuid(),'MP-WD-4',cust,loc,now() + interval '10 days',now() + interval '11 days','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, split_sent_to_gateway, refund_absorbed_by_master, split, gateway_fee_cents, partner_release_at)
+    values ((select id from public.booking where code = 'MP-WD-4'),'pagarme','pix','booking',100,'refunded',now() - interval '2 days', now() - interval '1 day', 100, true, true, split_novo, 100, now() - interval '2 days');
   -- saque anterior de 1000 + taxa 367
   insert into public.payout_withdrawal(company_id, provider, external_transfer_id, external_recipient_id, amount_cents, fee_cents, status, paid_at)
     values (cid, 'pagarme', 'tr_wd_1', 're_wd_p', 1000, 367, 'paid', now() - interval '10 days');
@@ -57,20 +63,23 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
 select is(public.payout_release_days(current_setting('test.cid')::uuid), 30, 'sem override, vale o global');
--- liberadas: venda 1 (7900) + venda 3 (7900, o dinheiro ficou com ele); retida: venda 2 (7900)
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'released_cents')::int, 15800, 'liberado = vendas fora do prazo, líquidas');
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'retained_cents')::int, 7900, 'retido = venda dentro do prazo');
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'debt_cents')::int, 8000, 'dívida do estorno absorvido');
--- disponível = 15800 − 8000 − 1367 = 6433, e o gateway (20000) cobre
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'available_cents')::int, 6433, 'disponível = liberado − dívida − saques');
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'max_withdraw_cents')::int, 6433,
+-- liberadas: venda 1 (7900) + venda 3 (7900, o dinheiro ficou com ele) + venda 4 (7900, estornada
+-- pelo master há 2 dias: libera na hora); retida: só a venda 2 (7900)
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'released_cents')::int, 23700, 'liberado = vendas fora do prazo, líquidas, mais a estornada pelo master');
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'retained_cents')::int, 7900, 'retido = só a venda paga dentro do prazo');
+select isnt((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'retained_cents')::int, 15800, 'venda estornada pelo master de 2 dias não fica retida');
+-- dívida líquida da taxa: (8000 − 100) × 2 vendas absorvidas
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'debt_cents')::int, 15800, 'dívida dos dois estornos absorvidos, líquida da taxa');
+-- disponível = 23700 − 15800 − 1367 = 6533, e o gateway (20000) cobre
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'available_cents')::int, 6533, 'disponível = liberado − dívida − saques');
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'max_withdraw_cents')::int, 6533,
   'o máximo do pedido é o disponível inteiro: a taxa só é cobrada no saque (e entra pelos saques feitos)');
 select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'withdrawal_fee_cents')::int,
   (select nullif(trim(value), '')::int from public.app_setting where key = 'payout_withdrawal_fee_cents'),
   'a taxa por saque vem informativa, para a tela');
 -- override por empresa: prazo 3 dias libera a venda 2 também
 select lives_ok(format('select public.company_set_payout_release_days(%L::uuid, 3)', current_setting('test.cid')), 'hub_admin muda o prazo da empresa');
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'available_cents')::int, 14333, 'com prazo 3, a venda de 5 dias entra: 23700 − 8000 − 1367');
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid) ->> 'available_cents')::int, 14433, 'com prazo 3, a venda de 5 dias entra: 31600 − 15800 − 1367');
 reset role;
 
 -- teto físico: se o gateway tem menos, vale o gateway

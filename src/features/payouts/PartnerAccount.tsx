@@ -176,6 +176,11 @@ export function PartnerAccount({
             ) : (
               <div className="text-caption text-muted">liberado pelo prazo, já descontados dívida e saques</div>
             )}
+            {(h?.debt_cents ?? 0) > 0 && (
+              <div className="text-caption text-error" data-testid="conta-divida-abate">
+                dívida de {brl(h!.debt_cents)} abate antes de liberar qualquer saque
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
