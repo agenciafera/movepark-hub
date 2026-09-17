@@ -6,14 +6,15 @@ import { useRefreshGatewayBalances } from "./api";
  * Edge `refresh-recipients` uma leitura forçada (relê o que tem mais de 30 s) e expõe o botão
  * "Atualizar saldos". O cron de 15 min continua por trás para quem não está olhando.
  */
-export function useAutoRefreshBalances() {
+export function useAutoRefreshBalances(enabled = true) {
   const refresh = useRefreshGatewayBalances();
   const disparou = React.useRef(false);
   const { mutate } = refresh;
   React.useEffect(() => {
-    if (disparou.current) return;
+    // Só hub_admin pode forçar a leitura (a Edge recusa o resto); o parceiro nem tenta.
+    if (!enabled || disparou.current) return;
     disparou.current = true;
     mutate();
-  }, [mutate]);
+  }, [mutate, enabled]);
   return refresh;
 }

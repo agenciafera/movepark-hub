@@ -103,7 +103,7 @@ export default function OperatorFinance() {
       />
 
       {/* Conta do estacionamento (E0.3.7): o mesmo extrato que a Movepark vê. */}
-      <PartnerAccount companyId={companyId} canWithdraw={canConfigurePayout} canRefund={false} />
+      <PartnerAccount companyId={companyId} canWithdraw={canConfigurePayout} canRefund={false} showGateway={false} />
 
       {/* Saldo + status do recebedor */}
       <div className="grid gap-4 tablet:grid-cols-3">

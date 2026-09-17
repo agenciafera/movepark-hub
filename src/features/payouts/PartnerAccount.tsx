@@ -54,18 +54,25 @@ export function PartnerAccount({
   companyId,
   canWithdraw,
   canRefund,
+  showGateway = true,
 }: {
   companyId: string;
   /** hub_admin ou Dono (`payouts:write`): mostra o botão Repassar. */
   canWithdraw: boolean;
   /** Só hub_admin: "Estornar" leva ao cancelamento com estorno da reserva. */
   canRefund: boolean;
+  /**
+   * Só o Manager vê o saldo bruto da Pagar.me e força a leitura. Para o parceiro (17/09/2026) o
+   * número que vale é o nosso "disponível para saque": o que ele pode tirar é decisão da
+   * Movepark, e mostrar o saldo real do gateway só geraria a pergunta "por que não posso sacar".
+   */
+  showGateway?: boolean;
 }) {
   const months = React.useMemo(() => recentMonths(12), []);
   const [monthKey, setMonthKey] = React.useState(months[0].value);
   const period = months.find((m) => m.value === monthKey) ?? months[0];
   const statement = usePartnerAccountStatement({ companyId, from: period.from, to: period.to });
-  const refresh = useAutoRefreshBalances();
+  const refresh = useAutoRefreshBalances(showGateway);
   const withdraw = useWithdraw();
   const withdrawable = usePayoutWithdrawable(companyId);
   const [withdrawOpen, setWithdrawOpen] = React.useState(false);
@@ -120,17 +127,21 @@ export function PartnerAccount({
     <div className="flex flex-col gap-4" data-testid="partner-account">
       {/* Cabeçalho (E0.3.8): o disponível para saque é o NOSSO número (vendas liberadas pelo prazo,
           menos dívida e saques, limitado ao saldo real). O gateway aparece como referência. */}
-      <div className="grid gap-4 tablet:grid-cols-4">
+      <div className={showGateway ? "grid gap-4 tablet:grid-cols-4" : "grid gap-4 tablet:grid-cols-3"}>
         <Card>
           <CardContent className="p-5">
             <div className="text-caption text-muted">Disponível para saque</div>
             <div className="text-display-sm text-ink" data-testid="conta-disponivel">
               {w ? brl(w.available_cents) : "…"}
             </div>
-            <div className="text-caption text-muted">
-              {h?.available_cents != null ? `no gateway ${brl(h.available_cents)}` : "gateway sem leitura"}
-              {h?.balance_synced_at ? ` · lido em ${formatDateTime(h.balance_synced_at)}` : ""}
-            </div>
+            {showGateway ? (
+              <div className="text-caption text-muted" data-testid="conta-gateway">
+                {h?.available_cents != null ? `no gateway ${brl(h.available_cents)}` : "gateway sem leitura"}
+                {h?.balance_synced_at ? ` · lido em ${formatDateTime(h.balance_synced_at)}` : ""}
+              </div>
+            ) : (
+              <div className="text-caption text-muted">liberado pelo prazo, já descontados dívida e saques</div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -142,15 +153,17 @@ export function PartnerAccount({
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-5">
-            <div className="text-caption text-muted">A liberar pelo gateway</div>
-            <div className="text-display-sm text-ink">{h?.waiting_cents != null ? brl(h.waiting_cents) : "-"}</div>
-            <div className="text-caption text-muted">
-              cartão em 30 dias, PIX na hora · {h ? transferCycleLabel(h) : "-"}
-            </div>
-          </CardContent>
-        </Card>
+        {showGateway && (
+          <Card>
+            <CardContent className="p-5">
+              <div className="text-caption text-muted">A liberar pelo gateway</div>
+              <div className="text-display-sm text-ink">{h?.waiting_cents != null ? brl(h.waiting_cents) : "-"}</div>
+              <div className="text-caption text-muted">
+                cartão em 30 dias, PIX na hora · {h ? transferCycleLabel(h) : "-"}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardContent className="p-5">
             <div className="text-caption text-muted">Dívida com a Movepark</div>
@@ -179,17 +192,19 @@ export function PartnerAccount({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="gap-1"
-            onClick={() => refresh.mutate()}
-            disabled={refresh.isPending}
-            aria-label="Atualizar saldos do gateway"
-          >
-            <ArrowsClockwise className={refresh.isPending ? "animate-spin" : undefined} />
-            {refresh.isPending ? "Lendo o gateway…" : "Atualizar saldos"}
-          </Button>
+          {showGateway && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1"
+              onClick={() => refresh.mutate()}
+              disabled={refresh.isPending}
+              aria-label="Atualizar saldos do gateway"
+            >
+              <ArrowsClockwise className={refresh.isPending ? "animate-spin" : undefined} />
+              {refresh.isPending ? "Lendo o gateway…" : "Atualizar saldos"}
+            </Button>
+          )}
           {canWithdraw && (
             <Button
               size="sm"

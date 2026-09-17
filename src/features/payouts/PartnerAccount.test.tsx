@@ -28,7 +28,7 @@ const extrato = {
   ],
 };
 
-function monta(props: { canWithdraw: boolean; canRefund: boolean }) {
+function monta(props: { canWithdraw: boolean; canRefund: boolean; showGateway?: boolean }) {
   vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
     data: { session: { access_token: "jwt" } as never },
     error: null,
@@ -42,10 +42,10 @@ function monta(props: { canWithdraw: boolean; canRefund: boolean }) {
       withdrawal_fee_cents: 367, max_withdraw_cents: 2120,
     },
   });
-  edge("refresh-recipients", { json: { ok: true } });
+  const refresh = edge("refresh-recipients", { json: { ok: true } });
   const saque = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", requested_cents: 5000, amount_cents: 4633, fee_cents: 367 } });
   renderWithProviders(<PartnerAccount companyId="c1" {...props} />);
-  return { saque };
+  return { saque, refresh };
 }
 
 describe("PartnerAccount", () => {
@@ -99,5 +99,14 @@ describe("PartnerAccount", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: "Passar do teto" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
     await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000, force: true }));
+  });
+
+  it("para o parceiro (showGateway=false) não há saldo da Pagar.me, nem Atualizar saldos, nem leitura forçada", async () => {
+    const { refresh } = monta({ canWithdraw: true, canRefund: false, showGateway: false });
+    expect(await screen.findByTestId("conta-disponivel")).toHaveTextContent("R$ 21,20");
+    expect(screen.queryByTestId("conta-gateway")).not.toBeInTheDocument();
+    expect(screen.queryByText("A liberar pelo gateway")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Atualizar saldos do gateway" })).not.toBeInTheDocument();
+    expect(refresh.chamadas).toHaveLength(0);
   });
 });

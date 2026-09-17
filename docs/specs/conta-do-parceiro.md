@@ -66,6 +66,10 @@ conciliação atualizam o status) e relê o saldo para a tela não mostrar o nú
   (disponível, a liberar, vai para o banco, dívida), o mês de referência, "Atualizar saldos"
   (leitura forçada no gateway), **Repassar para o banco** e, na linha da venda, **Estornar**.
 - **Operator › Financeiro**: o mesmo componente no topo, sem Estornar; Repassar só para o Dono.
+  **Sem o saldo da Pagar.me** (17/09/2026): o parceiro não vê o saldo bruto do recebedor, o
+  cartão "a liberar pelo gateway" nem o botão "Atualizar saldos", e a tela não força leitura no
+  gateway. O que ele pode tirar é o nosso "disponível para saque"; mostrar o saldo real só
+  geraria a pergunta "por que não posso sacar". Manager continua vendo tudo (`showGateway`).
 
 ## Testes
 
