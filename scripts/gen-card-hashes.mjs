@@ -5,6 +5,8 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const INDEX = "public/.well-known/agent-skills/index.json";
 
