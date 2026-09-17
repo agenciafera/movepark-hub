@@ -6,6 +6,9 @@
 > pós-reserva E2.8-d) implementado. A config por unidade (E2.8-f) foi **removida** em 23/07: a tarifa é
 > fonte única global, editada pelo Super Admin em `/manager/tarifas` (ver seção E2.8-f abaixo).
 
+> **Como cada benefício opera na prática** (quem aciona, onde se configura, o que ainda não
+> existe e o plano de adequação): [tarifas-operacao.md](./tarifas-operacao.md).
+
 ## O que é (e o que não é)
 
 A **Tarifa** é a flexibilidade da **própria reserva**, vendida no checkout no padrão good-better-best
