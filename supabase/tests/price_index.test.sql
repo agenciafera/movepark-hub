@@ -7,7 +7,7 @@
 -- deixar de ter uma entrada por duração pedida, o front quebra a tabela em silêncio.
 
 begin;
-select plan(20);
+select plan(23);
 
 -- ── Existência e superfície ──────────────────────────────────────────────────
 
@@ -165,7 +165,41 @@ select is(
   (select price_updated_at from public.destination_price_freshness('pgtap-indice-destino')),
   (select max((u ->> 'price_updated_at')::timestamptz)
      from jsonb_array_elements(pg_temp.idx() -> 'destinations' -> 0 -> 'units') u),
-  'o carimbo é o mesmo max(pricing_rule.updated_at) que o índice publica');
+  'o carimbo é a mesma data de mudança que o índice publica');
+
+select is(
+  (select price_verified_at from public.destination_price_freshness('pgtap-indice-destino')),
+  (select max((u ->> 'price_verified_at')::timestamptz)
+     from jsonb_array_elements(pg_temp.idx() -> 'destinations' -> 0 -> 'units') u),
+  'a data de conferência também sai igual nas duas funções');
+
+-- ── O carimbo mede MUDANÇA, não o batimento do robô (Conteúdo 29) ────────────
+--
+-- O espelhamento (`wl-price-mirror`) reescreve `mirror_verified_at` de 3 em 3 horas mesmo
+-- quando o preço não muda, e o `set_updated_at` empurra `updated_at` junto. Enquanto o carimbo
+-- saía de `updated_at`, ele dizia "hoje" todo dia, em todas as praças: em 17/09/2026 as seis
+-- praças carimbavam a data do dia com a tabela de Viracopos parada desde 10/08.
+--
+-- Este par simula uma passada que NÃO achou preço novo: só a conferência avança.
+
+update public.pricing_rule
+   set mirror_source = 'wl_sampling',
+       mirror_sampled_at = now() - interval '30 days',
+       mirror_verified_at = now()
+ where location_parking_type_id in (
+   select lpt.id from public.location_parking_type lpt
+   join public.location l on l.id = lpt.location_id
+   where l.slug = 'pgtap-indice-unidade');
+
+select ok(
+  (select price_updated_at from public.destination_price_freshness('pgtap-indice-destino'))
+    < now() - interval '29 days',
+  'passada que não achou preço novo NÃO rejuvenesce o carimbo');
+
+select ok(
+  (select price_verified_at from public.destination_price_freshness('pgtap-indice-destino'))
+    > now() - interval '1 minute',
+  'a conferência recente aparece, mas na coluna dela');
 
 select is((
   select count(*)::int from public.destination_price_freshness()

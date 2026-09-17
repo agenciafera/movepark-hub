@@ -5938,6 +5938,7 @@ export type Database = {
         Returns: {
           destination_slug: string
           price_updated_at: string
+          price_verified_at: string
         }[]
       }
       destination_price_index: {

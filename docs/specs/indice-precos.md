@@ -242,21 +242,40 @@ sem ninguém editar texto.
 | Post do blog que publica preço | "Preços conferidos no motor de reservas em <data>", no cabeçalho, com link para a tabela de hoje | `BlogPosting.dateModified` = a data mais recente entre a edição do texto e essa tabela |
 | `blog/<slug>.md` (gêmeo que a IA lê) | Linha "Preços conferidos no motor de reservas em" no cabeçalho | (o gêmeo não emite JSON-LD) |
 
-O dado sai da RPC `destination_price_freshness(p_destination)`
-(migration `20261120190000_carimbo_de_frescor_do_preco.sql`), que devolve
-`max(pricing_rule.updated_at)` por destino publicado **com o mesmo corte do
-`destination_price_index`**. São duas funções porque o índice roda o motor de preço inteiro
-para montar a matriz, e o post só precisa da data: pagar a matriz em cada um dos 95 loaders
-do build seria caro à toa. O pgTAP de `price_index.test.sql` tranca a igualdade entre as
-duas, para elas nunca datarem a página por tabelas diferentes.
+O dado sai da RPC `destination_price_freshness(p_destination)`, que devolve **duas** datas por
+destino publicado, **com o mesmo corte do `destination_price_index`**. São duas funções porque o
+índice roda o motor de preço inteiro para montar a matriz, e o post só precisa da data: pagar a
+matriz em cada um dos 95 loaders do build seria caro à toa. O pgTAP de `price_index.test.sql`
+tranca a igualdade entre as duas, para elas nunca datarem a página por tabelas diferentes.
+
+### As duas datas não são a mesma coisa (corrigido no Conteúdo 29)
+
+| Coluna | O que é | De onde sai |
+| --- | --- | --- |
+| `price_updated_at` | O dia em que a tabela do parceiro **mudou** | `mirror_sampled_at`, que o espelhamento só reescreve quando o fingerprint da regra muda. Na regra nativa, `updated_at` |
+| `price_verified_at` | O dia em que a gente **conferiu** pela última vez | `mirror_verified_at`, reescrito em toda passada do `wl-price-mirror` |
+
+**O defeito que isso conserta** (migration `20261120230000_carimbo_mede_mudanca_nao_batimento.sql`):
+o carimbo saía de `max(pricing_rule.updated_at)`, e `updated_at` não é a data da tabela. O
+`wl-price-mirror` roda de 3 em 3 horas e reescreve `mirror_verified_at = now()` em **toda**
+passada, inclusive quando o preço não mudou; o trigger `set_updated_at_pricing_rule` empurra
+`updated_at` junto. Medido em 17/09/2026, antes do conserto: as seis praças precificadas
+carimbavam "17/09/2026", enquanto a última mudança real de Viracopos era **10/08**, a de Afonso
+Pena **10/08** e a do Tietê **12/08**. No dia seguinte todas carimbariam 18/09, e assim para
+sempre. O número publicado era a hora do último cron, não a idade do preço, e ele vazava junto
+para o `dateModified` do schema, que é exatamente o frescor inventado que esta seção existe para
+impedir.
+
+Tabela parada há um mês não está desatualizada: está **confirmada**. Quem publica escolhe qual
+das duas datas mostra, e a /metodologia mostra as duas lado a lado, com o nome certo em cada uma.
 
 Duas regras que evitam frescor inventado:
 
 - **Só post que publica preço ganha carimbo** (`publicaPreco`, valor em reais no corpo). Num
   guia de aeroporto sem tabela a linha seria ruído, e o `dateModified` passaria a se mexer a
   cada revisão de parceiro em post que não fala de preço.
-- **O carimbo é cortado no dia.** A tabela é tocada várias vezes por dia pela sincronização,
-  e o visitante lê data, não hora. Cortar no dia faz o schema bater exatamente com o texto.
+- **O carimbo é cortado no dia.** O visitante lê data, não hora, e cortar no dia faz o schema
+  bater exatamente com o texto.
 
 A página se atualiza sozinha porque `pricing_rule` já tem trigger `site_rebuild` (ver
 [deploy-automatico.md](./deploy-automatico.md)): preço novo enfileira rebuild, o build

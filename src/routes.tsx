@@ -67,7 +67,7 @@ import ContatoPage from "@/routes/contato";
 import AjudaPage from "@/routes/ajuda";
 import CancelamentoPage from "@/routes/cancelamento";
 import ComoFuncionaPage from "@/routes/como-funciona";
-import MetodologiaPage from "@/routes/metodologia";
+import MetodologiaPage, { type MetodologiaData } from "@/routes/metodologia";
 import EstacionamentoMaisBaratoPage from "@/routes/estacionamento-mais-barato";
 
 import AccountIndexPage from "@/routes/account/index";
@@ -694,6 +694,38 @@ async function fetchAllFaqPaths(): Promise<string[]> {
 }
 
 /**
+ * Metodologia (/metodologia): a tabela de "quando cada tabela mudou" sai do
+ * banco, pelo mesmo `destination_price_freshness` que carimba o preço no resto
+ * do site. São duas datas por destino, e elas são coisas diferentes: a mudança
+ * da tabela do parceiro e a última conferência do espelhamento, que roda de 3
+ * em 3 horas. Falhou no build, a seção perde a tabela e mantém a explicação.
+ */
+async function metodologiaLoader(): Promise<MetodologiaData> {
+  const { data, error } = await supabase.rpc("destination_price_freshness", {
+    p_destination: undefined,
+  });
+  if (error || !data) return { frescor: [] };
+
+  const { data: destinos } = await supabase
+    .from("destination")
+    .select("slug, short_name, name")
+    .eq("is_published", true);
+  const nomes = new Map((destinos ?? []).map((d) => [d.slug, d.short_name ?? d.name]));
+
+  return {
+    frescor: data
+      // Destino sem nome publicado ficaria como slug cru na tela.
+      .filter((f) => nomes.has(f.destination_slug))
+      .map((f) => ({
+        slug: f.destination_slug,
+        nome: nomes.get(f.destination_slug) as string,
+        mudouEm: f.price_updated_at,
+        conferidaEm: f.price_verified_at,
+      })),
+  };
+}
+
+/**
  * Índice de preços (/precos): a matriz 1/7/15/30 dos destinos precificados sai
  * do motor numa chamada só (RPC destination_price_index), e o catálogo inteiro
  * de aeroportos publicados entra junto, com os lotes mapeados de cada um
@@ -848,7 +880,7 @@ export const routes: RouteRecord[] = [
           // Descadastro de marketing pelo link do e-mail. Público e sem login de propósito.
           { path: "/descadastro", element: <DescadastroPage /> },
           { path: "/como-funciona", element: <ComoFuncionaPage /> },
-          { path: "/metodologia", element: <MetodologiaPage /> },
+          { path: "/metodologia", element: <MetodologiaPage />, loader: metodologiaLoader },
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/selo", element: <SeloPage /> },

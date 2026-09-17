@@ -1,28 +1,46 @@
+import * as React from "react";
+import { useLoaderData } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ContentPageView } from "@/features/content/ContentPageView";
 import { METODOLOGIA, RELACIONADOS } from "@/features/content/pages";
+import { comFrescorVivo, type FrescorDestino } from "@/features/content/metodologia.logic";
 import { readingMinutes } from "@/features/content/types";
 import { siteUrl } from "@/lib/site";
+
+export type MetodologiaData = {
+  /** Uma linha por destino precificado, do `destination_price_freshness`. */
+  frescor: FrescorDestino[];
+};
 
 /**
  * Metodologia: a página de confiança que sustenta a citação. Buscador e LLM
  * decidem quem citar olhando se o número tem origem declarada; aqui a origem
  * é o motor de reservas, e isso está escrito preto no branco.
+ *
+ * A tabela de datas vem do loader, não do arquivo de conteúdo: é a única seção
+ * que envelheceria sozinha, e ela é justamente a que promete não envelhecer.
+ * Sem dado (RPC fora do ar no build), a prosa da seção fica de pé sem a tabela.
  */
 export default function MetodologiaPage() {
+  const data = useLoaderData() as MetodologiaData | null;
   const p = METODOLOGIA;
+  const sections = React.useMemo(
+    () => comFrescorVivo(p.sections, data?.frescor ?? []),
+    [p.sections, data],
+  );
+
   return (
     <>
       <Helmet>
-        <title>Metodologia: de onde vêm os preços da Movepark</title>
+        <title>Metodologia: de onde vem cada número da Movepark</title>
         <meta
           name="description"
-          content="Os preços do site saem do motor de reservas, os mesmos do checkout. Como ordenamos resultados, o que é parceiro e mapeado, e de onde vêm as avaliações."
+          content="A fonte de cada dado do site, campo a campo: preço do motor de reservas, distância medida em PostGIS, traslado declarado pelo parceiro e a data em que cada tabela mudou."
         />
-        <meta property="og:title" content="Metodologia: de onde vêm os preços da Movepark" />
+        <meta property="og:title" content="Metodologia: de onde vem cada número da Movepark" />
         <meta
           property="og:description"
-          content="Como a Movepark coleta, calcula e atualiza os preços do índice: fonte, frequência e regra de arredondamento, com o mesmo motor do checkout."
+          content="Preço, distância, traslado e piso de permanência: qual é a origem de cada um, o que a Movepark não publica e por quê, e com que frequência cada tabela muda."
         />
         <meta property="og:type" content="article" />
         <meta property="og:url" content={siteUrl("/metodologia")} />
@@ -34,8 +52,8 @@ export default function MetodologiaPage() {
         title={p.title}
         intro={p.intro}
         updated={p.updated}
-        readMinutes={readingMinutes(p.sections)}
-        sections={p.sections}
+        readMinutes={readingMinutes(sections)}
+        sections={sections}
         related={p.related.map((slug) => RELACIONADOS[slug]).filter(Boolean)}
       />
     </>

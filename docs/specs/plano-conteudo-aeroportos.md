@@ -369,6 +369,22 @@ publicada hoje**, então nada disso mostra número: o que destrava é a coleta (
 exibição acende sozinha, sem deploy. Regra completa em [reviews.md](./reviews.md) §1b.
 | Metodologia aberta | Página explicando de onde vem cada número e com que frequência muda | A coleta à mão do xpark |
 
+#### A /metodologia declara proveniência campo a campo (Conteúdo 29)
+
+Entregue em 17/09/2026. A página existia desde agosto com prosa genérica ("os preços saem do motor"),
+que não é verificável e por isso não serve de prova. Agora ela declara a origem de cada dado numa
+tabela (preço e balcão, distância, traslado, piso de permanência, data da tabela), diz o que **não**
+publica e por quê (lote sem contrato não tem tarifa, ADR-010) e mostra, por praça, quando a tabela
+mudou e quando foi conferida.
+
+A tabela de datas **nasce do banco**, no loader da rota, pela mesma RPC que carimba o preço no resto
+do site. Data escrita à mão dentro de uma página que promete dizer quando cada número mudou seria a
+primeira coisa a envelhecer, e a mais cara de perder.
+
+**O que a construção encontrou:** o carimbo de frescor do Conteúdo 26 media o batimento do robô, não
+a idade do preço. Foi consertado no mesmo commit, porque a página certifica essa origem. Ver
+[`indice-precos.md`](./indice-precos.md), seção "As duas datas não são a mesma coisa".
+
 ### Fase 4: a cauda longa órfã (semanas 15 a 20)
 
 O terreno continua vazio e fica barato de ocupar depois que a cabeça estiver de pé. São 189 termos
