@@ -148,15 +148,14 @@ describe("PrecosDestinoPage", () => {
     const lista = await waitFor(() => {
       const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
         .map((s) => JSON.parse(s.textContent ?? "{}"))
-        .find((d) => d["@type"] === "ItemList");
+        .find((d) => Array.isArray(d) && d[0]?.["@type"] === "Product");
       expect(achado).toBeDefined();
-      return achado as { itemListElement: { item: { image?: string[] } }[] };
+      return achado as { image?: string[] }[];
     });
-    const itens = lista.itemListElement;
-    expect(itens[0].item.image).toEqual([
+    expect(lista[0].image).toEqual([
       "https://movepark.co/Estacionamentos/aerovalet/guarulhos/capa.webp",
     ]);
-    expect(itens.every((i) => i.item.image)).toBe(true);
+    expect(lista.every((p) => p.image)).toBe(true);
   });
 
   it("carimba a validade do preço e a escada de diária por janela", async () => {
@@ -166,24 +165,20 @@ describe("PrecosDestinoPage", () => {
     const lista = await waitFor(() => {
       const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
         .map((s) => JSON.parse(s.textContent ?? "{}"))
-        .find((d) => d["@type"] === "ItemList");
+        .find((d) => Array.isArray(d) && d[0]?.["@type"] === "Product");
       expect(achado).toBeDefined();
       return achado as {
-        itemListElement: {
-          item: {
-            offers: {
-              validFrom: string;
-              priceValidUntil: string;
-              lowPrice: string;
-              highPrice: string;
-              priceSpecification: { price: string; eligibleQuantity: { minValue: number } }[];
-            };
-          };
-        }[];
-      };
+        offers: {
+          validFrom: string;
+          priceValidUntil: string;
+          lowPrice: string;
+          highPrice: string;
+          priceSpecification: { price: string; eligibleQuantity: { minValue: number } }[];
+        };
+      }[];
     });
 
-    const offers = lista.itemListElement[0].item.offers;
+    const offers = lista[0].offers;
     // Conferido em 14/08/2026; o número vale por 90 dias a partir daí.
     expect(offers.validFrom).toBe("2026-08-14");
     expect(offers.priceValidUntil).toBe("2026-11-12");
@@ -223,11 +218,11 @@ describe("PrecosDestinoPage", () => {
     const lista = await waitFor(() => {
       const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
         .map((s) => JSON.parse(s.textContent ?? "{}"))
-        .find((d) => d["@type"] === "ItemList");
+        .find((d) => Array.isArray(d) && d[0]?.["@type"] === "Product");
       expect(achado).toBeDefined();
-      return achado as { itemListElement: unknown[] };
+      return achado as unknown[];
     });
-    expect(lista.itemListElement).toHaveLength(1);
+    expect(lista).toHaveLength(1);
     expect(JSON.stringify(lista)).not.toContain("Infinity");
     expect(JSON.stringify(lista)).not.toContain("Sem Preço");
   });

@@ -937,6 +937,7 @@ describe("priceTableOffersSchema", () => {
   });
 
   type Produto = {
+    "@context"?: string;
     "@type": string;
     name: string;
     url: string;
@@ -954,13 +955,13 @@ describe("priceTableOffersSchema", () => {
   };
 
   const produtos = (s: ReturnType<typeof priceTableOffersSchema>) =>
-    (s?.itemListElement ?? []).map((e) => e.item as unknown as Produto);
+    (s ?? []) as unknown as Produto[];
 
   it("publica um Product com AggregateOffer por linha da tabela", () => {
     const s = priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM });
-    expect(s?.["@type"]).toBe("ItemList");
-    expect(s?.numberOfItems).toBe(1);
+    expect(s).toHaveLength(1);
     const [p] = produtos(s);
+    expect(p["@context"]).toBe("https://schema.org");
     expect(p["@type"]).toBe("Product");
     expect(p.name).toBe("Aerovalet · Vaga Descoberta");
     expect(p.offers.priceCurrency).toBe("BRL");
@@ -1027,7 +1028,7 @@ describe("priceTableOffersSchema", () => {
       ],
       generatedAt: GERADO_EM,
     });
-    expect(s?.numberOfItems).toBe(1);
+    expect(s).toHaveLength(1);
     expect(JSON.stringify(s)).not.toContain("Sem Preço");
   });
 
@@ -1069,8 +1070,8 @@ describe("priceTableOffersSchema", () => {
       generatedAt: GERADO_EM,
     });
 
-    expect(s?.numberOfItems).toBe(1);
-    const urls = (s?.itemListElement ?? []).map((e) => e.url);
+    expect(s).toHaveLength(1);
+    const urls = produtos(s).map((p) => p.url);
     expect(new Set(urls).size).toBe(urls.length);
 
     const [p] = produtos(s);
@@ -1084,19 +1085,29 @@ describe("priceTableOffersSchema", () => {
     expect(p.offers.priceSpecification).toBeUndefined();
   });
 
-  it("o ListItem carrega url e name, que é como o Google identifica o item", () => {
-    const s = priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM });
-    expect(s?.itemListElement[0]).toMatchObject({
-      url: "https://movepark.co/estacionamentos/aeroporto-guarulhos/aerovalet",
-      name: "Aerovalet",
-    });
-  });
-
-  it("posição segue a ordem da tabela", () => {
+  /**
+   * O invólucro `ItemList` saiu em 17/09/2026: o teste de resultados ricos o lê como
+   * tentativa de carrossel, que só existe para Course, Movie, Recipe e Restaurant, e
+   * reprovava a página inteira com os produtos válidos ao lado.
+   */
+  it("é uma lista de Product, sem invólucro de ItemList", () => {
     const s = priceTableOffersSchema({
       itens: [item(), item({ name: "Aeropark", url: "/estacionamentos/aeroporto-guarulhos/aeropark" })],
       generatedAt: GERADO_EM,
     });
-    expect(s?.itemListElement.map((e) => e.position)).toEqual([1, 2]);
+    expect(Array.isArray(s)).toBe(true);
+    expect(JSON.stringify(s)).not.toContain("ItemList");
+    expect(produtos(s).map((p) => p["@type"])).toEqual(["Product", "Product"]);
+  });
+
+  it("a ordem do array é a ordem da tabela", () => {
+    const s = priceTableOffersSchema({
+      itens: [item(), item({ name: "Aeropark", url: "/estacionamentos/aeroporto-guarulhos/aeropark" })],
+      generatedAt: GERADO_EM,
+    });
+    expect(produtos(s).map((p) => p.name)).toEqual([
+      "Aerovalet · Vaga Descoberta",
+      "Aeropark · Vaga Descoberta",
+    ]);
   });
 });

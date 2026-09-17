@@ -168,35 +168,26 @@ describe("EstacionamentoMaisBaratoPage", () => {
     const lista = await waitFor(() => {
       const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
         .map((s) => JSON.parse(s.textContent ?? "{}"))
-        .find(
-          (d) =>
-            d["@type"] === "ItemList" &&
-            d.itemListElement?.[0]?.item?.["@type"] === "Product",
-        );
+        .find((d) => Array.isArray(d) && d[0]?.["@type"] === "Product");
       expect(achado).toBeDefined();
       return achado as {
-        numberOfItems: number;
-        itemListElement: {
-          item: {
-            name: string;
-            image?: string[];
-            offers: { lowPrice: string; offerCount: number; priceValidUntil?: string };
-          };
-        }[];
-      };
+        name: string;
+        image?: string[];
+        offers: { lowPrice: string; offerCount: number; priceValidUntil?: string };
+      }[];
     });
 
     // Virapark descoberta, Garageinn descoberta e Virapark coberta: três vagas, não quatro
     // linhas de ranking.
-    expect(lista.numberOfItems).toBe(3);
-    const nomes = lista.itemListElement.map((e) => e.item.name);
+    expect(lista).toHaveLength(3);
+    const nomes = lista.map((p) => p.name);
     expect(nomes).toEqual([
       "Virapark · Vaga Descoberta",
       "Garageinn · Vaga Descoberta",
       "Virapark · Vaga Coberta",
     ]);
 
-    const vencedor = lista.itemListElement[0].item;
+    const vencedor = lista[0];
     expect(vencedor.offers.lowPrice).toBe("40.00");
     expect(vencedor.offers.offerCount).toBe(1);
     expect(vencedor.offers.priceValidUntil).toBe("2026-12-15");

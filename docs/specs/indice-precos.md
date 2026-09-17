@@ -88,11 +88,16 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
 
 - Title/H1 com a consulta ("Preços de estacionamento em Guarulhos (GRU): diária, 7, 15
   e 30 dias"); meta description derivada do dado (menor diária + 7 dias).
-- JSON-LD: `BreadcrumbList` + `ItemList` de `Product` com `AggregateOffer` por vaga, nas
-  **três** páginas de preço (`/precos`, `/precos/<slug>` e
+- JSON-LD: `BreadcrumbList` + uma **lista de `Product`** com `AggregateOffer` por
+  estacionamento, nas **três** páginas de preço (`/precos`, `/precos/<slug>` e
   `/estacionamento-mais-barato/<slug>`), de uma função só: `priceTableOffersSchema`, em
   `src/lib/jsonld.ts` (testes em `jsonld.test.ts`). O índice mantém, ao lado, o `ItemList`
   de links das páginas e o `Dataset`. O que o bloco publica e o que ele cala:
+  - **Array de `Product`, sem invólucro de `ItemList`.** O teste de resultados ricos lê um
+    `ItemList` como tentativa de **carrossel**, que só existe para Course, Movie, Recipe e
+    Restaurant, e reprovava a página com "Carousels: 1 invalid item" mesmo com os produtos
+    válidos ao lado (medido em 16/09/2026). Vários produtos num `script` só é o formato que
+    o Google documenta para página que lista produtos, e a ordem do array é a da tabela.
   - `lowPrice`/`highPrice` são o menor e o maior **total** da linha, que é o número que a
     célula mostra; `priceSpecification` traz a **escada** (`UnitPriceSpecification` com a
     diária de cada janela e o `eligibleQuantity` de dias em que ela vale).
@@ -111,10 +116,11 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
   - **Uma entrada por URL.** A tabela tem uma linha por vaga e a ficha é do lote, então
     coberta e descoberta do mesmo estacionamento viram um `Product` só, com a faixa
     cobrindo as duas tabelas e sem a escada (duas tabelas dariam dois preços para a mesma
-    janela). O `ListItem` carrega `url` e `name`. Medido no teste de resultados ricos de
-    16/09/2026: com a linha por vaga, Guarulhos saía com "Carousels: 1 invalid item ·
-    Identical property values given, but unique values are required", e a página do destino
-    publicava 19 itens para 15 fichas. O guard `bun run lint:schema` passou a reprovar URL
+    janela). Dois `Product` com a mesma URL são a mesma entidade dita duas vezes; no
+    formato de lista o Google chegava a reprovar com "Identical property values given, but
+    unique values are required", e a página do destino publicava 19 itens para 15 fichas.
+    O `destinationOffersSchema` (que segue em `ItemList`, porque mistura parceiro e lote
+    mapeado) recebeu a mesma junção, e o guard `bun run lint:schema` passou a reprovar URL
     repetida em `ItemList`.
   - A página do destino (`/estacionamentos/<slug>`) usa o `destinationOffersSchema`, que é
     outro bloco (mistura parceiro e lote mapeado), e ganhou a mesma validade.

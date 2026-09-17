@@ -283,34 +283,25 @@ describe("PrecosPage", () => {
     const produtos = await waitFor(() => {
       const achado = [...document.querySelectorAll('script[type="application/ld+json"]')]
         .map((s) => JSON.parse(s.textContent ?? "{}"))
-        .find(
-          (d) =>
-            d["@type"] === "ItemList" &&
-            d.itemListElement?.[0]?.item?.["@type"] === "Product",
-        );
+        .find((d) => Array.isArray(d) && d[0]?.["@type"] === "Product");
       expect(achado).toBeDefined();
       return achado as {
-        numberOfItems: number;
-        itemListElement: {
-          item: {
-            name: string;
-            url: string;
-            image?: string[];
-            offers: {
-              lowPrice: string;
-              highPrice: string;
-              offerCount: number;
-              priceValidUntil?: string;
-              availability?: string;
-            };
-          };
-        }[];
-      };
+        name: string;
+        url: string;
+        image?: string[];
+        offers: {
+          lowPrice: string;
+          highPrice: string;
+          offerCount: number;
+          priceValidUntil?: string;
+          availability?: string;
+        };
+      }[];
     });
 
     // Só a vaga de parceiro de Guarulhos tem preço: lote mapeado não vende nada aqui.
-    expect(produtos.numberOfItems).toBe(1);
-    const item = produtos.itemListElement[0].item;
+    expect(produtos).toHaveLength(1);
+    const item = produtos[0];
     expect(item.name).toBe("Aerovalet · Vaga Descoberta");
     expect(item.url).toBe("https://movepark.co/estacionamentos/aeroporto-guarulhos/aerovalet");
     expect(item.image).toEqual([

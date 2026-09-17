@@ -746,32 +746,38 @@ export type PriceTableItem = {
 };
 
 /**
- * A tabela de preço em dado estruturado: um `Product` por linha, com `AggregateOffer`
- * e a escada de tarifa por duração.
+ * A tabela de preço em dado estruturado: um `Product` por estacionamento, com
+ * `AggregateOffer` e a escada de tarifa por duração.
  *
  * Nasceu como função local da página `/precos/<slug>` e subiu para cá em 16/09/2026,
  * quando as outras páginas de preço (o índice `/precos` e a de "mais barato") passaram a
  * precisar do mesmo bloco. Schema de preço em três cópias divergiria na primeira correção;
  * aqui a regra é uma só e tem teste.
  *
- * As três decisões que o bloco carrega:
+ * **Uma lista de `Product`, e não um `ItemList`.** O invólucro de lista era o formato
+ * anterior, e o teste de resultados ricos do Google o lê como tentativa de **carrossel**,
+ * que só existe para Course, Movie, Recipe e Restaurant: a página aparecia com "Carousels:
+ * 1 invalid item" mesmo com os produtos todos válidos ao lado. Um array de `Product` no
+ * mesmo `script` é o formato que o Google documenta para página que lista vários produtos,
+ * e a ordem da tabela continua sendo a ordem do array.
  *
- * - **Linha sem preço em nenhuma duração fica fora da lista.** A página mostra a linha,
- *   porque "consulte na página" é informação; o schema não, porque `Product` sem `offers`
- *   válida o Google reprova como item inválido e derruba a lista inteira junto. Lista sem
- *   nenhum item precificado devolve `null`: `ItemList` vazia também é item inválido.
+ * As decisões que o bloco carrega:
+ *
+ * - **Linha sem preço em nenhuma duração fica de fora.** A página mostra a linha, porque
+ *   "consulte na página" é informação; o schema não, porque `Product` sem `offers` válida o
+ *   Google reprova como item inválido. Nada precificado devolve `null` e o bloco não sai.
+ * - **Uma entrada por URL.** A tabela tem uma linha por VAGA e a ficha é do LOTE, então o
+ *   mesmo estacionamento aparece duas vezes quando tem coberta e descoberta. Dois `Product`
+ *   com a mesma URL são a mesma entidade dita duas vezes (e, no formato de lista, o Google
+ *   reprovava com "Identical property values given, but unique values are required").
+ *   Linhas que dividem a ficha viram um `Product` só, com a faixa cobrindo as duas tabelas;
+ *   aí o nome é o do lote, sem o tipo de vaga, que é o que aquela URL descreve. A escada
+ *   some nesse caso: duas tabelas dariam dois preços para a mesma janela de dias.
  * - **Sem `availability`.** Afirmar `InStock` é prometer vaga garantida, e quem controla o
  *   estoque da unidade externa é o parceiro (ADR-009). O preço é fato da tabela; o estoque
  *   não é nosso para afirmar.
  * - **Sem `aggregateRating`.** A nota é da unidade e mora na página dela. Agregar nota num
  *   item de lista de preço infla estrela em página que não é a do produto.
- * - **Uma entrada por URL.** A tabela tem uma linha por VAGA e a ficha é do LOTE, então o
- *   mesmo estacionamento aparece duas vezes quando tem coberta e descoberta. O teste de
- *   resultados ricos reprova a lista inteira nisso ("Identical property values given, but
- *   unique values are required"), porque para o Google o item da lista é identificado pela
- *   URL. Linhas que dividem a ficha viram um `Product` só, com a faixa cobrindo as duas
- *   tabelas; aí o nome é o do lote, sem o tipo de vaga, que é o que aquela URL descreve.
- *   A escada some nesse caso: duas tabelas dariam dois preços para a mesma janela de dias.
  *
  * `lowPrice`/`highPrice` são o menor e o maior TOTAL da linha, não a diária: é o que a
  * célula mostra. Quem quiser a diária lê a escada, que traz preço por dia com a faixa de
@@ -803,42 +809,31 @@ export function priceTableOffersSchema(args: {
     else porUrl.set(url, [item]);
   }
 
-  return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    numberOfItems: porUrl.size,
-    itemListElement: [...porUrl.entries()].map(([url, grupo], i) => {
-      const primeiro = grupo[0];
-      const duracoes = grupo.flatMap((g) => g.porDuracao);
-      const totais = duracoes.map((d) => d.total);
-      const soUmaTabela = grupo.length === 1;
-      return {
-        "@type": "ListItem",
-        position: i + 1,
-        // `url` no próprio `ListItem` é o que o Google lê para identificar o item da lista;
-        // deixá-lo só no `Product` aninhado faz o item entrar como "Unnamed item".
+  return [...porUrl.entries()].map(([url, grupo]) => {
+    const primeiro = grupo[0];
+    const duracoes = grupo.flatMap((g) => g.porDuracao);
+    const totais = duracoes.map((d) => d.total);
+    const soUmaTabela = grupo.length === 1;
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name:
+        soUmaTabela && primeiro.variant ? `${primeiro.name} · ${primeiro.variant}` : primeiro.name,
+      description: primeiro.description ?? undefined,
+      image: primeiro.image ? [absoluta(primeiro.image)] : undefined,
+      url,
+      offers: {
+        "@type": "AggregateOffer",
+        priceCurrency: "BRL",
+        lowPrice: Math.min(...totais).toFixed(2),
+        highPrice: Math.max(...totais).toFixed(2),
+        offerCount: totais.length,
+        priceSpecification: soUmaTabela ? escadaDePreco(primeiro.porDuracao) : undefined,
+        ...validade,
         url,
-        name: primeiro.name,
-        item: {
-          "@type": "Product",
-          name: soUmaTabela && primeiro.variant ? `${primeiro.name} · ${primeiro.variant}` : primeiro.name,
-          description: primeiro.description ?? undefined,
-          image: primeiro.image ? [absoluta(primeiro.image)] : undefined,
-          url,
-          offers: {
-            "@type": "AggregateOffer",
-            priceCurrency: "BRL",
-            lowPrice: Math.min(...totais).toFixed(2),
-            highPrice: Math.max(...totais).toFixed(2),
-            offerCount: totais.length,
-            priceSpecification: soUmaTabela ? escadaDePreco(primeiro.porDuracao) : undefined,
-            ...validade,
-            url,
-          },
-        },
-      };
-    }),
-  };
+      },
+    };
+  });
 }
 
 /** Lista de itens (coleção), usada na página índice de destinos. */
