@@ -4033,14 +4033,18 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           external_recipient_id: string | null
+          expected_at: string | null
           external_transfer_id: string
+          failure_reason: string | null
           fee_cents: number
+          gateway_status: string | null
           id: string
           paid_at: string | null
           provider: string
           raw: Json | null
           requested_at: string | null
           status: Database["public"]["Enums"]["payout_withdrawal_status"]
+          synced_at: string | null
           updated_at: string
         }
         Insert: {
@@ -4050,12 +4054,16 @@ export type Database = {
           deleted_at?: string | null
           external_recipient_id?: string | null
           external_transfer_id: string
+          expected_at?: string | null
+          failure_reason?: string | null
           fee_cents?: number
+          gateway_status?: string | null
           id?: string
           paid_at?: string | null
           provider?: string
           raw?: Json | null
           requested_at?: string | null
+          synced_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           updated_at?: string
         }
@@ -4066,12 +4074,16 @@ export type Database = {
           deleted_at?: string | null
           external_recipient_id?: string | null
           external_transfer_id?: string
+          expected_at?: string | null
+          failure_reason?: string | null
           fee_cents?: number
+          gateway_status?: string | null
           id?: string
           paid_at?: string | null
           provider?: string
           raw?: Json | null
           requested_at?: string | null
+          synced_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           updated_at?: string
         }

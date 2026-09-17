@@ -3,7 +3,7 @@
 -- finance:read lê. Transação com rollback.
 
 begin;
-select plan(12);
+select plan(15);
 
 select has_column('public', 'payment', 'partner_release_at', 'payment.partner_release_at existe');
 
@@ -41,8 +41,13 @@ begin
     values (b3,'pagarme','pix','booking',100,'refunded','2026-08-04T13:00:00Z','2026-08-05T10:00:00Z',100,'cancelamento (staff)', true, false, 7900, split_novo, 100, '2026-08-04T13:00:00Z');
   -- acerto e saque
   insert into public.payout_debt_settlement(company_id, amount_cents, kind, note, created_at) values (cid, 3000, 'manual_payment', 'pix do dono', '2026-08-07T10:00:00Z');
-  insert into public.payout_withdrawal(company_id, provider, external_transfer_id, external_recipient_id, amount_cents, fee_cents, status, paid_at)
-    values (cid, 'pagarme', 'tr_pa_1', 're_pa_p', 5000, 367, 'paid', '2026-08-06T10:00:00Z');
+  insert into public.payout_withdrawal(company_id, provider, external_transfer_id, external_recipient_id, amount_cents, fee_cents, status, requested_at, paid_at)
+    values (cid, 'pagarme', 'tr_pa_1', 're_pa_p', 5000, 367, 'paid', '2026-08-05T14:00:00Z', '2026-08-06T10:00:00Z');
+  -- E0.3.10: saque ainda em curso, com previsão de queda; e um que falhou, com o motivo do banco.
+  insert into public.payout_withdrawal(company_id, provider, external_transfer_id, external_recipient_id, amount_cents, fee_cents, status, requested_at, expected_at)
+    values (cid, 'pagarme', 'tr_pa_2', 're_pa_p', 1000, 367, 'processing', '2026-08-08T10:00:00Z', '2026-08-08T20:00:00Z');
+  insert into public.payout_withdrawal(company_id, provider, external_transfer_id, external_recipient_id, amount_cents, fee_cents, status, requested_at, failure_reason)
+    values (cid, 'pagarme', 'tr_pa_3', 're_pa_p', 1000, 367, 'failed', '2026-08-09T10:00:00Z', 'conta encerrada');
   perform set_config('test.adm', adm::text, false);
   perform set_config('test.cust', cust::text, false);
   perform set_config('test.cid', cid::text, false);
@@ -63,7 +68,7 @@ create temporary table _st as
 select is((select (j -> 'header' ->> 'available_cents')::int from _st), 12849, 'cabeçalho traz o saldo disponível do gateway');
 select is((select j -> 'header' ->> 'transfer_interval' from _st), 'Monthly', 'cabeçalho traz o ciclo de transferência');
 select is((select (j -> 'header' ->> 'debt_cents')::int from _st), 5000, 'dívida = 8000 absorvidos menos 3000 de acerto');
-select is((select jsonb_array_length(j -> 'movements') from _st), 7, 'sete movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 1 saque');
+select is((select jsonb_array_length(j -> 'movements') from _st), 9, 'nove movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 3 saques');
 
 select is(
   (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'sale' and m ->> 'booking_code' = 'MP-PA-1'),
@@ -78,8 +83,17 @@ select is(
   (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'refund'),
   -7900, 'estorno híbrido debita 7900 do saldo do parceiro');
 select is(
-  (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'withdrawal'),
+  (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'withdrawal' and m ->> 'status' = 'paid'),
   -5367, 'saque sai do saldo com a taxa de saque');
+select is(
+  (select m ->> 'release_at' || '|' || (m ->> 'release_status') from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'withdrawal' and m ->> 'status' = 'paid'),
+  '2026-08-06T10:00:00+00:00|released', 'saque pago: release_at é quando caiu no banco');
+select is(
+  (select m ->> 'release_at' || '|' || (m ->> 'release_status') from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'withdrawal' and m ->> 'status' = 'processing'),
+  '2026-08-08T20:00:00+00:00|waiting', 'saque em curso: release_at é a previsão de queda');
+select is(
+  (select (m ->> 'note') || '|' || coalesce(m ->> 'release_status', 'null') from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'withdrawal' and m ->> 'status' = 'failed'),
+  'conta encerrada|null', 'saque que falhou traz o motivo do banco e nenhuma previsão');
 select is(
   (select (m ->> 'debt_delta_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'settlement'),
   -3000, 'acerto manual reduz a dívida');

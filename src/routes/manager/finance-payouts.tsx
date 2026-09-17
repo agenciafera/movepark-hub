@@ -24,6 +24,7 @@ import { ManualRefundQueueCard } from "@/features/payouts/ManualRefundQueueCard"
 import { MasterBalanceCard } from "@/features/payouts/MasterBalanceCard";
 import { PayoutDebtCard } from "@/features/payouts/PayoutDebtCard";
 import { PayoutTransferCard } from "@/features/payouts/PayoutTransferCard";
+import { WithdrawalsCard } from "@/features/payouts/WithdrawalsCard";
 import { formatBRL } from "@/lib/format";
 import { recentMonths } from "@/features/payouts/months.logic";
 
@@ -55,6 +56,8 @@ export default function ManagerFinancePayouts() {
       />
 
       <MasterBalanceCard />
+      {/* E0.3.10: todos os saques dos parceiros, com previsão e confirmação de queda. */}
+      <WithdrawalsCard showCompany canReconcile />
       <ManualRefundQueueCard />
       <PayoutDebtCard />
       {!splitLigado && <PayoutTransferCard />}

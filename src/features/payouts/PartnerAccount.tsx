@@ -32,6 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { MOVEMENT_LABEL, maxWithdrawReason, negativeRecipientAlert, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
+import { WithdrawalsCard } from "./WithdrawalsCard";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
@@ -263,6 +264,9 @@ export function PartnerAccount({
           </Table>
         </div>
       )}
+
+      {/* Controle de saques (E0.3.10): quando cai, se caiu, por que falhou. */}
+      <WithdrawalsCard companyId={companyId} canReconcile={showGateway} />
 
       <Dialog open={withdrawOpen} onOpenChange={(o) => !o && setWithdrawOpen(false)}>
         <DialogContent className="max-w-md">

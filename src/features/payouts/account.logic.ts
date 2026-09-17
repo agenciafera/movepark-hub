@@ -65,6 +65,13 @@ export function transferCycleLabel(h: Pick<AccountHeader, "transfer_enabled" | "
 
 /** Coluna "Liberação" de uma linha. */
 export function releaseLabel(m: Pick<AccountMovement, "kind" | "release_status" | "release_at">, fmt: (iso: string) => string): string {
+  if (m.kind === "withdrawal") {
+    // E0.3.10: no saque, release_at é quando caiu (pago) ou a previsão de queda (em trânsito).
+    if (m.release_status === "released" && m.release_at) return `caiu em ${fmt(m.release_at)}`;
+    if (m.release_status === "waiting" && m.release_at) return `cai em ${fmt(m.release_at)}`;
+    if (m.release_status === "unknown") return "sem previsão";
+    return "";
+  }
   if (m.kind !== "sale") return "";
   if (m.release_status === "released") return "liberado";
   if (m.release_status === "waiting" && m.release_at) return `libera em ${fmt(m.release_at)}`;

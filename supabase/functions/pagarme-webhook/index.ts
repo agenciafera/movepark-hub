@@ -16,6 +16,8 @@ import { mapRecipientStatus } from "../_shared/payments/pagarme.ts";
 import { chargebackAbsorbedByMaster, executeRefund, partnerRecipientMissing, persistPartnerBalance } from "../_shared/payments/refund.ts";
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { nextTransferRowStatus } from "../_shared/payments/transfer.ts";
+import { withdrawalPatch } from "../_shared/payments/withdrawal.ts";
+import { buildTransferResult } from "../_shared/payments/pagarme.ts";
 import {
   issueKycLinkAndNotify,
   PROVIDER_STATUS_AWAITING_KYC,
@@ -338,7 +340,13 @@ Deno.serve(async (req: Request) => {
     }
 
     const nowIso = new Date().toISOString();
+    // E0.3.10: previsão de queda, data em que caiu e motivo de falha vêm do próprio evento.
+    const datas = withdrawalPatch({
+      result: buildTransferResult(200, (body as { data?: unknown })?.data ?? {}),
+      nowIso,
+    }) ?? {};
     const row: Record<string, unknown> = {
+      ...datas,
       company_id: rec.company_id,
       provider: "pagarme",
       external_transfer_id: tr.transferId,
@@ -349,7 +357,7 @@ Deno.serve(async (req: Request) => {
       raw: body,
     };
     if (wStatus === "created") row.requested_at = nowIso;
-    if (wStatus === "paid") row.paid_at = nowIso;
+    if (wStatus === "paid" && !row.paid_at) row.paid_at = nowIso;
 
     const { error: wErr } = await admin
       .from("payout_withdrawal")

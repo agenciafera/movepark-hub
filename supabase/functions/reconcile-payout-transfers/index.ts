@@ -9,23 +9,53 @@
 // Só relê: nunca dispara transferência. Consulta `GET /transfers/{id}` para as linhas em
 // `processing` com id do gateway e aplica a mesma regra do webhook (`nextTransferRowStatus`).
 //
-// Chamada interna pelo pg_cron (pg_net), protegida pelo header x-reconcile-payout-transfers-key.
+// E0.3.10: também relê os SAQUES abertos (`payout_withdrawal` em created/processing), guardando
+// previsão de queda, data em que caiu e motivo de falha (`_shared/payments/withdrawal.ts`).
 //
-// POST /functions/v1/reconcile-payout-transfers   (header: x-reconcile-payout-transfers-key)
-// → { ok, checked, updated }
+// Chamada interna pelo pg_cron (pg_net), protegida pelo header x-reconcile-payout-transfers-key.
+// Segunda porta: o Manager chama com o JWT de um hub_admin ("Conferir no gateway").
+//
+// POST /functions/v1/reconcile-payout-transfers   (header: x-reconcile-payout-transfers-key | Authorization: Bearer <jwt hub_admin>)
+// → { ok, checked, updated, withdrawals: { checked, updated } }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
+import { withdrawalPatch } from "../_shared/payments/withdrawal.ts";
 import { BATCH_LIMIT, decideReconcileTransfer } from "./logic.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
+async function ehHubAdmin(req: Request): Promise<boolean> {
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return false;
+  try {
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { auth: { persistSession: false }, global: { headers: { Authorization: auth } } },
+    );
+    const { data: userData } = await userClient.auth.getUser();
+    if (!userData?.user) return false;
+    const { data } = await userClient.rpc("is_hub_admin");
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const admin = createClient(
@@ -36,7 +66,8 @@ Deno.serve(async (req: Request) => {
 
   // A chave interna vem do Vault (a mesma que o cron envia), sem env var para sincronizar.
   const { data: expected } = await admin.rpc("reconcile_payout_transfers_expected_key");
-  if (!expected || req.headers.get("x-reconcile-payout-transfers-key") !== expected) {
+  const pelaChave = !!expected && req.headers.get("x-reconcile-payout-transfers-key") === expected;
+  if (!pelaChave && !(await ehHubAdmin(req))) {
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -90,5 +121,44 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ ok: true, checked: linhas?.length ?? 0, updated });
+  // Saques abertos (E0.3.10): mesma leitura, `GET /transfers/{id}`, regra em withdrawalPatch.
+  const { data: saques, error: sqErr } = await admin
+    .from("payout_withdrawal")
+    .select("id, status, external_transfer_id")
+    .eq("provider", "pagarme")
+    .in("status", ["created", "processing"])
+    .not("external_transfer_id", "is", null)
+    .is("deleted_at", null)
+    .order("requested_at", { ascending: true })
+    .limit(BATCH_LIMIT);
+  if (sqErr) return json({ error: sqErr.message, checked: linhas?.length ?? 0, updated }, 500);
+
+  let saquesAtualizados = 0;
+  for (const w of saques ?? []) {
+    try {
+      const r = await gateway.getTransfer(String(w.external_transfer_id));
+      const patch = withdrawalPatch({ result: r, nowIso: new Date().toISOString(), current: w.status });
+      if (!patch) continue;
+      // `.eq("status")`: se o webhook fechou a linha no meio, não sobrescreve o que ele decidiu.
+      const { error: upErr } = await admin
+        .from("payout_withdrawal")
+        .update(patch)
+        .eq("id", w.id)
+        .eq("status", w.status);
+      if (upErr) {
+        console.error("[reconcile-payout-transfers] saque não atualizou:", w.id, upErr.message);
+        continue;
+      }
+      if (patch.status) saquesAtualizados += 1;
+    } catch (e) {
+      console.error("[reconcile-payout-transfers] falha no saque", w.external_transfer_id, e);
+    }
+  }
+
+  return json({
+    ok: true,
+    checked: linhas?.length ?? 0,
+    updated,
+    withdrawals: { checked: saques?.length ?? 0, updated: saquesAtualizados },
+  });
 });

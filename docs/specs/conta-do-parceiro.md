@@ -123,6 +123,49 @@ do recebedor sai exatamente A. `payout_withdrawal` guarda `amount_cents` = o que
 `fee_cents` = a taxa; a soma é o que saiu do saldo e abate o disponível seguinte. O disponível
 nunca chega já com a taxa descontada; ela só aparece no saque (migration `20261120050000`).
 
+## Controle de saques (E0.3.10, 17/09/2026)
+
+**Problema.** O saque nascia com o status da resposta do `POST /transfers` e ninguém o relia: o
+webhook `transfer.*` nunca chegou nesta conta, e a conciliação (`reconcile-payout-transfers`) só
+olhava o repasse da custódia. Um saque ficaria "Processando" para sempre, sem previsão de quando
+cai nem confirmação de que caiu.
+
+**O que a Pagar.me devolve na transferência** (`POST /transfers` e `GET /transfers/{id}`):
+`status` (`pending_transfer`, `processing`, `transferred`, `failed`, `canceled`), `fee`,
+`funding_estimated_date` (previsão de crédito), `funding_date` (quando creditou) e `bank_response`
+(motivo do banco na falha). Saque manual pedido até as 15h de Brasília em dia útil cai no mesmo dia;
+depois, ou em fim de semana, no próximo dia útil.
+
+**Modelo.** `payout_withdrawal` ganhou `expected_at`, `gateway_status`, `failure_reason` e
+`synced_at` (migration `20261120090000_controle_de_saques.sql`). Uma regra só escreve a linha,
+`_shared/payments/withdrawal.ts`:
+
+- `transferStatusToWithdrawalStatus` e `nextWithdrawalStatus`: terminal nunca reabre, `created`
+  não rebaixa `processing`.
+- `expectedFundingDate(requestedAt)`: a regra das 15h em dia útil (fim do dia BRT), usada só
+  quando o gateway não devolve `funding_estimated_date`. Feriado não entra: quando o gateway manda
+  a data, ela prevalece.
+- `withdrawalPatch({ result, nowIso, current })`: o que gravar a partir de uma leitura (resposta
+  do POST, evento do webhook ou GET da conciliação). Erro HTTP não escreve nada.
+
+**Quem escreve.** `recipient-withdraw` grava a linha com a previsão e deixa rastro em
+`payment_gateway_event` (kind `withdrawal`, sem reserva). `reconcile-payout-transfers` (cron a
+cada 15 min) relê os saques em `created`/`processing` com `GET /transfers/{id}` e fecha como
+pago (com `funding_date`), falhou (com `bank_response`) ou cancelado; o Manager chama a mesma
+Edge com JWT de hub_admin pelo botão "Conferir no gateway". O webhook `transfer.*`, se um dia
+chegar, grava as mesmas datas.
+
+**Telas.** Card "Saques para o banco" (`WithdrawalsCard`): pedido em, vai ao banco, taxa, status
+(Solicitado, Em trânsito, Caiu na conta, Falhou, Cancelado) e "Chega em" (previsto para X;
+previsto para X, ainda não caiu, em vermelho quando passou o dia; caiu em X; falhou: motivo). Ele
+aparece na conta de cada estacionamento (Manager e Operator, o parceiro vê o mesmo) e em Manager ›
+Financeiro › Repasses com todas as empresas e o botão de conferir. No extrato, a linha do saque
+traz a mesma informação na coluna Liberação (`release_at`/`release_status` do movimento).
+
+**Testes.** Deno `withdrawal.test.ts` (regra das 15h, patch, terminal); pgTAP
+`partner_account_statement.test.sql` (15: saque pago, em curso com previsão, falhado com motivo);
+Vitest `withdrawal.logic.test.ts`, `WithdrawalsCard.test.tsx`.
+
 ## Fora do escopo agora
 
 Antecipação por venda, exportação do extrato e o extrato de operações de saldo do gateway

@@ -25,7 +25,6 @@ import { useAuth } from "@/auth/context";
 import {
   usePayoutBalance,
   usePayoutStatement,
-  usePayoutWithdrawals,
   useRecipient,
 } from "@/features/payouts/api";
 import { PartnerAccount } from "@/features/payouts/PartnerAccount";
@@ -52,14 +51,6 @@ function recentMonths(n: number) {
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
-const withdrawalStatus: Record<string, { label: string; tone: "pending" | "confirmed" | "cancelled" | "neutral" }> = {
-  created: { label: "Solicitado", tone: "pending" },
-  processing: { label: "Processando", tone: "pending" },
-  paid: { label: "Pago", tone: "confirmed" },
-  failed: { label: "Falhou", tone: "cancelled" },
-  canceled: { label: "Cancelado", tone: "cancelled" },
-};
-
 export default function OperatorFinance() {
   const { effectiveCompanyIds, hasScope } = useAuth();
   const companyId = effectiveCompanyIds[0];
@@ -80,7 +71,6 @@ export default function OperatorFinance() {
     companyId,
     includeLines: true,
   });
-  const withdrawals = usePayoutWithdrawals(companyId);
 
   const company = statement.data?.companies?.[0] ?? null;
   const recStatus = recipient.data?.status;
@@ -216,49 +206,6 @@ export default function OperatorFinance() {
         </CardContent>
       </Card>
 
-      {/* Histórico de saques */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Saques</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {withdrawals.isLoading ? (
-            <Skeleton className="h-20 w-full" />
-          ) : (withdrawals.data ?? []).length === 0 ? (
-            <p className="text-body-sm text-muted">
-              Nenhum saque ainda. As transferências para a sua conta são agregadas (diluindo a taxa de saque).
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="text-right">Taxa</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(withdrawals.data ?? []).map((w) => {
-                    const st = withdrawalStatus[w.status] ?? { label: w.status, tone: "neutral" as const };
-                    return (
-                      <TableRow key={w.id}>
-                        <TableCell className="tabular-nums">{formatDate(w.paid_at ?? w.created_at)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{brl(w.amount_cents)}</TableCell>
-                        <TableCell className="text-right tabular-nums text-muted">{brl(w.fee_cents)}</TableCell>
-                        <TableCell>
-                          <Badge tone={st.tone}>{st.label}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* NFs: depende da camada fiscal (E0.2) */}
       <Card>

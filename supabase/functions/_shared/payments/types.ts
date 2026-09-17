@@ -306,6 +306,14 @@ export interface TransferResult {
   amountCents: number | null;
   sourceId: string | null;
   targetId: string | null;
+  /** Taxa da transferência cobrada pelo gateway (`fee`), quando ele devolve. */
+  feeCents?: number | null;
+  /** Previsão de crédito no banco (`funding_estimated_date`), ISO. */
+  fundingEstimatedDate?: string | null;
+  /** Quando o banco creditou (`funding_date`), ISO. */
+  fundingDate?: string | null;
+  /** Motivo do banco quando falha (`bank_response`). */
+  bankResponse?: string | null;
   raw: unknown;
   httpStatus: number | null;
 }

@@ -13,6 +13,7 @@ import {
   useManualRefunds,
   useRefreshGatewayBalances,
   useWithdraw,
+  useReconcileWithdrawals,
   useSetCompanyPayoutReleaseDays,
 } from "./api";
 import { renderHook, waitFor } from "@testing-library/react";
@@ -305,6 +306,30 @@ describe("useWithdraw", () => {
     falha("edge", "recipient-withdraw", 409, "Saldo disponível não cobre o saque.");
     const { result } = renderMutation(() => useWithdraw());
     await expect(result.current.mutateAsync({ company_id: "c1", amount_cents: 5000 })).rejects.toThrow(/não cobre/);
+  });
+});
+
+describe("useReconcileWithdrawals", () => {
+  it("pede à Edge reconcile-payout-transfers com o JWT do hub_admin e devolve o que mudou", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "jwt" } as never },
+      error: null,
+    } as never);
+    const chamada = edge("reconcile-payout-transfers", { json: { ok: true, checked: 0, updated: 0, withdrawals: { checked: 2, updated: 1 } } });
+    const { result } = renderMutation(() => useReconcileWithdrawals());
+    const r = await result.current.mutateAsync();
+    expect(chamada.chamadas).toHaveLength(1);
+    expect(r.withdrawals).toEqual({ checked: 2, updated: 1 });
+  });
+
+  it("sem ser hub_admin a Edge recusa e a mensagem chega", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "jwt" } as never },
+      error: null,
+    } as never);
+    falha("edge", "reconcile-payout-transfers", 401, "unauthorized");
+    const { result } = renderMutation(() => useReconcileWithdrawals());
+    await expect(result.current.mutateAsync()).rejects.toThrow(/unauthorized/);
   });
 });
 

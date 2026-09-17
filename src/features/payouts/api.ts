@@ -9,6 +9,7 @@ export type PayoutAccountPayload = ReturnType<typeof toPayoutAccountPayload>;
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-recipient`;
 const REFRESH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-recipients`;
 const WITHDRAW_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recipient-withdraw`;
+const RECONCILE_WITHDRAWALS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reconcile-payout-transfers`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -333,20 +334,60 @@ export function usePayoutStatement(args: {
   });
 }
 
-/** Saques (transferências) registrados — RLS escopa por empresa. */
+export const withdrawalKeys = {
+  all: ["payout-withdrawals"] as const,
+  list: (companyId?: string) => [...withdrawalKeys.all, companyId ?? "all"] as const,
+};
+
+/** Linha do histórico de saques, com o nome da empresa para a visão do Manager. */
+export type PayoutWithdrawalRow = PayoutWithdrawal & { company: { name: string } | null };
+
+/** Saques registrados, com o nome da empresa. RLS escopa por empresa. */
 export function usePayoutWithdrawals(companyId?: string) {
   return useQuery({
-    queryKey: ["payout-withdrawals", companyId ?? "all"],
-    queryFn: async (): Promise<PayoutWithdrawal[]> => {
+    queryKey: withdrawalKeys.list(companyId),
+    queryFn: async (): Promise<PayoutWithdrawalRow[]> => {
       let q = supabase
         .from("payout_withdrawal")
-        .select("*")
+        .select("*, company:company(name)")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (companyId) q = q.eq("company_id", companyId);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as PayoutWithdrawal[];
+      return (data ?? []) as unknown as PayoutWithdrawalRow[];
+    },
+  });
+}
+
+/**
+ * "Conferir no gateway" (E0.3.10, hub_admin): relê agora os saques abertos em vez de esperar o
+ * cron de 15 min. Mesma Edge da conciliação, segunda porta por JWT.
+ */
+export function useReconcileWithdrawals() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<{ ok: boolean; withdrawals: { checked: number; updated: number } }> => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(RECONCILE_WITHDRAWALS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: ANON,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: "{}",
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: withdrawalKeys.all });
+      qc.invalidateQueries({ queryKey: accountKeys.all });
     },
   });
 }
@@ -756,7 +797,7 @@ export function useWithdraw() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: accountKeys.all });
       qc.invalidateQueries({ queryKey: payoutKeys.all });
-      qc.invalidateQueries({ queryKey: ["payout-withdrawals"] });
+      qc.invalidateQueries({ queryKey: withdrawalKeys.all });
     },
   });
 }

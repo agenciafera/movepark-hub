@@ -547,9 +547,30 @@ export function buildTransferResult(httpStatus: number, body: unknown): Transfer
     amountCents: typeof b.amount === "number" && Number.isFinite(b.amount) ? b.amount : null,
     sourceId: typeof b.source_id === "string" ? b.source_id : null,
     targetId: typeof b.target_id === "string" ? b.target_id : null,
+    feeCents: typeof b.fee === "number" && Number.isFinite(b.fee) ? b.fee : null,
+    fundingEstimatedDate: gatewayDateToIso(b.funding_estimated_date),
+    fundingDate: gatewayDateToIso(b.funding_date),
+    bankResponse: typeof b.bank_response === "string" && b.bank_response.trim() ? b.bank_response : null,
     raw: body,
     httpStatus,
   };
+}
+
+/**
+ * Data do gateway em ISO. A doc do objeto transferência declara `funding_date` como inteiro e
+ * `funding_estimated_date` como ISO; na prática os dois chegam como string ISO. Aceita os dois
+ * (inteiro = epoch em segundos ou milissegundos) e devolve null para o que não é data.
+ */
+export function gatewayDateToIso(v: unknown): string | null {
+  if (typeof v === "string" && v.trim()) {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  if (typeof v === "number" && Number.isFinite(v) && v > 0) {
+    const ms = v < 1e11 ? v * 1000 : v;
+    return new Date(ms).toISOString();
+  }
+  return null;
 }
 
 /**

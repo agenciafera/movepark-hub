@@ -15,7 +15,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
-import { transferStatusToWithdrawalStatus } from "../pagarme-webhook/logic.ts";
+import { withdrawalPatch } from "../_shared/payments/withdrawal.ts";
+import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { parseWithdrawInput, withdrawCap, withdrawPreflight } from "./logic.ts";
 
 const corsHeaders = {
@@ -142,8 +143,12 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: `O gateway recusou o saque (HTTP ${http}).`, raw: result.raw }, 502);
   }
 
-  const status = transferStatusToWithdrawalStatus(result.status);
   const nowIso = new Date().toISOString();
+  // E0.3.10: status, previsão de queda (do gateway, ou a regra das 15h) e leitura, pela mesma regra
+  // que o webhook e a conciliação usam. A partir daqui `reconcile-payout-transfers` relê a linha a
+  // cada 15 min até ela cair no banco ou falhar.
+  const patch = withdrawalPatch({ result, nowIso }) ?? {};
+  const status = (patch.status as string | undefined) ?? "created";
   const { data: row, error: rowErr } = await admin
     .from("payout_withdrawal")
     .upsert(
@@ -155,16 +160,26 @@ Deno.serve(async (req: Request) => {
         // O que foi ao banco; a taxa fica ao lado. amount + fee = o que saiu do recebedor.
         amount_cents: toBankCents,
         fee_cents: feeCents,
-        status,
         requested_at: nowIso,
-        ...(status === "paid" ? { paid_at: nowIso } : {}),
-        raw: result.raw ?? null,
+        ...patch,
+        status,
       },
       { onConflict: "provider,external_transfer_id" },
     )
     .select("id")
     .maybeSingle();
   if (rowErr) console.error("[recipient-withdraw] saque pedido mas a linha não gravou:", rowErr.message);
+
+  // Rastro do gateway: o saque não tem reserva, mas a chamada fica registrada como as outras.
+  await logGatewayEvent(admin, {
+    paymentId: null,
+    bookingId: null,
+    kind: "withdrawal",
+    httpStatus: result.httpStatus,
+    request: { company_id: input.companyId, recipient_id: recipient.external_recipient_id, amount: toBankCents, requested_cents: input.amountCents, force: input.force },
+    response: result.raw ?? null,
+    note: `saque ${status} · transfer ${result.transferId}`,
+  });
 
   // O saldo mudou: relê e grava, para a tela não mostrar o número de antes do saque.
   try {

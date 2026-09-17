@@ -231,7 +231,7 @@ export function decidePaymentStatus(input: StatusDecisionInput): StatusDecision 
 
 // ── Transferências (saques) — E0.3.3 ────────────────────────────────────────
 
-export type WithdrawalStatus = "created" | "processing" | "paid" | "failed" | "canceled";
+export type { WithdrawalStatus } from "../_shared/payments/withdrawal.ts";
 
 export interface ParsedTransfer {
   type: string;
@@ -297,28 +297,9 @@ export function parseRecipientEvent(body: unknown): ParsedRecipient {
   };
 }
 
-/** Status cru da transferência → status normalizado do saque. */
-export function transferStatusToWithdrawalStatus(raw: string | null | undefined): WithdrawalStatus {
-  switch ((raw ?? "").toLowerCase()) {
-    case "paid":
-    case "transferred":
-      return "paid";
-    case "failed":
-    case "with_error":
-      return "failed";
-    case "canceled":
-    case "cancelled":
-      return "canceled";
-    case "processing":
-    case "pending_transfer":
-    case "pending":
-      return "processing";
-    case "created":
-    case "":
-    default:
-      return "created";
-  }
-}
+// E0.3.10: a regra do status do saque mora em _shared/payments/withdrawal.ts (a mesma para a Edge
+// do saque, este webhook e a conciliação). Re-exportada aqui para quem já importava daqui.
+export { transferStatusToWithdrawalStatus } from "../_shared/payments/withdrawal.ts";
 
 // ── Cartão salvo (card.*) ───────────────────────────────────────────────────
 
