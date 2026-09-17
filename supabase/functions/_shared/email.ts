@@ -616,6 +616,56 @@ export function tplBookingConfirmation(
   };
 }
 
+export type CancellationRefund = "refunded" | "pending" | "manual" | "none";
+
+/**
+ * Cancelamento ao cliente (17/09/2026): confirma o cancelamento e diz, sem rodeio, o que acontece
+ * com o dinheiro. O prazo do estorno depende do meio: PIX volta na conta em minutos, no máximo um
+ * dia útil; cartão aparece na fatura em até duas, conforme o banco. Sem cobrança, sem promessa.
+ */
+export function tplBookingCancelled(
+  b: VoucherBooking,
+  customerName: string | null,
+  opts: { refund: CancellationRefund; amount: number | null; method: "pix" | "card" | null; reason: string | null },
+  bookingUrl: string,
+): { subject: string; html: string } {
+  const fn = String(customerName ?? "").trim().split(/\s+/)[0];
+  const greeting = fn ? `Olá, ${escapeHtml(fn)}.` : "Olá.";
+  const valor = opts.amount != null ? formatBRL(opts.amount, b.currency ?? "BRL") : null;
+  const prazo = opts.method === "card"
+    ? "No cartão, o estorno aparece na fatura em até duas faturas, conforme o seu banco."
+    : "No PIX, o estorno costuma aparecer na sua conta em minutos, no máximo em um dia útil.";
+  const dinheiro = opts.refund === "refunded"
+    ? `<p style="margin:0 0 14px">O estorno${valor ? ` de <strong>${valor}</strong>` : ""} já foi enviado. ${prazo}</p>`
+    : opts.refund === "pending"
+      ? `<p style="margin:0 0 14px">O estorno${valor ? ` de <strong>${valor}</strong>` : ""} está em processamento no banco. ${prazo} Você recebe outro e-mail quando ele for confirmado.</p>`
+      : opts.refund === "manual"
+        ? `<p style="margin:0 0 14px">O estorno${valor ? ` de <strong>${valor}</strong>` : ""} será feito pela nossa equipe em até 2 dias úteis, e a gente te avisa quando sair.</p>`
+        : `<p style="margin:0 0 14px">Não houve cobrança nesta reserva, então não há estorno.</p>`;
+  const rows: [string, string][] = [
+    ["Reserva", escapeHtml(`#${b.code}`)],
+    ["Estacionamento", escapeHtml(b.company_name)],
+    ["Unidade", escapeHtml(b.location_name)],
+    ["Check-in que seria", escapeHtml(formatBRDateTime(b.check_in_at))],
+  ];
+  if (opts.reason) rows.push(["Motivo", escapeHtml(opts.reason)]);
+  const summary = rows.map(([l, v]) => bordRow(l, v)).join("");
+  return {
+    subject: `Reserva ${b.code} cancelada`,
+    html: shell(
+      "Reserva cancelada",
+      `
+      <p style="margin:0 0 14px">${greeting} Sua reserva no ${escapeHtml(b.location_name)} foi cancelada.</p>
+      ${dinheiro}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 24px;">${summary}</table>
+      ${checkItem(`Mudou de ideia? É só fazer uma nova reserva. A vaga volta para a busca na hora.`)}
+      ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver a reserva")}</p>`,
+      { preheader: `Reserva ${b.code} cancelada${opts.refund === "none" ? "" : ", estorno a caminho"}` },
+    ),
+  };
+}
+
 function row(label: string, value: string): string {
   return `<tr><td style="padding:6px 0;color:${BRAND.muted};width:120px">${label}</td><td style="padding:6px 0;font-weight:600">${escapeHtml(value)}</td></tr>`;
 }

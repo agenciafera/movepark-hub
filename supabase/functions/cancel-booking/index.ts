@@ -24,6 +24,7 @@ import { executeRefund, manualRefundReason, partnerRecipientMissing, persistPart
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { sweepDebtEmails } from "../_shared/debt-email.ts";
+import { cancellationRefund, sendBookingCancellationEmail } from "../_shared/booking-cancellation.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -117,7 +118,7 @@ Deno.serve(async (req: Request) => {
   // Último payment do booking.
   const { data: payment } = await admin
     .from("payment")
-    .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
+    .select("id, provider, provider_payment_id, provider_charge_id, amount, method, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
     .eq("booking_id", booking.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -260,6 +261,14 @@ Deno.serve(async (req: Request) => {
   // Estorno pago pelo master vira dívida do parceiro: avisa na hora (a varredura do cron cobre o
   // resto). Best-effort.
   if (refunded && absorvidoPeloMaster) await sweepDebtEmails(admin);
+
+  // O cliente fica sabendo do cancelamento e do que acontece com o dinheiro (best-effort).
+  await sendBookingCancellationEmail(admin, booking.id, {
+    refund: cancellationRefund({ refunded, refundPending, refundManual }),
+    amount: refunded || refundManual ? Number(payment?.amount ?? 0) || null : null,
+    method: payment?.method === "card" ? "card" : payment?.method === "pix" ? "pix" : null,
+    reason: input.reason ?? null,
+  });
 
   // Histórico de alteração (best-effort: não bloqueia a resposta se o log falhar).
   await admin

@@ -353,6 +353,13 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   usam o **fallback de 24h**. A Tarifa é **receita 100% Movepark** (split próprio pra Movepark, fora
   do repasse do parceiro), ver [payment-split.md](./payment-split.md). Regra completa das alterações
   (cancelar + trocar data/veículo) em [booking-modifications.md](./booking-modifications.md).
+- **E-mail ao cliente (17/09/2026, ✅):** todo cancelamento pela Edge `cancel-booking` manda
+  `tplBookingCancelled` ao contato do pedido (snapshot, senão `auth.users`), dizendo o que acontece
+  com o dinheiro: estorno enviado (PIX em minutos, até um dia útil; cartão em até duas faturas),
+  em processamento (PIX assíncrono), manual (equipe em até 2 dias úteis) ou sem cobrança. Guarda
+  de exatamente-uma-vez em `booking.cancellation_email_sent_at` (migration
+  `20261121010000_email_de_cancelamento.sql`), igual à da confirmação. Até então o cliente só
+  recebia e-mail na confirmação; cancelamento e estorno passavam em silêncio.
 - **`location.reservation_policy` não é a política (D-007, ✅):** é um texto livre da **unidade**,
   exibido como adendo junto do bloco de cancelamento na página de detalhe
   (`ListingKnowSection`, `src/routes/listing.tsx`). O detentor é a `location` (cada unidade tem o

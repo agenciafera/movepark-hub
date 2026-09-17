@@ -594,6 +594,7 @@ export type Database = {
           checked_in_at: string | null
           checked_out_at: string | null
           code: string
+          cancellation_email_sent_at: string | null
           confirmation_email_sent_at: string | null
           created_at: string
           created_via_api_key_id: string | null
@@ -639,6 +640,7 @@ export type Database = {
           checked_in_at?: string | null
           checked_out_at?: string | null
           code: string
+          cancellation_email_sent_at?: string | null
           confirmation_email_sent_at?: string | null
           created_at?: string
           created_via_api_key_id?: string | null
@@ -684,6 +686,7 @@ export type Database = {
           checked_in_at?: string | null
           checked_out_at?: string | null
           code?: string
+          cancellation_email_sent_at?: string | null
           confirmation_email_sent_at?: string | null
           created_at?: string
           created_via_api_key_id?: string | null

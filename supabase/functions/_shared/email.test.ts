@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
-import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest, tplWithdrawalRequested, tplWithdrawalPaid, tplWithdrawalFailed, tplPartnerDebtCreated } from "./email.ts";
+import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest, tplWithdrawalRequested, tplWithdrawalPaid, tplWithdrawalFailed, tplPartnerDebtCreated, tplBookingCancelled } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
 
@@ -179,4 +179,22 @@ Deno.test("e-mail de dívida: reserva, valor abatido, total e motivo, sem traves
   assertStringIncludes(m.html, "cancelamento (staff)");
   assertStringIncludes(m.html, "Total a abater hoje");
   assert(!m.html.includes("—") && !m.html.includes("–") && !m.html.includes("\n"), "sem travessão nem quebra");
+});
+
+Deno.test("e-mail de cancelamento: diz o que acontece com o dinheiro por meio e situação", () => {
+  const b = { code: "MP-F65005", check_in_at: "2026-09-20T12:00:00Z", check_out_at: "2026-09-21T12:00:00Z", total_amount: 18, currency: "BRL", company_name: "Agência Fera", location_name: "Agência Fera", location_address: null, parking_type_name: null, vehicle: null };
+  const url = "https://movepark.co/bookings/MP-F65005";
+  const pix = tplBookingCancelled(b, "Kallef Alexandre", { refund: "refunded", amount: 18, method: "pix", reason: "cancelamento (staff)" }, url);
+  assertStringIncludes(pix.subject, "MP-F65005 cancelada");
+  assertStringIncludes(pix.html, "Olá, Kallef.");
+  assertStringIncludes(pix.html, "18,00");
+  assertStringIncludes(pix.html, "No PIX");
+  const card = tplBookingCancelled(b, null, { refund: "pending", amount: 30.9, method: "card", reason: null }, url);
+  assertStringIncludes(card.html, "em processamento");
+  assertStringIncludes(card.html, "fatura");
+  const manual = tplBookingCancelled(b, null, { refund: "manual", amount: 18, method: "pix", reason: null }, url);
+  assertStringIncludes(manual.html, "nossa equipe");
+  const none = tplBookingCancelled(b, null, { refund: "none", amount: null, method: null, reason: null }, url);
+  assertStringIncludes(none.html, "Não houve cobrança");
+  for (const m of [pix, card, manual, none]) assert(!m.html.includes("—") && !m.html.includes("–") && !m.html.includes("\n"), "sem travessão nem quebra");
 });
