@@ -5,7 +5,7 @@ export type WithdrawalTone = "pending" | "confirmed" | "cancelled" | "neutral";
 export const WITHDRAWAL_STATUS: Record<string, { label: string; tone: WithdrawalTone }> = {
   created: { label: "Solicitado", tone: "pending" },
   processing: { label: "Em trânsito", tone: "pending" },
-  paid: { label: "Caiu na conta", tone: "confirmed" },
+  paid: { label: "Transferido", tone: "confirmed" },
   failed: { label: "Falhou", tone: "cancelled" },
   canceled: { label: "Cancelado", tone: "cancelled" },
 };
@@ -35,7 +35,8 @@ export function withdrawalLanding(
   now: Date = new Date(),
 ): { text: string; late: boolean } {
   if (w.status === "paid") {
-    return { text: w.paid_at ? `caiu em ${fmt(w.paid_at)}` : "caiu na conta", late: false };
+    // "transferred" na Pagar.me = TED enviada, com comprovante. Não é o banco confirmando o crédito.
+    return { text: w.paid_at ? `TED enviada em ${fmt(w.paid_at)}` : "TED enviada", late: false };
   }
   if (w.status === "failed") {
     return { text: w.failure_reason ? `falhou: ${w.failure_reason}` : "falhou no banco", late: false };

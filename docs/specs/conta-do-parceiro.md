@@ -155,6 +155,16 @@ depois, ou em fim de semana, no próximo dia útil.
 - `withdrawalPatch({ result, nowIso, current })`: o que gravar a partir de uma leitura (resposta
   do POST, evento do webhook ou GET da conciliação). Erro HTTP não escreve nada.
 
+**O que "transferred" significa (conferido na doc em 17/09/2026).** Na Pagar.me, `transferred` é
+a transferência "realizada com sucesso": a TED foi enviada ao banco e o comprovante fica disponível
+(`GET /transfers/{id}` só devolve comprovante nesse status); `funding_date` é "data da ocorrência
+da transferência". Não é o banco de destino confirmando o crédito, que a Pagar.me não enxerga.
+Por isso a tela diz **Transferido** e "TED enviada em X", nunca "caiu na conta". Os saques manuais
+saem em lotes de hora em hora, das 9h às 15h, em dia bancário; pedido até as 15h "é processado e
+concluído no mesmo dia", depois disso vai para o próximo dia útil. Medido no primeiro saque real:
+pedido às 15:03, `transferred` às 15:05. Fonte: docs.pagar.me (Saque; Objeto Transferência;
+Retornando o comprovante de uma transferência).
+
 **Quem escreve.** `recipient-withdraw` grava a linha com a previsão e deixa rastro em
 `payment_gateway_event` (kind `withdrawal`, sem reserva). `reconcile-payout-transfers` (cron a
 cada 15 min) relê os saques em `created`/`processing` com `GET /transfers/{id}` e fecha como
@@ -163,15 +173,15 @@ Edge com JWT de hub_admin pelo botão "Conferir no gateway". O webhook `transfer
 chegar, grava as mesmas datas.
 
 **Telas.** Card "Saques para o banco" (`WithdrawalsCard`): pedido em, vai ao banco, taxa, status
-(Solicitado, Em trânsito, Caiu na conta, Falhou, Cancelado) e "Chega em" (previsto para X;
-previsto para X, ainda não caiu, em vermelho quando passou o dia; caiu em X; falhou: motivo). Ele
+(Solicitado, Em trânsito, Transferido, Falhou, Cancelado) e "Chega em" (previsto para X;
+previsto para X, ainda não caiu, em vermelho quando passou o dia; TED enviada em X; falhou: motivo). Ele
 aparece na conta de cada estacionamento (Manager e Operator, o parceiro vê o mesmo) e em Manager ›
 Financeiro › Repasses com todas as empresas e o botão de conferir. No extrato, a linha do saque
 traz a mesma informação na coluna Liberação (`release_at`/`release_status` do movimento).
 
 **E-mails ao parceiro (17/09/2026).** Dois por saque, sempre pela guarda de silêncio
 (`sendPartnerEmail`): "Seu saque está a caminho" quando o saque é pedido (valor que cai, taxa,
-previsão da Pagar.me, conta final) e "Caiu na conta" quando o gateway confirma, ou "O saque não
+previsão da Pagar.me, conta final) e "Transferência enviada ao seu banco" quando o gateway confirma, ou "O saque não
 foi concluído" com o motivo do banco. Destinatário: e-mail da ficha de KYC, com o contato do
 onboarding como reserva. A unicidade vem de `payout_withdrawal.requested_email_sent_at` e
 `settled_email_sent_at`, reivindicados por UPDATE condicional antes do envio (migration

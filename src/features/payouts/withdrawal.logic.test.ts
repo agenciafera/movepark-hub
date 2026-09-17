@@ -5,8 +5,8 @@ const fmt = (iso: string) => iso.slice(0, 10);
 const base = { status: "processing", requested_at: "2026-09-17T17:30:00Z", created_at: "2026-09-17T17:30:05Z", expected_at: null, paid_at: null, failure_reason: null };
 
 describe("withdrawalLanding", () => {
-  it("pago diz quando caiu", () => {
-    expect(withdrawalLanding({ ...base, status: "paid", paid_at: "2026-09-18T13:05:00Z" }, fmt)).toEqual({ text: "caiu em 2026-09-18", late: false });
+  it("transferido diz quando a TED saiu", () => {
+    expect(withdrawalLanding({ ...base, status: "paid", paid_at: "2026-09-18T13:05:00Z" }, fmt)).toEqual({ text: "TED enviada em 2026-09-18", late: false });
   });
 
   it("em trânsito diz a previsão; passou o dia sem cair, avisa que está atrasado", () => {

@@ -161,7 +161,7 @@ Deno.test("e-mails de saque: valor, taxa, previs√£o, data e motivo, sem travess√
   assertStringIncludes(pedido.html, "18/09/2026");
   assertStringIncludes(pedido.html, "3,67");
   const caiu = tplWithdrawalPaid({ ...base, paidAt: "2026-09-18T13:05:00.000Z" });
-  assertStringIncludes(caiu.subject, "Caiu na conta");
+  assertStringIncludes(caiu.subject, "enviada ao seu banco");
   assertStringIncludes(caiu.html, "em 18/09/2026");
   const falhou = tplWithdrawalFailed({ ...base, failureReason: "conta encerrada" });
   assertStringIncludes(falhou.html, "conta encerrada");

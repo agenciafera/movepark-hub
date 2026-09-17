@@ -63,9 +63,9 @@ export function WithdrawalsCard({
         <div>
           <CardTitle>Saques para o banco</CardTitle>
           <p className="text-caption text-muted">
-            {abertos > 0
-              ? `${abertos} em trânsito. Pedido até as 15h em dia útil cai no mesmo dia; depois, no próximo dia útil.`
-              : "Pedido até as 15h em dia útil cai no mesmo dia; depois, no próximo dia útil."}
+            {abertos > 0 ? `${abertos} em trânsito. ` : ""}
+            Pedido até as 15h em dia útil sai no mesmo dia; depois, no próximo dia útil. "Transferido" é a
+            Pagar.me com a TED enviada e comprovante; o crédito aparece no banco de destino em seguida.
           </p>
         </div>
         {canReconcile && (

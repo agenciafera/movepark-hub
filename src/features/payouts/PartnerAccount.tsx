@@ -38,7 +38,7 @@ const brl = (cents: number) => formatBRL(cents / 100);
 const STATUS_LABEL: Record<string, string> = {
   created: "Solicitado",
   processing: "Processando",
-  paid: "Pago",
+  paid: "Transferido",
   failed: "Falhou",
   canceled: "Cancelado",
   manual_payment: "Pagamento por fora",

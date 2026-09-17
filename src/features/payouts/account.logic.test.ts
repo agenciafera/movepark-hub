@@ -19,7 +19,7 @@ describe("transferCycleLabel", () => {
 describe("releaseLabel", () => {
   it("saque: quando caiu, quando cai, ou sem previsão", () => {
     const fmt = (iso: string) => iso.slice(0, 10);
-    expect(releaseLabel({ kind: "withdrawal", release_status: "released", release_at: "2026-09-18T13:00:00Z" }, fmt)).toBe("caiu em 2026-09-18");
+    expect(releaseLabel({ kind: "withdrawal", release_status: "released", release_at: "2026-09-18T13:00:00Z" }, fmt)).toBe("TED enviada em 2026-09-18");
     expect(releaseLabel({ kind: "withdrawal", release_status: "waiting", release_at: "2026-09-18T20:00:00Z" }, fmt)).toBe("cai em 2026-09-18");
     expect(releaseLabel({ kind: "withdrawal", release_status: "unknown", release_at: null }, fmt)).toBe("sem previsão");
     expect(releaseLabel({ kind: "withdrawal", release_status: null, release_at: null }, fmt)).toBe("");

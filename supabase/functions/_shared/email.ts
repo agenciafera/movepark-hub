@@ -463,12 +463,12 @@ export function tplWithdrawalRequested(w: WithdrawalMail): { subject: string; ht
   };
 }
 
-/** O banco confirmou: caiu na conta. */
+/** A Pagar.me enviou a TED (status transferred, com comprovante). O crédito é do banco de destino. */
 export function tplWithdrawalPaid(w: WithdrawalMail): { subject: string; html: string } {
   return {
-    subject: `Caiu na conta: ${cents(w.amountCents)}`,
-    html: shell("Dinheiro na conta", `
-      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. O banco confirmou: <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> caíram na conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}${w.paidAt ? ` em ${brDate(w.paidAt)}` : ""}.</p>
+    subject: `Transferência de ${cents(w.amountCents)} enviada ao seu banco`,
+    html: shell("Transferência enviada", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. A Pagar.me enviou a TED de <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> para a conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}${w.paidAt ? ` em ${brDate(w.paidAt)}` : ""}. Em dia útil, o crédito costuma aparecer no seu banco em minutos.</p>
       <p style="margin:0 0 22px">Taxa de saque: ${cents(w.feeCents)}. O extrato completo está no seu painel.</p>
       <p style="margin:0;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver o extrato")}</p>`),
   };
