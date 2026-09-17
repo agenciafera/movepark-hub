@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowsClockwise } from "@phosphor-icons/react";
+import { ArrowsClockwise, Warning } from "@phosphor-icons/react";
 import {
   usePayoutOwed,
   useRecipientsOverview,
@@ -28,10 +28,11 @@ import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { PayoutKycDialog } from "@/features/payouts/PayoutKycDialog";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import {
+  type RecipientOverviewRow,
   buildRecipientOverview,
   latestBalanceSync,
+  negativeRecipients,
   summarizeRecipients,
-  type RecipientOverviewRow,
 } from "./finance-recipients.logic";
 
 export default function ManagerFinanceRecipients() {
@@ -54,6 +55,7 @@ export default function ManagerFinanceRecipients() {
     [owed.data],
   );
   const lidoEm = latestBalanceSync(rows);
+  const negativos = React.useMemo(() => negativeRecipients(rows), [rows]);
   const brl = (cents: number) => formatBRL(cents / 100);
 
   async function run(row: RecipientOverviewRow, action: "create" | "refresh") {
@@ -92,6 +94,40 @@ export default function ManagerFinanceRecipients() {
         title="Recebedores"
         description="Status de cada empresa no gateway de pagamento (Pagar.me) e criação/manutenção do recebedor para o split."
       />
+
+      {/* Recebedor negativo: a Pagar.me pede para nunca deixar, porque arrasta o saldo do master e
+          pode travar estorno. Fica no topo até as vendas da empresa cobrirem o buraco. */}
+      {negativos.length > 0 && (
+        <div
+          role="alert"
+          data-testid="recebedores-negativos"
+          className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-body-sm text-ink"
+        >
+          <Warning className="mt-0.5 shrink-0 text-destructive" />
+          <div className="flex flex-col gap-1">
+            <div className="font-medium">
+              {negativos.length === 1
+                ? `1 recebedor negativo na Pagar.me, ${brl(summary.negativeCents)} saindo do master`
+                : `${negativos.length} recebedores negativos na Pagar.me, ${brl(summary.negativeCents)} saindo do master`}
+            </div>
+            <div className="text-pretty text-muted">
+              Recebedor negativo arrasta o saldo da conta inteira e pode travar estorno. As próximas
+              vendas de cada empresa cobrem o buraco antes de liberar saque.
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {negativos.map((r) => (
+                <Link
+                  key={r.companyId}
+                  to={`/manager/companies/${r.companyId}/conta`}
+                  className="text-mp-primary underline-offset-2 hover:underline"
+                >
+                  {r.companyName}: {brl(r.balance?.availableCents ?? 0)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 tablet:grid-cols-3">
         <Card>
@@ -178,7 +214,7 @@ export default function ManagerFinanceRecipients() {
                       <div className="font-medium">{row.companyName}</div>
                       {!row.hasKyc && (
                         <div className="mt-0.5 text-caption text-warning">
-                          KYC pendente — preencha os dados antes de criar
+                          KYC pendente: preencha os dados antes de criar
                         </div>
                       )}
                       {row.requirements.length > 0 && (
@@ -233,9 +269,15 @@ export default function ManagerFinanceRecipients() {
                           liberar (cartão, D+30). Sem leitura, a tela diz isso em vez de mostrar zero. */}
                       {row.balance ? (
                         <div className="flex flex-col items-end">
-                          <span className="text-ink" data-testid={`saldo-${row.companyId}`}>
+                          <span
+                            className={row.negativeBalance ? "font-medium text-destructive" : "text-ink"}
+                            data-testid={`saldo-${row.companyId}`}
+                          >
                             {brl(row.balance.availableCents)}
                           </span>
+                          {row.negativeBalance && (
+                            <Badge tone="cancelled">Saldo negativo</Badge>
+                          )}
                           {row.balance.waitingCents > 0 && (
                             <span className="text-caption text-muted">
                               a liberar {brl(row.balance.waitingCents)}

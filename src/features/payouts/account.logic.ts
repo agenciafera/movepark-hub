@@ -122,3 +122,20 @@ export function maxWithdrawReason(
   }
   return "Nada disponível para saque.";
 }
+
+/**
+ * Alerta de recebedor negativo na conta do parceiro. Null quando não há leitura ou o saldo
+ * não é negativo. O texto muda por audiência: o Manager vê o efeito no master; o parceiro vê o
+ * que acontece com o dinheiro dele (as próximas vendas cobrem antes de liberar saque).
+ */
+export function negativeRecipientAlert(
+  gatewayAvailableCents: number | null | undefined,
+  audience: "manager" | "partner",
+  brl: (cents: number) => string,
+): string | null {
+  if (gatewayAvailableCents == null || gatewayAvailableCents >= 0) return null;
+  const buraco = brl(-gatewayAvailableCents);
+  return audience === "manager"
+    ? `Recebedor negativo em ${buraco} na Pagar.me. Esse valor está saindo do saldo do master até as próximas vendas desta empresa cobrirem; enquanto isso nada libera para saque aqui.`
+    : `Sua conta no gateway está negativa em ${buraco}. As próximas vendas cobrem esse valor primeiro; até lá não há saque.`;
+}

@@ -129,6 +129,36 @@ describe("PartnerAccount", () => {
     await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000, force: true }));
   });
 
+  it("recebedor negativo no gateway acende o alerta, com a consequência certa para cada audiência", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "jwt" } as never },
+      error: null,
+    } as never);
+    rpc("partner_account_statement", { json: { ...extrato, header: { ...extrato.header, available_cents: -1422 } } });
+    rpc("payout_withdrawable", {
+      json: {
+        company_id: "c1", release_days: 30, released_cents: 2000, retained_cents: 0, debt_cents: 0,
+        withdrawn_cents: 0, gateway_available_cents: -1422, gateway_waiting_cents: 0, gateway_synced_at: null,
+        recipient_status: "active", recipient_missing: false, available_cents: 0,
+        withdrawal_fee_cents: 367, max_withdraw_cents: 0,
+      },
+    });
+    edge("refresh-recipients", { json: { ok: true } });
+    const { unmount } = renderWithProviders(<PartnerAccount companyId="c1" canWithdraw={false} canRefund={false} showGateway={false} />);
+    expect(await screen.findByTestId("conta-negativa")).toHaveTextContent(
+      "Sua conta no gateway está negativa em R$ 14,22. As próximas vendas cobrem esse valor primeiro; até lá não há saque.",
+    );
+    unmount();
+    renderWithProviders(<PartnerAccount companyId="c1" canWithdraw canRefund />);
+    expect(await screen.findByTestId("conta-negativa")).toHaveTextContent(/saindo do saldo do master/);
+  });
+
+  it("sem saldo negativo o alerta não existe", async () => {
+    monta({ canWithdraw: false, canRefund: false });
+    await screen.findByTestId("conta-disponivel");
+    expect(screen.queryByTestId("conta-negativa")).not.toBeInTheDocument();
+  });
+
   it("para o parceiro (showGateway=false) não há saldo da Pagar.me, nem Atualizar saldos, nem leitura forçada", async () => {
     const { refresh } = monta({ canWithdraw: true, canRefund: false, showGateway: false });
     expect(await screen.findByTestId("conta-disponivel")).toHaveTextContent("R$ 21,20");

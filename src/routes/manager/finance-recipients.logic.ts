@@ -12,7 +12,7 @@ export interface RecipientOverviewRow {
   recipientStatus: PayoutRecipientStatus;
   /** Tem recebedor de fato criado no gateway (id externo presente). */
   hasRecipient: boolean;
-  /** Tem dados de banco/KYC (`company_payout_account`) — pré-requisito para criar o recebedor. */
+  /** Tem dados de banco/KYC (`company_payout_account`), pré-requisito para criar o recebedor. */
   hasKyc: boolean;
   externalRecipientId: string | null;
   kycUrl: string | null;
@@ -25,6 +25,12 @@ export interface RecipientOverviewRow {
   recipientMissing: boolean;
   /** Saldo real no gateway (disponível, a receber, já transferido), ou null sem leitura. */
   balance: { availableCents: number; waitingCents: number; transferredCents: number; syncedAt: string } | null;
+  /**
+   * O recebedor está devendo ao gateway. A Pagar.me pede para nunca deixar: recebedor negativo
+   * arrasta o saldo da conta inteira (o master) e pode travar estorno. Acontece quando um estorno
+   * híbrido ou chargeback debita mais do que ele tinha (ex.: o parceiro sacou no meio).
+   */
+  negativeBalance: boolean;
 }
 
 /** Empresas que podem vender (e portanto precisam de recebedor apto). */
@@ -63,6 +69,15 @@ export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow 
     ? (rec!.requirements as PayoutRequirement[])
     : [];
   const hasKyc = toArray(raw.company_payout_account).some((a) => !a.deleted_at);
+  const balance =
+    rec?.balance_synced_at && rec.balance_available_cents != null
+      ? {
+          availableCents: rec.balance_available_cents,
+          waitingCents: rec.balance_waiting_cents ?? 0,
+          transferredCents: rec.balance_transferred_cents ?? 0,
+          syncedAt: rec.balance_synced_at,
+        }
+      : null;
   return {
     companyId: raw.id,
     companyName: raw.name,
@@ -77,15 +92,8 @@ export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow 
       SELLABLE_ONBOARDING.includes(onboardingStatus) && recipientStatus !== "active",
     splitEnabled: raw.gateway_split_enabled === true,
     recipientMissing: !!rec?.gateway_missing_at,
-    balance:
-      rec?.balance_synced_at && rec.balance_available_cents != null
-        ? {
-            availableCents: rec.balance_available_cents,
-            waitingCents: rec.balance_waiting_cents ?? 0,
-            transferredCents: rec.balance_transferred_cents ?? 0,
-            syncedAt: rec.balance_synced_at,
-          }
-        : null,
+    balance,
+    negativeBalance: !!balance && balance.availableCents < 0,
   };
 }
 
@@ -99,9 +107,10 @@ export function latestBalanceSync(rows: RecipientOverviewRow[]): string | null {
   return best;
 }
 
-/** Pendências primeiro, depois por nome (pt-BR). */
+/** Recebedor negativo primeiro (é dinheiro saindo do master), depois pendências, depois nome. */
 export function sortRecipientRows(rows: RecipientOverviewRow[]): RecipientOverviewRow[] {
   return [...rows].sort((a, b) => {
+    if (a.negativeBalance !== b.negativeBalance) return a.negativeBalance ? -1 : 1;
     if (a.needsAttention !== b.needsAttention) return a.needsAttention ? -1 : 1;
     return a.companyName.localeCompare(b.companyName, "pt-BR");
   });
@@ -116,12 +125,26 @@ export interface RecipientSummary {
   total: number;
   active: number;
   needsAttention: number;
+  /** Recebedores devendo ao gateway. */
+  negative: number;
+  /** Soma do que eles devem, em centavos positivos (o buraco que o master está cobrindo). */
+  negativeCents: number;
 }
 
 export function summarizeRecipients(rows: RecipientOverviewRow[]): RecipientSummary {
+  const negativos = negativeRecipients(rows);
   return {
     total: rows.length,
     active: rows.filter((r) => r.recipientStatus === "active").length,
     needsAttention: rows.filter((r) => r.needsAttention).length,
+    negative: negativos.length,
+    negativeCents: negativos.reduce((acc, r) => acc + -(r.balance?.availableCents ?? 0), 0),
   };
+}
+
+/** Só quem está negativo no gateway, mais negativo primeiro. */
+export function negativeRecipients(rows: RecipientOverviewRow[]): RecipientOverviewRow[] {
+  return rows
+    .filter((r) => r.negativeBalance)
+    .sort((a, b) => (a.balance?.availableCents ?? 0) - (b.balance?.availableCents ?? 0));
 }

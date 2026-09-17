@@ -92,6 +92,7 @@ quando pode sair. Migration `20261120010000`.
 | Quando a venda libera | N dias depois do pagamento. Padrão global `app_setting.payout_release_days` (30), sobrescrito por `company.payout_release_days` (Recebedores › Prazo de saque) |
 | Quem saca | O Dono pelo Operator, até o disponível nosso; a Movepark pelo Manager, e só passa do teto com "Passar do disponível calculado" marcado (o gateway continua sendo o teto físico) |
 | Taxa de saque | Do parceiro, descontada do saldo pelo gateway |
+| Recebedor negativo | A Pagar.me pede para nunca deixar (arrasta o saldo do master e pode travar estorno). Quando a leitura do gateway vem abaixo de zero, Recebedores mostra um alerta no topo com as empresas e o buraco somado, a linha fica em vermelho com o selo "Saldo negativo", e a conta da empresa abre com o alerta: o Manager lê o efeito no master, o parceiro lê que as próximas vendas cobrem antes de qualquer saque (`negativeRecipientAlert`) |
 | Transferência automática | Desligada em todo recebedor (`transfer_enabled = false`, default global `payout_transfer_enabled = 'false'` no create). Desde 17/09/2026 o diálogo de repasse não oferece mais ligar, recorrência nem dia; o Operator perdeu o botão "Configurar recebimento" |
 
 `payout_withdrawable(company)`:

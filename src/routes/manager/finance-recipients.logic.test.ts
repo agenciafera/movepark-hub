@@ -5,6 +5,7 @@ import {
   latestBalanceSync,
   mapRecipientRow,
   summarizeRecipients,
+  negativeRecipients,
 } from "./finance-recipients.logic";
 
 function raw(over: Partial<RawCompanyRecipient> & { id: string; name: string }): RawCompanyRecipient {
@@ -120,7 +121,7 @@ describe("summarizeRecipients", () => {
       raw({ id: "b", name: "B" }),
       raw({ id: "c", name: "C", onboarding_status: "pending_review" }),
     ]);
-    expect(summarizeRecipients(rows)).toEqual({ total: 3, active: 1, needsAttention: 1 });
+    expect(summarizeRecipients(rows)).toEqual({ total: 3, active: 1, needsAttention: 1, negative: 0, negativeCents: 0 });
   });
 
   it("traz o saldo real do gateway quando houve leitura, e null sem ela", () => {
@@ -148,5 +149,41 @@ describe("summarizeRecipients", () => {
     expect(sem.balance).toBeNull();
     expect(latestBalanceSync([com, sem])).toBe("2026-09-16T17:11:06Z");
     expect(latestBalanceSync([sem])).toBeNull();
+  });
+});
+
+describe("recebedor negativo no gateway", () => {
+  const recipient = (available: number | null, synced: string | null = "2026-09-17T10:00:00Z") => ({
+    provider: "pagarme",
+    status: "active",
+    external_recipient_id: "re_x",
+    kyc_url: null,
+    kyc_url_expires_at: null,
+    requirements: [],
+    deleted_at: null,
+    balance_available_cents: available,
+    balance_waiting_cents: 0,
+    balance_transferred_cents: 0,
+    balance_synced_at: synced,
+  });
+
+  it("acende só com leitura e saldo abaixo de zero", () => {
+    expect(mapRecipientRow(raw({ id: "a", name: "A", payout_recipient: recipient(-1422) })).negativeBalance).toBe(true);
+    expect(mapRecipientRow(raw({ id: "b", name: "B", payout_recipient: recipient(0) })).negativeBalance).toBe(false);
+    expect(mapRecipientRow(raw({ id: "c", name: "C", payout_recipient: recipient(500) })).negativeBalance).toBe(false);
+    // Sem leitura não dá para afirmar nada: nem positivo, nem negativo.
+    expect(mapRecipientRow(raw({ id: "d", name: "D", payout_recipient: recipient(null, null) })).negativeBalance).toBe(false);
+  });
+
+  it("vem antes até das pendências de KYC, e o resumo soma o buraco", () => {
+    const rows = buildRecipientOverview([
+      raw({ id: "a", name: "Alfa", onboarding_status: "active" }), // sem recebedor → atenção
+      raw({ id: "b", name: "Beta", onboarding_status: "active", payout_recipient: recipient(-1000) }),
+      raw({ id: "c", name: "Gama", onboarding_status: "active", payout_recipient: recipient(-2500) }),
+      raw({ id: "d", name: "Delta", onboarding_status: "active", payout_recipient: recipient(900) }),
+    ]);
+    expect(rows.map((r) => r.companyName)).toEqual(["Beta", "Gama", "Alfa", "Delta"]);
+    expect(summarizeRecipients(rows)).toMatchObject({ negative: 2, negativeCents: 3500 });
+    expect(negativeRecipients(rows).map((r) => r.companyName)).toEqual(["Gama", "Beta"]);
   });
 });

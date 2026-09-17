@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowsClockwise } from "@phosphor-icons/react";
+import { ArrowsClockwise, Warning } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { usePartnerAccountStatement, usePayoutWithdrawable, useWithdraw } from "./api";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MOVEMENT_LABEL, maxWithdrawReason, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
+import { MOVEMENT_LABEL, maxWithdrawReason, negativeRecipientAlert, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
 
@@ -128,6 +128,23 @@ export function PartnerAccount({
 
   return (
     <div className="flex flex-col gap-4" data-testid="partner-account">
+      {/* Recebedor negativo no gateway: a Pagar.me pede para nunca deixar, porque arrasta o saldo do
+          master. Aparece para as duas audiências, cada uma com a consequência que é dela. */}
+      {(() => {
+        const alerta = negativeRecipientAlert(h?.available_cents, showGateway ? "manager" : "partner", brl);
+        if (!alerta) return null;
+        return (
+          <div
+            role="alert"
+            data-testid="conta-negativa"
+            className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-body-sm text-ink"
+          >
+            <Warning className="mt-0.5 shrink-0 text-destructive" />
+            <span className="text-pretty">{alerta}</span>
+          </div>
+        );
+      })()}
+
       {/* Cabeçalho (E0.3.8): o disponível para saque é o NOSSO número (vendas liberadas pelo prazo,
           menos dívida e saques, limitado ao saldo real). O gateway aparece como referência. */}
       <div className={showGateway ? "grid gap-4 tablet:grid-cols-4" : "grid gap-4 tablet:grid-cols-3"}>

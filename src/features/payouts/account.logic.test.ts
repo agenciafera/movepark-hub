@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { maxWithdrawReason, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
+import { maxWithdrawReason, negativeRecipientAlert, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 
 const base: AccountMovement = {
   kind: "sale", at: "2026-09-16T18:31:00Z", booking_code: "MP-1", gross_cents: 1440, fee_cents: 18,
@@ -83,5 +83,25 @@ describe("maxWithdrawReason", () => {
 
   it("nada em lugar nenhum", () => {
     expect(maxWithdrawReason(base, brl)).toBe("Nada disponível para saque.");
+  });
+});
+
+describe("negativeRecipientAlert", () => {
+  const brl = (c: number) => `R$ ${(c / 100).toFixed(2).replace(".", ",")}`;
+
+  it("silencioso sem leitura ou com saldo zero/positivo", () => {
+    expect(negativeRecipientAlert(null, "manager", brl)).toBeNull();
+    expect(negativeRecipientAlert(undefined, "partner", brl)).toBeNull();
+    expect(negativeRecipientAlert(0, "manager", brl)).toBeNull();
+    expect(negativeRecipientAlert(1422, "partner", brl)).toBeNull();
+  });
+
+  it("manager vê o buraco e o efeito no master; parceiro vê o que muda para ele", () => {
+    expect(negativeRecipientAlert(-1422, "manager", brl)).toBe(
+      "Recebedor negativo em R$ 14,22 na Pagar.me. Esse valor está saindo do saldo do master até as próximas vendas desta empresa cobrirem; enquanto isso nada libera para saque aqui.",
+    );
+    expect(negativeRecipientAlert(-1422, "partner", brl)).toBe(
+      "Sua conta no gateway está negativa em R$ 14,22. As próximas vendas cobrem esse valor primeiro; até lá não há saque.",
+    );
   });
 });
