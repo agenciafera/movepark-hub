@@ -19,12 +19,14 @@ Deno.test("withdrawPreflight: leitura ruim aborta em 502, saldo curto em 409, sa
   assertEquals(withdrawPreflight({ httpStatus: 200, availableCents: 100 }, 100).ok, true);
 });
 
-Deno.test("withdrawCap: o parceiro pede até o disponível inteiro; a taxa só precisa caber no saldo do gateway", () => {
+Deno.test("withdrawCap: a taxa sai de dentro do valor pedido; o que vai ao banco é valor menos taxa", () => {
   const base = { availableCents: 5000, feeCents: 367, gatewayAvailableCents: 12849, isHubAdmin: false, force: false };
-  assertEquals(withdrawCap({ ...base, amountCents: 5000 }).ok, true, "disponível inteiro, taxa cabe no gateway");
+  const tudo = withdrawCap({ ...base, amountCents: 5000 });
+  assertEquals(tudo.ok, true, "disponível inteiro pode ser pedido");
+  if (tudo.ok) assertEquals(tudo.toBankCents, 4633, "cai na conta o valor menos a taxa");
   assertEquals(withdrawCap({ ...base, amountCents: 5001 }).ok, false, "acima do disponível nosso");
-  assertEquals(withdrawCap({ ...base, amountCents: 5000, gatewayAvailableCents: 5000 }).ok, false, "gateway não cobre valor mais taxa");
+  assertEquals(withdrawCap({ ...base, amountCents: 367 }).ok, false, "valor igual à taxa não sobra nada");
+  assertEquals(withdrawCap({ ...base, amountCents: 5000, gatewayAvailableCents: 4999 }).ok, false, "gateway não cobre");
   assertEquals(withdrawCap({ ...base, amountCents: 6000, isHubAdmin: true, force: false }).ok, false, "hub_admin sem force respeita o teto");
   assertEquals(withdrawCap({ ...base, amountCents: 6000, isHubAdmin: true, force: true }).ok, true);
-  assertEquals(withdrawCap({ ...base, amountCents: 12600, isHubAdmin: true, force: true }).ok, false, "nem com force passa do gateway");
 });

@@ -43,7 +43,7 @@ function monta(props: { canWithdraw: boolean; canRefund: boolean }) {
     },
   });
   edge("refresh-recipients", { json: { ok: true } });
-  const saque = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", amount_cents: 5000, fee_cents: 367 } });
+  const saque = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", requested_cents: 5000, amount_cents: 4633, fee_cents: 367 } });
   renderWithProviders(<PartnerAccount companyId="c1" {...props} />);
   return { saque };
 }
@@ -74,16 +74,18 @@ describe("PartnerAccount", () => {
     expect(screen.getByTestId("saque-taxa")).toHaveTextContent("3,67");
     expect(screen.getByTestId("saque-disponivel")).toHaveTextContent("21,20");
     await userEvent.type(screen.getByLabelText("Valor a sacar"), "1000");
-    expect(screen.getByTestId("saque-resumo")).toHaveTextContent("Cai na conta: R$ 10,00");
-    expect(screen.getByTestId("saque-resumo")).toHaveTextContent("taxa cobrada do saldo no saque: R$ 3,67");
+    // A taxa sai de dentro do valor: pediu 10,00, caem 6,33.
+    expect(screen.getByTestId("saque-resumo")).toHaveTextContent("Sai do saldo: R$ 10,00");
+    expect(screen.getByTestId("saque-resumo")).toHaveTextContent("cai na conta: R$ 6,33");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
     await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 1000, force: false }));
   });
 
-  it("Sacar o máximo preenche o disponível inteiro; a taxa vem depois, do saldo", async () => {
+  it("Sacar o máximo pede o disponível inteiro e avisa que cai o valor menos a taxa", async () => {
     const { saque } = monta({ canWithdraw: true, canRefund: false });
     await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
     await userEvent.click(screen.getByRole("button", { name: "Sacar o máximo" }));
+    expect(screen.getByTestId("saque-resumo")).toHaveTextContent("cai na conta: R$ 17,53");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
     await waitFor(() => expect(saque.ultimoBody).toEqual({ company_id: "c1", amount_cents: 2120, force: false }));
   });

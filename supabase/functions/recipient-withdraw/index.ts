@@ -6,7 +6,7 @@
 //
 // POST /functions/v1/recipient-withdraw   Authorization: Bearer <JWT>
 // { "company_id": "uuid", "amount_cents": 5000, "force"?: true }
-// → { ok, withdrawal_id, external_transfer_id, status, amount_cents, fee_cents }
+// → { ok, withdrawal_id, external_transfer_id, status, requested_cents, amount_cents (vai ao banco), fee_cents }
 //
 // Permissão: hub_admin OU membro da empresa com `payouts:write` (o Dono, ADR-005).
 // Pré-voo: lê o saldo disponível do recebedor ao vivo; só pede quando cobre. Idempotência pelo
@@ -125,12 +125,16 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // A taxa sai de dentro do valor pedido: o gateway recebe o pedido de (valor − taxa), cobra a taxa
+  // do saldo, e do recebedor sai exatamente o valor que o parceiro pediu.
+  const feeCents = Number(tetoJson.withdrawal_fee_cents ?? 0);
+  const toBankCents = cap.toBankCents;
   const idempotencyKey = `wd-${crypto.randomUUID()}`;
   const result = await gateway.createWithdrawal({
     recipientId: recipient.external_recipient_id,
-    amountCents: input.amountCents,
+    amountCents: toBankCents,
     idempotencyKey,
-    metadata: { company_id: input.companyId, requested_by: userData.user.id },
+    metadata: { company_id: input.companyId, requested_by: userData.user.id, requested_cents: String(input.amountCents) },
   });
   const http = result.httpStatus ?? 0;
   if (http < 200 || http >= 300 || !result.transferId) {
@@ -138,9 +142,6 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: `O gateway recusou o saque (HTTP ${http}).`, raw: result.raw }, 502);
   }
 
-  // Taxa de saque configurada (a mesma que o webhook usa).
-  const { data: feeSetting } = await admin.from("app_setting").select("value").eq("key", "payout_withdrawal_fee_cents").maybeSingle();
-  const feeCents = Number(feeSetting?.value ?? 0) || 0;
   const status = transferStatusToWithdrawalStatus(result.status);
   const nowIso = new Date().toISOString();
   const { data: row, error: rowErr } = await admin
@@ -151,7 +152,8 @@ Deno.serve(async (req: Request) => {
         provider: "pagarme",
         external_transfer_id: result.transferId,
         external_recipient_id: recipient.external_recipient_id,
-        amount_cents: input.amountCents,
+        // O que foi ao banco; a taxa fica ao lado. amount + fee = o que saiu do recebedor.
+        amount_cents: toBankCents,
         fee_cents: feeCents,
         status,
         requested_at: nowIso,
@@ -184,7 +186,8 @@ Deno.serve(async (req: Request) => {
     withdrawal_id: row?.id ?? null,
     external_transfer_id: result.transferId,
     status,
-    amount_cents: input.amountCents,
+    requested_cents: input.amountCents,
+    amount_cents: toBankCents,
     fee_cents: feeCents,
   });
 });

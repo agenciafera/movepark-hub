@@ -780,7 +780,16 @@ export function useWithdraw() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
-      return body as { ok: boolean; withdrawal_id: string | null; status: string; amount_cents: number; fee_cents: number };
+      return body as {
+        ok: boolean;
+        withdrawal_id: string | null;
+        status: string;
+        /** O que o parceiro pediu (sai do saldo). */
+        requested_cents: number;
+        /** O que cai na conta: pedido menos a taxa. */
+        amount_cents: number;
+        fee_cents: number;
+      };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: accountKeys.all });

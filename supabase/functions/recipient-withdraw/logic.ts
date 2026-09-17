@@ -44,11 +44,11 @@ export function withdrawPreflight(
 }
 
 /**
- * Teto do saque (E0.3.8, corrigido em 17/09/2026): o parceiro pede até o NOSSO disponível inteiro;
- * a taxa de saque não é descontada dele antes, é cobrada pela Pagar.me do saldo do recebedor no
- * ato (sempre do recebedor, não há API para mandar para o master) e entra no razão como custo do
- * saque. O que continua valendo para todo mundo é o teto físico: valor mais taxa precisam caber
- * no saldo real do gateway. hub_admin passa do teto nosso só com `force`.
+ * Teto do saque (E0.3.8, fechado em 17/09/2026): o parceiro pede um valor A até o NOSSO disponível
+ * inteiro. A taxa de saque sai DE DENTRO desse valor: o gateway recebe o pedido de A − taxa, cobra
+ * a taxa do saldo, e o recebedor sai exatamente A. Na conta bancária cai A − taxa, e a tela avisa
+ * isso antes de confirmar. O teto físico é o saldo real do gateway. hub_admin passa do teto nosso
+ * só com `force`.
  */
 export function withdrawCap(
   args: {
@@ -59,20 +59,24 @@ export function withdrawCap(
     isHubAdmin: boolean;
     force: boolean;
   },
-): { ok: true } | { ok: false; reason: string; status: number } {
+): { ok: true; toBankCents: number } | { ok: false; reason: string; status: number } {
   const fee = Math.max(0, args.feeCents);
-  if (args.gatewayAvailableCents != null && args.amountCents + fee > args.gatewayAvailableCents) {
+  if (args.amountCents <= fee) {
+    return { ok: false, reason: `O saque precisa ser maior que a taxa de ${fee} centavos.`, status: 400 };
+  }
+  if (args.gatewayAvailableCents != null && args.amountCents > args.gatewayAvailableCents) {
     return {
       ok: false,
-      reason: `O saldo no gateway (${args.gatewayAvailableCents} centavos) não cobre o saque mais a taxa de ${fee}.`,
+      reason: `O saldo no gateway (${args.gatewayAvailableCents} centavos) não cobre o saque de ${args.amountCents}.`,
       status: 409,
     };
   }
-  if (args.amountCents <= args.availableCents) return { ok: true };
-  if (args.isHubAdmin && args.force) return { ok: true };
-  return {
-    ok: false,
-    reason: `Disponível para saque é ${args.availableCents} centavos; o pedido foi de ${args.amountCents}.`,
-    status: 409,
-  };
+  if (args.amountCents > args.availableCents && !(args.isHubAdmin && args.force)) {
+    return {
+      ok: false,
+      reason: `Disponível para saque é ${args.availableCents} centavos; o pedido foi de ${args.amountCents}.`,
+      status: 409,
+    };
+  }
+  return { ok: true, toBankCents: args.amountCents - fee };
 }

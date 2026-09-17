@@ -107,15 +107,15 @@ recusa (409) o que passa dele; `force` só para hub_admin.
 A conta mostra "Disponível para saque" (nosso), "Retido pelo prazo" (com o prazo), "A liberar
 pelo gateway" (cartão) e a dívida; o saldo bruto da Pagar.me fica como referência pequena.
 
-**No saque, o custo fica explícito, mas não é descontado antes (17/09/2026):** o diálogo mostra
-o disponível e a taxa por saque (`app_setting.payout_withdrawal_fee_cents`, devolvida pela RPC em
-`withdrawal_fee_cents`). O parceiro pede qualquer valor até o disponível inteiro
-(`max_withdraw_cents` = disponível) ou usa "Sacar o máximo". A taxa é cobrada pela Pagar.me do
-saldo do recebedor no ato do saque, sempre do recebedor (a Pagar.me não tem como mandar para o
-master: "as taxas de saque sempre são cobradas da conta do recebedor que realiza a
-transferência"), e entra no razão pelo `fee_cents` de `payout_withdrawal`, abatendo o disponível
-seguinte. A Edge só exige que valor mais taxa caibam no saldo real do gateway (migration
-`20261120050000`).
+**No saque, a taxa sai de dentro do valor (fechado em 17/09/2026):** o diálogo mostra o
+disponível e a taxa por saque (`app_setting.payout_withdrawal_fee_cents`, devolvida pela RPC em
+`withdrawal_fee_cents`). O parceiro pede qualquer valor A até o disponível inteiro
+(`max_withdraw_cents` = disponível) ou usa "Sacar o máximo", e a tela avisa antes de confirmar:
+"sai do saldo A · taxa · cai na conta A − taxa". A Edge pede ao gateway A − taxa; a Pagar.me
+cobra a taxa do saldo do recebedor (sempre do recebedor, não há API para mandar ao master), então
+do recebedor sai exatamente A. `payout_withdrawal` guarda `amount_cents` = o que foi ao banco e
+`fee_cents` = a taxa; a soma é o que saiu do saldo e abate o disponível seguinte. O disponível
+nunca chega já com a taxa descontada; ela só aparece no saque (migration `20261120050000`).
 
 ## Fora do escopo agora
 

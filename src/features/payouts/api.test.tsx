@@ -294,7 +294,7 @@ describe("useRefreshGatewayBalances", () => {
 
 describe("useWithdraw", () => {
   it("pede o saque à Edge recipient-withdraw com empresa e valor em centavos", async () => {
-    const chamada = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", amount_cents: 5000, fee_cents: 367 } });
+    const chamada = edge("recipient-withdraw", { json: { ok: true, withdrawal_id: "w1", status: "created", requested_cents: 5000, amount_cents: 4633, fee_cents: 367 } });
     const { result } = renderMutation(() => useWithdraw());
     const r = await result.current.mutateAsync({ company_id: "c1", amount_cents: 5000 });
     expect(chamada.ultimoBody).toEqual({ company_id: "c1", amount_cents: 5000 });

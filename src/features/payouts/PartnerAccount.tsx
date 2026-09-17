@@ -87,13 +87,17 @@ export function PartnerAccount({
       toast.error("Informe o valor do saque.");
       return;
     }
+    if (cents <= feeCents) {
+      toast.error(`O saque precisa ser maior que a taxa de ${brl(feeCents)}.`);
+      return;
+    }
     if (w && cents > maxCents && !(canRefund && force)) {
       toast.error(`Disponível para saque é ${brl(maxCents)}.`);
       return;
     }
     try {
       const r = await withdraw.mutateAsync({ company_id: companyId, amount_cents: cents, force: canRefund && force });
-      toast.success(`Saque de ${brl(r.amount_cents)} pedido ao gateway (${STATUS_LABEL[r.status] ?? r.status}).`);
+      toast.success(`Saque pedido: ${brl(r.amount_cents)} caem na conta (taxa de ${brl(r.fee_cents)} descontada).`);
       setWithdrawOpen(false);
       setAmount(null);
       setForce(false);
@@ -244,8 +248,8 @@ export function PartnerAccount({
                 <span className="text-ink" data-testid="saque-taxa">{brl(feeCents)}</span>
               </div>
               <p className="mt-1 text-caption text-muted">
-                A taxa é cobrada pela Pagar.me do saldo do estacionamento na hora do saque, uma vez por
-                saque. Quem saca toda hora paga mais; juntar em um saque paga uma taxa só.
+                A taxa é descontada do valor sacado, uma vez por saque. Quem saca toda hora paga mais;
+                juntar em um saque paga uma taxa só.
               </p>
             </div>
             <div className="flex items-end gap-2">
@@ -264,7 +268,8 @@ export function PartnerAccount({
             </div>
             {amountCents > 0 && (
               <p className="text-caption text-muted" data-testid="saque-resumo">
-                Cai na conta: <strong>{brl(amountCents)}</strong> · taxa cobrada do saldo no saque: {brl(feeCents)}
+                Sai do saldo: {brl(amountCents)} · taxa: {brl(feeCents)} · cai na conta:{" "}
+                <strong>{brl(Math.max(0, amountCents - feeCents))}</strong>
                 {amountCents > maxCents && !(canRefund && force) ? " · acima do disponível" : ""}
               </p>
             )}
