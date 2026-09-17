@@ -62,8 +62,16 @@ describe("Manager · Usuários", () => {
     expect(screen.getByText("nunca entrou")).toBeInTheDocument();
   });
 
+  /**
+   * Três linhas, e não as 25 da página cheia: o rodapé ("1 a 25 de 60") sai de
+   * `pageInfo(total, page, PAGE_SIZE)`, que nem olha quantas linhas vieram. Com 25 linhas
+   * cada tecla digitada na busca repintava a tabela inteira, e o caso levava 3,1 s contra
+   * um teto de 5 s: passava na máquina parada e estourava na suíte cheia, onde quatro
+   * forks disputam a CPU. Teste que só falha com a máquina ocupada não é sinal, é ruído,
+   * e ruído na `main` treina o time a ignorar o vermelho.
+   */
   it("Próxima pede o offset seguinte; a busca vai ao servidor e volta à primeira página", async () => {
-    const chamada = montaTela(60, Array.from({ length: 25 }, (_, i) => linha(i + 1)));
+    const chamada = montaTela(60, Array.from({ length: 3 }, (_, i) => linha(i + 1)));
     expect(await screen.findByText("Pessoa 1")).toBeInTheDocument();
     expect(screen.getByText("1 a 25 de 60")).toBeInTheDocument();
 

@@ -820,8 +820,9 @@ export default function PrecosPage() {
               e IA citarem o número com o nosso nome junto. */}
           <p className="mt-3 text-pretty text-caption-sm text-muted">
             Para imprensa e citação: reprodução livre com atribuição a "Índice Movepark de
-            Preços (movepark.co)". Os dados são contínuos, direto do motor de reservas; a
-            versão em texto vive em movepark.co/llms-full.txt. Contato: contato@movepark.co.
+            Preços (movepark.co)". Os dados são contínuos, direto do motor de reservas. Para ler
+            por máquina: movepark.co/precos.json (JSON datado) ou movepark.co/llms-full.txt
+            (texto). Contato: contato@movepark.co.
           </p>
         </div>
       </section>

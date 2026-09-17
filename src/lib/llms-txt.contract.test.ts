@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { rotasDeclaradas } from "@/test/rotas";
@@ -37,14 +37,41 @@ function enderecosCitados(): string[] {
     .map((u) => u.split(/[?#]/)[0].replace(/[.,;:]+$/, ""))
     .map((u) => u.replace(/<([a-zA-Z]+)>/g, ":$1"))
     .map((u) => u.replace(/\/+$/, "") || "/")
-    .filter((u) => !u.startsWith("/.well-known"))
     // `/v1` é a Public API, que mora em api.movepark.co e não em rota do site.
-    .filter((u) => u !== "/v1" && !u.startsWith("/v1/"))
-    // Último segmento com ponto é arquivo (sitemap.xml, llms-full.txt, feed.xml).
-    .filter((u) => !u.split("/").pop()?.includes("."));
+    .filter((u) => u !== "/v1" && !u.startsWith("/v1/"));
 
   return [...new Set(limpos)];
 }
+
+/** Último segmento com ponto é arquivo servido do `dist`, não rota de React Router. */
+const ehAsset = (u: string) => u.split("/").pop()?.includes(".") || u.startsWith("/.well-known");
+
+/**
+ * Arquivo citado que NÃO mora em `public/`: quem o escreve, e a marca que prova isso.
+ *
+ * Arquivo gerado é o caso perigoso, porque o `llms.txt` promete um endereço que só passa
+ * a existir depois do build. Se o passo que escreve some, o arquivo some junto e a
+ * promessa vira 404 sem nenhum teste reclamar.
+ *
+ * A `marca` é escrita entrada por entrada, e não derivada do nome, por dois motivos:
+ * procurar só o nome aceitaria a menção dele num comentário como se fosse a escrita, e o
+ * índice de preços tem duas escritas com o mesmo nome de arquivo (o geral e o por
+ * destino), que precisam se provar separadamente. O sitemap não tem string de escrita,
+ * porque quem o emite é o plugin do vite.
+ */
+const GERADOS: Record<string, { arquivo: string; marca: string }> = {
+  "/llms-full.txt": { arquivo: "scripts/generate-geo-artifacts.mjs", marca: '"llms-full.txt"' },
+  "/blog/feed.xml": { arquivo: "scripts/generate-geo-artifacts.mjs", marca: '"feed.xml"' },
+  "/precos.json": {
+    arquivo: "scripts/generate-geo-artifacts.mjs",
+    marca: 'path.join(DIST, "precos.json")',
+  },
+  "/estacionamentos/:destino/precos.json": {
+    arquivo: "scripts/generate-geo-artifacts.mjs",
+    marca: 'escreverNoDestino(dest, "precos.json"',
+  },
+  "/sitemap.xml": { arquivo: "vite.config.ts", marca: "vite-plugin-sitemap" },
+};
 
 /** Casa por segmento, com `:param` como coringa. Mesmo critério do inventário de rotas. */
 function casa(rota: string, url: string): boolean {
@@ -63,8 +90,22 @@ describe("contrato do llms.txt", () => {
   });
 
   it("todo endereço citado existe como rota", () => {
-    const mortos = citados.filter((url) => !rotas.some((rota) => casa(rota, url)));
+    const mortos = citados
+      .filter((url) => !ehAsset(url))
+      .filter((url) => !rotas.some((rota) => casa(rota, url)));
     expect(mortos, "endereço no llms.txt que nenhuma rota atende").toEqual([]);
+  });
+
+  it("todo arquivo citado está no repo ou é escrito por um passo do build", () => {
+    const mortos = citados.filter((url) => {
+      if (!ehAsset(url)) return false;
+      if (existsSync(join(process.cwd(), "public", url.replace(/^\//, "")))) return false;
+      const gerado = GERADOS[url];
+      if (!gerado) return true;
+      // Não basta estar na lista: o passo que escreve o arquivo tem que continuar lá.
+      return !readFileSync(join(process.cwd(), gerado.arquivo), "utf8").includes(gerado.marca);
+    });
+    expect(mortos, "arquivo prometido no llms.txt que ninguém escreve").toEqual([]);
   });
 
   /**
