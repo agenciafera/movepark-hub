@@ -60,9 +60,19 @@ Deno.serve(async (req: Request) => {
     // reconcile-pending-charges marcou pago depois. Sem este status, a linha ficaria paga e
     // não entregue, contando como dívida com o parceiro e sem ninguém para estornar.
     .in("booking.status", ["pending", "cancelled", "expired"])
+    // Cancelamento intencional com estorno recusado (fila manual) NÃO é "webhook perdido": o
+    // pagamento fica `paid` de propósito até a devolução sair. Reconfirmar aqui ressuscitava a
+    // reserva que o staff acabou de cancelar (MP-6CFA4B, 17/09/2026).
+    .is("refund_reason", null)
     .lt("updated_at", cutoff)
     .limit(BATCH_LIMIT);
   if (error) return json({ error: error.message }, 500);
+
+  const { data: filaManual } = await admin
+    .from("payout_refund_manual")
+    .select("payment_id")
+    .eq("status", "pending");
+  const naFila = new Set((filaManual ?? []).map((r: { payment_id: string }) => r.payment_id));
 
   const site = siteUrl();
   const settings = await loadGatewaySettings(admin);
@@ -70,6 +80,7 @@ Deno.serve(async (req: Request) => {
   let refunded = 0;
 
   for (const p of payments ?? []) {
+    if (naFila.has(p.id)) continue; // devolução pendente na fila manual: não é para reconfirmar
     try {
       const { data: cr } = await admin.rpc("confirm_or_refund_booking", {
         p_booking_id: p.booking_id,

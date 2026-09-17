@@ -214,14 +214,27 @@ Deno.serve(async (req: Request) => {
       // Insistir nunca vai funcionar. O cancelamento segue e a devolução vai para a fila manual;
       // o payment fica `paid` até alguém marcar a linha como paga no Manager.
       console.error("[cancel-booking] estorno recusado, vai para a fila manual:", refund.httpStatus, JSON.stringify(refund.raw));
-      const { error: filaErr } = await admin.from("payout_refund_manual").insert({
-        booking_id: booking.id,
-        payment_id: payment.id,
-        amount_cents: totalCents,
-        reason: manualRefundReason(refund.raw),
-        gateway_response: refund.raw ?? null,
-        created_by: userId,
-      });
+      // Uma linha pendente por pagamento (índice parcial): se já existe (segunda tentativa de
+      // cancelar a mesma reserva), reaproveita em vez de falhar o cancelamento inteiro.
+      const { data: pendente } = await admin
+        .from("payout_refund_manual")
+        .select("id")
+        .eq("payment_id", payment.id)
+        .eq("status", "pending")
+        .maybeSingle();
+      const { error: filaErr } = pendente
+        ? await admin
+            .from("payout_refund_manual")
+            .update({ reason: manualRefundReason(refund.raw), gateway_response: refund.raw ?? null })
+            .eq("id", pendente.id)
+        : await admin.from("payout_refund_manual").insert({
+            booking_id: booking.id,
+            payment_id: payment.id,
+            amount_cents: totalCents,
+            reason: manualRefundReason(refund.raw),
+            gateway_response: refund.raw ?? null,
+            created_by: userId,
+          });
       if (filaErr) {
         // Sem a linha na fila o cliente ficaria sem devolução e sem ninguém sabendo. Aí é abortar.
         console.error("[cancel-booking] fila manual falhou:", filaErr.message);
