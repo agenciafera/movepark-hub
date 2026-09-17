@@ -53,19 +53,21 @@ não é "escrever mais sobre GRU", é **consolidar GRU e abrir CNF**.
 
 ### 1.3 O furo que precisa ser dito antes de tudo
 
-**Confins tem parceiro fechado, o Be Park, e ele não está no sistema.** Em 26/08/2026 não existe
-empresa, unidade nem lote mapeado com esse nome no Hub: zero registros em `company`, `location` e
-`prospect_location`. Os seis lotes mapeados de Confins são Park Confins, IPO Park, Estacionamento
-Pátio, AeroPark Confins, Auto Park Brasil e Space Park.
+**Resolvido em 16/09/2026: o Be Park está cadastrado e listado.** A unidade aparece em
+`/estacionamentos/aeroporto-confins/bepark` com tarifa do motor de reservas (R$ 45,00 a diária em
+16/09/2026), 7,6 km do terminal, van de 10 minutos e operação 24 horas. Confins deixou de ser a
+praça sem tarifa, sem distância medida e sem reserva, e o conteúdo de lá pode levar CTA de reserva.
 
-Pior: o Be Park **tinha página no site antigo**, em
-`/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins/`. Hoje essa URL
-responde 301 para `/destinos/aeroporto-de-confins`, uma página que não menciona o Be Park. Quem
-chega procurando por ele cai num lugar que não fala dele, o que perde busca de marca e perde
-conversão ao mesmo tempo.
+O retrato anterior, de 26/08/2026, era outro: não existia empresa, unidade nem lote mapeado com
+esse nome no Hub. Os lotes mapeados de Confins hoje são oito: Park Confins, Multipark, Central
+Park, AeroPark Confins, Auto Park Brasil, Space Park, Estacionamento Pátio e IPO Park.
 
-Enquanto o cadastro não acontece, Confins é a única praça sem tarifa, sem distância medida e sem
-reserva. **É o primeiro entregável da Fase 0**, e sem ele metade da praça do Leonardo fica parada.
+**Sobra uma ponta solta na busca de marca.** O Be Park tinha página no site antigo, em
+`/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins/`. Essa URL responde
+301 para `/estacionamentos/aeroporto-confins`, a página da praça, que hoje já mostra o Be Park
+entre as unidades. Melhorou, mas o destino certo seria a ficha da unidade,
+`/estacionamentos/aeroporto-confins/bepark`: quem busca pela marca quer o pátio, não a lista.
+Ajustar esse 301 é tarefa de uma linha no mapa do worker.
 
 **Resolvido em 01/09/2026, e o que estava abaixo virou história.** O BePark entrou como unidade
 listada em `/estacionamentos/aeroporto-confins/bepark`, com `checkout_mode = external`, traslado de
@@ -284,7 +286,7 @@ Ritmo proposto: **2 páginas por semana por pessoa** e **4 peças de Instagram p
 
 | Entrega | Por quê | Quem |
 |---|---|---|
-| **Cadastrar o Be Park no Hub** | Sem ele Confins não tem tarifa, distância nem reserva | Leonardo |
+| **Cadastrar o Be Park no Hub** | Sem ele Confins não tem tarifa, distância nem reserva | Leonardo. ✅ feito, listado com preço vivo em 16/09/2026 |
 | **Mapa de canonicalização** | Definir, por aeroporto, qual URL ganha cada termo de cabeça e o que é redirecionado para ela | os dois. ✅ GRU e CWB em 27/08/2026, em [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md). ✅ VCP e CNF em 28/08/2026, em [canonicalizacao-vcp-cnf.md](./canonicalizacao-vcp-cnf.md); planilha do acervo inteiro em [dados/mapa-canonicalizacao-blog.csv](./dados/mapa-canonicalizacao-blog.csv) |
 | Baseline do Search Console | 16 meses por consulta e por página, congelados como marco zero | os dois. ✅ congelado em 27/08/2026: 9.744 consultas, 709 páginas, 1,35 milhão de impressões, em [baseline-search-console.md](./baseline-search-console.md) |
 | **Placar de citação em IA** | 12 consultas a cada quinze dias em ChatGPT, Gemini, Perplexity e visão geral do Google, com print | os dois |
