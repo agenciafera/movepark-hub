@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +75,12 @@ export default function ManagerFinanceBilling() {
                 const commission = (row.grossRevenue * row.takeRateBps) / 10000;
                 return (
                   <TableRow key={row.companyId}>
-                    <TableCell className="text-ink">{row.companyName}</TableCell>
+                    <TableCell className="text-ink">
+                      {/* Nome leva à conta do estacionamento (E0.3.7): extrato, saque, estorno. */}
+                      <Link to={`/manager/companies/${row.companyId}/conta`} className="underline-offset-2 hover:underline">
+                        {row.companyName}
+                      </Link>
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{row.reservations}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatBRL(row.grossRevenue)}

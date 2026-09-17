@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -121,7 +122,12 @@ export default function ManagerFinancePayouts() {
             <TableBody>
               {companies.map((c) => (
                 <TableRow key={c.company_id}>
-                  <TableCell className="text-ink">{c.company_name}</TableCell>
+                  <TableCell className="text-ink">
+                    {/* Nome leva à conta do estacionamento (E0.3.7): extrato, saque, estorno. */}
+                    <Link to={`/manager/companies/${c.company_id}/conta`} className="underline-offset-2 hover:underline">
+                      {c.company_name}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{c.paid_count}</TableCell>
                   <TableCell className="text-right tabular-nums">{brl(c.gross_partner_cents)}</TableCell>
                   <TableCell className="text-right tabular-nums text-warning">
