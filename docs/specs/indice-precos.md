@@ -204,7 +204,13 @@ gate `bun run test` (o projeto `unit` do Vitest passou a incluir
   (`datasetSchema` em `src/lib/jsonld.ts`): quem chega pelo schema descobre o JSON, e
   quem chega pelo JSON lê a mesma permissão.
 - CORS liberado em `public/_headers` (`Access-Control-Allow-Origin: *`): sem isso o
-  arquivo não abre de dentro de um navegador.
+  arquivo não abre de dentro de um navegador. **Só CORS naquele bloco, nunca
+  `Content-Type`**, e isso foi medido em produção em 16/09/2026: o `_headers` é
+  aplicado antes do worker, então declarar `application/json` no padrão
+  `/estacionamentos/:destino/precos.json` rotulava também o fallback da SPA. Destino
+  que não existe caía no `index.html`, a guarda `type.includes("text/html")` do worker
+  deixava de reconhecer o HTML, e a resposta saía com 200, content-type de JSON e 94 KB
+  da casca do app. O tipo certo já vem da extensão do asset.
 
 ## Atualização
 

@@ -50,10 +50,15 @@
 # Índice de preços em JSON: dado público de referência, feito para agente e para
 # ferramenta de terceiro ler. Sem CORS ele não abre de dentro de um navegador, que
 # é metade dos consumidores que queremos. Ver docs/specs/indice-precos.md.
+#
+# Sem `Content-Type` aqui, de propósito, e isso já quebrou uma vez em produção: o
+# header do `_headers` é aplicado ANTES do worker, então declarar application/json
+# neste padrão também rotulava o fallback da SPA. Caminho de destino que não existe
+# caía no index.html, a guarda `type.includes("text/html")` do worker não reconhecia
+# mais o HTML, e o agente recebia 94 KB da casca do app com 200 e content-type de
+# JSON. O tipo correto já vem da extensão `.json` do próprio asset.
 /precos.json
-  Content-Type: application/json; charset=utf-8
   Access-Control-Allow-Origin: *
 
 /estacionamentos/:destino/precos.json
-  Content-Type: application/json; charset=utf-8
   Access-Control-Allow-Origin: *
