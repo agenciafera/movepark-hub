@@ -138,7 +138,7 @@ nas inversões de 28/08. O que foi conferido:
 | Todo alvo de 301 é post publicado e fora do mapa | sim, nenhuma cadeia |
 | Resposta em produção | 301 para a dona nas formas `/blog/<slug>/`, sem barra e `.md`; as 14 donas respondem 200 |
 | Sitemap, índice do blog e links internos dos posts publicados | nenhum aponta para slug absorvido |
-| Pátio fora de operação (Ponce Park, Urban Park, Decolar Park, Stop Park) em post publicado | zero, no acervo inteiro. Só aparecem nos 15 absorvidos, que não renderizam |
+| Pátio fora de operação (Ponce Park, Urban Park, Decolar Park, Stop Park) em post publicado | zero, no acervo inteiro. Só aparecem em 13 absorvidos de GRU, que não renderizam |
 | `bun run test`, com `blog-urls.contract.test.ts` | verde, 3.412 testes |
 
 O `public/blog/<slug>.md` que a atividade citava saiu do repo em 01/09/2026; o gêmeo markdown do
