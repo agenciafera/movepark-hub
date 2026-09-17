@@ -195,7 +195,10 @@ Deno.serve(async (req: Request) => {
       httpStatus: exec.result.httpStatus,
       request: { amount_cents: totalCents, split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
       response: exec.result.raw,
-      note: input.reason ?? `cancelamento (${actor})`,
+      // Recusa processada fica explícita no rastro: "HTTP 200" sozinho parecia estorno feito.
+      note: exec.result.status === "failed"
+        ? `ESTORNO RECUSADO pelo gateway: ${(exec.result.failureMessages ?? []).join("; ") || "sem motivo"} · ${input.reason ?? `cancelamento (${actor})`}`
+        : input.reason ?? `cancelamento (${actor})`,
     });
     const refund = exec.result;
     const motivo = input.reason ?? `cancelamento (${actor})`;
