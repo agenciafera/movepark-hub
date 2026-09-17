@@ -29,7 +29,7 @@ export const bookingsKeys = {
 };
 
 const baseSelect =
-  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at)";
+  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at, paid_at, method)";
 
 async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
   // Reserva cancelada carrega `deleted_at` (que também é o "cancelada em" na UI). A lista

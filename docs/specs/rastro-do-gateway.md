@@ -36,3 +36,12 @@ Manager › Reservas › clique na reserva › bloco **Gateway (Pagar.me)** (só
 pgTAP `payment_gateway_event.test.sql` (7): RLS e RPC só para hub_admin, ids do gateway na
 resposta, ordem dos eventos. Deno `trail.test.ts`. Vitest `GatewayTrail.test.tsx` (ids, split,
 estorno, evento expansível) e o modal da reserva.
+
+## Aviso da janela de estorno (17/09/2026)
+
+A Pagar.me só estorna pela API dentro de um prazo contado do pagamento: **PIX 90 dias, cartão
+180**. Passou, recusa com ou sem saldo, e o cancelamento cai na fila de reembolso manual. O modal
+da reserva no Manager avisa antes do clique: vencida, um bloco em vermelho com a data e a
+consequência; a vencer em até 7 dias, um bloco de atenção com a data. Lógica pura em
+`payment.logic.ts` (`refundWindow`, `REFUND_WINDOW_DAYS`), com o embed de `payments` da reserva
+trazendo `paid_at` e `method`.

@@ -338,7 +338,7 @@ export type BookingWithRelations = Booking & {
     | null;
   vehicle: Pick<Vehicle, "id" | "license_plate" | "model" | "color"> | null;
   /** Pagamentos da reserva (para gatear/exibir o estado de estorno no painel). */
-  payments?: Pick<Payment, "id" | "status" | "refunded_at" | "created_at">[] | null;
+  payments?: Pick<Payment, "id" | "status" | "refunded_at" | "created_at" | "paid_at" | "method">[] | null;
 };
 
 export type Session = {

@@ -5,12 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { formatBRL, formatDateTime } from "@/lib/format";
+import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import type { BookingWithRelations } from "@/types/domain";
 import { useAuth } from "@/auth/context";
 import { useCancelBookingStaff } from "./api";
-import { paymentState } from "./payment.logic";
+import { paymentState, refundWindow } from "./payment.logic";
 import { GatewayTrail } from "./GatewayTrail";
 
 type Props = {
@@ -32,7 +32,10 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
   if (!booking) return null;
 
   const pay = paymentState(booking.payments);
-  // Cancelar (que reembolsa) só antes do check-in — e com escopo. Depois do check-in não há estorno.
+  // Janela de estorno do gateway (PIX 90 dias, cartão 180, contados do pagamento). Vencida, o
+  // cancelamento ainda acontece, mas a devolução cai na fila de reembolso manual.
+  const janela = pay.canRefund ? refundWindow(booking.payments) : null;
+  // Cancelar (que reembolsa) só antes do check-in, e com escopo. Depois do check-in não há estorno.
   const canCancel =
     (booking.status === "pending" || booking.status === "confirmed") &&
     hasScope("bookings:cancel", booking.location?.company?.id);
@@ -113,6 +116,17 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
               <GatewayTrail bookingId={booking.id} />
             </div>
           </>
+        )}
+
+        {canCancel && janela && (janela.expired || janela.daysLeft <= 7) && (
+          <div
+            className={`rounded-md border p-3 text-body-sm ${janela.expired ? "border-error/40 bg-error/5 text-error" : "border-warning/40 bg-warning/5 text-ink"}`}
+            data-testid="aviso-janela-estorno"
+          >
+            {janela.expired
+              ? `O prazo de estorno pelo gateway venceu em ${formatDate(janela.deadline)} (${janela.method === "pix" ? "PIX: 90 dias" : "cartão: 180 dias"} depois do pagamento). Cancelar ainda funciona, mas a devolução ao cliente vai para a fila de reembolso manual, para pagar por fora.`
+              : `O prazo de estorno pelo gateway vence em ${formatDate(janela.deadline)} (${janela.daysLeft} dia${janela.daysLeft === 1 ? "" : "s"}). Depois disso a devolução vai para a fila manual.`}
+          </div>
         )}
 
         {canCancel && (

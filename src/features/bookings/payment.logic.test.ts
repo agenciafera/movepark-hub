@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lastPayment, paymentState } from "./payment.logic";
+import { lastPayment, paymentState, refundWindow } from "./payment.logic";
 
 const pay = (over: Partial<{ status: string | null; refunded_at: string | null; created_at: string }>) => ({
   status: "paid",
@@ -44,5 +44,25 @@ describe("paymentState", () => {
     const old = pay({ status: "failed", created_at: "2026-06-01T00:00:00Z" });
     const recent = pay({ status: "paid", created_at: "2026-06-10T00:00:00Z" });
     expect(paymentState([old, recent]).canRefund).toBe(true);
+  });
+});
+
+describe("refundWindow", () => {
+  const agora = new Date("2026-09-17T12:00:00Z");
+  it("PIX: 90 dias do pagamento; cartão: 180", () => {
+    const pix = refundWindow([{ status: "paid", method: "pix", paid_at: "2026-09-01T12:00:00Z", created_at: "2026-09-01T12:00:00Z" }], agora)!;
+    expect(pix.method).toBe("pix");
+    expect(pix.deadline.toISOString()).toBe("2026-11-30T12:00:00.000Z");
+    expect(pix.expired).toBe(false);
+    expect(pix.daysLeft).toBe(74);
+    const card = refundWindow([{ status: "paid", method: "card", paid_at: "2026-01-01T12:00:00Z", created_at: "2026-01-01T12:00:00Z" }], agora)!;
+    expect(card.deadline.toISOString()).toBe("2026-06-30T12:00:00.000Z");
+    expect(card.expired).toBe(true);
+    expect(card.daysLeft).toBeLessThan(0);
+  });
+  it("sem pagamento pago, ou sem método conhecido, não há janela", () => {
+    expect(refundWindow([], agora)).toBeNull();
+    expect(refundWindow([{ status: "pending", method: "pix", paid_at: null, created_at: "2026-09-01T12:00:00Z" }], agora)).toBeNull();
+    expect(refundWindow([{ status: "paid", method: "boleto", paid_at: "2026-09-01T12:00:00Z", created_at: "2026-09-01T12:00:00Z" }], agora)).toBeNull();
   });
 });
