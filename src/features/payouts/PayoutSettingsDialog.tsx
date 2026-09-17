@@ -1,6 +1,5 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Warning } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -10,25 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useRecipient, useSetCompanyPayoutReleaseDays, useUpdateRecipientPayout } from "./api";
-import { useCompanies } from "@/features/companies/api";
 import { Input } from "@/components/ui/input";
-import {
-  coerceDay,
-  dayOptions,
-  INTERVAL_LABELS,
-  TRANSFER_INTERVALS,
-  WEEKDAY_LABELS,
-  type TransferInterval,
-} from "./payoutSettings.logic";
+import { useSetCompanyPayoutReleaseDays } from "./api";
+import { useCompanies } from "@/features/companies/api";
 
 type Props = {
   companyId: string;
@@ -37,15 +20,16 @@ type Props = {
 };
 
 /**
- * Configuração de repasse por empresa (E0.3.3, hub_admin): cadência de transferência editável;
- * antecipação automática exibida porém desabilitada (requer liberação prévia na Pagar.me).
+ * Prazo de saque por empresa (E0.3.8, hub_admin): quantos dias depois do pagamento a venda entra
+ * no disponível para saque. Vazio herda o global (`app_setting.payout_release_days`).
+ *
+ * A cadência de transferência automática da Pagar.me saiu daqui de propósito: o saque é sempre
+ * manual (o dinheiro sai do recebedor só pelo botão "Repassar para o banco"), e o recebedor nasce
+ * com `transfer_enabled = false` pelo `sync-recipient`. Não existe mais UI que religue isso.
  */
 export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
-  const update = useUpdateRecipientPayout();
   const setReleaseDays = useSetCompanyPayoutReleaseDays();
   const companies = useCompanies();
-  const { data: recipient } = useRecipient(open ? companyId : undefined);
-  // E0.3.8: prazo de liberação do saque desta empresa; vazio herda o global.
   const companyDays = (companies.data?.find((c) => c.id === companyId) as { payout_release_days?: number | null } | undefined)
     ?.payout_release_days;
   const [releaseDays, setReleaseDaysState] = React.useState<string>("");
@@ -53,42 +37,11 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
     if (open) setReleaseDaysState(companyDays == null ? "" : String(companyDays));
   }, [open, companyDays]);
 
-  // NULL nas colunas = herda o default global (app_setting `payout_transfer_*`); refletimos isso na
-  // dica "herdado" e no fallback do formulário, pra não exibir uma cadência que a empresa não tem.
-  // O default hoje é transferência automática DESLIGADA, Mensal/dia 1: o parceiro acumula saldo na
-  // Pagar.me e saca quando quiser. Se mudar o global, mude aqui junto (o front é só espelho).
-  const inheritsTransfer = recipient?.transfer_interval == null;
-  const [interval, setInterval] = React.useState<TransferInterval>("Monthly");
-  const [day, setDay] = React.useState(1);
-  const [enabled, setEnabled] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!open) return;
-    const iv = (recipient?.transfer_interval as TransferInterval) ?? "Monthly";
-    setInterval(iv);
-    setDay(coerceDay(iv, recipient?.transfer_day ?? 1));
-    setEnabled(recipient?.transfer_enabled ?? false);
-  }, [open, recipient]);
-
-  function changeInterval(next: TransferInterval) {
-    setInterval(next);
-    setDay((d) => coerceDay(next, d));
-  }
-
-  const days = dayOptions(interval);
-
   async function save() {
     try {
-      const res = await update.mutateAsync({
-        company_id: companyId,
-        transfer: { enabled, interval, day: coerceDay(interval, day) },
-      });
       const dias = releaseDays.trim() === "" ? null : Math.min(365, Math.max(0, Math.round(Number(releaseDays))));
-      if (dias !== (companyDays ?? null)) {
-        await setReleaseDays.mutateAsync({ company_id: companyId, days: Number.isFinite(dias as number) ? dias : null });
-      }
-      toast.success("Configuração de repasse salva");
-      if (res.warning) toast.warning(res.warning);
+      await setReleaseDays.mutateAsync({ company_id: companyId, days: Number.isFinite(dias as number) ? dias : null });
+      toast.success("Prazo de saque salvo");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
@@ -99,93 +52,35 @@ export function PayoutSettingsDialog({ companyId, open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Configuração de repasse</DialogTitle>
+          <DialogTitle>Prazo de saque</DialogTitle>
           <DialogDescription>
-            Frequência com que a Pagar.me transfere o saldo desta empresa pro banco dela.
-            {inheritsTransfer && " Hoje herdando o padrão global."}
+            Quantos dias depois do pagamento cada venda desta empresa entra no disponível para
+            saque. O dinheiro só sai do recebedor por saque manual.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-body-sm text-ink">Transferência automática</span>
-            <Switch checked={enabled} onCheckedChange={setEnabled} />
-          </label>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>Recorrência</Label>
-            <Select value={interval} onValueChange={(v) => changeInterval(v as TransferInterval)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TRANSFER_INTERVALS.map((i) => (
-                  <SelectItem key={i} value={i}>
-                    {INTERVAL_LABELS[i]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {days && (
-            <div className="flex flex-col gap-1.5">
-              <Label>{interval === "Weekly" ? "Dia da semana" : "Dia do mês"}</Label>
-              <Select value={String(day || days[0])} onValueChange={(v) => setDay(Number(v))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {days.map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {interval === "Weekly" ? WEEKDAY_LABELS[d - 1] : `Dia ${d}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="release-days">Prazo de liberação do saque (dias)</Label>
-            <Input
-              id="release-days"
-              type="number"
-              min={0}
-              max={365}
-              value={releaseDays}
-              onChange={(e) => setReleaseDaysState(e.target.value)}
-              placeholder="herda o global"
-            />
-            <span className="text-caption text-muted">
-              Dias depois do pagamento para a venda entrar no disponível para saque. Vazio herda o
-              padrão global de Configurações.
-            </span>
-          </div>
-
-          {/* Antecipação — desabilitada até liberação da Pagar.me (E0.3.3, decisão de produto). */}
-          <div className="space-y-2 rounded-md border border-hairline bg-surface-soft p-3 opacity-80">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-body-sm text-ink">Antecipação automática</span>
-              <Switch
-                checked={recipient?.anticipation_enabled ?? false}
-                onCheckedChange={() => {}}
-                disabled
-              />
-            </div>
-            <p className="flex items-start gap-1.5 text-caption text-muted">
-              <Warning className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
-              Requer liberação prévia junto à Pagar.me. Solicite pra habilitar aqui.
-            </p>
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="release-days">Prazo de liberação do saque (dias)</Label>
+          <Input
+            id="release-days"
+            type="number"
+            min={0}
+            max={365}
+            value={releaseDays}
+            onChange={(e) => setReleaseDaysState(e.target.value)}
+            placeholder="herda o global"
+          />
+          <span className="text-caption text-muted">
+            Vazio herda o padrão global de Configurações.
+          </span>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={save} disabled={update.isPending}>
-            {update.isPending ? "Salvando…" : "Salvar"}
+          <Button onClick={save} disabled={setReleaseDays.isPending}>
+            {setReleaseDays.isPending ? "Salvando…" : "Salvar"}
           </Button>
         </div>
       </DialogContent>

@@ -4,7 +4,6 @@ import { ptBR } from "date-fns/locale";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -31,7 +30,6 @@ import {
 } from "@/features/payouts/api";
 import { PartnerAccount } from "@/features/payouts/PartnerAccount";
 import { PartnerDebtCard } from "@/features/payouts/PartnerDebtCard";
-import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import { resumoSaldo } from "@/features/payouts/saldo.logic";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { formatBRL, formatDate } from "@/lib/format";
@@ -65,8 +63,9 @@ const withdrawalStatus: Record<string, { label: string; tone: "pending" | "confi
 export default function OperatorFinance() {
   const { effectiveCompanyIds, hasScope } = useAuth();
   const companyId = effectiveCompanyIds[0];
-  const [payoutOpen, setPayoutOpen] = React.useState(false);
-  const canConfigurePayout = hasScope("payouts:write", companyId);
+  // payouts:write (exclusivo do Dono) libera o saque na conta acima. A cadência de transferência
+  // automática da Pagar.me não é mais configurável: o saque é sempre manual.
+  const canWithdraw = hasScope("payouts:write", companyId);
 
   const months = React.useMemo(() => recentMonths(12), []);
   const [monthKey, setMonthKey] = React.useState(months[0].value);
@@ -103,7 +102,7 @@ export default function OperatorFinance() {
       />
 
       {/* Conta do estacionamento (E0.3.7): o mesmo extrato que a Movepark vê. */}
-      <PartnerAccount companyId={companyId} canWithdraw={canConfigurePayout} canRefund={false} showGateway={false} />
+      <PartnerAccount companyId={companyId} canWithdraw={canWithdraw} canRefund={false} showGateway={false} />
 
       {/* Saldo + status do recebedor */}
       <div className="grid gap-4 tablet:grid-cols-3">
@@ -136,21 +135,12 @@ export default function OperatorFinance() {
                 )}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2 text-right">
-              <div>
-                <div className="text-caption text-muted">Saques diluem a taxa</div>
-                <div className="text-body-sm text-body">transferência agregada (não por reserva)</div>
-              </div>
-              {canConfigurePayout && recipient.data && (
-                <Button size="sm" variant="secondary" onClick={() => setPayoutOpen(true)}>
-                  Configurar recebimento
-                </Button>
-              )}
+            <div className="text-right">
+              <div className="text-caption text-muted">Saque</div>
+              <div className="text-body-sm text-body">sempre manual, pelo botão Repassar para o banco</div>
             </div>
           </CardContent>
         </Card>
-
-        <PayoutSettingsDialog companyId={companyId} open={payoutOpen} onOpenChange={setPayoutOpen} />
       </div>
 
       {/* Dívida com a Movepark e o que cada reserva abateu (E0.3.5). Some quando não há nada. */}
@@ -270,7 +260,7 @@ export default function OperatorFinance() {
         </CardContent>
       </Card>
 
-      {/* NFs — depende da camada fiscal (E0.2) */}
+      {/* NFs: depende da camada fiscal (E0.2) */}
       <Card>
         <CardHeader>
           <CardTitle>Notas fiscais</CardTitle>

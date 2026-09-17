@@ -1,24 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test/utils";
-import type { PayoutRecipient } from "@/types/domain";
-
-const mutateAsync = vi.fn().mockResolvedValue({ ok: true, warning: null });
-const recipient = {
-  id: "r1",
-  company_id: "c1",
-  transfer_interval: null, // herda o global → default Mensal/dia 1, automática DESLIGADA
-  transfer_day: null,
-  transfer_enabled: null,
-  anticipation_enabled: null,
-} as unknown as PayoutRecipient;
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() } }));
 const setReleaseDays = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock("./api", () => ({
-  useUpdateRecipientPayout: () => ({ mutateAsync, isPending: false }),
-  useRecipient: () => ({ data: recipient }),
-  // E0.3.8: prazo de liberação por empresa.
+  // E0.3.8: prazo de liberação por empresa. É a única escrita do diálogo.
   useSetCompanyPayoutReleaseDays: () => ({ mutateAsync: setReleaseDays, isPending: false }),
 }));
 vi.mock("@/features/companies/api", () => ({
@@ -28,22 +15,30 @@ vi.mock("@/features/companies/api", () => ({
 import { PayoutSettingsDialog } from "./PayoutSettingsDialog";
 
 describe("PayoutSettingsDialog", () => {
-  beforeEach(() => mutateAsync.mockClear());
+  beforeEach(() => setReleaseDays.mockClear());
 
-  it("mostra o aviso de liberação da antecipação", () => {
+  // O saque é sempre manual: a cadência de transferência automática da Pagar.me saiu do diálogo
+  // para ninguém religar por engano (o recebedor nasce com transfer_enabled = false).
+  it("não oferece transferência automática nem recorrência", () => {
     renderWithProviders(<PayoutSettingsDialog companyId="c1" open onOpenChange={() => {}} />);
-    expect(screen.getByText(/Requer liberação prévia junto à Pagar.me/i)).toBeInTheDocument();
+    expect(screen.getByText("Prazo de saque")).toBeInTheDocument();
+    expect(screen.queryByText(/Transferência automática/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Recorrência/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Antecipação/i)).not.toBeInTheDocument();
   });
 
-  // Regressão: o fallback do switch era `?? true` enquanto o global já era "desligada". Abrir o
-  // diálogo de uma empresa herdeira e salvar sem tocar em nada RELIGAVA a transferência automática.
-  it("salva a cadência efetiva (herdado = Mensal/dia 1, automática desligada)", async () => {
+  it("salva o prazo de liberação da empresa e fecha", async () => {
+    const onOpenChange = vi.fn();
+    renderWithProviders(<PayoutSettingsDialog companyId="c1" open onOpenChange={onOpenChange} />);
+    fireEvent.change(screen.getByLabelText(/Prazo de liberação do saque/i), { target: { value: "45" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    await waitFor(() => expect(setReleaseDays).toHaveBeenCalledWith({ company_id: "c1", days: 45 }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("campo vazio volta a herdar o global (days = null)", async () => {
     renderWithProviders(<PayoutSettingsDialog companyId="c1" open onOpenChange={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
-    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
-    expect(mutateAsync).toHaveBeenCalledWith({
-      company_id: "c1",
-      transfer: { enabled: false, interval: "Monthly", day: 1 },
-    });
+    await waitFor(() => expect(setReleaseDays).toHaveBeenCalledWith({ company_id: "c1", days: null }));
   });
 });

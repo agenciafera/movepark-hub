@@ -11,9 +11,6 @@ vi.mock("@/features/companies/api", () => ({
 }));
 vi.mock("@/features/payouts/api", () => ({
   useRecipient: () => ({ data: { status: "active" } }),
-  // E0.3.8: prazo de liberação por empresa, dentro do diálogo de repasse.
-  useSetCompanyPayoutReleaseDays: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useUpdateRecipientPayout: () => ({ mutateAsync: vi.fn(), isPending: false }),
   usePayoutBalance: () => ({
     data: {
       balance_cents: 25500,

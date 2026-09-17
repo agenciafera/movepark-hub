@@ -431,7 +431,7 @@ export function BookingHoldSettings() {
 /**
  * Saque dos parceiros (E0.3.8): o disponível para saque é nosso, e a venda só entra nele N dias
  * depois do pagamento. Este é o padrão global; cada empresa pode sobrescrever em Recebedores ›
- * Configurar repasse. A transferência automática da Pagar.me fica desligada: saque é manual.
+ * Prazo de saque. A transferência automática da Pagar.me fica desligada: saque é manual.
  */
 export function PayoutReleaseSettings() {
   const { data, isLoading } = useAppSettings();
@@ -478,7 +478,7 @@ export function PayoutReleaseSettings() {
           />
           <span className="text-caption text-muted">
             A venda só entra no disponível para saque do parceiro depois desse prazo. Padrão para
-            todas as empresas; cada uma pode ter o seu em Recebedores › Configurar repasse. O saque
+            todas as empresas; cada uma pode ter o seu em Recebedores › Prazo de saque. O saque
             é sempre manual: a transferência automática da Pagar.me fica desligada.
           </span>
         </div>

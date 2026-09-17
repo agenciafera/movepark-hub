@@ -16,9 +16,10 @@ a própria), sem versão "suavizada".
 1. **Da venda para o saldo do recebedor**, na Pagar.me, no momento do pagamento: PIX libera na
    hora; cartão entra como "a liberar" e vira disponível em D+30 por parcela (antecipação é
    opcional e custa taxa). O Hub não segura nada até o check-in.
-2. **Do saldo para a conta bancária**, pelo ciclo configurado no recebedor (Recebedores ›
-   Configurar repasse): automático diário, semanal ou mensal num dia, ou saque manual. Sem
-   configuração própria o recebedor herda o padrão da conta Pagar.me.
+2. **Do saldo para a conta bancária**, só por saque manual (botão "Repassar para o banco" na
+   conta). A transferência automática da Pagar.me fica desligada em todo recebedor e não tem
+   mais UI que a religue: o que a Movepark configura por empresa é o prazo de liberação
+   (Recebedores › Prazo de saque).
 
 A data de liberação de cada venda vem do recebível do gateway (`payment_date`), apurada junto
 com a taxa pelo `reconcile-gateway-fees` e guardada em `payment.partner_release_at`.
@@ -88,10 +89,10 @@ quando pode sair. Migration `20261120010000`.
 
 | Decisão | Escolha |
 |---|---|
-| Quando a venda libera | N dias depois do pagamento. Padrão global `app_setting.payout_release_days` (30), sobrescrito por `company.payout_release_days` (Recebedores › Configurar repasse) |
+| Quando a venda libera | N dias depois do pagamento. Padrão global `app_setting.payout_release_days` (30), sobrescrito por `company.payout_release_days` (Recebedores › Prazo de saque) |
 | Quem saca | O Dono pelo Operator, até o disponível nosso; a Movepark pelo Manager, e só passa do teto com "Passar do disponível calculado" marcado (o gateway continua sendo o teto físico) |
 | Taxa de saque | Do parceiro, descontada do saldo pelo gateway |
-| Transferência automática | Desligada em todo recebedor (`transfer_enabled = false`); Agência Fera já está |
+| Transferência automática | Desligada em todo recebedor (`transfer_enabled = false`, default global `payout_transfer_enabled = 'false'` no create). Desde 17/09/2026 o diálogo de repasse não oferece mais ligar, recorrência nem dia; o Operator perdeu o botão "Configurar recebimento" |
 
 `payout_withdrawable(company)`:
 

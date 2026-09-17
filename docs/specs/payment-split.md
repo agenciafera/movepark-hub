@@ -594,16 +594,17 @@ global do `app_setting` — `payout_transfer_*` / novos `payout_anticipation_*`)
 recebedor: no **create** pelo `sync-recipient`, e no **update** pela Edge nova **`update-recipient-payout`**
 (hub_admin) → `gateway.updateTransferSettings` / `updateAnticipationSettings`
 (PATCH `/recipients/{id}/transfer-settings` e `/automatic-anticipation-settings`, ADR-004; mock no-op).
-UI: botão **Configurar repasse** no `RecipientPanel` (Manager → Recebedores). **Antecipação** aparece
-mas **desabilitada** — a Pagar.me exige **liberação prévia** da conta. `take_rate_bps` segue por empresa
-na `company`.
+UI: **não há mais** (17/09/2026). O botão do Manager → Recebedores virou **Prazo de saque** e o
+`PayoutSettingsDialog` edita só `company.payout_release_days` (E0.3.8): o saque é sempre manual e
+ninguém religa a transferência automática por engano. A Edge `update-recipient-payout` continua
+existindo para uso administrativo por API, sem tela. **Antecipação** segue desligada e exige
+**liberação prévia** da Pagar.me. `take_rate_bps` segue por empresa na `company`.
 
 **Default global vigente (jul/2026): transferência automática DESLIGADA**, Mensal/dia 1
 (`app_setting.payout_transfer_enabled = 'false'`). O recebedor do parceiro **nasce sem repasse
 automático**: o saldo fica na Pagar.me e sai por **saque** (`payout_withdrawal`, escopo
-`payouts:write`, exclusivo do Dono). O `PayoutSettingsDialog` **espelha** esse default no fallback do
-formulário — ao mudar o global, mude o espelho no mesmo PR, senão abrir o diálogo de uma empresa
-herdeira e salvar sem tocar em nada **religa** a transferência.
+`payouts:write`, exclusivo do Dono), limitado pelo disponível calculado pelo Hub
+(`payout_withdrawable`, ver `conta-do-parceiro.md`).
 
 **Armadilha:** o `PATCH /recipients/{id}/transfer-settings` responde **404 "Recipient not found"**
 enquanto o recebedor está em `affiliation` (KYC em análise) — só aceita alteração depois de `active`.
