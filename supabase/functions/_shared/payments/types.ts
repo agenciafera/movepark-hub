@@ -261,6 +261,11 @@ export interface RefundResult {
   /** Status da cobrança após o estorno (esperado "refunded"; PIX pode vir "pending"). */
   status: ChargeStatus;
   refundedAmountCents: number | null;
+  /**
+   * Mensagens da adquirente quando a transação de estorno falhou dentro de um HTTP 200 (a cobrança
+   * segue `paid`, `last_transaction.status = failed`). Ex.: "Saldo insuficiente." (17/09/2026).
+   */
+  failureMessages?: string[];
   raw: unknown;
   httpStatus: number | null;
 }

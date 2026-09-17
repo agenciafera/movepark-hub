@@ -469,11 +469,21 @@ export function buildChargeResult(httpStatus: number, body: unknown): ChargeResu
 export function buildRefundResult(httpStatus: number, body: unknown): RefundResult {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const tx = (b.last_transaction ?? {}) as Record<string, unknown>;
-  const status = mapChargeStatus((b.status as string) ?? (tx.status as string));
+  // A recusa do estorno vem dentro de um 200: a cobrança segue `paid` e a transação de
+  // cancelamento nasce `failed` com o motivo em gateway_response. Sem olhar a transação, o
+  // cancelamento seguia como "estorno pendente" e o cliente ficava sem devolução (MP-6CFA4B).
+  const gr = (tx.gateway_response ?? {}) as Record<string, unknown>;
+  const errors = Array.isArray(gr.errors) ? gr.errors : [];
+  const failureMessages = errors
+    .map((e) => (e && typeof e === "object" ? (e as Record<string, unknown>).message : null))
+    .filter((m): m is string => typeof m === "string" && m.trim().length > 0);
+  const txFailed = tx.operation_type === "cancel" && String(tx.status ?? "").toLowerCase() === "failed";
+  const status = txFailed ? "failed" : mapChargeStatus((b.status as string) ?? (tx.status as string));
   return {
     chargeId: (b.id as string) ?? null,
     status,
     refundedAmountCents: typeof b.amount === "number" ? (b.amount as number) : null,
+    ...(txFailed ? { failureMessages } : {}),
     raw: body,
     httpStatus,
   };

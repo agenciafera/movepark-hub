@@ -637,3 +637,16 @@ Deno.test("chargeFailureDetail: 412 do adquirente é erro de integração, não 
   assertEquals(chargeFailureDetail(recusa).integrationError, false);
   assertEquals(chargeFailureDetail(null), { code: null, messages: [], integrationError: false });
 });
+
+Deno.test("buildRefundResult: transação de cancelamento falhada dentro do 200 é estorno recusado", () => {
+  const r = buildRefundResult(200, {
+    id: "ch_1", status: "paid", amount: 3090,
+    last_transaction: { operation_type: "cancel", status: "failed", gateway_response: { code: "400", errors: [{ message: "action_forbidden |  | Saldo insuficiente." }] } },
+  });
+  assertEquals(r.status, "failed");
+  assertEquals(r.failureMessages, ["action_forbidden |  | Saldo insuficiente."]);
+  // Estorno que passou: a cobrança já volta refunded.
+  const ok = buildRefundResult(200, { id: "ch_2", status: "refunded", amount: 1800, last_transaction: { operation_type: "cancel", status: "refunded" } });
+  assertEquals(ok.status, "refunded");
+  assertEquals(ok.failureMessages, undefined);
+});

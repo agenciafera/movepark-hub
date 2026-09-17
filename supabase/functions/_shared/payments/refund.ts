@@ -71,9 +71,14 @@ export type RefundOutcome = "ok" | "definitive" | "transient";
  * funcionar. Os outros 4xx são recusa processada: prazo vencido, saldo insuficiente, cobrança em
  * estado final. Insistir não muda nada, e o cliente precisa da devolução por outro caminho.
  */
-export function classifyRefundOutcome(httpStatus: number | null | undefined): RefundOutcome {
+export function classifyRefundOutcome(
+  httpStatus: number | null | undefined,
+  status?: RefundResult["status"] | null,
+): RefundOutcome {
   const s = httpStatus ?? 0;
-  if (s >= 200 && s < 300) return "ok";
+  // 200 com a transação de cancelamento `failed` é recusa processada (saldo insuficiente, prazo):
+  // insistir não muda nada, e o cliente precisa cair na fila manual, não em "pendente".
+  if (s >= 200 && s < 300) return status === "failed" ? "definitive" : "ok";
   if (s === 408 || s === 409 || s === 429) return "transient";
   if (s >= 400 && s < 500) return "definitive";
   return "transient";
@@ -275,7 +280,7 @@ export async function executeRefund(a: RefundArgs): Promise<RefundExecution> {
       amountCents: a.amountCents,
       split: decision.rules,
     });
-    if (classifyRefundOutcome(tentativa.httpStatus) === "ok") {
+    if (classifyRefundOutcome(tentativa.httpStatus, tentativa.status) === "ok") {
       return {
         ...base,
         result: tentativa,
@@ -300,7 +305,7 @@ export async function executeRefund(a: RefundArgs): Promise<RefundExecution> {
   return {
     ...base,
     result,
-    outcome: classifyRefundOutcome(result.httpStatus),
+    outcome: classifyRefundOutcome(result.httpStatus, result.status),
     absorbedByMaster: refundAbsorbedByMaster(a.payment),
     splitSent: split,
     mode: split ? "master" : "none",

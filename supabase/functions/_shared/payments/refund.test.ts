@@ -61,6 +61,10 @@ Deno.test("classifyRefundOutcome: 2xx ok, 4xx definitivo, 408/409/429 e 5xx ince
   for (const s of [408, 409, 429, 500, 502, 503, 0, null, undefined]) {
     assertEquals(classifyRefundOutcome(s), "transient", `HTTP ${s}`);
   }
+  // 17/09/2026: a Pagar.me responde 200 com a transação de cancelamento `failed` ("Saldo
+  // insuficiente"). É recusa processada: fila manual, nunca "pendente".
+  assertEquals(classifyRefundOutcome(200, "failed"), "definitive");
+  assertEquals(classifyRefundOutcome(200, "refunded"), "ok");
 });
 
 Deno.test("manualRefundReason lê o motivo da resposta crua, e na dúvida é 'recusado'", () => {
