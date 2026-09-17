@@ -265,6 +265,8 @@ por `fare_tier`, `fare_price_cents`, `fare_cancel_until` e `fare_benefits` grava
 
 ## 4. O que precisa ser feito (plano de adequação)
 
+Cada item virou atividade no Backlog do ClickUp em 17/09/2026, na série **E2.8-i** a **E2.8-t**.
+
 Ordenado por "o que dói se um cliente comprar amanhã".
 
 ### Fase 1: parar de prometer o que não entrega (bloqueia a venda da Flex e da Superflex)
@@ -307,16 +309,19 @@ segunda verdade para envelhecer.
 
 ## 5. Decisões de negócio em aberto
 
+As seis viraram cards de Questionamento no Backlog do ClickUp (Q-025 a Q-030) em 17/09/2026, com a
+sugestão junto para não travar por falta de opinião.
+
 Precisam de resposta antes da implementação correspondente. Sugestão em cada uma, para não travar.
 
 | # | Pergunta | Sugestão |
 |---|---|---|
-| Q-A | Quanto a proteção de voo estende, e quantas vezes? | Até 24h a mais, uma vez por reserva, acionável até o horário de saída mais a tolerância. Acima disso, vira alteração de data normal |
-| Q-B | Exigir número do voo para acionar a proteção? | Pedir opcional no checkout da Superflex e obrigatório no acionamento. Permite conferir o atraso depois e abre caminho para o disparo automático |
-| Q-C | Quem paga a diária estendida ao parceiro? | Movepark. É o custo do produto que a Movepark vendeu, e a margem da Superflex cobre |
-| Q-D | Qual o SLA do suporte prioritário? | 15 min em horário estendido. Prometer 24/7 sem plantão é criar a próxima promessa vazia |
-| Q-E | A troca de placa e de data tem limite? | Sem limite por enquanto, mas com contador em `booking_modification` para revisitar com dado |
-| Q-F | Cancelamento Superflex a 1 min: compensa o parceiro? | Não neste momento. Medir a frequência desde a primeira reserva e revisitar |
+| Q-025 | Quanto a proteção de voo estende, e quantas vezes? | Até 24h a mais, uma vez por reserva, acionável até o horário de saída mais a tolerância. Acima disso, vira alteração de data normal |
+| Q-026 | Exigir número do voo para acionar a proteção? | Pedir opcional no checkout da Superflex e obrigatório no acionamento. Permite conferir o atraso depois e abre caminho para o disparo automático |
+| Q-027 | Quem paga a diária estendida ao parceiro? | Movepark. É o custo do produto que a Movepark vendeu, e a margem da Superflex cobre |
+| Q-028 | Qual o SLA do suporte prioritário? | 15 min em horário estendido. Prometer 24/7 sem plantão é criar a próxima promessa vazia |
+| Q-029 | A troca de placa e de data tem limite? | Sem limite por enquanto, mas com contador em `booking_modification` para revisitar com dado |
+| Q-030 | Cancelamento Superflex a 1 min: compensa o parceiro? | Não neste momento. Medir a frequência desde a primeira reserva e revisitar |
 
 ## 6. O que isso exige de teste
 
