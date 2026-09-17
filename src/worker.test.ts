@@ -236,14 +236,40 @@ describe("301 legado do WordPress (institucional, aeroporto, estacionamento)", (
   });
 
   it("ficha sem par confiável no Hub vai para o destino, nunca 404", async () => {
+    // O exemplo aqui era o arai-park, que saiu do grupo 3 em 17/09/2026 quando o lote
+    // mapeado dele foi publicado. Trocado por uma marca que segue sem ficha no Hub.
     const env = makeEnv({});
     const res = await worker.fetch(
-      req("/estacionamentos/aeroporto-congonhas/arai-park-cgh"),
+      req("/estacionamentos/aeroporto-confins/premium-park-estacionamento-aeroporto-confins"),
       env,
     );
 
     expect(res.status).toBe(301);
-    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-congonhas");
+    expect(res.headers.get("Location")).toBe("/estacionamentos/aeroporto-confins");
+  });
+
+  // Regressão: as três abaixo apontavam para a lista do destino porque, quando o mapa foi
+  // escrito, a ficha não existia. Com a ficha no ar o 301 para a lista desperdiça a busca
+  // de marca, que é o mesmo defeito que tirou o bandeira-park do mapa em 31/08/2026.
+  it.each([
+    [
+      "/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins",
+      "/estacionamentos/aeroporto-confins/bepark",
+    ],
+    [
+      "/estacionamentos/aeroporto-confins/central-park-confins-estacionamento-aeroporto-confins",
+      "/estacionamentos/aeroporto-confins/central-park",
+    ],
+    [
+      "/estacionamentos/aeroporto-congonhas/arai-park-cgh",
+      "/estacionamentos/aeroporto-congonhas/arai-park",
+    ],
+  ])("busca de marca em %s cai na ficha, não na lista", async (de, para) => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req(de), env);
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe(para);
   });
 
   it("preserva a query string no redirect", async () => {

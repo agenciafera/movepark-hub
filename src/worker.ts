@@ -473,6 +473,15 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
     "/estacionamentos/aeroporto-confins/aeropark",
   "/estacionamentos/aeroporto-confins/park-confins-estacionamento-aeroporto-confins":
     "/estacionamentos/aeroporto-confins/park-confins",
+  // Saíram do grupo 3 em 17/09/2026, pelo mesmo motivo do `bandeira-park`: a ficha passou a
+  // existir, e mandar a busca de marca para a lista do destino desperdiçava a intenção. O
+  // Be Park é parceiro ativo; Central Park e Arai Park são lote mapeado publicado.
+  "/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins":
+    "/estacionamentos/aeroporto-confins/bepark",
+  "/estacionamentos/aeroporto-confins/central-park-confins-estacionamento-aeroporto-confins":
+    "/estacionamentos/aeroporto-confins/central-park",
+  "/estacionamentos/aeroporto-congonhas/arai-park-cgh":
+    "/estacionamentos/aeroporto-congonhas/arai-park",
   "/estacionamentos/aeroporto-guarulhos/econopark-gru":
     "/estacionamentos/aeroporto-guarulhos/econopark",
   "/estacionamentos/aeroporto-guarulhos/decolar-park-gru":
@@ -504,16 +513,12 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
   "/estacionamentos/aeroporto-guarulhos/aeroparking-gru":
     "/estacionamentos/aeroporto-guarulhos",
   "/estacionamentos/aeroporto-guarulhos/viaje-park-gru": "/estacionamentos/aeroporto-guarulhos",
-  "/estacionamentos/aeroporto-congonhas/arai-park-cgh": "/estacionamentos/aeroporto-congonhas",
   "/estacionamentos/aeroporto-congonhas/mobi-city-cgh": "/estacionamentos/aeroporto-congonhas",
   "/estacionamentos/rio-de-janeiro/move-parking-nova-iguacu": "/estacionamentos/centro-de-nova-iguacu",
   "/estacionamentos/aeroporto-recife/aero-park-estacionamento-aeroporto-recife":
     "/estacionamentos/aeroporto-recife",
   "/estacionamentos/aeroporto-navegantes/prime-estacionamento-aeroporto-navegantes":
     "/estacionamentos/aeroporto-navegantes",
-  "/estacionamentos/aeroporto-confins/central-park-confins-estacionamento-aeroporto-confins":
-    "/estacionamentos/aeroporto-confins",
-  "/estacionamentos/aeroporto-confins/be-park-estacionamento-aeroporto-confins": "/estacionamentos/aeroporto-confins",
   "/estacionamentos/aeroporto-guarulhos/parkindigo-estacionamento-aeroporto-guarulhos":
     "/estacionamentos/aeroporto-guarulhos",
 };
