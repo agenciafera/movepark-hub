@@ -342,6 +342,8 @@ export function buildOrderBody(input: PixChargeInput): Record<string, unknown> {
       amount: i.amount,
       description: i.description,
       quantity: i.quantity,
+      // Obrigatório no cartão (o adquirente recusa com 412 sem ele); inofensivo no PIX.
+      code: i.code ?? input.externalCode,
     })),
     payments: [
       {
@@ -412,6 +414,8 @@ export function buildCardOrderBody(input: CardChargeInput): Record<string, unkno
       amount: i.amount,
       description: i.description,
       quantity: i.quantity,
+      // Obrigatório no cartão (o adquirente recusa com 412 sem ele); inofensivo no PIX.
+      code: i.code ?? input.externalCode,
     })),
     payments: [
       {
@@ -530,6 +534,25 @@ export function buildWithdrawalBody(input: WithdrawalInput): Record<string, unkn
     recipient_id: input.recipientId,
     ...(input.metadata ? { metadata: input.metadata } : {}),
   };
+}
+
+/**
+ * O que a adquirente/emissor disse numa cobrança de cartão que falhou: `gateway_response.code` e
+ * as mensagens. Código 412 (ou 4xx de validação) é erro NOSSO no pedido, não recusa do emissor,
+ * e o cliente não pode ler "cartão recusado" para isso.
+ */
+export function chargeFailureDetail(raw: unknown): { code: string | null; messages: string[]; integrationError: boolean } {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const charges = Array.isArray(r.charges) ? r.charges : [];
+  const tx = ((charges[0] as Record<string, unknown> | undefined)?.last_transaction ?? {}) as Record<string, unknown>;
+  const gr = (tx.gateway_response ?? {}) as Record<string, unknown>;
+  const code = typeof gr.code === "string" ? gr.code : typeof gr.code === "number" ? String(gr.code) : null;
+  const errors = Array.isArray(gr.errors) ? gr.errors : [];
+  const messages = errors
+    .map((e) => (e && typeof e === "object" ? (e as Record<string, unknown>).message : null))
+    .filter((m): m is string => typeof m === "string" && m.trim().length > 0);
+  const integrationError = code === "412" || code === "400" || code === "422";
+  return { code, messages, integrationError };
 }
 
 /** Normaliza a resposta de `POST /transfers`. Id vem numérico na v5. */

@@ -25,6 +25,7 @@ import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payme
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import { chargeFailureDetail } from "../_shared/payments/pagarme.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -298,6 +299,8 @@ Deno.serve(async (req: Request) => {
       debt_recovered_cents: debtRecoveryCents,
       debt_reservation_id: debtReservationId,
     });
+    // Recusa do emissor e erro nosso no pedido chegam pelo mesmo status; o gateway_response separa.
+    const detalhe = chargeFailureDetail(result.raw);
     await logGatewayEvent(admin, {
       paymentId: null,
       bookingId: booking.id,
@@ -305,8 +308,14 @@ Deno.serve(async (req: Request) => {
       httpStatus: result.httpStatus,
       request: { method: "card", amount_cents: chargedCents, installments: input.installments },
       response: result.raw,
-      note: "cartão recusado pelo emissor",
+      note: detalhe.integrationError
+        ? `erro de integração (${detalhe.code}): ${detalhe.messages.join("; ") || "sem mensagem"}`
+        : `cartão recusado pelo emissor${detalhe.code ? ` (${detalhe.code})` : ""}`,
     });
+    if (detalhe.integrationError) {
+      console.error("[%s] pedido recusado pelo adquirente:", EDGE_NAME, detalhe.code, detalhe.messages);
+      return jsonResponse({ error: "Não conseguimos processar o pagamento agora. Tente de novo em alguns minutos." }, 502);
+    }
     return jsonResponse({ error: "Cartão recusado. Tente outro cartão." }, 402);
   }
   if (!result.orderId || (result.httpStatus ?? 500) >= 400) {

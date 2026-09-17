@@ -1,6 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
   buildBalanceResult,
+  chargeFailureDetail,
   buildCardOrderBody,
   buildChargeResult,
   buildCreateRecipientBody,
@@ -148,6 +149,8 @@ Deno.test("buildCardOrderBody: cartão novo (token) com parcelas + split", () =>
   assertEquals(body.payments[0].credit_card.installments, 6);
   assertEquals(body.payments[0].credit_card.statement_descriptor, "MOVEPARK");
   assertEquals(body.payments[0].credit_card.card.token, "token_abc");
+  // O adquirente exige `code` no item (412 sem ele); cai no código do pedido.
+  assertEquals(body.items[0].code, "MP-CARD1");
   assertEquals(body.payments[0].credit_card.card_id, undefined);
   assertEquals(body.payments[0].credit_card.split.length, 2);
   assertEquals(body.payments[0].credit_card.split[0].recipient_id, "rp_partner");
@@ -619,4 +622,12 @@ Deno.test("partnerReleaseAt: a última payment_date dos créditos do recebedor d
   assertEquals(partnerReleaseAt(payables, "re_p"), "2026-11-16");
   assertEquals(partnerReleaseAt(payables, "re_x"), null);
   assertEquals(partnerReleaseAt(payables, null), null);
+});
+
+Deno.test("chargeFailureDetail: 412 do adquirente é erro de integração, não recusa do emissor", () => {
+  const raw = { charges: [{ last_transaction: { gateway_response: { code: "412", errors: [{ message: "The item Code is required." }] } } }] };
+  assertEquals(chargeFailureDetail(raw), { code: "412", messages: ["The item Code is required."], integrationError: true });
+  const recusa = { charges: [{ last_transaction: { gateway_response: { code: "1000", errors: [] } } }] };
+  assertEquals(chargeFailureDetail(recusa).integrationError, false);
+  assertEquals(chargeFailureDetail(null), { code: null, messages: [], integrationError: false });
 });

@@ -168,6 +168,11 @@ export interface ChargeItem {
   amount: number; // centavos
   description: string;
   quantity: number;
+  /**
+   * Código do item. O adquirente do cartão exige (`412 "The item Code is required"`, medido em
+   * 17/09/2026); o PIX não valida. Sem ele, o adapter usa o código do pedido (a reserva).
+   */
+  code?: string;
 }
 
 export interface PixChargeInput {
