@@ -123,7 +123,18 @@ function visita(no, rota, caminho = "$", pai = null) {
       err(`BreadcrumbList com positions fora de ordem: ${pos.join(",")}`);
     }
   }
-  if (ts.includes("ItemList") && !lista(no.itemListElement).length) err("ItemList sem itemListElement");
+  if (ts.includes("ItemList")) {
+    const elementos = lista(no.itemListElement);
+    if (!elementos.length) err("ItemList sem itemListElement");
+    // O Google identifica o item da lista pela URL, e lista com URL repetida ele reprova
+    // inteira ("Identical property values given, but unique values are required"). Acontece
+    // sozinho quando a tabela tem uma linha por vaga e a ficha é do lote.
+    const urls = elementos.map((e) => e?.url ?? e?.item?.url).filter(Boolean);
+    const repetidas = [...new Set(urls.filter((u, i) => urls.indexOf(u) !== i))];
+    if (repetidas.length) {
+      err(`ItemList com URL repetida em ${repetidas.length}: ${repetidas.slice(0, 3).join(", ")}`);
+    }
+  }
   if (["Article", "BlogPosting", "NewsArticle"].some((t) => ts.includes(t))) {
     if (!no.headline) err("Article sem headline");
     else if (String(no.headline).length > 110) {

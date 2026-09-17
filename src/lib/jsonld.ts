@@ -616,10 +616,20 @@ export function breadcrumbSchema(
  * `priceValidUntil` entrou em 16/09/2026, junto das páginas de preço: a data de conferência
  * visível resolve para quem lê a tela, e não para quem lê só o JSON-LD. A janela e o motivo
  * estão em `janelaDeValidade`.
+ *
+ * **Uma entrada por URL, desde 16/09/2026.** O card é por VAGA e a ficha é do LOTE, então a
+ * lista de Guarulhos saía com 19 itens para 15 fichas, e o teste de resultados ricos reprova
+ * a lista inteira nisso ("Identical property values given, but unique values are required"):
+ * para o Google, o item da lista é identificado pela URL. As vagas do mesmo lote viram um
+ * item só, com a faixa cobrindo as duas tabelas, e o nome perde o tipo de vaga, que é o que
+ * aquela URL descreve. `guaranteedSpot` só sobrevive à junção se valer para todas.
  */
 export function destinationOffersSchema(args: {
   partners: {
+    /** Nome do estacionamento ("Aerovalet"), sem o tipo de vaga. */
     name: string;
+    /** Tipo de vaga do card ("Vaga Coberta"). Só entra no nome quando o lote tem uma só. */
+    variant?: string | null;
     url: string;
     description?: string | null;
     /** Capa da unidade, a mesma do card visível. Vira `image`, que o Google pede no Product. */
@@ -637,8 +647,36 @@ export function destinationOffersSchema(args: {
   generatedAt?: string;
 }) {
   const validade = args.generatedAt ? janelaDeValidade(args.generatedAt) : undefined;
+
+  // Junta as vagas que dividem a mesma ficha: uma entrada por URL (ver doc acima).
+  const porUrl = new Map<string, (typeof args.partners)[number][]>();
+  for (const parceiro of args.partners) {
+    const url = absoluta(parceiro.url);
+    const grupo = porUrl.get(url);
+    if (grupo) grupo.push(parceiro);
+    else porUrl.set(url, [parceiro]);
+  }
+  const parceiros = [...porUrl.values()].map((grupo) => {
+    const base = grupo[0];
+    const precos = grupo.map((g) => g.price).filter((x): x is NonNullable<typeof x> => x != null);
+    return {
+      ...base,
+      name: grupo.length === 1 && base.variant ? `${base.name} · ${base.variant}` : base.name,
+      image: grupo.find((g) => g.image)?.image ?? null,
+      price: precos.length
+        ? {
+            lowPrice: Math.min(...precos.map((x) => x.lowPrice)),
+            highPrice: Math.max(...precos.map((x) => x.highPrice)),
+            offerCount: precos.reduce((n, x) => n + x.offerCount, 0),
+            // Promessa de estoque só sobrevive à junção se valer para todas as vagas.
+            guaranteedSpot: precos.every((x) => x.guaranteedSpot),
+          }
+        : null,
+    };
+  });
+
   const itens = [
-    ...args.partners.map((p) =>
+    ...parceiros.map((p) =>
       // Sem preço na matriz do build, o parceiro entra como `ParkingFacility`, e não como
       // `Product` mudo. Chutar um valor seria afirmar preço que a página não mostra, e
       // `Product` sem `offers`, `review` nem `aggregateRating` o Google reprova como item
@@ -668,11 +706,14 @@ export function destinationOffersSchema(args: {
             url: absoluta(p.url),
           },
     ),
-    ...args.mapped.map((m) => ({
-      "@type": "ParkingFacility" as const,
-      name: m.name,
-      url: absoluta(m.url),
-    })),
+    // Lote mapeado que já virou parceiro (conversão) repetiria a mesma ficha na lista.
+    ...args.mapped
+      .filter((m) => !porUrl.has(absoluta(m.url)))
+      .map((m) => ({
+        "@type": "ParkingFacility" as const,
+        name: m.name,
+        url: absoluta(m.url),
+      })),
   ];
 
   return {
@@ -682,6 +723,8 @@ export function destinationOffersSchema(args: {
     itemListElement: itens.map((item, i) => ({
       "@type": "ListItem",
       position: i + 1,
+      url: item.url,
+      name: item.name,
       item,
     })),
   };
@@ -689,9 +732,11 @@ export function destinationOffersSchema(args: {
 
 /** Uma linha da tabela de preço: o estacionamento e o total de cada duração visível. */
 export type PriceTableItem = {
-  /** O nome da linha, como a tabela escreve ("Aerovalet · Vaga Descoberta"). */
+  /** O nome do estacionamento ("Aerovalet"). */
   name: string;
-  /** Ficha do estacionamento. Caminho relativo vira absoluto aqui. */
+  /** O tipo de vaga daquela linha ("Vaga Descoberta"), quando a tabela separa por vaga. */
+  variant?: string | null;
+  /** Ficha do estacionamento. Caminho relativo vira absoluto aqui, e é a chave do item. */
   url: string;
   description?: string | null;
   /** Capa da unidade. O Google pede `image` no `Product`. */
@@ -720,6 +765,13 @@ export type PriceTableItem = {
  *   não é nosso para afirmar.
  * - **Sem `aggregateRating`.** A nota é da unidade e mora na página dela. Agregar nota num
  *   item de lista de preço infla estrela em página que não é a do produto.
+ * - **Uma entrada por URL.** A tabela tem uma linha por VAGA e a ficha é do LOTE, então o
+ *   mesmo estacionamento aparece duas vezes quando tem coberta e descoberta. O teste de
+ *   resultados ricos reprova a lista inteira nisso ("Identical property values given, but
+ *   unique values are required"), porque para o Google o item da lista é identificado pela
+ *   URL. Linhas que dividem a ficha viram um `Product` só, com a faixa cobrindo as duas
+ *   tabelas; aí o nome é o do lote, sem o tipo de vaga, que é o que aquela URL descreve.
+ *   A escada some nesse caso: duas tabelas dariam dois preços para a mesma janela de dias.
  *
  * `lowPrice`/`highPrice` são o menor e o maior TOTAL da linha, não a diária: é o que a
  * célula mostra. Quem quiser a diária lê a escada, que traz preço por dia com a faixa de
@@ -742,21 +794,36 @@ export function priceTableOffersSchema(args: {
   if (comPreco.length === 0) return null;
   const validade = janelaDeValidade(args.generatedAt);
 
+  // Uma entrada por ficha: linhas de vagas diferentes do mesmo lote compartilham a URL.
+  const porUrl = new Map<string, typeof comPreco>();
+  for (const item of comPreco) {
+    const url = absoluta(item.url);
+    const grupo = porUrl.get(url);
+    if (grupo) grupo.push(item);
+    else porUrl.set(url, [item]);
+  }
+
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    numberOfItems: comPreco.length,
-    itemListElement: comPreco.map((item, i) => {
-      const totais = item.porDuracao.map((d) => d.total);
-      const url = absoluta(item.url);
+    numberOfItems: porUrl.size,
+    itemListElement: [...porUrl.entries()].map(([url, grupo], i) => {
+      const primeiro = grupo[0];
+      const duracoes = grupo.flatMap((g) => g.porDuracao);
+      const totais = duracoes.map((d) => d.total);
+      const soUmaTabela = grupo.length === 1;
       return {
         "@type": "ListItem",
         position: i + 1,
+        // `url` no próprio `ListItem` é o que o Google lê para identificar o item da lista;
+        // deixá-lo só no `Product` aninhado faz o item entrar como "Unnamed item".
+        url,
+        name: primeiro.name,
         item: {
           "@type": "Product",
-          name: item.name,
-          description: item.description ?? undefined,
-          image: item.image ? [absoluta(item.image)] : undefined,
+          name: soUmaTabela && primeiro.variant ? `${primeiro.name} · ${primeiro.variant}` : primeiro.name,
+          description: primeiro.description ?? undefined,
+          image: primeiro.image ? [absoluta(primeiro.image)] : undefined,
           url,
           offers: {
             "@type": "AggregateOffer",
@@ -764,7 +831,7 @@ export function priceTableOffersSchema(args: {
             lowPrice: Math.min(...totais).toFixed(2),
             highPrice: Math.max(...totais).toFixed(2),
             offerCount: totais.length,
-            priceSpecification: escadaDePreco(item.porDuracao),
+            priceSpecification: soUmaTabela ? escadaDePreco(primeiro.porDuracao) : undefined,
             ...validade,
             url,
           },

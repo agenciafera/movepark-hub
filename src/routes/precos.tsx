@@ -163,7 +163,8 @@ function itensDePreco(sections: AirportSection[]): PriceTableItem[] {
   return sections.flatMap((section) => {
     const nome = nomeDoAeroporto(section.meta);
     return section.rows.map((row) => ({
-      name: `${row.label} · ${row.unit.parking_type_name}`,
+      name: row.label,
+      variant: row.unit.parking_type_name,
       url: listingPath(row.unit),
       description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
       image: row.unit.photo,

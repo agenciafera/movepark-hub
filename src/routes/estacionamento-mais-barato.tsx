@@ -102,7 +102,8 @@ export default function EstacionamentoMaisBaratoPage() {
   const produtos = generatedAt
     ? priceTableOffersSchema({
         itens: vagasDoRanking(linhas).map(({ opcao, porDuracao }) => ({
-          name: `${opcao.label} · ${opcao.parkingTypeName}`,
+          name: opcao.label,
+          variant: opcao.parkingTypeName,
           url: opcao.path,
           description: `Estacionamento perto do ${prosa}, com reserva online pela Movepark.`,
           image: opcao.photo,

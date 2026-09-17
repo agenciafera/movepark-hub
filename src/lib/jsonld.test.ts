@@ -374,6 +374,38 @@ describe("destinationOffersSchema · parceiro sem preço", () => {
     expect(item.offers?.lowPrice).toBe("18.90");
   });
 
+  it("vagas do mesmo lote viram um item só, porque o item da lista é a URL", () => {
+    // Guarulhos publicava 19 itens para 15 fichas, e o teste de resultados ricos reprovava
+    // a lista inteira com "Identical property values given, but unique values are required".
+    const s = destinationOffersSchema({
+      partners: [
+        { ...comPreco, name: "Aeropark", variant: "Vaga Coberta" },
+        {
+          ...comPreco,
+          name: "Aeropark",
+          variant: "Vaga Descoberta",
+          price: { lowPrice: 15.9, highPrice: 380, offerCount: 4, guaranteedSpot: false },
+        },
+      ],
+      mapped: [],
+    });
+
+    expect(s.itemListElement).toHaveLength(1);
+    const item = s.itemListElement[0].item as { name: string; offers?: { lowPrice: string; highPrice: string; offerCount: number } };
+    expect(item.name).toBe("Aeropark");
+    expect(item.offers?.lowPrice).toBe("15.90");
+    expect(item.offers?.highPrice).toBe("447.00");
+    expect(item.offers?.offerCount).toBe(8);
+  });
+
+  it("lote mapeado que já é parceiro não repete a ficha na lista", () => {
+    const s = destinationOffersSchema({
+      partners: [comPreco],
+      mapped: [{ name: "Aeropark", url: "/p/aeropark/gru/covered" }],
+    });
+    expect(s.itemListElement).toHaveLength(1);
+  });
+
   it("nenhum item da lista fica sem offers, review nem aggregateRating", () => {
     const s = destinationOffersSchema({
       partners: [comPreco, { name: "Sem Preço", url: "/p/x/y/covered", price: null }],
@@ -891,7 +923,8 @@ describe("priceTableOffersSchema", () => {
   const GERADO_EM = "2026-09-16T12:00:00Z";
 
   const item = (over: Partial<Parameters<typeof priceTableOffersSchema>[0]["itens"][number]> = {}) => ({
-    name: "Aerovalet · Vaga Descoberta",
+    name: "Aerovalet",
+    variant: "Vaga Descoberta",
     url: "/estacionamentos/aeroporto-guarulhos/aerovalet",
     description: "Estacionamento perto de Guarulhos (GRU), com reserva online pela Movepark.",
     image: "/Estacionamentos/aerovalet/capa.webp",
@@ -988,7 +1021,10 @@ describe("priceTableOffersSchema", () => {
     // A linha continua visível na tabela ("ver na página"); Product sem offers válida o
     // Google reprova como item inválido e derruba a lista inteira junto.
     const s = priceTableOffersSchema({
-      itens: [item(), item({ name: "Sem Preço · Vaga Coberta", porDuracao: [] })],
+      itens: [
+        item(),
+        item({ name: "Sem Preço", url: "/estacionamentos/x/sem-preco", porDuracao: [] }),
+      ],
       generatedAt: GERADO_EM,
     });
     expect(s?.numberOfItems).toBe(1);
@@ -1013,9 +1049,52 @@ describe("priceTableOffersSchema", () => {
     ).toBeNull();
   });
 
+  /**
+   * O teste de resultados ricos do Google reprovou a lista inteira de Guarulhos com
+   * "Identical property values given, but unique values are required": a tabela tem uma
+   * linha por vaga, a ficha é do lote, e o item da lista é identificado pela URL.
+   */
+  it("junta as vagas que dividem a mesma ficha num Product só, com URL única", () => {
+    const s = priceTableOffersSchema({
+      itens: [
+        item(),
+        item({
+          variant: "Vaga Coberta",
+          porDuracao: [
+            { days: 1, total: 24.9 },
+            { days: 7, total: 150 },
+          ],
+        }),
+      ],
+      generatedAt: GERADO_EM,
+    });
+
+    expect(s?.numberOfItems).toBe(1);
+    const urls = (s?.itemListElement ?? []).map((e) => e.url);
+    expect(new Set(urls).size).toBe(urls.length);
+
+    const [p] = produtos(s);
+    // O nome perde o tipo de vaga: é o lote que aquela URL descreve.
+    expect(p.name).toBe("Aerovalet");
+    // A faixa cobre as duas tabelas, e a escada some porque duas tabelas dariam dois
+    // preços para a mesma janela de dias.
+    expect(p.offers.lowPrice).toBe("18.90");
+    expect(p.offers.highPrice).toBe("447.00");
+    expect(p.offers.offerCount).toBe(5);
+    expect(p.offers.priceSpecification).toBeUndefined();
+  });
+
+  it("o ListItem carrega url e name, que é como o Google identifica o item", () => {
+    const s = priceTableOffersSchema({ itens: [item()], generatedAt: GERADO_EM });
+    expect(s?.itemListElement[0]).toMatchObject({
+      url: "https://movepark.co/estacionamentos/aeroporto-guarulhos/aerovalet",
+      name: "Aerovalet",
+    });
+  });
+
   it("posição segue a ordem da tabela", () => {
     const s = priceTableOffersSchema({
-      itens: [item(), item({ name: "Aeropark · Vaga Coberta" })],
+      itens: [item(), item({ name: "Aeropark", url: "/estacionamentos/aeroporto-guarulhos/aeropark" })],
       generatedAt: GERADO_EM,
     });
     expect(s?.itemListElement.map((e) => e.position)).toEqual([1, 2]);

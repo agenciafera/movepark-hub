@@ -47,7 +47,8 @@ function distanciaLabel(dest: PriceDestination, m: number | null): string | null
 function itensDePreco(dest: PriceDestination, rows: MatrixRow[]): PriceTableItem[] {
   const nome = dest.short_name ?? dest.name;
   return rows.map((row) => ({
-    name: `${row.label} · ${row.unit.parking_type_name}`,
+    name: row.label,
+    variant: row.unit.parking_type_name,
     url: listingPath(row.unit),
     description: `Estacionamento perto de ${nome}, com reserva online pela Movepark.`,
     // A mesma capa que a busca e a página da unidade usam. Metade das unidades guarda

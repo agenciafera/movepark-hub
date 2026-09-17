@@ -108,6 +108,14 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
   - Linha sem preço em duração nenhuma fica fora da lista (segue visível na tabela), e
     lista sem nenhum item precificado não emite bloco: `Product` sem `offers` e `ItemList`
     vazia são itens inválidos para o Google.
+  - **Uma entrada por URL.** A tabela tem uma linha por vaga e a ficha é do lote, então
+    coberta e descoberta do mesmo estacionamento viram um `Product` só, com a faixa
+    cobrindo as duas tabelas e sem a escada (duas tabelas dariam dois preços para a mesma
+    janela). O `ListItem` carrega `url` e `name`. Medido no teste de resultados ricos de
+    16/09/2026: com a linha por vaga, Guarulhos saía com "Carousels: 1 invalid item ·
+    Identical property values given, but unique values are required", e a página do destino
+    publicava 19 itens para 15 fichas. O guard `bun run lint:schema` passou a reprovar URL
+    repetida em `ItemList`.
   - A página do destino (`/estacionamentos/<slug>`) usa o `destinationOffersSchema`, que é
     outro bloco (mistura parceiro e lote mapeado), e ganhou a mesma validade.
   - A **calculadora** fica de fora de propósito: o que ela mostra muda com o que a pessoa

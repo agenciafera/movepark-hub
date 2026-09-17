@@ -320,7 +320,8 @@ export default function DestinoPage() {
       .map((p) => p.total)
       .filter((t): t is number => t != null && t > 0);
     return {
-      name: `${r.operator.name} · ${r.parking_type.name}`,
+      name: r.operator.name,
+      variant: r.parking_type.name,
       url: r.location.public_path ?? "",
       description: `Estacionamento perto do ${seoLabelPrimary(destination)}, em ${destination.city}.`,
       // A capa que o card ao lado já mostra. `image` é recomendado no Product, e sem ele o

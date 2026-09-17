@@ -52,6 +52,9 @@ const DATA: PrecosDestinoData = {
       unit({
         company_slug: "aeropark",
         company_name: "Aeropark",
+        // Ficha própria: no JSON-LD o item da lista é a URL, e duas empresas dividindo a
+        // mesma ficha seria dado errado antes de ser teste errado.
+        public_path: "/estacionamentos/aeroporto-guarulhos/aeropark",
         min_stay_days: 2,
         prices: [
           { days: 1, total: null, old_total: null },
@@ -208,6 +211,7 @@ describe("PrecosDestinoPage", () => {
           unit({
             company_slug: "sem-preco",
             company_name: "Sem Preço",
+            public_path: "/estacionamentos/aeroporto-guarulhos/sem-preco",
             prices: DIAS.map((days) => ({ days, total: null, old_total: null })),
           }),
         ],
