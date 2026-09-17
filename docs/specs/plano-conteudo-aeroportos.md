@@ -401,6 +401,28 @@ Galeão, Brasília, Recife, Salvador, Porto Alegre, Fortaleza, Florianópolis, N
 Cuiabá, Goiânia, Santos Dumont, Campo Grande, Maceió, João Pessoa, Londrina, Teresina. Molde fixo
 de guia âncora, página de preço e FAQ.
 
+**Os 8 aeroportos do Conteúdo 36 fecharam em 17/09/2026, e o molde mudou no caminho.** O
+levantamento mostrou que os 22 aeroportos publicados já tinham o post da série Top 5, que é a dona
+da intenção de preço, mais 8 FAQs cada. O que faltava era o guia âncora, então foi ele que a
+entrega escreveu, e não um segundo post de preço, que canibalizaria o Top 5.
+
+| Praça | O que foi feito | Palavras |
+| --- | --- | ---: |
+| Cuiabá, Goiânia, Santos Dumont, Londrina, Campo Grande | guia âncora novo, publicado | de 3.125 a 3.288 |
+| Teresina, Maceió, João Pessoa | seções de guia acrescentadas ao Top 5 existente | de 3.499 a 3.688 |
+
+**A regra que saiu daqui: praça com um ou dois lotes mapeados não ganha guia próprio.** Em
+Teresina, Maceió e João Pessoa, um texto de 3.000 palavras sobre um pátio só vira enchimento, que
+a skill proíbe, e ainda divide uma demanda pequena com a dona que já existe. Nessas três, as
+seções de entidade (nome oficial, código IATA, município), de acesso e a declaração de que a
+Movepark ainda não tem parceiro entraram no próprio Top 5, mantendo uma dona por praça.
+
+Nenhuma das oito publica tarifa da Movepark, porque `prospect_location.researched_*` está nulo nas
+oito (ADR-010). O preço continua morando no Top 5 de cada praça, com fonte e data ao lado de cada
+valor, que é a regra do portão 1.4 da skill. O que sustenta o guia é o que dá para verificar:
+distância medida com PostGIS, nota pública do Google com a data da coleta, endereço conferido e o
+que perguntar ao pátio por telefone.
+
 ### Defesa: contínua, a partir da semana 7
 
 | Rotina | Frequência |
