@@ -39,17 +39,29 @@ export const FARE_ACTION_BENEFIT = {
   change_vehicle: "plate_change",
 } as const satisfies Record<string, FareBenefitKey>;
 
-/** Rótulo curto de cada benefício, em ordem de exibição na tabela comparativa. */
+/**
+ * Rótulo curto de cada benefício, em ordem de exibição na tabela comparativa.
+ * Fonte única da promessa: modal comparativo, tooltip do card, detalhe da reserva e editor do
+ * Manager leem daqui. Mudar a copy aqui muda em todo lugar; não duplique o texto em componente.
+ * A chave `notifications_sms` é identificador técnico (jsonb do banco): o aviso é só por WhatsApp.
+ */
 export const FARE_BENEFIT_LABELS: { key: FareBenefitKey; label: string }[] = [
   { key: "guaranteed_spot", label: "Vaga garantida" },
   { key: "email_confirmation", label: "Confirmação por e-mail" },
   { key: "free_cancellation", label: "Cancelamento grátis" },
   { key: "plate_change", label: "Troca de placa/veículo" },
   { key: "date_change", label: "Alteração de data/horário" },
-  { key: "notifications_sms", label: "Avisos por SMS/WhatsApp" },
+  { key: "notifications_sms", label: "Avisos por WhatsApp" },
   { key: "flight_delay_protection", label: "Proteção contra atraso de voo" },
   { key: "priority_support", label: "Suporte prioritário" },
 ];
+
+/** Rótulo de um benefício pela chave (para quem monta lista própria, como o modal comparativo). */
+export function fareBenefitLabel(key: FareBenefitKey): string {
+  const found = FARE_BENEFIT_LABELS.find((b) => b.key === key);
+  if (!found) throw new Error(`Benefício sem rótulo: ${key}`);
+  return found.label;
+}
 
 /** Item do catálogo retornado por `get_unit_fares`. */
 export interface FareOption {

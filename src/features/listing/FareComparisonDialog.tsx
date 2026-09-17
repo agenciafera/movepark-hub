@@ -2,19 +2,22 @@ import { Check, X } from "@phosphor-icons/react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { fareBenefitLabel } from "@/lib/fares";
 
 type FareTier = "basic" | "flex" | "superflex";
 
+// As linhas de benefício pegam o texto de `FARE_BENEFIT_LABELS` (fonte única da promessa). Só as
+// linhas de janela de cancelamento são texto próprio, porque dependem do prazo e não de uma flag.
 const FEATURES: { label: string; tiers: [boolean, boolean, boolean] }[] = [
   { label: "Cancelamento grátis até 24h", tiers: [true, true, true] },
-  { label: "E-mail de confirmação", tiers: [true, true, true] },
-  { label: "Vaga garantida", tiers: [true, true, true] },
-  { label: "SMS/WhatsApp + lembrete", tiers: [false, true, true] },
-  { label: "Trocar placa / veículo", tiers: [false, true, true] },
-  { label: "Alterar data e horário", tiers: [false, true, true] },
+  { label: fareBenefitLabel("email_confirmation"), tiers: [true, true, true] },
+  { label: fareBenefitLabel("guaranteed_spot"), tiers: [true, true, true] },
+  { label: fareBenefitLabel("notifications_sms"), tiers: [false, true, true] },
+  { label: fareBenefitLabel("plate_change"), tiers: [false, true, true] },
+  { label: fareBenefitLabel("date_change"), tiers: [false, true, true] },
   { label: "Cancelar até 1 min antes", tiers: [false, false, true] },
-  { label: "Proteção contra atraso de voo", tiers: [false, false, true] },
-  { label: "Suporte prioritário", tiers: [false, false, true] },
+  { label: fareBenefitLabel("flight_delay_protection"), tiers: [false, false, true] },
+  { label: fareBenefitLabel("priority_support"), tiers: [false, false, true] },
 ];
 
 const TIERS: {

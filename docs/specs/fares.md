@@ -1,7 +1,7 @@
 # Tarifas de flexibilidade da reserva (E2.8 · Básica / Flex / Superflex)
 
 > **Status:** E2.8-e **completa no backend** — núcleo financeiro (`20260717000000_fare_tiers.sql`) +
-> passo 2 (auto-extensão por atraso de voo + notificações SMS/WhatsApp, `20260718000000_fare_flight_extension.sql`)
+> passo 2 (auto-extensão por atraso de voo + notificações por WhatsApp, `20260718000000_fare_flight_extension.sql`)
 > aplicados; Edges deployadas. Front (seletor no checkout E2.8-b, detalhe da reserva E2.8-c, upgrade
 > pós-reserva E2.8-d) implementado. A config por unidade (E2.8-f) foi **removida** em 23/07: a tarifa é
 > fonte única global, editada pelo Super Admin em `/manager/tarifas` (ver seção E2.8-f abaixo).
@@ -20,7 +20,7 @@ A **Tarifa** é a flexibilidade da **própria reserva**, vendida no checkout no 
 | Tarifa | Preço | Janela de cancelamento grátis | Benefícios (cumulativos) |
 |---|---|---|---|
 | **Básica** | Grátis (no preço da vaga) | até **24h** antes | vaga garantida, confirmação por e-mail, cancelamento grátis |
-| **Flex** ⭐ | **R$ 12,90** | até **24h** antes | + troca de placa/veículo, alteração de data/horário, avisos SMS/WhatsApp |
+| **Flex** ⭐ | **R$ 12,90** | até **24h** antes | + troca de placa/veículo, alteração de data/horário, avisos por WhatsApp |
 | **Superflex** | **R$ 24,90** | até **1 min** antes (estorno total) | + proteção contra atraso de voo (auto-extensão), suporte prioritário |
 
 Flex é marcada como **"Mais popular"** (efeito isca; Superflex ancora). Preços são hipótese inicial
@@ -108,9 +108,12 @@ a notificação. **Follow-up:** a propagação da extensão ao white-label (o ou
 `reserve`/`release`, não `extend`) e o gatilho automático por uma API de voos ficam para depois — hoje
 a extensão é acionada manualmente (cliente/staff).
 
-## Notificações SMS/WhatsApp (Flex+)
+## Notificações por WhatsApp (Flex+)
 
-Tarifas com `fare_benefits.notifications_sms` (Flex e Superflex) recebem aviso por WhatsApp. Sender
+Tarifas com `fare_benefits.notifications_sms` (Flex e Superflex) recebem aviso por WhatsApp. **Não há SMS:**
+a chave `notifications_sms` é identificador técnico herdado (jsonb do catálogo e snapshot da reserva);
+o canal é só WhatsApp e a copy que o cliente vê vem de `FARE_BENEFIT_LABELS` em `src/lib/fares.ts`
+(fonte única: modal comparativo, tooltip do card, detalhe da reserva e editor do Manager). Sender
 reutilizável em **`_shared/whatsapp.ts`** (Meta Cloud API, mensagens de **template**), que **degrada
 como o e-mail**: sem config/template aprovado, loga e segue (nunca derruba o chamador). Pontos de
 disparo (best-effort, pós-resposta):

@@ -180,7 +180,7 @@ Push (futuro)
 □ Confirmação de pagamento
 □ Atualizações da reserva
 
-SMS
+WhatsApp
 □ Lembrete de check-in (Premium)
 ```
 

@@ -41,7 +41,7 @@ import {
 } from "./api";
 import { availabilityUi } from "./availability.logic";
 import { useUnitFares } from "@/features/fares/api";
-import { fareReais } from "@/lib/fares";
+import { fareBenefitLabel, fareReais } from "@/lib/fares";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { getLocationCapabilities } from "./capabilities";
 import { withSearchDates } from "./externalCheckout";
@@ -100,7 +100,7 @@ const FARE_OPTIONS: FareOption[] = [
     label: "Flex",
     surcharge: 12.9,
     tagline: "+ R$ 12,90",
-    tooltip: ["Tudo da Básica", "Troca de placa e data", "SMS/WhatsApp na chegada"],
+    tooltip: ["Tudo da Básica", "Troca de placa e data", fareBenefitLabel("notifications_sms")],
     badgeText: "Cancelamento grátis até 24h",
     cancellationLine: "Cancelamento grátis até 24h antes · troca de placa liberada",
     guaranteeContext: "cancele grátis até 24h · troca de placa liberada",

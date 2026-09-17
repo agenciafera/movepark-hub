@@ -6,6 +6,7 @@ import {
   fareUpgradeDeltaCents,
   FARE_BENEFIT_LABELS,
   FARE_TIER_ORDER,
+  fareBenefitLabel,
   isWithinFareCancelWindow,
 } from "./fares";
 
@@ -42,6 +43,17 @@ describe("FARE_BENEFIT_LABELS", () => {
     const keys = FARE_BENEFIT_LABELS.map((b) => b.key);
     expect(keys.length).toBe(8);
     expect(new Set(keys).size).toBe(8);
+  });
+
+  // Regressão: a Movepark avisa só por WhatsApp. A chave `notifications_sms` é técnica e fica;
+  // a promessa que o cliente lê não pode voltar a citar SMS.
+  it("nenhum rótulo promete SMS", () => {
+    for (const b of FARE_BENEFIT_LABELS) expect(b.label).not.toMatch(/sms/i);
+    expect(fareBenefitLabel("notifications_sms")).toBe("Avisos por WhatsApp");
+  });
+
+  it("fareBenefitLabel devolve o rótulo da lista", () => {
+    expect(fareBenefitLabel("guaranteed_spot")).toBe("Vaga garantida");
   });
 });
 
