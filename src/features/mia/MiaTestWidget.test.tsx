@@ -44,6 +44,17 @@ describe("bolinha de teste da Mia", () => {
   });
 });
 
+describe("como página (inline)", () => {
+  it("abre direto, sem bolinha nem botão de fechar", () => {
+    comPapel("hub_admin");
+    render(<MiaTestWidget inline />, { wrapper });
+    expect(screen.queryByLabelText("Testar a Mia")).toBeNull();
+    expect(screen.queryByLabelText("Fechar")).toBeNull();
+    expect(screen.getByTestId("mia-test")).toBeTruthy();
+    expect(screen.getByText("Teste interno")).toBeTruthy();
+  });
+});
+
 describe("o histórico daquele número", () => {
   const ident = { telefone: "5541988149449", origem: "webchat-bot" } as const;
 

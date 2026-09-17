@@ -36,9 +36,11 @@ import { identidadeDe, rotuloDoTelefone, telefoneAceito } from "./MiaTestWidget.
  * o formato e a origem contra lista fechada, e que nunca reusa o namespace de memória do
  * WhatsApp de verdade. Ver o cabeçalho de `supabase/functions/mia-chat/index.ts`.
  */
-export function MiaTestWidget() {
+export function MiaTestWidget({ inline = false }: { inline?: boolean } = {}) {
   const { effectiveRole } = useAuth();
-  const [open, setOpen] = React.useState(false);
+  // `inline` (17/09/2026): a mesma ferramenta como página própria (Manager › Testar a Mia), em
+  // vez da bolinha flutuante, que ficava em cima das tabelas do Backoffice.
+  const [open, setOpen] = React.useState(inline);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   /**
    * As tools ficam FORA do texto, indexadas pela mensagem.
@@ -102,7 +104,7 @@ export function MiaTestWidget() {
     }
   }
 
-  if (!open) {
+  if (!open && !inline) {
     return (
       <button
         type="button"
@@ -116,7 +118,14 @@ export function MiaTestWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex h-[560px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+    <div
+      className={
+        inline
+          ? "flex h-[70vh] min-h-[480px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-hairline bg-white"
+          : "fixed bottom-6 right-6 z-50 flex h-[560px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-neutral-200"
+      }
+      data-testid="mia-test"
+    >
       <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
         <div>
           <p className="text-title-md text-ink">Mia</p>
@@ -158,9 +167,11 @@ export function MiaTestWidget() {
           >
             <Trash size={18} />
           </button>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-sm p-1 text-muted hover:text-ink">
-            <X size={20} />
-          </button>
+          {!inline && (
+            <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-sm p-1 text-muted hover:text-ink">
+              <X size={20} />
+            </button>
+          )}
         </div>
       </header>
 

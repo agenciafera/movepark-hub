@@ -69,6 +69,8 @@ export const managerSections: Section[] = [
       { to: "/manager/api-interna", label: "API interna", icon: LockKey },
       // Externo: o Studio é outro worker. Ver `features/studio/api.ts` para por que o
       // token não pode vir do bundle.
+      // Ferramenta de time (17/09/2026): era uma bolinha flutuante em cima das tabelas.
+      { to: "/manager/mia", label: "Testar a Mia", shortLabel: "Mia", icon: Robot },
       { to: "studio", label: "Studio dos agentes", shortLabel: "Studio", icon: Robot, externo: true },
       { to: "/manager/settings", label: "Configurações", icon: Gear },
     ],

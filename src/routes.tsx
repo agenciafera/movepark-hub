@@ -91,6 +91,7 @@ import ManagerCompanies from "@/routes/manager/companies";
 import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
 import ManagerCompanyAccount from "@/routes/manager/company-account";
+import ManagerMia from "@/routes/manager/mia";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
@@ -1052,6 +1053,8 @@ export const routes: RouteRecord[] = [
               { path: "faq/categorias", element: <ManagerFaqCategorias /> },
               { path: "tarifas", element: <ManagerTarifas /> },
               { path: "settings", element: <ManagerSettings /> },
+              // Ferramenta de time: a Mia de teste como página (era bolinha flutuante).
+              { path: "mia", element: <ManagerMia /> },
               { path: "legal", element: <ManagerLegal /> },
             ],
           },
