@@ -8,6 +8,7 @@ import worker, {
   ehRotaPrivada,
   normalizaBarraFinal,
   wpLegacyRedirect,
+  ptLegacyRedirect,
   blogRedirect,
 } from "./worker";
 import { SITEMAP_PRIVATE_PREFIXES } from "./lib/sitemapRoutes";
@@ -890,6 +891,83 @@ describe("mapa do WordPress com entrada identidade", () => {
     );
     expect(r?.status).toBe(301);
     expect(r?.headers.get("Location")).toBe("/estacionamentos/aeroporto-confins/park-confins");
+  });
+});
+
+describe("árvore /pt/ do WordPress multisite", () => {
+  /**
+   * As 39 URLs `/pt/` do baseline de 29/08/2026 respondiam 404 desde o corte, com 71.661
+   * impressões e 108 cliques em 16 meses. A regra tira o prefixo e resolve pela cadeia que
+   * já existe, então cada caso aqui usa uma URL real daquele levantamento.
+   */
+  const loc = (path: string) => ptLegacyRedirect(new URL(`https://movepark.co${path}`));
+
+  it("post absorvido vai direto para a dona, num salto só", () => {
+    const r = loc("/pt/qual-e-o-valor-da-diaria-estacionamento-aeroporto-guarulhos/");
+    expect(r?.status).toBe(301);
+    expect(r?.headers.get("Location")).toBe("/blog/preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui/");
+  });
+
+  it("post que continua publicado vai para a própria URL, com barra", () => {
+    expect(loc("/pt/estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade/")?.headers.get("Location")).toBe(
+      "/blog/estacionamento-aeroporto-guarulhos-seguranca-do-seu-veiculo-e-prioridade/",
+    );
+  });
+
+  it("caminho legado da raiz resolve até a dona, sem cadeia", () => {
+    expect(loc("/pt/estacionamento-aeroporto-guarulhos-veja-o-preco-dos-principais-estacionamentos/")?.headers.get("Location")).toBe(
+      "/blog/preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui/",
+    );
+  });
+
+  it("ficha de estacionamento de Portugal cai no catálogo, no mesmo endereço", () => {
+    expect(loc("/pt/estacionamentos/lisboa/skypark-estacionamento-aeroporto-lisboa/")?.headers.get("Location")).toBe(
+      "/estacionamentos/lisboa/skypark-estacionamento-aeroporto-lisboa",
+    );
+  });
+
+  it("institucional usa o mesmo mapa do WordPress", () => {
+    expect(loc("/pt/o-sistema/")?.headers.get("Location")).toBe("/como-funciona");
+    expect(loc("/pt/termos-de-uso/")?.headers.get("Location")).toBe("/termos");
+  });
+
+  it("a home do site em português vai para a home", () => {
+    expect(loc("/pt/")?.headers.get("Location")).toBe("/");
+    expect(loc("/pt")?.headers.get("Location")).toBe("/");
+  });
+
+  it("índice e paginação do blog seguem para o índice daqui", () => {
+    expect(loc("/pt/blog/")?.headers.get("Location")).toBe("/blog");
+    expect(loc("/pt/blog/page/2/")?.headers.get("Location")).toBe("/blog/page/2");
+  });
+
+  it("query string acompanha o destino", () => {
+    expect(loc("/pt/o-sistema/?utm_source=google")?.headers.get("Location")).toBe("/como-funciona?utm_source=google");
+  });
+
+  /**
+   * Sem equivalente é 404 mesmo. Mandar para a home seria soft 404: o Google descarta o
+   * sinal e a URL continua no relatório de cobertura, agora mentindo que tem destino.
+   */
+  it("imagem do wp-content e página de autor continuam em 404", () => {
+    expect(loc("/pt/wp-content/uploads/sites/2/2022/08/MG_3032.jpg")).toBeNull();
+    expect(loc("/pt/author/diego/")).toBeNull();
+  });
+
+  it("slug inventado não vira redirect", () => {
+    expect(loc("/pt/estacionamento-que-nunca-existiu/")).toBeNull();
+  });
+
+  it("o worker inteiro responde o 301 antes da regra de 404", async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(req("/pt/estacionamentos/faro/airpark-estacionamento-aeroporto-faro/"), env);
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/estacionamentos/faro/airpark-estacionamento-aeroporto-faro");
+  });
+
+  it("caminho fora da árvore não é tocado", () => {
+    expect(loc("/ptx/algo")).toBeNull();
+    expect(loc("/blog/estacionamento-barato-aeroporto-curitiba/")).toBeNull();
   });
 });
 

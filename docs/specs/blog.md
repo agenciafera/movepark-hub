@@ -197,6 +197,39 @@ A tabela completa é reproduzível a qualquer momento:
 ssh -p 3022 <user>@gate.paas.saveincloud.net.br 'cd /var/www/webroot/ROOT && php wp-cli.phar db query "SELECT url_from, url_to, count FROM ko1_redirects ORDER BY count DESC" --skip-column-names'
 ```
 
+## A árvore `/pt/` do multisite (17/09/2026)
+
+O WordPress era uma rede de três sites, e o de português servia o mesmo conteúdo sob `/pt/`.
+Essas URLs ficaram fora do corte e respondiam 404 desde então. O baseline do Search Console de
+29/08/2026 mostra o tamanho do buraco: **39 URLs, 71.661 impressões e 108 cliques em 16 meses**.
+
+| Grupo | URLs | Impressões | Tem equivalente no Hub |
+| --- | --- | --- | --- |
+| Catálogo de Portugal (`/pt/estacionamentos/lisboa/...`, Faro, Porto) | 8 | ~41.900 | sim, o mesmo caminho sem o prefixo |
+| Post de blog (9 de GRU, 5 de VCP) | 14 | ~25.000 | sim, o post ou a dona que o absorveu |
+| Institucional (`/pt/`, `/pt/o-sistema/`, `/pt/blog/`, termos, privacidade) | 9 | ~4.400 | sim, pelos mapas que já existiam |
+| Imagem de `/pt/wp-content/uploads/` | 7 | 11 | não |
+| `/pt/author/diego/` | 1 | 2 | não |
+
+**A regra não tem mapa próprio.** O `ptLegacyRedirect` em [`src/worker.ts`](../../src/worker.ts)
+tira o prefixo e resolve o resto pela cadeia que já existe, nesta ordem: caminho legado da raiz,
+slug consolidado, slug do acervo congelado, mapa do WordPress e, por último, caminho que o Hub
+serve no mesmo endereço. Assim toda consolidação futura vale para a árvore `/pt/` sem ninguém
+lembrar dela.
+
+Duas decisões que valem registro:
+
+- **Quem não tem equivalente continua em 404.** Redirecionar as imagens e a página de autor
+  para a home seria soft 404: o Google descarta o sinal e a URL fica no relatório de cobertura
+  fingindo ter destino.
+- **O acervo congelado (`legacy-slugs.json`) é o universo da checagem de slug**, em vez do
+  manifesto do build ou do banco. A árvore `/pt/` só carregou conteúdo da época do WordPress, e
+  consultar o banco a cada requisição pagaria latência para atender varredura de bot.
+
+A regra roda no `serve()` antes dos outros mapas, para o visitante fazer **um salto só**. A
+normalização de barra final não interfere, porque `/pt/<algo>/` não é rota de app. Coberta por 12
+casos em `worker.test.ts`, todos com URL real do baseline.
+
 ## Modelo de dados
 
 Tabela `public.blog_post`, espelhando `destination`, que já é o molde de conteúdo do projeto.
@@ -869,8 +902,8 @@ uma comparação de um valor prova mais que uma amostragem.
   diferença deve estar na cauda, em URLs da árvore `/pt/` ou em taxonomia contada como blog.
   Precisa ser reconciliada antes do corte, porque cada URL não explicada é um 404 em potencial.
 - **Multisite.** O WordPress é uma rede com três sites (`/`, `/pt/`, `/es/`). O `/es/` tem 0
-  redirects e não apareceu no levantamento de tráfego. A árvore `/pt/` é a decisão 4 em aberto
-  da planilha e não pertence a esta spec.
+  redirects e não apareceu no levantamento de tráfego. A árvore `/pt/` foi resolvida em
+  17/09/2026 e está na seção logo abaixo.
 - **Índice sem paginação.** As 93 URLs cabem numa página só hoje (41 KB comprimido). O
   WordPress paginava em `/blog/page/N/`, e essas URLs não têm par no Hub. Elas nunca
   apareceram no Search Console, então ficaram fora; se o acervo crescer, a paginação entra

@@ -1,4 +1,5 @@
 import { DEFAULT_SITE_URL } from "./lib/site-host.mjs";
+import legacySlugs from "./features/blog/legacy-slugs.json";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -530,10 +531,13 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
  * `blogRedirect` porque nenhum destes caminhos é `/blog/*`, então a ordem entre os dois não
  * importa — mas rodar antes do fallback de asset/404 importa sempre.
  */
+function wpLegacyTarget(path: string): string | undefined {
+  return WP_INSTITUTIONAL_REDIRECTS[path] ?? WP_AEROPORTO_REDIRECTS[path] ?? WP_ESTACIONAMENTO_REDIRECTS[path];
+}
+
 export function wpLegacyRedirect(url: URL): Response | null {
   const path = url.pathname.replace(/\/+$/, "") || "/";
-  const destino =
-    WP_INSTITUTIONAL_REDIRECTS[path] ?? WP_AEROPORTO_REDIRECTS[path] ?? WP_ESTACIONAMENTO_REDIRECTS[path];
+  const destino = wpLegacyTarget(path);
   // URL do WordPress idêntica à do Hub (a ficha manteve o slug): redirecionar
   // seria um 301 para ela mesma, e o loop derruba a página inteira. Aconteceu
   // com a br-parking-viracopos, que ficou inacessível até 28/08/2026.
@@ -629,6 +633,69 @@ export function blogRedirect(url: URL): Response | null {
 
   // Post sem a barra final: a canônica é com barra, igual ao WordPress.
   return semBarra ? paraCanonica() : null;
+}
+
+/** Os 93 slugs herdados do WordPress, para reconhecer post na árvore `/pt/` sem ir ao banco. */
+const SLUGS_HERDADOS = new Set<string>(legacySlugs);
+
+/**
+ * Destino de um caminho da árvore `/pt/`, já sem o prefixo. `null` quando não há equivalente.
+ *
+ * A ordem responde à composição real da árvore, medida no baseline do Search Console de
+ * 29/08/2026: post de blog primeiro (14 URLs), depois ficha e índice do WordPress, e por
+ * último o caminho que o Hub serve no mesmo endereço (o catálogo de Portugal, que sozinho
+ * responde por 41 mil das 71 mil impressões).
+ */
+function destinoDaArvorePt(resto: string): string | null {
+  const legado = BLOG_LEGACY_PATHS[resto];
+  if (legado) return resolveConsolidado(legado);
+
+  const segmentos = resto.split("/").filter(Boolean);
+  const slug =
+    segmentos.length === 1
+      ? segmentos[0]
+      : segmentos.length === 2 && segmentos[0] === "blog"
+        ? segmentos[1]
+        : null;
+  if (slug) {
+    const vencedor = BLOG_CONSOLIDATED_SLUGS[slug];
+    if (vencedor) return `/blog/${vencedor}/`;
+    // O acervo congelado é o universo certo aqui: a árvore `/pt/` só carrega conteúdo da
+    // época do WordPress, e consultar o manifesto ou o banco por slug inventado abriria
+    // uma leitura por varredura de bot.
+    if (SLUGS_HERDADOS.has(slug)) return `/blog/${slug}/`;
+  }
+
+  const wp = wpLegacyTarget(resto);
+  if (wp) return wp;
+
+  if (resto === "/" || ehRotaDeApp(resto)) return resto;
+
+  return null;
+}
+
+/**
+ * 301 da árvore `/pt/`, o site em português da rede multisite do WordPress.
+ *
+ * São 39 URLs com 71.661 impressões e 108 cliques em 16 meses, todas em 404 desde o corte
+ * (baseline de 29/08/2026). Em vez de um mapa novo com 39 linhas para manter, a regra tira o
+ * prefixo e resolve o resto pela cadeia que já existe, então cada consolidação futura entra
+ * aqui sozinha.
+ *
+ * Quem não tem equivalente continua em 404, de propósito: são as 7 imagens de
+ * `/pt/wp-content/uploads/` (11 impressões) e a página de autor. Mandar tudo isso para a home
+ * seria soft 404, que o Google descarta e ainda suja o relatório de cobertura.
+ *
+ * Roda no `serve()` antes dos outros mapas, e a normalização de barra final não a atrapalha:
+ * `/pt/<algo>/` não é rota de app, então chega aqui inteiro e sai num salto só.
+ */
+export function ptLegacyRedirect(url: URL): Response | null {
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  if (path !== "/pt" && !path.startsWith("/pt/")) return null;
+
+  const destino = destinoDaArvorePt(path.slice("/pt".length) || "/");
+  if (!destino || destino === path) return null;
+  return redirect301(destino + url.search);
 }
 
 export default {
@@ -1000,6 +1067,11 @@ export function __resetCachesDoWorker(): void {
 async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
   const url = new URL(request.url);
+
+  // Árvore `/pt/` do WordPress multisite: resolve antes dos outros mapas, porque o destino
+  // dela é justamente o que eles respondem, e assim o visitante faz um salto só.
+  const ptHop = ptLegacyRedirect(url);
+  if (ptHop) return ptHop;
 
   // URL institucional, de aeroporto ou de ficha do WordPress: 301 antes de qualquer outra
   // coisa, pelo mesmo motivo do blog logo abaixo.
