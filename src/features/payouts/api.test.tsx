@@ -14,6 +14,7 @@ import {
   useRefreshGatewayBalances,
   useWithdraw,
   useReconcileWithdrawals,
+  useRetryManualRefund,
   useSetCompanyPayoutReleaseDays,
 } from "./api";
 import { renderHook, waitFor } from "@testing-library/react";
@@ -330,6 +331,20 @@ describe("useReconcileWithdrawals", () => {
     falha("edge", "reconcile-payout-transfers", 401, "unauthorized");
     const { result } = renderMutation(() => useReconcileWithdrawals());
     await expect(result.current.mutateAsync()).rejects.toThrow(/unauthorized/);
+  });
+});
+
+describe("useRetryManualRefund", () => {
+  it("pede à Edge retry-refund com o id da fila e propaga a recusa com o motivo", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({ data: { session: { access_token: "jwt" } as never }, error: null } as never);
+    const chamada = edge("retry-refund", { json: { ok: true, status: "refunded", refund_pending: false } });
+    const { result } = renderMutation(() => useRetryManualRefund());
+    const r = await result.current.mutateAsync({ id: "mr1" });
+    expect(chamada.ultimoBody).toEqual({ manual_refund_id: "mr1" });
+    expect(r.status).toBe("refunded");
+    falha("edge", "retry-refund", 409, "O gateway recusou de novo: Saldo insuficiente.");
+    const { result: r2 } = renderMutation(() => useRetryManualRefund());
+    await expect(r2.current.mutateAsync({ id: "mr1" })).rejects.toThrow(/Saldo insuficiente/);
   });
 });
 

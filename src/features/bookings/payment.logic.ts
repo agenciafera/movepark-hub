@@ -62,6 +62,29 @@ export function paymentLine(
   return "Sem pagamento";
 }
 
+export type PaymentBadge = {
+  label: string;
+  tone: "confirmed" | "pending" | "cancelled" | "neutral";
+  /** Cancelada, paga e sem estorno: a devolução está na fila manual da Movepark. */
+  manualRefund: boolean;
+};
+
+/**
+ * O SEGUNDO status da reserva (17/09/2026): o do dinheiro, separado do da reserva. Uma reserva
+ * pode estar cancelada com a devolução ainda pendente, e as duas coisas precisam aparecer.
+ */
+export function paymentBadge(payments: PaymentLike[] | null | undefined, bookingStatus: string): PaymentBadge | null {
+  const p = lastPayment(payments);
+  if (!p) return bookingStatus === "pending" ? { label: "Aguardando pagamento", tone: "pending", manualRefund: false } : null;
+  if (p.status === "refunded") return { label: "Devolvido", tone: "confirmed", manualRefund: false };
+  if (p.status === "paid" && p.refunded_at) return { label: "Estorno em processamento", tone: "pending", manualRefund: false };
+  if (p.status === "paid" && bookingStatus === "cancelled") return { label: "Devolução pendente", tone: "cancelled", manualRefund: true };
+  if (p.status === "paid") return { label: "Pago", tone: "confirmed", manualRefund: false };
+  if (p.status === "failed") return { label: "Pagamento recusado", tone: "cancelled", manualRefund: false };
+  if (p.status === "pending" || p.status === "authorized") return { label: "Aguardando pagamento", tone: "pending", manualRefund: false };
+  return null;
+}
+
 // ── Janela de estorno do gateway (17/09/2026) ────────────────────────────────
 //
 // A Pagar.me só estorna pela API dentro de um prazo contado do PAGAMENTO: PIX até 90 dias,

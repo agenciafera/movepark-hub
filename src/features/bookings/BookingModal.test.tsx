@@ -29,6 +29,14 @@ function booking(status: string): BookingWithRelations {
 }
 
 describe("BookingModal (Manager)", () => {
+  it("cancelada com estorno recusado mostra os dois status e o atalho para a fila manual", () => {
+    const b = { ...booking("cancelled"), payments: [{ id: "p1", status: "paid", refunded_at: null, created_at: "2026-09-17T20:38:09Z", paid_at: "2026-09-17T20:38:21Z", method: "card" }] } as never;
+    renderWithProviders(<BookingModal booking={b} open onOpenChange={() => {}} />);
+    expect(screen.getByTestId("badge-pagamento")).toHaveTextContent("Devolução pendente");
+    expect(screen.getByTestId("aviso-devolucao-pendente")).toHaveTextContent("o cliente ainda não recebeu");
+    expect(screen.getByRole("link", { name: /Tentar de novo ou marcar como devolvido/ })).toHaveAttribute("href", "/manager/finance/payouts");
+  });
+
   it("mostra 'Cancelar reserva' numa reserva confirmada (antes do check-in)", () => {
     renderWithProviders(<BookingModal booking={booking("confirmed")} open onOpenChange={() => {}} />);
     expect(screen.getByRole("button", { name: "Cancelar reserva" })).toBeInTheDocument();

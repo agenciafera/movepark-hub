@@ -11,6 +11,8 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDateTime, daysBetween } from "@/lib/format";
 import { bookingCustomerName } from "./bookings.logic";
+import { paymentBadge } from "./payment.logic";
+import { Badge } from "@/components/ui/badge";
 import type { BookingWithRelations } from "@/types/domain";
 
 type Props = {
@@ -76,7 +78,14 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
               </TableCell>
               <TableCell className="text-right tabular-nums">{formatBRL(b.total_amount)}</TableCell>
               <TableCell>
-                <StatusBadge status={b.status} />
+                <div className="flex flex-col items-start gap-1">
+                  <StatusBadge status={b.status} />
+                  {(() => {
+                    const d = paymentBadge(b.payments, b.status);
+                    // Só o que exige olhar: devolução pendente e estorno em processamento.
+                    return d && d.label !== "Pago" && d.label !== "Devolvido" ? <Badge tone={d.tone}>{d.label}</Badge> : null;
+                  })()}
+                </div>
               </TableCell>
             </TableRow>
           ))}

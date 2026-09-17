@@ -10,6 +10,7 @@ const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-recipient
 const REFRESH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-recipients`;
 const WITHDRAW_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recipient-withdraw`;
 const RECONCILE_WITHDRAWALS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reconcile-payout-transfers`;
+const RETRY_REFUND_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/retry-refund`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -620,6 +621,34 @@ export function useManualRefunds() {
 }
 
 /** Marca um reembolso manual como pago: o `payment` vira `refunded` e a dívida do parceiro entra. */
+/**
+ * Tentar o estorno de novo no gateway (17/09/2026), para a linha da fila manual. Recusa de novo
+ * volta como erro com o motivo; sucesso fecha a linha e vira o pagamento em estornado.
+ */
+export function useRetryManualRefund() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { id: string }): Promise<{ ok: boolean; status: string; refund_pending: boolean }> => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(RETRY_REFUND_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ manual_refund_id: args.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+    },
+  });
+}
+
 export function useMarkManualRefundPaid() {
   const qc = useQueryClient();
   return useMutation({

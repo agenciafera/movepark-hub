@@ -16,11 +16,13 @@ const fila: ManualRefundRow[] = [
     booking: { code: "MP-B27660", customer_name: "Bia", customer_email: null },
   },
 ];
+const tentar = vi.hoisted(() => vi.fn().mockResolvedValue({ ok: true, status: "refunded", refund_pending: false }));
 const marcar = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("@/features/payouts/api", () => ({
   useManualRefunds: () => ({ data: fila, isLoading: false }),
   useMarkManualRefundPaid: () => ({ mutateAsync: marcar, isPending: false }),
+  useRetryManualRefund: () => ({ mutateAsync: tentar, isPending: false }),
 }));
 
 import { ManualRefundQueueCard } from "./ManualRefundQueueCard";
@@ -37,6 +39,12 @@ describe("ManualRefundQueueCard", () => {
     const linha = screen.getByText("MP-4715F4").closest("tr")!;
     expect(norm(linha.textContent)).toContain("R$ 162,40");
     expect(linha.textContent).toContain("Prazo do meio de pagamento venceu");
+  });
+
+  it("tenta o estorno de novo no gateway pela linha da fila", async () => {
+    renderWithProviders(<ManualRefundQueueCard />);
+    await userEvent.click(screen.getAllByRole("button", { name: "Tentar de novo no gateway" })[0]);
+    await waitFor(() => expect(tentar).toHaveBeenCalledWith({ id: expect.any(String) }));
   });
 
   it("marca como pago só depois da confirmação, levando a observação", async () => {

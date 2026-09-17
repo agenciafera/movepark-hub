@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lastPayment, paymentLine, paymentState, refundWindow } from "./payment.logic";
+import { lastPayment, paymentBadge, paymentLine, paymentState, refundWindow } from "./payment.logic";
 
 const pay = (over: Partial<{ status: string | null; refunded_at: string | null; created_at: string }>) => ({
   status: "paid",
@@ -83,5 +83,19 @@ describe("paymentLine", () => {
     expect(paymentLine([], "cancelled")).toBe("Sem pagamento");
     expect(paymentLine([pay({ status: "failed" })], "pending")).toBe("Pagamento recusado");
     expect(paymentLine([pay({ status: "pending" })], "pending")).toBe("Aguardando pagamento");
+  });
+});
+
+describe("paymentBadge: o status do dinheiro, separado do da reserva", () => {
+  it("cancelada e paga sem estorno é Devolução pendente (fila manual)", () => {
+    expect(paymentBadge([pay({ status: "paid" })], "cancelled")).toEqual({ label: "Devolução pendente", tone: "cancelled", manualRefund: true });
+  });
+  it("demais estados", () => {
+    expect(paymentBadge([pay({ status: "paid" })], "confirmed")?.label).toBe("Pago");
+    expect(paymentBadge([pay({ status: "refunded" })], "cancelled")?.label).toBe("Devolvido");
+    expect(paymentBadge([pay({ status: "paid", refunded_at: "2026-09-17T00:00:00Z" })], "cancelled")?.label).toBe("Estorno em processamento");
+    expect(paymentBadge([pay({ status: "failed" })], "pending")?.label).toBe("Pagamento recusado");
+    expect(paymentBadge([], "pending")?.label).toBe("Aguardando pagamento");
+    expect(paymentBadge([], "cancelled")).toBeNull();
   });
 });

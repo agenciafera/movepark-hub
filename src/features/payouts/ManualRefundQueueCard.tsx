@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { formatBRL, formatDate } from "@/lib/format";
-import { useManualRefunds, useMarkManualRefundPaid, type ManualRefundRow } from "./api";
+import { useManualRefunds, useMarkManualRefundPaid, useRetryManualRefund, type ManualRefundRow } from "./api";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
@@ -43,8 +43,23 @@ const motivo: Record<ManualRefundRow["reason"], string> = {
 export function ManualRefundQueueCard() {
   const { data, isLoading } = useManualRefunds();
   const marcar = useMarkManualRefundPaid();
+  const tentar = useRetryManualRefund();
   const [alvo, setAlvo] = React.useState<ManualRefundRow | null>(null);
   const [nota, setNota] = React.useState("");
+  const [tentando, setTentando] = React.useState<string | null>(null);
+
+  // Tentar de novo no gateway: sem saldo ontem pode ter saldo hoje. Recusa vem com o motivo.
+  async function tentarDeNovo(r: ManualRefundRow) {
+    setTentando(r.id);
+    try {
+      const res = await tentar.mutateAsync({ id: r.id });
+      toast.success(res.refund_pending ? "Estorno enviado ao gateway, em processamento." : `Estorno de ${brl(r.amount_cents)} feito pelo gateway.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não consegui estornar de novo.");
+    } finally {
+      setTentando(null);
+    }
+  }
 
   const pendentes = (data ?? []).filter((r) => r.status === "pending");
 
@@ -72,8 +87,8 @@ export function ManualRefundQueueCard() {
             Reembolsos para fazer por fora
           </CardTitle>
           <p className="text-body-sm text-muted">
-            O gateway recusou o estorno e a reserva já foi cancelada. Devolva ao cliente pelo banco e
-            marque aqui.
+            O gateway recusou o estorno e a reserva já foi cancelada. Tente de novo pelo gateway (o
+            saldo pode ter entrado), ou devolva ao cliente pelo banco e marque aqui.
           </p>
         </CardHeader>
         <CardContent className="p-0">
@@ -102,9 +117,14 @@ export function ManualRefundQueueCard() {
                   </TableCell>
                   <TableCell className="text-muted">{formatDate(r.created_at)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => setAlvo(r)}>
-                      Marcar como pago
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button size="sm" onClick={() => tentarDeNovo(r)} disabled={tentando === r.id}>
+                        {tentando === r.id ? "Tentando…" : "Tentar de novo no gateway"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setAlvo(r)}>
+                        Marcar como pago
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

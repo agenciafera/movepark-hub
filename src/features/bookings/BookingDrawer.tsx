@@ -11,7 +11,8 @@ import { documentMask } from "@/lib/masks";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
 import { useCancelBookingStaff, useUpdateBookingStatus } from "./api";
 import { useChangeBookingVehicle } from "./customerApi";
-import { paymentLine, paymentState } from "./payment.logic";
+import { paymentBadge, paymentLine } from "./payment.logic";
+import { Badge } from "@/components/ui/badge";
 
 type Props = {
   booking: BookingWithRelations | null;
@@ -39,8 +40,8 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
 
   if (!booking) return null;
 
-  // Badge de estado do estorno (Estornado / em processamento), quando houver.
-  const pay = paymentState(booking.payments);
+  // O status do dinheiro, separado do da reserva.
+  const dinheiro = paymentBadge(booking.payments, booking.status);
 
   async function savePlate() {
     const lp = plate.trim().toUpperCase();
@@ -94,10 +95,10 @@ export function BookingDrawer({ booking, open, onOpenChange }: Props) {
           <SheetTitle>Reserva {booking.code}</SheetTitle>
           <div className="flex items-center gap-2">
             <StatusBadge status={booking.status} />
-            {pay.badge && (
-              <span className="rounded-sm bg-surface-soft px-2 py-0.5 text-caption text-muted-steel">
-                {pay.badge}
-              </span>
+            {dinheiro && (
+              <Badge tone={dinheiro.tone} data-testid="badge-pagamento">
+                {dinheiro.label}
+              </Badge>
             )}
             <span className="text-body-sm text-muted">{booking.location?.name}</span>
           </div>

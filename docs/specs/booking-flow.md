@@ -360,6 +360,16 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   de exatamente-uma-vez em `booking.cancellation_email_sent_at` (migration
   `20261121010000_email_de_cancelamento.sql`), igual à da confirmação. Até então o cliente só
   recebia e-mail na confirmação; cancelamento e estorno passavam em silêncio.
+- **Dois status, e tentar de novo (17/09/2026, ✅):** a reserva tem o status dela (Cancelada) e o
+  dinheiro tem o dele (`paymentBadge`: Pago, Estorno em processamento, Devolvido, Devolução
+  pendente, Pagamento recusado, Aguardando pagamento). Os dois aparecem lado a lado na ficha do
+  Manager, na do Operator e na lista. "Devolução pendente" é a cobrança paga de reserva cancelada
+  sem estorno: o gateway recusou de forma definitiva (ex.: "Saldo insuficiente" dentro de um HTTP
+  200, que `buildRefundResult` agora lê em `last_transaction`) e a linha está na fila manual. A fila
+  (Financeiro › Repasses) tem "Tentar de novo no gateway" (Edge `retry-refund`, hub_admin: mesma
+  regra do `cancel-booking`; sucesso fecha a linha e vira o pagamento em estornado; recusa volta com
+  o motivo) e "Marcar como pago" para a devolução feita por fora. Regra mantida: recusa definitiva
+  cancela a reserva e libera a vaga; incerteza (timeout, 5xx) não cancela.
 - **`location.reservation_policy` não é a política (D-007, ✅):** é um texto livre da **unidade**,
   exibido como adendo junto do bloco de cancelamento na página de detalhe
   (`ListingKnowSection`, `src/routes/listing.tsx`). O detentor é a `location` (cada unidade tem o

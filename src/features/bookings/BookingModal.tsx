@@ -10,7 +10,9 @@ import { parkingTitle } from "@/lib/parkingName";
 import type { BookingWithRelations } from "@/types/domain";
 import { useAuth } from "@/auth/context";
 import { useCancelBookingStaff } from "./api";
-import { paymentState, refundWindow } from "./payment.logic";
+import { paymentBadge, paymentState, refundWindow } from "./payment.logic";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import { GatewayTrail } from "./GatewayTrail";
 
 type Props = {
@@ -32,6 +34,9 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
   if (!booking) return null;
 
   const pay = paymentState(booking.payments);
+  // Dois status, de propósito: o da reserva e o do dinheiro. Cancelada com devolução pendente
+  // precisa gritar aqui, e a fila manual (Financeiro › Repasses) é onde se tenta de novo.
+  const dinheiro = paymentBadge(booking.payments, booking.status);
   // Janela de estorno do gateway (PIX 90 dias, cartão 180, contados do pagamento). Vencida, o
   // cancelamento ainda acontece, mas a devolução cai na fila de reembolso manual.
   const janela = pay.canRefund ? refundWindow(booking.payments) : null;
@@ -69,15 +74,23 @@ export function BookingModal({ booking, open, onOpenChange }: Props) {
           <DialogTitle>Reserva {booking.code}</DialogTitle>
           <div className="flex items-center gap-2 pt-1">
             <StatusBadge status={booking.status} />
-            {pay.badge && (
-              <span className="rounded-sm bg-surface-soft px-2 py-0.5 text-caption text-muted-steel">
-                {pay.badge}
-              </span>
+            {dinheiro && (
+              <Badge tone={dinheiro.tone} data-testid="badge-pagamento">
+                {dinheiro.label}
+              </Badge>
             )}
             <span className="text-body-sm text-muted">
               {parkingTitle(booking.location?.company?.name, booking.location?.name)}
             </span>
           </div>
+          {dinheiro?.manualRefund && (
+            <p className="text-caption text-error" data-testid="aviso-devolucao-pendente">
+              O gateway recusou o estorno; o cliente ainda não recebeu.{" "}
+              <Link to="/manager/finance/payouts" className="underline underline-offset-2">
+                Tentar de novo ou marcar como devolvido
+              </Link>
+            </p>
+          )}
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 text-body-sm">
