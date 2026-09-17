@@ -171,7 +171,7 @@ mínima e a comparação com o estacionamento oficial.
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.645 (tabela de 17/09/2026) | ✅ verde, 0 bloqueio, revista em 17/09/2026 |
-| `estacionamento-barato-aeroporto-curitiba` | 3.114 | ✅ verde, 0 bloqueio |
+| `estacionamento-barato-aeroporto-curitiba` | 4.170 (tabela de 27/08/2026) | ✅ verde, 0 bloqueio, conferida e ampliada em 17/09/2026 |
 | `conheca-o-estacionamento-mais-proximo-do-aeroporto-afonso-pena-em-2024` | 3.025 | ✅ verde, 0 bloqueio |
 
 **As seis âncoras estão no padrão desde 27/08/2026.** Todas em verde no analisador da skill, com
@@ -226,6 +226,26 @@ mostra os três degraus (R$ 18,90, R$ 16,90 e R$ 15,90 na descoberta do Abbapark
 Analisador em verde, 0 bloqueio. As três atenções são densidade da frase-chave (0,3%), frase-chave
 em 8 de 29 títulos e palavras de transição a 29,5% contra o piso de 30%; as duas primeiras têm a
 justificativa das outras âncoras e a terceira está a meia frase do piso.
+
+### Conteúdo 13: a canônica de economia de CWB fecha nesta âncora
+
+A atividade [Conteúdo 13, página canônica de economia do Afonso Pena](https://app.clickup.com/t/86ak6h702)
+pedia a dona do cluster barato, economia e desconto em Curitiba. Pelo mesmo motivo do Conteúdo 07,
+nenhuma página nova foi escrita: a âncora já era a dona, com histórico de URL e os 3 redirects desta
+consolidação. Em 17/09/2026 todo preço de parceiro do post, inclusive o de balcão (`old_total`),
+batia com o motor, e o que faltava da atividade entrou no próprio post:
+
+| O que a atividade exigia | Onde está na âncora |
+| --- | --- |
+| As três alavancas medidas na semana (pátio R$ 21,00, cobertura R$ 35,00, online R$ 13,14) | Seção nova "Quanto cada alavanca devolve numa viagem de uma semana?", com a coluna de 30 diárias (pátio R$ 90,00) |
+| Menor total por duração, com quem pratica | Tabela de 1 dia a 30 diárias, com o pátio e o segundo lugar; 1, 2 e 3 dias custam os mesmos R$ 56,70 |
+| O piso de três diárias derruba a viagem curta | Resposta rápida, tabela de duração e armadilha própria |
+| A conta honesta de quando o carro perde para o aplicativo | Seção nova com o limite por duração. **Nenhuma corrida foi estimada**: o post publica o lado do estacionamento e o leitor coloca o valor do aplicativo |
+| FAQ que emite `FAQPage`, zero promessa | 10 perguntas; a do mínimo de diárias, redundante, deu lugar à do aplicativo. Analisador sem bloqueio |
+
+A tarifa do oficial segue sendo a coleta manual de 27/08/2026, marcada como tal, e entra na revisão
+mensal da Fase 3. A única atenção do analisador é a densidade da frase-chave (0,2%), com a mesma
+justificativa das outras âncoras.
 
 ### O molde, definido pela âncora de preço de GRU
 
