@@ -154,6 +154,39 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
 - **Achados citáveis do índice** repetidos com a mesma redação nos gêmeos
   Markdown e no `llms-full.txt`, mais `tags` no frontmatter do FAQ.
 
+## O `llms.txt` diz como consumir, não só o que existe
+
+> **Implementado em 16/09/2026** (Conteúdo 25). Antes o arquivo era um mapa de páginas:
+> listava o que o site tem e deixava o agente adivinhar como ler aquilo sem raspar HTML.
+
+Duas seções fixas em [`public/llms.txt`](../../public/llms.txt), escritas à mão e servidas
+antes do bloco por aeroporto que o build injeta:
+
+- **"Dados legíveis por máquina"**: como pedir Markdown (`Accept: text/markdown`, mesmo
+  endereço, sem sufixo), o que vem no frontmatter (`title`, `canonical`, `updated`), o que
+  `/precos` e `/estacionamentos/<destino>/precos` devolvem, o `llms-full.txt` como arquivo
+  único, a licença CC BY 4.0 do `Dataset` e a afirmação que sustenta tudo: **o preço
+  publicado é o cobrado no fechamento**, porque sai do mesmo motor do checkout.
+- **"Frequência de atualização"**: retrato do motor a cada build, espelho de parceiro de 3
+  em 3 horas, conteúdo do painel no mesmo build, preço pesquisado de lote mapeado com
+  validade de 90 dias, e onde ler a data de cada retrato. O `updated` é o campo de
+  desempate quando duas fontes divergem, que é a pergunta que um agente faz antes de citar.
+
+A seção de MCP nomeia as tools em vez de descrevê-las em prosa (`search_blog` e
+`get_blog_post` inclusive), com link para o
+[`server-card.json`](../../public/.well-known/mcp/server-card.json), que é a lista viva.
+
+**O que falta:** o índice de preços em JSON, datado, sem raspar Markdown (Conteúdo 24). Ele
+ganha uma linha na seção "Dados legíveis por máquina" quando existir; o ADR-003 se aplica.
+
+**Guarda:** [`src/lib/llms-txt.contract.test.ts`](../../src/lib/llms-txt.contract.test.ts)
+exige que todo endereço citado no arquivo case com uma rota de `src/routes.tsx`. O arquivo é
+escrito à mão e nada no build o confere: a migração de URL de agosto moveu a intenção "mais
+barato" para dentro da pasta do destino e o `llms.txt` seguiu citando
+`/estacionamento-mais-barato/<slug>` por semanas. Para quem lê HTML isso é um 301 invisível;
+para quem pede `Accept: text/markdown` numa URL que não existe, é o `llms.txt` genérico de
+volta em vez da tabela pedida, e a consulta se perde em silêncio.
+
 ## Heading em forma de pergunta fecha com "?"
 
 Um H2 escrito como pergunta **tem que terminar em "?"**. Vale nas páginas públicas

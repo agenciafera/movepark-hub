@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
+import { rotasDeclaradas } from "@/test/rotas";
+
 /**
  * Inventário de cobertura de rota: toda rota de `src/routes.tsx` é aberta por
  * algum teste de navegador?
@@ -15,7 +17,6 @@ import { join } from "node:path";
  * cenário, remova a rota daqui no mesmo commit.
  */
 
-const ROUTES_TSX = join(process.cwd(), "src", "routes.tsx");
 const WINDUP = join(process.cwd(), "e2e", "windup");
 
 /**
@@ -48,28 +49,6 @@ const COBERTAS_POR_PLAYWRIGHT: Record<string, string> = {
  * entra aqui só com data e motivo, e sai no commit que escreve o cenário.
  */
 const SEM_COBERTURA: string[] = [];
-
-/**
- * Resolve os `path:` de routes.tsx. Filha é relativa ao pai, e o pai sempre
- * aparece antes dela no arquivo, então o último path absoluto visto é o prefixo.
- */
-function rotasDeclaradas(): string[] {
-  const source = readFileSync(ROUTES_TSX, "utf8");
-  let base = "";
-  const rotas: string[] = [];
-  for (const m of source.matchAll(/path:\s*"([^"]*)"/g)) {
-    const p = m[1];
-    if (p.startsWith("/")) {
-      base = p;
-      rotas.push(p);
-    } else if (p === "*") {
-      rotas.push("*");
-    } else {
-      rotas.push((base === "/" ? "" : base) + "/" + p);
-    }
-  }
-  return [...new Set(rotas)];
-}
 
 /** Uma URL cobre uma rota quando os segmentos casam, com `:param` como coringa. */
 function casa(rota: string, url: string): boolean {
