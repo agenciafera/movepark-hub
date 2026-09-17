@@ -167,7 +167,7 @@ mínima e a comparação com o estacionamento oficial.
 
 | Âncora | Palavras | Analisador |
 | --- | --- | --- |
-| `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.417 | ✅ verde, 0 bloqueio |
+| `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui` | 3.794 (tabela de 11/09/2026) | ✅ verde, 0 bloqueio, conferida em 17/09/2026 |
 | `como-estacionar-barato-no-aeroporto-de-guarulhos` | 3.073 | ✅ verde, 0 bloqueio |
 | `estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes` | 3.040 | ✅ verde, 0 bloqueio |
 | `preco-estacionamento-aeroporto-afonso-pena-curitiba-saiba-tudo-aqui` (conteúdo portado do slug anterior em 28/08) | 3.120 | ✅ verde, 0 bloqueio |
@@ -179,6 +179,31 @@ zero bloqueio, e a única atenção remanescente em cada uma é a densidade da f
 justificativa é a mesma nas seis: as frases-chave têm de quatro a seis palavras de conteúdo, e
 chegar a 0,5% exigiria repeti-las de 15 a 17 vezes em pouco mais de 3.000 palavras, o que a
 própria skill manda não forçar.
+
+### Conteúdo 07: a canônica de preço de GRU fecha nesta âncora
+
+A atividade [Conteúdo 07, página canônica de preço de Guarulhos](https://app.clickup.com/t/86ak6h5f3)
+pedia uma página nova. Ela não foi escrita, de propósito: a dona de preço já existia, carregava o
+histórico de URL e os 17 redirects desta consolidação, e post novo na mesma intenção reabriria a
+canibalização. O que a atividade pedia foi conferido item a item na âncora, em 17/09/2026:
+
+| O que a atividade exigia | Onde está na âncora |
+| --- | --- |
+| Tabela por faixa de permanência, parceiros lado a lado | Aerovalet e Aeropark nas três vagas, em 1, 7, 15 e 30 diárias |
+| Balcão contra online, com a economia em reais | Tabela própria, em 7 diárias, mais a leitura em 30 |
+| Data da tabela visível e método aberto | Toda cifra com a data ao lado; bloco "Como estes preços foram apurados?" separa motor de coleta manual |
+| Bloco de fato citável por unidade | Ficha por pátio com endereço, km por terminal, traslado, tolerância, mínimo e serviços |
+| FAQ que emite `FAQPage` | 8 perguntas em `###` terminadas em "?", próprias do post |
+| Zero promessa de transação | Analisador sem bloqueio; serviços entram como declaração da unidade |
+
+A tabela do post é a de 11/09/2026, quando Aeropark e Aerovalet baixaram a tarifa, e em 17/09
+todo valor, inclusive o de balcão (`old_total` do motor), as seis distâncias por terminal e as duas
+listas de serviços batiam com o banco. O único número que não sai do motor segue sendo a tarifa do
+oficial, coletada em 27/08/2026 e marcada como tal; ela entra na revisão mensal da Fase 3.
+
+As duas atenções do analisador são as mesmas das outras âncoras: densidade da frase-chave em 0,3%
+e frase-chave em 7 dos 25 títulos. Forçar qualquer uma pioraria o texto, e a justificativa é a que
+já está registrada acima.
 
 ### O molde, definido pela âncora de preço de GRU
 
