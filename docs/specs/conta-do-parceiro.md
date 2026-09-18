@@ -137,6 +137,14 @@ do recebedor sai exatamente A. `payout_withdrawal` guarda `amount_cents` = o que
 `fee_cents` = a taxa; a soma é o que saiu do saldo e abate o disponível seguinte. O disponível
 nunca chega já com a taxa descontada; ela só aparece no saque (migration `20261120050000`).
 
+## O que o estacionamento vê de taxa (18/09/2026)
+
+A taxa de processamento do gateway é da Movepark desde 18/09/2026 (payment-split.md) e **não
+aparece na visão do estacionamento**: no Operator a coluna do extrato é "Taxa de saque" e só
+mostra a taxa do saque, que é custo dele. Venda anterior a 18/09, em que ele ainda pagou a taxa
+de processamento, explica a diferença numa legenda na própria linha. No Manager a coluna segue
+"Taxa" e mostra as duas. Relatórios e demais telas do Operator não exibem taxa de gateway.
+
 ## Controle de saques (E0.3.10, 17/09/2026)
 
 **Problema.** O saque nascia com o status da resposta do `POST /transfers` e ninguém o relia: o

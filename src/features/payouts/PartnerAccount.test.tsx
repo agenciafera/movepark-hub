@@ -175,6 +175,23 @@ describe("PartnerAccount", () => {
     expect(screen.queryByTestId("conta-negativa")).not.toBeInTheDocument();
   });
 
+  it("na visão do estacionamento a coluna é só a taxa de saque; a de processamento não aparece", async () => {
+    monta({ canWithdraw: true, canRefund: false, showGateway: false });
+    await screen.findByTestId("conta-disponivel");
+    expect(screen.getByRole("columnheader", { name: "Taxa de saque" })).toBeInTheDocument();
+    const taxas = screen.getAllByTestId("mov-taxa").map((e) => e.textContent?.replace(/\u00a0/g, " "));
+    // venda (taxa de processamento 0,18 escondida), dívida, saque (3,67 visível)
+    expect(taxas).toEqual(["-", "-", "−R$ 3,67"]);
+    expect(screen.getByText(/venda anterior a 18\/09\/2026/)).toBeInTheDocument();
+  });
+
+  it("no Manager a coluna Taxa mostra as duas", async () => {
+    monta({ canWithdraw: true, canRefund: true });
+    await screen.findByTestId("conta-disponivel");
+    expect(screen.getByRole("columnheader", { name: "Taxa" })).toBeInTheDocument();
+    expect(screen.getAllByTestId("mov-taxa")[0]).toHaveTextContent("0,18");
+  });
+
   it("para o parceiro (showGateway=false) não há saldo da Pagar.me, nem Atualizar saldos, nem leitura forçada", async () => {
     const { refresh } = monta({ canWithdraw: true, canRefund: false, showGateway: false });
     expect(await screen.findByTestId("conta-disponivel")).toHaveTextContent("R$ 21,20");

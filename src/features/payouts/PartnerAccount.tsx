@@ -284,7 +284,9 @@ export function PartnerAccount({
                 <TableHead>Movimento</TableHead>
                 <TableHead>Reserva</TableHead>
                 <TableHead className="text-right">Bruto</TableHead>
-                <TableHead className="text-right">Taxa</TableHead>
+                {/* O parceiro só vê a taxa que é dele: a de saque. A taxa de processamento do
+                    gateway é da Movepark (18/09/2026) e não aparece na visão do estacionamento. */}
+                <TableHead className="text-right">{showGateway ? "Taxa" : "Taxa de saque"}</TableHead>
                 <TableHead className="text-right">Abatimento</TableHead>
                 <TableHead className="text-right">No saldo</TableHead>
                 <TableHead>Liberação</TableHead>
@@ -293,7 +295,7 @@ export function PartnerAccount({
             </TableHeader>
             <TableBody>
               {moves.map((m, i) => (
-                <MovementRow key={`${m.kind}-${m.at}-${m.booking_code ?? i}`} m={m} canRefund={canRefund} />
+                <MovementRow key={`${m.kind}-${m.at}-${m.booking_code ?? i}`} m={m} canRefund={canRefund} partnerView={!showGateway} />
               ))}
             </TableBody>
           </Table>
@@ -396,7 +398,10 @@ export function PartnerAccount({
   );
 }
 
-function MovementRow({ m, canRefund }: { m: AccountMovement; canRefund: boolean }) {
+function MovementRow({ m, canRefund, partnerView = false }: { m: AccountMovement; canRefund: boolean; partnerView?: boolean }) {
+  // Na visão do estacionamento a coluna é só a taxa de SAQUE. Venda antiga em que ele ainda pagou a
+  // taxa de processamento (regra até 17/09/2026) explica a diferença numa legenda, sem coluna.
+  const taxaNaColuna = partnerView && m.kind !== "withdrawal" ? 0 : m.fee_cents;
   const tone = m.net_cents > 0 ? "text-success" : m.net_cents < 0 ? "text-error" : "text-muted";
   return (
     <TableRow>
@@ -412,6 +417,9 @@ function MovementRow({ m, canRefund }: { m: AccountMovement; canRefund: boolean 
           {m.kind === "refund" && m.origin === "partner" && (
             <span className="text-caption text-muted">o gateway debitou do seu saldo</span>
           )}
+          {partnerView && m.kind === "sale" && m.fee_cents > 0 && (
+            <span className="text-caption text-muted">venda anterior a 18/09/2026: {brl(m.fee_cents)} de processamento descontados</span>
+          )}
           {m.kind === "custody_sale" && (
             <span className="text-caption text-muted">o valor ficou com a Movepark e chega por repasse</span>
           )}
@@ -426,7 +434,7 @@ function MovementRow({ m, canRefund }: { m: AccountMovement; canRefund: boolean 
       </TableCell>
       <TableCell className="font-mono text-caption">{m.booking_code ?? "-"}</TableCell>
       <TableCell className="text-right">{m.gross_cents ? brl(m.gross_cents) : "-"}</TableCell>
-      <TableCell className="text-right text-muted">{m.fee_cents ? `−${brl(m.fee_cents)}` : "-"}</TableCell>
+      <TableCell className="text-right text-muted" data-testid="mov-taxa">{taxaNaColuna ? `−${brl(taxaNaColuna)}` : "-"}</TableCell>
       <TableCell className="text-right text-muted">
         {m.debt_recovered_cents ? `−${brl(m.debt_recovered_cents)}` : "-"}
       </TableCell>
