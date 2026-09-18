@@ -40,6 +40,20 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+/**
+ * Quanto do desconto a Movepark banca nesta reserva (E3.3).
+ *
+ * `price_breakdown.coupon.funded_by = 'platform'` significa campanha da Movepark: o parceiro tem
+ * que receber como se o cupom não existisse, então o valor volta para a base do repasse e sai da
+ * nossa comissão. Cupom do parceiro devolve 0 e o split fica igual ao de sempre.
+ */
+function platformFundedCents(priceBreakdown: unknown): number {
+  const bd = priceBreakdown as { coupon?: { discount?: number; funded_by?: string } } | null;
+  const c = bd?.coupon;
+  if (!c || c.funded_by !== "platform") return 0;
+  return Math.max(0, Math.round(Number(c.discount ?? 0) * 100));
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -77,6 +91,7 @@ Deno.serve(async (req: Request) => {
     .from("booking")
     .select(
       "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, " +
+        "price_breakdown, " +
         "customer_name, customer_first_name, customer_last_name, customer_email, customer_tax_id",
     )
     .eq("code", input.bookingCode)
@@ -185,6 +200,7 @@ Deno.serve(async (req: Request) => {
       moveparkRecipientId,
       partnerRecipientId: recipient?.external_recipient_id ?? null,
       requireRecipients: splitEnabled,
+      platformFundedCents: platformFundedCents(booking.price_breakdown),
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);

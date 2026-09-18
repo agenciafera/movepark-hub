@@ -1,0 +1,71 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "account-descontos",
+    "start_url": "/account/descontos",
+    "start_sig": "sig:9e04911adf726e4a",
+    "scenario_sig": "5eff5571a1c919e9"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "account-descontos",
+    "start_url": "http://localhost:5180/account/descontos",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "heading Descontos"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content area"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "body element"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "final verification of all elements"
+        },
+        "timeout_ms": 5000,
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Seus cupons ficam guardados aqui"
+          }
+        }
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Descontos\", depois o texto \"Seus cupons ficam guardados aqui\", depois o texto \"Você ainda não tem cupom\".",
+    "generated_by": {
+      "model": "google/gemini-3.1-flash-lite",
+      "at": "2026-09-18T16:25:49.577Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-18T16:25:52.032Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

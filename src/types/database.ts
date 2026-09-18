@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -589,12 +589,12 @@ export type Database = {
       }
       booking: {
         Row: {
+          cancellation_email_sent_at: string | null
           check_in_at: string
           check_out_at: string
           checked_in_at: string | null
           checked_out_at: string | null
           code: string
-          cancellation_email_sent_at: string | null
           confirmation_email_sent_at: string | null
           created_at: string
           created_via_api_key_id: string | null
@@ -635,12 +635,12 @@ export type Database = {
           voucher_url: string | null
         }
         Insert: {
+          cancellation_email_sent_at?: string | null
           check_in_at: string
           check_out_at: string
           checked_in_at?: string | null
           checked_out_at?: string | null
           code: string
-          cancellation_email_sent_at?: string | null
           confirmation_email_sent_at?: string | null
           created_at?: string
           created_via_api_key_id?: string | null
@@ -681,12 +681,12 @@ export type Database = {
           voucher_url?: string | null
         }
         Update: {
+          cancellation_email_sent_at?: string | null
           check_in_at?: string
           check_out_at?: string
           checked_in_at?: string | null
           checked_out_at?: string | null
           code?: string
-          cancellation_email_sent_at?: string | null
           confirmation_email_sent_at?: string | null
           created_at?: string
           created_via_api_key_id?: string | null
@@ -1091,6 +1091,7 @@ export type Database = {
           contract_version: string | null
           created_at: string
           deleted_at: string | null
+          gateway_split_enabled: boolean
           hub_relationship: string
           id: string
           legal_name: string | null
@@ -1098,6 +1099,7 @@ export type Database = {
           monthly_revenue_goal_cents: number | null
           name: string
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
+          payout_release_days: number | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           take_rate_bps: number
@@ -1116,6 +1118,7 @@ export type Database = {
           contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
+          gateway_split_enabled?: boolean
           hub_relationship?: string
           id?: string
           legal_name?: string | null
@@ -1123,6 +1126,7 @@ export type Database = {
           monthly_revenue_goal_cents?: number | null
           name: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
+          payout_release_days?: number | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
           take_rate_bps?: number
@@ -1141,6 +1145,7 @@ export type Database = {
           contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
+          gateway_split_enabled?: boolean
           hub_relationship?: string
           id?: string
           legal_name?: string | null
@@ -1148,6 +1153,7 @@ export type Database = {
           monthly_revenue_goal_cents?: number | null
           name?: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
+          payout_release_days?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
           take_rate_bps?: number
@@ -1406,58 +1412,76 @@ export type Database = {
       }
       coupon: {
         Row: {
+          audience: Database["public"]["Enums"]["coupon_audience"]
+          audience_inactive_days: number | null
           code: string
-          company_id: string
+          company_id: string | null
           created_at: string
           description: string | null
           discount_type: Database["public"]["Enums"]["discount_type"]
           discount_value: number
+          funded_by: Database["public"]["Enums"]["coupon_funding"]
           id: string
           is_active: boolean
+          max_discount_amount: number | null
           max_uses: number | null
           min_amount: number | null
           min_days: number | null
           per_user_limit: number | null
           sort_order: number
+          terms: string | null
           times_used: number
+          title: string | null
           updated_at: string
           valid_from: string | null
           valid_until: string | null
         }
         Insert: {
+          audience?: Database["public"]["Enums"]["coupon_audience"]
+          audience_inactive_days?: number | null
           code: string
-          company_id: string
+          company_id?: string | null
           created_at?: string
           description?: string | null
           discount_type: Database["public"]["Enums"]["discount_type"]
           discount_value: number
+          funded_by?: Database["public"]["Enums"]["coupon_funding"]
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           max_uses?: number | null
           min_amount?: number | null
           min_days?: number | null
           per_user_limit?: number | null
           sort_order?: number
+          terms?: string | null
           times_used?: number
+          title?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
         }
         Update: {
+          audience?: Database["public"]["Enums"]["coupon_audience"]
+          audience_inactive_days?: number | null
           code?: string
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           description?: string | null
           discount_type?: Database["public"]["Enums"]["discount_type"]
           discount_value?: number
+          funded_by?: Database["public"]["Enums"]["coupon_funding"]
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           max_uses?: number | null
           min_amount?: number | null
           min_days?: number | null
           per_user_limit?: number | null
           sort_order?: number
+          terms?: string | null
           times_used?: number
+          title?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
@@ -1498,6 +1522,39 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupon"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_wallet: {
+        Row: {
+          coupon_id: string
+          profile_id: string
+          redeemed_at: string
+        }
+        Insert: {
+          coupon_id: string
+          profile_id: string
+          redeemed_at?: string
+        }
+        Update: {
+          coupon_id?: string
+          profile_id?: string
+          redeemed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_wallet_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupon"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_wallet_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2003,6 +2060,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gateway_account_balance: {
+        Row: {
+          available_cents: number
+          provider: string
+          recipient_id: string
+          synced_at: string
+          transferred_cents: number
+          waiting_cents: number
+        }
+        Insert: {
+          available_cents?: number
+          provider: string
+          recipient_id: string
+          synced_at?: string
+          transferred_cents?: number
+          waiting_cents?: number
+        }
+        Update: {
+          available_cents?: number
+          provider?: string
+          recipient_id?: string
+          synced_at?: string
+          transferred_cents?: number
+          waiting_cents?: number
+        }
+        Relationships: []
+      }
       google_place_snapshot: {
         Row: {
           created_at: string
@@ -2329,6 +2413,7 @@ export type Database = {
           has_shuttle: boolean
           id: string
           is_24h: boolean
+          is_draft: boolean
           is_listed: boolean
           latitude: number | null
           legal_name: string | null
@@ -2377,6 +2462,7 @@ export type Database = {
           has_shuttle?: boolean
           id?: string
           is_24h?: boolean
+          is_draft?: boolean
           is_listed?: boolean
           latitude?: number | null
           legal_name?: string | null
@@ -2425,6 +2511,7 @@ export type Database = {
           has_shuttle?: boolean
           id?: string
           is_24h?: boolean
+          is_draft?: boolean
           is_listed?: boolean
           latitude?: number | null
           legal_name?: string | null
@@ -3746,23 +3833,33 @@ export type Database = {
           currency: string
           date_change_check_in_at: string | null
           date_change_check_out_at: string | null
+          debt_email_sent_at: string | null
+          debt_recovered_cents: number
+          debt_reservation_id: string | null
           expires_at: string | null
           fare_target_tier: Database["public"]["Enums"]["fare_tier"] | null
+          gateway_fee_cents: number | null
+          gateway_fee_synced_at: string | null
           id: string
           installments: number | null
           kind: string
           method: string | null
           paid_at: string | null
+          partner_release_at: string | null
           pix_qr_code: string | null
           pix_qr_code_url: string | null
           provider: string
           provider_charge_id: string | null
           provider_payment_id: string | null
-          debt_email_sent_at: string | null
+          refund_absorbed_by_master: boolean
+          refund_partner_balance_cents: number | null
+          refund_partner_cents: number
           refund_reason: string | null
+          refund_split: Json | null
           refunded_amount: number | null
           refunded_at: string | null
           split: Json | null
+          split_sent_to_gateway: boolean | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
         }
@@ -3773,23 +3870,33 @@ export type Database = {
           currency?: string
           date_change_check_in_at?: string | null
           date_change_check_out_at?: string | null
+          debt_email_sent_at?: string | null
+          debt_recovered_cents?: number
+          debt_reservation_id?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
+          gateway_fee_cents?: number | null
+          gateway_fee_synced_at?: string | null
           id?: string
           installments?: number | null
           kind?: string
           method?: string | null
           paid_at?: string | null
+          partner_release_at?: string | null
           pix_qr_code?: string | null
           pix_qr_code_url?: string | null
           provider: string
           provider_charge_id?: string | null
           provider_payment_id?: string | null
-          debt_email_sent_at?: string | null
+          refund_absorbed_by_master?: boolean
+          refund_partner_balance_cents?: number | null
+          refund_partner_cents?: number
           refund_reason?: string | null
+          refund_split?: Json | null
           refunded_amount?: number | null
           refunded_at?: string | null
           split?: Json | null
+          split_sent_to_gateway?: boolean | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
@@ -3800,23 +3907,33 @@ export type Database = {
           currency?: string
           date_change_check_in_at?: string | null
           date_change_check_out_at?: string | null
+          debt_email_sent_at?: string | null
+          debt_recovered_cents?: number
+          debt_reservation_id?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
+          gateway_fee_cents?: number | null
+          gateway_fee_synced_at?: string | null
           id?: string
           installments?: number | null
           kind?: string
           method?: string | null
           paid_at?: string | null
+          partner_release_at?: string | null
           pix_qr_code?: string | null
           pix_qr_code_url?: string | null
           provider?: string
           provider_charge_id?: string | null
           provider_payment_id?: string | null
-          debt_email_sent_at?: string | null
+          refund_absorbed_by_master?: boolean
+          refund_partner_balance_cents?: number | null
+          refund_partner_cents?: number
           refund_reason?: string | null
+          refund_split?: Json | null
           refunded_amount?: number | null
           refunded_at?: string | null
           split?: Json | null
+          split_sent_to_gateway?: boolean | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
@@ -3834,6 +3951,67 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "marketing_booking_fact"
             referencedColumns: ["booking_id"]
+          },
+        ]
+      }
+      payment_gateway_event: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          http_status: number | null
+          id: string
+          kind: string
+          note: string | null
+          payment_id: string | null
+          provider: string
+          request: Json | null
+          response: Json | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          kind: string
+          note?: string | null
+          payment_id?: string | null
+          provider?: string
+          request?: Json | null
+          response?: Json | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          payment_id?: string | null
+          provider?: string
+          request?: Json | null
+          response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_gateway_event_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_gateway_event_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payment_gateway_event_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3914,6 +4092,102 @@ export type Database = {
         }
         Relationships: []
       }
+      payout_debt_reservation: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          consumed_by_payment_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          provider: string
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          consumed_by_payment_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          provider?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          consumed_by_payment_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_debt_reservation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_debt_reservation_consumed_by_payment_id_fkey"
+            columns: ["consumed_by_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_debt_settlement: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          kind: string
+          note: string | null
+          provider: string
+          recorded_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          provider?: string
+          recorded_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          provider?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_debt_settlement_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_debt_settlement_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payout_recipient: {
         Row: {
           anticipation_days: number[] | null
@@ -3921,10 +4195,15 @@ export type Database = {
           anticipation_enabled: boolean | null
           anticipation_type: string | null
           anticipation_volume_percentage: number | null
+          balance_available_cents: number | null
+          balance_synced_at: string | null
+          balance_transferred_cents: number | null
+          balance_waiting_cents: number | null
           company_id: string
           created_at: string
           deleted_at: string | null
           external_recipient_id: string | null
+          gateway_missing_at: string | null
           id: string
           kyc_link_email_sent_at: string | null
           kyc_url: string | null
@@ -3944,10 +4223,15 @@ export type Database = {
           anticipation_enabled?: boolean | null
           anticipation_type?: string | null
           anticipation_volume_percentage?: number | null
+          balance_available_cents?: number | null
+          balance_synced_at?: string | null
+          balance_transferred_cents?: number | null
+          balance_waiting_cents?: number | null
           company_id: string
           created_at?: string
           deleted_at?: string | null
           external_recipient_id?: string | null
+          gateway_missing_at?: string | null
           id?: string
           kyc_link_email_sent_at?: string | null
           kyc_url?: string | null
@@ -3967,10 +4251,15 @@ export type Database = {
           anticipation_enabled?: boolean | null
           anticipation_type?: string | null
           anticipation_volume_percentage?: number | null
+          balance_available_cents?: number | null
+          balance_synced_at?: string | null
+          balance_transferred_cents?: number | null
+          balance_waiting_cents?: number | null
           company_id?: string
           created_at?: string
           deleted_at?: string | null
           external_recipient_id?: string | null
+          gateway_missing_at?: string | null
           id?: string
           kyc_link_email_sent_at?: string | null
           kyc_url?: string | null
@@ -4032,14 +4321,173 @@ export type Database = {
           },
         ]
       }
+      payout_refund_manual: {
+        Row: {
+          amount_cents: number
+          booking_id: string
+          created_at: string
+          created_by: string | null
+          gateway_response: Json | null
+          id: string
+          note: string | null
+          paid_at: string | null
+          paid_by: string | null
+          payment_id: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          booking_id: string
+          created_at?: string
+          created_by?: string | null
+          gateway_response?: Json | null
+          id?: string
+          note?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_id: string
+          reason: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          booking_id?: string
+          created_at?: string
+          created_by?: string | null
+          gateway_response?: Json | null
+          id?: string
+          note?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_id?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_refund_manual_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_refund_manual_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payout_refund_manual_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_refund_manual_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_refund_manual_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_transfer: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          external_transfer_id: string | null
+          failed_reason: string | null
+          id: string
+          idempotency_key: string
+          paid_at: string | null
+          provider: string
+          raw: Json | null
+          requested_at: string
+          requested_by: string | null
+          source_recipient_id: string
+          status: Database["public"]["Enums"]["payout_withdrawal_status"]
+          target_recipient_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          external_transfer_id?: string | null
+          failed_reason?: string | null
+          id?: string
+          idempotency_key: string
+          paid_at?: string | null
+          provider?: string
+          raw?: Json | null
+          requested_at?: string
+          requested_by?: string | null
+          source_recipient_id: string
+          status?: Database["public"]["Enums"]["payout_withdrawal_status"]
+          target_recipient_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          external_transfer_id?: string | null
+          failed_reason?: string | null
+          id?: string
+          idempotency_key?: string
+          paid_at?: string | null
+          provider?: string
+          raw?: Json | null
+          requested_at?: string
+          requested_by?: string | null
+          source_recipient_id?: string
+          status?: Database["public"]["Enums"]["payout_withdrawal_status"]
+          target_recipient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_transfer_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_transfer_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payout_withdrawal: {
         Row: {
           amount_cents: number
           company_id: string
           created_at: string
           deleted_at: string | null
-          external_recipient_id: string | null
           expected_at: string | null
+          external_recipient_id: string | null
           external_transfer_id: string
           failure_reason: string | null
           fee_cents: number
@@ -4060,9 +4508,9 @@ export type Database = {
           company_id: string
           created_at?: string
           deleted_at?: string | null
+          expected_at?: string | null
           external_recipient_id?: string | null
           external_transfer_id: string
-          expected_at?: string | null
           failure_reason?: string | null
           fee_cents?: number
           gateway_status?: string | null
@@ -4073,8 +4521,8 @@ export type Database = {
           requested_at?: string | null
           requested_email_sent_at?: string | null
           settled_email_sent_at?: string | null
-          synced_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
+          synced_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -4082,9 +4530,9 @@ export type Database = {
           company_id?: string
           created_at?: string
           deleted_at?: string | null
+          expected_at?: string | null
           external_recipient_id?: string | null
           external_transfer_id?: string
-          expected_at?: string | null
           failure_reason?: string | null
           fee_cents?: number
           gateway_status?: string | null
@@ -4095,8 +4543,8 @@ export type Database = {
           requested_at?: string | null
           requested_email_sent_at?: string | null
           settled_email_sent_at?: string | null
-          synced_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
+          synced_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -4412,6 +4860,8 @@ export type Database = {
           first_name: string | null
           full_name: string | null
           id: string
+          last_login_at: string | null
+          last_login_channel: string | null
           last_name: string | null
           preferences: Json
           role: Database["public"]["Enums"]["user_role"]
@@ -4426,6 +4876,8 @@ export type Database = {
           first_name?: string | null
           full_name?: string | null
           id: string
+          last_login_at?: string | null
+          last_login_channel?: string | null
           last_name?: string | null
           preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
@@ -4440,6 +4892,8 @@ export type Database = {
           first_name?: string | null
           full_name?: string | null
           id?: string
+          last_login_at?: string | null
+          last_login_channel?: string | null
           last_name?: string | null
           preferences?: Json
           role?: Database["public"]["Enums"]["user_role"]
@@ -4447,71 +4901,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      prospect_price_research: {
-        Row: {
-          biweekly_brl: number | null
-          created_at: string
-          daily_brl: number | null
-          decided_at: string | null
-          decided_by: string | null
-          decision_note: string | null
-          evidence: string | null
-          fetched_at: string | null
-          id: string
-          model: string | null
-          monthly_brl: number | null
-          notes: string | null
-          prospect_location_id: string
-          source_url: string | null
-          status: string
-          weekly_brl: number | null
-        }
-        Insert: {
-          biweekly_brl?: number | null
-          created_at?: string
-          daily_brl?: number | null
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_note?: string | null
-          evidence?: string | null
-          fetched_at?: string | null
-          id?: string
-          model?: string | null
-          monthly_brl?: number | null
-          notes?: string | null
-          prospect_location_id: string
-          source_url?: string | null
-          status?: string
-          weekly_brl?: number | null
-        }
-        Update: {
-          biweekly_brl?: number | null
-          created_at?: string
-          daily_brl?: number | null
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_note?: string | null
-          evidence?: string | null
-          fetched_at?: string | null
-          id?: string
-          model?: string | null
-          monthly_brl?: number | null
-          notes?: string | null
-          prospect_location_id?: string
-          source_url?: string | null
-          status?: string
-          weekly_brl?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prospect_price_research_prospect_location_id_fkey"
-            columns: ["prospect_location_id"]
-            isOneToOne: false
-            referencedRelation: "prospect_location"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       prospect_location: {
         Row: {
@@ -4637,6 +5026,71 @@ export type Database = {
             columns: ["destination_id"]
             isOneToOne: false
             referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_price_research: {
+        Row: {
+          biweekly_brl: number | null
+          created_at: string
+          daily_brl: number | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          evidence: string | null
+          fetched_at: string | null
+          id: string
+          model: string | null
+          monthly_brl: number | null
+          notes: string | null
+          prospect_location_id: string
+          source_url: string | null
+          status: string
+          weekly_brl: number | null
+        }
+        Insert: {
+          biweekly_brl?: number | null
+          created_at?: string
+          daily_brl?: number | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          evidence?: string | null
+          fetched_at?: string | null
+          id?: string
+          model?: string | null
+          monthly_brl?: number | null
+          notes?: string | null
+          prospect_location_id: string
+          source_url?: string | null
+          status?: string
+          weekly_brl?: number | null
+        }
+        Update: {
+          biweekly_brl?: number | null
+          created_at?: string
+          daily_brl?: number | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          evidence?: string | null
+          fetched_at?: string | null
+          id?: string
+          model?: string | null
+          monthly_brl?: number | null
+          notes?: string | null
+          prospect_location_id?: string
+          source_url?: string | null
+          status?: string
+          weekly_brl?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_price_research_prospect_location_id_fkey"
+            columns: ["prospect_location_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_location"
             referencedColumns: ["id"]
           },
         ]
@@ -4946,6 +5400,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tester_user: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       vehicle: {
         Row: {
@@ -5418,36 +5890,24 @@ export type Database = {
       }
     }
     Functions: {
-      _apply_pricing:
-        | {
-            Args: {
-              p_days?: number
-              p_source_strategy?: string
-              p_source_tiers?: Json
-              p_strategy: string
-              p_surcharge_multiplier?: number
-              p_tiers: Json
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_days?: number
-              p_hourly_daily?: number
-              p_inc_base?: number
-              p_inc_mult?: number
-              p_inc_one_day?: number
-              p_inc_two_days?: number
-              p_monthly_daily?: number
-              p_monthly_fixed?: number
-              p_source_strategy?: string
-              p_source_tiers?: Json
-              p_strategy: string
-              p_surcharge_multiplier?: number
-              p_tiers: Json
-            }
-            Returns: number
-          }
+      _apply_pricing: {
+        Args: {
+          p_days?: number
+          p_hourly_daily?: number
+          p_inc_base?: number
+          p_inc_mult?: number
+          p_inc_one_day?: number
+          p_inc_two_days?: number
+          p_monthly_daily?: number
+          p_monthly_fixed?: number
+          p_source_strategy?: string
+          p_source_tiers?: Json
+          p_strategy: string
+          p_surcharge_multiplier?: number
+          p_tiers: Json
+        }
+        Returns: number
+      }
       _create_booking_core: {
         Args: {
           p_add_on_ids: string[]
@@ -5477,6 +5937,10 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      admin_list_users: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+        Returns: Json
+      }
       admin_search: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
@@ -5498,6 +5962,10 @@ export type Database = {
           p_sort_order: number
           p_tier: Database["public"]["Enums"]["fare_tier"]
         }
+        Returns: undefined
+      }
+      admin_set_tester: {
+        Args: { p_enabled: boolean; p_user_id: string }
         Returns: undefined
       }
       admin_set_user_role: {
@@ -5780,6 +6248,10 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_coupon_to_booking: {
+        Args: { p_booking_id: string; p_code: string }
+        Returns: Json
+      }
       apply_fare_upgrade: {
         Args: {
           p_booking_id: string
@@ -5831,6 +6303,7 @@ export type Database = {
         Args: { p_from: string; p_location_ids?: string[]; p_to: string }
         Returns: Json
       }
+      booking_gateway_trail: { Args: { p_booking_id: string }; Returns: Json }
       cancel_booking_with_release: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["booking_status"]
@@ -5870,12 +6343,20 @@ export type Database = {
         Args: { p_company_id: string; p_profile_id: string }
         Returns: undefined
       }
+      company_set_gateway_split: {
+        Args: { p_company_id: string; p_enabled: boolean }
+        Returns: undefined
+      }
       company_set_member_role: {
         Args: {
           p_company_id: string
           p_profile_id: string
           p_role: Database["public"]["Enums"]["company_role"]
         }
+        Returns: undefined
+      }
+      company_set_payout_release_days: {
+        Args: { p_company_id: string; p_days: number }
         Returns: undefined
       }
       confirm_or_refund_booking: {
@@ -5885,6 +6366,13 @@ export type Database = {
       coupon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      coupon_customer_stats: {
+        Args: { p_profile_id: string }
+        Returns: {
+          days_since_last: number
+          paid_count: number
+        }[]
       }
       coupon_evaluate: {
         Args: {
@@ -5901,6 +6389,7 @@ export type Database = {
           error_code: string
         }[]
       }
+      coupon_redeem: { Args: { p_code: string }; Returns: Json }
       create_booking_atomic: {
         Args: {
           p_add_on_ids?: string[]
@@ -5921,6 +6410,10 @@ export type Database = {
       cron_dispatch_site_rebuild: { Args: never; Returns: Json }
       cron_expire_date_change_holds: { Args: never; Returns: number }
       cron_expire_pending_bookings: { Args: never; Returns: number }
+      cron_key_matches: {
+        Args: { p_key: string; p_name: string }
+        Returns: boolean
+      }
       cron_prune_api_request_log: { Args: never; Returns: number }
       cron_prune_checkout_handoff: { Args: never; Returns: number }
       cron_prune_integration_logs: { Args: never; Returns: Json }
@@ -5935,6 +6428,15 @@ export type Database = {
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      customer_coupon_wallet: {
+        Args: {
+          p_booking_id?: string
+          p_check_in_at?: string
+          p_check_out_at?: string
+          p_location_parking_type_id?: string
+        }
+        Returns: Json
       }
       destination_price_freshness: {
         Args: { p_destination?: string }
@@ -6136,6 +6638,7 @@ export type Database = {
       }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }
+      is_tester: { Args: never; Returns: boolean }
       knowledge_embed_key_valid: { Args: { p_key: string }; Returns: boolean }
       knowledge_queue_claim: {
         Args: { p_limit?: number }
@@ -6267,6 +6770,40 @@ export type Database = {
           sessions: number
         }[]
       }
+      manager_list_platform_coupons: {
+        Args: never
+        Returns: {
+          audience: Database["public"]["Enums"]["coupon_audience"]
+          audience_inactive_days: number | null
+          code: string
+          company_id: string | null
+          created_at: string
+          description: string | null
+          discount_type: Database["public"]["Enums"]["discount_type"]
+          discount_value: number
+          funded_by: Database["public"]["Enums"]["coupon_funding"]
+          id: string
+          is_active: boolean
+          max_discount_amount: number | null
+          max_uses: number | null
+          min_amount: number | null
+          min_days: number | null
+          per_user_limit: number | null
+          sort_order: number
+          terms: string | null
+          times_used: number
+          title: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "coupon"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       manager_location_address_apply: {
         Args: {
           p_address?: string
@@ -6324,6 +6861,35 @@ export type Database = {
         Returns: undefined
       }
       manager_location_address_scan: { Args: never; Returns: number }
+      manager_price_research_decide: {
+        Args: { p_action: string; p_id: string; p_note?: string }
+        Returns: undefined
+      }
+      manager_price_research_pending: {
+        Args: never
+        Returns: {
+          atual_biweekly_brl: number
+          atual_daily_brl: number
+          atual_monthly_brl: number
+          atual_researched_at: string
+          atual_weekly_brl: number
+          biweekly_brl: number
+          created_at: string
+          daily_brl: number
+          destination_name: string
+          evidence: string
+          fetched_at: string
+          id: string
+          model: string
+          monthly_brl: number
+          notes: string
+          prospect_location_id: string
+          prospect_name: string
+          source_url: string
+          status: string
+          weekly_brl: number
+        }[]
+      }
       manager_prospect_location_delete: {
         Args: { p_id: string }
         Returns: undefined
@@ -6410,6 +6976,29 @@ export type Database = {
           updated_at: string
         }[]
       }
+      manager_upsert_platform_coupon: {
+        Args: {
+          p_audience: string
+          p_audience_inactive_days: number
+          p_code: string
+          p_description: string
+          p_discount_type: string
+          p_discount_value: number
+          p_id: string
+          p_is_active: boolean
+          p_max_discount_amount: number
+          p_max_uses: number
+          p_min_amount: number
+          p_min_days: number
+          p_per_user_limit: number
+          p_sort_order: number
+          p_terms: string
+          p_title: string
+          p_valid_from: string
+          p_valid_until: string
+        }
+        Returns: string
+      }
       marketing_contact_doc: {
         Args: { p_location_ids?: string[] }
         Returns: {
@@ -6421,15 +7010,20 @@ export type Database = {
         Args: { p_email: string; p_phone: string; p_profile_id: string }
         Returns: string
       }
-      marketing_discoveries: {
-        Args: { p_location_ids?: string[]; p_window_days?: number }
-        Returns: Json
-      }
       marketing_contact_metrics: {
         Args: { p_from?: string; p_location_ids?: string[]; p_to?: string }
         Returns: {
+          abandoned: boolean
+          abandoned_check_in: string
+          abandoned_check_out: string
           avg_gap_days: number
+          avg_lead_days: number
+          avg_stay_days: number
           avg_ticket: number
+          bookings_180: number
+          bookings_30: number
+          bookings_365: number
+          bookings_90: number
           bookings_count: number
           cancelled_count: number
           cohort: Database["public"]["Enums"]["marketing_cohort"]
@@ -6443,18 +7037,41 @@ export type Database = {
           growth_stage: Database["public"]["Enums"]["marketing_growth_stage"]
           last_booking_at: string
           last_location_id: string
+          last_ticket: number
           phone: string
           profile_id: string
+          second_booking_at: string
           subscription_candidate: boolean
+          top_dow: number
+          top_location_id: string
           total_spent: number
           vacation_bookings: number
           vacation_share: number
+          vehicle_brand: string
           vehicle_color: string
           vehicle_model: string
+          vehicle_origin: string
+          weekend_share: number
+        }[]
+      }
+      marketing_contact_rfm: {
+        Args: { p_location_ids?: string[]; p_window_days?: number }
+        Returns: {
+          contact_key: string
+          eligible: boolean
+          f_score: number
+          m_score: number
+          r_score: number
+          rfm_cell: string
+          rfm_segment: string
         }[]
       }
       marketing_conversion_funnel: {
         Args: { p_from: string; p_location_ids?: string[]; p_to: string }
+        Returns: Json
+      }
+      marketing_discoveries: {
+        Args: { p_location_ids?: string[]; p_window_days?: number }
         Returns: Json
       }
       marketing_due_enrollments: {
@@ -6538,6 +7155,20 @@ export type Database = {
         Args: { p_location_ids?: string[] }
         Returns: Json
       }
+      marketing_rfm_contacts: {
+        Args: {
+          p_limit?: number
+          p_location_ids?: string[]
+          p_segment: string
+          p_window_days?: number
+        }
+        Returns: Json
+      }
+      marketing_rfm_overview: {
+        Args: { p_location_ids?: string[]; p_window_days?: number }
+        Returns: Json
+      }
+      marketing_rfm_window_days: { Args: never; Returns: number }
       marketing_segment_contacts: {
         Args: {
           p_definition: Json
@@ -6558,19 +7189,6 @@ export type Database = {
           total_spent: number
           vehicle_model: string
         }[]
-      }
-      marketing_rfm_contacts: {
-        Args: {
-          p_limit?: number
-          p_location_ids?: string[]
-          p_segment: string
-          p_window_days?: number
-        }
-        Returns: Json
-      }
-      marketing_rfm_overview: {
-        Args: { p_location_ids?: string[]; p_window_days?: number }
-        Returns: Json
       }
       marketing_segment_counts: {
         Args: { p_location_ids?: string[] }
@@ -6598,6 +7216,8 @@ export type Database = {
         Args: { p_booking: Database["public"]["Tables"]["booking"]["Row"] }
         Returns: undefined
       }
+      marketing_vehicle_brand: { Args: { p_model: string }; Returns: string }
+      marketing_vehicle_origin: { Args: { p_model: string }; Returns: string }
       match_knowledge: {
         Args: {
           p_destination_id?: string
@@ -6857,10 +7477,55 @@ export type Database = {
         Args: { p_identifier_hash: string; p_ip?: string }
         Returns: boolean
       }
+      partner_account_statement: {
+        Args: { p_company_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       payout_balance: {
         Args: { p_company_id: string; p_provider?: string }
         Returns: Json
       }
+      payout_debt_cents: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: number
+      }
+      payout_debt_lines: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: Json
+      }
+      payout_debt_overview: { Args: { p_provider?: string }; Returns: Json }
+      payout_debt_reserve: {
+        Args: {
+          p_company_id: string
+          p_floor_cents?: number
+          p_max_cents: number
+          p_provider?: string
+        }
+        Returns: {
+          amount_cents: number
+          reservation_id: string
+        }[]
+      }
+      payout_debt_settle: {
+        Args: {
+          p_amount_cents: number
+          p_company_id: string
+          p_kind: string
+          p_note?: string
+          p_provider?: string
+        }
+        Returns: string
+      }
+      payout_owed_cents: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: number
+      }
+      payout_owed_overview: { Args: { p_provider?: string }; Returns: Json }
+      payout_refund_manual_mark_paid: {
+        Args: { p_id: string; p_note?: string }
+        Returns: undefined
+      }
+      payout_release_days: { Args: { p_company_id: string }; Returns: number }
       payout_statement: {
         Args: {
           p_company_id?: string
@@ -6870,35 +7535,19 @@ export type Database = {
         }
         Returns: Json
       }
-      manager_price_research_decide: {
-        Args: { p_action: string; p_id: string; p_note?: string }
-        Returns: undefined
+      payout_transfer_request: {
+        Args: {
+          p_amount_cents: number
+          p_company_id: string
+          p_provider?: string
+        }
+        Returns: Json
       }
-      manager_price_research_pending: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          atual_biweekly_brl: number
-          atual_daily_brl: number
-          atual_monthly_brl: number
-          atual_researched_at: string
-          atual_weekly_brl: number
-          biweekly_brl: number
-          created_at: string
-          daily_brl: number
-          destination_name: string
-          evidence: string
-          fetched_at: string
-          id: string
-          model: string
-          monthly_brl: number
-          notes: string
-          prospect_location_id: string
-          prospect_name: string
-          source_url: string
-          status: string
-          weekly_brl: number
-        }[]
+      payout_transferred_cents: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: number
       }
+      payout_withdrawable: { Args: { p_company_id: string }; Returns: Json }
       preco_pesquisado_fresco: {
         Args: { p_hoje?: string; p_researched_at: string }
         Returns: boolean
@@ -6926,7 +7575,11 @@ export type Database = {
         Returns: undefined
       }
       reconcile_confirmations_expected_key: { Args: never; Returns: string }
+      reconcile_gateway_fees_expected_key: { Args: never; Returns: string }
+      reconcile_payout_transfers_expected_key: { Args: never; Returns: string }
+      reconcile_pending_charges_expected_key: { Args: never; Returns: string }
       reconcile_refunds_expected_key: { Args: never; Returns: string }
+      record_login_channel: { Args: { p_channel: string }; Returns: undefined }
       record_terms_acceptance: {
         Args: { p_booking_id: string; p_ip?: string }
         Returns: Json
@@ -6936,6 +7589,10 @@ export type Database = {
       release_booking_capacity: {
         Args: { p_booking_id: string }
         Returns: undefined
+      }
+      remove_coupon_from_booking: {
+        Args: { p_booking_id: string }
+        Returns: Json
       }
       renew_booking_hold: { Args: { p_booking_id: string }; Returns: Json }
       reprice_booking_dates: {
@@ -6959,6 +7616,7 @@ export type Database = {
           contract_version: string | null
           created_at: string
           deleted_at: string | null
+          gateway_split_enabled: boolean
           hub_relationship: string
           id: string
           legal_name: string | null
@@ -6966,6 +7624,7 @@ export type Database = {
           monthly_revenue_goal_cents: number | null
           name: string
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
+          payout_release_days: number | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
           take_rate_bps: number
@@ -6986,6 +7645,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_email_hint: { Args: { p_email: string }; Returns: undefined }
       set_phone_hint: { Args: { p_phone: string }; Returns: undefined }
       simulate_price: {
         Args: {
@@ -7010,6 +7670,7 @@ export type Database = {
           last_name: string
         }[]
       }
+      split_rule_is_partner: { Args: { r: Json }; Returns: boolean }
       submit_partner_lead: {
         Args: {
           p_city?: string
@@ -7124,6 +7785,13 @@ export type Database = {
         | "expired"
         | "no_show"
       company_role: "owner" | "operator" | "manager" | "finance"
+      coupon_audience:
+        | "code_only"
+        | "public"
+        | "first_purchase"
+        | "second_purchase"
+        | "winback"
+      coupon_funding: "platform" | "company"
       discount_type: "percent" | "fixed"
       entity_status: "active" | "inactive" | "suspended"
       faq_scope: "global" | "location" | "destination"
@@ -7204,12 +7872,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -7233,11 +7901,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -7258,11 +7926,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -7283,11 +7951,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -7300,11 +7968,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -7337,6 +8005,14 @@ export const Constants = {
         "no_show",
       ],
       company_role: ["owner", "operator", "manager", "finance"],
+      coupon_audience: [
+        "code_only",
+        "public",
+        "first_purchase",
+        "second_purchase",
+        "winback",
+      ],
+      coupon_funding: ["platform", "company"],
       discount_type: ["percent", "fixed"],
       entity_status: ["active", "inactive", "suspended"],
       faq_scope: ["global", "location", "destination"],

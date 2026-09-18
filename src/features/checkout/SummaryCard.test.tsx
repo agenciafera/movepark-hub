@@ -35,6 +35,7 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
       slug: "gru",
       name: "Guarulhos",
       address: null,
+      checkout_mode: "hub",
       photos: [],
       company: { slug: "aero", name: "Aerovalet" },
     },

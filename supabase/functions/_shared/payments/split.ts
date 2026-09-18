@@ -51,6 +51,13 @@ export interface BuildSplitArgs {
    * Default `true`: quem não disser nada continua no comportamento estrito.
    */
   requireRecipients?: boolean;
+  /**
+   * Parte do desconto que a MOVEPARK banca (cupom `funded_by = 'platform'`, E3.3).
+   *
+   * O parceiro recebe como se esse desconto não existisse: quem absorve é a comissão da Movepark.
+   * Cupom do parceiro fica em 0 e nada muda, que é o comportamento de sempre.
+   */
+  platformFundedCents?: number;
 }
 
 /**
@@ -64,6 +71,7 @@ export function buildSplit({
   moveparkRecipientId,
   partnerRecipientId,
   requireRecipients = true,
+  platformFundedCents = 0,
 }: BuildSplitArgs): SplitRule[] {
   if (!Number.isInteger(baseCents) || baseCents <= 0) {
     throw new Error("Valor da cobrança inválido.");
@@ -75,16 +83,28 @@ export function buildSplit({
     throw new Error("Recebedor do parceiro ausente.");
   }
 
+  // O parceiro é pago sobre o preço SEM o desconto que a Movepark banca. Somar de volta aqui é o
+  // que faz a campanha de plataforma sair da nossa comissão, e não do repasse dele.
+  const partnerBase = baseCents + platformFundedCents;
   const commission = Math.min(
-    baseCents,
-    Math.max(0, Math.round((baseCents * takeRateBps) / 10000)),
+    partnerBase,
+    Math.max(0, Math.round((partnerBase * takeRateBps) / 10000)),
   );
-  const partnerAmount = baseCents - commission;
+  const partnerAmount = partnerBase - commission;
   if (partnerAmount <= 0) {
     throw new Error("Comissão (take_rate) não pode consumir todo o valor da reserva.");
   }
-  // Movepark fica com a comissão + o excedente cobrado (juros do parcelamento).
+  // Movepark fica com a comissão + o excedente cobrado (juros do parcelamento), menos o desconto
+  // que ela mesma bancou.
   const moveparkAmount = chargedCents - partnerAmount;
+  if (moveparkAmount < 0) {
+    // O cupom de plataforma passou da comissão: pagar o parceiro exigiria a Movepark pôr dinheiro
+    // do bolso, e o gateway não aceita perna negativa. É o buraco que o teto
+    // (`coupon.max_discount_amount`) existe para fechar; se estourou, o teto está mal calibrado.
+    throw new Error(
+      "Cupom da Movepark maior que a comissão da reserva: ajuste o teto do cupom (max_discount_amount).",
+    );
+  }
 
   // Parceiro: absorve a taxa de processamento e recebe o líquido do preço base. O chargeback
   // (`liable`) foi para a Movepark em 15/09/2026 (E0.3.5): o gateway debita o master e a perna do

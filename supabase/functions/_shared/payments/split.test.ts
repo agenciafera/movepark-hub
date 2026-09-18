@@ -341,3 +341,64 @@ Deno.test("debtFloorCents: piso por método, nunca abaixo de R$ 1", () => {
   assertEquals(debtFloorCents("card", 20000), 3000);
   assertEquals(debtFloorCents("card", 0), 100);
 });
+
+// --- E3.3: cupom bancado pela Movepark ---------------------------------------------------------
+
+Deno.test("buildSplit: cupom de plataforma sai da comissão, não do repasse do parceiro", () => {
+  // Reserva de R$ 100 com take rate de 15%: sem cupom o parceiro leva 8500 e a Movepark 1500.
+  const semCupom = buildSplit({
+    chargedCents: 10000,
+    baseCents: 10000,
+    takeRateBps: 1500,
+    moveparkRecipientId: "mp",
+    partnerRecipientId: "pt",
+  });
+  assertEquals(semCupom[0].amount, 8500);
+  assertEquals(semCupom[1].amount, 1500);
+
+  // Mesmo pedido com R$ 10 de cupom da Movepark: o cliente paga 9000 e o parceiro TEM que
+  // continuar recebendo 8500. Quem perde os 1000 é a comissão, que cai de 1500 para 500.
+  const comCupom = buildSplit({
+    chargedCents: 9000,
+    baseCents: 9000,
+    takeRateBps: 1500,
+    moveparkRecipientId: "mp",
+    partnerRecipientId: "pt",
+    platformFundedCents: 1000,
+  });
+  assertEquals(comCupom[0].amount, 8500);
+  assertEquals(comCupom[1].amount, 500);
+});
+
+Deno.test("buildSplit: cupom do parceiro continua reduzindo os dois lados", () => {
+  // Sem `platformFundedCents`, o desconto já veio abatido no base e comissão e repasse caem
+  // juntos. É o comportamento de antes do E3.3, e ele não pode ter mudado.
+  const rules = buildSplit({
+    chargedCents: 9000,
+    baseCents: 9000,
+    takeRateBps: 1500,
+    moveparkRecipientId: "mp",
+    partnerRecipientId: "pt",
+  });
+  assertEquals(rules[0].amount, 7650); // 9000 - 1350
+  assertEquals(rules[1].amount, 1350);
+});
+
+Deno.test("buildSplit: cupom de plataforma maior que a comissão é recusado", () => {
+  // R$ 40 de cupom sobre uma reserva de R$ 100 com 15% de comissão: pagar o parceiro os 8500
+  // exigiria mais do que os 6000 cobrados. Recusa é melhor que perna negativa no gateway, e o
+  // teto do cupom existe justamente para isso não chegar aqui.
+  assertThrows(
+    () =>
+      buildSplit({
+        chargedCents: 6000,
+        baseCents: 6000,
+        takeRateBps: 1500,
+        moveparkRecipientId: "mp",
+        partnerRecipientId: "pt",
+        platformFundedCents: 4000,
+      }),
+    Error,
+    "max_discount_amount",
+  );
+});

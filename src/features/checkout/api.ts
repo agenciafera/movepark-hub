@@ -49,6 +49,8 @@ export type BookingForCheckout = {
     slug: string;
     name: string;
     address: string | null;
+    /** Fonte primária das capacidades da unidade (ADR-009). */
+    checkout_mode: string | null;
     /** Fotos da unidade. A primeira vira a miniatura do resumo. */
     photos: string[];
     company: { slug: string; name: string };
@@ -97,7 +99,7 @@ export function useCheckoutBooking(code: string | undefined) {
            fare_cancel_until, expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone,
-           location:location!inner(id, slug, name, address, photos,
+           location:location!inner(id, slug, name, address, photos, checkout_mode,
              company:company!inner(slug, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
              parking_type:parking_type(code, name),

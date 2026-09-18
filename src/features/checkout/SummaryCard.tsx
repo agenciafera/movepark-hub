@@ -6,6 +6,8 @@ import {
   cancellationPolicyLines,
 } from "@/features/bookings/cancellation.logic";
 import { useAvailability } from "@/features/listing/api";
+import { getLocationCapabilities } from "@/features/listing/capabilities";
+import { CheckoutCouponRow } from "@/features/customer-coupons/CheckoutCouponRow";
 import { dateCell } from "./summary.logic";
 import type { BookingForCheckout } from "./api";
 
@@ -163,6 +165,19 @@ export function SummaryCard({ booking, bare }: Props) {
               −{formatBRL(booking.coupon.discount_applied)}
             </span>
           </div>
+        )}
+        {/* Escolher ou trocar cupom acontece aqui, com o total à vista. Some quando a reserva já
+            saiu do `pending`: mexer no total depois do pagamento quebraria o split enviado. */}
+        {booking.status === "pending" && (
+          <CheckoutCouponRow
+            bookingId={booking.id}
+            allowsCoupons={getLocationCapabilities(booking.location).coupons}
+            applied={
+              booking.coupon
+                ? { code: booking.coupon.code, discount: booking.coupon.discount_applied }
+                : null
+            }
+          />
         )}
         {breakdown?.fare && breakdown.fare.amount > 0 && (
           <div className="flex justify-between gap-3 text-body-sm">

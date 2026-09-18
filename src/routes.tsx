@@ -74,6 +74,7 @@ import AccountIndexPage from "@/routes/account/index";
 import AccountReservasPage from "@/routes/account/reservas";
 import AccountReservaDetailPage from "@/routes/account/reserva-detail";
 import AccountClubePage from "@/routes/account/clube";
+import AccountDescontosPage from "@/routes/account/descontos";
 import AccountIndicarPage from "@/routes/account/indicar";
 import AccountProfilePage from "@/routes/account/profile";
 import AccountVehiclesPage from "@/routes/account/vehicles";
@@ -1044,6 +1045,7 @@ export const routes: RouteRecord[] = [
               { path: "reservas", element: <AccountReservasPage /> },
               { path: "reservas/:code", element: <AccountReservaDetailPage /> },
               { path: "clube", element: <AccountClubePage /> },
+              { path: "descontos", element: <AccountDescontosPage /> },
               { path: "indicar", element: <AccountIndicarPage /> },
               { path: "profile", element: <AccountProfilePage /> },
               { path: "vehicles", element: <AccountVehiclesPage /> },

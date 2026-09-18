@@ -1,5 +1,12 @@
 /**
- * C-24 do roteiro do consumidor: cupom por querystring e aplicado à mão.
+ * C-24 do roteiro do consumidor: cupom de campanha por querystring.
+ *
+ * MUDOU EM E3.3: o campo de digitar cupom saiu da página da unidade. A escolha do cupom agora mora
+ * no checkout (carteira em `/account/descontos` + painel no resumo), onde o cliente decide olhando
+ * o total. A página da unidade só honra o link de campanha (`?cupom=`), e é isso que estes casos
+ * cobrem. O caso que digitava à mão aqui (C-24d) foi removido junto com o campo. A cobertura da
+ * carteira depende de uma unidade `checkout_mode='hub'` COM preço, e hoje nenhuma das unidades hub
+ * do banco tem tabela de preço, então esse caso ainda não é automatizável.
  *
  * Só LÊ. A validação do cupom é anônima e server-side (`validate_coupon_public`),
  * então este caso NÃO cria reserva nem cobrança. Fica no project de leitura.
@@ -63,10 +70,13 @@ test.describe("C-24", () => {
     expect(Number(coupon!.discount_value)).toBe(10);
 
     // O escopo mora AQUI, não em coupon_parking_type.
+    // `company_id` virou anulável em E3.3 (null = cupom da Movepark). FERA10 é de empresa, e
+    // afirmar isso aqui protege o caso de virar cupom de plataforma sem ninguém notar.
+    expect(coupon!.company_id, `${CODE} deveria ser cupom de empresa, não de plataforma`).not.toBeNull();
     const { data: owner } = await admin
       .from("company")
       .select("slug")
-      .eq("id", coupon!.company_id)
+      .eq("id", coupon!.company_id!)
       .maybeSingle();
     expect(owner?.slug, `${CODE} deveria pertencer à Agência Fera`).toBe(AGENCIA_FERA.operatorSlug);
   });
@@ -97,25 +107,14 @@ test.describe("C-24", () => {
     await expect(applied).toContainText(CODE);
   });
 
-  test("C-24d: aplicar à mão dá o mesmo resultado da querystring", async ({ page }) => {
-    const range = oneNightRange();
-    await page.goto(listingUrl(AGENCIA_FERA, "uncovered", range));
-
-    const input = couponEl(page, "coupon-input");
-    await expect(input).toBeVisible({ timeout: 30_000 });
-    await input.fill(CODE);
-    await couponEl(page, "coupon-apply").click();
-
-    await expect(couponEl(page, "coupon-applied")).toBeVisible({ timeout: 30_000 });
-  });
-
   test("C-24e: o mesmo cupom é recusado em unidade de outra empresa", async ({ page }) => {
     const range = oneNightRange();
     await page.goto(`${listingUrl(MOTION_PARK, "uncovered", range)}&cupom=${CODE}`);
 
-    await expect(couponEl(page, "coupon-input")).toHaveValue(CODE, { timeout: 30_000 });
-    // Recusa é o comportamento CORRETO: o cupom é da Agência Fera. Não é cupom quebrado.
+    // Recusa é o comportamento CORRETO: o cupom é da Agência Fera.
+    // Sem o campo manual, o sinal de recusa é o chip de aplicado NÃO aparecer. Espera o preço
+    // carregar antes de afirmar ausência, senão o teste passa só por ter chegado cedo demais.
+    await expect(page.getByText("Total", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
     await expect(couponEl(page, "coupon-applied")).toHaveCount(0);
-    await expect(couponEl(page, "coupon-error")).toBeVisible({ timeout: 30_000 });
   });
 });

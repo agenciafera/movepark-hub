@@ -10,6 +10,7 @@ import {
   MapPin,
   SignOut,
   Sparkle,
+  Tag,
   Ticket,
   User,
 } from "@phosphor-icons/react";
@@ -33,6 +34,7 @@ const secoesBrutas = [
     items: [
       { to: "/account/reservas", icon: Ticket, label: "Minhas reservas" },
       { to: "/account/saved", icon: Heart, label: "Favoritos" },
+      { to: "/account/descontos", icon: Tag, label: "Descontos" },
       { to: "/account/clube", icon: Sparkle, label: "Movepark Clube" },
       { to: "/account/indicar", icon: Gift, label: "Indique e ganhe" },
     ],

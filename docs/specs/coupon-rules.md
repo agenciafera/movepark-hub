@@ -10,6 +10,12 @@
 > ciclo de vida do uso, RPCs, RLS, UI (checkout + operator + manager) e o plano de
 > implementação/testes. **Ao mudar uma regra, atualize esta spec no mesmo PR.**
 
+> **Atualizado em E3.3 ([coupon-wallet.md](./coupon-wallet.md)):** `coupon.company_id` passou a
+> aceitar NULL (cupom da Movepark, válido na rede), o cupom ganhou teto (`max_discount_amount`),
+> financiamento (`funded_by`) e audiência (`audience`), e a aplicação saiu da página da unidade
+> para o checkout. A D1 abaixo ("cupom global de plataforma fica como evolução futura") foi
+> superada por essa entrega.
+
 **Status:** ✅ implementado (Fase 1 + Fase 2) na migration `20260611000000_coupon_engine.sql`.
 Ciclo de uso (trigger no pagamento), regra única `coupon_evaluate`, RPCs de gestão,
 `validate_coupon` (preview), painel operator `/operator/coupons`, cupom no listing +

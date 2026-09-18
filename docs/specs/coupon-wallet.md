@@ -1,0 +1,182 @@
+# Área de descontos do cliente, carteira de cupons (E3.3)
+
+> **Status:** ✅ implementado nas migrations `20260918160052_coupon_platform_wallet.sql`,
+> `20260918160252_coupon_campanhas_lancamento.sql`, `20260918160600_coupon_evaluate_lock_internal.sql`
+> e `20260918161025_coupon_wallet_por_reserva.sql`. Front em `src/features/customer-coupons/`, rota
+> `/account/descontos`, painel no resumo do checkout.
+>
+> **Carimbo:** os quatro nomes batem com o `schema_migrations` do banco vivo. O repo está dezenas de
+> migrations atrás do banco (há entradas até `20261121` lá que não existem aqui), então inventar
+> carimbo alto colidiria: `20261030093000` já é de `destination_price_index_photo`. Confira o banco
+> antes de numerar migration nova, e não só o `ls` do diretório.
+
+O motor de cupom ([coupon-rules.md](./coupon-rules.md)) já resolvia código digitado, janela, limite
+por usuário e restrição por tipo de vaga. O que faltava para virar uma **área de descontos** como a
+do iFood e do 99: cupom que a Movepark oferece na rede inteira, uma carteira onde ele aparece sem o
+cliente digitar nada, e a escolha na hora de pagar.
+
+Relacionado: [coupon-rules.md](./coupon-rules.md) · [discount-rules.md](./discount-rules.md) ·
+[payment-split.md](./payment-split.md) · [marketing-rfm.md](./marketing-rfm.md) ·
+[capacidades-unidade.md](./capacidades-unidade.md)
+
+## As quatro mudanças de base
+
+| # | Mudança | Por quê |
+|---|---|---|
+| 1 | `coupon.company_id` aceita NULL = cupom da Movepark | Sem isso não existe campanha de rede, só promoção de um parceiro |
+| 2 | `coupon.funded_by` (`platform` \| `company`) | Quem banca o desconto muda o repasse. Ver §3 |
+| 3 | `coupon.max_discount_amount` | Teto do percentual, o "Até R$ 40 OFF" da referência. É o que impede a campanha de sangrar |
+| 4 | `coupon.audience` + `coupon_wallet` | O cupom aparece na carteira sem código digitado |
+
+### Precedência de código
+
+Cupom de empresa vence cupom de plataforma com o mesmo código, porque é o mais específico. Sem essa
+regra, um parceiro criando `BEMVINDO30` tornaria ambíguo qual desconto sai. O unique `(company_id,
+code)` não alcança as linhas de plataforma (NULL não colide com NULL no Postgres), então existe um
+índice parcial `coupon_platform_code_idx` sobre `lower(code) where company_id is null`.
+
+## 1. Audiência: por que não é segmento de RFM
+
+A audiência é **determinística**: contagem de reservas pagas e dias parado.
+
+| `audience` | Quem vê |
+|---|---|
+| `code_only` | ninguém, só quem digita o código. É o **default**, então nenhum cupom existente mudou de comportamento |
+| `public` | qualquer cliente logado |
+| `first_purchase` | zero reservas pagas |
+| `second_purchase` | exatamente uma reserva paga |
+| `winback` | tem reserva paga e passou de `audience_inactive_days` sem voltar |
+
+O [marketing-rfm.md](./marketing-rfm.md) já entrega 14 segmentos, e eles seriam o alvo natural. Não
+são, por uma razão que a própria spec do RFM escreve: **o score é quintil sobre a base**, e o
+quintil sempre preenche as cinco faixas. A base media, em setembro de 2026, **uma reserva**. Um
+cupom mirando "campeões" iria para quem fosse o melhor entre um. `MINIMO_PARA_RFM_CONFIAVEL` é 25.
+
+"Nunca comprou" e "está há 60 dias sem voltar" são verdade em qualquer tamanho de base. Quando a
+base passar dos 25 clientes com compra, segmento de RFM entra como audiência nova, sem tocar em
+nada disto.
+
+**Audiência decide se o cupom APARECE; `coupon_evaluate` decide se ele VALE.** Cupom resgatado cujo
+dono saiu da audiência continua aparecendo na carteira, com o motivo. Sumir sem explicação seria
+pior para quem guardou.
+
+## 2. As quatro campanhas de lançamento
+
+Todas `funded_by = 'platform'`, `company_id = null`.
+
+| Código | Audiência | Desconto | Objetivo |
+|---|---|---|---|
+| `BEMVINDO30` | `first_purchase` | 30%, teto R$ 40 | Ativação |
+| `SEGUNDA15` | `second_purchase` | R$ 15 | Taxa de 1ª para 2ª reserva, a métrica que a apresentação nomeia (pág. 14) |
+| `VOLTA20` | `winback` 60 dias | 20%, teto R$ 30 | Recuperação antes do churn |
+| `LONGA25` | `public`, `min_days = 7` | R$ 25 | Ticket médio |
+
+`VOLTA20` não tem `per_user_limit`: quem sumiu de novo e voltou de novo merece o mesmo convite.
+`BEMVINDO30` e `SEGUNDA15` têm limite 1, o que é redundante com a audiência mas fecha a janela
+entre criar a reserva e pagar, quando a contagem ainda não mudou.
+
+## 3. Quem banca, e como isso chega no repasse
+
+**Decisão do negócio: a Movepark banca a campanha dela.** O parceiro recebe o mesmo repasse que
+receberia se o cupom não existisse, e o desconto sai da comissão.
+
+Antes do E3.3, `buildSplit` calculava a comissão sobre o preço já descontado, então **o parceiro
+absorvia qualquer cupom proporcionalmente**. Isso está certo para um cupom que o parceiro criou, e
+errado para uma campanha da Movepark: seria o parceiro pagando marketing que não pediu.
+
+```
+Sem cupom, reserva de R$ 100, take rate 15%:
+  parceiro 8500 · Movepark 1500
+
+Com R$ 10 de cupom da MOVEPARK (cliente paga 9000):
+  parceiro 8500 (inalterado) · Movepark 500   ← a comissão absorve
+
+Com R$ 10 de cupom do PARCEIRO (cliente paga 9000):
+  parceiro 7650 · Movepark 1350               ← comportamento de sempre, os dois caem
+```
+
+Implementação: `buildSplit` ganhou `platformFundedCents`, que volta para a base do repasse do
+parceiro. As Edges `create-pix-charge` e `create-card-charge` leem
+`price_breakdown.coupon.funded_by`.
+
+**Por isso o teto é obrigatório.** Se o cupom de plataforma passar da comissão, pagar o parceiro
+exigiria a Movepark pôr dinheiro do bolso e o gateway não aceita perna negativa: `buildSplit` recusa
+com uma mensagem que aponta o `max_discount_amount`. `manager_upsert_platform_coupon` exige teto em
+todo cupom percentual, para o erro não chegar no pagamento.
+
+## 4. Onde o cliente aplica
+
+**No checkout, não na página da unidade.** A página da unidade perdeu o campo de digitar cupom: a
+escolha mora onde o cliente vê o total que vai pagar. Um link de campanha (`?cupom=`) continua
+valendo e chega ao checkout já aplicado.
+
+| Superfície | O que faz |
+|---|---|
+| `/account/descontos` | A carteira. Lista condições, sem veredito, porque não há pedido para julgar |
+| Resumo do checkout | Linha "Usar cupom" que abre a carteira no contexto da reserva, com veredito, motivo e valor |
+
+`apply_coupon_to_booking` / `remove_coupon_from_booking` mexem no total de reserva **`pending`** do
+próprio cliente. Depois do pagamento a porta fecha: mudar o total quebraria o split já enviado.
+
+### A carteira avalia contra a reserva, não contra uma simulação nova
+
+`customer_coupon_wallet(p_booking_id => ...)` usa o **subtotal congelado** em
+`price_breakdown.subtotal`, que é o mesmo que `apply_coupon_to_booking` usa. Se simulasse o preço de
+novo, o valor no botão poderia divergir do total depois de aplicar, porque o preço muda entre criar
+a reserva e pagar.
+
+### ADR-009
+
+Cupom é promessa de transação. `coupon_evaluate` recusa com `not_available_here` quando a unidade
+tem `checkout_mode = 'external'`, e a regra mora **no banco**, não só na UI, porque
+`validate_coupon_public` é chamável direto. No front, `CheckoutCouponRow` não renderiza quando
+`getLocationCapabilities(location).coupons` é falso.
+
+## 5. Superfície
+
+| Função | Quem chama | Gate |
+|---|---|---|
+| `customer_coupon_wallet(lpt, in, out, booking)` | carteira e checkout | `auth.uid()` |
+| `coupon_redeem(code)` | botão "Resgatar" | `auth.uid()` |
+| `apply_coupon_to_booking(booking, code)` | checkout | dono da reserva + `pending` |
+| `remove_coupon_from_booking(booking)` | checkout | dono da reserva + `pending` |
+| `manager_upsert_platform_coupon(...)` | Manager | `is_hub_admin()` |
+| `manager_list_platform_coupons()` | Manager | `is_hub_admin()` |
+| `coupon_customer_stats(profile)` | interno | sem grant a anon/authenticated |
+| `coupon_evaluate(...)` | interno | sem grant a anon/authenticated |
+
+## 6. Duas correções de segurança que vieram junto
+
+Não eram do escopo, mas o escopo as tornou perigosas: o código passou a valer dinheiro da Movepark.
+
+**`catalog_read_coupon` foi removida.** A policy liberava `SELECT` em todo cupom ativo para
+qualquer um, inclusive `anon`: a lista de códigos era pública. Nada lê a tabela direto além do
+painel do operador, coberto por `coupon_select`; o cliente passa por RPC `SECURITY DEFINER`.
+
+**`coupon_evaluate` perdeu o grant a `anon` e `authenticated`.** A migration original fez `revoke
+... from public`, que não alcança o grant que o Supabase dá a esses papéis por privilégio padrão
+(mesma lição da `20261027094500`). Além da varredura de códigos, havia um vazamento pior: o
+`p_profile_id` vem **do chamador**, então com a audiência nova um anônimo poderia passar o id de
+outra pessoa e ler do erro (`not_first_purchase` / `not_second_purchase` / `not_winback`) se aquela
+pessoa tem 0, 1 ou mais reservas pagas.
+
+## 7. Testes
+
+| Camada | Onde |
+|---|---|
+| Lógica pura | `src/features/customer-coupons/couponWallet.logic.test.ts` (21 casos) |
+| Split | `supabase/functions/_shared/payments/split.test.ts` (3 casos novos, incluindo a recusa por teto estourado) |
+| Banco | `supabase/tests/coupon_wallet.test.sql` |
+| Navegador | `e2e/windup/account-descontos.json` |
+
+**O que ainda não dá para automatizar:** a carteira em contexto de pedido precisa de uma unidade
+`checkout_mode = 'hub'` **com preço**, e hoje as 20 unidades hub do banco não têm tabela de preço
+(as 18 que têm preço são todas externas). O caso E2E do checkout entra quando existir uma.
+
+## 8. Pendências
+
+- **Manager não tem tela de cupom de plataforma.** As RPCs existem e são gateadas por `is_hub_admin`;
+  a UI ainda não. Hoje a campanha nova entra por migration.
+- **Segmento de RFM como audiência** quando a base passar de 25 clientes com compra.
+- **Atribuição:** quantas reservas cada campanha gerou. Depende do RF-007 do
+  [marketing-rfm.md](./marketing-rfm.md), que ainda não rastreia reserva por campanha.

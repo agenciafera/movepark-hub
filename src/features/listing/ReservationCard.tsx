@@ -23,7 +23,6 @@ import {
   getStoredCoupon,
   storeCoupon,
   clearStoredCoupon,
-  normalizeCouponCode,
 } from "@/lib/coupon";
 import {
   storeBookingIntent,
@@ -163,7 +162,6 @@ export function ReservationCard({
   // round-trip de login). O `couponCode` é o código pretendido; o effect re-valida (o desconto
   // depende dos dias) e produz o `applied`. Sem gate de login (validação anônima server-side).
   const initialCoupon = parseCouponParam(location.search) ?? getStoredCoupon() ?? "";
-  const [couponInput, setCouponInput] = React.useState<string>(initialCoupon);
   const [couponCode, setCouponCode] = React.useState<string | null>(initialCoupon || null);
   const [applied, setApplied] = React.useState<CouponPreview | null>(null);
   const [couponMsg, setCouponMsg] = React.useState<string | null>(null);
@@ -252,17 +250,8 @@ export function ReservationCard({
     }
   }, [pricedFares, selectedFare]);
 
-  // Aplicar = definir o código pretendido; o effect valida (server-side, sem exigir login).
-  function applyCoupon() {
-    const code = normalizeCouponCode(couponInput);
-    if (!code) return;
-    setCouponMsg(null);
-    setCouponCode(code);
-  }
-
   function clearCoupon() {
     setApplied(null);
-    setCouponInput("");
     setCouponCode(null);
     setCouponMsg(null);
     clearStoredCoupon();
@@ -386,7 +375,6 @@ export function ReservationCard({
       setSelectedFare(intent.fare);
     }
     if (intent.coupon) {
-      setCouponInput(intent.coupon);
       setCouponCode(intent.coupon);
     }
     setResumePending(true);
@@ -635,52 +623,26 @@ export function ReservationCard({
           </div>
         )}
 
-        {/* Cupom */}
-        {caps.coupons && canReserve && (
+        {/* Cupom de campanha (?cupom=). O campo manual saiu daqui: a escolha do cupom mora no
+            checkout, onde o cliente decide olhando o total que vai pagar. Um link de campanha
+            continua valendo, e o desconto aparece já aplicado. */}
+        {caps.coupons && canReserve && applied && (
           <div className="mt-4">
-            {applied ? (
-              <div
-                data-testid="coupon-applied"
-                className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3"
+            <div
+              data-testid="coupon-applied"
+              className="flex items-center justify-between gap-2 rounded-sm border border-badge-confirmed-fg/30 bg-badge-confirmed-bg p-3"
+            >
+              <span className="text-caption font-medium text-badge-confirmed-fg">
+                {applied.code}: {couponDiscountLabel(applied)}
+              </span>
+              <button
+                type="button"
+                onClick={clearCoupon}
+                className="inline-flex items-center gap-1 text-caption text-badge-confirmed-fg hover:underline"
               >
-                <span className="text-caption font-medium text-badge-confirmed-fg">
-                  {applied.code}: {couponDiscountLabel(applied)}
-                </span>
-                <button
-                  type="button"
-                  onClick={clearCoupon}
-                  className="inline-flex items-center gap-1 text-caption text-badge-confirmed-fg hover:underline"
-                >
-                  <X className="h-3 w-3" /> Remover
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  data-testid="coupon-input"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value)}
-                  placeholder="Cupom de desconto"
-                  className="h-10 flex-1"
-                  aria-label="Código do cupom"
-                />
-                <Button
-                  data-testid="coupon-apply"
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={applyCoupon}
-                  disabled={!couponInput.trim() || validateCoupon.isPending}
-                >
-                  {validateCoupon.isPending ? "…" : "Aplicar"}
-                </Button>
-              </div>
-            )}
-            {couponMsg && (
-              <p data-testid="coupon-error" className="mt-1.5 text-caption text-error">
-                {couponMsg}
-              </p>
-            )}
+                <X className="h-3 w-3" /> Remover
+              </button>
+            </div>
           </div>
         )}
 
