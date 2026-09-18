@@ -24,7 +24,7 @@ import { formatBRL } from "@/lib/format";
 import { computeInstallmentPlan } from "@/lib/installments";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { parseValidade } from "@/lib/card-expiry";
-import { documentMask, onlyDigits } from "@/lib/masks";
+import { documentMask, onlyDigits, cardExpiryMask } from "@/lib/masks";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
@@ -382,8 +382,10 @@ export function Step4Payment({
                         id="card-expiry"
                         inputMode="numeric"
                         placeholder="12/27"
+                        autoComplete="cc-exp"
+                        maxLength={5}
                         value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
+                        onChange={(e) => setCardExpiry(cardExpiryMask(e.target.value))}
                         required
                       />
                     </div>

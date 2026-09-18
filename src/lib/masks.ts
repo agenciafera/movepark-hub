@@ -60,6 +60,17 @@ export function dateMask(value: string): string {
   return `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
 }
 
+/**
+ * Validade do cartão, MM/AA: só dígitos, no máximo quatro, com a barra entrando sozinha. Mês que
+ * começa em 2 a 9 ganha o zero na frente ("3" vira "03/"), porque não existe mês 3x.
+ */
+export function cardExpiryMask(value: string): string {
+  let v = onlyDigits(value).slice(0, 4);
+  if (v.length >= 1 && Number(v[0]) > 1) v = `0${v}`.slice(0, 4);
+  if (v.length <= 2) return v;
+  return `${v.slice(0, 2)}/${v.slice(2)}`;
+}
+
 /** DD/MM/AAAA → AAAA-MM-DD (ISO), ou null se incompleta/invalida no formato. */
 export function brDateToIso(value: string): string | null {
   const v = onlyDigits(value);

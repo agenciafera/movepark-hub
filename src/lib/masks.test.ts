@@ -4,6 +4,7 @@ import {
   cepMask,
   cnpjMask,
   cpfMask,
+  cardExpiryMask,
   dateMask,
   documentMask,
   onlyDigits,
@@ -43,6 +44,16 @@ describe("masks", () => {
 
   it("splitPhone separa DDD e número", () => {
     expect(splitPhone("(11) 99999-8888")).toEqual({ ddd: "11", number: "999998888" });
+  });
+
+  it("cardExpiryMask formata MM/AA, corta o excesso e ajuda no mês de um dígito", () => {
+    expect(cardExpiryMask("1230")).toBe("12/30");
+    expect(cardExpiryMask("12332")).toBe("12/33");
+    expect(cardExpiryMask("12/3")).toBe("12/3");
+    expect(cardExpiryMask("1")).toBe("1");
+    expect(cardExpiryMask("3")).toBe("03");
+    expect(cardExpiryMask("328")).toBe("03/28");
+    expect(cardExpiryMask("ab")).toBe("");
   });
 
   it("dateMask formata DD/MM/AAAA", () => {
