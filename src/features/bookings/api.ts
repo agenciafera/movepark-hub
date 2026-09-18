@@ -69,13 +69,23 @@ export function useBookings(filters: BookingFilters) {
   });
 }
 
-/** Uma reserva pelo código, com as mesmas relações da lista (tela de detalhe do Manager). */
+/**
+ * Select da tela da reserva: as relações da lista, com o pagamento completo (split, taxa,
+ * abatimento, estorno), que é de onde saem os valores destrinchados. A RLS de `payment` já deixa
+ * a empresa ler os pagamentos das próprias reservas, então vale para Manager e Operator.
+ */
+const detailSelect = baseSelect.replace(
+  "payments:payment(id, status, refunded_at, created_at, paid_at, method)",
+  "payments:payment(id, status, refunded_at, created_at, paid_at, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents)",
+);
+
+/** Uma reserva pelo código, com as relações da lista e o pagamento completo (tela de detalhe). */
 export function useBookingByCode(code: string | undefined) {
   return useQuery({
     queryKey: [...bookingsKeys.all, "by-code", code ?? ""] as const,
     enabled: !!code,
     queryFn: async (): Promise<BookingWithRelations | null> => {
-      const { data, error } = await supabase.from("booking").select(baseSelect).eq("code", code!).limit(1);
+      const { data, error } = await supabase.from("booking").select(detailSelect).eq("code", code!).limit(1);
       if (error) throw error;
       return ((data ?? [])[0] ?? null) as unknown as BookingWithRelations | null;
     },

@@ -148,6 +148,16 @@ R$ 0,00. Migration `20260918000000_company_revenue_goal.sql`, pgTAP `revenue_goa
 
 ### 4.2 Reservas
 
+**Tela da reserva (18/09/2026): `/operator/bookings/:code`.** Clicar numa linha abre a mesma
+tela do Manager (`BookingDetailView`), no lugar da ficha lateral: os dois status (o da reserva e o
+do dinheiro), Reserva, Linha do tempo, **Valores** e as ações. O que muda para o estacionamento:
+em Valores ele vê "O cliente pagou" e "Sua parte" (parte dele, abatimento de dívida, quanto
+recebe e quando entra no saldo); a coluna da Movepark, a taxa do gateway e o rastro da Pagar.me
+não aparecem. O bloco **Operação** traz confirmar, check-in, check-out, não compareceu e trocar
+placa; **Cancelar** pede confirmação e o servidor decide a elegibilidade. Devolução pendente
+avisa que é com a equipe da Movepark, sem ação para ele.
+
+
 **Rota:** `/operator/bookings`
 
 **Objetivo:** gestão completa das reservas da empresa.

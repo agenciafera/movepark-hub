@@ -3,7 +3,7 @@
  * operador apontou (docs/testes/roteiro-operador.md, seção "Cobertura automatizada
  * e lacunas"):
  *   O-15  check-in por QR em /voucher/validate (confirmed -> checked_in);
- *   O-14  transição no drawer de /operator/bookings (confirmed -> no_show).
+ *   O-14  transição na tela da reserva de /operator/bookings (confirmed -> no_show).
  *
  * ESCREVE EM PRODUÇÃO (sandbox): semeia uma reserva CONFIRMADA de teste na Agência Fera
  * pelo `admin` (service_role, que passa pelo guard `booking_guard_status_transition`),
@@ -84,7 +84,7 @@ test.describe("Roteiro O: operação de reservas (Agência Fera)", () => {
       .toBe("checked_in");
   });
 
-  test("O-14: o drawer transita a reserva (confirmed -> no_show)", async ({ page }) => {
+  test("O-14: a tela da reserva transita a reserva (confirmed -> no_show)", async ({ page }) => {
     const { checkIn, checkOut } = futureRange(30);
     await upsertConfirmedTestBooking({
       code: DRAWER_CODE,
@@ -96,19 +96,19 @@ test.describe("Roteiro O: operação de reservas (Agência Fera)", () => {
 
     await page.goto(`/operator/bookings?q=${DRAWER_CODE}`);
 
-    // A linha da reserva de teste abre o detalhe (drawer).
+    // A linha da reserva de teste abre a tela da reserva (/operator/bookings/:code).
     const row = page.getByRole("row").filter({ hasText: DRAWER_CODE });
     await expect(row).toBeVisible({ timeout: 15_000 });
     await row.click();
 
-    // O drawer abre com o título da reserva e as ações da transição.
+    // A tela abre com o título da reserva e as ações da transição.
     await expect(page.getByRole("heading", { name: `Reserva ${DRAWER_CODE}` })).toBeVisible();
     await page.getByRole("button", { name: "Não compareceu" }).click();
 
     await expect
       .poll(async () => getBookingStatusByCode(DRAWER_CODE), {
         timeout: 15_000,
-        message: "a transição do drawer deveria marcar a reserva como no_show",
+        message: "a transição da tela da reserva deveria marcar a reserva como no_show",
       })
       .toBe("no_show");
   });

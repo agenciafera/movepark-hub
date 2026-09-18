@@ -295,7 +295,8 @@ Colunas: `#ID` · `Cliente` · `Empresa` · `Localização` · `Tipo de Vaga` ·
 
 
 **Tela da reserva (18/09/2026): `/manager/bookings/:code`.** Clicar numa linha (lista ou
-dashboard) abre uma página, não mais um popup. Blocos: cabeçalho com os dois status (o da
+dashboard) abre uma página, não mais um popup. O componente é `BookingDetailView`, o mesmo do
+Operator (`/operator/bookings/:code`), com `audience` decidindo o que aparece. Blocos: cabeçalho com os dois status (o da
 reserva e o do dinheiro, `paymentBadge`); **Reserva** (cliente, contato, documento, veículo,
 plano com o limite de cancelamento grátis, datas); **Linha do tempo**; **Valores**; **Cancelar**
 (com o aviso da janela de estorno do gateway); **Gateway (Pagar.me)** com o rastro completo.

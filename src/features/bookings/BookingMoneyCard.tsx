@@ -31,15 +31,18 @@ function Bloco({ title, hint, children }: { title: string; hint?: string; childr
  * O dinheiro da reserva destrinchado (18/09/2026): o que o cliente pagou, o que foi para o
  * estacionamento, o que ficou com a Movepark, a taxa do gateway e o estorno. Só Manager.
  */
-export function BookingMoneyCard({ money }: { money: MoneyBreakdown }) {
+export function BookingMoneyCard({ money, audience = "manager" }: { money: MoneyBreakdown; audience?: "manager" | "operator" }) {
   const { customer, split, refund } = money;
+  // O estacionamento vê o que o cliente pagou e a parte dele. A coluna da Movepark (comissão,
+  // plano, taxa do gateway) é da Movepark; taxa de processamento não aparece para ele.
+  const parceiro = audience === "operator";
   const meio = customer.method ? METODO[customer.method] ?? customer.method : null;
   return (
     <Card data-testid="reserva-valores">
       <CardHeader>
         <CardTitle>Valores</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 desktop:grid-cols-3">
+      <CardContent className={`grid gap-4 ${parceiro ? "desktop:grid-cols-2" : "desktop:grid-cols-3"}`}>
         <Bloco title="O cliente pagou" hint={meio ? `${meio}${customer.installments && customer.installments > 1 ? ` em ${customer.installments}x` : ""}` : "ainda sem pagamento"}>
           {customer.lines.map((l) => (
             <Linha key={`${l.kind}-${l.label}`} label={l.label} value={signed(l.cents)} />
@@ -48,14 +51,18 @@ export function BookingMoneyCard({ money }: { money: MoneyBreakdown }) {
         </Bloco>
 
         <Bloco
-          title="Estacionamento"
+          title={parceiro ? "Sua parte" : "Estacionamento"}
           hint={
             !split
               ? "entra quando o pagamento for aprovado"
               : split.custody
-                ? "cobrança sem split: o valor ficou com a Movepark e chega por repasse"
+                ? parceiro
+                  ? "o valor ficou com a Movepark e chega por repasse"
+                  : "cobrança sem split: o valor ficou com a Movepark e chega por repasse"
                 : split.partner.releaseAt
-                  ? `libera no gateway em ${formatDate(split.partner.releaseAt)}`
+                  ? parceiro
+                    ? `entra no seu saldo em ${formatDate(split.partner.releaseAt)}; o saque libera pelo prazo da conta`
+                    : `libera no gateway em ${formatDate(split.partner.releaseAt)}`
                   : "data de liberação ainda não apurada"
           }
         >
@@ -63,15 +70,18 @@ export function BookingMoneyCard({ money }: { money: MoneyBreakdown }) {
             <>
               <Linha label="Parte do estacionamento" value={brl(split.partner.grossCents)} />
               {split.partner.debtRecoveredCents > 0 && <Linha label="Abatimento de dívida" value={signed(-split.partner.debtRecoveredCents)} muted />}
-              {split.partner.feeCents > 0 && <Linha label="Taxa do gateway" value={signed(-split.partner.feeCents)} muted />}
-              <Linha label={split.custody ? "A repassar" : "Líquido do estacionamento"} value={brl(split.partner.netCents)} strong testId="valores-parceiro" />
+              {split.partner.feeCents > 0 && (
+                <Linha label={parceiro ? "Processamento (venda anterior a 18/09/2026)" : "Taxa do gateway"} value={signed(-split.partner.feeCents)} muted />
+              )}
+              <Linha label={split.custody ? "A repassar" : parceiro ? "Você recebe" : "Líquido do estacionamento"} value={brl(split.partner.netCents)} strong testId="valores-parceiro" />
             </>
           ) : (
             <Linha label="Parte do estacionamento" value="-" muted />
           )}
         </Bloco>
 
-        <Bloco title="Movepark" hint={split?.feePending ? "taxa do gateway ainda não apurada (até 30 min depois do pagamento)" : undefined}>
+        {!parceiro && (
+          <Bloco title="Movepark" hint={split?.feePending ? "taxa do gateway ainda não apurada (até 30 min depois do pagamento)" : undefined}>
           {split ? (
             <>
               <Linha label="Comissão" value={brl(split.movepark.commissionCents)} />
@@ -85,14 +95,24 @@ export function BookingMoneyCard({ money }: { money: MoneyBreakdown }) {
             <Linha label="Comissão" value="-" muted />
           )}
         </Bloco>
+        )}
 
         {refund && (
-          <div className="desktop:col-span-3" data-testid="valores-estorno">
-            <Bloco title="Estorno" hint={refund.debtCents > 0 ? "a Movepark pagou a parte do estacionamento; virou dívida dele, abatida nas próximas vendas" : undefined}>
+          <div className={parceiro ? "desktop:col-span-2" : "desktop:col-span-3"} data-testid="valores-estorno">
+            <Bloco
+              title="Estorno"
+              hint={
+                refund.debtCents > 0
+                  ? parceiro
+                    ? "a Movepark devolveu ao cliente a sua parte; ela abate sozinha nas próximas vendas"
+                    : "a Movepark pagou a parte do estacionamento; virou dívida dele, abatida nas próximas vendas"
+                  : undefined
+              }
+            >
               <Linha label="Devolvido ao cliente" value={brl(refund.totalCents)} />
-              <Linha label="Saiu do estacionamento (gateway debitou)" value={brl(refund.partnerCents)} muted />
-              <Linha label="Saiu da Movepark" value={brl(refund.moveparkCents)} muted />
-              {refund.debtCents > 0 && <Linha label="Dívida gerada para o estacionamento" value={brl(refund.debtCents)} strong />}
+              <Linha label={parceiro ? "Saiu do seu saldo" : "Saiu do estacionamento (gateway debitou)"} value={brl(refund.partnerCents)} muted />
+              {!parceiro && <Linha label="Saiu da Movepark" value={brl(refund.moveparkCents)} muted />}
+              {refund.debtCents > 0 && <Linha label={parceiro ? "A abater nas próximas vendas" : "Dívida gerada para o estacionamento"} value={brl(refund.debtCents)} strong />}
             </Bloco>
           </div>
         )}

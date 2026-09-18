@@ -1,17 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import { mockAuth, renderWithProviders } from "@/test/utils";
 
 const state = vi.hoisted(() => ({ booking: null as unknown, trail: null as unknown }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/features/bookings/api", () => ({
+const updateMutate = vi.hoisted(() => vi.fn());
+vi.mock("./api", () => ({
   useBookingByCode: () => ({ data: state.booking, isLoading: false }),
   useBookingGatewayTrail: () => ({ data: state.trail, isLoading: false, isError: false }),
   useCancelBookingStaff: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateBookingStatus: () => ({ mutate: updateMutate, isPending: false }),
 }));
+vi.mock("./customerApi", () => ({ useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }) }));
 
-import ManagerBookingDetail from "./booking-detail";
+import { BookingDetailView } from "./BookingDetailView";
 
 function booking(status: string, payments: unknown[]) {
   return {
@@ -26,7 +29,12 @@ function booking(status: string, payments: unknown[]) {
     payments,
   };
 }
-const pago = { id: "p1", status: "paid", refunded_at: null, created_at: "2026-09-18T17:36:40Z", paid_at: "2026-09-18T17:37:26Z", method: "card" };
+const pago = {
+  id: "p1", status: "paid", refunded_at: null, created_at: "2026-09-18T17:36:40Z", paid_at: "2026-09-18T17:37:26Z", method: "card",
+  amount: 30.9, installments: 1, split: [{ role: "partner", amount: 1440, chargeProcessingFee: true }, { role: "movepark", amount: 1650, liable: true }],
+  split_sent_to_gateway: true, debt_recovered_cents: 0, gateway_fee_cents: 117, partner_release_at: "2026-10-20T03:00:00Z",
+  refunded_amount: null, refund_absorbed_by_master: false, refund_partner_cents: 0,
+};
 const trailPago = {
   events: [],
   payments: [{
@@ -37,16 +45,19 @@ const trailPago = {
   }],
 };
 
-function abre() {
+function abre(audience: "manager" | "operator" = "manager") {
   return renderWithProviders(
     <Routes>
-      <Route path="/manager/bookings/:code" element={<ManagerBookingDetail />} />
+      <Route path="/x/:code" element={<BookingDetailView code="MP-7E2482" audience={audience} />} />
     </Routes>,
-    { route: "/manager/bookings/MP-7E2482", auth: mockAuth({ effectiveRole: "hub_admin", hasScope: () => true }) },
+    {
+      route: "/x/MP-7E2482",
+      auth: mockAuth(audience === "manager" ? { effectiveRole: "hub_admin", hasScope: () => true } : { effectiveRole: "company_operator", hasScope: () => true }),
+    },
   );
 }
 
-describe("ManagerBookingDetail", () => {
+describe("BookingDetailView", () => {
   it("mostra os dois status e os valores destrinchados: cliente, estacionamento e Movepark", () => {
     state.booking = booking("confirmed", [pago]);
     state.trail = trailPago;
@@ -89,6 +100,44 @@ describe("ManagerBookingDetail", () => {
     state.trail = null;
     abre();
     expect(screen.getByTestId("aviso-janela-estorno")).toHaveTextContent("fila de reembolso manual");
+  });
+
+  it("Operator: vê a parte dele, sem coluna da Movepark, sem rastro do gateway, e volta para as reservas dele", () => {
+    state.booking = booking("confirmed", [pago]);
+    state.trail = trailPago;
+    abre("operator");
+    expect(screen.getByText("Sua parte")).toBeInTheDocument();
+    expect(screen.queryByText("Movepark")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("valores-movepark")).not.toBeInTheDocument();
+    expect(screen.queryByText("Gateway (Pagar.me)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Taxa do gateway")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Voltar para Reservas/ })).toHaveAttribute("href", "/operator/bookings");
+  });
+
+  it("Operator: reserva confirmada oferece check-in e 'Não compareceu', e dispara a transição", () => {
+    state.booking = booking("confirmed", [pago]);
+    abre("operator");
+    expect(screen.getByRole("button", { name: "Check-in" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Não compareceu" }));
+    expect(updateMutate).toHaveBeenCalledWith(expect.objectContaining({ bookingId: "bk-1", status: "no_show" }), expect.anything());
+  });
+
+  it("Operator: reserva pendente só oferece confirmar (sem no-show); o Manager não tem ações de operação", () => {
+    state.booking = booking("pending", []);
+    const { unmount } = abre("operator");
+    expect(screen.getByRole("button", { name: "Confirmar" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Não compareceu" })).not.toBeInTheDocument();
+    unmount();
+    state.booking = booking("confirmed", [pago]);
+    abre("manager");
+    expect(screen.queryByRole("button", { name: "Check-in" })).not.toBeInTheDocument();
+  });
+
+  it("Operator: devolução pendente avisa que é com a Movepark, sem atalho para a fila", () => {
+    state.booking = booking("cancelled", [pago]);
+    abre("operator");
+    expect(screen.getByTestId("aviso-devolucao-pendente")).toHaveTextContent("pendente com a equipe da Movepark");
+    expect(screen.queryByRole("link", { name: /Tentar de novo/ })).not.toBeInTheDocument();
   });
 
   it("código que não existe mostra o vazio, com o caminho de volta", () => {

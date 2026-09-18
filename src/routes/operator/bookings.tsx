@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,10 +12,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
-import { BookingDrawer } from "@/features/bookings/BookingDrawer";
 import { useBookings, type BookingFilters } from "@/features/bookings/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
-import type { BookingStatus, BookingWithRelations } from "@/types/domain";
+import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -36,7 +35,7 @@ export default function OperatorBookings() {
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
-  const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
+  const navigate = useNavigate();
   const { ids: scopedLocationIds } = useScopedLocationIds();
 
   const filters: BookingFilters = React.useMemo(
@@ -98,13 +97,7 @@ export default function OperatorBookings() {
         bookings={data}
         isLoading={isLoading}
         showCompany={false}
-        onRowClick={(b) => setSelected(b)}
-      />
-
-      <BookingDrawer
-        booking={selected}
-        open={!!selected}
-        onOpenChange={(open) => !open && setSelected(null)}
+        onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
       />
     </div>
   );
