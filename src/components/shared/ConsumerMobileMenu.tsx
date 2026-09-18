@@ -78,7 +78,7 @@ type ItemDeMenu = { to: string; label: string; icone: Icone };
 type GrupoDeMenu = { titulo: string; itens: ItemDeMenu[] };
 
 /**
- * O caminho da reserva, solto no topo e sem título de grupo em cima.
+ * O caminho da reserva, sob a placa de quem viaja.
  *
  * São os três destinos que terminam numa vaga comprada: o catálogo de
  * aeroportos, quanto custa em cada um e a simulação da estadia. Todo o resto do
@@ -92,9 +92,6 @@ type GrupoDeMenu = { titulo: string; itens: ItemDeMenu[] };
  * (`/estacionamentos`) e o title da página já dizem. O cabeçalho do desktop
  * ainda usa o nome antigo: trocar lá mexe em oito cenários do Windup que afirmam
  * o texto do `<header>`, e o plano deles é replay versionado, sem LLM no CI.
- *
- * Por isso aqui a linha é mais alta, o rótulo é semibold e o ícone é maior: o
- * destaque é da hierarquia, não de um aviso pedindo pra clicar.
  */
 const DESTAQUES: ItemDeMenu[] = [
   { to: "/estacionamentos", label: "Estacionamentos", icone: MapPin },
@@ -107,40 +104,47 @@ const DESTAQUES: ItemDeMenu[] = [
 ];
 
 /**
- * O resto do site, em gavetas fechadas.
+ * O outro lado da praça, numa seção com o nome do público e sem gaveta.
+ *
+ * O menu inteiro fala com quem viaja, então só o bloco do parceiro precisa de
+ * placa. Ele não é uma gaveta porque o título já o nomeia, e um título em cima de
+ * uma gaveta com o mesmo nome seria a mesma palavra duas vezes; aberto, ainda
+ * custa três linhas, que é o preço de deixar claro que ali a conversa é outra.
+ *
+ * O nome diz o público, e é o público que separa B2C de B2B. "Estacionamentos"
+ * ficou impossível no dia em que o item de cima passou a se chamar assim, e
+ * "Para empresas" atrairia a empresa que quer estacionar a frota, que é cliente,
+ * não parceiro.
+ */
+const TITULO_B2C = "Para quem viaja";
+const TITULO_B2B = "Para donos de estacionamento";
+
+const LINKS_DO_PARCEIRO: ItemDeMenu[] = [
+  { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
+  { to: "/selo", label: "Selo de parceiro", icone: Seal },
+  { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
+];
+
+/**
+ * O que sobra do site, em gavetas fechadas no pé do menu.
  *
  * Os rótulos e os títulos continuam sendo os **do rodapé**, item por item: dois
  * nomes para a mesma página fazem o leitor achar que são páginas diferentes. O
  * que muda daqui pra lá é só a ordem, e ela muda porque as duas superfícies
  * respondem a perguntas diferentes. O rodapé é o mapa do site; o menu é a
- * navegação do celular, e nele vem primeiro o dono de estacionamento, que é o
- * outro lado da praça e o que faz a oferta crescer. O suporte fecha a lista, e
- * não porque vale menos: quem precisa de ajuda chega pelo e-mail da reserva, pela
- * chamada do rodapé ou pela busca, e raramente por um menu de navegação.
+ * navegação do celular, e nele o suporte fecha a lista, não porque vale menos:
+ * quem precisa de ajuda chega pelo e-mail da reserva, pela chamada do rodapé ou
+ * pela busca, e raramente por um menu de navegação.
  *
- * O grupo do parceiro se chama "Para donos de estacionamento" nas duas
- * superfícies (aqui e no rodapé, trocado no mesmo commit). "Estacionamentos"
- * ficou impossível no dia em que o item de cima passou a se chamar assim, e
- * "Para empresas" atrairia a empresa que quer estacionar a frota, que é cliente,
- * não parceiro. O nome diz o público, e é o público que separa B2C de B2B.
- *
- * Nada some: fechado, o grupo custa um toque, e é o toque que separa "quero
+ * Nada some: fechada, a gaveta custa um toque, e é o toque que separa "quero
  * reservar" de "quero ler os termos". O teste `ConsumerMobileMenu.test.tsx` abre
- * todos os grupos e compara as duas listas, então um link novo no rodapé
+ * todas as gavetas e compara as duas listas, então um link novo no rodapé
  * continua tendo que aparecer aqui no mesmo commit.
  *
  * A exceção é a Central de Ajuda, que o rodapé não lista: ela é a porta de
  * entrada do suporte no celular, e por isso abre o grupo em vez de ficar de fora.
  */
 const GRUPOS_DO_SITE: GrupoDeMenu[] = [
-  {
-    titulo: "Para donos de estacionamento",
-    itens: [
-      { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
-      { to: "/selo", label: "Selo de parceiro", icone: Seal },
-      { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
-    ],
-  },
   {
     titulo: "Movepark",
     itens: [
@@ -177,9 +181,11 @@ const LINKS_DA_CONTA: ItemDeMenu[] = [
  * Airbnb) fazem. A cor é `mp-indigo`, a mesma que a lista da conta
  * (`AccountSidebar`) já usa em ícone de navegação.
  *
- * `destaque` é o item do topo: linha mais alta, rótulo semibold e ícone maior.
- * Sem ele, o item é de dentro de uma gaveta, e aí recua e afina, para a gaveta
- * aberta continuar lendo como um bloco subordinado ao título.
+ * São três pesos, e cada um diz onde o item está. `destaque` é o do caminho da
+ * reserva: linha mais alta, rótulo semibold e ícone maior. `recuado` é o de
+ * dentro de uma seção ou gaveta, que afina e recua para o bloco ler como
+ * subordinado ao título. O peso do meio é o da lista da conta, que não está
+ * embaixo de título nenhum e por isso não recua.
  *
  * O item atual é o único violeta. O contrato do consumer reserva o `mp-primary`
  * para elemento acionável e indicador de seleção, e é exatamente este caso: com
@@ -192,7 +198,12 @@ const LINKS_DA_CONTA: ItemDeMenu[] = [
  *
  * `min-h-11` mantém o alvo de toque acessível nos dois tamanhos.
  */
-function Item({ to, label, icone: Icone, destaque = false }: ItemDeMenu & { destaque?: boolean }) {
+function Item({
+  to,
+  label,
+  icone: Icone,
+  peso = "normal",
+}: ItemDeMenu & { peso?: "destaque" | "normal" | "recuado" }) {
   const { pathname } = useLocation();
   const ativo = secaoAtiva(pathname, to);
 
@@ -203,7 +214,9 @@ function Item({ to, label, icone: Icone, destaque = false }: ItemDeMenu & { dest
         aria-current={ativo ? "page" : undefined}
         className={cn(
           "flex min-h-11 items-center gap-3 rounded-sm px-3 transition-colors",
-          destaque ? "py-3 text-body-md font-semibold" : "py-2.5 pl-6 text-body-sm",
+          peso === "destaque" && "py-3 text-body-md font-semibold",
+          peso === "normal" && "py-2.5 text-body-md",
+          peso === "recuado" && "py-2.5 pl-6 text-body-sm",
           ativo
             ? "bg-surface-soft font-semibold text-mp-primary"
             : "text-ink hover:bg-surface-soft",
@@ -212,7 +225,7 @@ function Item({ to, label, icone: Icone, destaque = false }: ItemDeMenu & { dest
         <Icone
           className={cn(
             "shrink-0",
-            destaque ? "h-5 w-5" : "h-4 w-4",
+            peso === "recuado" ? "h-4 w-4" : "h-5 w-5",
             ativo ? "text-mp-primary" : "text-mp-indigo",
           )}
           weight={ativo ? "fill" : "regular"}
@@ -221,6 +234,37 @@ function Item({ to, label, icone: Icone, destaque = false }: ItemDeMenu & { dest
         {label}
       </Link>
     </SheetClose>
+  );
+}
+
+/**
+ * Bloco com placa: um título que nomeia o público e a lista embaixo dele.
+ *
+ * O título não é botão nem link, e por isso é discreto de propósito (`text-muted`
+ * em corpo pequeno): ele existe para o leitor saber de quem é aquele pedaço do
+ * menu, não para competir com o que está embaixo. Em caixa alta não vai, porque o
+ * contrato de escrita do projeto trata eyebrow em maiúscula como vício.
+ *
+ * `role="group"` + `aria-labelledby` para o leitor de tela anunciar a placa ao
+ * entrar no bloco, do mesmo jeito que faz na gaveta.
+ */
+function Secao({
+  titulo,
+  className,
+  children,
+}: {
+  titulo: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const id = React.useId();
+  return (
+    <div role="group" aria-labelledby={id} className={className}>
+      <p id={id} className="px-3 pb-1 text-caption-sm font-semibold text-muted">
+        {titulo}
+      </p>
+      {children}
+    </div>
   );
 }
 
@@ -277,7 +321,7 @@ function Grupo({ titulo, itens }: GrupoDeMenu) {
 
       <div id={`${id}-itens`} hidden={!aberto}>
         {itens.map((i) => (
-          <Item key={i.to} {...i} />
+          <Item key={i.to} {...i} peso="recuado" />
         ))}
       </div>
     </div>
@@ -302,10 +346,17 @@ function Grupo({ titulo, itens }: GrupoDeMenu) {
  * O formato segue o menu do QuintoAndar: marca no topo, bloco de identidade com
  * atalho para a conta, itens com ícone, e uma régua separando a conta do site.
  *
- * O painel tem todo link do rodapé, mas em dois andares: os três destinos que
- * levam a uma reserva ficam à vista, e o resto mora em gavetas fechadas. A lista
- * corrida que estava aqui tinha dezesseis linhas do mesmo peso, e o item de
- * "Estacionamentos" do topo pesava igual à "Política de privacidade" do fim.
+ * O painel tem todo link do rodapé, mas repartido por público e por peso. Em
+ * cima, sob a placa de quem viaja, os três destinos que levam a uma reserva.
+ * Embaixo, sob a placa do dono de estacionamento, o que fala com o parceiro. No
+ * pé, o institucional e o suporte, em gavetas fechadas. A lista corrida que
+ * estava aqui tinha dezesseis linhas do mesmo peso, e o item de "Estacionamentos"
+ * do topo pesava igual à "Política de privacidade" do fim.
+ *
+ * As duas placas existem porque o menu atende dois lados da mesma praça, e sem
+ * elas o "Seja parceiro" parecia oferta pra quem ia viajar. Só o bloco do
+ * parceiro precisaria de placa (o menu fala com o cliente por padrão), mas uma
+ * placa sozinha deixaria o leitor perguntando de quem é o que está acima dela.
  *
  * Vale do celular até o tablet. A virada é em 1128, e não em 744: entre os dois
  * a barra de busca completa não cabe no header, e os campos dela se sobrepunham.
@@ -323,10 +374,10 @@ export function ConsumerMobileMenu() {
     ainda acenderia duas vezes como seção atual dentro de /operator. O rodapé pode
     mantê-lo porque lá ele fala com o parceiro que ainda não entrou.
   */
-  const grupos =
+  const linksDoParceiro =
     effectiveRole === "company_operator"
-      ? GRUPOS_DO_SITE.map((g) => ({ ...g, itens: g.itens.filter((i) => i.to !== "/operator") }))
-      : GRUPOS_DO_SITE;
+      ? LINKS_DO_PARCEIRO.filter((i) => i.to !== "/operator")
+      : LINKS_DO_PARCEIRO;
 
   async function sair() {
     setAberto(false);
@@ -431,9 +482,9 @@ export function ConsumerMobileMenu() {
           </SheetClose>
         )}
 
-        {/* Régua só onde separa duas naturezas: a conta do site, e o caminho da
-            reserva do resto. Entre itens de um mesmo bloco ela dividiria o que o
-            espaço e o título já dividem. */}
+        {/* Régua só onde separa duas naturezas: a conta do site, quem viaja de quem
+            tem estacionamento, e esses dois do que sobrou. Entre itens de um mesmo
+            bloco ela dividiria o que o espaço e o título já dividem. */}
         <nav aria-label="Menu" className="mt-2 flex flex-col px-3 pb-2">
           {session && (
             <>
@@ -448,12 +499,20 @@ export function ConsumerMobileMenu() {
             </>
           )}
 
-          {DESTAQUES.map((d) => (
-            <Item key={d.to} {...d} destaque />
-          ))}
+          <Secao titulo={TITULO_B2C}>
+            {DESTAQUES.map((d) => (
+              <Item key={d.to} {...d} peso="destaque" />
+            ))}
+          </Secao>
+
+          <Secao titulo={TITULO_B2B} className="mt-3 border-t border-hairline pt-3">
+            {linksDoParceiro.map((i) => (
+              <Item key={i.to} {...i} peso="recuado" />
+            ))}
+          </Secao>
 
           <div className="mt-3 border-t border-hairline pt-3">
-            {grupos.map((g) => (
+            {GRUPOS_DO_SITE.map((g) => (
               <Grupo key={g.titulo} {...g} />
             ))}
           </div>

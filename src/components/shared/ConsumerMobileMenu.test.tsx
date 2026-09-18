@@ -5,7 +5,7 @@ import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { ConsumerFooter } from "./ConsumerFooter";
 
-const GAVETAS = ["Para donos de estacionamento", "Movepark", "Suporte"];
+const GAVETAS = ["Movepark", "Suporte"];
 
 async function abrirMenu() {
   await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
@@ -50,11 +50,12 @@ describe("ConsumerMobileMenu", () => {
         "false",
       );
     }
-    for (const rotulo of ["Perguntas frequentes", "Política de privacidade", "Seja parceiro"]) {
+    for (const rotulo of ["Perguntas frequentes", "Política de privacidade", "Blog"]) {
       expect(screen.queryByRole("link", { name: rotulo })).toBeNull();
     }
-    // O caminho da reserva não depende de toque nenhum.
+    // O caminho da reserva e o bloco do parceiro não dependem de toque nenhum.
     expect(screen.getByRole("link", { name: "Estacionamentos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Seja parceiro" })).toBeInTheDocument();
   });
 
   /** A gaveta é do menu, não do painel: abrir um grupo não pode encerrar a visita. */
@@ -109,26 +110,40 @@ describe("ConsumerMobileMenu", () => {
   });
 
   /**
-   * O título é o que deixa o polegar parar de rolar no bloco certo, e a ordem é
-   * decisão de negócio: o dono de estacionamento é o outro lado da praça e vem
-   * primeiro; o suporte fecha a lista, porque quem precisa de ajuda chega pelo
-   * e-mail da reserva ou pela chamada do rodapé, e raramente por um menu.
+   * As duas placas são o que separa os dois lados da praça: sem elas, o "Seja
+   * parceiro" parecia oferta pra quem ia viajar. Depois delas vem o que não é de
+   * nenhum dos dois em particular, e o suporte fecha a lista, porque quem precisa
+   * de ajuda chega pelo e-mail da reserva ou pela chamada do rodapé.
    */
-  it("agrupa o resto do site em três gavetas, o parceiro primeiro e o suporte por último", async () => {
+  it("reparte o menu por público: quem viaja, o dono de estacionamento e o resto", async () => {
     renderWithProviders(<ConsumerMobileMenu />);
     await abrirMenu();
 
-    // O título é o botão da gaveta, e é ele que a ordem tem que respeitar.
-    const grupos = screen.getAllByRole("group");
-    expect(grupos.map((g) => g.querySelector("button")?.textContent?.trim())).toEqual([
+    const blocos = screen.getAllByRole("group");
+    expect(blocos.map((b) => b.firstElementChild?.textContent?.trim())).toEqual([
+      "Para quem viaja",
       "Para donos de estacionamento",
       "Movepark",
       "Suporte",
     ]);
-    // O caminho da reserva fica solto acima das gavetas: é o motivo de alguém
-    // abrir o site.
-    for (const rotulo of ["Estacionamentos", "Índice de preços"]) {
-      expect(screen.getByRole("link", { name: rotulo }).closest('[role="group"]')).toBeNull();
+  });
+
+  /** Cada placa responde pelo que está embaixo dela, senão a placa mente. */
+  it("cada link fica embaixo da placa do público dele", async () => {
+    renderWithProviders(<ConsumerMobileMenu />);
+    await abrirMenu();
+
+    const blocoDe = (rotulo: string) =>
+      screen
+        .getByRole("link", { name: rotulo })
+        .closest('[role="group"]')
+        ?.firstElementChild?.textContent?.trim();
+
+    for (const rotulo of ["Estacionamentos", "Índice de preços", "Calculadora de estacionamento"]) {
+      expect(blocoDe(rotulo)).toBe("Para quem viaja");
+    }
+    for (const rotulo of ["Seja parceiro", "Selo de parceiro", "Painel do estacionamento"]) {
+      expect(blocoDe(rotulo)).toBe("Para donos de estacionamento");
     }
   });
 
@@ -146,7 +161,7 @@ describe("ConsumerMobileMenu", () => {
     );
     const atual = screen.getByRole("link", { name: "Política de cancelamento" });
     expect(atual).toHaveAttribute("aria-current", "page");
-    // As outras seguem fechadas: só a gaveta da página é que abre.
+    // A outra segue fechada: só a gaveta da página é que abre.
     expect(screen.getByRole("button", { name: "Movepark" })).toHaveAttribute(
       "aria-expanded",
       "false",
