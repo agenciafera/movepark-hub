@@ -3,7 +3,7 @@
 -- finance:read lê. Transação com rollback.
 
 begin;
-select plan(15);
+select plan(17);
 
 select has_column('public', 'payment', 'partner_release_at', 'payment.partner_release_at existe');
 
@@ -39,6 +39,11 @@ begin
     values (b3,'MP-PA-3',cust,loc,'2026-12-15T12:00:00Z','2026-12-16T12:00:00Z','cancelled',100);
   insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, refund_partner_cents, split, gateway_fee_cents, partner_release_at)
     values (b3,'pagarme','pix','booking',100,'refunded','2026-08-04T13:00:00Z','2026-08-05T10:00:00Z',100,'cancelamento (staff)', true, false, 7900, split_novo, 100, '2026-08-04T13:00:00Z');
+  -- 4: venda em custódia (sem split no gateway), estornada: entra na conta com efeito zero no saldo
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (gen_random_uuid(),'MP-PA-4',cust,loc,'2026-12-16T12:00:00Z','2026-12-17T12:00:00Z','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, split, gateway_fee_cents)
+    values ((select id from public.booking where code='MP-PA-4'),'pagarme','card','booking',100,'refunded','2026-08-10T13:00:00Z','2026-08-11T10:00:00Z',100,'cancelamento (staff)', false, split_novo, 379);
   -- acerto e saque
   insert into public.payout_debt_settlement(company_id, amount_cents, kind, note, created_at) values (cid, 3000, 'manual_payment', 'pix do dono', '2026-08-07T10:00:00Z');
   insert into public.payout_withdrawal(company_id, provider, external_transfer_id, external_recipient_id, amount_cents, fee_cents, status, requested_at, paid_at)
@@ -68,7 +73,7 @@ create temporary table _st as
 select is((select (j -> 'header' ->> 'available_cents')::int from _st), 12849, 'cabeçalho traz o saldo disponível do gateway');
 select is((select j -> 'header' ->> 'transfer_interval' from _st), 'Monthly', 'cabeçalho traz o ciclo de transferência');
 select is((select (j -> 'header' ->> 'debt_cents')::int from _st), 4900, 'dívida = 7900 absorvidos (8000 menos a taxa de 100) menos 3000 de acerto');
-select is((select jsonb_array_length(j -> 'movements') from _st), 9, 'nove movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 3 saques');
+select is((select jsonb_array_length(j -> 'movements') from _st), 11, 'onze movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 3 saques, venda e cancelamento em custódia');
 
 select is(
   (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'sale' and m ->> 'booking_code' = 'MP-PA-1'),
@@ -97,6 +102,12 @@ select is(
 select is(
   (select (m ->> 'debt_delta_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'settlement'),
   -3000, 'acerto manual reduz a dívida');
+select is(
+  (select (m ->> 'gross_cents') || '|' || (m ->> 'net_cents') || '|' || (m ->> 'note') from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'custody_sale'),
+  '8000|0|em custódia com a Movepark', 'venda em custódia aparece com a parte do parceiro e efeito zero no saldo');
+select is(
+  (select (m ->> 'gross_cents') || '|' || (m ->> 'net_cents') from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'custody_refund'),
+  '-8000|0', 'cancelamento da venda em custódia aparece, sem mexer no saldo');
 reset role;
 
 select * from finish();

@@ -412,10 +412,16 @@ function MovementRow({ m, canRefund }: { m: AccountMovement; canRefund: boolean 
           {m.kind === "refund" && m.origin === "partner" && (
             <span className="text-caption text-muted">o gateway debitou do seu saldo</span>
           )}
+          {m.kind === "custody_sale" && (
+            <span className="text-caption text-muted">o valor ficou com a Movepark e chega por repasse</span>
+          )}
+          {m.kind === "custody_refund" && (
+            <span className="text-caption text-muted">a Movepark devolveu ao cliente; nada saiu do seu saldo</span>
+          )}
           {m.status && (m.kind === "withdrawal" || m.kind === "transfer_in" || m.kind === "settlement") && (
             <Badge tone="neutral" className="mt-0.5 w-fit">{STATUS_LABEL[m.status] ?? m.status}</Badge>
           )}
-          {m.note && <span className="text-caption text-muted">{m.note}</span>}
+          {m.note && m.kind !== "custody_sale" && <span className="text-caption text-muted">{m.note}</span>}
         </div>
       </TableCell>
       <TableCell className="font-mono text-caption">{m.booking_code ?? "-"}</TableCell>

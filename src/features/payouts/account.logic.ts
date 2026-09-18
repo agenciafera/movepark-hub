@@ -1,6 +1,14 @@
 // Lógica pura da conta do parceiro (E0.3.7): tipos do extrato e os rótulos, sem React.
 
-export type MovementKind = "sale" | "refund" | "debt" | "settlement" | "transfer_in" | "withdrawal";
+export type MovementKind =
+  | "sale"
+  | "refund"
+  | "debt"
+  | "settlement"
+  | "transfer_in"
+  | "withdrawal"
+  | "custody_sale"
+  | "custody_refund";
 
 export interface AccountMovement {
   kind: MovementKind;
@@ -49,6 +57,8 @@ export const MOVEMENT_LABEL: Record<MovementKind, string> = {
   settlement: "Acerto de dívida",
   transfer_in: "Repasse da Movepark",
   withdrawal: "Saque para o banco",
+  custody_sale: "Venda (em custódia)",
+  custody_refund: "Venda em custódia cancelada",
 };
 
 /** Como o dinheiro sai do recebedor para a conta bancária, em uma frase. */

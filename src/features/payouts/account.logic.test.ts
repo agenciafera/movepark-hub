@@ -113,3 +113,12 @@ describe("negativeRecipientAlert", () => {
     );
   });
 });
+
+describe("venda em custódia", () => {
+  it("tem rótulo próprio e não mexe nos totais do saldo", () => {
+    const custodia = { ...base, kind: "custody_sale" as const, net_cents: 0 };
+    const cancelada = { ...base, kind: "custody_refund" as const, gross_cents: -1440, net_cents: 0 };
+    expect(summarizeMovements([custodia, cancelada])).toEqual({ in_cents: 0, out_cents: 0, debt_delta: 0 });
+    expect(releaseLabel(custodia, (s) => s)).toBe("");
+  });
+});

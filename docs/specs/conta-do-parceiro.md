@@ -39,6 +39,11 @@ Só hub_admin, ou membro da empresa com `finance:read`. Devolve:
 - `header`: status e id do recebedor, `recipient_missing`, saldo disponível, a liberar e já
   transferido (com `balance_synced_at`), ciclo de transferência (`transfer_enabled`,
   `transfer_interval`, `transfer_day`) e `debt_cents` (`payout_debt_cents`).
+- Vendas **em custódia** (cobrança sem split no gateway) também entram, desde 18/09/2026: `kind`
+  `custody_sale` e `custody_refund`, com a parte do parceiro em `gross_cents` e **efeito zero** em
+  `net_cents`, porque o dinheiro ficou na Movepark e chega por repasse (migration
+  `20261121030000_venda_em_custodia_na_conta.sql`). Antes elas ficavam de fora e o parceiro não
+  via a própria venda.
 - `movements`, cada um com `kind`, `at`, `booking_code`, `gross_cents`, `fee_cents`,
   `debt_recovered_cents`, `net_cents` (efeito no saldo do recebedor), `debt_delta_cents`
   (efeito na dívida), `release_at`/`release_status` (venda), `origin` (estorno), `status`, `note`:
