@@ -8,7 +8,7 @@
 --   5. os grants dos ajudantes internos, que vazariam histórico de terceiro se afrouxarem.
 
 begin;
-select plan(19);
+select plan(22);
 
 -- ---------------------------------------------------------------------------
 -- Fixture
@@ -180,6 +180,32 @@ select ok(
 select ok(
   has_function_privilege('authenticated', 'public.customer_coupon_wallet(uuid,timestamptz,timestamptz,uuid)', 'execute'),
   'a carteira em si é chamável pelo cliente logado');
+
+-- ---------------------------------------------------------------------------
+-- 9. Gestão da campanha (Manager)
+-- ---------------------------------------------------------------------------
+-- Sem JWT, `is_hub_admin()` é falso. As duas RPCs de gestão precisam recusar, e não cair no
+-- update: um gate que só existe na tela deixaria qualquer `authenticated` pausar campanha.
+select throws_ok(
+  $$select public.manager_set_platform_coupon_active(
+      (select id from public.coupon where code = 'BEMVINDO30'), false)$$,
+  '42501',
+  null,
+  'pausar campanha sem ser hub_admin é recusado');
+
+select throws_ok(
+  $$select public.manager_upsert_platform_coupon(
+      null, 'QUALQUER', null, null, null, 'fixed', 10, null, 'public', null,
+      null, null, null, null, null, null, true, 0)$$,
+  '42501',
+  null,
+  'criar campanha sem ser hub_admin é recusado');
+
+-- A campanha segue ativa: a recusa não pode ter passado pelo update antes de levantar.
+select is(
+  (select is_active from public.coupon where code = 'BEMVINDO30'),
+  true,
+  'a recusa acontece ANTES do update, não depois');
 
 select * from finish();
 rollback;

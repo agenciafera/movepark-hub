@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CouponWallet, WalletCoupon } from "./couponWallet.logic";
+import type { PlatformCouponUpsertArgs } from "./platformCoupons.logic";
 
 /**
  * Contexto do pedido. Sem ele a carteira lista condições; com ele o banco devolve veredito,
@@ -104,6 +105,85 @@ export function useRemoveCouponFromBooking() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: couponWalletKeys.all });
       qc.invalidateQueries({ queryKey: ["checkout-booking"] });
+    },
+  });
+}
+
+// --- Gestão das campanhas da Movepark (Manager) ------------------------------------------------
+
+export const platformCouponKeys = {
+  all: ["platform-coupons"] as const,
+  list: () => [...platformCouponKeys.all, "list"] as const,
+};
+
+/**
+ * Lista as campanhas da Movepark. A RPC é gateada por `is_hub_admin()` e filtra
+ * `company_id is null`, então cupom de parceiro nunca aparece aqui por acidente.
+ */
+export function usePlatformCoupons() {
+  return useQuery({
+    queryKey: platformCouponKeys.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("manager_list_platform_coupons");
+      if (error) throw error;
+      return (data ?? []) as PlatformCouponRow[];
+    },
+  });
+}
+
+export type PlatformCouponRow = {
+  id: string;
+  code: string;
+  title: string | null;
+  description: string | null;
+  terms: string | null;
+  discount_type: "percent" | "fixed";
+  discount_value: number | string;
+  max_discount_amount: number | string | null;
+  audience: string;
+  audience_inactive_days: number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  max_uses: number | null;
+  times_used: number;
+  per_user_limit: number | null;
+  min_amount: number | string | null;
+  min_days: number | null;
+  is_active: boolean;
+  sort_order: number;
+};
+
+/** Cria ou edita uma campanha. O servidor recusa percentual sem teto. */
+export function useUpsertPlatformCoupon() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: PlatformCouponUpsertArgs) => {
+      const { data, error } = await supabase.rpc("manager_upsert_platform_coupon", args as never);
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: platformCouponKeys.all });
+      // A carteira do cliente muda junto: campanha nova aparece sem recarregar a página.
+      qc.invalidateQueries({ queryKey: couponWalletKeys.all });
+    },
+  });
+}
+
+/** Pausa ou retoma a campanha sem abrir o formulário. */
+export function useSetPlatformCouponActive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.rpc("manager_set_platform_coupon_active", {
+        p_coupon_id: vars.id,
+        p_is_active: vars.is_active,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: platformCouponKeys.all });
+      qc.invalidateQueries({ queryKey: couponWalletKeys.all });
     },
   });
 }

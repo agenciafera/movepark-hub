@@ -1,0 +1,67 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-marketing-cupons",
+    "start_url": "/manager/marketing/cupons",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "7a08476765e33f58"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-marketing-cupons",
+    "start_url": "http://localhost:5187/manager/marketing/cupons",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Wait for the body element to load"
+        }
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Verify that the page displays 'Cupons da Movepark'"
+        }
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Verify that the page displays 'BEMVINDO30'"
+        }
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "body",
+          "description": "Final check for the text 'BEMVINDO30'"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Cupons da Movepark"
+          }
+        }
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Cupons da Movepark\". Passo 2: verifique que a pagina exibe o texto \"BEMVINDO30\".",
+    "generated_by": {
+      "model": "google/gemini-3.5-flash",
+      "at": "2026-09-18T18:43:20.427Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-18T18:43:26.565Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

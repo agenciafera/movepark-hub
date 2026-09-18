@@ -1,0 +1,122 @@
+{
+  "scenario_id": "manager-marketing-cupons",
+  "start_url": "/manager/marketing/cupons",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Cupons da Movepark\". Passo 2: verifique que a pagina exibe o texto \"BEMVINDO30\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\", \"token_type\": \"bearer\", \"expires_in\": 999999999, \"expires_at\": 4102444800, \"refresh_token\": \"windup-fake-refresh\", \"user\": {\"id\": \"00000000-0000-4000-8000-000000000001\", \"aud\": \"authenticated\", \"role\": \"authenticated\", \"email\": \"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/marketing_segment*",
+      "json": [
+        {
+          "id": "seg-1",
+          "name": "Recorrentes do Confins",
+          "slug": "recorrentes-confins",
+          "description": "Quem ja voltou pelo menos uma vez",
+          "definition": {
+            "match": "all",
+            "rules": [
+              {
+                "field": "bookings_count",
+                "op": "gte",
+                "value": 2
+              }
+            ]
+          },
+          "location_ids": [],
+          "created_by": null,
+          "created_at": "2026-08-01T00:00:00Z",
+          "updated_at": "2026-08-01T00:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/manager_list_platform_coupons*",
+      "json": [
+        {
+          "id": "cup-1",
+          "code": "BEMVINDO30",
+          "title": "Primeira reserva",
+          "description": null,
+          "terms": "Vale na sua primeira reserva. 30% de desconto, ate R$ 40.",
+          "discount_type": "percent",
+          "discount_value": "30.00",
+          "max_discount_amount": "40.00",
+          "audience": "first_purchase",
+          "audience_inactive_days": null,
+          "valid_from": null,
+          "valid_until": null,
+          "max_uses": null,
+          "times_used": 0,
+          "per_user_limit": 1,
+          "min_amount": null,
+          "min_days": null,
+          "is_active": true,
+          "sort_order": 10
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "Sao duas checagens de texto, nada mais: nao navegue, nao clique, nao abra formulario.",
+    "Use text_contains com selector body nas duas."
+  ]
+}

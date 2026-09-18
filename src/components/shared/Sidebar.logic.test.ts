@@ -207,9 +207,9 @@ describe("itens com subitens", () => {
   });
 });
 
-/** O menu do manager tem uma linha só para marketing, com as quatro telas dentro. */
+/** O menu do manager tem uma linha só para marketing, com as cinco telas dentro. */
 describe("marketing ocupa uma linha do menu do manager", () => {
-  it("existe um item Automação com os quatro subitens", () => {
+  it("existe um item Automação com os cinco subitens", () => {
     const automacao = managerSections
       .flatMap((s) => s.items)
       .find((i) => i.label === "Automação");
@@ -218,6 +218,7 @@ describe("marketing ocupa uma linha do menu do manager", () => {
       "Leads",
       "Segmentos",
       "Campanhas",
+      "Cupons",
     ]);
   });
 

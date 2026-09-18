@@ -114,6 +114,7 @@ valendo e chega ao checkout já aplicado.
 |---|---|
 | `/account/descontos` | A carteira. Lista condições, sem veredito, porque não há pedido para julgar |
 | Resumo do checkout | Linha "Usar cupom" que abre a carteira no contexto da reserva, com veredito, motivo e valor |
+| `/manager/marketing/cupons` | Onde a Movepark cria e pausa a campanha. Separada de `/operator/coupons`, onde o parceiro cria a dele e banca o desconto |
 
 `apply_coupon_to_booking` / `remove_coupon_from_booking` mexem no total de reserva **`pending`** do
 próprio cliente. Depois do pagamento a porta fecha: mudar o total quebraria o split já enviado.
@@ -142,6 +143,7 @@ tem `checkout_mode = 'external'`, e a regra mora **no banco**, não só na UI, p
 | `remove_coupon_from_booking(booking)` | checkout | dono da reserva + `pending` |
 | `manager_upsert_platform_coupon(...)` | Manager | `is_hub_admin()` |
 | `manager_list_platform_coupons()` | Manager | `is_hub_admin()` |
+| `manager_set_platform_coupon_active(id, ativo)` | Manager | `is_hub_admin()` |
 | `coupon_customer_stats(profile)` | interno | sem grant a anon/authenticated |
 | `coupon_evaluate(...)` | interno | sem grant a anon/authenticated |
 
@@ -165,9 +167,10 @@ pessoa tem 0, 1 ou mais reservas pagas.
 | Camada | Onde |
 |---|---|
 | Lógica pura | `src/features/customer-coupons/couponWallet.logic.test.ts` (21 casos) |
+| Lógica do formulário | `src/features/customer-coupons/platformCoupons.logic.test.ts` (21 casos) |
 | Split | `supabase/functions/_shared/payments/split.test.ts` (3 casos novos, incluindo a recusa por teto estourado) |
 | Banco | `supabase/tests/coupon_wallet.test.sql` |
-| Navegador | `e2e/windup/account-descontos.json` |
+| Navegador | `e2e/windup/account-descontos.json` e `e2e/windup/manager-marketing-cupons.json` |
 
 **O que ainda não dá para automatizar:** a carteira em contexto de pedido precisa de uma unidade
 `checkout_mode = 'hub'` **com preço**, e hoje as 20 unidades hub do banco não têm tabela de preço
@@ -175,8 +178,6 @@ pessoa tem 0, 1 ou mais reservas pagas.
 
 ## 8. Pendências
 
-- **Manager não tem tela de cupom de plataforma.** As RPCs existem e são gateadas por `is_hub_admin`;
-  a UI ainda não. Hoje a campanha nova entra por migration.
 - **Segmento de RFM como audiência** quando a base passar de 25 clientes com compra.
 - **Atribuição:** quantas reservas cada campanha gerou. Depende do RF-007 do
   [marketing-rfm.md](./marketing-rfm.md), que ainda não rastreia reserva por campanha.

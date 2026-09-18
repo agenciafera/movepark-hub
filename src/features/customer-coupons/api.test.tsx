@@ -4,7 +4,13 @@ import {
   useApplyCouponToBooking,
   useRedeemCoupon,
   useRemoveCouponFromBooking,
+  useSetPlatformCouponActive,
+  useUpsertPlatformCoupon,
 } from "./api";
+import {
+  buildPlatformCouponArgs,
+  EMPTY_PLATFORM_COUPON_FORM,
+} from "./platformCoupons.logic";
 
 /**
  * Contrato de rede da carteira de cupons.
@@ -100,5 +106,64 @@ describe("useRemoveCouponFromBooking", () => {
 
     const { result } = renderMutation(() => useRemoveCouponFromBooking());
     await expect(result.current.mutateAsync("bk-1")).rejects.toThrow(/fora/);
+  });
+});
+
+describe("useUpsertPlatformCoupon", () => {
+  it("manda os argumentos montados pelo builder, sem perder campo", async () => {
+    const args = buildPlatformCouponArgs(null, {
+      ...EMPTY_PLATFORM_COUPON_FORM,
+      code: "BEMVINDO30",
+      discount_type: "percent",
+      discount_value: 30,
+      max_discount_amount: 40,
+      audience: "first_purchase",
+    });
+    const espiao = rpc("manager_upsert_platform_coupon", { json: "cup-1" });
+
+    const { result } = renderMutation(() => useUpsertPlatformCoupon());
+    const id = await result.current.mutateAsync(args);
+
+    expect(espiao.ultimoBody).toEqual(args);
+    expect(id).toBe("cup-1");
+  });
+
+  it("propaga a recusa do servidor, que e quem manda no teto", async () => {
+    // O front ja valida, mas a RPC e a autoridade: um percentual sem teto que passasse pela tela
+    // ainda seria barrado aqui, e a mensagem precisa chegar no gestor.
+    falha("rpc", "manager_upsert_platform_coupon", 400, "exige teto (max_discount_amount)");
+
+    const { result } = renderMutation(() => useUpsertPlatformCoupon());
+    await expect(
+      result.current.mutateAsync(
+        buildPlatformCouponArgs(null, {
+          ...EMPTY_PLATFORM_COUPON_FORM,
+          code: "X",
+          discount_value: 30,
+        }),
+      ),
+    ).rejects.toThrow(/teto/);
+  });
+});
+
+describe("useSetPlatformCouponActive", () => {
+  it("pausar manda false, e o false nao se perde", async () => {
+    // Pausar e o gesto urgente: se o campo sumisse, a campanha continuaria descontando enquanto a
+    // tela mostra desligada.
+    const espiao = rpc("manager_set_platform_coupon_active", { json: null });
+
+    const { result } = renderMutation(() => useSetPlatformCouponActive());
+    await result.current.mutateAsync({ id: "cup-9", is_active: false });
+
+    expect(espiao.ultimoBody).toEqual({ p_coupon_id: "cup-9", p_is_active: false });
+  });
+
+  it("propaga a recusa de quem nao e hub_admin", async () => {
+    falha("rpc", "manager_set_platform_coupon_active", 403, "Apenas a equipe Movepark");
+
+    const { result } = renderMutation(() => useSetPlatformCouponActive());
+    await expect(
+      result.current.mutateAsync({ id: "cup-9", is_active: true }),
+    ).rejects.toThrow(/Movepark/);
   });
 });
