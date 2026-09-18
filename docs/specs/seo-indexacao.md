@@ -171,10 +171,11 @@ que fecham reserva, então não é saída para improvisar.
    `robots.ts` que **libera o crawl** delas. Bloquear no `robots.txt` antes de o Google ler o
    `noindex` congelaria as URLs no índice, a mesma regra do `movepark.co` (ver "Áreas privadas").
    A rota-modelo `/[category]/[product]` tem que responder 404.
-2. **As páginas que vendem ficam indexadas** até uma decisão de produto: se o dono da consulta
-   deve ser o white-label do parceiro ou a ficha do Hub em `/estacionamentos/<destino>/<lote>`.
-   É escolha comercial, não técnica, porque o parceiro com `checkout_mode = external` fecha a
-   reserva justamente no white-label.
+2. **As páginas que vendem ficam indexadas. Decidido em 18/09/2026:** os white-labels seguem no
+   índice, e não recebem canonical para o Hub. O motivo é comercial: o parceiro com
+   `checkout_mode = external` fecha a reserva justamente no white-label, e as páginas dele somam
+   mais de 1.600 cliques em 16 meses. O `noindex` fica restrito ao que não vende: login, conta,
+   recuperação de senha, etapas de checkout e a rota-modelo vazada.
 3. **Ferramentas internas**: `n8n` e `chatbuilder` atrás de Cloudflare Access (ou equivalente),
    o que resolve a exposição e a busca de uma vez.
 4. **Remover do DNS** `moveparking` e `estacionamentos`.
