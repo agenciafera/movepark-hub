@@ -114,6 +114,7 @@ valendo e chega ao checkout já aplicado.
 |---|---|
 | `/account/descontos` | A carteira, acionável. Ver §4.1 |
 | Resumo do checkout | Linha "Usar cupom" que abre a carteira no contexto da reserva, com veredito, motivo e valor |
+| `/descontos` | **Vitrine pública**, sem login. Ver §4.2 |
 | `/manager/marketing/cupons` | Onde a Movepark cria e pausa a campanha. Separada de `/operator/coupons`, onde o parceiro cria a dele e banca o desconto |
 
 `apply_coupon_to_booking` / `remove_coupon_from_booking` mexem no total de reserva **`pending`** do
@@ -136,6 +137,31 @@ motivo e o desconto real: é o mesmo seletor do checkout, alcançado por outra p
 Sem reserva aberta **não existe pedido para julgar**, e prometer "disponível" ali seria mentira: o
 desconto depende do preço, do tipo de vaga e de a unidade fechar a reserva no Hub. Por isso o
 cartão mostra condições e o botão fala em guardar, não em usar.
+
+### 4.2 A vitrine pública, para quem ainda não tem conta
+
+A carteira exige login, e `BEMVINDO30` é campanha de **aquisição**: quem nunca reservou, que é o
+alvo, nunca via que o desconto existia. `/descontos` fecha esse furo.
+
+Duas defesas moram no servidor, não na tela:
+
+**`coupon.is_advertised`** separa "existe" de "é anunciado". Campanha de retenção pode continuar
+funcionando sem virar cartaz. O nome não é `is_public` para não colidir com `audience = 'public'`:
+um diz QUEM pode usar, o outro se vira propaganda. Um `CHECK` impede cupom de parceiro de entrar,
+porque a página é da rede e dar holofote a uma empresa seria desigual.
+
+**O guard de capacidade (ADR-009).** `public_coupon_offers()` conta as unidades `hub` vendáveis
+pelos **mesmos filtros do `get_pricing_data`** e devolve lista vazia quando não há nenhuma. Contar
+`pricing_rule` sozinho mentiria: as 20 unidades hub têm regra e **nenhuma é vendável** (as 18 com
+preço são todas `external`, que não aceitam cupom). Sem o guard, a página anunciaria 30% num dia em
+que nenhuma reserva aceita cupom.
+
+> **Estado em 18/09/2026: a vitrine está vazia, e isso está certo.** Ela acende sozinha, sem
+> deploy, no dia em que o Hub ganhar a primeira unidade vendável. Medido: com uma unidade ligada,
+> a RPC passa a devolver as 4 campanhas.
+
+A RPC não roda `simulate_price` de propósito: a chamada é anônima e o `anon` tem
+`statement_timeout` curto.
 
 O canal do "guardar" é o **mesmo do link de campanha** (`?cupom=`): a página da unidade já lê
 `getStoredCoupon()` e passa o código ao criar a reserva. Não há caminho novo para manter, e o
@@ -195,6 +221,8 @@ pessoa tem 0, 1 ou mais reservas pagas.
 | Lógica pura | `src/features/customer-coupons/couponWallet.logic.test.ts` (21 casos) |
 | Lógica do formulário | `src/features/customer-coupons/platformCoupons.logic.test.ts` (21 casos) |
 | Os dois modos da tela | `src/routes/account/descontos.test.tsx` (3 casos) |
+| Cartão da vitrine | `src/features/customer-coupons/publicOffers.logic.test.ts` (11 casos) |
+| Guard da vitrine | `src/routes/descontos.test.tsx` (3 casos) e `coupon_wallet.test.sql` §10 |
 | Split | `supabase/functions/_shared/payments/split.test.ts` (3 casos novos, incluindo a recusa por teto estourado) |
 | Banco | `supabase/tests/coupon_wallet.test.sql` |
 | Navegador | `e2e/windup/account-descontos.json` e `e2e/windup/manager-marketing-cupons.json` |

@@ -19,6 +19,7 @@ export const SITEMAP_STATIC_ROUTES = [
   "/",
   "/sobre",
   "/como-funciona",
+  "/descontos",
   "/faq",
   "/ajuda",
   "/contato",

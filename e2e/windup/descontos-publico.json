@@ -1,0 +1,36 @@
+{
+  "scenario_id": "descontos-publico",
+  "start_url": "/descontos",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Cupons de desconto\". Passo 2: verifique que a pagina exibe o texto \"Primeira reserva\".",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "Sao duas checagens de leitura: nao clique, nao navegue, nao preencha campo.",
+    "Asserte text_contains em elemento de conteudo (o h1 e o cartao da campanha).",
+    "Nao asserte em body, html, main, div nem #root: pos-condicao trivial e recusada."
+  ],
+  "network": [
+    {
+      "url": "**/rpc/public_coupon_offers*",
+      "json": {
+        "honored_by_units": 3,
+        "offers": [
+          {
+            "code": "BEMVINDO30",
+            "title": "Primeira reserva",
+            "terms": null,
+            "discount_type": "percent",
+            "discount_value": "30.00",
+            "max_discount_amount": "40.00",
+            "min_days": null,
+            "min_amount": null,
+            "valid_until": null,
+            "audience": "first_purchase"
+          }
+        ]
+      }
+    }
+  ]
+}

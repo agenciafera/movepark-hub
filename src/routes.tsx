@@ -68,6 +68,7 @@ import ContatoPage from "@/routes/contato";
 import AjudaPage from "@/routes/ajuda";
 import CancelamentoPage from "@/routes/cancelamento";
 import ComoFuncionaPage from "@/routes/como-funciona";
+import DescontosPublicoPage from "@/routes/descontos";
 import MetodologiaPage, { type MetodologiaData } from "@/routes/metodologia";
 import EstacionamentoMaisBaratoPage from "@/routes/estacionamento-mais-barato";
 
@@ -885,6 +886,7 @@ export const routes: RouteRecord[] = [
           // Descadastro de marketing pelo link do e-mail. Público e sem login de propósito.
           { path: "/descadastro", element: <DescadastroPage /> },
           { path: "/como-funciona", element: <ComoFuncionaPage /> },
+          { path: "/descontos", element: <DescontosPublicoPage /> },
           { path: "/metodologia", element: <MetodologiaPage />, loader: metodologiaLoader },
           { path: "/grupo", element: <GrupoPage /> },
           { path: "/docs", element: <DocsPage /> },

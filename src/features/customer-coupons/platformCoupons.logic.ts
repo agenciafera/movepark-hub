@@ -30,6 +30,7 @@ export type PlatformCouponFormValues = {
   min_amount: number | null;
   min_days: number | null;
   is_active: boolean;
+  is_advertised: boolean;
   sort_order: number | null;
 };
 
@@ -51,6 +52,7 @@ export type PlatformCouponUpsertArgs = {
   p_min_amount: number | null;
   p_min_days: number | null;
   p_is_active: boolean;
+  p_is_advertised: boolean;
   p_sort_order: number;
 };
 
@@ -71,6 +73,7 @@ export const EMPTY_PLATFORM_COUPON_FORM: PlatformCouponFormValues = {
   min_amount: null,
   min_days: null,
   is_active: true,
+  is_advertised: false,
   sort_order: 0,
 };
 
@@ -161,6 +164,7 @@ export function buildPlatformCouponArgs(
     p_min_amount: v.min_amount,
     p_min_days: v.min_days,
     p_is_active: v.is_active,
+    p_is_advertised: v.is_advertised,
     p_sort_order: v.sort_order ?? 0,
   };
 }
@@ -183,6 +187,7 @@ export function platformCouponToForm(c: {
   min_amount: number | string | null;
   min_days: number | null;
   is_active: boolean;
+  is_advertised: boolean;
   sort_order: number;
 }): PlatformCouponFormValues {
   const dia = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
@@ -204,6 +209,7 @@ export function platformCouponToForm(c: {
     min_amount: num(c.min_amount),
     min_days: c.min_days,
     is_active: c.is_active,
+    is_advertised: c.is_advertised,
     sort_order: c.sort_order,
   };
 }

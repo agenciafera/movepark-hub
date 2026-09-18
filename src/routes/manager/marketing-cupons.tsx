@@ -317,6 +317,21 @@ function CampanhaDialog({
             />
           </div>
 
+          <div className="flex items-start justify-between gap-4 rounded-md border border-hairline p-3">
+            <div>
+              <Label htmlFor="is_advertised">Anunciar na página pública</Label>
+              <p className="mt-1 text-caption-sm text-muted">
+                Mostra a campanha em /descontos, que quem ainda não tem conta consegue abrir.
+                Desligado, ela continua valendo, só não vira cartaz.
+              </p>
+            </div>
+            <Switch
+              id="is_advertised"
+              checked={form.is_advertised}
+              onCheckedChange={(c) => set("is_advertised", c)}
+            />
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancelar

@@ -53,6 +53,7 @@ const groups: FooterGroup[] = [
     links: [
       { to: "/faq", label: "Perguntas frequentes" },
       { to: "/como-funciona", label: "Como funciona" },
+      { to: "/descontos", label: "Cupons de desconto" },
       { to: "/cancelamento", label: "Política de cancelamento" },
       { to: "/contato", label: "Fale conosco" },
     ],

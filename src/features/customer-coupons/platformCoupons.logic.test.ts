@@ -145,6 +145,7 @@ describe("platformCouponToForm", () => {
       min_amount: null,
       min_days: null,
       is_active: true,
+      is_advertised: true,
       sort_order: 30,
     });
     expect(v.discount_value).toBe(20);
@@ -176,6 +177,7 @@ describe("platformCouponToForm", () => {
       min_amount: args.p_min_amount,
       min_days: args.p_min_days,
       is_active: args.p_is_active,
+      is_advertised: args.p_is_advertised,
       sort_order: args.p_sort_order,
     });
     expect(devolta.code).toBe("BEMVINDO30");

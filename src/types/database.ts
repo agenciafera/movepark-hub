@@ -1423,6 +1423,7 @@ export type Database = {
           funded_by: Database["public"]["Enums"]["coupon_funding"]
           id: string
           is_active: boolean
+          is_advertised: boolean
           max_discount_amount: number | null
           max_uses: number | null
           min_amount: number | null
@@ -1448,6 +1449,7 @@ export type Database = {
           funded_by?: Database["public"]["Enums"]["coupon_funding"]
           id?: string
           is_active?: boolean
+          is_advertised?: boolean
           max_discount_amount?: number | null
           max_uses?: number | null
           min_amount?: number | null
@@ -1473,6 +1475,7 @@ export type Database = {
           funded_by?: Database["public"]["Enums"]["coupon_funding"]
           id?: string
           is_active?: boolean
+          is_advertised?: boolean
           max_discount_amount?: number | null
           max_uses?: number | null
           min_amount?: number | null
@@ -6795,6 +6798,7 @@ export type Database = {
           funded_by: Database["public"]["Enums"]["coupon_funding"]
           id: string
           is_active: boolean
+          is_advertised: boolean
           max_discount_amount: number | null
           max_uses: number | null
           min_amount: number | null
@@ -7001,6 +7005,7 @@ export type Database = {
           p_discount_value: number
           p_id: string
           p_is_active: boolean
+          p_is_advertised: boolean
           p_max_discount_amount: number
           p_max_uses: number
           p_min_amount: number
@@ -7579,6 +7584,7 @@ export type Database = {
           target: string
         }[]
       }
+      public_coupon_offers: { Args: never; Returns: Json }
       public_slug_reservado: { Args: { p_slug: string }; Returns: boolean }
       publish_legal_document: {
         Args: { p_content: string; p_slug: string }

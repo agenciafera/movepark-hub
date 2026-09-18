@@ -8,7 +8,7 @@
 --   5. os grants dos ajudantes internos, que vazariam histórico de terceiro se afrouxarem.
 
 begin;
-select plan(22);
+select plan(26);
 
 -- ---------------------------------------------------------------------------
 -- Fixture
@@ -206,6 +206,36 @@ select is(
   (select is_active from public.coupon where code = 'BEMVINDO30'),
   true,
   'a recusa acontece ANTES do update, não depois');
+
+-- ---------------------------------------------------------------------------
+-- 10. Vitrine pública: o guard de capacidade (ADR-009)
+-- ---------------------------------------------------------------------------
+-- É a regra mais cara de errar do E3.3: se o guard falhar, a página pública anuncia 30% num dia
+-- em que nenhuma unidade aceita cupom. A promessa vira dívida com o cliente e com o CDC art. 30.
+
+select ok(
+  has_function_privilege('anon', 'public.public_coupon_offers()', 'execute'),
+  'anônimo executa a vitrine: a página existe justamente para quem não tem conta');
+
+-- Nenhuma unidade hub vendável no ambiente de teste, então a vitrine tem que sair vazia mesmo
+-- havendo campanha anunciada no catálogo.
+select is(
+  jsonb_array_length(public.public_coupon_offers() -> 'offers'),
+  0,
+  'sem unidade que honre cupom, a vitrine não anuncia nada');
+
+select cmp_ok(
+  (select count(*)::int from public.coupon where company_id is null and is_advertised),
+  '>', 0,
+  'e isso NÃO é por falta de campanha: há cupom anunciado no catálogo');
+
+-- Cupom de parceiro não pode virar cartaz da Movepark.
+select throws_ok(
+  $$update public.coupon set is_advertised = true
+    where company_id is not null$$,
+  '23514',
+  null,
+  'cupom de parceiro não entra na vitrine da plataforma');
 
 select * from finish();
 rollback;

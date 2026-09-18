@@ -150,6 +150,7 @@ export type PlatformCouponRow = {
   min_amount: number | string | null;
   min_days: number | null;
   is_active: boolean;
+  is_advertised: boolean;
   sort_order: number;
 };
 
@@ -234,6 +235,49 @@ export function useReservaEmAndamento(enabled = true) {
         code: row.code,
         expires_at: row.expires_at,
         location_name: row.location?.name ?? null,
+      };
+    },
+  });
+}
+
+// --- Vitrine pública (quem ainda não tem conta) -------------------------------------------------
+
+export type OfertaPublica = {
+  code: string;
+  title: string | null;
+  terms: string | null;
+  discount_type: "percent" | "fixed";
+  discount_value: number | string;
+  max_discount_amount: number | string | null;
+  min_days: number | null;
+  min_amount: number | string | null;
+  valid_until: string | null;
+  audience: string;
+};
+
+export type VitrinePublica = {
+  offers: OfertaPublica[];
+  /** Unidades do Hub que podem honrar cupom. Zero significa vitrine vazia por ADR-009. */
+  honored_by_units: number;
+};
+
+/**
+ * Campanhas anunciadas publicamente. Roda sem sessão: a página existe justamente para quem ainda
+ * não tem conta e por isso nunca veria a carteira.
+ *
+ * O servidor devolve lista vazia quando nenhuma unidade do Hub pode honrar cupom, então a tela
+ * nunca precisa decidir se pode prometer: ela só desenha o que chegou.
+ */
+export function useVitrinePublica() {
+  return useQuery({
+    queryKey: ["vitrine-publica-cupons"],
+    queryFn: async (): Promise<VitrinePublica> => {
+      const { data, error } = await supabase.rpc("public_coupon_offers");
+      if (error) throw error;
+      const raw = (data ?? {}) as { offers?: unknown[]; honored_by_units?: number };
+      return {
+        offers: (raw.offers ?? []) as OfertaPublica[],
+        honored_by_units: Number(raw.honored_by_units ?? 0),
       };
     },
   });
