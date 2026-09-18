@@ -238,21 +238,85 @@ online em lote parceiro. Isso é comparação de fato, não promessa.
 pergunta de operação, com resposta binária, que resolve uma dúvida real de quem já está dirigindo
 para o aeroporto. Custo de produção baixíssimo, e vira FAQ, post e reels.
 
+> **Portão rodado em 18/09/2026: entra como FAQ, não como post.** O levantamento na fonte primária
+> achou resposta literal em dois dos quatro aeroportos. O GRU Airport lista "Tags eletrônicas: Sem
+> Parar, Connect Car, Veloe e Taggy", e o BH Airport declara "abertura de cancela e pagamento
+> automático via Sem Parar, Conectcar, Veloe e Taggy". Viracopos publica a tabela de tarifas e não
+> publica meio de pagamento. Afonso Pena não publica nenhum dos dois, e o operador do estacionamento
+> descreve liberação por QR Code e por leitura de placa, sem citar tag. A ficha da unidade segue sem
+> declarar meio de pagamento na cancela, então a resposta sobre o parceiro continua sendo "confirme
+> com a unidade". Resposta binária de 50 palavras não sustenta 3.000, e `/faq/<slug>` é o formato
+> certo para ela.
+
 **4.3 Terminal e setor (79 termos, 61 só em GRU).** "Terminal 3 preço", "Terminal 2 edifício
 garagem", "portão 2", "P1 e P3 em Confins", "área C em Curitiba", "bolsão F em Viracopos". O
 buscador está pensando em geografia interna do aeroporto, e nenhum comparador fala essa língua.
 Uma página por terminal em GRU é a maior oportunidade isolada do plano.
 
-**4.4 Moto (11 termos).** O motor já tem `parking_type_code = motorcycle`, e o índice de preços já
-separa moto de carro. É conteúdo com produto pronto atrás.
+**4.4 Moto (11 termos).** O motor tem `parking_type_code = motorcycle`, e o índice de preços já
+separa moto de carro.
+
+> **Portão rodado em 18/09/2026: sai da pauta, e a conclusão "produto pronto atrás" estava errada.**
+> O tipo existe no motor, mas nenhuma unidade de aeroporto tem vaga de moto ativa: a única
+> `location_parking_type` com `motorcycle` é a de Nova Iguaçu, que não é aeroporto. Não existe
+> diária de moto para reservar em aeroporto nenhum, então não há o que vender. Na fonte primária, a
+> única tarifa de moto publicada nos quatro aeroportos é a do Pátio Motos do BH Airport, R$ 10,00
+> por 30 minutos e R$ 30,00 a diária. A frente volta à pauta no dia em que um parceiro cadastrar o
+> tipo. Até lá o cluster é respondido por FAQ, que é o formato honesto para "não temos".
 
 **4.5 Mensalista e longa estadia (15 termos).** "estacionamento mensal aeroporto Guarulhos",
 "30 dias", "20 dias". Ticket alto e recorrente. Conecta com a spec `mensalista-recorrencia.md`.
+
+> **Portão rodado em 18/09/2026: é a única das três com produto atrás, e a pergunta órfã não é a de
+> preço.** O motor precifica 30 diárias nos cinco aeroportos com parceiro, e `/precos/<slug>` já
+> publica esse número, então "quanto custa 30 dias" já tem resposta em duas superfícies. O que não
+> tinha resposta é "existe mensalidade?", e ela é não: a Movepark vende estadia por duração, não
+> contrato com renovação. Em Guarulhos o oficial mantém canal de mensalistas e cobra R$ 505,00 na
+> faixa de 18 a 30 diárias, contra R$ 239,40 do parceiro na vaga descoberta, conferido no motor em
+> 17/09/2026. O blogpost de mensalista em GRU segue como pauta de conversão e não canibaliza nada: o
+> acervo de Guarulhos não tem post publicado nessa intenção, e Viracopos já tem o dele desde
+> 03/09/2026.
 
 **4.6 Prova social e segurança (25 termos).** "é seguro", "confiável", "avaliação", "reviews",
 "reddit". A busca por "reddit" é o sinal mais claro de que a pessoa não confia no conteúdo
 comercial que encontrou. Conteúdo que mostra critério de seleção, avaliação real e o que acontece
 quando dá problema ganha essa consulta.
+
+### O que foi publicado da cauda longa
+
+Em 18/09/2026 os clusters 4.2, 4.4 e 4.5 viraram **12 páginas de FAQ**, três por aeroporto, em
+Guarulhos, Viracopos, Confins e Afonso Pena. A escolha do formato foi de GEO, e vale registrar o
+raciocínio porque ele se repete nos outros clusters órfãos:
+
+- **Pergunta binária cabe em 50 palavras**, e `references/geo-ia.md` registra a FAQ de 40 a 60
+  palavras como o formato de maior taxa de citação.
+- **Pergunta órfã não tem concorrente.** O motor generativo escolhe um trecho, não uma lista, então
+  quem responde primeiro leva a citação inteira em vez de disputar uma posição entre dez.
+- **A resposta não apodrece.** "Aceita Sem Parar" segue certo por anos, enquanto preço entra na
+  revisão mensal da Fase 5. Entre duas fontes, o modelo prefere a datada que continua verdadeira.
+- **A URL é a própria consulta**, e a página nasce com `FAQPage`, `BreadcrumbList` e gêmeo Markdown
+  pelo ADR-002.
+- **É o buraco de verdade.** Tag e moto não têm resposta em superfície nenhuma da Movepark; 30
+  diárias já está em `/precos/<slug>` e na FAQ de "compensa deixar o carro mais dias".
+
+A categoria de cada pergunta não é decoração. Desde a correção em `faq-pergunta.tsx`, só a categoria
+`pagamentos` injeta os blocos genéricos de preço e de fechamento. Por isso a pergunta de tag ficou em
+`check-in`, que é sobre liberar a cancela, e a de moto em `veiculos`: tabela de preço embaixo de
+"aceita Sem Parar?" quebraria justamente o contexto que a página existe para ganhar.
+
+**Fontes primárias consultadas em 17/09/2026**, citadas pelo nome e nunca linkadas, pela regra de
+[`links-e-fontes.md`](../../.claude/skills/blogpost-seo-geo/references/links-e-fontes.md): site do
+GRU Airport (tabela de valores e lista de formas de pagamento), site do BH Airport (tabela por
+pátio, com o Pátio Motos, e o aceite de tag), site oficial de Viracopos (Edifício Garagem e bolsão
+F, sem meio de pagamento publicado) e site do Aeroporto Afonso Pena com a página do operador do
+estacionamento (sem tabela e sem meio de pagamento).
+
+**Pendência que este trabalho revelou:** a publicação automática do site está inerte desde
+19/08/2026 pela mesma causa da §"O silêncio de 13 dias" de
+[`deploy-automatico.md`](./deploy-automatico.md). Em 18/09/2026 a `site_rebuild_health()` respondia
+`{"ok": false, "motivo": "sem_deploy_hook", "pendentes": 807, "horas_esperando": 714.8}`. Enquanto o
+segredo não voltar ao Vault, FAQ e post publicados no banco só chegam ao ar no próximo push da
+`main`.
 
 ---
 
