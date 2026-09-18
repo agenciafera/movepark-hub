@@ -35,3 +35,22 @@ export function pickCardBadge(
   }
   return null;
 }
+
+/**
+ * Tamanho a partir do qual a avaliação entra recolhida no carrossel.
+ *
+ * O espelho guarda avaliação de 78 a 4.064 caracteres (medido em set/2026, média ~700). Num
+ * carrossel de altura única a mais longa manda na altura de todas, então uma sozinha devolveria
+ * o scroll que o carrossel veio cortar. Recolher sem oferecer o "Ler mais" não seria opção: o
+ * texto de terceiro sai como veio, e quem recolhe tem que abrir na própria página.
+ *
+ * O corte é por caractere, e não por medição de DOM: o HTML nasce no SSG, e
+ * `scrollHeight > clientHeight` só responde depois da hidratação. 280 está acima do que as 6
+ * linhas mostram no card mais estreito (~300px), então avaliação curta entra sem recolher linha
+ * nenhuma, e recolhido e "Ler mais" andam sempre juntos.
+ */
+export const REVIEW_CLAMP_CHARS = 280;
+
+export function isLongReviewText(text: string): boolean {
+  return text.trim().length > REVIEW_CLAMP_CHARS;
+}

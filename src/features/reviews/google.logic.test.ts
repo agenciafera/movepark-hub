@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isSnapshotFresh, pickCardBadge } from "./google.logic";
+import {
+  REVIEW_CLAMP_CHARS,
+  isLongReviewText,
+  isSnapshotFresh,
+  pickCardBadge,
+} from "./google.logic";
 
 const NOW = new Date("2026-08-14T12:00:00Z");
 
@@ -51,5 +56,23 @@ describe("pickCardBadge", () => {
 
   it("devolve null quando o Google tem avaliacao media mas nenhuma contagem", () => {
     expect(pickCardBadge({ avg: null, count: 0 }, { rating: 4.5, count: 0 })).toBeNull();
+  });
+});
+
+describe("isLongReviewText", () => {
+  it("nao recolhe avaliacao curta, que caberia inteira nas 6 linhas do card", () => {
+    expect(isLongReviewText("Vaga coberta e transfer pontual.")).toBe(false);
+  });
+
+  it("recolhe avaliacao longa, que sozinha manda na altura do carrossel inteiro", () => {
+    expect(isLongReviewText("a".repeat(281))).toBe(true);
+  });
+
+  it("nao recolhe no limite exato, porque o corte e estritamente maior", () => {
+    expect(isLongReviewText("a".repeat(REVIEW_CLAMP_CHARS))).toBe(false);
+  });
+
+  it("ignora espaco nas pontas, que nao ocupa linha", () => {
+    expect(isLongReviewText(`   ${"a".repeat(270)}   `)).toBe(false);
   });
 });

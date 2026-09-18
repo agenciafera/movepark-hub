@@ -323,6 +323,26 @@ Na primeira entrega o `hub_admin` liga e desliga por `update` direto (a policy d
 permite). Tela no Manager fica para depois, e está em [§11](#11-fora-de-escopo): construir UI
 antes de existir um caso real de uso é adivinhar o fluxo.
 
+**A ficha mostra as cinco numa trilha, e não numa grade.** Empilhadas, as cinco avaliações
+mediam 1.714px na ficha do Virapark no desktop e 2.492px em 375px (medido em set/2026), com a
+FAQ e a reserva logo depois. Na trilha horizontal a mesma prova social cabe em 420px e 480px,
+75% e 81% menos, sem esconder nenhuma das cinco. O padrão é o do resto do consumidor
+(`overflow-x-auto` com `snap` e setas no cabeçalho), e não uma biblioteca: é o arrasto e a
+inércia do sistema sem uma linha de JS, e as cinco continuam inteiras no HTML pré-renderizado,
+que é o que o bloco precisa entregar. A seta anda um card por vez, porque o passo aqui é uma
+avaliação para ler, não uma distância.
+
+**Recolher em 6 linhas não é cortar o texto, e a diferença é o que mantém a atribuição de pé.**
+O espelho tem avaliação de 78 a 4.064 caracteres. Numa trilha de altura única a mais longa manda
+na altura de todas, então uma sozinha devolveria o scroll que a trilha veio cortar. O recorte é
+`line-clamp` de CSS com o "Ler mais" do lado: o texto inteiro está no HTML, crawler e leitor de
+tela recebem tudo, o clique não busca nada e ninguém é mandado para o Google para ler o resto.
+Recolher **sem** o "Ler mais" seria cortar conteúdo de terceiro, que a trava de atribuição do §2
+proíbe, então o recolhido e o botão andam sempre juntos: quem não passa de `REVIEW_CLAMP_CHARS`
+(280, em `google.logic.ts`) entra sem recolher linha nenhuma. O limite é por caractere, e não por
+medição de DOM, porque o HTML nasce no build e `scrollHeight > clientHeight` só responde depois
+da hidratação.
+
 ## 7. ADR-009: isso é fato da unidade, não promessa de transação
 
 Reputação descreve o lugar e é verdade independente de onde a reserva fecha, igual a endereço,
@@ -353,7 +373,7 @@ de IA leem sem precisar de marcação.
 |---|---|
 | pgTAP `google_place_snapshot.test.sql` | policy esconde snapshot com mais de 30 dias do `anon`; `hub_admin` escreve e `anon` não; purge apaga a linha vencida visível **e preserva a escondida sem o conteúdo do Google**, sendo idempotente na segunda passada; upsert por `place_id` substitui o conjunto inteiro |
 | Deno `google-place-refresh/index.test.ts` | refresh sem header secreto é recusado; seleção pega só o que está sem snapshot ou com mais de 7 dias; erro da Places API grava `fetch_error` e preserva o snapshot bom; **o mapper guarda o `originalText` e nunca a tradução de máquina** |
-| Vitest | merge das duas fontes no hook; atribuição renderiza autor, foto e link; card de busca escolhe um selo só, com prioridade Movepark; **as leituras de `googleApi.ts` filtram `is_hidden` e os 30 dias na query**; **o card do lote mapeado esconde a nota quando `google_fetched_at` passou de 30 dias**; **regressão que falha se o `productOfferSchema` ganhar `aggregateRating` vindo do Google** |
+| Vitest | merge das duas fontes no hook; atribuição renderiza autor, foto e link; card de busca escolhe um selo só, com prioridade Movepark; **as leituras de `googleApi.ts` filtram `is_hidden` e os 30 dias na query**; **o card do lote mapeado esconde a nota quando `google_fetched_at` passou de 30 dias**; **regressão que falha se o `productOfferSchema` ganhar `aggregateRating` vindo do Google**; **a trilha da ficha não volta a ser grade, anda um card por vez e desliga a seta nas pontas**; **a avaliação longa entra recolhida com o `Ler mais`, e o texto inteiro continua no HTML** |
 
 ## 10. Custo e operação
 
