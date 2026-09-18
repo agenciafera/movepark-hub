@@ -99,6 +99,17 @@ export function Step4Payment({
 
   // cartão: escolher salvo ou "new"
   const [cardChoice, setCardChoice] = React.useState<string>("new");
+  // Cartão salvo já vem selecionado: a lista chega ordenada (padrão primeiro, depois o mais
+  // recente), e quem paga de novo quer um clique, não redigitar. Só na primeira carga: depois que
+  // a pessoa escolhe "Usar outro cartão", a escolha é dela.
+  const cardChoiceInit = React.useRef(false);
+  React.useEffect(() => {
+    if (cardChoiceInit.current) return;
+    const first = savedCards.data?.[0];
+    if (!first) return;
+    setCardChoice(first.id);
+    cardChoiceInit.current = true;
+  }, [savedCards.data]);
   const [cardNumber, setCardNumber] = React.useState("");
   const [cardName, setCardName] = React.useState("");
   const [cardExpiry, setCardExpiry] = React.useState("");

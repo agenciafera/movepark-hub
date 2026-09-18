@@ -24,7 +24,8 @@ const policy: InstallmentPolicy = {
 };
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/features/payment-methods/api", () => ({ useMyPaymentMethods: () => ({ data: [] }) }));
+const savedCards = vi.hoisted(() => ({ data: [] as { id: string; brand: string; last4: string }[] }));
+vi.mock("@/features/payment-methods/api", () => ({ useMyPaymentMethods: () => savedCards }));
 vi.mock("@/features/profile/api", () => ({
   useProfile: () => ({ data: { tax_id: "04810388417" }, isLoading: false }),
   useUpdateProfile: () => ({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false }),
@@ -148,6 +149,27 @@ describe("Step4Payment", () => {
         }),
       ),
     );
+  });
+
+  it("cartão salvo já vem selecionado e paga sem redigitar nada", async () => {
+    savedCards.data = [{ id: "pm_1", brand: "Visa", last4: "0466" }];
+    try {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <Step4Payment bookingId="bk-1" bookingCode="MP-ABC123" totalAmount={100} customerTaxId="04810388417" paymentStatus={null} onBack={() => {}} />,
+      );
+      await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+      // Sem formulário de cartão novo: o salvo está escolhido.
+      await waitFor(() => expect(screen.queryByLabelText("Número do cartão")).not.toBeInTheDocument());
+      expect(screen.getByRole("combobox", { name: "Cartão" })).toHaveTextContent("0466");
+      fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+      await waitFor(() =>
+        expect(cardMutate).toHaveBeenCalledWith({ booking_code: "MP-ABC123", installments: 1, payment_method_id: "pm_1" }),
+      );
+      expect(tokenizeCard).not.toHaveBeenCalled();
+    } finally {
+      savedCards.data = [];
+    }
   });
 
   it("sem CEP válido o cartão não vai ao gateway: o antifraude recusaria", async () => {
