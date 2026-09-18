@@ -489,7 +489,14 @@ export default function ListingPage() {
 
       {/* Corpo em 2 colunas */}
       <div className="mt-10 grid grid-cols-1 gap-12 desktop:grid-cols-[1fr_400px]">
-        <div className="space-y-10">
+        {/* `min-w-0` não é enfeite: `1fr` é `minmax(auto, 1fr)`, e sem ele a coluna não
+            encolhe abaixo do min-content do que está dentro. A trilha de avaliações do
+            Google esticou a coluna de 768px para 1.001px, e os 233px saíram do card de
+            reserva, que foi parar fora da tela com o check-in cortado. O `overflow-x-auto`
+            da própria trilha não resolve: o min-content atravessa os blocos até o item da
+            grade, e só `min-w-0` aqui segura. Vale para qualquer coisa larga que entre
+            nesta coluna, não só para a trilha. */}
+        <div className="min-w-0 space-y-10">
 
           {/* Descrição e tipo de vaga */}
           {hasDescription && (

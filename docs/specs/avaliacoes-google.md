@@ -332,6 +332,14 @@ inércia do sistema sem uma linha de JS, e as cinco continuam inteiras no HTML p
 que é o que o bloco precisa entregar. A seta anda um card por vez, porque o passo aqui é uma
 avaliação para ler, não uma distância.
 
+**A coluna que recebe a trilha precisa de `min-w-0`.** `1fr` é `minmax(auto, 1fr)`, então sem
+isso o item da grade não encolhe abaixo do min-content do que está dentro: na ficha a coluna foi
+de 768px para 1.001px, e os 233px saíram do card de reserva, que foi parar fora da tela com o
+check-in cortado. O `overflow-x-auto` da própria trilha não segura nada, porque o min-content
+atravessa os blocos até o item da grade. O guard é de fonte
+(`src/features/listing/listing-grid.contract.test.ts`), e é de fonte de propósito: happy-dom não
+tem motor de layout, então esta regressão só aparece no navegador, longe de onde nasceu.
+
 **Recolher em 6 linhas não é cortar o texto, e a diferença é o que mantém a atribuição de pé.**
 O espelho tem avaliação de 78 a 4.064 caracteres. Numa trilha de altura única a mais longa manda
 na altura de todas, então uma sozinha devolveria o scroll que a trilha veio cortar. O recorte é
