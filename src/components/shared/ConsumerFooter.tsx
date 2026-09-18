@@ -19,7 +19,9 @@ const groups: FooterGroup[] = [
     ],
   },
   {
-    title: "Estacionamentos",
+    // Nome do público, não da coisa: "Estacionamentos" virou o rótulo do catálogo
+    // no menu do celular, e "Para empresas" chamaria quem quer estacionar frota.
+    title: "Para donos de estacionamento",
     links: [
       { to: "/seja-parceiro", label: "Seja parceiro" },
       { to: "/selo", label: "Selo de parceiro" },

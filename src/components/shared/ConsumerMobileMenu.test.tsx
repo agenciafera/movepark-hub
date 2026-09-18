@@ -5,7 +5,7 @@ import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { ConsumerFooter } from "./ConsumerFooter";
 
-const GAVETAS = ["Estacionamentos", "Movepark", "Suporte"];
+const GAVETAS = ["Para donos de estacionamento", "Movepark", "Suporte"];
 
 async function abrirMenu() {
   await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
@@ -36,7 +36,7 @@ describe("ConsumerMobileMenu", () => {
 
   /**
    * O pedido que originou as gavetas: dezesseis linhas do mesmo peso, e o
-   * "Destinos" do topo pesando igual à "Política de privacidade" do fim. Fechado,
+   * "Estacionamentos" do topo pesando igual à "Política de privacidade" do fim. Fechado,
    * o institucional custa um toque, e o toque é o que separa "quero reservar" de
    * "quero ler os termos".
    */
@@ -54,7 +54,7 @@ describe("ConsumerMobileMenu", () => {
       expect(screen.queryByRole("link", { name: rotulo })).toBeNull();
     }
     // O caminho da reserva não depende de toque nenhum.
-    expect(screen.getByRole("link", { name: "Destinos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Estacionamentos" })).toBeInTheDocument();
   });
 
   /** A gaveta é do menu, não do painel: abrir um grupo não pode encerrar a visita. */
@@ -118,17 +118,17 @@ describe("ConsumerMobileMenu", () => {
     renderWithProviders(<ConsumerMobileMenu />);
     await abrirMenu();
 
+    // O título é o botão da gaveta, e é ele que a ordem tem que respeitar.
     const grupos = screen.getAllByRole("group");
-    expect(grupos.map((g) => g.textContent?.slice(0, 20))).toEqual([
-      expect.stringContaining("Estacionamentos"),
-      expect.stringContaining("Movepark"),
-      expect.stringContaining("Suporte"),
+    expect(grupos.map((g) => g.querySelector("button")?.textContent?.trim())).toEqual([
+      "Para donos de estacionamento",
+      "Movepark",
+      "Suporte",
     ]);
     // O caminho da reserva fica solto acima das gavetas: é o motivo de alguém
     // abrir o site.
-    for (const g of grupos) {
-      expect(g).not.toHaveTextContent("Destinos");
-      expect(g).not.toHaveTextContent("Índice de preços");
+    for (const rotulo of ["Estacionamentos", "Índice de preços"]) {
+      expect(screen.getByRole("link", { name: rotulo }).closest('[role="group"]')).toBeNull();
     }
   });
 
@@ -208,7 +208,7 @@ describe("ConsumerMobileMenu", () => {
     for (const nome of ["Minhas reservas", "Favoritos", "Indique e ganhe"]) {
       expect(screen.getByRole("link", { name: nome })).toBeInTheDocument();
     }
-    expect(screen.getByRole("link", { name: "Destinos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Estacionamentos" })).toBeInTheDocument();
     await abrirGavetas();
     expect(screen.getByRole("link", { name: "Seja parceiro" })).toBeInTheDocument();
     // Quem já entrou tem "Sair", não "Entrar".
@@ -276,7 +276,7 @@ describe("ConsumerMobileMenu", () => {
 
     const marcados = [...container.ownerDocument.querySelectorAll("nav a[aria-current='page']")];
     expect(marcados).toHaveLength(1);
-    expect(marcados[0]).toHaveTextContent("Destinos");
+    expect(marcados[0]).toHaveTextContent("Estacionamentos");
     expect(marcados[0].className).toContain("text-mp-primary");
   });
 
@@ -365,7 +365,7 @@ describe("ConsumerMobileMenu", () => {
     expect(document.activeElement).toBe(painel);
 
     const tabaveis = [...painel.querySelectorAll<HTMLElement>("a[href], button")];
-    expect(tabaveis[0]).toHaveTextContent("Destinos");
+    expect(tabaveis[0]).toHaveTextContent("Estacionamentos");
   });
 
   /** Régua entre itens de lista curta divide o que o espaço já separa. */
@@ -373,7 +373,7 @@ describe("ConsumerMobileMenu", () => {
     renderWithProviders(<ConsumerMobileMenu />);
     await abrirMenu();
 
-    const item = screen.getByRole("link", { name: "Destinos" });
+    const item = screen.getByRole("link", { name: "Estacionamentos" });
     expect(item.className).not.toContain("border-b");
     expect(item.className).toContain("px-3");
   });
@@ -381,7 +381,7 @@ describe("ConsumerMobileMenu", () => {
 
 /** O caminho da reserva, o único bloco que não depende de toque. */
 const DESTAQUES_ESPERADOS: Record<string, string> = {
-  "/estacionamentos": "Destinos",
+  "/estacionamentos": "Estacionamentos",
   "/precos": "Índice de preços",
   "/calculadora-estacionamento-aeroporto": "Calculadora de estacionamento",
 };

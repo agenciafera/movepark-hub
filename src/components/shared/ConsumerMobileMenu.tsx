@@ -86,11 +86,18 @@ type GrupoDeMenu = { titulo: string; itens: ItemDeMenu[] };
  * alguém foi fazer no celular, e dezesseis linhas de peso igual escondiam estas
  * três no meio das outras treze.
  *
+ * O primeiro item se chama "Estacionamentos", e não "Destinos", porque destino é
+ * palavra de dentro de casa: no banco, `destination` é o aeroporto, e quem vai
+ * viajar procura estacionamento, não destino. O nome também é o que a URL
+ * (`/estacionamentos`) e o title da página já dizem. O cabeçalho do desktop
+ * ainda usa o nome antigo: trocar lá mexe em oito cenários do Windup que afirmam
+ * o texto do `<header>`, e o plano deles é replay versionado, sem LLM no CI.
+ *
  * Por isso aqui a linha é mais alta, o rótulo é semibold e o ícone é maior: o
  * destaque é da hierarquia, não de um aviso pedindo pra clicar.
  */
 const DESTAQUES: ItemDeMenu[] = [
-  { to: "/estacionamentos", label: "Destinos", icone: MapPin },
+  { to: "/estacionamentos", label: "Estacionamentos", icone: MapPin },
   { to: "/precos", label: "Índice de preços", icone: Tag },
   {
     to: "/calculadora-estacionamento-aeroporto",
@@ -111,6 +118,12 @@ const DESTAQUES: ItemDeMenu[] = [
  * não porque vale menos: quem precisa de ajuda chega pelo e-mail da reserva, pela
  * chamada do rodapé ou pela busca, e raramente por um menu de navegação.
  *
+ * O grupo do parceiro se chama "Para donos de estacionamento" nas duas
+ * superfícies (aqui e no rodapé, trocado no mesmo commit). "Estacionamentos"
+ * ficou impossível no dia em que o item de cima passou a se chamar assim, e
+ * "Para empresas" atrairia a empresa que quer estacionar a frota, que é cliente,
+ * não parceiro. O nome diz o público, e é o público que separa B2C de B2B.
+ *
  * Nada some: fechado, o grupo custa um toque, e é o toque que separa "quero
  * reservar" de "quero ler os termos". O teste `ConsumerMobileMenu.test.tsx` abre
  * todos os grupos e compara as duas listas, então um link novo no rodapé
@@ -121,7 +134,7 @@ const DESTAQUES: ItemDeMenu[] = [
  */
 const GRUPOS_DO_SITE: GrupoDeMenu[] = [
   {
-    titulo: "Estacionamentos",
+    titulo: "Para donos de estacionamento",
     itens: [
       { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
       { to: "/selo", label: "Selo de parceiro", icone: Seal },
@@ -291,8 +304,8 @@ function Grupo({ titulo, itens }: GrupoDeMenu) {
  *
  * O painel tem todo link do rodapé, mas em dois andares: os três destinos que
  * levam a uma reserva ficam à vista, e o resto mora em gavetas fechadas. A lista
- * corrida que estava aqui tinha dezesseis linhas do mesmo peso, e o "Destinos" do
- * topo pesava igual à "Política de privacidade" do fim.
+ * corrida que estava aqui tinha dezesseis linhas do mesmo peso, e o item de
+ * "Estacionamentos" do topo pesava igual à "Política de privacidade" do fim.
  *
  * Vale do celular até o tablet. A virada é em 1128, e não em 744: entre os dois
  * a barra de busca completa não cabe no header, e os campos dela se sobrepunham.
