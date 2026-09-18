@@ -1,0 +1,177 @@
+# Grupo Movepark: a área que explica os produtos
+
+> Página institucional em `/grupo` que diz quais produtos existem sob a marca Movepark, em que
+> estágio cada um está e o que os liga. O leitor é metade do alvo. A outra metade é a **entidade**:
+> o que Google e LLM respondem quando alguém pergunta o que é a Go2Park e de quem ela é.
+>
+> Specs relacionadas: [agent-readiness-seo.md](./agent-readiness-seo.md),
+> [seo-indexacao.md](./seo-indexacao.md),
+> [go2park-transfer-ao-vivo.md](./go2park-transfer-ao-vivo.md),
+> [mensalista-recorrencia.md](./mensalista-recorrencia.md),
+> [agente-whatsapp-wl.md](./agente-whatsapp-wl.md), [blog.md](./blog.md).
+>
+> Gestão: **E3.11** (Fase 3), com **Q-025**, **Q-026** e **D-011** abertos. Ver §7.
+
+## 1. Por que existe
+
+O site inteiro fala de um produto só. A Go2Park já está no Hub, mas só como **selo de unidade**:
+três locais com contrato mostram a van no mapa, e nada mais no site diz o nome dela. Quem não
+abrir a página de um desses três lotes não descobre que ela existe.
+
+Nas superfícies de máquina o silêncio é total. O `organizationSchema()` em
+[`src/lib/jsonld.ts`](../../src/lib/jsonld.ts) descreve a Movepark como entidade isolada, com
+`legalName`, `taxID` e `sameAs`, e nenhuma propriedade que ligue outra marca a ela. O
+[`public/llms.txt`](../../public/llms.txt) não cita a Go2Park uma vez sequer, e a frase de
+desambiguação afirma hoje que a Movepark "não tem relação com estacionamentos ou empresas de nome
+parecido", o que passa a ser incompleto no dia em que a casa assume quatro marcas.
+
+O efeito prático: um LLM perguntado sobre a Go2Park não tem de onde tirar o vínculo, e responde
+pelo que achar solto na web ou inventa. A página resolve isso pelo lado humano e pelo lado do dado
+estruturado ao mesmo tempo, que é o único jeito de a resposta ficar estável.
+
+## 2. Os quatro produtos
+
+| Produto | O que é | Estágio | Onde já vive no repo |
+|---|---|---|---|
+| **Movepark Hub** | Reserva de vaga com pagamento, split e preço fechado na tela | No ar | o site inteiro |
+| **Go2Park** | Van do traslado no mapa em tempo real, sem instalar app e sem criar conta | No ar, 3 unidades com contrato | `location.go2park_enabled`, [go2park-transfer-ao-vivo.md](./go2park-transfer-ao-vivo.md) |
+| **Go2Med** | O mesmo rastreio de van aplicado a transporte de hospital | Em desenvolvimento | nada |
+| **Coopark** | Mensalista casando demanda agregada com vaga ociosa, pelo melhor preço ao motorista | Em desenvolvimento | ver Q-025 |
+
+As três unidades com Go2Park são Nationpark (Afonso Pena), Virapark (Viracopos) e Garageinn
+(Viracopos). Nenhum vizinho de aeroporto oferece o mesmo, e é por isso que o selo existe na
+vitrine. A área do grupo não substitui esse selo: ela dá endereço ao nome que o selo cita.
+
+**A tese que une os quatro**, e que a página precisa dizer numa frase: transformar vaga e van em
+coisa reservável, rastreável e com preço fechado antes de o cliente sair de casa. Sem essa frase a
+página vira lista de logos, que é o formato que não sustenta entidade nenhuma.
+
+## 3. A situação societária, e a regra que ela impõe
+
+| Fato | Consequência |
+|---|---|
+| A Movepark tem CNPJ próprio: **Movepark Tecnologia Ltda, 68.183.164/0001-35**, já publicado no `organizationSchema()` e no `llms.txt` | A identificação legal da página-mãe já existe e não precisa ser inventada |
+| A **Go2Park fatura hoje pelo CNPJ da Fera** | Não é subsidiária da Movepark no papel, hoje |
+| A intenção é trazer **tudo para o guarda-chuva Movepark** mais adiante | A página precisa envelhecer bem, sem reescrita, quando isso acontecer |
+| A **Fera fica de fora**, como casa de desenvolvimento e marketing digital | Ela não aparece na página do grupo |
+
+Daí sai a regra que governa a entrega inteira:
+
+> **A copy fala de ecossistema de produtos. O dado estruturado afirma menos do que a copy sugere,
+> de propósito, e só sobe de nível quando a reorganização societária acontecer.**
+
+Chamar de "grupo" na tela é linguagem de marca, e é verdade operacional: é o mesmo time, o mesmo
+padrão de produto e a mesma casa. Afirmar `subOrganization` em JSON-LD é outra coisa, porque essa
+propriedade descreve estrutura organizacional, e enquanto a nota fiscal da Go2Park sai pela Fera a
+afirmação é falsa em dado estruturado. O que temos a ganhar com o vínculo não justifica declarar
+societariamente algo que o contrato social não sustenta.
+
+### O que o schema afirma em cada momento
+
+| Momento | Propriedade | Por quê |
+|---|---|---|
+| **Hoje** | `brand: [Movepark Hub, Go2Park, Go2Med, Coopark]` no `Organization` da Movepark | `brand` é "marcas mantidas por uma organização". Não afirma propriedade societária, e é verdade desde já |
+| **Hoje** | Um nó por produto com `name`, `url`, `description`, e `sameAs` para `go2park.com.br` | Dá endereço canônico a cada nome, que é o que faz o LLM parar de adivinhar |
+| **Gatilho: Go2Park passar para o CNPJ da Movepark** | Troca para `subOrganization` / `parentOrganization` | Uma linha de código. O gatilho está registrado aqui para ninguém precisar redescobrir a regra |
+
+Nada de `owns` enquanto a titularidade não mudar, pela mesma razão.
+
+## 4. Onde a área mora
+
+**Decisão: `/grupo` dentro do Hub, página única com âncora por produto.** Não é site separado, e
+não é reforma do `/sobre`.
+
+- **Site separado foi descartado.** O ativo que se quer construir é concentração de entidade. Abrir
+  um terceiro domínio institucional divide o sinal entre `movepark.co`, `go2park.com.br` e o novo,
+  que é o oposto do objetivo. O Hub já atende o `movepark.co`, host canônico e único da allowlist
+  `INDEXABLE_HOSTS` do worker, então a página nasce indexável, sem esperar migração nenhuma.
+- **Reformar o `/sobre` foi descartado.** Quem clica "Sobre nós" no rodapé de um site de reserva
+  está decidindo se confia na reserva, não conhecendo a holding. O `/sobre` continua sendo do
+  marketplace e ganha um bloco curto no fim apontando para `/grupo`.
+- **Página por produto (`/grupo/go2park`) fica para depois.** Só a Go2Park tem operação real, e ela
+  já tem site próprio. Quatro páginas magras hoje é thin content, e página fina de marca é
+  exatamente o tipo de URL que o buscador ignora e o LLM não cita. Cada produto ganha endereço
+  próprio quando tiver o que dizer.
+
+A área **não entra no funil**: sem CTA de reserva no topo, sem bloco na home acima da dobra. O link
+vive no rodapé, no grupo "Movepark", e no fim do `/sobre`.
+
+## 5. O que a página tem
+
+1. **A tese numa frase**, como H1 e subtítulo.
+2. **Identificação legal visível:** razão social e CNPJ. Já é o que o schema afirma, então a tela
+   passa a espelhar o dado em vez de escondê-lo.
+3. **Um bloco por produto**, com nome, uma linha do que é, para quem serve e o **estágio declarado
+   sem data**. "Em desenvolvimento" sem previsão é honesto e não cria dívida de promessa; data
+   vira cobrança e vaza roadmap.
+4. **Desambiguação escrita para humano e para máquina.** A frase atual do `llms.txt` nega
+   parentesco com qualquer nome parecido, e passa a fazer as duas coisas: declarar as irmãs e
+   continuar negando as homônimas. Um levantamento anterior já encontrou uma **Movepark 1
+   Estacionamentos (CNPJ 66.606.374)** que não é do grupo, então a negação continua necessária, e o
+   CNPJ publicado é o que a resolve de forma definitiva.
+5. **Link para `go2park.com.br`**, sem `nofollow`, pela mesma razão documentada em
+   [selo-parceiro.md](./selo-parceiro.md): link de marca entre propriedades da mesma casa é
+   exatamente o sinal que se quer emitir.
+
+## 6. Superfície de máquina
+
+A página só cumpre o objetivo se sair inteira no HTML do build e tiver gêmeo em Markdown. Crawler
+de IA não executa JS, e o padrão do projeto já é esse em `/precos`, `/faq` e no blog.
+
+| Superfície | O que muda |
+|---|---|
+| `organizationSchema()` | Ganha `brand` com as quatro marcas, conforme §3 |
+| `public/llms.txt` | Seção nova do grupo e reescrita do bloco de desambiguação |
+| `llms-full.txt` | Conteúdo da `/grupo` inline |
+| Sitemap | `/grupo` entra |
+| Markdown negotiation | `/grupo` responde a `Accept: text/markdown`, como as demais páginas editoriais |
+| Rodapé | Link "O grupo" no bloco Movepark |
+
+## 7. Gates: o que trava a escrita da copy
+
+Nenhum deles trava a estrutura, o schema ou a rota. Todos travam **texto publicado**.
+
+**Q-025 · O Coopark é o produto de [mensalista-recorrencia.md](./mensalista-recorrencia.md)?**
+Aquela spec descreve exatamente a tese anunciada para o Coopark, ou seja, demanda agregada contra
+vaga ociosa com preço negociado em bloco, e é fruto da reunião de 07/08/2026. Pior: a tabela de
+concorrência da própria spec lista **Coopark** na camada B, ao lado de Estapar Mensal e BrasilPark.
+Uma das duas leituras está errada, e as duas dão trabalho diferente:
+se for o mesmo produto, a spec passa a chamá-lo pelo nome e a linha da tabela sai;
+se for homônimo de mercado, a página precisa de outro nome ou de desambiguação própria, porque
+nascer com nome de concorrente é dívida de marca permanente.
+
+**Q-026 · Como sustentar os claims de exclusividade.** A área nasce com três claims fortes: único
+com split de pagamento, transparência total e venda com pagamento pelo WhatsApp com IA.
+Recomendação: manter, ancorados em levantamento **datado e com os players comparados nomeados**, no
+mesmo padrão que a [`/metodologia`](../../src/routes/metodologia.tsx) já usa para preço. Claim de
+superioridade absoluta sem lastro é o que o CDC (art. 37) e o CONAR tratam como enganoso, e o custo
+de defender depois é maior que o de datar agora.
+
+O que o repo já sustenta sobre o WhatsApp, para a copy não exagerar nem se encolher: o agente roda
+hoje no Dify com n8n na ponte, e uma das sete tools dele é `gerar_link_pagamento`, que chama
+`POST /backend/order/quick-pay` no white-label. Ou seja, **a venda fecha na conversa, por link de
+pagamento gerado ali**, e a reserva nasce no white-label, não no Hub. A migração do agente para
+dentro do Hub está especificada em [agente-whatsapp-wl.md](./agente-whatsapp-wl.md). A copy
+descreve o que o cliente vive, sem afirmar que o processamento acontece dentro do Hub.
+
+**D-011 · Quantos minutos leva a compra, de verdade.** O material de origem diz menos de um minuto;
+o site publica **2 min** em três lugares, contando `/sobre`, o `llms.txt` e o `PRODUCT.md`. O número
+é medível no banco, então vira medição, não opinião, e o valor apurado passa a valer nos quatro
+lugares de uma vez. Dois números publicados ao mesmo tempo é o pior dos mundos.
+
+## 8. O que a entrega obriga
+
+| Obrigação | Onde está escrita |
+|---|---|
+| Cenário de navegador para a rota nova, no mesmo commit | `src/routes/routes-coverage.contract.test.ts` |
+| Contrato visual do consumer (h1, container, tipografia) | skill `harmonizar-paginas` + `consumer-typography.contract.test.ts` |
+| Fragmento de Helmet no padrão do projeto | `helmet-fragment.contract.test.ts` |
+| Revisão de copy antes de gravar | skill `revisar-texto` |
+| Spec atualizada no mesmo PR | ADR-008, este arquivo |
+
+## 9. Fora de escopo
+
+- Página própria por produto. Ver §4.
+- Qualquer alteração no `/selo`, no white-label ou no fluxo de reserva.
+- A Fera, que segue fora do guarda-chuva por decisão.
+- Versão em inglês. Entra junto do multi-idioma (Q-024), se entrar.
