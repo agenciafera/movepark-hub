@@ -19,7 +19,6 @@ export const SITEMAP_STATIC_ROUTES = [
   "/",
   "/sobre",
   "/como-funciona",
-  "/descontos",
   "/faq",
   "/ajuda",
   "/contato",
@@ -39,6 +38,11 @@ export const SITEMAP_STATIC_ROUTES = [
  * ou no sitemap, ou nesta lista, ou sob um prefixo privado.
  */
 export const SITEMAP_OPT_OUT: Record<string, string> = {
+  "/descontos":
+    "vitrine de campanhas ainda não exposta ao cliente: cupom só vale em unidade que fecha a " +
+    "reserva no Hub, e enquanto `public_coupon_offers().honored_by_units` for zero, indexá-la " +
+    "anunciaria desconto que nenhuma unidade cumpre (ADR-009). Ao ligar a primeira unidade hub " +
+    "vendável, mova esta rota para SITEMAP_STATIC_ROUTES e devolva o link ao rodapé e ao menu",
   "/search": "resultado parametrizado; /search?dest=POA já apareceu indexado como duplicata",
   "/docs": "documentação técnica da API, fora da superfície de consumidor",
   "/motor-preview": "ferramenta interna de preço",

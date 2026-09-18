@@ -65,3 +65,27 @@ export function ofertaCondicoes(o: OfertaPublica): string[] {
   }
   return linhas;
 }
+
+export type SeloOferta = { texto: string; tom: "destaque" | "confirmado" };
+
+/**
+ * O selo do topo do cartão, o "Cupons para novos clientes" da referência.
+ *
+ * Só as audiências com recorte ganham selo. `public` fica sem, porque um selo escrito "para todos"
+ * ocupa a linha mais visível do cartão para não dizer nada, e aí os selos param de significar algo.
+ *
+ * `destaque` é reservado à primeira reserva: é a campanha de aquisição, a que precisa ser vista
+ * primeiro por quem ainda não é cliente.
+ */
+export function ofertaSelo(audience: string): SeloOferta | null {
+  switch (audience) {
+    case "first_purchase":
+      return { texto: "Para quem nunca reservou", tom: "destaque" };
+    case "second_purchase":
+      return { texto: "Para a segunda reserva", tom: "confirmado" };
+    case "winback":
+      return { texto: "Para quem voltou", tom: "confirmado" };
+    default:
+      return null;
+  }
+}

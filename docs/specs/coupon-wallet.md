@@ -70,6 +70,9 @@ Todas `funded_by = 'platform'`, `company_id = null`.
 | `SEGUNDA15` | `second_purchase` | R$ 15 | Taxa de 1ª para 2ª reserva, a métrica que a apresentação nomeia (pág. 14) |
 | `VOLTA20` | `winback` 60 dias | 20%, teto R$ 30 | Recuperação antes do churn |
 | `LONGA25` | `public`, `min_days = 7` | R$ 25 | Ticket médio |
+| `ACIMA200` | `public`, `min_amount = 200` | R$ 30 | Ticket, por piso de valor |
+| `QUINZENA15` | `public`, `min_days = 15` | 15%, teto R$ 60 | Estadia longa |
+| `AGORA10` | `public`, com prazo | 10%, teto R$ 25 | Conversão por urgência |
 
 `VOLTA20` não tem `per_user_limit`: quem sumiu de novo e voltou de novo merece o mesmo convite.
 `BEMVINDO30` e `SEGUNDA15` têm limite 1, o que é redundante com a audiência mas fecha a janela
@@ -150,18 +153,41 @@ funcionando sem virar cartaz. O nome não é `is_public` para não colidir com `
 um diz QUEM pode usar, o outro se vira propaganda. Um `CHECK` impede cupom de parceiro de entrar,
 porque a página é da rede e dar holofote a uma empresa seria desigual.
 
-**O guard de capacidade (ADR-009).** `public_coupon_offers()` conta as unidades `hub` vendáveis
-pelos **mesmos filtros do `get_pricing_data`** e devolve lista vazia quando não há nenhuma. Contar
-`pricing_rule` sozinho mentiria: as 20 unidades hub têm regra e **nenhuma é vendável** (as 18 com
-preço são todas `external`, que não aceitam cupom). Sem o guard, a página anunciaria 30% num dia em
-que nenhuma reserva aceita cupom.
+**A página ainda NÃO é linkada para o cliente.** Ela ficou fora do rodapé, do menu do celular e
+do sitemap (está em `SITEMAP_OPT_OUT` com o motivo escrito). Isso é o que sustenta o ADR-009 hoje:
+cupom só vale onde a reserva fecha no Hub, e **nenhuma unidade vendável é `checkout_mode = 'hub'`**
+(as 18 com preço são todas `external`). Sem público, não há promessa; com público, haveria.
 
-> **Estado em 18/09/2026: a vitrine está vazia, e isso está certo.** Ela acende sozinha, sem
-> deploy, no dia em que o Hub ganhar a primeira unidade vendável. Medido: com uma unidade ligada,
-> a RPC passa a devolver as 4 campanhas.
+`public_coupon_offers()` devolve **todas** as campanhas anunciadas, sem esconder nada, para o time
+ver o catálogo como o cliente verá. O guard não sumiu, mudou de lugar: a RPC continua devolvendo
+**`honored_by_units`**, e ele é a condição de religar os links.
 
-A RPC não roda `simulate_price` de propósito: a chamada é anônima e o `anon` tem
+> **Checklist para tornar a página pública:** confira `public_coupon_offers().honored_by_units`.
+> Enquanto for zero, nenhuma reserva aceita cupom e anunciar violaria o ADR-009. Quando passar de
+> zero, mova `/descontos` de `SITEMAP_OPT_OUT` para `SITEMAP_STATIC_ROUTES` e devolva o link ao
+> rodapé e ao menu do celular (o contrato de paridade entre os dois vai cobrar os dois juntos).
+
+A contagem usa os **mesmos filtros do `get_pricing_data`**, que é a definição de unidade que
+realmente vende. Contar `pricing_rule` sozinho mentiria: as 20 unidades hub têm regra e nenhuma é
+vendável. A RPC não roda `simulate_price` de propósito, porque a chamada é anônima e o `anon` tem
 `statement_timeout` curto.
+
+### O cartão em formato de ticket
+
+O desenho segue a referência: selo de audiência, valor grande, condição e um canhoto com o código,
+separado por picote. Três detalhes só apareceram medindo no navegador, e cada um estava silencioso:
+
+- `overflow-hidden` no cartão **cortava os dois furos** laterais, que ficam de propósito para fora
+  da borda. O cartão não pode ter overflow escondido, e o canhoto arredonda os próprios cantos.
+- As classes `-left-2.5` / `-right-2.5` **não geram CSS** neste projeto (computed vinha `left: 0`),
+  e os dois furos empilhavam no canto esquerdo. O deslocamento foi para `style` inline.
+- `[writing-mode:vertical-rl]` como classe arbitrária **também não gera regra**: o computed ficava
+  `horizontal-tb` e o código transbordava (82px de texto num canhoto de 56px). Também foi para
+  inline.
+
+O `terms` **não** é renderizado no ticket: as condições saem dos campos, e o texto livre repetia as
+mesmas frases, deixando cada cartão dizendo "Vale na primeira reserva" duas vezes. O `terms`
+continua servindo à carteira.
 
 O canal do "guardar" é o **mesmo do link de campanha** (`?cupom=`): a página da unidade já lê
 `getStoredCoupon()` e passa o código ao criar a reserva. Não há caminho novo para manter, e o

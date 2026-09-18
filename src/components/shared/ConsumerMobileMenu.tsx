@@ -162,7 +162,6 @@ const GRUPOS_DO_SITE: GrupoDeMenu[] = [
       { to: "/ajuda", label: "Central de ajuda", icone: Lifebuoy },
       { to: "/faq", label: "Perguntas frequentes", icone: Question },
       { to: "/como-funciona", label: "Como funciona", icone: Info },
-      { to: "/descontos", label: "Cupons de desconto", icone: Ticket },
       { to: "/cancelamento", label: "Política de cancelamento", icone: CalendarX },
       { to: "/contato", label: "Fale conosco", icone: ChatCircle },
     ],

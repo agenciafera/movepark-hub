@@ -8,11 +8,11 @@ import DescontosPage from "./descontos";
 const SUPABASE_URL = "http://localhost:54321";
 
 /**
- * A vitrine pública roda SEM sessão de propósito: ela existe para quem ainda não tem conta.
+ * A vitrine roda SEM sessão de propósito: ela mostra o catálogo como o cliente verá.
  *
- * O caso que mais importa aqui é o guard do ADR-009. Enquanto nenhuma unidade do Hub puder honrar
- * cupom, a página não pode anunciar desconto, e quem decide isso é o servidor. A tela só desenha o
- * que chegou, então o teste prova que ela não inventa oferta quando a lista vem vazia.
+ * A tela NÃO decide o que anunciar: ela desenha o que o servidor mandou. Os casos abaixo fixam
+ * isso nos dois extremos, porque uma tela que inventasse oferta quando a lista vem vazia, ou que
+ * filtrasse por conta própria, faria o `is_advertised` do Manager virar decoração.
  */
 function stubVitrine(resposta: { offers: unknown[]; honored_by_units: number }) {
   server.use(
@@ -37,7 +37,9 @@ const OFERTA = {
 
 describe("DescontosPage, /descontos (pública)", () => {
   it("mostra a campanha com valor, teto e condição, sem exigir login", async () => {
-    stubVitrine({ offers: [OFERTA], honored_by_units: 3 });
+    // `honored_by_units: 0` de propósito: a vitrine deixou de esconder campanha por causa disso,
+    // porque a página saiu dos links públicos. Se alguém reintroduzir o guard aqui, este caso cai.
+    stubVitrine({ offers: [OFERTA], honored_by_units: 0 });
 
     renderWithProviders(<DescontosPage />);
 
@@ -48,11 +50,13 @@ describe("DescontosPage, /descontos (pública)", () => {
     // A condição vem do campo `audience`, não de texto livre.
     expect(screen.getByText("Vale na primeira reserva")).toBeInTheDocument();
     expect(screen.getByText("BEMVINDO30")).toBeInTheDocument();
+    // O selo é o que faz a campanha de aquisição saltar na grade.
+    expect(screen.getByText("Para quem nunca reservou")).toBeInTheDocument();
   });
 
-  it("sem unidade que honre cupom, não anuncia desconto nenhum (ADR-009)", async () => {
-    // É o estado real de hoje: as unidades com preço são todas `external` e não aceitam cupom.
-    // A página tem que sair do ar como cartaz, não mostrar campanha que ninguém pode usar.
+  it("lista vazia não vira cartaz inventado", async () => {
+    // `honored_by_units: 0` é o estado real de hoje. A vitrine continua mostrando o que o servidor
+    // manda, e aqui ele não mandou nada: a tela não pode preencher o vazio sozinha.
     stubVitrine({ offers: [], honored_by_units: 0 });
 
     renderWithProviders(<DescontosPage />);

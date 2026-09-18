@@ -4,6 +4,7 @@ import {
   ofertaAudienciaLabel,
   ofertaCapLabel,
   ofertaCondicoes,
+  ofertaSelo,
 } from "./publicOffers.logic";
 import type { OfertaPublica } from "./api";
 
@@ -88,5 +89,24 @@ describe("ofertaCondicoes", () => {
 
   it("a audiência entra como primeira condição", () => {
     expect(ofertaCondicoes(oferta())[0]).toBe("Vale na primeira reserva");
+  });
+});
+
+describe("ofertaSelo", () => {
+  it("a aquisição ganha o tom de destaque, que é a que precisa ser vista primeiro", () => {
+    expect(ofertaSelo("first_purchase")).toEqual({
+      texto: "Para quem nunca reservou",
+      tom: "destaque",
+    });
+  });
+
+  it("retenção usa o tom confirmado, para não competir com a aquisição", () => {
+    expect(ofertaSelo("second_purchase")?.tom).toBe("confirmado");
+    expect(ofertaSelo("winback")?.tom).toBe("confirmado");
+  });
+
+  it("audiência aberta não ganha selo: 'para todos' gastaria a linha mais visível do cartão", () => {
+    expect(ofertaSelo("public")).toBeNull();
+    expect(ofertaSelo("code_only")).toBeNull();
   });
 });
