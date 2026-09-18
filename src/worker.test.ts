@@ -936,9 +936,10 @@ describe("árvore /pt/ do WordPress multisite", () => {
     expect(loc("/pt")?.headers.get("Location")).toBe("/");
   });
 
+  // Com a barra final, que é a canônica do blog: sem ela a paginação fazia dois saltos.
   it("índice e paginação do blog seguem para o índice daqui", () => {
-    expect(loc("/pt/blog/")?.headers.get("Location")).toBe("/blog");
-    expect(loc("/pt/blog/page/2/")?.headers.get("Location")).toBe("/blog/page/2");
+    expect(loc("/pt/blog/")?.headers.get("Location")).toBe("/blog/");
+    expect(loc("/pt/blog/page/2/")?.headers.get("Location")).toBe("/blog/page/2/");
   });
 
   it("query string acompanha o destino", () => {

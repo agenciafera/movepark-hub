@@ -431,6 +431,63 @@ const WP_AEROPORTO_REDIRECTS: Record<string, string> = {
   "/estacionamentos/aeroporto-salgado-filho": "/estacionamentos/aeroporto-porto-alegre",
   "/estacionamentos/aeroporto-santos-dumont-rio": "/estacionamentos/aeroporto-santos-dumont",
   "/estacionamentos/terminal-rodoviario-tiete": "/estacionamentos/rodoviaria-tiete",
+  // Apelidos de destino que o WordPress aceitava na mesma pasta (regras do plugin Redirection,
+  // `docs/specs/wp-inventory/ko1_redirects.csv`, e variantes que o Search Console registrou).
+  // Sem eles a URL respondia 200 com a casca da home: `/estacionamentos/<qualquer>` é rota de
+  // app, então o destino inventado virava soft 404 em vez de 404 ou 301.
+  "/estacionamentos/campinas": "/estacionamentos/aeroporto-viracopos",
+  "/estacionamentos/guarulhos": "/estacionamentos/aeroporto-guarulhos",
+  "/estacionamentos/afonso-pena": "/estacionamentos/aeroporto-curitiba",
+  "/estacionamentos/aeroporto-afonsopena": "/estacionamentos/aeroporto-curitiba",
+  "/estacionamentos/cgh": "/estacionamentos/aeroporto-congonhas",
+};
+
+/**
+ * Regras do plugin Redirection do WordPress (`docs/specs/wp-inventory/ko1_redirects.csv`),
+ * que viviam no banco do WordPress e não no sitemap, por isso ficaram de fora do mapa das
+ * fichas. Medido em 18/09/2026: 20 das 40 respondiam 404 no Hub, entre elas a de maior volume
+ * da tabela inteira (`/estacionamento/ponce-park-guarulhos/`, 110.196 acessos). Os alvos são
+ * os de hoje, não os que o plugin registrava: o plugin apontava para a URL do WordPress, que
+ * aqui já é ela mesma um 301, e seguir a cadeia é justamente o que este mapa evita.
+ *
+ * O Ponce Park é o caso notável: no WordPress o permalink estava quebrado e mandava para um
+ * lote de Navegantes (ver `inventario-urls-wordpress.md`). Aqui ele vai para a ficha do lote
+ * mapeado publicado em Guarulhos, que é a mesma marca.
+ */
+const WP_REDIRECTION_PLUGIN_REDIRECTS: Record<string, string> = {
+  // Ponce Park, Guarulhos (lote mapeado publicado)
+  "/estacionamento/ponce-park-guarulhos": "/estacionamentos/aeroporto-guarulhos/ponce-park",
+  "/estacionamento-aeroporto-guarulhos/ponce-park-guarulhos":
+    "/estacionamentos/aeroporto-guarulhos/ponce-park",
+  "/estacionamentos/aeroporto-guarulhos/ponce-park-guarulhos":
+    "/estacionamentos/aeroporto-guarulhos/ponce-park",
+  // Viracopos
+  "/estacionamento/garage-inn-aeroporto-viracopos": "/estacionamentos/aeroporto-viracopos/garageinn",
+  "/estacionamento/aeroporto-viracopos-garageinn": "/estacionamentos/aeroporto-viracopos/garageinn",
+  "/estacionamento/virapark-estacionamento-viracopos": "/estacionamentos/aeroporto-viracopos/virapark",
+  "/estacionamento/virapark-aeroporto-viracopos": "/estacionamentos/aeroporto-viracopos/virapark",
+  "/estacionamento-aeroporto-viracopos/virapark": "/estacionamentos/aeroporto-viracopos/virapark",
+  "/estacionamentos/campinas/virapark-estacionamento-viracopos":
+    "/estacionamentos/aeroporto-viracopos/virapark",
+  // Afonso Pena (Curitiba)
+  "/estacionamento/nation-park-aeroporto-afonso-pena": "/estacionamentos/aeroporto-curitiba/nationpark",
+  "/estacionamentos/aeroporto-afonsopena/estacionamento-aeroporto-afonso-pena-curitiba":
+    "/estacionamentos/aeroporto-curitiba/nationpark",
+  "/estacionamentos/aeroporto-afonso-pena/estacionamento-afonso-pena-curitiba":
+    "/estacionamentos/aeroporto-curitiba/nationpark",
+  "/estacionamento/estacionamento-aeroporto-afonso-pena": "/estacionamentos/aeroporto-curitiba",
+  // O plugin mandava para o índice geral; a intenção da URL é Congonhas.
+  "/estacionamento/estacionamento-aeroporto-congonhas": "/estacionamentos/aeroporto-congonhas",
+  // Atalhos de destino na raiz
+  "/campinas": "/estacionamentos/aeroporto-viracopos",
+  "/guarulhos": "/estacionamentos/aeroporto-guarulhos",
+  "/afonso-pena": "/estacionamentos/aeroporto-curitiba",
+  "/estacionamento-aeroporto-viracopos": "/estacionamentos/aeroporto-viracopos",
+  "/estacionamento-aeroporto-guarulhos": "/estacionamentos/aeroporto-guarulhos",
+  "/estacionamento-aeroporto-afonso-pena": "/estacionamentos/aeroporto-curitiba",
+  "/estacionamento-aeroporto-congonhas": "/estacionamentos/aeroporto-congonhas",
+  "/estacionamento-aeroporto-confins": "/estacionamentos/aeroporto-confins",
+  "/politicia-de-privacidade-old": "/privacidade",
 };
 
 /**
@@ -532,7 +589,33 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
  * importa — mas rodar antes do fallback de asset/404 importa sempre.
  */
 function wpLegacyTarget(path: string): string | undefined {
-  return WP_INSTITUTIONAL_REDIRECTS[path] ?? WP_AEROPORTO_REDIRECTS[path] ?? WP_ESTACIONAMENTO_REDIRECTS[path];
+  return (
+    WP_INSTITUTIONAL_REDIRECTS[path] ??
+    WP_AEROPORTO_REDIRECTS[path] ??
+    WP_ESTACIONAMENTO_REDIRECTS[path] ??
+    WP_REDIRECTION_PLUGIN_REDIRECTS[path] ??
+    fichaSobApelido(path)
+  );
+}
+
+/**
+ * Ficha sem entrada no mapa, mas debaixo de um destino que só existiu no WordPress
+ * (`/estacionamentos/aeroporto-afonso-pena/<qualquer>`): vai para o destino do Hub.
+ *
+ * É seguro porque as chaves de `WP_AEROPORTO_REDIRECTS` nunca são destino do Hub (a entrada
+ * identidade saiu do mapa na virada de URL), então não existe ficha nossa ali para ser
+ * roubada. Sem isto, qualquer variante de slug que o crawler guardou e que o mapa não lista
+ * respondia 404, depois de um salto inútil. As páginas do destino (`precos`, `mais-barato`)
+ * seguem para a página equivalente, e não para a raiz do destino.
+ */
+function fichaSobApelido(path: string): string | undefined {
+  const m = path.match(/^(\/estacionamentos\/[^/]+)\/([^/]+)$/);
+  if (!m) return undefined;
+  const destino = WP_AEROPORTO_REDIRECTS[m[1]];
+  if (!destino) return undefined;
+  return PAGINAS_DO_DESTINO.has(m[2]) && destino !== "/estacionamentos"
+    ? `${destino}/${m[2]}`
+    : destino;
 }
 
 export function wpLegacyRedirect(url: URL): Response | null {
@@ -669,7 +752,14 @@ function destinoDaArvorePt(resto: string): string | null {
   const wp = wpLegacyTarget(resto);
   if (wp) return wp;
 
-  if (resto === "/" || ehRotaDeApp(resto)) return resto;
+  if (resto === "/" || ehRotaDeApp(resto)) {
+    // O blog é a única pasta com a canônica COM barra (`/blog/`, `/blog/page/2/`). Devolver
+    // sem ela custava um segundo salto, ou caía na forma que não é a do `canonical` da página.
+    // Arquivo (`feed.xml`) fica como está.
+    const ehPastaDoBlog =
+      (resto === "/blog" || resto.startsWith("/blog/")) && !/\.[a-z0-9]+$/i.test(resto);
+    return ehPastaDoBlog ? `${resto}/` : resto;
+  }
 
   return null;
 }
@@ -706,16 +796,64 @@ export default {
     const www = redirecionaWww(url);
     if (www) return www;
 
-    // Barra final não é a forma canônica fora do blog (lá o contrato é COM barra).
-    // Sem isto, quem respondia era o auto-trailing-slash do ASSETS, com 307
-    // (temporário): o crawler não consolida sinal em redirect temporário. Passa
-    // pela política de índice porque rota privada segue noindex até no redirect.
-    const barra = normalizaBarraFinal(url);
-    if (barra) return applyIndexPolicy(barra, url);
-
+    // Passa pela política de índice porque rota privada segue noindex até no redirect.
     return applyIndexPolicy(await serve(request, env), url);
   },
 };
+
+/**
+ * Todos os 301 de endereço, na ordem em que precisam rodar, e a barra final POR ÚLTIMO.
+ *
+ * A barra rodava antes de tudo, no `fetch`, e isso custava um salto a cada URL do
+ * WordPress: `/estacionamentos/aeroporto-viracopos/virapark-estacionamento-viracopos/`
+ * (235 mil impressões, a URL de maior tráfego do site antigo) ia primeiro para a forma sem
+ * barra e só no segundo pedido chegava ao mapa. Medido em 18/09/2026: 41 cadeias de dois
+ * saltos entre as 581 URLs do apex no baseline de 24/08. Todo mapa abaixo já compara sem a
+ * barra final, então quem resolve o endereço antigo entrega o destino direto, e a barra só
+ * normaliza o que nenhum mapa conhece.
+ *
+ * Barra final não é a forma canônica fora do blog (lá o contrato é COM barra). Sem a
+ * normalização, quem respondia era o auto-trailing-slash do ASSETS, com 307 (temporário), e
+ * o crawler não consolida sinal em redirect temporário.
+ */
+async function saltoDeEndereco(url: URL, env: Env): Promise<Response | null> {
+  // Árvore `/pt/` do WordPress multisite: resolve antes dos outros mapas, porque o destino
+  // dela é justamente o que eles respondem, e assim o visitante faz um salto só.
+  // URL institucional, de aeroporto ou de ficha do WordPress: 301 antes de qualquer outra
+  // coisa, pelo mesmo motivo do blog logo abaixo.
+  // Política de URL do blog: categoria e URL legada saem em 301 sem chegar no asset. Ver
+  // docs/specs/blog.md.
+  const sincrono = ptLegacyRedirect(url) ?? wpLegacyRedirect(url) ?? blogRedirect(url);
+  if (sincrono) return sincrono;
+
+  // URL antiga do próprio Hub (a virada de /p/, /destinos/, /precos/ e do slug velho dos
+  // lotes mapeados) antes da negociação de conteúdo, de propósito: depois dela, um agente
+  // pedindo `Accept: text/markdown` receberia o .md do endereço velho em vez do 301.
+  const legado = await legacyRedirect(url, env);
+  if (legado) return legado;
+
+  return normalizaBarraFinal(url);
+}
+
+/** Pontuação que gruda no fim da URL quando ela é colada de um link em Markdown: `(url/)`. */
+const PONTUACAO_COLADA = /(?:\)|%29)+$/i;
+
+/**
+ * URL com `)` no fim, herdada de link em Markdown copiado por inteiro. O Search Console tinha
+ * duas das fichas de Viracopos assim, em 404. Tira a pontuação e resolve o que sobrou pela
+ * mesma cadeia de 301, para o visitante chegar ao destino final num salto só.
+ */
+export async function pontuacaoColada(url: URL, env: Env): Promise<Response | null> {
+  if (!PONTUACAO_COLADA.test(url.pathname)) return null;
+  const limpo = new URL(url.toString());
+  limpo.pathname = url.pathname.replace(PONTUACAO_COLADA, "") || "/";
+  const salto = await saltoDeEndereco(limpo, env);
+  if (salto) {
+    const alvo = salto.headers.get("Location");
+    if (alvo) return redirect301(alvo);
+  }
+  return redirect301(limpo.pathname + limpo.search);
+}
 
 /**
  * Slugs publicados, em cache por isolate.
@@ -1068,26 +1206,9 @@ async function serve(request: Request, env: Env): Promise<Response> {
   const accept = request.headers.get("Accept") ?? "";
   const url = new URL(request.url);
 
-  // Árvore `/pt/` do WordPress multisite: resolve antes dos outros mapas, porque o destino
-  // dela é justamente o que eles respondem, e assim o visitante faz um salto só.
-  const ptHop = ptLegacyRedirect(url);
-  if (ptHop) return ptHop;
-
-  // URL institucional, de aeroporto ou de ficha do WordPress: 301 antes de qualquer outra
-  // coisa, pelo mesmo motivo do blog logo abaixo.
-  const wpHop = wpLegacyRedirect(url);
-  if (wpHop) return wpHop;
-
-  // Política de URL do blog antes de tudo: categoria e URL legada saem em 301
-  // sem chegar no asset. Ver docs/specs/blog.md.
-  const blogHop = blogRedirect(url);
-  if (blogHop) return blogHop;
-
-  // URL antiga do próprio Hub (a virada de /p/, /destinos/, /precos/ e do slug velho dos
-  // lotes mapeados) antes da negociação de conteúdo, de propósito: depois dela, um agente
-  // pedindo `Accept: text/markdown` receberia o .md do endereço velho em vez do 301.
-  const legadoHop = await legacyRedirect(url, env);
-  if (legadoHop) return legadoHop;
+  // Endereço antigo e barra final: ver `saltoDeEndereco`.
+  const endereco = (await pontuacaoColada(url, env)) ?? (await saltoDeEndereco(url, env));
+  if (endereco) return endereco;
 
   // Requisição de asset com hash (ex.: /assets/app-XXXX.js, static-loader-data-*.json):
   // se o arquivo não existe mais (deploy novo invalidou o hash antigo), o

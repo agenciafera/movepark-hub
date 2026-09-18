@@ -200,6 +200,25 @@ de propósito (o cache do manifesto vive no escopo do módulo).
     soft 404 indexável. E `pagina404` fala com o ASSETS direto, nunca reentrando em `serve()`,
     para não travar o isolate em laço.
 
+## Ordem dos 301 de endereço (18/09/2026)
+
+Tudo que troca de endereço passa por `saltoDeEndereco`, nesta ordem, e **a barra final vem
+por último**:
+
+1. `pontuacaoColada`: tira `)` colado de link em Markdown e resolve o resto pela cadeia abaixo.
+2. `ptLegacyRedirect`: a árvore `/pt/` do WordPress multisite.
+3. `wpLegacyRedirect`: institucional, aeroporto, ficha e as regras do plugin Redirection.
+4. `blogRedirect`: consolidação e canônica do blog (com barra).
+5. `legacyRedirect`: o mapa do banco (`url_legacy_map`), para os endereços antigos do próprio Hub.
+6. `normalizaBarraFinal`: só para o que nenhum mapa reconheceu.
+
+Até 18/09 a barra rodava antes de tudo, no `fetch`, e cada URL do WordPress com barra (a
+forma que o Google guardou) pagava dois saltos: medido em produção, 41 das 581 URLs do apex no
+baseline de 24/08, incluindo a de maior tráfego do site antigo. Todo mapa compara sem a barra,
+então a ordem nova não perde caso nenhum. O guard é
+[`src/wp-legado.contract.test.ts`](../../src/wp-legado.contract.test.ts), que reprova qualquer
+URL legada que faça dois saltos. Ver [`seo-indexacao.md`](./seo-indexacao.md).
+
 ## Como reconferir
 
 O par que define se a mudança está certa, e que precisa ser rodado depois de todo deploy que
