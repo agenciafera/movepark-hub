@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { Block } from "./types";
 
 /**
- * Os seis tipos de bloco das páginas de conteúdo.
+ * Os sete tipos de bloco das páginas de conteúdo.
  *
  * A medida do texto é 68ch e vem do container da seção, não daqui: é a decisão que
  * mais muda a leitura de documento longo. Linha larga é o que faz texto jurídico
@@ -60,6 +60,23 @@ export function BlockView({ block }: { block: Block }) {
             </div>
           ))}
         </dl>
+      );
+
+    case "link":
+      // `rel="noopener"` sem `nofollow`: link entre propriedades da mesma casa é
+      // o sinal que a gente quer emitir, pela mesma razão do selo de parceiro.
+      return (
+        <p className="text-pretty text-body-md leading-[1.7] text-body">
+          {block.text ? `${block.text} ` : null}
+          <a
+            href={block.href}
+            target="_blank"
+            rel="noopener"
+            className="text-mp-primary underline underline-offset-4"
+          >
+            {block.label}
+          </a>
+        </p>
       );
 
     case "faq":

@@ -1,0 +1,74 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "grupo",
+    "start_url": "/grupo",
+    "scenario_sig": "bcb12f70652e4116"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "grupo",
+    "start_url": "http://localhost:5180/grupo",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "header",
+          "description": "Site header containing Destinos button"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "header",
+            "text": "Destinos"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Main page heading O grupo Movepark"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "O grupo Movepark"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "footer",
+          "description": "Site footer containing Seja parceiro link"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "footer",
+            "text": "Seja parceiro"
+          },
+          "selector": "footer"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto O grupo Movepark, e que o rodape exibe o texto Seja parceiro.",
+    "generated_by": {
+      "model": "handwritten",
+      "at": "2026-09-18T00:00:00.000Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-18T00:00:00.000Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

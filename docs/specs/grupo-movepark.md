@@ -124,7 +124,7 @@ de IA não executa JS, e o padrão do projeto já é esse em `/precos`, `/faq` e
 | `public/llms.txt` | Seção nova do grupo e reescrita do bloco de desambiguação |
 | `llms-full.txt` | Conteúdo da `/grupo` inline |
 | Sitemap | `/grupo` entra |
-| Markdown negotiation | `/grupo` responde a `Accept: text/markdown`, como as demais páginas editoriais |
+| Markdown negotiation | `public/grupo.md`, escrito à mão: o `generate-geo-artifacts.mjs` só cobre FAQ, preços, destinos, unidades e blog, e nenhuma página institucional tem gêmeo gerado. O que impede a divergência é o teste de sincronia em `grupo.test.tsx`, que compara título, data e cada parágrafo |
 | Rodapé | Link "O grupo" no bloco Movepark |
 
 ## 7. Gates: o que trava a escrita da copy
@@ -140,7 +140,10 @@ se for o mesmo produto, a spec passa a chamá-lo pelo nome e a linha da tabela s
 se for homônimo de mercado, a página precisa de outro nome ou de desambiguação própria, porque
 nascer com nome de concorrente é dívida de marca permanente.
 
-**Q-026 · Como sustentar os claims de exclusividade.** A área nasce com três claims fortes: único
+**Q-026 · Como sustentar os claims de exclusividade.** *A página foi ao ar sem eles.* A copy
+descreve o mecanismo (o parceiro recebe a parte dele direto do meio de pagamento; o assistente
+devolve o link de pagamento na própria conversa), que é verificável e não depende desta decisão.
+Publicar "único do mercado" continua travado até haver levantamento datado. A área nasce com três claims fortes: único
 com split de pagamento, transparência total e venda com pagamento pelo WhatsApp com IA.
 Recomendação: manter, ancorados em levantamento **datado e com os players comparados nomeados**, no
 mesmo padrão que a [`/metodologia`](../../src/routes/metodologia.tsx) já usa para preço. Claim de
@@ -154,7 +157,8 @@ pagamento gerado ali**, e a reserva nasce no white-label, não no Hub. A migraç
 dentro do Hub está especificada em [agente-whatsapp-wl.md](./agente-whatsapp-wl.md). A copy
 descreve o que o cliente vive, sem afirmar que o processamento acontece dentro do Hub.
 
-**D-011 · Quantos minutos leva a compra, de verdade.** O material de origem diz menos de um minuto;
+**D-011 · Quantos minutos leva a compra, de verdade.** *A `/grupo` não cita tempo*, para não
+criar uma terceira verdade enquanto a medição não sai. O material de origem diz menos de um minuto;
 o site publica **2 min** em três lugares, contando `/sobre`, o `llms.txt` e o `PRODUCT.md`. O número
 é medível no banco, então vira medição, não opinião, e o valor apurado passa a valer nos quatro
 lugares de uma vez. Dois números publicados ao mesmo tempo é o pior dos mundos.
@@ -168,6 +172,33 @@ lugares de uma vez. Dois números publicados ao mesmo tempo é o pior dos mundos
 | Fragmento de Helmet no padrão do projeto | `helmet-fragment.contract.test.ts` |
 | Revisão de copy antes de gravar | skill `revisar-texto` |
 | Spec atualizada no mesmo PR | ADR-008, este arquivo |
+
+## 8b. O que ficou no ar (18/09/2026)
+
+| Arquivo | Papel |
+|---|---|
+| `src/features/content/pages.ts` (`GRUPO`) | O conteúdo, como dado. Página institucional nova é um objeto, não uma tela |
+| `src/routes/grupo.tsx` | A rota, com `AboutPage` + `BreadcrumbList` e a entidade da casa como `mainEntity` |
+| `src/lib/jsonld.ts` (`MARCAS`) | As quatro marcas em `brand`, com o motivo de não ser `subOrganization` no comentário |
+| `public/grupo.md` | Gêmeo Markdown, preso à página pelo teste |
+| `public/llms.txt` | Seção "Os produtos da casa" e a desambiguação declarando as irmãs |
+| `src/routes/sobre.tsx` | A ponte para `/grupo`, no fim da página |
+| `ConsumerFooter` + `ConsumerMobileMenu` | O link nas duas navegações, que o teste do menu exige no mesmo commit |
+| `src/lib/sitemapRoutes.ts` | `/grupo` no sitemap |
+| `e2e/windup/grupo.json` + trajetória | O cenário de navegador que o `routes-coverage.contract.test.ts` cobra |
+
+**Um tipo de bloco novo:** `link`. O bloco `p` renderiza texto puro, então o endereço do
+Go2Park escrito no meio de um parágrafo não viraria link para ninguém, e uma página que
+apresenta produtos sem levar ao produto é meia página. Sem `nofollow`, pela mesma razão do
+[selo-parceiro.md](./selo-parceiro.md).
+
+**A trajetória do Windup foi escrita à mão.** O planner com `google:gemini-3.1-flash-lite`
+degenerou nesta página em três tentativas seguidas, estourando o teto de 16k tokens de saída
+(US$ 0,57 queimados). A saída foi calcular o `scenario_sig` pela fórmula do próprio pacote
+(`sha256` de `{task, hints, atomic_steps, depends_on, like}`, 16 primeiros caracteres) e montar
+o plano no formato do cenário `ajuda`, que é o mesmo trio de asserções. A prova de que vale é o
+replay real: `cache=hit`, `llm_calls=0`, `PASS`. O `start_sig` é opcional na validação do cache,
+então a ausência dele não causa miss.
 
 ## 9. Fora de escopo
 

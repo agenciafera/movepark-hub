@@ -462,6 +462,41 @@ export function blogPostingSchema(p: {
 }
 
 /**
+ * As marcas mantidas pela casa, emitidas como `brand` da Movepark.
+ *
+ * `brand` e não `subOrganization`: a propriedade de marca diz que a organização
+ * mantém aquele nome, e isso é verdade hoje. Estrutura organizacional é outra
+ * coisa, e enquanto a Go2Park faturar pelo CNPJ da Agência Fera afirmar
+ * `subOrganization` seria declarar em dado estruturado uma sociedade que o
+ * contrato social não tem. Quando a titularidade passar para a Movepark, esta
+ * lista vira `subOrganization`; o gatilho está escrito em
+ * docs/specs/grupo-movepark.md.
+ */
+export const MARCAS = [
+  {
+    name: "Movepark Hub",
+    url: SITE_URL,
+    description:
+      "Plataforma de reserva de vaga em estacionamento de aeroporto, com pagamento online e divisão automática do valor com o parceiro.",
+  },
+  {
+    name: "Go2Park",
+    url: "https://go2park.com.br",
+    description:
+      "Rastreio em tempo real da van de traslado do estacionamento até o terminal, pelo navegador, sem aplicativo e sem conta.",
+  },
+  {
+    name: "Go2Med",
+    description: "Rastreio em tempo real de van de transporte de hospital. Em desenvolvimento.",
+  },
+  {
+    name: "Coopark",
+    description:
+      "Contratação de vaga mensal com demanda agregada por região, para melhorar o preço de quem estaciona todo dia. Em desenvolvimento.",
+  },
+] as const;
+
+/**
  * A entidade Movepark, para a home: o bloco que ancora o knowledge panel e a
  * desambiguação de marca nos LLMs (o mesmo papel do bloco do llms.txt, em dado
  * estruturado). Só entra aqui dado com fonte verificável: redes oficiais
@@ -488,6 +523,7 @@ export function organizationSchema() {
       availableLanguage: "Portuguese",
     },
     sameAs: REDES.map((r) => r.url),
+    brand: MARCAS.map((m) => ({ "@type": "Brand", ...m })),
   };
 }
 

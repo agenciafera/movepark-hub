@@ -379,6 +379,23 @@ export default function SobrePage() {
         </div>
       </section>
 
+      {/* Ponte para a área do grupo. Quem abre o /sobre está decidindo se confia na
+          reserva, então o portfólio da casa fica a um clique daqui em vez de disputar
+          espaço com a história da plataforma. */}
+      <section className="border-t border-hairline bg-surface-soft">
+        <div className="mx-auto flex max-w-[1080px] flex-col gap-3 px-4 py-12 desktop:px-8">
+          <h2 className="text-balance text-display-sm text-ink">Os outros produtos da casa</h2>
+          <p className="max-w-[68ch] text-pretty text-body-md text-body">
+            A mesma equipe desenvolve a Go2Park, que mostra no mapa a van do traslado em tempo
+            real, e mais dois produtos que ainda estão em desenvolvimento.{" "}
+            <Link to="/grupo" className="text-mp-primary underline underline-offset-4">
+              Conheça o grupo
+            </Link>
+            .
+          </p>
+        </div>
+      </section>
+
       <CtaBanner largura="conteudo" />
     </>
   );

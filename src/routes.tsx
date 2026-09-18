@@ -60,6 +60,7 @@ import DestinosPage from "@/routes/destinos";
 import NotFoundPage from "@/routes/not-found";
 import BlogListingPage, { type BlogListingData } from "@/routes/blog";
 import BlogPostPage from "@/routes/blog-post";
+import GrupoPage from "@/routes/grupo";
 import SobrePage from "@/routes/sobre";
 import TermosPage from "@/routes/termos";
 import PrivacidadePage from "@/routes/privacidade";
@@ -885,6 +886,7 @@ export const routes: RouteRecord[] = [
           { path: "/descadastro", element: <DescadastroPage /> },
           { path: "/como-funciona", element: <ComoFuncionaPage /> },
           { path: "/metodologia", element: <MetodologiaPage />, loader: metodologiaLoader },
+          { path: "/grupo", element: <GrupoPage /> },
           { path: "/docs", element: <DocsPage /> },
           { path: "/seja-parceiro", element: <SejaParceiroPage /> },
           { path: "/selo", element: <SeloPage /> },
