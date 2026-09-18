@@ -423,6 +423,24 @@ valor, que é a regra do portão 1.4 da skill. O que sustenta o guia é o que d�
 distância medida com PostGIS, nota pública do Google com a data da coleta, endereço conferido e o
 que perguntar ao pátio por telefone.
 
+**Conteúdo 34, as cinco primeiras praças: o levantamento de 18/09/2026 achou o trio quase pronto.**
+Congonhas já tinha os três (6 posts, 11 FAQs e página de preço com dois parceiros). Recife, Brasília,
+Galeão e Salvador tinham o Top 5 da praça e 8 FAQs cada, então faltava só o guia âncora, pela mesma
+regra do Conteúdo 36: guia novo não repete a intenção de preço, que já tem dona.
+
+| Praça | Estado em 18/09/2026 | O que falta |
+| --- | --- | --- |
+| Congonhas | trio completo | nada |
+| Recife | guia âncora publicado em 18/09, 3.065 palavras | nada |
+| Brasília, Galeão, Salvador | Top 5 e FAQ no ar | guia âncora, um por vez |
+
+O guia do Recife ficou com a intenção **"deixar o carro"**, que estava órfã na coleta de cauda longa
+do REC enquanto o Top 5 seguia dono de "barato". O que sustenta o texto é o verificável: sete lotes
+mapeados com distância medida em PostGIS, a tarifa do pátio oficial com a data da pesquisa de agosto
+de 2026, e o roteiro de perguntas para a ligação, porque **nenhum dos sete particulares publica
+tabela**. Duas notas do Google ficaram de fora da tabela por se apoiarem em uma e em três avaliações,
+aplicando ao conteúdo o piso do Conteúdo 30.
+
 ### Defesa: contínua, a partir da semana 7
 
 | Rotina | Frequência |
