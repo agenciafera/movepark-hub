@@ -187,3 +187,54 @@ export function useSetPlatformCouponActive() {
     },
   });
 }
+
+// --- Reserva em andamento ----------------------------------------------------------------------
+
+export type ReservaEmAndamento = {
+  id: string;
+  code: string;
+  expires_at: string | null;
+  location_name: string | null;
+};
+
+/**
+ * A reserva que o cliente deixou no meio do checkout, se houver.
+ *
+ * É o que transforma a tela de descontos em algo acionável: com uma reserva aberta, escolher o
+ * cupom aplica nela e leva para o pagamento. Sem ela, o cupom só pode ser guardado para a próxima.
+ *
+ * `expires_at > now()` filtra no servidor: reserva vencida ainda fica `pending` na tabela (quem
+ * muda o status é a rotina de expiração), e oferecer cupom para ela mandaria o cliente para um
+ * checkout morto.
+ */
+export function useReservaEmAndamento(enabled = true) {
+  return useQuery({
+    queryKey: [...couponWalletKeys.all, "reserva-em-andamento"],
+    enabled,
+    queryFn: async (): Promise<ReservaEmAndamento | null> => {
+      const { data, error } = await supabase
+        .from("booking")
+        .select("id, code, expires_at, location:location(name)")
+        .eq("status", "pending")
+        .is("deleted_at", null)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const row = data as unknown as {
+        id: string;
+        code: string;
+        expires_at: string | null;
+        location: { name: string } | null;
+      };
+      return {
+        id: row.id,
+        code: row.code,
+        expires_at: row.expires_at,
+        location_name: row.location?.name ?? null,
+      };
+    },
+  });
+}

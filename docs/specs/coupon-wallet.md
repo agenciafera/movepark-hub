@@ -112,12 +112,38 @@ valendo e chega ao checkout já aplicado.
 
 | Superfície | O que faz |
 |---|---|
-| `/account/descontos` | A carteira. Lista condições, sem veredito, porque não há pedido para julgar |
+| `/account/descontos` | A carteira, acionável. Ver §4.1 |
 | Resumo do checkout | Linha "Usar cupom" que abre a carteira no contexto da reserva, com veredito, motivo e valor |
 | `/manager/marketing/cupons` | Onde a Movepark cria e pausa a campanha. Separada de `/operator/coupons`, onde o parceiro cria a dele e banca o desconto |
 
 `apply_coupon_to_booking` / `remove_coupon_from_booking` mexem no total de reserva **`pending`** do
 próprio cliente. Depois do pagamento a porta fecha: mudar o total quebraria o split já enviado.
+
+### 4.1 A tela de descontos tem dois modos
+
+Listar cupom sem poder fazer nada com ele é catálogo, não carteira. A tela olha se o cliente tem
+**reserva em andamento** (`status = 'pending'` e `expires_at > now()`, a mais recente) e muda de
+comportamento:
+
+| Estado | O cartão oferece | O que acontece |
+|---|---|---|
+| Com reserva aberta | **Usar** | Aplica naquela reserva por `apply_coupon_to_booking` e leva para `/checkout/<code>` |
+| Sem reserva aberta | **Guardar** | Grava o código na sessão (`storeCoupon`) e ele entra sozinho na próxima reserva |
+
+Com reserva aberta a carteira roda em contexto de pedido, então cada cartão vem com veredito,
+motivo e o desconto real: é o mesmo seletor do checkout, alcançado por outra porta.
+
+Sem reserva aberta **não existe pedido para julgar**, e prometer "disponível" ali seria mentira: o
+desconto depende do preço, do tipo de vaga e de a unidade fechar a reserva no Hub. Por isso o
+cartão mostra condições e o botão fala em guardar, não em usar.
+
+O canal do "guardar" é o **mesmo do link de campanha** (`?cupom=`): a página da unidade já lê
+`getStoredCoupon()` e passa o código ao criar a reserva. Não há caminho novo para manter, e o
+cupom escolhido na carteira entra pelo trilho que já era testado.
+
+`expires_at > now()` filtra no servidor porque reserva vencida continua `pending` na tabela (quem
+muda o status é a rotina de expiração), e oferecer cupom para ela mandaria o cliente a um checkout
+morto.
 
 ### A carteira avalia contra a reserva, não contra uma simulação nova
 
@@ -168,6 +194,7 @@ pessoa tem 0, 1 ou mais reservas pagas.
 |---|---|
 | Lógica pura | `src/features/customer-coupons/couponWallet.logic.test.ts` (21 casos) |
 | Lógica do formulário | `src/features/customer-coupons/platformCoupons.logic.test.ts` (21 casos) |
+| Os dois modos da tela | `src/routes/account/descontos.test.tsx` (3 casos) |
 | Split | `supabase/functions/_shared/payments/split.test.ts` (3 casos novos, incluindo a recusa por teto estourado) |
 | Banco | `supabase/tests/coupon_wallet.test.sql` |
 | Navegador | `e2e/windup/account-descontos.json` e `e2e/windup/manager-marketing-cupons.json` |

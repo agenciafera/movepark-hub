@@ -20,6 +20,10 @@ type Props = {
   applying?: boolean;
   appliedCode?: string | null;
   onClearCoupon?: () => void;
+  /** Cupom já guardado para a próxima reserva (fora de contexto de pedido). */
+  savedCode?: string | null;
+  /** Rótulo do botão de cada cartão. */
+  actionLabel?: string;
 };
 
 function Secao({ titulo, itens, ...rest }: { titulo: string; itens: WalletCoupon[] } & Props) {
@@ -35,6 +39,8 @@ function Secao({ titulo, itens, ...rest }: { titulo: string; itens: WalletCoupon
             onUse={rest.onUse}
             applying={rest.applying}
             isApplied={rest.appliedCode === c.code}
+            isSaved={rest.savedCode === c.code}
+            actionLabel={rest.actionLabel}
           />
         ))}
       </div>
@@ -52,6 +58,8 @@ export function CouponWalletView({
   applying,
   appliedCode,
   onClearCoupon,
+  savedCode,
+  actionLabel,
 }: Props) {
   const wallet = useCouponWallet(orderContext);
   const redeem = useRedeemCoupon();
@@ -133,13 +141,15 @@ export function CouponWalletView({
           <Secao
             titulo={temPedido ? "Disponível para esta reserva" : "Seus cupons"}
             itens={available}
-            onUse={temPedido ? onUse : undefined}
+            onUse={onUse}
             applying={applying}
             appliedCode={appliedCode}
+            savedCode={savedCode}
+            actionLabel={actionLabel}
           />
           <Secao titulo="Indisponível para esta reserva" itens={unavailable} />
 
-          {!temPedido ? (
+          {!temPedido && !onUse ? (
             <p className="text-caption-sm text-muted">O desconto entra na hora de pagar.</p>
           ) : null}
         </>

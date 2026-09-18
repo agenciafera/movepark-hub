@@ -11,10 +11,15 @@ import {
 
 type Props = {
   coupon: WalletCoupon;
-  /** Aplicar o cupom neste pedido. Ausente na tela da conta, onde não há pedido. */
+  /** Escolher este cupom. Ausente quando o cartão é só leitura. */
   onUse?: (code: string) => void;
   applying?: boolean;
+  /** Já aplicado na reserva em andamento. */
   isApplied?: boolean;
+  /** Já guardado para a próxima reserva (sem reserva aberta agora). */
+  isSaved?: boolean;
+  /** Rótulo do botão. "Usar" quando aplica numa reserva, "Guardar" quando fica para a próxima. */
+  actionLabel?: string;
 };
 
 /**
@@ -23,7 +28,14 @@ type Props = {
  * Indisponível mostra o motivo no lugar do botão. O motivo é obrigatório: um cartão apagado sem
  * explicação faz a pessoa tentar de novo e culpar o app.
  */
-export function CouponCard({ coupon, onUse, applying, isApplied }: Props) {
+export function CouponCard({
+  coupon,
+  onUse,
+  applying,
+  isApplied,
+  isSaved,
+  actionLabel = "Usar",
+}: Props) {
   const indisponivel = coupon.is_eligible === false;
   const cap = couponCapLabel(coupon);
   const validade = couponValidityLabel(coupon);
@@ -35,7 +47,7 @@ export function CouponCard({ coupon, onUse, applying, isApplied }: Props) {
         indisponivel && "opacity-60",
       )}
     >
-      {(coupon.is_best && !indisponivel) || isApplied ? (
+      {(coupon.is_best && !indisponivel) || isApplied || isSaved ? (
         <div className="flex flex-wrap items-center gap-2">
           {coupon.is_best && !indisponivel ? (
             <span className="rounded-full bg-primary px-2 py-0.5 text-badge text-on-primary">
@@ -45,6 +57,11 @@ export function CouponCard({ coupon, onUse, applying, isApplied }: Props) {
           {isApplied ? (
             <span className="rounded-full bg-badge-confirmed-bg px-2 py-0.5 text-badge text-badge-confirmed-fg">
               Em uso
+            </span>
+          ) : null}
+          {isSaved && !isApplied ? (
+            <span className="rounded-full bg-badge-confirmed-bg px-2 py-0.5 text-badge text-badge-confirmed-fg">
+              Vai na próxima reserva
             </span>
           ) : null}
         </div>
@@ -69,9 +86,9 @@ export function CouponCard({ coupon, onUse, applying, isApplied }: Props) {
           <p className="font-mono text-caption-sm text-muted">{coupon.code}</p>
         </div>
 
-        {onUse && !indisponivel && !isApplied ? (
+        {onUse && !indisponivel && !isApplied && !isSaved ? (
           <Button size="sm" onClick={() => onUse(coupon.code)} disabled={applying}>
-            Usar
+            {actionLabel}
           </Button>
         ) : null}
       </div>
