@@ -5,7 +5,7 @@ import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { ConsumerFooter } from "./ConsumerFooter";
 
-const GAVETAS = ["Suporte", "Movepark", "Estacionamentos"];
+const GAVETAS = ["Estacionamentos", "Movepark", "Suporte"];
 
 async function abrirMenu() {
   await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
@@ -108,16 +108,21 @@ describe("ConsumerMobileMenu", () => {
     }
   });
 
-  /** O título é o que deixa o polegar parar de rolar no bloco certo. */
-  it("agrupa o resto do site em três gavetas, o suporte primeiro", async () => {
+  /**
+   * O título é o que deixa o polegar parar de rolar no bloco certo, e a ordem é
+   * decisão de negócio: o dono de estacionamento é o outro lado da praça e vem
+   * primeiro; o suporte fecha a lista, porque quem precisa de ajuda chega pelo
+   * e-mail da reserva ou pela chamada do rodapé, e raramente por um menu.
+   */
+  it("agrupa o resto do site em três gavetas, o parceiro primeiro e o suporte por último", async () => {
     renderWithProviders(<ConsumerMobileMenu />);
     await abrirMenu();
 
     const grupos = screen.getAllByRole("group");
     expect(grupos.map((g) => g.textContent?.slice(0, 20))).toEqual([
-      expect.stringContaining("Suporte"),
-      expect.stringContaining("Movepark"),
       expect.stringContaining("Estacionamentos"),
+      expect.stringContaining("Movepark"),
+      expect.stringContaining("Suporte"),
     ]);
     // O caminho da reserva fica solto acima das gavetas: é o motivo de alguém
     // abrir o site.

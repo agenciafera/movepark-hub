@@ -105,9 +105,11 @@ const DESTAQUES: ItemDeMenu[] = [
  * Os rótulos e os títulos continuam sendo os **do rodapé**, item por item: dois
  * nomes para a mesma página fazem o leitor achar que são páginas diferentes. O
  * que muda daqui pra lá é só a ordem, e ela muda porque as duas superfícies
- * respondem a perguntas diferentes. O rodapé é o mapa do site, lido por quem
- * chegou ao fim da página; o menu é a navegação do celular, e nele o suporte vem
- * antes do institucional, que vem antes do que fala com o dono do estacionamento.
+ * respondem a perguntas diferentes. O rodapé é o mapa do site; o menu é a
+ * navegação do celular, e nele vem primeiro o dono de estacionamento, que é o
+ * outro lado da praça e o que faz a oferta crescer. O suporte fecha a lista, e
+ * não porque vale menos: quem precisa de ajuda chega pelo e-mail da reserva, pela
+ * chamada do rodapé ou pela busca, e raramente por um menu de navegação.
  *
  * Nada some: fechado, o grupo custa um toque, e é o toque que separa "quero
  * reservar" de "quero ler os termos". O teste `ConsumerMobileMenu.test.tsx` abre
@@ -119,13 +121,11 @@ const DESTAQUES: ItemDeMenu[] = [
  */
 const GRUPOS_DO_SITE: GrupoDeMenu[] = [
   {
-    titulo: "Suporte",
+    titulo: "Estacionamentos",
     itens: [
-      { to: "/ajuda", label: "Central de ajuda", icone: Lifebuoy },
-      { to: "/faq", label: "Perguntas frequentes", icone: Question },
-      { to: "/como-funciona", label: "Como funciona", icone: Info },
-      { to: "/cancelamento", label: "Política de cancelamento", icone: CalendarX },
-      { to: "/contato", label: "Fale conosco", icone: ChatCircle },
+      { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
+      { to: "/selo", label: "Selo de parceiro", icone: Seal },
+      { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
     ],
   },
   {
@@ -139,11 +139,13 @@ const GRUPOS_DO_SITE: GrupoDeMenu[] = [
     ],
   },
   {
-    titulo: "Estacionamentos",
+    titulo: "Suporte",
     itens: [
-      { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
-      { to: "/selo", label: "Selo de parceiro", icone: Seal },
-      { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
+      { to: "/ajuda", label: "Central de ajuda", icone: Lifebuoy },
+      { to: "/faq", label: "Perguntas frequentes", icone: Question },
+      { to: "/como-funciona", label: "Como funciona", icone: Info },
+      { to: "/cancelamento", label: "Política de cancelamento", icone: CalendarX },
+      { to: "/contato", label: "Fale conosco", icone: ChatCircle },
     ],
   },
 ];
