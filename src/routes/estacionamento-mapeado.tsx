@@ -112,7 +112,7 @@ export default function EstacionamentoMapeadoPage() {
           {JSON.stringify(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
-              { name: "Destinos", url: `${SITE_URL}/estacionamentos` },
+              { name: "Estacionamentos", url: `${SITE_URL}/estacionamentos` },
               { name: destinationLabel, url: `${SITE_URL}${caminhoDestino(destinoSlug)}` },
               { name: prospect.name, url: canonical },
             ]),

@@ -163,7 +163,7 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
     );
   });
 
-  it("renderiza breadcrumb visível (Início › Destinos › destino)", () => {
+  it("renderiza breadcrumb visível (Início › Estacionamentos › destino)", () => {
     vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
 
     render();
@@ -172,6 +172,35 @@ describe("DestinoPage: detalhe do destino (SEO/institucional)", () => {
     expect(trilha).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Estacionamentos" })).toHaveAttribute(
+      "href",
+      "/estacionamentos",
+    );
+  });
+
+  /**
+   * Regressão: a trilha visível já dizia "Estacionamentos" e o `BreadcrumbList` ainda dizia
+   * "Destinos". O Google pede que o dado estruturado repita o breadcrumb da página, então os
+   * dois não podem divergir: quem mexer no rótulo tem que mexer nos dois.
+   */
+  it("o BreadcrumbList repete o rótulo da trilha visível", async () => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+
+    render();
+
+    // O Helmet escreve no <head> depois do render, então a trilha em dado estruturado
+    // aparece num tique seguinte, como nos outros testes de JSON-LD deste arquivo.
+    const nomes = await waitFor(() => {
+      const trilha = [...document.querySelectorAll('script[type="application/ld+json"]')]
+        .map((s) => JSON.parse(s.textContent ?? "{}"))
+        .find((b) => b["@type"] === "BreadcrumbList") as
+        | { itemListElement: { name: string }[] }
+        | undefined;
+      expect(trilha).toBeTruthy();
+      return trilha!.itemListElement.map((i) => i.name);
+    });
+
+    expect(nomes.slice(0, 2)).toEqual(["Início", "Estacionamentos"]);
+    expect(screen.getByRole("link", { name: nomes[1] })).toHaveAttribute(
       "href",
       "/estacionamentos",
     );

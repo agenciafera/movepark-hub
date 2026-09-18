@@ -59,7 +59,7 @@ export default function DestinosPage() {
           {JSON.stringify(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
-              { name: "Destinos", url: canonical },
+              { name: "Estacionamentos", url: canonical },
             ]),
           )}
         </script>
@@ -74,7 +74,9 @@ export default function DestinosPage() {
           <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
             Onde a Movepark atua
           </span>
-          <h1 className="text-display-xl text-ink">Destinos atendidos pela Movepark</h1>
+          <h1 className="text-display-xl text-ink">
+            Estacionamento nos aeroportos atendidos pela Movepark
+          </h1>
           <p className="max-w-3xl text-body-md text-muted">
             Encontre estacionamento perto dos principais aeroportos e destinos do Brasil. Escolha um
             destino para ver as opções de estacionamento, comparar preços e reservar com antecedência.

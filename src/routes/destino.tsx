@@ -531,7 +531,7 @@ export default function DestinoPage() {
           {JSON.stringify(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
-              { name: "Destinos", url: `${SITE_URL}/estacionamentos` },
+              { name: "Estacionamentos", url: `${SITE_URL}/estacionamentos` },
               { name: destination.name, url: canonical },
             ]),
           )}

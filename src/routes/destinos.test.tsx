@@ -69,7 +69,7 @@ describe("DestinosPage", () => {
     render();
 
     expect(
-      screen.getByRole("heading", { level: 1, name: /Destinos atendidos pela Movepark/i }),
+      screen.getByRole("heading", { level: 1, name: /Estacionamento nos aeroportos atendidos pela Movepark/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Mais buscados/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Outros destinos/i })).toBeInTheDocument();
