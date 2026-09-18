@@ -76,7 +76,8 @@ do envio. Quem manda: `cancel-booking` na hora, e a varredura do cron `reconcile
 **Piso do abatimento (17/09/2026, migration `20261120220000_abatimento_com_piso.sql`).** A taxa de
 processamento fica na perna do parceiro. Se o abatimento deixasse a perna menor que a taxa, o
 recebedor ficaria negativo no gateway (medido no MP-62A79F: perna de R$ 0,18 pagando taxa de
-R$ 0,18, zero por sorte). `payout_debt_reserve(company, max, provider, floor)` garante que a perna
+R$ 0,18, zero por sorte). Desde 18/09/2026 a taxa é da Movepark e o piso só é passado quando a
+perna do parceiro ainda paga a taxa (exceção do take_rate baixo). `payout_debt_reserve(company, max, provider, floor)` garante que a perna
 que sobra é zero (abateu tudo, 100% master) ou pelo menos o piso; na faixa entre os dois, abate
 menos e o resto fica para a próxima venda. O piso vem da Edge (`debtFloorCents`: PIX 3%, cartão
 15% do total, mínimo R$ 1), com folga de propósito.
@@ -134,8 +135,8 @@ master, o gateway debita a Movepark e a perna do parceiro entra na dívida pela 
 | Regra | Antes | Agora |
 |---|---|---|
 | `liable` (chargeback) | parceiro | **Movepark** |
-| `charge_processing_fee` | parceiro | parceiro (inalterado) |
-| `charge_remainder_fee` | parceiro | parceiro (inalterado) |
+| `charge_processing_fee` | parceiro | parceiro até 17/09/2026; **Movepark** desde 18/09/2026 (ver payment-split.md) |
+| `charge_remainder_fee` | parceiro | parceiro até 17/09/2026; **Movepark** desde 18/09/2026 |
 | `role` (novo) | não existia | `partner` / `movepark`, gravado no snapshot |
 
 A identificação da perna do parceiro no razão deixa de depender de `liable`: passa a ser `role`,

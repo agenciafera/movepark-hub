@@ -9,10 +9,11 @@ import {
   refundSplitHybrid,
   refundSplitToMaster,
   splitForGateway,
+  estimatedGatewayFeeCents,
 } from "./split.ts";
 
 // PIX/à vista: chargedCents == baseCents (regressão — comportamento original).
-Deno.test("buildSplit: comissão + parceiro somam o total; parceiro absorve taxas", () => {
+Deno.test("buildSplit: comissão + parceiro somam o total; a Movepark paga a taxa do gateway", () => {
   const rules = buildSplit({
     chargedCents: 10000,
     baseCents: 10000,
@@ -26,12 +27,28 @@ Deno.test("buildSplit: comissão + parceiro somam o total; parceiro absorve taxa
   assertEquals(partner.amount, 8500);
   assertEquals(mp.amount, 1500);
   assertEquals(partner.amount + mp.amount, 10000);
-  // E0.3.5: o chargeback (liable) passou para a Movepark; a taxa de processamento segue no parceiro.
+  // E0.3.5: o chargeback (liable) passou para a Movepark. 18/09/2026: a taxa de processamento
+  // também. O parceiro recebe a perna cheia.
   assertEquals(partner.liable, false);
-  assertEquals(partner.chargeProcessingFee, true);
-  assertEquals(partner.chargeRemainderFee, true);
+  assertEquals(partner.chargeProcessingFee, false);
+  assertEquals(partner.chargeRemainderFee, false);
   assertEquals(mp.liable, true);
-  assertEquals(mp.chargeProcessingFee, false);
+  assertEquals(mp.chargeProcessingFee, true);
+  assertEquals(mp.chargeRemainderFee, true);
+});
+
+Deno.test("buildSplit: perna da Movepark menor que a taxa estimada devolve a taxa ao parceiro", () => {
+  // take_rate de 1% num cartão: a comissão (100) não cobre os ~6% estimados (600). O gateway cobra
+  // de quem está marcado, então marcar a Movepark deixaria a perna dela negativa.
+  const rules = buildSplit({ chargedCents: 10000, baseCents: 10000, takeRateBps: 100, moveparkRecipientId: "rp_mp", partnerRecipientId: "rp_partner", method: "card" });
+  const partner = rules.find((r) => r.recipientId === "rp_partner")!;
+  const mp = rules.find((r) => r.recipientId === "rp_mp")!;
+  assertEquals([partner.chargeProcessingFee, mp.chargeProcessingFee], [true, false]);
+  // No PIX a mesma comissão não cobre 1,5% (150): segue no parceiro; com 2% de comissão já cobre.
+  const pix = buildSplit({ chargedCents: 10000, baseCents: 10000, takeRateBps: 200, moveparkRecipientId: "rp_mp", partnerRecipientId: "rp_partner", method: "pix" });
+  assertEquals(pix.find((r) => r.recipientId === "rp_mp")!.chargeProcessingFee, true);
+  assertEquals(estimatedGatewayFeeCents("card", 3090), 186);
+  assertEquals(estimatedGatewayFeeCents("pix", 1800), 27);
 });
 
 Deno.test("buildSplit: take_rate 0 → só a perna do parceiro", () => {
@@ -235,8 +252,8 @@ Deno.test("E0.3.5: a perna do parceiro leva role=partner e o chargeback (liable)
   });
   const p = rules.find((r) => r.role === "partner")!;
   const m = rules.find((r) => r.role === "movepark")!;
-  assertEquals([p.amount, p.liable, p.chargeProcessingFee], [16000, false, true]);
-  assertEquals([m.amount, m.liable, m.chargeProcessingFee], [4000, true, false]);
+  assertEquals([p.amount, p.liable, p.chargeProcessingFee], [16000, false, false]);
+  assertEquals([m.amount, m.liable, m.chargeProcessingFee], [4000, true, true]);
   assertEquals(partnerRule(rules), p);
 });
 

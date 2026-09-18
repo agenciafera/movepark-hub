@@ -58,11 +58,28 @@ export interface BuildSplitArgs {
    * Cupom do parceiro fica em 0 e nada muda, que é o comportamento de sempre.
    */
   platformFundedCents?: number;
+  /**
+   * Meio de pagamento, para estimar a taxa do gateway. A Movepark paga a taxa (decisão de
+   * 18/09/2026); se a perna dela não cobre a estimativa (take_rate baixo, cupom de plataforma),
+   * a taxa volta para a perna do parceiro, porque o gateway cobra de quem está marcado e uma
+   * perna menor que a taxa deixaria o recebedor negativo.
+   */
+  method?: "pix" | "card";
 }
 
 /**
- * Divide o valor cobrado entre parceiro (líquido sobre o base, absorve taxas) e Movepark
- * (comissão + excedente de juros). Soma SEMPRE == chargedCents (exigência do gateway).
+ * Estimativa folgada da taxa do gateway, só para decidir se a perna da Movepark aguenta pagá-la:
+ * PIX cobra ~1%, cartão ~3,8% à vista e mais no parcelado.
+ */
+export function estimatedGatewayFeeCents(method: "pix" | "card" | undefined, chargedCents: number): number {
+  const pct = method === "card" ? 0.06 : 0.015;
+  return Math.ceil(Math.max(0, chargedCents) * pct);
+}
+
+/**
+ * Divide o valor cobrado entre parceiro (o preço base menos a comissão, perna cheia) e Movepark
+ * (comissão + excedente de juros, e é ela que paga a taxa do gateway). Soma SEMPRE ==
+ * chargedCents (exigência do gateway).
  */
 export function buildSplit({
   chargedCents,
@@ -72,6 +89,7 @@ export function buildSplit({
   partnerRecipientId,
   requireRecipients = true,
   platformFundedCents = 0,
+  method,
 }: BuildSplitArgs): SplitRule[] {
   if (!Number.isInteger(baseCents) || baseCents <= 0) {
     throw new Error("Valor da cobrança inválido.");
@@ -106,12 +124,16 @@ export function buildSplit({
     );
   }
 
-  // Parceiro: absorve a taxa de processamento e recebe o líquido do preço base. O chargeback
+  // Quem paga a taxa do gateway (18/09/2026): a MOVEPARK, da comissão dela. O parceiro recebe a
+  // perna cheia. Só volta para o parceiro quando não existe perna da Movepark, ou quando ela é
+  // menor que a taxa estimada (o gateway cobra de quem está marcado, sem olhar se cabe).
+  // Parceiro: recebe o preço base menos a comissão. O chargeback
   // (`liable`) foi para a Movepark em 15/09/2026 (E0.3.5): o gateway debita o master e a perna do
   // parceiro vira dívida no razão, o mesmo trilho do estorno. Só quando não existe perna da
   // Movepark (take_rate 0 e sem excedente) é que o parceiro fica `liable`, porque o gateway exige
   // um responsável.
   const temPernaMovepark = moveparkAmount > 0;
+  const moveparkPagaTaxa = temPernaMovepark && moveparkAmount >= estimatedGatewayFeeCents(method, chargedCents);
   const rules: SplitRule[] = [
     {
       role: "partner",
@@ -119,12 +141,12 @@ export function buildSplit({
       amount: partnerAmount,
       type: "flat",
       liable: !temPernaMovepark,
-      chargeProcessingFee: true,
-      chargeRemainderFee: true,
+      chargeProcessingFee: !moveparkPagaTaxa,
+      chargeRemainderFee: !moveparkPagaTaxa,
     },
   ];
 
-  // Movepark: comissão + excedente, responsável pelo chargeback, sem taxa de processamento.
+  // Movepark: comissão + excedente, responsável pelo chargeback e pela taxa de processamento.
   if (temPernaMovepark) {
     if (requireRecipients && !moveparkRecipientId) {
       throw new Error("Recebedor master da Movepark não configurado.");
@@ -135,8 +157,8 @@ export function buildSplit({
       amount: moveparkAmount,
       type: "flat",
       liable: true,
-      chargeProcessingFee: false,
-      chargeRemainderFee: false,
+      chargeProcessingFee: moveparkPagaTaxa,
+      chargeRemainderFee: moveparkPagaTaxa,
     });
   }
 

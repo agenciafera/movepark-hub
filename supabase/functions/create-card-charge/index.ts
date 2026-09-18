@@ -20,7 +20,7 @@ import {
   isGatewaySplitEnabled,
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
-import { debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, splitForGateway } from "../_shared/payments/split.ts";
+import { debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
@@ -201,6 +201,7 @@ Deno.serve(async (req: Request) => {
       partnerRecipientId: recipient?.external_recipient_id ?? null,
       requireRecipients: splitEnabled,
       platformFundedCents: platformFundedCents(booking.price_breakdown),
+      method: "card",
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
@@ -218,7 +219,8 @@ Deno.serve(async (req: Request) => {
       p_company_id: location.company_id,
       p_max_cents: maxDebtRecoveryCents(split),
       // A perna que sobra é zero ou pelo menos o piso: nunca menor que a taxa que ela paga.
-      p_floor_cents: debtFloorCents("card", split.reduce((a, r) => a + r.amount, 0)),
+      // O piso só existe quando a perna do PARCEIRO paga a taxa; com a Movepark pagando, abate tudo.
+      p_floor_cents: partnerRule(split)?.chargeProcessingFee ? debtFloorCents("card", split.reduce((a, r) => a + r.amount, 0)) : 0,
     });
     if (reservaErr) {
       // Sem reserva não dá para saber quanto abater; cobrar sem abater deixaria a dívida para a

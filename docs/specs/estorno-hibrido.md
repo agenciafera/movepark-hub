@@ -33,6 +33,13 @@ cliente nada muda: o dinheiro volta do mesmo jeito e no mesmo prazo.
 | 3 | Chargeback | **Fica 100% no master**, como hoje | O `liable` é fixado na captura e o gateway debita sem olhar saldo; não há como escolher na hora |
 | 4 | Ativação | **Chave global `pagarme_refund_hybrid_enabled`**, nasce `false` | Sobe inerte, um teste com a chave ligada, depois liga para todos. Desligar volta ao 100% master na hora |
 
+## Quem paga a taxa mudou (18/09/2026)
+
+A partir de 18/09/2026 a taxa do gateway é da Movepark (payment-split.md). Nas vendas novas a
+perna do parceiro não tem `charge_processing_fee`, então `partnerRefundCents` devolve a perna
+cheia e a dívida também é a perna cheia: "o líquido que ele recebeu" e "a perna" viram o mesmo
+número. A decisão 2 continua valendo para as vendas antigas, em que ele pagou a taxa.
+
 ## De qual saldo o estorno sai (18/09/2026)
 
 Confirmado pelo suporte da Pagar.me depois de quatro recusas `action_forbidden | Saldo

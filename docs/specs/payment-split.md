@@ -420,8 +420,16 @@ service_role).
    expirada), o recebedor do parceiro (`payout_recipient.external_recipient_id`, precisa existir) e o
    `company.take_rate_bps`.
 2. **Split** (`_shared/payments/split.ts`, puro/testado): comissão = `round(total * take_rate_bps/10000)`
-   → recebedor master da Movepark; restante → recebedor do parceiro. **O parceiro absorve as taxas**
-   (`liable`/`charge_processing_fee`/`charge_remainder_fee` = true na perna dele; Movepark = false).
+   → recebedor master da Movepark; restante → recebedor do parceiro. **A Movepark paga a taxa do
+   gateway (decisão de 18/09/2026):** `charge_processing_fee` e `charge_remainder_fee` = true na
+   perna da Movepark e false na do parceiro, que recebe a perna cheia. Até 17/09/2026 era o
+   contrário (o parceiro absorvia); as vendas antigas ficam como foram cobradas, e todo cálculo
+   que depende disso (líquido do extrato, dívida, estorno híbrido, piso do abatimento) lê a flag
+   gravada no `payment.split`, então convive com os dois. **Exceção:** se a perna da Movepark é
+   menor que a taxa estimada (`estimatedGatewayFeeCents`: 1,5% no PIX, 6% no cartão; acontece com
+   take_rate muito baixo ou cupom de plataforma), ou não existe, a taxa volta para a perna do
+   parceiro: o gateway cobra de quem está marcado e uma perna menor que a taxa ficaria negativa.
+   `liable` (chargeback) segue na Movepark desde 15/09/2026.
    `type: "flat"` em centavos; a soma é sempre o total. Comissão 0 → só a perna do parceiro.
 3. `getGateway("pagarme").createPixCharge(...)` → `POST /orders` com `payments[].pix` (`expires_in`)
    + `payments[].split[]`. Grava `payment` (provider=pagarme, `provider_payment_id`=order id, QR,
