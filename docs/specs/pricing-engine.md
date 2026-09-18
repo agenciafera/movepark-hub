@@ -335,6 +335,17 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
 > uma grade inteira numa chamada, o caminho é uma função que consulta a RPC por baixo, nunca uma
 > segunda implementação da conta. Ver `docs/specs/public-api.md` §14.
 
+- **Preço "a partir de" do card (`lowest_daily_rate`, ✅):** a vitrine (home, `/destinos/<slug>` e a
+  semente SSG dela) mostra a **menor diária que o lote pratica**, e não o preço da janela buscada,
+  que é sempre a mais curta e por isso sempre a mais cara. A RPC `lowest_daily_rate(p_lpt_ids,
+  p_days)` simula pelo motor as durações de referência da vitrine (`[1, 7, 15, 30]`, as mesmas de
+  `destination_price_index`, para card e tabela de preços não brigarem) mais a **menor estadia que
+  o lote vende**, e devolve a duração em que a diária sai mais barata. Empate resolve pela menor
+  duração, que é a promessa que exige menos dias do cliente. É uma chamada por página, não N
+  chamadas: quem lê a tabela de preço é o Postgres, e o TypeScript que fazia essa conta
+  (`src/features/search/fromPrice.ts`) foi removido. Migration
+  `20261121040000_menor_diaria_do_lote.sql`; ver `docs/specs/customer/search-results.md` §8b.
+
 - **Tabela "Ver preços por duração" (PRD-10, ✅):** o listing reusa `simulate_price` para vários
   buckets de dias (`[1,2,3,5,7,10,15,30]` + a duração buscada) via `useDurationPrices` (`useQueries`,
   mesma cache key do reservation card) e mostra total + por-dia. Não há regra nova nem batch RPC — são

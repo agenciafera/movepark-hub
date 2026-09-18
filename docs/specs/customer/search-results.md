@@ -242,26 +242,42 @@ idêntica à de antes.
 
 ---
 
-## 8b. Estadia mínima na vitrine (`price_mode`)
+## 8b. O preço do card na vitrine (`price_mode`)
 
-A Edge `search` aceita `price_mode: "exact" | "from"` (default `exact`).
+A Edge `search` aceita `price_mode: "exact" | "from"` (default `exact`). São duas perguntas
+diferentes, e cada modo responde a sua.
 
-- **`exact`** é a `/search`: as datas são do cliente, e quem não tem preço nelas sai da lista.
+- **`exact`** é a `/search`: *quanto custa a estadia que o cliente escolheu*. Uma simulação por
+  lote na janela pedida, e quem não tem preço nela sai da lista. O card mostra o total.
 - **`from`** é a **vitrine** (home e `/destinos/<slug>`), que busca com uma janela fixa que o
-  cliente não escolheu. Quando o lote não tem preço nessa janela, a Edge tenta de novo com a
-  **menor estadia que ele vende** (`max` entre `location_parking_type.has_minimum_stay` em dias e
-  o menor `pricing_tier.from_day`) e devolve o item com `price.days` = a duração usada e
-  `min_stay_days` preenchido.
+  cliente não escolheu: *qual é o melhor preço deste lote*. A Edge chama a RPC
+  `lowest_daily_rate`, que devolve a **menor diária** de cada lote e a duração em que ela vale.
+  O item volta com `price.per_day` = essa diária, `price.days` = a duração, `price.showcase =
+  true` e `min_stay_days` quando o lote exige mais de uma diária.
 
-Por que existe: a vitrine do destino pede D+7 por **2 diárias**, e lote de aeroporto costuma
-vender a partir de 3. Abbapark e Nationpark, que sozinhos respondem pelo CWB, sumiam da página
-inteira, que exibia "ainda não temos reserva online" com duas unidades ativas e precificadas.
+Por que a vitrine não usa o preço da janela: **ela é sempre a mais curta, e por isso sempre a mais
+cara**. O Virapark aparecia por R$ 40,00 (1 diária) numa tabela cuja diária cai para R$ 24,90 em
+estadia de 7 dias, e o cliente comparava cards pelo pior preço de cada unidade, justamente na tela
+em que ele escolhe.
 
-No card, `min_stay_days` muda duas coisas: o valor exibido passa a ser a **diária**
-(`price.per_day`), para o card ser comparável com os vizinhos de outra duração, e o rótulo vira
-`por diária · mínimo N diárias`. O link do card leva a janela **esticada** até esse mínimo
-(`stretchParamsToMinStay`), senão o cliente clica num preço e cai numa página que só diz que a
-vaga exige estadia maior.
+O modo `from` também resolve o que o resgate por estadia mínima resolvia: a menor estadia vendável
+(`max` entre `location_parking_type.has_minimum_stay` em dias e o menor `pricing_tier.from_day`) é
+uma das durações simuladas pela RPC. Quem só vende a partir de 3 diárias continua na lista, e pelo
+melhor preço dele. Isso importa porque a vitrine do destino pede D+7 por 2 diárias: Abbapark e
+Nationpark, que sozinhos respondem pelo CWB, sumiam da página inteira, que exibia "ainda não temos
+reserva online" com duas unidades ativas e precificadas.
+
+No card, `price.showcase` muda três coisas: aparece a linha **"a partir de"** acima do número, o
+valor exibido é a **diária** (para o card ser comparável com os vizinhos de outra duração, o mesmo
+motivo do badge "Mais barato") e o rótulo vira `por diária na estadia de N dias`. O rótulo diz a
+duração **exata**, e não "a partir de N dias": a curva pode subir de novo depois (a BePark tem a
+diária mais barata em 30 diárias e volta a subir em 31), então prometer "N ou mais" afirmaria o
+que o motor não garante. O link do card leva a janela **esticada** até essa duração
+(`stretchParamsToMinStay`), senão o cliente clica num preço e cai numa página que mostra outro.
+
+O mesmo preço sai no **HTML do build**: a semente SSG da página de destino (`buildStaticUnits`)
+consome a mesma RPC, porque crawler de IA não executa JS e o "a partir de" precisa estar no HTML
+cru. A home (vitrine curada) usa a RPC direto, sem passar pela Edge.
 
 ---
 

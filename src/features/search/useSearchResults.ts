@@ -20,10 +20,12 @@ export type SearchFilters = {
   min_rating?: number;
   sort?: SearchSort;
   /**
-   * "from" é o modo da vitrine (home e `/destinos`), que busca com uma janela fixa em vez
-   * de datas escolhidas pelo cliente: quem só vende a partir de N diárias entra com o preço
-   * dessa estadia, em vez de sumir da lista. Na `/search` fica o padrão "exact", porque ali
-   * as datas são do cliente.
+   * "from" é o modo da vitrine (home e `/destinos`), que busca com uma janela fixa em vez de
+   * datas escolhidas pelo cliente. Nele o preço deixa de ser o da janela e passa a ser a MENOR
+   * diária do lote, na duração em que ela vale: é o "a partir de" do card, e é o que faz quem
+   * só vende estadia longa aparecer na lista em vez de sumir por não ter preço de 1 diária.
+   * Na `/search` fica o padrão "exact", porque ali as datas são do cliente e o card tem que
+   * mostrar o que ele vai pagar.
    */
   price_mode?: "exact" | "from";
   limit?: number;
@@ -76,8 +78,14 @@ export type SearchResultItem = {
     per_day: number;
     /** Diárias que este preço cobre. Na vitrine pode ser maior que a janela buscada. */
     days: number;
+    /**
+     * `true` quando o preço é o de vitrine (`price_mode: "from"`): a MENOR diária que o lote
+     * pratica, na duração `days` em que ela vale. O card mostra `per_day` com "a partir de".
+     * `false` na `/search`: ali `total` é o da estadia que o cliente escolheu.
+     */
+    showcase: boolean;
   };
-  /** Estadia mínima do lote, preenchida só quando o preço veio dela (`price_mode: "from"`). */
+  /** Estadia mínima do lote, quando ele exige mais de uma diária. */
   min_stay_days?: number | null;
   amenities: string[];
 };

@@ -6743,6 +6743,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      lowest_daily_rate: {
+        Args: { p_days?: number[]; p_lpt_ids: string[] }
+        Returns: {
+          daily: number
+          days: number
+          location_parking_type_id: string
+          min_stay_days: number
+          old_total: number
+          total: number
+        }[]
+      }
       manager_daily_flow: {
         Args: { p_date: string; p_location_ids?: string[] }
         Returns: Json
@@ -6975,6 +6986,10 @@ export type Database = {
           state: string
           updated_at: string
         }[]
+      }
+      manager_set_platform_coupon_active: {
+        Args: { p_coupon_id: string; p_is_active: boolean }
+        Returns: undefined
       }
       manager_upsert_platform_coupon: {
         Args: {

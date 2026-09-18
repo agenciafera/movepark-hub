@@ -2,22 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { buildStaticUnits, type ProximityRow, type UnitRow } from "./units.logic";
 import type { GoogleRatingRow } from "@/features/reviews/googleApi";
+import type { LowestDaily } from "@/features/search/menorDiaria";
 
-function regra(tiers: { from_day: number; to_day: number | null; unit_price: number }[]) {
-  return {
-    strategy: "uniform_by_duration",
-    incremental_one_day_price: null,
-    old_price_strategy: "none",
-    old_price_multiplier: null,
-    hourly_daily_rate: null,
-    pricing_tier: tiers.map((t) => ({
-      from_day: t.from_day,
-      to_day: t.to_day,
-      total_price: null,
-      unit_price: t.unit_price,
-      is_old_price: false,
-    })),
-  };
+/** Menor diária como o motor devolve: total da estadia, a diária e a duração dela. */
+function preco(over: Partial<LowestDaily> = {}): LowestDaily {
+  return { total: 30, oldTotal: null, daily: 30, days: 1, minStayDays: null, ...over };
+}
+
+/** O mapa que `fetchDestinationUnits` monta com o retorno de `lowest_daily_rate`. */
+function precos(entradas: Record<string, Partial<LowestDaily>> = { lpt1: {} }) {
+  return new Map(Object.entries(entradas).map(([id, p]) => [id, preco(p)]));
 }
 
 function row(over: Partial<UnitRow> = {}, locOver: Record<string, unknown> = {}): UnitRow {
@@ -43,7 +37,6 @@ function row(over: Partial<UnitRow> = {}, locOver: Record<string, unknown> = {})
       ...locOver,
     } as UnitRow["location"],
     company_parking_type: { parking_type: { code: "covered", name: "Vaga Coberta" } },
-    pricing_rule: regra([{ from_day: 1, to_day: null, unit_price: 30 }]),
     ...over,
   };
 }
@@ -59,7 +52,7 @@ const prox: ProximityRow[] = [
 
 describe("buildStaticUnits", () => {
   it("monta o card com o que é verdade sem data", () => {
-    const [item] = buildStaticUnits([row()], prox);
+    const [item] = buildStaticUnits([row()], precos(), prox);
     expect(item.id).toBe("lpt1");
     expect(item.operator).toEqual({ slug: "abbapark", name: "Abbapark" });
     expect(item.parking_type).toEqual({ code: "covered", name: "Vaga Coberta" });
@@ -69,7 +62,7 @@ describe("buildStaticUnits", () => {
   });
 
   it("converte numeric do Postgres, que chega como string", () => {
-    const [item] = buildStaticUnits([row()], prox);
+    const [item] = buildStaticUnits([row()], precos(), prox);
     expect(item.location.latitude).toBe(-25.53);
     expect(item.location.distance_km).toBe(1.8);
     expect(item.location.nearest_terminal).toEqual({
@@ -81,7 +74,7 @@ describe("buildStaticUnits", () => {
   it("disponibilidade nasce neutra, porque HTML congelado não pode afirmar vaga", () => {
     // O ponto do arquivo inteiro: "resta 1 vaga" gravado no build vira mentira na hora
     // seguinte, e ADR-009 proíbe renderizar promessa que a unidade não sustenta.
-    const [item] = buildStaticUnits([row()], prox);
+    const [item] = buildStaticUnits([row()], precos(), prox);
     expect(item.availability).toEqual({
       remaining: null,
       sold_out: false,
@@ -91,11 +84,27 @@ describe("buildStaticUnits", () => {
     expect(item.location.high_demand_today).toBe(false);
   });
 
-  it("quem só vende estadia longa entra com o preço da menor estadia que vende", () => {
+  it("o card mostra a MENOR diária do lote, e a estadia em que ela vale", () => {
+    // O Virapark aparecia por R$ 40,00 (1 diária) numa tabela cuja diária cai para R$ 24,90
+    // em estadia de 7 dias: o card comparava unidades pelo pior preço de cada uma.
+    const [item] = buildStaticUnits(
+      [row()],
+      precos({ lpt1: { total: 174.3, daily: 24.9, days: 7 } }),
+      prox,
+    );
+    expect(item.price.per_day).toBe(24.9);
+    expect(item.price.days).toBe(7);
+    expect(item.price.total).toBe(174.3);
+    // O "a partir de" do card sai no HTML do build, não só depois que a busca responde.
+    expect(item.price.showcase).toBe(true);
+  });
+
+  it("quem só vende estadia longa entra pela estadia que vende", () => {
     // Abbapark e Nationpark em Afonso Pena começam a tabela em 3 diárias. Sem isso eles
     // sumiam da vitrine inteira, sem nada indicando o motivo.
     const [item] = buildStaticUnits(
-      [row({ pricing_rule: regra([{ from_day: 3, to_day: null, unit_price: 23.9 }]) })],
+      [row()],
+      precos({ lpt1: { total: 71.7, daily: 23.9, days: 3, minStayDays: 3 } }),
       prox,
     );
     expect(item.price.days).toBe(3);
@@ -105,14 +114,13 @@ describe("buildStaticUnits", () => {
   });
 
   it("estadia de 1 diária não anuncia mínimo", () => {
-    const [item] = buildStaticUnits([row()], prox);
+    const [item] = buildStaticUnits([row()], precos(), prox);
     expect(item.price.days).toBe(1);
     expect(item.min_stay_days).toBeNull();
   });
 
   it("descarta o que não pode aparecer na vitrine", () => {
     const casos: [string, UnitRow][] = [
-      ["sem preço calculável", row({ pricing_rule: null })],
       ["tipo de vaga inativo", row({ is_active: false })],
       ["unidade não listada", row({}, { is_listed: false })],
       ["unidade com soft delete", row({}, { deleted_at: "2026-01-01T00:00:00Z" })],
@@ -121,32 +129,35 @@ describe("buildStaticUnits", () => {
       ["tipo de vaga ausente no embed", row({ company_parking_type: null })],
     ];
     for (const [motivo, r] of casos) {
-      expect(buildStaticUnits([r], prox), motivo).toEqual([]);
+      expect(buildStaticUnits([r], precos(), prox), motivo).toEqual([]);
     }
+    // Sem preço no motor o card não existe: preço de estacionamento não se inventa no cliente.
+    expect(buildStaticUnits([row()], new Map(), prox)).toEqual([]);
   });
 
   it("ordena por preço da diária, igual ao sort que a página pede à busca", () => {
     // Se a ordem da semente divergir do price_asc da busca, os cards trocam de lugar na
     // frente de quem está lendo assim que a busca do cliente responde.
     const itens = buildStaticUnits(
-      [
-        row({ id: "caro", pricing_rule: regra([{ from_day: 1, to_day: null, unit_price: 40 }]) }),
-        row({ id: "barato", pricing_rule: regra([{ from_day: 1, to_day: null, unit_price: 20 }]) }),
-        row({ id: "meio", pricing_rule: regra([{ from_day: 1, to_day: null, unit_price: 30 }]) }),
-      ],
+      [row({ id: "caro" }), row({ id: "barato" }), row({ id: "meio" })],
+      precos({
+        caro: { total: 40, daily: 40 },
+        barato: { total: 20, daily: 20 },
+        meio: { total: 30, daily: 30 },
+      }),
       prox,
     );
     expect(itens.map((i) => i.id)).toEqual(["barato", "meio", "caro"]);
   });
 
   it("sem geo do destino o card sai sem distância, em vez de sair errado", () => {
-    const [item] = buildStaticUnits([row()], []);
+    const [item] = buildStaticUnits([row()], precos(), []);
     expect(item.location.distance_km).toBeNull();
     expect(item.location.nearest_terminal).toBeNull();
   });
 
   it("terminal só aparece com nome e distância juntos", () => {
-    const [item] = buildStaticUnits([row()], [
+    const [item] = buildStaticUnits([row()], precos(), [
       { location_id: "loc1", distance_km: "2", nearest_terminal_name: "T1", nearest_terminal_distance_km: null },
     ]);
     expect(item.location.nearest_terminal).toBeNull();
@@ -154,7 +165,7 @@ describe("buildStaticUnits", () => {
   });
 
   it("unidade sem foto sai com capa nula em vez de quebrar", () => {
-    const [item] = buildStaticUnits([row({}, { photos: null })], prox);
+    const [item] = buildStaticUnits([row({}, { photos: null })], precos(), prox);
     expect(item.location.cover_image).toBeNull();
   });
 
@@ -173,6 +184,7 @@ describe("buildStaticUnits", () => {
       // resposta da busca no cliente.
       const [item] = buildStaticUnits(
         [row({}, { google_place_id: "ChIJ_lote" })],
+        precos(),
         prox,
         [snapshot()],
         agora,
@@ -184,6 +196,7 @@ describe("buildStaticUnits", () => {
     it("snapshot de outro lugar não encosta no card", () => {
       const [item] = buildStaticUnits(
         [row({}, { google_place_id: "ChIJ_lote" })],
+        precos(),
         prox,
         [snapshot({ place_id: "ChIJ_outro" })],
         agora,
@@ -195,6 +208,7 @@ describe("buildStaticUnits", () => {
     it("snapshot vencido fica de fora, porque o HTML publicado também é cache", () => {
       const [item] = buildStaticUnits(
         [row({}, { google_place_id: "ChIJ_lote" })],
+        precos(),
         prox,
         [snapshot({ fetched_at: "2026-07-01T12:00:00Z" })],
         agora,
@@ -203,7 +217,7 @@ describe("buildStaticUnits", () => {
     });
 
     it("unidade sem place_id continua sem nota, sem erro", () => {
-      const [item] = buildStaticUnits([row()], prox, [snapshot()], agora);
+      const [item] = buildStaticUnits([row()], precos(), prox, [snapshot()], agora);
       expect(item.location.google_rating).toBeNull();
       expect(item.location.google_rating_count).toBe(0);
     });

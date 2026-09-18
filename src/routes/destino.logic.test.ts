@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { lowestPerDay, pickRelatedDestinations, pointsSummary } from "./destino.logic";
+import {
+  lowestMatrixDaily,
+  lowestPerDay,
+  pickRelatedDestinations,
+  pointsSummary,
+} from "./destino.logic";
 
 describe("lowestPerDay", () => {
   it("retorna o menor per_day", () => {
@@ -49,5 +54,46 @@ describe("pointsSummary", () => {
   it("ponto único sai como está, e lista vazia vira string vazia", () => {
     expect(pointsSummary(["Terminal Único"])).toBe("Terminal Único");
     expect(pointsSummary([])).toBe("");
+  });
+});
+
+describe("lowestMatrixDaily", () => {
+  const unidade = (prices: { days: number; total: number | null }[]) => ({ prices });
+
+  it("pega a menor diária entre todas as durações, não o total de 1 diária", () => {
+    // O topo da página dizia "a partir de R$ 40,00" (1 diária, a duração mais cara) logo acima
+    // de cards que mostram a menor diária do lote.
+    expect(
+      lowestMatrixDaily([
+        unidade([
+          { days: 1, total: 40 },
+          { days: 7, total: 174.3 },
+          { days: 30, total: 747 },
+        ]),
+      ]),
+    ).toBe(24.9);
+  });
+
+  it("compara entre unidades", () => {
+    expect(
+      lowestMatrixDaily([unidade([{ days: 1, total: 40 }]), unidade([{ days: 1, total: 28 }])]),
+    ).toBe(28);
+  });
+
+  it("duração sem preço não conta como preço zero", () => {
+    expect(
+      lowestMatrixDaily([
+        unidade([
+          { days: 1, total: null },
+          { days: 7, total: 174.3 },
+        ]),
+      ]),
+    ).toBe(24.9);
+  });
+
+  it("sem preço nenhum devolve null", () => {
+    expect(lowestMatrixDaily([])).toBeNull();
+    expect(lowestMatrixDaily([{ prices: null }])).toBeNull();
+    expect(lowestMatrixDaily([unidade([{ days: 1, total: 0 }])])).toBeNull();
   });
 });

@@ -7,6 +7,25 @@ export function lowestPerDay(results: { price: { per_day: number } }[]): number 
 }
 
 /**
+ * Menor diária do destino inteiro, lida da matriz de preço do motor.
+ *
+ * O "A partir de" do topo mostrava o total de 1 diária, que é a duração mais curta e por isso a
+ * mais CARA da tabela: a página prometia "a partir de R$ 40,00" logo acima de cards que agora
+ * dizem R$ 24,90. Aqui a conta percorre todas as durações da matriz, que é a mesma fonte da
+ * tabela de preços mais abaixo.
+ */
+export function lowestMatrixDaily(
+  units: { prices: { days: number; total: number | null }[] | null }[],
+): number | null {
+  const diarias = units.flatMap((u) =>
+    (u.prices ?? [])
+      .filter((p) => p.total != null && p.total > 0 && p.days > 0)
+      .map((p) => Math.round((p.total! / p.days) * 100) / 100),
+  );
+  return diarias.length > 0 ? Math.min(...diarias) : null;
+}
+
+/**
  * Destinos relacionados p/ cross-link: exclui o atual, prioriza os populares e
  * depois `sort_order`, limitando a `limit`.
  */

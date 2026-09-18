@@ -43,7 +43,7 @@ function item(overrides: {
       near_capacity: false,
       near_capacity_message: null,
     },
-    price: { total, old_price: null, per_day: total / days, days },
+    price: { total, old_price: null, per_day: total / days, days, showcase: false },
     amenities: overrides.amenities ?? [],
   };
 }

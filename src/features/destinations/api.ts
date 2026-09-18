@@ -9,6 +9,7 @@ import {
   type UnitRow,
 } from "@/features/destinations/units.logic";
 import { fetchGoogleRatings } from "@/features/reviews/googleApi";
+import { mapLowestDaily, type LowestDailyRow } from "@/features/search/menorDiaria";
 
 type DestinationInsert = Database["public"]["Tables"]["destination"]["Insert"];
 type DestinationUpdate = Database["public"]["Tables"]["destination"]["Update"];
@@ -113,11 +114,6 @@ export async function fetchDestinationUnits(destination: {
       ),
       company_parking_type:company_parking_type!inner(
         parking_type:parking_type!inner(code, name)
-      ),
-      pricing_rule!location_parking_type_id(
-        strategy, incremental_one_day_price,
-        old_price_strategy, old_price_multiplier, hourly_daily_rate,
-        pricing_tier(from_day, to_day, total_price, unit_price, is_old_price)
       )
     `,
     )
@@ -145,6 +141,14 @@ export async function fetchDestinationUnits(destination: {
   // e só ganhava um depois que a busca do cliente respondia. Falhar aqui não pode custar a
   // lista: sem nota o card volta a ser o de antes.
   const unitRows = (rows ?? []) as unknown as UnitRow[];
+
+  // O preço do card vem do motor, não da tabela relida em TypeScript: uma chamada devolve a
+  // MENOR diária de cada lote e a estadia em que ela vale, que é o "a partir de" que sai no
+  // HTML do build. Sem ela a unidade fica sem preço e sai da lista.
+  const { data: precoRaw } = unitRows.length
+    ? await supabase.rpc("lowest_daily_rate", { p_lpt_ids: unitRows.map((r) => r.id) })
+    : { data: [] };
+  const precos = mapLowestDaily((precoRaw ?? null) as LowestDailyRow[] | null);
   const placeIds = unitRows
     .map((r) => r.location?.google_place_id ?? null)
     .filter((id): id is string => !!id);
@@ -152,6 +156,7 @@ export async function fetchDestinationUnits(destination: {
 
   return buildStaticUnits(
     unitRows,
+    precos,
     (proximity ?? []) as unknown as ProximityRow[],
     google,
     new Date(),

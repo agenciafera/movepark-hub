@@ -51,7 +51,17 @@ export type ParkingCardProps = {
    * no corpo, e não sobre a imagem, pra não disputar espaço com os selos comparativos.
    */
   highlight?: React.ReactNode;
-  price: { total: number | null | undefined; oldPrice?: number | null; unit: string };
+  /**
+   * O preço do card. `caption` é a linha pequena ACIMA do número ("a partir de"), que a vitrine
+   * usa porque ali o valor é a menor diária do lote, não o total da estadia buscada. Na
+   * `/search`, onde as datas são do cliente, ela não existe: o número é o que ele vai pagar.
+   */
+  price: {
+    total: number | null | undefined;
+    oldPrice?: number | null;
+    unit: string;
+    caption?: string;
+  };
   /** Selos sobre a imagem, no canto superior esquerdo (diferenciais comparativos). */
   overlay?: React.ReactNode;
   /** Selo no rodapé da imagem, canto inferior esquerdo (escassez/demanda). */
@@ -254,6 +264,9 @@ export function ParkingCard({
 
         {/* Preço — sempre por último */}
         <div className="mt-auto pt-1">
+          {price.caption && (
+            <span className="block text-body-sm text-muted">{price.caption}</span>
+          )}
           {price.oldPrice != null && price.total != null && price.oldPrice > price.total && (
             <div className="text-[13px] text-muted line-through tabular-nums">
               {formatBRL(price.oldPrice)}

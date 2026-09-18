@@ -42,7 +42,7 @@ import {
 } from "@/lib/seo";
 import { getLocationCapabilities } from "@/features/listing/capabilities";
 import type { PriceDestination } from "@/features/price-index/priceIndex.logic";
-import { carUnits, priceFor } from "@/features/price-index/priceIndex.logic";
+import { carUnits } from "@/features/price-index/priceIndex.logic";
 import { isSnapshotFresh, pickCardBadge } from "@/features/reviews/google.logic";
 import {
   DestinationPriceTable,
@@ -60,7 +60,12 @@ import {
 } from "@/features/destinations/destinoPrices.logic";
 import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
-import { lowestPerDay, pickRelatedDestinations, pointsSummary } from "./destino.logic";
+import {
+  lowestMatrixDaily,
+  lowestPerDay,
+  pickRelatedDestinations,
+  pointsSummary,
+} from "./destino.logic";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoFicha } from "@/lib/urls";
 
@@ -357,16 +362,10 @@ export default function DestinoPage() {
       : null;
 
   // O "a partir de" do topo prefere a matriz do build: ela existe no HTML pré-renderizado
-  // e a busca por janela só responde depois do JS. Sem preço na matriz, cai na busca.
-  const fromPriceMatrix = priceDest
-    ? Math.min(
-        ...carUnits(priceDest.units)
-          .map((u) => priceFor(u, 1)?.total ?? null)
-          .filter((t): t is number => t != null),
-        Infinity,
-      )
-    : Infinity;
-  const fromPrice = Number.isFinite(fromPriceMatrix) ? fromPriceMatrix : lowestPerDay(results);
+  // e a busca por janela só responde depois do JS. Sem preço na matriz, cai na busca. Nos dois
+  // caminhos o número é a MENOR diária do destino, o mesmo que os cards mostram logo abaixo.
+  const fromPriceMatrix = priceDest ? lowestMatrixDaily(carUnits(priceDest.units)) : null;
+  const fromPrice = fromPriceMatrix ?? lowestPerDay(results);
 
   // Meta description: a geografia escrita à mão MAIS o preço do dado, dentro dos 160.
   // As 26 descrições do banco não trazem um único valor, e snippet sem número perde para

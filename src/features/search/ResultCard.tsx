@@ -2,6 +2,7 @@ import { MapPin, Tag } from "@phosphor-icons/react";
 import { formatDistance } from "@/lib/format";
 import { tituloDaUnidade } from "@/lib/parkingName";
 import { stretchParamsToMinStay } from "./dates";
+import { rotuloDaDiaria } from "./menorDiaria";
 import { isTypeDescriptorAmenity } from "./amenities.logic";
 import { Go2ParkCardCredit, Go2ParkLivePill } from "@/features/go2park/Go2ParkLive";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";
@@ -78,9 +79,15 @@ export function ResultCard({
   source,
   badges = [],
 }: Props) {
-  // O link precisa entregar o que o card prometeu: quando o preço veio da estadia mínima
-  // (vitrine), a janela vai esticada, senão o cliente cai na página sem o preço que viu.
-  const params = new URLSearchParams(stretchParamsToMinStay(searchParams, item.min_stay_days));
+  // O link precisa entregar o que o card prometeu: na vitrine o preço é o de uma estadia mais
+  // longa que a janela, então ela vai esticada, senão o cliente clica num preço e cai numa
+  // página que mostra outro.
+  const params = new URLSearchParams(
+    stretchParamsToMinStay(
+      searchParams,
+      item.price.showcase ? Math.max(item.price.days, item.min_stay_days ?? 0) : item.min_stay_days,
+    ),
+  );
   if (source) params.set("src", source);
 
   // O tipo de vaga saiu da URL e virou seleção dentro da ficha: `?vaga=` abre a página já
@@ -183,21 +190,27 @@ export function ResultCard({
       // O crédito do parceiro fica abaixo da nota, em tom de metadado: a promessa já foi dada pela
       // pílula sobre a foto, e repetir a marca aqui em destaque roubaria a leitura do preço.
       highlight={item.location.go2park ? <Go2ParkCardCredit /> : undefined}
-      // Na vitrine o card mostra a diária, não o total da estadia mínima: a lista mistura
-      // durações, e um total de 3 diárias ao lado de um de 2 faz o selo "Mais barato" cair no
-      // número maior da tela. Com todos exibindo diária, a comparação bate com o que se vê. A
-      // exigência vai no rótulo, que é condição do lote e não escolha nossa.
-      price={{
-        total: item.min_stay_days ? item.price.per_day : item.price.total,
-        oldPrice: item.min_stay_days
-          ? item.price.old_price != null
-            ? Number((item.price.old_price / item.price.days).toFixed(2))
-            : null
-          : item.price.old_price,
-        unit: item.min_stay_days
-          ? `por diária · mínimo ${item.min_stay_days} ${item.min_stay_days === 1 ? "diária" : "diárias"}`
-          : `${item.price.days} ${item.price.days === 1 ? "diária" : "diárias"}`,
-      }}
+      // Na vitrine o card mostra a MENOR diária do lote, com a duração em que ela vale; na
+      // `/search`, onde as datas são do cliente, mostra o total daquela estadia. A diária também
+      // é o que mantém o selo "Mais barato" honesto: a vitrine mistura durações, e comparar
+      // total com total faria o selo cair no número maior da tela.
+      price={
+        item.price.showcase
+          ? {
+              caption: "a partir de",
+              total: item.price.per_day,
+              oldPrice:
+                item.price.old_price != null
+                  ? Number((item.price.old_price / item.price.days).toFixed(2))
+                  : null,
+              unit: rotuloDaDiaria(item.price.days),
+            }
+          : {
+              total: item.price.total,
+              oldPrice: item.price.old_price,
+              unit: `${item.price.days} ${item.price.days === 1 ? "diária" : "diárias"}`,
+            }
+      }
       overlay={overlay}
       imageFooter={imageFooter}
       favorite={{ isSaved, onToggle: onToggleSave }}

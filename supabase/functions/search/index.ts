@@ -15,17 +15,17 @@
 //   "amenities": ["shuttle_free","cameras_24h"],
 //   "max_distance_km": 5,
 //   "sort": "price_asc" | "price_desc" | "distance_asc",
-//   "price_mode": "exact" | "from",           // "from": lote sem preço na janela pedida entra
-//                                             // com o preço da menor estadia que ele vende
+//   "price_mode": "exact" | "from",           // "from": o preço é a MENOR diária do lote
 //   "limit": 20,
 //   "offset": 0
 // }
 //
-// `price_mode` existe para a vitrine (home e /destinos), que busca com uma janela fixa e
-// não com datas escolhidas pelo cliente. Em "exact" (padrão) quem não tem preço na janela
-// sai da lista, que é o certo quando as datas são do cliente. Em "from" o item volta com
-// `price.days` = a duração de fato usada e `min_stay` preenchido, para o card mostrar
-// "a partir de X · 3 diárias" em vez de sumir.
+// `price_mode` existe para a vitrine (home e /destinos), que busca com uma janela fixa e não
+// com datas escolhidas pelo cliente. Em "exact" (padrão) o preço é o da janela pedida e quem
+// não tem preço nela sai da lista, que é o certo quando as datas são do cliente. Em "from" o
+// preço passa a ser a menor diária que o lote pratica (RPC `lowest_daily_rate`), com
+// `price.days` = a estadia em que ela vale e `price.showcase` = true, para o card escrever
+// "a partir de R$ 24,90 · por diária na estadia de 7 dias".
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -38,7 +38,12 @@ import {
   type AvailabilityRow,
 } from "./availability.ts";
 import { buildHighDemandSet, isHighDemandToday, type HighDemandRow } from "./highDemand.ts";
-import { buildMinStayMap, type MinStayRow } from "./minStay.ts";
+import {
+  batchIds,
+  buildShowcaseMap,
+  type LowestDailyRow,
+  type ShowcasePrice,
+} from "./showcasePrice.ts";
 import {
   aggregateDestinations,
   aggregateOperators,
@@ -71,7 +76,7 @@ interface SearchParams {
   max_distance_km?: number;
   min_rating?: number;
   sort?: "price_asc" | "price_desc" | "distance_asc" | "rating_desc";
-  /** "from" (vitrine): quem não tem preço na janela entra com a menor estadia vendável. */
+  /** "from" (vitrine): o preço é a menor diária do lote, não o da janela pedida. */
   price_mode?: "exact" | "from";
   limit?: number;
   offset?: number;
@@ -295,74 +300,71 @@ Deno.serve(async (req: Request) => {
     availMap = buildAvailabilityMap((availRows ?? null) as AvailabilityRow[] | null);
   }
 
-  // 9. Run simulate_price in parallel
-  const priced = await Promise.all(
-    distanceFiltered.map(async (r) => {
-      const { data: sim, error: simErr } = await supabase.rpc("simulate_price", {
-        p_company: r.location.company.slug,
-        p_location: r.location.slug,
-        p_parking_type: r.company_parking_type.parking_type.code,
-        p_days: days,
-      });
-      if (simErr) {
-        return { ...r, _price: null, _old_price: null, _price_error: simErr.message };
-      }
-      // deno-lint-ignore no-explicit-any
-      const s = sim as any;
+  // 9. Preço. São duas perguntas diferentes, e cada modo faz a sua.
+  //
+  // "exact" (/search): quanto custa a estadia que o cliente escolheu. Uma simulação por lote,
+  // na janela pedida, e quem não tem preço nela sai da lista.
+  //
+  // "from" (vitrine: home e /destinos): qual é o melhor preço deste lote. A janela ali é nossa
+  // e é sempre a mais curta, então precificar por ela mostrava justamente o número mais caro
+  // de cada unidade (o Virapark saía por R$ 40,00 numa tabela que cai para R$ 24,90 a diária em
+  // estadia de 7 dias). A RPC `lowest_daily_rate` devolve a MENOR diária de cada lote e a
+  // duração em que ela vale, numa chamada só para a página inteira. De quebra resolve o que o
+  // resgate por estadia mínima resolvia: a menor estadia vendável é uma das durações simuladas,
+  // então Abbapark e Nationpark (3 diárias) continuam na lista do CWB, e pelo melhor preço.
+  // deno-lint-ignore no-explicit-any
+  let priced: any[];
+
+  if (params.price_mode === "from") {
+    const showcase = new Map<string, ShowcasePrice>();
+    const lotes = batchIds(distanceFiltered.map((r) => r.id as string));
+    const respostas = await Promise.all(
+      lotes.map(async (ids) => {
+        const { data, error } = await supabase.rpc("lowest_daily_rate", { p_lpt_ids: ids });
+        if (error) return null;
+        return (data ?? null) as LowestDailyRow[] | null;
+      }),
+    );
+    for (const rows of respostas) {
+      for (const [id, preco] of buildShowcaseMap(rows)) showcase.set(id, preco);
+    }
+    priced = distanceFiltered.map((r) => {
+      const p = showcase.get(r.id as string) ?? null;
       return {
         ...r,
-        _price: s?.price != null ? Number(s.price) : null,
-        _old_price: s?.old_price != null ? Number(s.old_price) : null,
-        _price_error: s?.error ?? null,
-        _days: days,
-        _min_stay_days: null as number | null,
+        _price: p?.total ?? null,
+        _old_price: p?.oldTotal ?? null,
+        _price_error: null,
+        _days: p?.days ?? days,
+        _min_stay_days: p?.minStayDays ?? null,
+        _showcase: p != null,
       };
-    }),
-  );
-
-  // 9b. Vitrine (price_mode "from"): quem não tem preço na janela pedida costuma ser um lote
-  // com estadia mínima maior que ela, não um lote sem preço. Em vez de sumir da lista, ele
-  // volta com o preço da menor estadia que vende de fato, e o card mostra essa duração.
-  // Sem isso, a página de um destino inteiro pode ficar vazia com unidades ativas no catálogo:
-  // foi o caso do CWB, onde Abbapark e Nationpark só vendem a partir de 3 diárias e a vitrine
-  // pede 2.
-  if (params.price_mode === "from") {
-    const unpriced = priced.filter((r) => r._price == null);
-    if (unpriced.length > 0) {
-      const { data: minRows } = await supabase
-        .from("location_parking_type")
-        .select(
-          `id, has_minimum_stay, minimum_stay_value, minimum_stay_unit,
-           pricing_rule!location_parking_type_id(pricing_tier(from_day, is_old_price))`,
-        )
-        .in(
-          "id",
-          unpriced.map((r) => r.id as string),
-        );
-      const minStay = buildMinStayMap((minRows ?? null) as MinStayRow[] | null);
-
-      await Promise.all(
-        unpriced.map(async (r) => {
-          const minDays = minStay.get(r.id as string);
-          if (minDays == null || minDays <= days) return;
-          const { data: sim, error: simErr } = await supabase.rpc("simulate_price", {
-            p_company: r.location.company.slug,
-            p_location: r.location.slug,
-            p_parking_type: r.company_parking_type.parking_type.code,
-            p_days: minDays,
-          });
-          if (simErr) return;
-          // deno-lint-ignore no-explicit-any
-          const s = sim as any;
-          if (s?.price == null) return;
-          r._price = Number(s.price);
-          r._old_price = s.old_price != null ? Number(s.old_price) : null;
-          r._price_error = null;
-          r._days = minDays;
-          r._min_stay_days = minDays;
-        }),
-      );
-    }
+    });
+  } else {
+    priced = await Promise.all(
+      distanceFiltered.map(async (r) => {
+        const { data: sim, error: simErr } = await supabase.rpc("simulate_price", {
+          p_company: r.location.company.slug,
+          p_location: r.location.slug,
+          p_parking_type: r.company_parking_type.parking_type.code,
+          p_days: days,
+        });
+        if (simErr) {
+          return { ...r, _price: null, _old_price: null, _price_error: simErr.message };
+        }
+        // deno-lint-ignore no-explicit-any
+        const s = sim as any;
+        return {
+          ...r,
+          _price: s?.price != null ? Number(s.price) : null,
+          _old_price: s?.old_price != null ? Number(s.old_price) : null,
+          _price_error: s?.error ?? null,
+          _days: days,
+          _min_stay_days: null as number | null,
+          _showcase: false,
+        };
+      }),
+    );
   }
 
   // 10. Drop unpriceable results — conjunto base das facetas (sem filtro de estacionamento/destino)
@@ -524,13 +526,15 @@ Deno.serve(async (req: Request) => {
     price: {
       total: r._price,
       old_price: r._old_price,
-      // `_days` é a duração de fato precificada: igual à janela pedida, ou a estadia mínima
-      // do lote quando o preço veio pelo modo "from". Dividir pela janela daria um "por dia"
-      // que não corresponde ao total mostrado.
+      // `_days` é a duração de fato precificada: a janela pedida no modo "exact", a estadia em
+      // que a diária é mais barata no modo "from". Dividir pela janela daria um "por dia" que
+      // não corresponde ao total mostrado.
       per_day: r._price != null ? Number((r._price / (r._days ?? days)).toFixed(2)) : null,
       days: r._days ?? days,
+      // O card só escreve "a partir de" quando o preço é o de vitrine.
+      showcase: r._showcase === true,
     },
-    /** Preenchido só quando o preço veio da estadia mínima (vitrine, `price_mode: "from"`). */
+    /** Estadia mínima do lote, quando ele exige mais de uma diária. */
     min_stay_days: r._min_stay_days ?? null,
     // deno-lint-ignore no-explicit-any
     amenities: (r.location.amenities ?? []).map((a: any) => a.amenity_code),

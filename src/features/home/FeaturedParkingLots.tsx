@@ -8,6 +8,7 @@ import {
   ParkingCardBadge,
   type ParkingCardAmenity,
 } from "@/features/search/ParkingCard";
+import { rotuloDaDiaria } from "@/features/search/menorDiaria";
 import { Go2ParkCardCredit, Go2ParkLivePill } from "@/features/go2park/Go2ParkLive";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,14 +103,14 @@ function FeaturedOfferCard({
       // Rastreio ao vivo da van (Go2Park): promessa na pílula sobre a foto, crédito do parceiro
       // aqui embaixo em tom de metadado.
       highlight={location.go2park ? <Go2ParkCardCredit /> : undefined}
-      // Quem exige estadia mínima mostra a diária, e não o total dela: a vitrine põe lado a
-      // lado cards de durações diferentes, e comparar total com total faria o "Mais barato"
-      // cair no número maior da tela.
+      // A vitrine mostra a MENOR diária do lote, com a estadia em que ela vale. Diária e não
+      // total porque os cards têm durações diferentes: comparar total com total faria o "Mais
+      // barato" cair no número maior da tela.
       price={{
-        total: price_days > 1 && price_from != null ? price_from / price_days : price_from,
-        oldPrice:
-          price_days > 1 && old_price_from != null ? old_price_from / price_days : old_price_from,
-        unit: price_days > 1 ? `por diária · mínimo ${price_days} diárias` : "1 diária",
+        caption: "a partir de",
+        total: price_from != null ? Number((price_from / price_days).toFixed(2)) : null,
+        oldPrice: old_price_from != null ? Number((old_price_from / price_days).toFixed(2)) : null,
+        unit: rotuloDaDiaria(price_days),
       }}
       // A pílula do transfer divide a fila com o selo de preço: mesma natureza (o que separa
       // esta unidade das vizinhas) e o mesmo canto da foto.

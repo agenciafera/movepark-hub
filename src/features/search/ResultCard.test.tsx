@@ -38,7 +38,7 @@ function item(
       near_capacity_message: null,
       ...overrides,
     },
-    price: { total: 159.5, old_price: null, per_day: 31.9, days: 5 },
+    price: { total: 159.5, old_price: null, per_day: 31.9, days: 5, showcase: false },
     amenities: ["covered"],
   };
 }
@@ -148,33 +148,48 @@ describe("ResultCard", () => {
     expect(container.querySelector("a")?.getAttribute("href") ?? "").toContain("vaga=covered");
   });
 
-  it("vitrine: mostra a diária e avisa a estadia mínima exigida pelo lote", () => {
-    // O valor grande vira a diária para o card ser comparável com os vizinhos de outra
-    // duração; o rótulo carrega a condição, que é exigência do estacionamento.
+  it("vitrine: mostra a menor diária do lote e a estadia em que ela vale", () => {
+    // O valor grande é a diária, para o card ser comparável com os vizinhos de outra duração;
+    // o rótulo carrega a condição, e o "a partir de" avisa que o número é o piso do lote.
     const base = item();
     renderWithProviders(
       <ResultCard
         item={{
           ...base,
-          price: { total: 71.7, old_price: null, per_day: 23.9, days: 3 },
-          min_stay_days: 3,
+          price: { total: 174.3, old_price: null, per_day: 24.9, days: 7, showcase: true },
         }}
         isSaved={false}
         onToggleSave={vi.fn()}
         searchParams={new URLSearchParams()}
       />,
     );
-    expect(screen.getByText("por diária · mínimo 3 diárias")).toBeInTheDocument();
-    expect(screen.getByText("R$ 23,90")).toBeInTheDocument();
-    expect(screen.queryByText("R$ 71,70")).toBeNull();
+    expect(screen.getByText("a partir de")).toBeInTheDocument();
+    expect(screen.getByText("por diária na estadia de 7 dias")).toBeInTheDocument();
+    expect(screen.getByText("R$ 24,90")).toBeInTheDocument();
+    expect(screen.queryByText("R$ 174,30")).toBeNull();
   });
 
-  it("vitrine: o link leva a janela esticada até a estadia mínima", () => {
+  it("busca com datas do cliente: mostra o total daquela estadia, sem 'a partir de'", () => {
+    // Na /search o número tem que ser o que ele vai pagar pelas datas que escolheu.
+    renderWithProviders(
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.getByText("R$ 159,50")).toBeInTheDocument();
+    expect(screen.getByText("5 diárias")).toBeInTheDocument();
+    expect(screen.queryByText("a partir de")).toBeNull();
+  });
+
+  it("vitrine: o link leva a janela esticada até a estadia que o card precificou", () => {
     // Sem isso o cliente clica num preço de 3 diárias e cai na página com 2, sem preço.
     const base = item();
     const { container } = renderWithProviders(
       <ResultCard
-        item={{ ...base, price: { ...base.price, days: 3 }, min_stay_days: 3 }}
+        item={{ ...base, price: { ...base.price, days: 3, showcase: true }, min_stay_days: 3 }}
         isSaved={false}
         onToggleSave={vi.fn()}
         searchParams={

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { calcFromPrice } from "./fromPrice";
+import { mapLowestDaily, type LowestDailyRow } from "./menorDiaria";
 
 export type Destination = {
   id: string;
@@ -141,10 +141,10 @@ export type FeaturedOffer = {
     /** Transfer com rastreio ao vivo (Go2Park): fato da unidade, vale também no checkout externo. */
     go2park: boolean;
   };
-  /** Preço de partida: 1 diária, ou a menor estadia que o lote vende (ver `price_days`). */
+  /** Total da estadia em que a diária do lote sai mais barata (ver `price_days`). */
   price_from: number | null;
   old_price_from: number | null;
-  /** Diárias que `price_from` cobre. Maior que 1 quando o lote exige estadia mínima. */
+  /** Diárias que `price_from` cobre: a estadia em que a menor diária vale. */
   price_days: number;
 };
 
@@ -198,10 +198,7 @@ export function useFeaturedOffers() {
 
       const locMap = new Map(((locDetails ?? []) as any[]).map((l) => [l.id, l]));
 
-      // Passo 3: pricing dos tipos de vaga curados (nesting raso: lpt → pricing_rule → tier).
-      // Hint !location_parking_type_id necessário: pricing_rule tem 2 FKs para
-      // location_parking_type (location_parking_type_id e surcharge_source_id), causando
-      // ambiguidade sem o hint.
+      // Passo 3: os tipos de vaga curados.
       const { data: lptRaw, error: lptErr } = await supabase
         .from("location_parking_type")
         .select(
@@ -210,29 +207,32 @@ export function useFeaturedOffers() {
           location_id,
           company_parking_type:company_parking_type_id (
             parking_type:parking_type_id (code, name)
-          ),
-          pricing_rule!location_parking_type_id (
-            strategy,
-            incremental_one_day_price,
-            old_price_strategy, old_price_multiplier,
-            hourly_daily_rate,
-            pricing_tier (from_day, to_day, total_price, unit_price, is_old_price)
           )
         `,
         )
         .in("id", [...ordem.keys()]);
       if (lptErr) throw lptErr;
 
+      // Passo 4: o preço, pelo motor. A vitrine mostra a MENOR diária do lote e a estadia em
+      // que ela vale, e não o preço de 1 diária: este é o card em que o cliente compara
+      // unidades, e precificar todo mundo pela estadia mais curta mostrava o número mais caro
+      // de cada uma. Quem lê a tabela é o Postgres (`lowest_daily_rate`), nunca o TypeScript.
+      const { data: precoRaw, error: precoErr } = await supabase.rpc("lowest_daily_rate", {
+        p_lpt_ids: [...ordem.keys()],
+      });
+      if (precoErr) throw precoErr;
+      const precos = mapLowestDaily((precoRaw ?? null) as LowestDailyRow[] | null);
+
       const offers: FeaturedOffer[] = [];
       for (const r of (lptRaw ?? []) as any[]) {
         const loc = locMap.get(r.location_id);
         if (!loc || !r.company_parking_type?.parking_type) continue;
         if (!loc.company || loc.company.status !== "active") continue;
-        const ruleRaw = Array.isArray(r.pricing_rule) ? r.pricing_rule[0] : r.pricing_rule;
-        // "A partir de": quem só vende estadia longa entra com o preço da menor estadia que
-        // vende, em vez de sair da home por não ter preço de 1 diária (que é o normal em lote
-        // de aeroporto, e derrubava Abbapark, Nationpark e a coberta do Plenty Park).
-        const from = calcFromPrice(ruleRaw ?? null);
+        // Sem preço no motor o lote sai da vitrine: card de estacionamento sem preço não
+        // ajuda ninguém a comparar. Quem só vende estadia longa continua entrando, porque a
+        // menor estadia vendável é uma das durações simuladas (era o caso de Abbapark,
+        // Nationpark e da coberta do Plenty Park, que sumiam por não ter preço de 1 diária).
+        const from = precos.get(r.id as string);
         if (!from) continue;
 
         // Fonte canônica de fotos = coluna location.photos (text[]), a mesma que o operador
@@ -257,8 +257,8 @@ export function useFeaturedOffers() {
             amenities: (loc.amenities ?? []) as { amenity_code: string }[],
             go2park: loc.go2park_enabled === true,
           },
-          price_from: from.price,
-          old_price_from: from.oldPrice,
+          price_from: from.total,
+          old_price_from: from.oldTotal,
           price_days: from.days,
         });
       }

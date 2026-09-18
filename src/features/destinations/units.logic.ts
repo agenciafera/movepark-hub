@@ -17,7 +17,7 @@
  * Lógica pura, sem rede: a query mora em `api.ts` e o teste exercita as regras aqui.
  */
 import { caminhoFicha } from "@/lib/urls";
-import { calcFromPrice, type PricingRuleRaw } from "@/features/search/fromPrice";
+import type { LowestDaily } from "@/features/search/menorDiaria";
 import type { SearchResultItem } from "@/features/search/useSearchResults";
 import type { GoogleRatingRow } from "@/features/reviews/googleApi";
 import { isSnapshotFresh } from "@/features/reviews/google.logic";
@@ -48,7 +48,6 @@ export type UnitRow = {
   company_parking_type: {
     parking_type: { code: string; name: string } | null;
   } | null;
-  pricing_rule: PricingRuleRaw | PricingRuleRaw[] | null;
 };
 
 /** Linha da RPC `locations_proximity` (PostGIS, ADR-001: distância nunca é calculada no TS). */
@@ -72,6 +71,8 @@ function num(v: number | string | null | undefined): number | null {
  */
 export function buildStaticUnits(
   rows: UnitRow[],
+  /** Menor diária de cada lote, do motor (`lowest_daily_rate`), indexada por `lpt.id`. */
+  precos: Map<string, LowestDaily>,
   proximity: ProximityRow[],
   google: GoogleRatingRow[] = [],
   now: Date = new Date(),
@@ -96,11 +97,11 @@ export function buildStaticUnits(
     if (!loc.is_listed || loc.deleted_at) continue;
     if (!loc.company || loc.company.status !== "active") continue;
 
-    const regra = Array.isArray(row.pricing_rule) ? row.pricing_rule[0] : row.pricing_rule;
-    // Quem só vende estadia longa entra com o preço da menor estadia que vende, em vez de
-    // sumir da lista. Sem preço calculável a unidade fica de fora: card sem preço no HTML
-    // estático seria pior que card nenhum.
-    const from = calcFromPrice(regra ?? null);
+    // O preço do card é a MENOR diária do lote, calculada pelo motor (`lowest_daily_rate`) e
+    // recebida pronta aqui: o TypeScript não relê a tabela de preço. Quem só vende estadia
+    // longa entra pela estadia que vende, em vez de sumir da lista. Sem preço a unidade fica
+    // de fora, porque card sem preço no HTML estático é pior que card nenhum.
+    const from = precos.get(row.id);
     if (!from) continue;
 
     const p = geo.get(loc.id);
@@ -151,12 +152,15 @@ export function buildStaticUnits(
         near_capacity_message: null,
       },
       price: {
-        total: from.price,
-        old_price: from.oldPrice,
-        per_day: Number((from.price / from.days).toFixed(2)),
+        total: from.total,
+        old_price: from.oldTotal,
+        per_day: from.daily,
         days: from.days,
+        // O HTML do build já sai com o "a partir de": é a mesma promessa que a busca do
+        // cliente repete depois, e o crawler só lê esta.
+        showcase: true,
       },
-      min_stay_days: from.days > 1 ? from.days : null,
+      min_stay_days: from.minStayDays,
       amenities: (loc.amenities ?? []).map((a) => a.amenity_code),
     });
   }
