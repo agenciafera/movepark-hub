@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAllDestinationPoints, useDestinations, type Destination } from "./api";
 import { destinationTypeIcon } from "@/lib/destination-types";
 import { cn } from "@/lib/utils";
+import { SEARCH_FIELD_CELL } from "./searchFieldStyles";
 
 type Props = {
   value: string | null;
@@ -70,10 +71,7 @@ export function DestinationCombobox({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={cn(
-            "flex h-full w-full flex-col items-start justify-center gap-0.5 rounded-full px-6 text-left transition-colors hover:bg-surface-soft",
-            triggerClassName,
-          )}
+          className={cn(SEARCH_FIELD_CELL, triggerClassName)}
         >
           {triggerContent ? (
             triggerContent(current)

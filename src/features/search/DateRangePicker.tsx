@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { SEARCH_FIELD_CELL, SEARCH_FIELD_DIVIDER } from "./searchFieldStyles";
 import {
   TIME_SLOTS,
   dayAriaLabel,
@@ -90,8 +91,6 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
     onChange(merged.from, merged.to);
   }
 
-  const cellBase =
-    "flex h-full w-full flex-col items-start justify-center gap-0.5 rounded-full px-6 text-left transition-colors hover:bg-surface-soft";
   const value = (d: Date | null) =>
     d ? format(d, "dd MMM · HH:mm", { locale: ptBR }) : "Adicionar data";
 
@@ -109,13 +108,12 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
         {/* h-full (tablet+) pra o bloco preencher a altura do pill e os campos ficarem
             verticalmente centralizados, alinhados com "Onde" e "Veículo". */}
         <div className="flex w-full flex-col tablet:h-full tablet:flex-row">
-          {/* Divisória no wrapper (linha reta, full-height) — não no botão, senão o
-              rounded-full curva a borda e cria um "entalhe" entre os dois campos. */}
-          <div className="min-w-0 flex-1 border-b border-hairline tablet:border-b-0 tablet:border-r">
+          {/* Divisória no wrapper, não no botão (ver searchFieldStyles). */}
+          <div className={cn("min-w-0 flex-1", SEARCH_FIELD_DIVIDER)}>
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className={cn(cellBase, triggerClassName)}
+              className={cn(SEARCH_FIELD_CELL, triggerClassName)}
             >
               <span className="text-caption font-medium text-ink">Check-in</span>
               <span className="line-clamp-1 text-body-sm text-muted">{value(from)}</span>
@@ -125,7 +123,7 @@ export function DateRangePicker({ from, to, onChange, triggerClassName }: Props)
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className={cn(cellBase, triggerClassName)}
+              className={cn(SEARCH_FIELD_CELL, triggerClassName)}
             >
               <span className="text-caption font-medium text-ink">Check-out</span>
               {/* Com a entrada escolhida e a saída em aberto, o campo diz o próximo
