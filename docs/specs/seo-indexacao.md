@@ -114,6 +114,71 @@ A mesma propriedade de domínio revelou dois subdomínios fora do `hub.` no índ
 | `n8n.movepark.co` | instância n8n de automação | indexado; ferramenta interna exposta na busca |
 | `virapark.movepark.co` | white-label do parceiro Virapark (Vercel) | indexado; pode ser intencional para o SEO do parceiro |
 
+#### A medição completa, pelo Search Console (18/09/2026, Conteúdo 05b)
+
+A atividade [Conteúdo 05b](https://app.clickup.com/t/86akewdvb) partiu de uma leitura do Bing, em
+que os white-labels ocupavam mais espaço no índice que o site, e pedia `noindex` nos sete. A
+leitura do Google, feita pela propriedade de domínio com a credencial do coletor, mostrou uma
+situação diferente e maior. Os números são da coleta de 16 meses em
+[`dados/gsc-baseline-2026-08-29/`](./dados/gsc-baseline-2026-08-29/RESUMO.md).
+
+**Os white-labels vendem pelo Google.** São 12 hosts na Vercel, todos com CNAME em
+`cname.vercel-dns.com` e **fora do proxy da Cloudflare** (nuvem cinza), então o tráfego nunca
+passa pelo `src/worker.ts`. Nenhum responde `robots.txt` (404), nenhum emite `X-Robots-Tag` e
+nenhum tem meta `robots`. Mas vários têm tráfego orgânico que converte:
+
+| Host | Cliques em 16 meses | Impressões | Página que mais puxa |
+| --- | ---: | ---: | --- |
+| `virapark` | 874 | 318.407 | home (610 cliques) e a página de vaga avulsa (182) |
+| `garageinn` | 366 | 104.264 | a vaga avulsa de Viracopos, via Google Meu Negócio (252) |
+| `aeropark` | 177 | 45.935 | home (125) e vaga coberta de Guarulhos (49) |
+| `abbapark` | 97 | 16.274 | home (96) |
+| `aerovalet`, `plenty`, `airpark`, `skypark`, `nationpark` | 98 somados | 15.746 | home |
+
+Isso contradiz a premissa de tirar os sete do índice: seriam mais de 1.600 cliques em 16 meses
+para páginas que fecham reserva. O card do Conteúdo 05b lista `nationpark`, `garageinn`,
+`aeropark`, `aerovalet`, `plenty`, `airpark` e `virapark`; a medição achou também `abbapark`,
+`skypark`, `redpark` e `nine` no mesmo padrão.
+
+**O que é defeito sem discussão:**
+
+1. **Página de login e de conta indexada em 9 hosts.** O caso mais grave é
+   `virapark.movepark.co/login`, com **24.631 impressões e 51 cliques**, seguido por `aeropark`
+   (1.305), `abbapark` (795, com `callbackUrl` para `/profile/vehicles`), `skypark` (531),
+   `airpark` (402), `garageinn` (298) e `aerovalet` (262). Rotas `/profile`,
+   `/profile/my-reservations`, `/minhaconta/login` e `/restore-password` também aparecem.
+2. **Rota-modelo do Next.js vazada.** `/[category]/[product]` e `/[category]/[product]/vehicle`
+   estão indexadas em `virapark` e `garageinn`, literalmente com os colchetes. É URL que nunca
+   deveria existir.
+3. **Etapas de checkout indexadas.** `/vehicle` e `/payment` do fluxo de reserva.
+4. **Ferramentas internas na busca.** `n8n.movepark.co` (automação, responde 200 com a tela de
+   entrada) e `chatbuilder.movepark.co` (redireciona para `/signin`) estão indexados. Os dois
+   passam pelo proxy da Cloudflare, então aceitam cabeçalho na borda, mas a correção certa é
+   tirá-los do ar público, e não só da busca.
+5. **DNS morto.** `moveparking.movepark.co` responde 522 (origem fora do ar) e
+   `estacionamentos.movepark.co` não responde. Registro de DNS sem serviço atrás.
+
+**Por que nada disso foi aplicado a partir deste repositório.** O app de white-label não está
+aqui (é um Next.js na Vercel, provavelmente o legado `movepark-nextjs`), os hosts não passam pelo
+worker e não há credencial da Cloudflare nem da Vercel no ambiente de desenvolvimento. Trocar os
+CNAMEs para o proxy da Cloudflare para injetar cabeçalho mexeria no roteamento e no TLS de sites
+que fecham reserva, então não é saída para improvisar.
+
+**O caminho recomendado, por ordem de risco:**
+
+1. **No app de white-label**, e não na borda: `noindex` nas rotas de login, conta, recuperação de
+   senha e etapas de checkout (metadata `robots` do Next.js ou cabeçalho em `next.config`), e um
+   `robots.ts` que **libera o crawl** delas. Bloquear no `robots.txt` antes de o Google ler o
+   `noindex` congelaria as URLs no índice, a mesma regra do `movepark.co` (ver "Áreas privadas").
+   A rota-modelo `/[category]/[product]` tem que responder 404.
+2. **As páginas que vendem ficam indexadas** até uma decisão de produto: se o dono da consulta
+   deve ser o white-label do parceiro ou a ficha do Hub em `/estacionamentos/<destino>/<lote>`.
+   É escolha comercial, não técnica, porque o parceiro com `checkout_mode = external` fecha a
+   reserva justamente no white-label.
+3. **Ferramentas internas**: `n8n` e `chatbuilder` atrás de Cloudflare Access (ou equivalente),
+   o que resolve a exposição e a busca de uma vez.
+4. **Remover do DNS** `moveparking` e `estacionamentos`.
+
 > **A borda tem spec própria.** Comportamento do worker, configuração de assets e a regra de
 > 404 estão em [`borda-cloudflare.md`](./borda-cloudflare.md), com as medições de produção.
 
