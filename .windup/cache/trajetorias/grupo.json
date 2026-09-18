@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "grupo",
     "start_url": "/grupo",
-    "scenario_sig": "bcb12f70652e4116"
+    "scenario_sig": "42ba26d7205565ac"
   },
   "plan": {
     "plan_version": "0.1",
@@ -29,13 +29,13 @@
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "main h1",
-          "description": "Main page heading O grupo Movepark"
+          "selector": "main",
+          "description": "Main content naming the Go2Park brand"
         },
         "expect": {
           "text_contains": {
-            "selector": "main h1",
-            "text": "O grupo Movepark"
+            "selector": "main",
+            "text": "Go2Park"
           }
         },
         "timeout_ms": 5000
@@ -57,7 +57,7 @@
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto O grupo Movepark, e que o rodape exibe o texto Seja parceiro.",
+    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Go2Park, e que o rodape exibe o texto Seja parceiro.",
     "generated_by": {
       "model": "handwritten",
       "at": "2026-09-18T00:00:00.000Z"
@@ -69,6 +69,6 @@
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

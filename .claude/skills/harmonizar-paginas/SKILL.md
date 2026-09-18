@@ -30,7 +30,7 @@ classe, porque tudo abaixo depende da faixa.
 
 | Faixa | Quais | O que é |
 |---|---|---|
-| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto`, `/precos`, `/destinos/<slug>` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
+| **Hero de marketing** | `/`, `/seja-parceiro`, `/sobre`, `/como-funciona`, `/calculadora-estacionamento-aeroporto`, `/precos`, `/destinos/<slug>`, `/grupo` | Abre com imagem ou faixa de marca full-bleed, headline grande, sem padding no topo |
 | **Página de conteúdo** | as outras 9 | Abre com `PageHeader`, coluna de leitura, padding no topo |
 | **Conteúdo com hero** | `/contato` | Corpo de conteúdo, aberto pela faixa violeta do `PageHero` (ver abaixo) |
 
@@ -174,6 +174,14 @@ de página inteira, com botão branco de 48px e texto branco puro, medido em
 4.83:1 contra o mínimo de 4.5. A folga é curta de propósito, então texto menor ou
 cinza claro ali está fora. O rodapé perdeu a `border-t` quando ganhou essa faixa:
 a hairline virava um risco claro sobre a cor.
+
+**`/grupo` nasceu de conteúdo e virou hero em 18/09/2026.** A primeira versão usava
+`ContentPageView`, e o resultado foi recusado com uma frase que vale guardar: a página
+"tem que ser mais visual, mostrando os logos de todas as marcas". Vitrine de marca não é
+documento. Uma página cujo trabalho é fazer quatro logos conviverem, mostrar a estrutura
+da casa e dizer o estágio de cada produto entrega errado dentro de uma casca de leitura,
+que ordena tudo em coluna única de 68ch e trata imagem como acessório. Mesma justificativa
+da `/sobre`: é página de marca, não de utilidade.
 
 ## Contrato de tipografia
 

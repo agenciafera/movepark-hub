@@ -98,20 +98,54 @@ vive no rodapé, no grupo "Movepark", e no fim do `/sobre`.
 
 ## 5. O que a página tem
 
-1. **A tese numa frase**, como H1 e subtítulo.
-2. **Identificação legal visível:** razão social e CNPJ. Já é o que o schema afirma, então a tela
-   passa a espelhar o dado em vez de escondê-lo.
-3. **Um bloco por produto**, com nome, uma linha do que é, para quem serve e o **estágio declarado
-   sem data**. "Em desenvolvimento" sem previsão é honesto e não cria dívida de promessa; data
-   vira cobrança e vaza roadmap.
-4. **Desambiguação escrita para humano e para máquina.** A frase atual do `llms.txt` nega
-   parentesco com qualquer nome parecido, e passa a fazer as duas coisas: declarar as irmãs e
-   continuar negando as homônimas. Um levantamento anterior já encontrou uma **Movepark 1
-   Estacionamentos (CNPJ 66.606.374)** que não é do grupo, então a negação continua necessária, e o
-   CNPJ publicado é o que a resolve de forma definitiva.
-5. **Link para `go2park.com.br`**, sem `nofollow`, pela mesma razão documentada em
-   [selo-parceiro.md](./selo-parceiro.md): link de marca entre propriedades da mesma casa é
-   exatamente o sinal que se quer emitir.
+A primeira versão foi entregue como página de conteúdo, na casca de leitura de
+`/cancelamento` e `/metodologia`, e foi recusada: **vitrine de marca não é documento**. A
+página existe para fazer quatro logos conviverem e mostrar a estrutura da casa, e nada
+disso sobrevive a uma coluna de 68ch onde imagem é acessório. Ela é **hero de marketing**,
+registrado na skill `harmonizar-paginas`.
+
+1. **Hero** com a tese em uma frase e a ilustração do ecossistema recortada, flutuando
+   sobre o navy.
+2. **Mural das quatro marcas**, cada uma com logo, uma linha do que faz e o estágio.
+3. **Organograma**: a marca-casa no topo, os quatro produtos abaixo e, embaixo dele, quem
+   responde pela cobrança de cada um. Ver §5.2.
+4. **Um cartão por produto**, com o traço na cor da marca, o corpo do texto e o link para
+   o site próprio quando existe.
+5. **Desambiguação**, que continua necessária: existe homônima no mercado, e o CNPJ é o
+   que resolve.
+
+### 5.1 Os logos, e os dois que não existiam
+
+Só a Movepark tinha marca no repositório. O **Go2Park** tem logo oficial, baixado do site
+do produto e versionado em `public/brand/logo-go2park.png` (azul `#1B5FFF`, verde
+`#A4E244`, medidos no arquivo).
+
+**Go2Med e Coopark não têm marca fechada**, e a decisão foi dar a eles um **wordmark
+provisório** em vez de deixar dois nomes soltos ao lado de dois logos reais. Eles herdam
+um único gesto do GO2PARK, o "O" como anel de miolo cheio com o dígito em cor de acento, e
+são SVG **inline** porque dependem da Inter da página: um `.svg` servido por `<img>` cai no
+fallback do sistema e perde o parentesco.
+
+Duas tentativas anteriores foram descartadas e estão registradas no componente: reproduzir
+o glifo inteiro do "G" virou borrão a 24px, e trocá-lo por um anel com seta saindo ficou
+nítido e virou **o símbolo de Marte (♂) num produto de transporte de hospital**. Marca
+derivada herda gesto; não inventa símbolo sem quem revise.
+
+### 5.2 O que o organograma pode dizer
+
+A caixa de cima é a **marca** Movepark, não uma holding, e os quatro ramos são **produtos**,
+não subsidiárias. A linha de baixo é o que impede a leitura errada, porque nomeia quem
+fatura cada um hoje, e a Go2Park ainda fatura pela Agência Fera. Os conectores só existem
+do tablet para cima: em 375px o desenho vira grade de dois por dois, porque quatro ramos
+com linha viram um emaranhado de 2px.
+
+### 5.3 A ilustração
+
+Gerada no Higgsfield (`gpt_image_2_5`, 1 crédito) e recortada pelo `remove_background` do
+mesmo provedor, que entrega **alfa de verdade** (conferido pixel a pixel: `a=0` no canto e
+no topo). Isso importa porque o provedor oficial de imagem do projeto, o `gemini-image`,
+não entrega transparência: ele devolve o xadrez **pintado**. O arquivo final é
+`public/images/grupo-ecossistema.webp`, 903x767, 79KB.
 
 ## 6. Superfície de máquina
 
@@ -177,28 +211,31 @@ lugares de uma vez. Dois números publicados ao mesmo tempo é o pior dos mundos
 
 | Arquivo | Papel |
 |---|---|
-| `src/features/content/pages.ts` (`GRUPO`) | O conteúdo, como dado. Página institucional nova é um objeto, não uma tela |
-| `src/routes/grupo.tsx` | A rota, com `AboutPage` + `BreadcrumbList` e a entidade da casa como `mainEntity` |
-| `src/lib/jsonld.ts` (`MARCAS`) | As quatro marcas em `brand`, com o motivo de não ser `subOrganization` no comentário |
-| `public/grupo.md` | Gêmeo Markdown, preso à página pelo teste |
+| `src/features/grupo/marcas.ts` | As quatro marcas como dado. Fonte única da tela, do `brand` no JSON-LD e do gêmeo Markdown |
+| `src/features/grupo/Wordmark.tsx` | Os wordmarks provisórios de Go2Med e Coopark, com as duas tentativas descartadas documentadas |
+| `src/features/grupo/MarcaLogo.tsx` | Despacha arquivo oficial ou wordmark, com o `alt` saindo do nome da marca |
+| `src/features/grupo/Organograma.tsx` | A estrutura, com conectores só onde eles conectam |
+| `src/routes/grupo.tsx` | A página, com `AboutPage` + `BreadcrumbList` e a entidade da casa como `mainEntity` |
+| `src/lib/jsonld.ts` (`brandSchema`) | As quatro em `brand`, derivadas de `marcas.ts`: o schema espelha a tela |
+| `public/brand/logo-go2park.png` | Logo oficial, servido pelo próprio site |
+| `public/images/grupo-ecossistema.webp` | A ilustração recortada |
+| `public/grupo.md` | Gêmeo Markdown, preso ao dado pelo teste |
 | `public/llms.txt` | Seção "Os produtos da casa" e a desambiguação declarando as irmãs |
-| `src/routes/sobre.tsx` | A ponte para `/grupo`, no fim da página |
 | `ConsumerFooter` + `ConsumerMobileMenu` | O link nas duas navegações, que o teste do menu exige no mesmo commit |
-| `src/lib/sitemapRoutes.ts` | `/grupo` no sitemap |
 | `e2e/windup/grupo.json` + trajetória | O cenário de navegador que o `routes-coverage.contract.test.ts` cobra |
 
-**Um tipo de bloco novo:** `link`. O bloco `p` renderiza texto puro, então o endereço do
-Go2Park escrito no meio de um parágrafo não viraria link para ninguém, e uma página que
-apresenta produtos sem levar ao produto é meia página. Sem `nofollow`, pela mesma razão do
-[selo-parceiro.md](./selo-parceiro.md).
+**O bloco `link` das páginas de conteúdo foi revertido.** Ele nasceu na primeira versão,
+para o endereço do Go2Park virar link dentro de um parágrafo. Com a página fora da casca
+de conteúdo ele ficaria sem nenhum uso, e tipo de bloco sem uso é peso morto no sistema.
 
-**A trajetória do Windup foi escrita à mão.** O planner com `google:gemini-3.1-flash-lite`
-degenerou nesta página em três tentativas seguidas, estourando o teto de 16k tokens de saída
-(US$ 0,57 queimados). A saída foi calcular o `scenario_sig` pela fórmula do próprio pacote
-(`sha256` de `{task, hints, atomic_steps, depends_on, like}`, 16 primeiros caracteres) e montar
-o plano no formato do cenário `ajuda`, que é o mesmo trio de asserções. A prova de que vale é o
-replay real: `cache=hit`, `llm_calls=0`, `PASS`. O `start_sig` é opcional na validação do cache,
-então a ausência dele não causa miss.
+**A trajetória do Windup é escrita à mão.** O planner com `google:gemini-3.1-flash-lite`
+degenerou três vezes nesta página, estourando o teto de 16k tokens de saída (US$ 0,57
+queimados). A saída foi calcular o `scenario_sig` pela fórmula do próprio pacote
+(`sha256` de `{task, hints, atomic_steps, depends_on, like}`, 16 primeiros caracteres) e
+montar o plano no formato do cenário `ajuda`. A prova é o replay real: `cache=hit`,
+`llm_calls=0`, `PASS`. O `start_sig` é opcional na validação do cache, então a ausência
+dele não causa miss. O cenário afirma o nome **Go2Park** no corpo da página, e não a
+headline: headline de marketing muda, nome de marca não.
 
 ## 9. Fora de escopo
 

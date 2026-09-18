@@ -16,10 +16,7 @@ export type Block =
   | { type: "note"; label: string; text: string }
   | { type: "table"; rows: { k: string; v: string }[] }
   | { type: "faq"; items: { q: string; a: string; slug?: string }[] }
-  | { type: "steps"; items: { n: string; title: string; text: string }[] }
-  /** Link para fora do site. O bloco `p` renderiza texto puro, e endereço
-   *  escrito no meio de um parágrafo não vira link para ninguém. */
-  | { type: "link"; href: string; label: string; text?: string };
+  | { type: "steps"; items: { n: string; title: string; text: string }[] };
 
 export type Section = {
   /** Vira âncora (`#id`), então o suporte consegue mandar link de seção. */
@@ -99,10 +96,6 @@ export function readingMinutes(sections: Section[]): number {
             conta(i.title);
             conta(i.text);
           });
-          break;
-        case "link":
-          if (b.text) conta(b.text);
-          conta(b.label);
           break;
       }
     }

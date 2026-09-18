@@ -2,6 +2,7 @@ import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
+import { MARCAS } from "@/features/grupo/marcas";
 import { caminhoDestino, caminhoFicha } from "@/lib/urls";
 import { temVolumeParaNota } from "@/lib/reviews-volume.mjs";
 import { REDES } from "@/lib/redes";
@@ -462,39 +463,26 @@ export function blogPostingSchema(p: {
 }
 
 /**
- * As marcas mantidas pela casa, emitidas como `brand` da Movepark.
+ * As marcas da casa em `brand`.
  *
- * `brand` e não `subOrganization`: a propriedade de marca diz que a organização
- * mantém aquele nome, e isso é verdade hoje. Estrutura organizacional é outra
- * coisa, e enquanto a Go2Park faturar pelo CNPJ da Agência Fera afirmar
- * `subOrganization` seria declarar em dado estruturado uma sociedade que o
- * contrato social não tem. Quando a titularidade passar para a Movepark, esta
- * lista vira `subOrganization`; o gatilho está escrito em
+ * `brand` e não `subOrganization`: a propriedade de marca diz que a organização mantém
+ * aquele nome, e isso é verdade hoje. Estrutura organizacional é outra coisa, e enquanto
+ * a Go2Park faturar pelo CNPJ da Agência Fera afirmar `subOrganization` seria declarar em
+ * dado estruturado uma sociedade que o contrato social não tem. Quando a titularidade
+ * passar para a Movepark, esta função vira `subOrganization`; o gatilho está escrito em
  * docs/specs/grupo-movepark.md.
+ *
+ * A lista vem de `features/grupo/marcas.ts`, a mesma que a `/grupo` renderiza: o schema
+ * espelha a tela, nunca uma segunda lista que envelhece sozinha.
  */
-export const MARCAS = [
-  {
-    name: "Movepark Hub",
-    url: SITE_URL,
-    description:
-      "Plataforma de reserva de vaga em estacionamento de aeroporto, com pagamento online e divisão automática do valor com o parceiro.",
-  },
-  {
-    name: "Go2Park",
-    url: "https://go2park.com.br",
-    description:
-      "Rastreio em tempo real da van de traslado do estacionamento até o terminal, pelo navegador, sem aplicativo e sem conta.",
-  },
-  {
-    name: "Go2Med",
-    description: "Rastreio em tempo real de van de transporte de hospital. Em desenvolvimento.",
-  },
-  {
-    name: "Coopark",
-    description:
-      "Contratação de vaga mensal com demanda agregada por região, para melhorar o preço de quem estaciona todo dia. Em desenvolvimento.",
-  },
-] as const;
+function brandSchema() {
+  return MARCAS.map((m) => ({
+    "@type": "Brand",
+    name: m.nome,
+    ...(m.url ? { url: m.url } : { url: SITE_URL }),
+    description: m.resumo,
+  }));
+}
 
 /**
  * A entidade Movepark, para a home: o bloco que ancora o knowledge panel e a
@@ -523,7 +511,7 @@ export function organizationSchema() {
       availableLanguage: "Portuguese",
     },
     sameAs: REDES.map((r) => r.url),
-    brand: MARCAS.map((m) => ({ "@type": "Brand", ...m })),
+    brand: brandSchema(),
   };
 }
 

@@ -1,7 +1,7 @@
 {
   "scenario_id": "grupo",
   "start_url": "/grupo",
-  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto O grupo Movepark, e que o rodape exibe o texto Seja parceiro.",
+  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Go2Park, e que o rodape exibe o texto Seja parceiro.",
   "tags": [
     "smoke",
     "leitura"
