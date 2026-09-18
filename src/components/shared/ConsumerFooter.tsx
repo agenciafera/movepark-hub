@@ -5,27 +5,46 @@ import { Wordmark } from "./Brand";
 type FooterLink = { to: string; label: string; external?: boolean };
 type FooterGroup = { title: string; links: FooterLink[] };
 
+/**
+ * As colunas são as mesmas do menu do celular, na mesma ordem e com os mesmos
+ * rótulos: as duas superfícies atendem os dois lados da praça, e quem lê o
+ * rodapé numa página e o menu na seguinte tem que reconhecer a mesma casa.
+ *
+ * As duas primeiras nomeiam público, não assunto, porque é o público que separa
+ * B2C de B2B: sem isso, "Seja parceiro" parecia oferta pra quem ia viajar. As
+ * duas últimas nomeiam assunto, e é honesto que nomeiem: institucional e suporte
+ * não são de nenhum dos dois públicos em particular.
+ *
+ * Ao mexer aqui, mexa no `ConsumerMobileMenu` no mesmo commit: o teste
+ * `ConsumerMobileMenu.test.tsx` cobra que todo link deste rodapé exista lá.
+ */
 const groups: FooterGroup[] = [
+  {
+    title: "Para quem viaja",
+    links: [
+      { to: "/estacionamentos", label: "Estacionamentos" },
+      { to: "/precos", label: "Índice de preços" },
+      { to: "/calculadora-estacionamento-aeroporto", label: "Calculadora de estacionamento" },
+    ],
+  },
+  {
+    // Nome do público, não da coisa: "Estacionamentos" é o rótulo do catálogo na
+    // coluna ao lado, e "Para empresas" chamaria quem quer estacionar frota.
+    title: "Para donos de estacionamento",
+    links: [
+      { to: "/seja-parceiro", label: "Seja parceiro" },
+      { to: "/selo", label: "Selo de parceiro" },
+      { to: "/operator", label: "Painel do estacionamento" },
+    ],
+  },
   {
     title: "Movepark",
     links: [
       { to: "/sobre", label: "Sobre nós" },
       // Barra final de propósito: é a URL canônica do blog, herdada do WordPress.
       { to: "/blog/", label: "Blog" },
-      { to: "/precos", label: "Índice de preços" },
-      { to: "/calculadora-estacionamento-aeroporto", label: "Calculadora de estacionamento" },
       { to: "/termos", label: "Termos de uso" },
       { to: "/privacidade", label: "Política de privacidade" },
-    ],
-  },
-  {
-    // Nome do público, não da coisa: "Estacionamentos" virou o rótulo do catálogo
-    // no menu do celular, e "Para empresas" chamaria quem quer estacionar frota.
-    title: "Para donos de estacionamento",
-    links: [
-      { to: "/seja-parceiro", label: "Seja parceiro" },
-      { to: "/selo", label: "Selo de parceiro" },
-      { to: "/operator", label: "Painel do estacionamento" },
     ],
   },
   {
@@ -68,7 +87,7 @@ export function ConsumerFooter() {
           </Button>
         </div>
       </div>
-      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-3 desktop:grid-cols-3 desktop:px-8">
+      <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-8 px-6 py-12 tablet:grid-cols-2 desktop:grid-cols-4 desktop:px-8">
         {groups.map((g) => (
           <div key={g.title} className="space-y-3">
             <h4 className="text-title-sm text-ink">{g.title}</h4>

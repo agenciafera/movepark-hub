@@ -33,6 +33,37 @@ describe("ConsumerFooter — links", () => {
   });
 });
 
+describe("ConsumerFooter — as colunas", () => {
+  /**
+   * As duas primeiras colunas nomeiam público, e não assunto, porque é o público que
+   * separa B2C de B2B: sem isso, "Seja parceiro" parecia oferta pra quem ia viajar. A
+   * ordem e os rótulos são os mesmos do menu do celular, para as duas superfícies
+   * contarem a mesma história.
+   */
+  it("abre por público, na mesma ordem do menu do celular", () => {
+    renderWithProviders(<ConsumerFooter />);
+
+    const titulos = screen
+      .getByRole("contentinfo")
+      .querySelectorAll("h4");
+    expect([...titulos].map((t) => t.textContent)).toEqual([
+      "Para quem viaja",
+      "Para donos de estacionamento",
+      "Movepark",
+      "Suporte",
+    ]);
+  });
+
+  /** O catálogo não tinha link no rodapé: só se chegava nele pelo header. */
+  it("leva o catálogo de estacionamentos, sob a placa de quem viaja", () => {
+    renderWithProviders(<ConsumerFooter />);
+
+    const link = screen.getByRole("link", { name: "Estacionamentos" });
+    expect(link).toHaveAttribute("href", "/estacionamentos");
+    expect(link.closest("div")?.querySelector("h4")?.textContent).toBe("Para quem viaja");
+  });
+});
+
 describe("ConsumerFooter — a faixa da chamada", () => {
   /**
    * A pergunta media 16px, o mesmo da linha de apoio logo abaixo, e a faixa lia
