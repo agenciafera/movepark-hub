@@ -1,0 +1,238 @@
+{
+  "scenario_id": "manager-reserva-detalhe",
+  "start_url": "/manager/bookings/MP-QA0001",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reserva MP-QA0001\". Passo 2: verifique que a pagina exibe o texto \"Valores\". Passo 3: verifique que a pagina exibe o texto \"Plano Flex\". Passo 4: verifique que a pagina exibe o texto \"Voltar para Reservas\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/booking*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-0000000000b1",
+          "code": "MP-QA0001",
+          "status": "confirmed",
+          "check_in_at": "2026-10-10T12:00:00Z",
+          "check_out_at": "2026-10-11T12:00:00Z",
+          "total_amount": 30.9,
+          "currency": "BRL",
+          "created_at": "2026-09-18T17:31:00Z",
+          "updated_at": "2026-09-18T17:37:00Z",
+          "customer_name": "Cliente QA",
+          "customer_phone": "+5541999990000",
+          "customer_email": "qa@windup.local",
+          "customer_tax_id": null,
+          "fare_tier": "flex",
+          "fare_cancel_until": "2026-10-09T12:00:00Z",
+          "notes": null,
+          "checked_in_at": null,
+          "checked_out_at": null,
+          "deleted_at": null,
+          "price_breakdown": {
+            "days": 1,
+            "total": 30.9,
+            "line_items": [
+              {
+                "kind": "parking",
+                "name": "uncovered",
+                "quantity": 1,
+                "subtotal": 18
+              },
+              {
+                "kind": "fare",
+                "name": "Flex",
+                "tier": "flex",
+                "quantity": 1,
+                "subtotal": 12.9
+              }
+            ]
+          },
+          "profile": {
+            "id": "p",
+            "full_name": "Cliente QA",
+            "tax_id": null
+          },
+          "location": {
+            "id": "l",
+            "name": "Unidade QA",
+            "slug": "unidade-qa",
+            "timezone": "America/Sao_Paulo",
+            "company": {
+              "id": "00000000-0000-4000-8000-0000000000c1",
+              "name": "Empresa QA",
+              "slug": "empresa-qa"
+            }
+          },
+          "vehicle": {
+            "id": "v",
+            "license_plate": "QAA1A11",
+            "model": "Carro QA",
+            "color": "Branco"
+          },
+          "payments": [
+            {
+              "id": "pay1",
+              "status": "paid",
+              "refunded_at": null,
+              "created_at": "2026-09-18T17:36:40Z",
+              "paid_at": "2026-09-18T17:37:26Z",
+              "method": "card"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/booking_gateway_trail*",
+      "json": {
+        "payments": [
+          {
+            "id": "pay1",
+            "kind": "booking",
+            "method": "card",
+            "status": "paid",
+            "amount": 30.9,
+            "installments": 1,
+            "provider_payment_id": "or_qa",
+            "provider_charge_id": "ch_qa",
+            "created_at": "2026-09-18T17:36:40Z",
+            "paid_at": "2026-09-18T17:37:26Z",
+            "expires_at": null,
+            "refunded_at": null,
+            "refunded_amount": null,
+            "refund_reason": null,
+            "refund_absorbed_by_master": false,
+            "refund_partner_cents": 0,
+            "refund_partner_balance_cents": null,
+            "refund_split": null,
+            "split": [
+              {
+                "role": "partner",
+                "recipientId": "re_p",
+                "amount": 1440,
+                "liable": false,
+                "chargeProcessingFee": true
+              },
+              {
+                "role": "movepark",
+                "recipientId": "re_mp",
+                "amount": 1650,
+                "liable": true,
+                "chargeProcessingFee": false
+              }
+            ],
+            "split_sent_to_gateway": true,
+            "debt_recovered_cents": 0,
+            "gateway_fee_cents": 117,
+            "gateway_fee_synced_at": "2026-09-18T17:49:00Z",
+            "partner_release_at": "2026-10-20T03:00:00Z",
+            "pix_qr_code_url": null
+          }
+        ],
+        "events": []
+      }
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "A tela abre pelo codigo da reserva; os valores vem do price_breakdown da reserva e do pagamento do rastro do gateway."
+  ]
+}

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,9 +15,8 @@ import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { periodLabel } from "@/features/manager-filters/managerFilters.logic";
 import { BookingTable } from "@/features/bookings/BookingTable";
-import { BookingModal } from "@/features/bookings/BookingModal";
 import { useBookings, type BookingFilters } from "@/features/bookings/api";
-import type { BookingStatus, BookingWithRelations } from "@/types/domain";
+import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -34,7 +33,7 @@ export default function ManagerBookings() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
-  const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
+  const navigate = useNavigate();
   const { period, range, scopedLocationIds } = useManagerFilters();
 
   // Buscar por código atravessa o período: quem digita um código quer AQUELA
@@ -96,13 +95,7 @@ export default function ManagerBookings() {
         </CardContent>
       </Card>
 
-      <BookingTable bookings={data} isLoading={isLoading} onRowClick={(b) => setSelected(b)} />
-
-      <BookingModal
-        booking={selected}
-        open={!!selected}
-        onOpenChange={(open) => !open && setSelected(null)}
-      />
+      <BookingTable bookings={data} isLoading={isLoading} onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)} />
     </div>
   );
 }

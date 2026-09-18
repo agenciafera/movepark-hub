@@ -26,6 +26,8 @@ vi.mock("@/features/payouts/api", () => ({
   // E0.3.10: o card de saques tem teste próprio (WithdrawalsCard.test.tsx).
   usePayoutWithdrawals: () => ({ data: [], isLoading: false }),
   useReconcileWithdrawals: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  // Fila manual ganhou "Tentar de novo no gateway" (17/09/2026); o card tem teste próprio.
+  useRetryManualRefund: () => ({ mutateAsync: vi.fn(), isPending: false }),
   // A página passou a embutir o card de repasse (E0.3.4); sem dívida aberta ele não renderiza.
   usePayoutOwed: () => ({ data: [], isLoading: false }),
   useRequestPayoutTransfer: () => ({ mutateAsync: vi.fn(), isPending: false }),

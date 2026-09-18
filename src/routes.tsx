@@ -88,6 +88,7 @@ import CompleteProfilePage from "@/routes/account/complete-profile";
 import ManagerLayout from "@/routes/manager/layout";
 import ManagerDashboard from "@/routes/manager/dashboard";
 import ManagerBookings from "@/routes/manager/bookings";
+import ManagerBookingDetail from "@/routes/manager/booking-detail";
 import ManagerCompanies from "@/routes/manager/companies";
 import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
@@ -1070,6 +1071,8 @@ export const routes: RouteRecord[] = [
             children: [
               { index: true, element: <ManagerDashboard /> },
               { path: "bookings", element: <ManagerBookings /> },
+              // Tela da reserva (18/09/2026): substitui o popup, com os valores destrinchados.
+              { path: "bookings/:code", element: <ManagerBookingDetail /> },
               { path: "companies", element: <ManagerCompanies /> },
               { path: "partners", element: <ManagerPartners /> },
               { path: "destinations", element: <ManagerDestinations /> },

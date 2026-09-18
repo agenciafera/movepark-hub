@@ -15,6 +15,7 @@ import { executeRefund, manualRefundReason, partnerRecipientMissing, persistPart
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { sweepDebtEmails } from "../_shared/debt-email.ts";
+import { parseRetryInput, retryPreflight, retryResponse } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,8 +48,8 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: "Invalid JSON" }, 400);
   }
-  const id = typeof body.manual_refund_id === "string" && body.manual_refund_id.trim() ? body.manual_refund_id.trim() : null;
-  if (!id) return json({ error: "manual_refund_id é obrigatório." }, 400);
+  const { id, error: inputErr } = parseRetryInput(body);
+  if (!id) return json({ error: inputErr }, 400);
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
@@ -57,16 +58,14 @@ Deno.serve(async (req: Request) => {
     .select("id, booking_id, payment_id, amount_cents, status")
     .eq("id", id)
     .maybeSingle();
-  if (!fila) return json({ error: "Linha da fila não encontrada." }, 404);
-  if (fila.status !== "pending") return json({ error: "Essa devolução já foi resolvida." }, 409);
 
   const { data: payment } = await admin
     .from("payment")
     .select("id, provider, provider_payment_id, provider_charge_id, amount, method, status, refunded_at, refund_reason, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
-    .eq("id", fila.payment_id)
+    .eq("id", fila?.payment_id ?? "00000000-0000-0000-0000-000000000000")
     .maybeSingle();
-  if (!payment) return json({ error: "Pagamento não encontrado." }, 404);
-  if (payment.status === "refunded") return json({ error: "Esse pagamento já está estornado." }, 409);
+  const pre = retryPreflight(fila, payment);
+  if (!pre.ok || !fila || !payment) return json({ error: pre.error }, pre.status);
 
   let gateway;
   try {
@@ -107,17 +106,14 @@ Deno.serve(async (req: Request) => {
       : "nova tentativa pela fila manual",
   });
 
-  if (exec.outcome === "transient") {
-    return json({ error: "O gateway não respondeu. Tente de novo em instantes." }, 502);
-  }
+  const resposta = retryResponse(exec.outcome, exec.result);
   if (exec.outcome === "definitive") {
     await admin
       .from("payout_refund_manual")
       .update({ reason: manualRefundReason(exec.result.raw), gateway_response: exec.result.raw ?? null, note: `nova tentativa recusada em ${nowIso}` })
       .eq("id", fila.id);
-    const motivo = (exec.result.failureMessages ?? []).join("; ") || "sem motivo informado";
-    return json({ error: `O gateway recusou de novo: ${motivo}` }, 409);
   }
+  if (!resposta.closeQueue) return json(resposta.body, resposta.http);
 
   const refundPending = exec.result.status !== "refunded";
   await admin
@@ -141,5 +137,5 @@ Deno.serve(async (req: Request) => {
     .eq("id", fila.id);
   if (exec.absorbedByMaster) await sweepDebtEmails(admin);
 
-  return json({ ok: true, status: refundPending ? "paid" : "refunded", refund_pending: refundPending });
+  return json(resposta.body, resposta.http);
 });

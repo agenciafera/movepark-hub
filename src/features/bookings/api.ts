@@ -69,6 +69,19 @@ export function useBookings(filters: BookingFilters) {
   });
 }
 
+/** Uma reserva pelo código, com as mesmas relações da lista (tela de detalhe do Manager). */
+export function useBookingByCode(code: string | undefined) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "by-code", code ?? ""] as const,
+    enabled: !!code,
+    queryFn: async (): Promise<BookingWithRelations | null> => {
+      const { data, error } = await supabase.from("booking").select(baseSelect).eq("code", code!).limit(1);
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as unknown as BookingWithRelations | null;
+    },
+  });
+}
+
 export function useRecentBookings(limit = 20, locationIds?: string[]) {
   return useQuery({
     queryKey: bookingsKeys.recent(locationIds),
@@ -114,6 +127,8 @@ export type CancelBookingResult = {
   status: string;
   refunded: boolean;
   refund_pending: boolean;
+  /** O gateway recusou o estorno de forma definitiva: a devolução foi para a fila manual. */
+  refund_manual?: boolean;
 };
 
 /**
@@ -171,7 +186,7 @@ export type GatewayTrailPayment = {
   refund_partner_cents: number;
   refund_partner_balance_cents: number | null;
   refund_split: unknown;
-  split: { role?: string; recipientId?: string | null; amount: number; liable?: boolean }[] | null;
+  split: { role?: string; recipientId?: string | null; amount: number; liable?: boolean; chargeProcessingFee?: boolean }[] | null;
   split_sent_to_gateway: boolean | null;
   debt_recovered_cents: number;
   gateway_fee_cents: number | null;

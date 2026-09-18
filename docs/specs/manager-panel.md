@@ -293,6 +293,21 @@ Colunas: `#ID` · `Cliente` · `Empresa` · `Localização` · `Tipo de Vaga` ·
 
 ---
 
+
+**Tela da reserva (18/09/2026): `/manager/bookings/:code`.** Clicar numa linha (lista ou
+dashboard) abre uma página, não mais um popup. Blocos: cabeçalho com os dois status (o da
+reserva e o do dinheiro, `paymentBadge`); **Reserva** (cliente, contato, documento, veículo,
+plano com o limite de cancelamento grátis, datas); **Linha do tempo**; **Valores**; **Cancelar**
+(com o aviso da janela de estorno do gateway); **Gateway (Pagar.me)** com o rastro completo.
+O bloco **Valores** (`bookingMoney.logic.ts`, puro e testado) destrincha em três colunas: o que o
+cliente pagou (diária, plano, cupom ou desconto, juros do parcelamento, total cobrado, meio e
+parcelas); o que foi para o **estacionamento** (parte dele, menos abatimento de dívida, menos a
+taxa do gateway quando é ele que paga, líquido e data de liberação; em custódia vira "a
+repassar"); e o que ficou com a **Movepark** (comissão, plano, juros, dívida recuperada, menos a
+taxa quando é dela, líquido). Havendo estorno, uma quarta faixa diz quanto voltou ao cliente,
+quanto saiu de cada lado e a dívida gerada. Fontes: `booking.price_breakdown` e o pagamento do
+`booking_gateway_trail` (só hub_admin).
+
 ### 4.6 Financeiro — Faturamento
 
 **Rota:** `/manager/finance/billing`

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -20,7 +20,6 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Panel, PanelTitle } from "@/components/shared/Panel";
 import { BookingTable } from "@/features/bookings/BookingTable";
-import { BookingModal } from "@/features/bookings/BookingModal";
 import { useRecentBookings } from "@/features/bookings/api";
 import { useRevenueByRange } from "@/features/reports/api";
 import { useManagerFilters } from "@/features/manager-filters/context";
@@ -29,7 +28,6 @@ import { formatRangeLabel, periodLabel } from "@/features/manager-filters/manage
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { BookingWithRelations } from "@/types/domain";
 import { useManagerOverview, useManagerDailyFlow, todayIsoDate } from "./api";
 import { bestRevenueDay } from "./operatorInsights.logic";
 import { flowTotals, hourLabel } from "./dashboardMetrics.logic";
@@ -95,7 +93,7 @@ function NetworkGauge({ earning, total }: { earning: number; total: number }) {
 export default function ManagerDashboard() {
   const { period, range, compareRange, scopedLocationIds } = useManagerFilters();
   const [flowDate, setFlowDate] = React.useState(todayIsoDate);
-  const [selected, setSelected] = React.useState<BookingWithRelations | null>(null);
+  const navigate = useNavigate();
 
   const overview = useManagerOverview(range, compareRange, scopedLocationIds);
   const revenue = useRevenueByRange(
@@ -792,16 +790,11 @@ export default function ManagerDashboard() {
           <BookingTable
             bookings={recent.data}
             isLoading={recent.isLoading}
-            onRowClick={(b) => setSelected(b)}
+            onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
           />
         </div>
       </Panel>
 
-      <BookingModal
-        booking={selected}
-        open={!!selected}
-        onOpenChange={(open) => !open && setSelected(null)}
-      />
     </div>
   );
 }
