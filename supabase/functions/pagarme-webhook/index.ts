@@ -622,6 +622,17 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", payment.id);
 
+    // O gateway confirmou o estorno: se havia devolução pendente na fila manual para este
+    // pagamento (estorno recusado antes, feito depois pelo painel ou por nova tentativa), fecha a
+    // linha. Sem isso a fila pedia para devolver de novo um dinheiro já devolvido (MP-6CFA4B).
+    if (!chargeback) {
+      await admin
+        .from("payout_refund_manual")
+        .update({ status: "paid", paid_at: new Date().toISOString(), note: "estornado pelo gateway (webhook charge.refunded)" })
+        .eq("payment_id", payment.id)
+        .eq("status", "pending");
+    }
+
     // Cancela a reserva se ainda confirmada/pendente (regra única em refundShouldCancelBooking).
     // A RPC é idempotente e libera a vaga uma vez; erro é logado, nunca 500 (evita retry infinito).
     const { data: bk } = await admin

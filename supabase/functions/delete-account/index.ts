@@ -98,7 +98,7 @@ Deno.serve(async (req: Request) => {
   for (const b of active) {
     const { data: payment } = await admin
       .from("payment")
-      .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
+      .select("id, provider, provider_payment_id, provider_charge_id, amount, status, refunded_at, method, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
       .eq("booking_id", b.id)
       .order("created_at", { ascending: false })
       .limit(1)

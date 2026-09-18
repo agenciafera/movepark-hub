@@ -10,6 +10,7 @@ import {
   partnerRefundCents,
   refundAbsorbedByMaster,
   refundSplitFor,
+  refundableBalanceCents,
 } from "./refund.ts";
 import type { PaymentGateway, RecipientBalance, RefundInput, RefundResult, SplitRule } from "./types.ts";
 
@@ -125,6 +126,20 @@ Deno.test("decideRefundSplit: com chave, taxa apurada e saldo que cobre, o gatew
   assertEquals(d.partnerCents, 7900);
   assertEquals(d.partnerBalanceCents, 50000);
   assertEquals(d.rules!.map((r) => [r.recipientId, r.amount]), [["re_p", 7900], ["re_mp", 2100]]);
+});
+
+Deno.test("decideRefundSplit: cartão olha o saldo A RECEBER, não o disponível (suporte Pagar.me, 18/09/2026)", () => {
+  const cartao = { ...pagamentoHibrido, method: "card" };
+  // Disponível gordo e nada a receber: no cartão o gateway recusaria; cai no master.
+  const semReceber = decideRefundSplit({ payment: cartao, moveparkRecipientId: "re_mp", amountCents: 10000, totalCents: 10000, hybridEnabled: true, balance: { availableCents: 50000, waitingFundsCents: 0, httpStatus: 200 } });
+  assertEquals(semReceber.mode, "master");
+  // A receber cobre o líquido do parceiro: híbrido, mesmo com disponível zerado.
+  const comReceber = decideRefundSplit({ payment: cartao, moveparkRecipientId: "re_mp", amountCents: 10000, totalCents: 10000, hybridEnabled: true, balance: { availableCents: 0, waitingFundsCents: 7900, httpStatus: 200 } });
+  assertEquals(comReceber.mode, "partner");
+  assertEquals(comReceber.partnerBalanceCents, 7900);
+  // PIX segue no disponível.
+  assertEquals(refundableBalanceCents("pix", { availableCents: 10, waitingFundsCents: 99 }), 10);
+  assertEquals(refundableBalanceCents("card", { availableCents: 10, waitingFundsCents: 99 }), 99);
 });
 
 Deno.test("decideRefundSplit: cada condição da tabela cai no 100% master", () => {

@@ -18,6 +18,22 @@ export interface RefundablePayment {
   debt_recovered_cents?: number | null;
   /** Taxa do gateway apurada em `GET /payables` (reconcile-gateway-fees). Nulo = ainda não apurada. */
   gateway_fee_cents?: number | null;
+  /** `card` muda de QUAL saldo o gateway debita o estorno (ver `refundableBalanceCents`). */
+  method?: string | null;
+}
+
+/**
+ * De qual saldo do recebedor a Pagar.me tira o estorno (confirmado pelo suporte em 18/09/2026):
+ * cartão sai do **saldo a receber** (vendas de crédito ainda não liquidadas), que precisa ser
+ * maior ou igual ao valor estornado; PIX sai do **disponível**. Olhar o saldo errado fazia o
+ * híbrido decidir pelo disponível numa venda de cartão e o gateway responder "Saldo insuficiente".
+ */
+export function refundableBalanceCents(
+  method: string | null | undefined,
+  balance: Pick<RecipientBalance, "availableCents" | "waitingFundsCents"> | null | undefined,
+): number | null {
+  if (!balance) return null;
+  return method === "card" ? (balance.waitingFundsCents ?? null) : (balance.availableCents ?? null);
 }
 
 /**
@@ -124,7 +140,7 @@ export interface RefundDecisionInput {
   totalCents: number;
   hybridEnabled: boolean;
   /** Leitura ao vivo do saldo do recebedor do parceiro; null se não foi lida. */
-  balance: Pick<RecipientBalance, "availableCents" | "httpStatus"> | null;
+  balance: (Pick<RecipientBalance, "availableCents" | "httpStatus"> & Partial<Pick<RecipientBalance, "waitingFundsCents">>) | null;
   /** O recebedor está marcado como inexistente no gateway (`gateway_missing_at`)? */
   recipientMissing?: boolean;
 }
@@ -169,18 +185,24 @@ export function decideRefundSplit(i: RefundDecisionInput): RefundDecision {
   if (cents <= 0) return master("parceiro não tem o que devolver nesta venda");
   if (cents >= i.amountCents) return master("parte do parceiro cobre o estorno inteiro; regra exige perna do master");
   const http = i.balance?.httpStatus ?? 0;
-  if (!i.balance || http < 200 || http >= 300 || i.balance.availableCents == null) {
+  const cartao = i.payment.method === "card";
+  const saldo = refundableBalanceCents(i.payment.method, {
+    availableCents: i.balance?.availableCents ?? null,
+    waitingFundsCents: i.balance?.waitingFundsCents ?? null,
+  });
+  if (!i.balance || http < 200 || http >= 300 || saldo == null) {
     return master("saldo do parceiro sem leitura boa");
   }
-  if (i.balance.availableCents < cents) {
-    return master(`saldo disponível (${i.balance.availableCents}) não cobre a parte do parceiro (${cents})`, i.balance.availableCents);
+  const nome = cartao ? "saldo a receber" : "saldo disponível";
+  if (saldo < cents) {
+    return master(`${nome} (${saldo}) não cobre a parte do parceiro (${cents})`, saldo);
   }
   return {
     mode: "partner",
     rules: refundSplitHybrid(i.moveparkRecipientId, partner.recipientId, cents, i.amountCents),
     partnerCents: cents,
-    partnerBalanceCents: i.balance.availableCents,
-    reason: "saldo disponível cobre o líquido do parceiro",
+    partnerBalanceCents: saldo,
+    reason: `${nome} cobre o líquido do parceiro`,
   };
 }
 

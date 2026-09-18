@@ -33,6 +33,24 @@ cliente nada muda: o dinheiro volta do mesmo jeito e no mesmo prazo.
 | 3 | Chargeback | **Fica 100% no master**, como hoje | O `liable` é fixado na captura e o gateway debita sem olhar saldo; não há como escolher na hora |
 | 4 | Ativação | **Chave global `pagarme_refund_hybrid_enabled`**, nasce `false` | Sobe inerte, um teste com a chave ligada, depois liga para todos. Desligar volta ao 100% master na hora |
 
+## De qual saldo o estorno sai (18/09/2026)
+
+Confirmado pelo suporte da Pagar.me depois de quatro recusas `action_forbidden | Saldo
+insuficiente.` no MP-6CFA4B, com R$ 159,59 disponíveis no master: **estorno de cartão é debitado
+do saldo a receber** (vendas de crédito ainda não liquidadas), e ele precisa ser **maior ou igual
+ao valor estornado**. PIX sai do disponível. Consequências:
+
+- A decisão 1 ("só o disponível") vale para PIX. No cartão o híbrido compara o líquido do
+  parceiro com o **saldo a receber** dele (`refundableBalanceCents`, `payment.method`).
+- Uma venda de cartão sozinha nunca se estorna com o próprio recebível: entram R$ 30,90, a taxa
+  (R$ 1,17) sai na hora, e o saldo a receber fica em R$ 29,73, menor que os R$ 30,90 a devolver.
+  Falta sempre a taxa, que precisa vir de OUTRAS vendas de cartão a receber do mesmo recebedor.
+  Com volume isso some; no começo (e em teste) a recusa é esperada e cai na fila manual, que tem
+  "Tentar de novo no gateway".
+- A recusa vem dentro de um HTTP 200 (`last_transaction.status = failed`); `buildRefundResult`
+  lê isso e o cancelamento segue para a fila manual.
+- Quando o gateway confirma depois (`charge.refunded`), o webhook fecha a linha pendente da fila.
+
 ## A regra
 
 Para um estorno de `payment` capturado com split (`split_sent_to_gateway = true`, perna do

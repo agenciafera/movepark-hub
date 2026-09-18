@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
   const cutoff = confirmationCutoffIso(Date.now());
   const { data: payments, error } = await admin
     .from("payment")
-    .select("id, provider_charge_id, booking_id, amount, split, split_sent_to_gateway, debt_recovered_cents, booking:booking_id!inner(status)")
+    .select("id, provider_charge_id, booking_id, amount, method, split, split_sent_to_gateway, debt_recovered_cents, booking:booking_id!inner(status)")
     .eq("provider", "pagarme")
     .eq("status", "paid")
     // `expired` entra aqui porque é onde cai a reserva cujo pagamento só foi descoberto depois:

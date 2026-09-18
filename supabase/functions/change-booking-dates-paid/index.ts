@@ -147,7 +147,7 @@ Deno.serve(async (req: Request) => {
       // Estorno PARCIAL da diferença na cobrança original da reserva.
       const { data: payment } = await admin
         .from("payment")
-        .select("id, provider, provider_payment_id, provider_charge_id, refunded_amount, amount, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
+        .select("id, provider, provider_payment_id, provider_charge_id, refunded_amount, amount, method, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
         .eq("booking_id", booking.id)
         .eq("kind", "booking")
         .eq("status", "paid")
