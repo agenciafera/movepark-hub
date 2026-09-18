@@ -6,6 +6,7 @@ import {
   Buildings,
   Calculator,
   CalendarX,
+  CaretDown,
   ChatCircle,
   Gauge,
   Gift,
@@ -77,40 +78,62 @@ type ItemDeMenu = { to: string; label: string; icone: Icone };
 type GrupoDeMenu = { titulo: string; itens: ItemDeMenu[] };
 
 /**
- * Busca de vaga é o motivo de alguém abrir o site, então "Destinos" fica solto no
- * topo, antes de qualquer título de grupo. É também o único link daqui que o
- * rodapé não tem: lá a busca já está no header em toda página.
+ * O caminho da reserva, solto no topo e sem título de grupo em cima.
+ *
+ * São os três destinos que terminam numa vaga comprada: o catálogo de
+ * aeroportos, quanto custa em cada um e a simulação da estadia. Todo o resto do
+ * site (institucional, jurídico, suporte, parceiro) é legítimo, mas não é o que
+ * alguém foi fazer no celular, e dezesseis linhas de peso igual escondiam estas
+ * três no meio das outras treze.
+ *
+ * Por isso aqui a linha é mais alta, o rótulo é semibold e o ícone é maior: o
+ * destaque é da hierarquia, não de um aviso pedindo pra clicar.
  */
-const DESTINOS: ItemDeMenu = { to: "/estacionamentos", label: "Destinos", icone: MapPin };
+const DESTAQUES: ItemDeMenu[] = [
+  { to: "/estacionamentos", label: "Destinos", icone: MapPin },
+  { to: "/precos", label: "Índice de preços", icone: Tag },
+  {
+    to: "/calculadora-estacionamento-aeroporto",
+    label: "Calculadora de estacionamento",
+    icone: Calculator,
+  },
+];
 
 /**
- * Os grupos, os rótulos e a ordem são os **do rodapé**, item por item.
+ * O resto do site, em gavetas fechadas.
  *
- * O menu nasceu com cinco links porque metade destas páginas ainda não existia, e
- * o rodapé foi crescendo sozinho: quem estava no celular só chegava em preços,
- * calculadora, cancelamento ou contato rolando até o fim da página.
+ * Os rótulos e os títulos continuam sendo os **do rodapé**, item por item: dois
+ * nomes para a mesma página fazem o leitor achar que são páginas diferentes. O
+ * que muda daqui pra lá é só a ordem, e ela muda porque as duas superfícies
+ * respondem a perguntas diferentes. O rodapé é o mapa do site, lido por quem
+ * chegou ao fim da página; o menu é a navegação do celular, e nele o suporte vem
+ * antes do institucional, que vem antes do que fala com o dono do estacionamento.
  *
- * Copiar a hierarquia do rodapé, e não inventar uma segunda, é o que evita o
- * problema mais caro: dois nomes para a mesma página fazem o leitor achar que são
- * páginas diferentes. Ao mexer no rodapé, mexa aqui no mesmo commit; o teste
- * `ConsumerMobileMenu.test.tsx` compara as duas listas.
+ * Nada some: fechado, o grupo custa um toque, e é o toque que separa "quero
+ * reservar" de "quero ler os termos". O teste `ConsumerMobileMenu.test.tsx` abre
+ * todos os grupos e compara as duas listas, então um link novo no rodapé
+ * continua tendo que aparecer aqui no mesmo commit.
  *
  * A exceção é a Central de Ajuda, que o rodapé não lista: ela é a porta de
  * entrada do suporte no celular, e por isso abre o grupo em vez de ficar de fora.
  */
 const GRUPOS_DO_SITE: GrupoDeMenu[] = [
   {
+    titulo: "Suporte",
+    itens: [
+      { to: "/ajuda", label: "Central de ajuda", icone: Lifebuoy },
+      { to: "/faq", label: "Perguntas frequentes", icone: Question },
+      { to: "/como-funciona", label: "Como funciona", icone: Info },
+      { to: "/cancelamento", label: "Política de cancelamento", icone: CalendarX },
+      { to: "/contato", label: "Fale conosco", icone: ChatCircle },
+    ],
+  },
+  {
     titulo: "Movepark",
     itens: [
       { to: "/sobre", label: "Sobre nós", icone: Buildings },
       // Barra final de propósito: é a URL canônica do blog, herdada do WordPress.
       { to: "/blog/", label: "Blog", icone: Article },
-      { to: "/precos", label: "Índice de preços", icone: Tag },
-      {
-        to: "/calculadora-estacionamento-aeroporto",
-        label: "Calculadora de estacionamento",
-        icone: Calculator,
-      },
       { to: "/termos", label: "Termos de uso", icone: Scales },
       { to: "/privacidade", label: "Política de privacidade", icone: LockKey },
     ],
@@ -121,16 +144,6 @@ const GRUPOS_DO_SITE: GrupoDeMenu[] = [
       { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
       { to: "/selo", label: "Selo de parceiro", icone: Seal },
       { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
-    ],
-  },
-  {
-    titulo: "Suporte",
-    itens: [
-      { to: "/ajuda", label: "Central de ajuda", icone: Lifebuoy },
-      { to: "/faq", label: "Perguntas frequentes", icone: Question },
-      { to: "/como-funciona", label: "Como funciona", icone: Info },
-      { to: "/cancelamento", label: "Política de cancelamento", icone: CalendarX },
-      { to: "/contato", label: "Fale conosco", icone: ChatCircle },
     ],
   },
 ];
@@ -149,6 +162,10 @@ const LINKS_DA_CONTA: ItemDeMenu[] = [
  * Airbnb) fazem. A cor é `mp-indigo`, a mesma que a lista da conta
  * (`AccountSidebar`) já usa em ícone de navegação.
  *
+ * `destaque` é o item do topo: linha mais alta, rótulo semibold e ícone maior.
+ * Sem ele, o item é de dentro de uma gaveta, e aí recua e afina, para a gaveta
+ * aberta continuar lendo como um bloco subordinado ao título.
+ *
  * O item atual é o único violeta. O contrato do consumer reserva o `mp-primary`
  * para elemento acionável e indicador de seleção, e é exatamente este caso: com
  * todos os ícones em violeta, nenhum item se destacaria.
@@ -158,9 +175,9 @@ const LINKS_DA_CONTA: ItemDeMenu[] = [
  * (a API do `NavLink`) ia parar no DOM como o **código-fonte da função**. O item
  * perdia toda a estilização sem erro nenhum no console.
  *
- * `min-h-11` mantém o alvo de toque acessível.
+ * `min-h-11` mantém o alvo de toque acessível nos dois tamanhos.
  */
-function Item({ to, label, icone: Icone }: ItemDeMenu) {
+function Item({ to, label, icone: Icone, destaque = false }: ItemDeMenu & { destaque?: boolean }) {
   const { pathname } = useLocation();
   const ativo = secaoAtiva(pathname, to);
 
@@ -170,14 +187,19 @@ function Item({ to, label, icone: Icone }: ItemDeMenu) {
         to={to}
         aria-current={ativo ? "page" : undefined}
         className={cn(
-          "flex min-h-11 items-center gap-3 rounded-sm px-3 py-2.5 text-body-md transition-colors",
+          "flex min-h-11 items-center gap-3 rounded-sm px-3 transition-colors",
+          destaque ? "py-3 text-body-md font-semibold" : "py-2.5 pl-6 text-body-sm",
           ativo
             ? "bg-surface-soft font-semibold text-mp-primary"
             : "text-ink hover:bg-surface-soft",
         )}
       >
         <Icone
-          className={cn("h-5 w-5 shrink-0", ativo ? "text-mp-primary" : "text-mp-indigo")}
+          className={cn(
+            "shrink-0",
+            destaque ? "h-5 w-5" : "h-4 w-4",
+            ativo ? "text-mp-primary" : "text-mp-indigo",
+          )}
           weight={ativo ? "fill" : "regular"}
           aria-hidden
         />
@@ -188,29 +210,61 @@ function Item({ to, label, icone: Icone }: ItemDeMenu) {
 }
 
 /**
- * Bloco nomeado da lista, com o mesmo título e a mesma ordem do rodapé.
+ * Gaveta nomeada: o título virou botão, e os itens de dentro só aparecem no toque.
  *
- * O título é discreto de propósito: numa lista de dezesseis itens ele existe para
- * o polegar saber onde parar de rolar, não para competir com os links. Por isso
- * `text-muted` em corpo pequeno, e não o `text-title-sm` que o rodapé usa, onde
- * as três colunas ficam lado a lado e o título é que separa uma da outra.
+ * Antes o título era um rótulo morto e os dezesseis links ficavam todos abertos,
+ * um em cima do outro. O título continua discreto (é referência, não concorre com
+ * o link), mas agora tem a seta que conta que ele abre, alvo de toque de 44px e
+ * `aria-expanded` para o leitor de tela anunciar o estado.
  *
- * Em caixa alta não vai: o contrato de escrita do projeto trata eyebrow em
- * maiúscula como vício, e aqui a maiúscula ainda atrapalharia a leitura rápida.
+ * A gaveta nasce aberta quando a pessoa já está numa página de dentro, senão o
+ * menu esconderia justamente onde ela está, e a marca de seção atual, que é o que
+ * responde "onde eu estou", não teria onde aparecer.
  *
- * `role="group"` + `aria-labelledby` para o leitor de tela anunciar o título ao
- * entrar no bloco, em vez de despejar dezesseis links num nível só.
+ * Os itens ficam sempre na árvore, escondidos por `hidden`, e não desmontados:
+ * assim o `aria-controls` do botão aponta para um elemento que existe nos dois
+ * estados, que é o que o leitor de tela precisa para seguir a relação.
+ *
+ * `role="group"` + `aria-labelledby` para o leitor anunciar o título ao entrar no
+ * bloco, em vez de despejar os links num nível só.
  */
 function Grupo({ titulo, itens }: GrupoDeMenu) {
+  const { pathname } = useLocation();
   const id = React.useId();
+  const temItemAtivo = itens.some((i) => secaoAtiva(pathname, i.to));
+  const [aberto, setAberto] = React.useState(temItemAtivo);
+
+  // Navegar para dentro do grupo (por link da página, busca, URL colada) reabre
+  // a gaveta, do mesmo jeito que a sidebar do painel faz.
+  React.useEffect(() => {
+    if (temItemAtivo) setAberto(true);
+  }, [temItemAtivo]);
+
   return (
-    <div role="group" aria-labelledby={id} className="mt-4 first:mt-0">
-      <p id={id} className="px-3 pb-1 text-caption-sm font-semibold text-muted">
+    <div role="group" aria-labelledby={`${id}-titulo`} className="mt-1 first:mt-0">
+      <button
+        type="button"
+        id={`${id}-titulo`}
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        aria-controls={`${id}-itens`}
+        className="flex min-h-11 w-full items-center gap-3 rounded-sm px-3 py-2.5 text-left text-body-md text-ink transition-colors hover:bg-surface-soft"
+      >
         {titulo}
-      </p>
-      {itens.map((i) => (
-        <Item key={i.to} {...i} />
-      ))}
+        <CaretDown
+          aria-hidden
+          className={cn(
+            "ml-auto h-4 w-4 shrink-0 text-muted transition-transform duration-200 motion-reduce:transition-none",
+            aberto && "rotate-180",
+          )}
+        />
+      </button>
+
+      <div id={`${id}-itens`} hidden={!aberto}>
+        {itens.map((i) => (
+          <Item key={i.to} {...i} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -233,10 +287,10 @@ function Grupo({ titulo, itens }: GrupoDeMenu) {
  * O formato segue o menu do QuintoAndar: marca no topo, bloco de identidade com
  * atalho para a conta, itens com ícone, e uma régua separando a conta do site.
  *
- * Os links do site são os **do rodapé**, nos mesmos grupos e na mesma ordem. O
- * menu tinha ficado com cinco links de quando metade das páginas não existia, e o
- * celular só alcançava preços, calculadora, cancelamento ou contato rolando até o
- * fim da página.
+ * O painel tem todo link do rodapé, mas em dois andares: os três destinos que
+ * levam a uma reserva ficam à vista, e o resto mora em gavetas fechadas. A lista
+ * corrida que estava aqui tinha dezesseis linhas do mesmo peso, e o "Destinos" do
+ * topo pesava igual à "Política de privacidade" do fim.
  *
  * Vale do celular até o tablet. A virada é em 1128, e não em 744: entre os dois
  * a barra de busca completa não cabe no header, e os campos dela se sobrepunham.
@@ -362,9 +416,9 @@ export function ConsumerMobileMenu() {
           </SheetClose>
         )}
 
-        {/* Sem régua entre os itens: quem separa um bloco do outro é o título do
-            grupo, e a linha em cima dele viraria risco em cima de risco. A régua
-            só entra entre a conta e o site, que é onde separa duas naturezas. */}
+        {/* Régua só onde separa duas naturezas: a conta do site, e o caminho da
+            reserva do resto. Entre itens de um mesmo bloco ela dividiria o que o
+            espaço e o título já dividem. */}
         <nav aria-label="Menu" className="mt-2 flex flex-col px-3 pb-2">
           {session && (
             <>
@@ -379,11 +433,15 @@ export function ConsumerMobileMenu() {
             </>
           )}
 
-          <Item {...DESTINOS} />
-
-          {grupos.map((g) => (
-            <Grupo key={g.titulo} {...g} />
+          {DESTAQUES.map((d) => (
+            <Item key={d.to} {...d} destaque />
           ))}
+
+          <div className="mt-3 border-t border-hairline pt-3">
+            {grupos.map((g) => (
+              <Grupo key={g.titulo} {...g} />
+            ))}
+          </div>
         </nav>
 
         <div className="mt-auto flex flex-col gap-4 p-6">
