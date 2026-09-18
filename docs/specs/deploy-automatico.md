@@ -2,8 +2,10 @@
 
 **Status:** implementado em 19/08/2026, migration `20261030140000_deploy_automatico_no_save.sql`.
 **Nunca publicou nada.** O Deploy Hook não chegou a ser criado, o segredo do Vault não existe e o
-mecanismo ficou 13 dias inerte sem ninguém perceber. O diagnóstico está em "O silêncio de 13 dias";
-a checagem que passou a reclamar está em "O alarme"; o passo que falta está em "Ativação".
+mecanismo ficou inerte desde 19/08/2026. Em 18/09 eram **809 pedidos na fila, nenhum despachado**.
+O diagnóstico está em "O silêncio de 13 dias"; a checagem que passou a reclamar está em "O alarme",
+e o motivo de ela também ter ficado em silêncio por 17 dias está em "O alarme que ninguém ouviu";
+o passo que falta está em "Ativação".
 
 ## O problema
 
@@ -174,6 +176,23 @@ fecha a issue sozinha quando a publicação volta.
 Não existe cron novo no Postgres para isso, e é decisão, não esquecimento: um cron cuja única
 consequência é escrever aviso no log do Postgres repetiria o defeito original, porque log que
 ninguém lê é a mesma coisa que silêncio. Issue notifica gente.
+
+### O alarme que ninguém ouviu (18/09/2026)
+
+O alarme funcionou do jeito que foi escrito, e mesmo assim ninguém soube. A issue #12 foi aberta em
+01/09/2026 e ganhou um comentário por dia, 17 ao todo, sempre com o motivo `sem_deploy_hook` e a
+fila acima de 800 pedidos. Dois detalhes deixaram tudo isso mudo:
+
+- **O run terminava verde.** O workflow registrava a issue e saía com sucesso. Run verde não
+  notifica ninguém, e o X vermelho no commit, que é o que o time de fato vê, nunca apareceu.
+- **A issue não tinha dono.** Issue sem atribuição só notifica quem acompanha o repo, e ninguém
+  acompanha este repo pela aba de issues.
+
+A correção foi no workflow, não no banco: agora a issue é **atribuída** (variável de repositório
+`SITE_REBUILD_ASSIGNEES`, logins separados por vírgula, com o Diego como padrão), inclusive a que já
+existe, e o run **falha** depois de registrar a issue enquanto `ok` for `false`. Atribuição manda
+e-mail; run vermelho aparece no commit e na aba Actions. Quando a publicação volta, o run fica verde e
+a issue fecha sozinha, como antes.
 
 ## Ativação (o passo que depende de gente)
 

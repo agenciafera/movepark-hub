@@ -12,6 +12,14 @@ name: Saúde da publicação automática
 # O alarme mora no GitHub de propósito. Um cron novo no Postgres escrevendo aviso no log
 # repetiria o defeito original: log que ninguém lê é o mesmo que silêncio. Issue notifica
 # quem acompanha o repo.
+#
+# Emenda de 18/09/2026: a issue sozinha também virou silêncio. A #12 foi aberta em 01/09 e
+# recebeu um comentário por dia durante 17 dias, sem ninguém atribuído, enquanto o run
+# terminava VERDE. Ninguém acompanha o repo pela aba de issues, e run verde não notifica
+# ninguém. Agora a issue é atribuída (quem recebe atribuição recebe e-mail) e o run falha
+# quando a publicação está parada, o que deixa o X vermelho no commit e na aba Actions.
+# Quem recebe vem da variável de repositório SITE_REBUILD_ASSIGNEES (logins separados por
+# vírgula), com o Diego como padrão.
 
 on:
   schedule:
@@ -60,6 +68,7 @@ jobs:
           MOTIVO: ${{ steps.health.outputs.motivo }}
           PENDENTES: ${{ steps.health.outputs.pendentes }}
           HORAS: ${{ steps.health.outputs.horas }}
+          ASSIGNEES: ${{ vars.SITE_REBUILD_ASSIGNEES || 'diegoguedesgomes' }}
         with:
           script: |
             const title = "🚨 A publicação automática do site está parada";
@@ -98,18 +107,32 @@ jobs:
               owner: context.repo.owner, repo: context.repo.repo,
               state: "open", labels: "site-rebuild",
             });
+            const assignees = process.env.ASSIGNEES.split(",").map(s => s.trim()).filter(Boolean);
             const existing = issues.find(i => i.title === title);
             if (existing) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner, repo: context.repo.repo,
                 issue_number: existing.number, body,
               });
+              // A #12 ficou 17 dias sem dono. Atribuir de novo é idempotente e garante que
+              // a issue antiga também passe a notificar alguém.
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, assignees,
+              });
             } else {
               await github.rest.issues.create({
                 owner: context.repo.owner, repo: context.repo.repo,
-                title, body, labels: ["site-rebuild"],
+                title, body, labels: ["site-rebuild"], assignees,
               });
             }
+
+      - name: Falha o run enquanto a publicação estiver parada
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        run: |
+          # Vem DEPOIS da issue de propósito: o registro fica feito e só então o run fica vermelho.
+          echo "::error title=Publicação automática parada::motivo=${{ steps.health.outputs.motivo }}, ${{ steps.health.outputs.pendentes }} pedidos na fila há ${{ steps.health.outputs.horas }} h"
+          exit 1
 
       - name: Fecha a issue quando a publicação volta
         if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'true' }}
