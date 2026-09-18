@@ -327,11 +327,19 @@ Deno.serve(async (req: Request) => {
       response: result.raw,
       note: detalhe.integrationError
         ? `erro de integração (${detalhe.code}): ${detalhe.messages.join("; ") || "sem mensagem"}`
-        : `cartão recusado pelo emissor${detalhe.code ? ` (${detalhe.code})` : ""}`,
+        : detalhe.antifraudReproved
+          ? "reprovado pelo antifraude da Pagar.me (o banco tinha aprovado)"
+          : `cartão recusado pelo emissor${detalhe.code ? ` (${detalhe.code})` : ""}`,
     });
     if (detalhe.integrationError) {
       console.error("[%s] pedido recusado pelo adquirente:", EDGE_NAME, detalhe.code, detalhe.messages);
       return jsonResponse({ error: "Não conseguimos processar o pagamento agora. Tente de novo em alguns minutos." }, 502);
+    }
+    if (detalhe.antifraudReproved) {
+      return jsonResponse(
+        { error: "O pagamento não passou na análise de segurança. Tente de novo em alguns minutos ou pague com PIX.", code: "antifraud_reproved" },
+        402,
+      );
     }
     return jsonResponse({ error: "Cartão recusado. Tente outro cartão." }, 402);
   }

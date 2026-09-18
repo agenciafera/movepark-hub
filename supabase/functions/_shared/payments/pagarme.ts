@@ -559,7 +559,7 @@ export function buildWithdrawalBody(input: WithdrawalInput): Record<string, unkn
  * as mensagens. Código 412 (ou 4xx de validação) é erro NOSSO no pedido, não recusa do emissor,
  * e o cliente não pode ler "cartão recusado" para isso.
  */
-export function chargeFailureDetail(raw: unknown): { code: string | null; messages: string[]; integrationError: boolean } {
+export function chargeFailureDetail(raw: unknown): { code: string | null; messages: string[]; integrationError: boolean; antifraudReproved: boolean } {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const charges = Array.isArray(r.charges) ? r.charges : [];
   const tx = ((charges[0] as Record<string, unknown> | undefined)?.last_transaction ?? {}) as Record<string, unknown>;
@@ -570,7 +570,12 @@ export function chargeFailureDetail(raw: unknown): { code: string | null; messag
     .map((e) => (e && typeof e === "object" ? (e as Record<string, unknown>).message : null))
     .filter((m): m is string => typeof m === "string" && m.trim().length > 0);
   const integrationError = code === "412" || code === "400" || code === "422";
-  return { code, messages, integrationError };
+  // O banco pode aprovar ("0000 Transação aprovada") e o ANTIFRAUDE da Pagar.me reprovar em
+  // seguida: a transação volta `not_authorized` com antifraud_response.status = "reproved". Não é
+  // recusa do emissor, e trocar de cartão raramente resolve (medido em 18/09/2026, três seguidas).
+  const af = (tx.antifraud_response ?? {}) as Record<string, unknown>;
+  const antifraudReproved = String(af.status ?? "").toLowerCase() === "reproved";
+  return { code, messages, integrationError, antifraudReproved };
 }
 
 /** Normaliza a resposta de `POST /transfers`. Id vem numérico na v5. */

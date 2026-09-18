@@ -632,10 +632,14 @@ Deno.test("partnerReleaseAt: a última payment_date dos créditos do recebedor d
 
 Deno.test("chargeFailureDetail: 412 do adquirente é erro de integração, não recusa do emissor", () => {
   const raw = { charges: [{ last_transaction: { gateway_response: { code: "412", errors: [{ message: "The item Code is required." }] } } }] };
-  assertEquals(chargeFailureDetail(raw), { code: "412", messages: ["The item Code is required."], integrationError: true });
+  assertEquals(chargeFailureDetail(raw), { code: "412", messages: ["The item Code is required."], integrationError: true, antifraudReproved: false });
   const recusa = { charges: [{ last_transaction: { gateway_response: { code: "1000", errors: [] } } }] };
   assertEquals(chargeFailureDetail(recusa).integrationError, false);
-  assertEquals(chargeFailureDetail(null), { code: null, messages: [], integrationError: false });
+  assertEquals(chargeFailureDetail(null), { code: null, messages: [], integrationError: false, antifraudReproved: false });
+  // Banco aprovou, antifraude reprovou: não é recusa do emissor.
+  const af = { charges: [{ last_transaction: { status: "not_authorized", acquirer_return_code: "0000", gateway_response: { code: "200" }, antifraud_response: { status: "reproved" } } }] };
+  assertEquals(chargeFailureDetail(af).antifraudReproved, true);
+  assertEquals(chargeFailureDetail(af).integrationError, false);
 });
 
 Deno.test("buildRefundResult: transação de cancelamento falhada dentro do 200 é estorno recusado", () => {
