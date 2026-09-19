@@ -172,6 +172,26 @@ realmente vende. Contar `pricing_rule` sozinho mentiria: as 20 unidades hub têm
 vendável. A RPC não roda `simulate_price` de propósito, porque a chamada é anônima e o `anon` tem
 `statement_timeout` curto.
 
+### Os dois estágios: o que vale agora e o que a pessoa destrava
+
+A vitrine é pública, então não há sessão para consultar e o leitor é tratado como **visitante
+novo**. Isso não é chute, é a única leitura honesta possível, e acerta o caso que importa: quem
+descobre a Movepark agora.
+
+| Estágio | Audiências | Como aparece |
+|---|---|---|
+| `agora` | `first_purchase`, `public` | Cartão cheio, valor em verde, selo colorido |
+| `depois` | `second_purchase`, `winback` | Cartão apagado, cadeado e a frase que diz o que destrava |
+
+**Mostrar o cupom bloqueado é o ponto, não um efeito colateral.** Ele é o argumento de voltar:
+esconder o cupom da segunda reserva faria a segunda reserva parecer não ter prêmio nenhum. Por isso
+o que destrava fica ao lado do CTA, e não no rodapé do cartão.
+
+O **CTA "Usar" aparece em todo cartão, sempre desabilitado**. Ele existe para o cartão ser lido
+como cupom, e não como aviso; aplicar de verdade acontece no checkout, onde existe um pedido para
+descontar. Para quem já tem conta, quem dá o veredito real é a carteira, que consulta o histórico
+por `coupon_evaluate`.
+
 ### O cartão em formato de ticket
 
 O desenho segue a referência: selo de audiência, valor grande, condição e um canhoto com o código,
@@ -248,7 +268,7 @@ pessoa tem 0, 1 ou mais reservas pagas.
 | Lógica do formulário | `src/features/customer-coupons/platformCoupons.logic.test.ts` (21 casos) |
 | Os dois modos da tela | `src/routes/account/descontos.test.tsx` (3 casos) |
 | Cartão da vitrine | `src/features/customer-coupons/publicOffers.logic.test.ts` (11 casos) |
-| Guard da vitrine | `src/routes/descontos.test.tsx` (3 casos) e `coupon_wallet.test.sql` §10 |
+| Estágios e guard da vitrine | `src/routes/descontos.test.tsx` (4 casos) e `coupon_wallet.test.sql` §10 |
 | Split | `supabase/functions/_shared/payments/split.test.ts` (3 casos novos, incluindo a recusa por teto estourado) |
 | Banco | `supabase/tests/coupon_wallet.test.sql` |
 | Navegador | `e2e/windup/account-descontos.json` e `e2e/windup/manager-marketing-cupons.json` |

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
 import { useVitrinePublica } from "@/features/customer-coupons/api";
 import { OfertaTicket } from "@/features/customer-coupons/OfertaTicket";
+import { separarPorEstagio } from "@/features/customer-coupons/publicOffers.logic";
 
 /**
  * `/descontos`: a vitrine de campanhas da Movepark.
@@ -16,12 +17,15 @@ import { OfertaTicket } from "@/features/customer-coupons/OfertaTicket";
  * descontos para o cliente seria promessa que nenhuma unidade cumpre (ADR-009). Ao religar os
  * links, confira esse número primeiro.
  *
- * A página existe agora para o time ver o catálogo de campanhas como o cliente verá.
+ * A página é dividida em DOIS estágios porque mostrar tudo junto desperdiça o melhor argumento:
+ * o cupom que a pessoa ainda não pode usar é o motivo de ela voltar. Esconder o bloqueado faria
+ * a segunda reserva parecer não ter prêmio nenhum.
  */
 export default function DescontosPage() {
   const vitrine = useVitrinePublica();
   const { session } = useAuth();
   const ofertas = vitrine.data?.offers ?? [];
+  const { agora, depois } = separarPorEstagio(ofertas);
 
   return (
     // `bg-surface-soft` não é escolha de gosto: os furos laterais do ticket são pintados com esta
@@ -39,8 +43,8 @@ export default function DescontosPage() {
         <header className="mb-8 max-w-2xl">
           <h1 className="text-display-xl text-ink">Cupons de desconto</h1>
           <p className="mt-2 text-body-md text-body">
-            Campanhas da Movepark para estacionamento de aeroporto. O desconto entra na hora de
-            pagar a reserva, sem precisar digitar nada.
+            Os cupons mudam conforme você usa a Movepark. Começa com o desconto de primeira
+            reserva, e cada vez que você volta libera o próximo.
           </p>
         </header>
 
@@ -54,7 +58,7 @@ export default function DescontosPage() {
         ) : vitrine.isLoading ? (
           <div className="grid gap-4 tablet:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-36 w-full rounded-md" />
+              <Skeleton key={i} className="h-44 w-full rounded-md" />
             ))}
           </div>
         ) : ofertas.length === 0 ? (
@@ -73,13 +77,35 @@ export default function DescontosPage() {
           </div>
         ) : (
           <>
-            <div className="grid gap-4 tablet:grid-cols-2">
-              {ofertas.map((o) => (
-                <OfertaTicket key={o.code} oferta={o} />
-              ))}
-            </div>
+            {agora.length > 0 ? (
+              <section className="mb-10">
+                <h2 className="mb-1 text-title-md text-ink">Disponível agora</h2>
+                <p className="mb-4 text-body-sm text-muted">
+                  Vale já na sua próxima reserva. O desconto aparece no pagamento.
+                </p>
+                <div className="grid gap-4 tablet:grid-cols-2">
+                  {agora.map((o) => (
+                    <OfertaTicket key={o.code} oferta={o} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
-            <div className="mt-8 flex flex-col gap-3 rounded-md border border-hairline bg-canvas p-5 tablet:flex-row tablet:items-center tablet:justify-between">
+            {depois.length > 0 ? (
+              <section className="mb-10">
+                <h2 className="mb-1 text-title-md text-ink">Libera conforme você reserva</h2>
+                <p className="mb-4 text-body-sm text-muted">
+                  Estes já existem e ficam esperando. Cada reserva concluída destrava o próximo.
+                </p>
+                <div className="grid gap-4 tablet:grid-cols-2">
+                  {depois.map((o) => (
+                    <OfertaTicket key={o.code} oferta={o} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <div className="flex flex-col gap-3 rounded-md border border-hairline bg-canvas p-5 tablet:flex-row tablet:items-center tablet:justify-between">
               <div>
                 <p className="text-title-sm text-ink">Como o desconto entra</p>
                 <p className="mt-1 text-body-sm text-muted">

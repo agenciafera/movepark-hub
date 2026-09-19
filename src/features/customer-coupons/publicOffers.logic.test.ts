@@ -5,6 +5,8 @@ import {
   ofertaCapLabel,
   ofertaCondicoes,
   ofertaSelo,
+  ofertaEstagio,
+  separarPorEstagio,
 } from "./publicOffers.logic";
 import type { OfertaPublica } from "./api";
 
@@ -108,5 +110,46 @@ describe("ofertaSelo", () => {
   it("audiência aberta não ganha selo: 'para todos' gastaria a linha mais visível do cartão", () => {
     expect(ofertaSelo("public")).toBeNull();
     expect(ofertaSelo("code_only")).toBeNull();
+  });
+});
+
+describe("ofertaEstagio", () => {
+  it("quem chega na página já se encaixa na aquisição e nas campanhas abertas", () => {
+    expect(ofertaEstagio("first_purchase").quando).toBe("agora");
+    expect(ofertaEstagio("public").quando).toBe("agora");
+    expect(ofertaEstagio("first_purchase").destrava).toBeNull();
+  });
+
+  it("retenção fica bloqueada, e o texto diz COMO destravar", () => {
+    // O que destrava é o argumento inteiro do cartão bloqueado: sem ele, o cupom apagado só
+    // frustra. Com ele, vira motivo de voltar.
+    expect(ofertaEstagio("second_purchase")).toEqual({
+      quando: "depois",
+      destrava: "Desbloqueia depois da sua primeira reserva",
+    });
+    expect(ofertaEstagio("winback").destrava).toMatch(/sem reservar/i);
+  });
+});
+
+describe("separarPorEstagio", () => {
+  it("separa o que já vale do que a pessoa destrava reservando", () => {
+    const { agora, depois } = separarPorEstagio([
+      { audience: "first_purchase" },
+      { audience: "public" },
+      { audience: "second_purchase" },
+      { audience: "winback" },
+    ]);
+    expect(agora).toHaveLength(2);
+    expect(depois.map((o) => o.audience)).toEqual(["second_purchase", "winback"]);
+  });
+
+  it("preserva a ordem que o servidor mandou dentro de cada grupo", () => {
+    // O servidor ordena por `sort_order`, que é como o Manager controla o destaque. Reordenar aqui
+    // faria o campo virar decoração.
+    const { agora } = separarPorEstagio([
+      { audience: "public", code: "b" },
+      { audience: "first_purchase", code: "a" },
+    ] as { audience: string; code: string }[]);
+    expect(agora.map((o) => o.code)).toEqual(["b", "a"]);
   });
 });

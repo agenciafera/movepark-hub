@@ -89,3 +89,45 @@ export function ofertaSelo(audience: string): SeloOferta | null {
       return null;
   }
 }
+
+export type EstagioOferta = {
+  /** `agora`: quem chega na página já se encaixa. `depois`: precisa avançar na jornada. */
+  quando: "agora" | "depois";
+  /** O que destrava o cupom. Null quando ele já vale. */
+  destrava: string | null;
+};
+
+/**
+ * Em que ponto da jornada o cupom entra, do ponto de vista de quem chega SEM conta.
+ *
+ * A vitrine é pública, então não há sessão para consultar: o leitor é tratado como visitante novo.
+ * Isso não é chute, é a única leitura honesta possível, e ela acerta o caso que importa (quem
+ * descobre a Movepark agora). Para quem já tem conta, quem dá o veredito é a carteira, que consulta
+ * o histórico real por `coupon_evaluate`.
+ *
+ * Mostrar o cupom bloqueado, em vez de escondê-lo, é o ponto: ele vira a razão de voltar. Some o
+ * cupom e a pessoa nunca fica sabendo que existe um benefício esperando na segunda reserva.
+ */
+export function ofertaEstagio(audience: string): EstagioOferta {
+  switch (audience) {
+    case "second_purchase":
+      return { quando: "depois", destrava: "Desbloqueia depois da sua primeira reserva" };
+    case "winback":
+      return { quando: "depois", destrava: "Desbloqueia se você ficar um tempo sem reservar" };
+    default:
+      // `first_purchase` e `public` valem para quem está começando agora.
+      return { quando: "agora", destrava: null };
+  }
+}
+
+/** Separa a vitrine nas duas seções: o que já vale e o que a jornada destrava. */
+export function separarPorEstagio<T extends { audience: string }>(
+  ofertas: T[],
+): { agora: T[]; depois: T[] } {
+  const agora: T[] = [];
+  const depois: T[] = [];
+  for (const o of ofertas) {
+    (ofertaEstagio(o.audience).quando === "agora" ? agora : depois).push(o);
+  }
+  return { agora, depois };
+}

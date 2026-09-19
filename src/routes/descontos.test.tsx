@@ -68,6 +68,22 @@ describe("DescontosPage, /descontos (pública)", () => {
     expect(screen.getByRole("button", { name: /Buscar estacionamento/i })).toBeInTheDocument();
   });
 
+  it("cupom de retenção aparece bloqueado, com o que destrava e o CTA desabilitado", async () => {
+    // É o coração da tela: o cupom que a pessoa ainda NÃO pode usar é o motivo de ela voltar.
+    // Se ele sumisse, a segunda reserva pareceria não ter prêmio nenhum.
+    stubVitrine({
+      offers: [{ ...OFERTA, code: "SEGUNDA15", title: "Sua segunda reserva", audience: "second_purchase" }],
+      honored_by_units: 0,
+    });
+
+    renderWithProviders(<DescontosPage />);
+
+    expect(await screen.findByText("Libera conforme você reserva")).toBeInTheDocument();
+    expect(screen.getByText("Desbloqueia depois da sua primeira reserva")).toBeInTheDocument();
+    // O CTA fica visível, e desabilitado: some o botão e o cartão vira aviso, não cupom.
+    expect(screen.getByRole("button", { name: "Usar" })).toBeDisabled();
+  });
+
   it("visitante sem conta é convidado a entrar, não bloqueado", async () => {
     stubVitrine({ offers: [OFERTA], honored_by_units: 3 });
 
