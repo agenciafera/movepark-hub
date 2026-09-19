@@ -88,15 +88,24 @@ export default function GrupoPage() {
             </div>
           </div>
 
+          {/* Halo atrás da arte. A saia da van é navy #29263F, a mesma cor do hero, então
+              sem ele a base do veículo e as rodas somem no fundo. É luz, não caixa: um
+              brilho radial fraco que devolve o contorno sem recortar um retângulo. */}
+          <div className="relative mx-auto w-full max-w-[420px] desktop:max-w-none">
+            <div
+              className="pointer-events-none absolute inset-[8%] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.14),rgba(255,255,255,0)_68%)] blur-xl"
+              aria-hidden
+            />
           <img
             src="/images/grupo-ecossistema.webp"
-            alt="Ilustração isométrica de uma van de traslado ao lado de uma vaga demarcada e de um celular com o mapa da rota"
-            width={903}
-            height={767}
-            className="mx-auto w-full max-w-[420px] desktop:max-w-none"
+            alt="Ilustração isométrica de uma van elétrica de traslado ao lado de uma vaga demarcada e de um celular com o mapa da rota"
+            width={918}
+            height={827}
+            className="relative mx-auto w-full"
             loading="eager"
             decoding="async"
           />
+          </div>
         </div>
       </section>
 

@@ -141,11 +141,19 @@ com linha viram um emaranhado de 2px.
 
 ### 5.3 A ilustração
 
-Gerada no Higgsfield (`gpt_image_2_5`, 1 crédito) e recortada pelo `remove_background` do
-mesmo provedor, que entrega **alfa de verdade** (conferido pixel a pixel: `a=0` no canto e
-no topo). Isso importa porque o provedor oficial de imagem do projeto, o `gemini-image`,
-não entrega transparência: ele devolve o xadrez **pintado**. O arquivo final é
-`public/images/grupo-ecossistema.webp`, 903x767, 79KB.
+Gerada no Higgsfield (`gpt_image_2_5`) e recortada pelo `remove_background` do mesmo
+provedor, que entrega **alfa de verdade** (conferido pixel a pixel: `a=0` no canto e no
+topo). Isso importa porque o provedor oficial de imagem do projeto, o `gemini-image`, não
+entrega transparência: ele devolve o xadrez **pintado**. O arquivo final é
+`public/images/grupo-ecossistema.webp`, 918x827, 69KB.
+
+**A paleta é a da Movepark, e isso é decisão, não estética.** A primeira arte saiu no azul
+e no verde do Go2Park, que são as cores de **um** dos quatro produtos: no hero da página da
+casa, isso subordina a marca-mãe a uma das filhas. A arte atual usa navy `#29263F`, violeta
+`#5D5FEF` e teal `#A6DBDF`, os três do símbolo da Movepark, com um ponto coral `#DA455E` de
+acento. A van também mudou de um furgão comum para um elétrico de linha limpa, porque a
+ilustração da casa é a que fixa o tom das outras. Conferir a paleta do arquivo final faz
+parte da entrega: as cores dominantes têm que ser as da marca, e não as de um produto.
 
 ## 6. Superfície de máquina
 
