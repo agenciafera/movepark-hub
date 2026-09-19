@@ -32,6 +32,8 @@ export type CreateBookingInput = {
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
+  /** Prova da origem (E0.3.12): quando clicou, por onde entrou e de onde veio. */
+  attribution?: { clicked_at?: unknown; landing_url?: unknown; referrer?: unknown } | null;
   [extra: string]: unknown;
 };
 
@@ -93,5 +95,50 @@ export function decidirUtm(
       utm_medium: input.utm_medium ?? null,
       utm_campaign: input.utm_campaign ?? null,
     },
+  };
+}
+
+export type Atribuicao = {
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  clicked_at: string | null;
+  landing_url: string | null;
+  referrer: string | null;
+};
+
+function texto(v: unknown, max: number): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  return t ? t.slice(0, max) : null;
+}
+
+/**
+ * Monta a prova da origem que vai para `booking_apply_commission` (E0.3.12).
+ *
+ * Mesmo cuidado do patch de UTM: só campos NOMEADOS, cada um com tipo e tamanho conferidos,
+ * porque isto vira jsonb gravado com service_role. Data ilegível vira null (o banco trata como
+ * "sem data do clique"), página de entrada tem que ser caminho do próprio site e o referrer tem
+ * que ser http(s). Sem UTM nenhum não há o que provar: devolve null e a reserva é do Hub, salvo
+ * o white-label, que o banco reconhece pela `origin`.
+ */
+export function montarAtribuicao(input: CreateBookingInput): Atribuicao | null {
+  const utm_source = texto(input.utm_source, 200);
+  const utm_medium = texto(input.utm_medium, 200);
+  const utm_campaign = texto(input.utm_campaign, 200);
+  if (!utm_source && !utm_medium && !utm_campaign) return null;
+
+  const a = input.attribution && typeof input.attribution === "object" ? input.attribution : {};
+  const clickedRaw = texto(a.clicked_at, 40);
+  const clicked = clickedRaw ? new Date(clickedRaw) : null;
+  const landing = texto(a.landing_url, 500);
+  const referrer = texto(a.referrer, 500);
+  return {
+    utm_source,
+    utm_medium,
+    utm_campaign,
+    clicked_at: clicked && !Number.isNaN(clicked.getTime()) ? clicked.toISOString() : null,
+    landing_url: landing && landing.startsWith("/") && !landing.startsWith("//") ? landing : null,
+    referrer: referrer && /^https?:\/\//i.test(referrer) ? referrer : null,
   };
 }

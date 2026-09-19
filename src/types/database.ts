@@ -3956,6 +3956,7 @@ export type Database = {
         Row: {
           amount: number
           booking_id: string
+          chargeback_debt_cents: number | null
           created_at: string
           currency: string
           date_change_check_in_at: string | null
@@ -3993,6 +3994,7 @@ export type Database = {
         Insert: {
           amount: number
           booking_id: string
+          chargeback_debt_cents?: number | null
           created_at?: string
           currency?: string
           date_change_check_in_at?: string | null
@@ -4030,6 +4032,7 @@ export type Database = {
         Update: {
           amount?: number
           booking_id?: string
+          chargeback_debt_cents?: number | null
           created_at?: string
           currency?: string
           date_change_check_in_at?: string | null

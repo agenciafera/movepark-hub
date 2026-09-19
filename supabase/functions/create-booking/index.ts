@@ -13,7 +13,12 @@
 //   "has_pcd": false,                // optional
 //   "add_on_service_ids": ["uuid"],  // optional
 //   "coupon_code": "PROMO10",        // optional
-//   "origin": "search-results"       // optional
+//   "origin": "search-results",      // optional
+//   "utm_source": "abbapark",        // optional (utm_medium, utm_campaign idem)
+//   "attribution": {                 // optional, prova da origem (E0.3.12)
+//     "clicked_at": "2026-09-10T12:00:00Z", "landing_url": "/p/x?utm_source=abbapark",
+//     "referrer": "https://abbapark.com.br/"
+//   }
 // }
 //
 // Resposta:
@@ -24,6 +29,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   decidirUtm,
   montarArgsRpc,
+  montarAtribuicao,
   validarEntrada,
   type CreateBookingInput,
 } from "./logic.ts";
@@ -115,6 +121,18 @@ Deno.serve(async (req: Request) => {
       .update(utm.patch)
       .eq("id", bookingId!);
     if (utmErr) console.error("utm update falhou:", utmErr.message);
+  }
+
+  // Comissão por origem (E0.3.12): congela na reserva o pacote (comissão, quem paga a taxa do
+  // gateway, quem arca com chargeback) da regra que casar com a origem. Roda SEMPRE, mesmo sem
+  // UTM, porque o white-label casa pela `origin` e o padrão do Hub também fica gravado. Não
+  // bloqueia a reserva: se falhar, a Edge de cobrança congela antes de montar o split.
+  if (bookingId) {
+    const { error: commErr } = await admin.rpc("booking_apply_commission", {
+      p_booking_id: bookingId,
+      p_attribution: montarAtribuicao(input),
+    });
+    if (commErr) console.error("booking_apply_commission falhou:", commErr.message);
   }
 
   // O push Hub→WL (reserve) é enfileirado pelo trigger booking_item_wl_reserve → outbox wl_delivery

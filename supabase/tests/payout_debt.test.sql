@@ -8,7 +8,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(32);
+select plan(37);
 
 -- ── schema ──────────────────────────────────────────────────────────────────
 select has_column('public', 'payment', 'debt_recovered_cents', 'payment.debt_recovered_cents existe');
@@ -235,6 +235,66 @@ select is(
 select is(
   (select amount_cents from public.payout_debt_reserve(current_setting('test.cid_piso')::uuid, 8000, 'pagarme', 300)),
   250::bigint, 'fora da faixa, abate a dívida inteira que sobrou');
+
+-- H) Chargeback pela regra de comissão da venda (E0.3.12). Empresa própria, três vendas de R$ 100
+--    (perna 8000, Movepark pagando a taxa), todas com chargeback absorvido pelo master.
+do $$
+declare cid uuid := gen_random_uuid(); loc uuid := gen_random_uuid(); bk uuid;
+  split_cb jsonb := '[{"role":"partner","recipientId":"re_p3","amount":8000,"liable":false,"chargeProcessingFee":false,"chargeRemainderFee":false,"type":"flat"},
+                      {"role":"movepark","recipientId":"re_mp","amount":2000,"liable":true,"chargeProcessingFee":true,"chargeRemainderFee":true,"type":"flat"}]'::jsonb;
+  caso record;
+begin
+  insert into public.company(id, name, slug) values (cid, 'Chargeback Empresa', 'chargeback-empresa');
+  insert into public.location(id, company_id, name, slug) values (loc, cid, 'Chargeback Loc', 'chargeback-loc');
+  perform set_config('test.cid_cb', cid::text, false);
+  perform set_config('test.loc_cb', loc::text, false);
+  perform set_config('test.split_cb', split_cb::text, false);
+  -- each: coluna nula, o razão calcula a perna do parceiro
+  bk := gen_random_uuid();
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (bk,'MP-CB-EACH',current_setting('test.cust')::uuid,loc,'2026-12-22T12:00:00Z','2026-12-23T12:00:00Z','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, split, chargeback_debt_cents)
+    values (bk,'pagarme','card','booking',100,'refunded','2026-11-22T13:00:00Z','2026-11-23T10:00:00Z',100,'chargeback (contestação no banco)', true, true, split_cb, null);
+end $$;
+select is(public.payout_debt_cents(current_setting('test.cid_cb')::uuid), 8000::bigint,
+  'chargeback "cada um com o seu": a dívida é a perna do parceiro, como sempre');
+
+do $$
+declare bk uuid := gen_random_uuid();
+begin
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (bk,'MP-CB-MOVE',current_setting('test.cust')::uuid,current_setting('test.loc_cb')::uuid,'2026-12-22T12:00:00Z','2026-12-23T12:00:00Z','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, split, chargeback_debt_cents)
+    values (bk,'pagarme','card','booking',100,'refunded','2026-11-22T13:00:00Z','2026-11-23T11:00:00Z',100,'chargeback (contestação no banco)', true, true, current_setting('test.split_cb')::jsonb, 0);
+end $$;
+select is(public.payout_debt_cents(current_setting('test.cid_cb')::uuid), 8000::bigint,
+  'chargeback por conta da Movepark: o parceiro não deve nada por essa venda');
+
+do $$
+declare bk uuid := gen_random_uuid();
+begin
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (bk,'MP-CB-PART',current_setting('test.cust')::uuid,current_setting('test.loc_cb')::uuid,'2026-12-22T12:00:00Z','2026-12-23T12:00:00Z','cancelled',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, split, chargeback_debt_cents)
+    values (bk,'pagarme','card','booking',100,'refunded','2026-11-22T13:00:00Z','2026-11-23T12:00:00Z',100,'chargeback (contestação no banco)', true, true, current_setting('test.split_cb')::jsonb, 10000);
+end $$;
+select is(public.payout_debt_cents(current_setting('test.cid_cb')::uuid), 18000::bigint,
+  'chargeback por conta do parceiro: ele devolve o valor cobrado inteiro (R$ 100), não só a perna');
+
+-- payout_debt_lines exige sessão: hub_admin, o mesmo do acerto manual lá em cima.
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
+select is(
+  (select jsonb_agg((o ->> 'cents')::int order by (o ->> 'cents')::int)
+     from jsonb_array_elements(public.payout_debt_lines(current_setting('test.cid_cb')::uuid) -> 'origins') o),
+  '[8000, 10000]'::jsonb, 'as origens da dívida mostram o que a regra mandou: 8000 (each), 10000 (parceiro), e nada da que a Movepark absorveu');
+
+select is(
+  (select jsonb_agg((m ->> 'debt_delta_cents')::int order by (m ->> 'debt_delta_cents')::int)
+     from jsonb_array_elements(public.partner_account_statement(current_setting('test.cid_cb')::uuid,
+            '2026-11-01T00:00:00Z'::timestamptz, '2026-12-01T00:00:00Z'::timestamptz) -> 'movements') m
+    where m ->> 'kind' = 'debt'),
+  '[0, 8000, 10000]'::jsonb, 'o extrato do parceiro mostra a mesma dívida por chargeback que o razão cobra');
 
 select * from finish();
 rollback;

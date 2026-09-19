@@ -42,6 +42,7 @@ import {
 } from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import { chargebackDebtCents } from "../_shared/payments/commission.ts";
 
 /**
  * Notifica a confirmação por WhatsApp — só Tarifas Flex+ (`fare_benefits.notifications_sms`).
@@ -608,6 +609,35 @@ Deno.serve(async (req: Request) => {
         `[pagarme-webhook] CHARGEBACK: payment=${payment.id} booking=${payment.booking_id} valor=${pay?.amount}`,
       );
     }
+    // Chargeback pela regra de comissão da venda (E0.3.12): a reserva guarda quem arca. `each`
+    // (ou reserva antiga) deixa nulo e o razão calcula a perna do parceiro; `movepark` grava 0;
+    // `partner` grava o valor cobrado inteiro. O gateway debita o master nos três casos.
+    let chargebackDebt: number | null = null;
+    if (chargeback && pay && chargebackAbsorbedByMaster(pay)) {
+      const { data: bkRule } = await admin
+        .from("booking")
+        .select("commission_chargeback_bearer, commission_channel")
+        .eq("id", payment.booking_id)
+        .maybeSingle();
+      chargebackDebt = chargebackDebtCents(
+        bkRule?.commission_chargeback_bearer,
+        Math.round(Number(pay.amount ?? 0) * 100),
+        true,
+      );
+      await logGatewayEvent(admin, {
+        paymentId: payment.id,
+        bookingId: payment.booking_id,
+        kind: "chargeback",
+        httpStatus: null,
+        note:
+          `quem arca pela regra "${bkRule?.commission_channel ?? "hub"}": ${bkRule?.commission_chargeback_bearer ?? "each"}. ` +
+          (chargebackDebt == null
+            ? "Dívida do parceiro = a perna dele."
+            : chargebackDebt === 0
+              ? "A Movepark absorve, parceiro sem dívida."
+              : `Dívida do parceiro = valor cobrado inteiro (${chargebackDebt} centavos).`),
+      });
+    }
     await admin
       .from("payment")
       .update({
@@ -617,7 +647,7 @@ Deno.serve(async (req: Request) => {
         // E0.3.5: com `liable` na Movepark, o gateway debitou o master e a perna do parceiro vira
         // dívida no razão. Só o chargeback grava isto aqui; o estorno pedido por nós grava na hora.
         ...(chargeback && pay && chargebackAbsorbedByMaster(pay)
-          ? { refund_absorbed_by_master: true }
+          ? { refund_absorbed_by_master: true, chargeback_debt_cents: chargebackDebt }
           : {}),
       })
       .eq("id", payment.id);

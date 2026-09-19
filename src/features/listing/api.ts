@@ -720,6 +720,8 @@ export function useCreateBooking() {
       utm_source?: string | null;
       utm_medium?: string | null;
       utm_campaign?: string | null;
+      /** Prova da origem (E0.3.12): quando clicou, por onde entrou, de onde veio. */
+      attribution?: { clicked_at: string; landing_url: string | null; referrer: string | null } | null;
     }): Promise<{
       code: string;
       booking_id: string;

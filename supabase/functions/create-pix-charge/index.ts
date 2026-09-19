@@ -25,6 +25,12 @@ import { buildPixItems, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import {
+  type BookingCommissionColumns,
+  columnsFromRpc,
+  commissionForCharge,
+  needsCommissionFreeze,
+} from "../_shared/payments/commission.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +96,7 @@ Deno.serve(async (req: Request) => {
     .select(
       "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, " +
         "price_breakdown, " +
+        "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
         "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id",
     )
     .eq("code", input.booking_code)
@@ -171,17 +178,30 @@ Deno.serve(async (req: Request) => {
   const totalCents = reaisToCents(Number(booking.total_amount));
   const fareCents = booking.fare_price_cents ?? 0;
   const partnerBaseCents = totalCents - fareCents;
+  // Comissão por origem (E0.3.12): o pacote foi congelado na reserva quando ela nasceu. Reserva
+  // sem pacote (criada por MCP/API, ou cujo congelamento falhou) é congelada AGORA, antes do split,
+  // pela mesma função do banco, para nunca cobrar 20% de uma venda que o parceiro trouxe.
+  let commissionCols = booking as unknown as BookingCommissionColumns;
+  if (needsCommissionFreeze(commissionCols)) {
+    const { data: frozen, error: freezeErr } = await admin.rpc("booking_apply_commission", {
+      p_booking_id: (booking as unknown as { id: string }).id,
+    });
+    if (freezeErr) console.error("[%s] booking_apply_commission falhou:", EDGE_NAME, freezeErr.message);
+    else commissionCols = columnsFromRpc(frozen);
+  }
+  const commission = commissionForCharge(commissionCols, company?.take_rate_bps);
   let split;
   try {
     split = buildSplit({
       chargedCents: totalCents, // PIX não tem juros; o excedente sobre o base é só a tarifa
       baseCents: partnerBaseCents,
-      takeRateBps: company?.take_rate_bps ?? 0,
+      takeRateBps: commission.takeRateBps,
       moveparkRecipientId,
       partnerRecipientId: recipient?.external_recipient_id ?? null,
       requireRecipients: splitEnabled,
       platformFundedCents: platformFundedCents(booking.price_breakdown),
       method: "pix",
+      feePayer: commission.feePayer,
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
@@ -314,6 +334,8 @@ Deno.serve(async (req: Request) => {
       method: "pix",
       amount_cents: Math.round(Number(booking.total_amount) * 100),
       split: splitEnabled ? gatewaySplit : null,
+      // De onde veio a comissão desta venda (E0.3.12): canal, percentual e quem paga a taxa.
+      commission: { channel: commission.channel, take_rate_bps: commission.takeRateBps, fee_payer: commission.feePayer },
       expires_in_seconds: holdSeconds,
     },
     response: result.raw,

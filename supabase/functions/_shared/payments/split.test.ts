@@ -419,3 +419,48 @@ Deno.test("buildSplit: cupom de plataforma maior que a comissão é recusado", (
     "max_discount_amount",
   );
 });
+
+// ── E0.3.12: quem paga a taxa do gateway vem da regra de comissão da origem ─────────────────
+Deno.test("feePayer=partner: a perna do parceiro paga a taxa, mesmo com a Movepark podendo pagar", () => {
+  const rules = buildSplit({
+    chargedCents: 10000,
+    baseCents: 10000,
+    takeRateBps: 2000,
+    moveparkRecipientId: "rp_mp",
+    partnerRecipientId: "rp_partner",
+    method: "pix",
+    feePayer: "partner",
+  });
+  const partner = rules.find((r) => r.role === "partner")!;
+  const mp = rules.find((r) => r.role === "movepark")!;
+  assertEquals([partner.amount, mp.amount], [8000, 2000], "os valores das pernas não mudam, só quem paga a taxa");
+  assertEquals([partner.chargeProcessingFee, partner.chargeRemainderFee], [true, true]);
+  assertEquals([mp.chargeProcessingFee, mp.chargeRemainderFee], [false, false]);
+  assertEquals(mp.liable, true, "quem paga a taxa não muda quem é liable no gateway");
+});
+
+Deno.test("feePayer=movepark com comissão de 5% no cartão: a taxa volta ao parceiro, a Movepark não fica negativa", () => {
+  // 5% de R$ 100 = R$ 5; a taxa estimada do cartão é 6% = R$ 6. A perna não cobre.
+  const card = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 500,
+    moveparkRecipientId: "rp_mp", partnerRecipientId: "rp_partner", method: "card", feePayer: "movepark",
+  });
+  assertEquals(card.find((r) => r.role === "partner")!.chargeProcessingFee, true);
+  assertEquals(card.find((r) => r.role === "movepark")!.chargeProcessingFee, false);
+  // No PIX (1,5%) os mesmos 5% cobrem com folga.
+  const pix = buildSplit({
+    chargedCents: 10000, baseCents: 10000, takeRateBps: 500,
+    moveparkRecipientId: "rp_mp", partnerRecipientId: "rp_partner", method: "pix", feePayer: "movepark",
+  });
+  assertEquals(pix.find((r) => r.role === "movepark")!.chargeProcessingFee, true);
+  assertEquals(pix.find((r) => r.role === "partner")!.chargeProcessingFee, false);
+});
+
+Deno.test("comissão reduzida da regra muda as pernas: 5% em R$ 200", () => {
+  const rules = buildSplit({
+    chargedCents: 20000, baseCents: 20000, takeRateBps: 500,
+    moveparkRecipientId: "rp_mp", partnerRecipientId: "rp_partner", method: "pix",
+  });
+  assertEquals(rules.find((r) => r.role === "partner")!.amount, 19000);
+  assertEquals(rules.find((r) => r.role === "movepark")!.amount, 1000);
+});

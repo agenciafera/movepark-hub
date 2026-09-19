@@ -17,7 +17,7 @@ import { DateRangePicker } from "@/features/search/DateRangePicker";
 import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
 import { originFromSrc } from "@/lib/bookingOrigin";
-import { getStoredUtm } from "@/lib/utm";
+import { bookingAttributionPayload } from "@/lib/utm";
 import {
   parseCouponParam,
   getStoredCoupon,
@@ -294,7 +294,8 @@ export function ReservationCard({
         // Tarifa escolhida (E2.8): o id "basic" da UI mapeia pro enum "basica" do banco.
         fare_tier: effectiveFare === "basic" ? "basica" : effectiveFare,
         origin: originFromSrc(new URLSearchParams(location.search).get("src")),
-        ...getStoredUtm(),
+        // UTM + prova da origem: a comissão da venda depende de onde o cliente veio (E0.3.12).
+        ...bookingAttributionPayload(),
       });
       navigate(`/checkout/${result.code}`);
     } catch (err) {

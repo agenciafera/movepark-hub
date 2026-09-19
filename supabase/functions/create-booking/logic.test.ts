@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { decidirUtm, montarArgsRpc, validarEntrada } from "./logic.ts";
+import { decidirUtm, montarArgsRpc, montarAtribuicao, validarEntrada } from "./logic.ts";
 
 const BASE = {
   location_parking_type_id: "lpt-1",
@@ -85,4 +85,67 @@ Deno.test("o patch de UTM carrega SÓ os três campos, mesmo com lixo no corpo",
   if (!d.gravar) throw new Error("deveria gravar");
   assertEquals(Object.keys(d.patch).sort(), ["utm_campaign", "utm_medium", "utm_source"]);
   assertEquals(JSON.stringify(d.patch).includes("confirmed"), false);
+});
+
+// ── prova da origem (E0.3.12) ────────────────────────────────────────────────
+Deno.test("sem UTM não há prova: a reserva é do Hub", () => {
+  assertEquals(montarAtribuicao(BASE), null);
+  assertEquals(montarAtribuicao({ ...BASE, attribution: { clicked_at: "2026-09-10T12:00:00Z" } }), null);
+});
+
+Deno.test("a prova leva UTM, hora do clique, página de entrada e referrer", () => {
+  assertEquals(
+    montarAtribuicao({
+      ...BASE,
+      utm_source: " abbapark ",
+      utm_medium: "site",
+      attribution: {
+        clicked_at: "2026-09-10T12:00:00Z",
+        landing_url: "/p/abbapark?utm_source=abbapark",
+        referrer: "https://abbapark.com.br/reservar",
+      },
+    }),
+    {
+      utm_source: "abbapark",
+      utm_medium: "site",
+      utm_campaign: null,
+      clicked_at: "2026-09-10T12:00:00.000Z",
+      landing_url: "/p/abbapark?utm_source=abbapark",
+      referrer: "https://abbapark.com.br/reservar",
+    },
+  );
+});
+
+Deno.test("campo torto vira null em vez de derrubar a reserva ou entrar no banco", () => {
+  const a = montarAtribuicao({
+    ...BASE,
+    utm_source: "abbapark",
+    attribution: {
+      clicked_at: "ontem",
+      landing_url: "https://site-de-fora.com/x",
+      referrer: "javascript:alert(1)",
+    },
+  });
+  assertEquals(a?.clicked_at, null);
+  assertEquals(a?.landing_url, null);
+  assertEquals(a?.referrer, null);
+  // caminho "//host" é URL de outro site disfarçada de caminho
+  assertEquals(montarAtribuicao({ ...BASE, utm_source: "x", attribution: { landing_url: "//evil.com" } })?.landing_url, null);
+  // tipo errado também
+  assertEquals(montarAtribuicao({ ...BASE, utm_source: "x", attribution: { clicked_at: 123, referrer: {} } })?.clicked_at, null);
+});
+
+Deno.test("a prova carrega SÓ os seis campos, mesmo com lixo no corpo", () => {
+  const a = montarAtribuicao({
+    ...BASE,
+    utm_source: "abbapark",
+    status: "confirmed",
+    commission_take_rate_bps: 0,
+    attribution: { clicked_at: "2026-09-10T12:00:00Z", take_rate_bps: 0 } as never,
+  });
+  assertEquals(Object.keys(a ?? {}).sort(), ["clicked_at", "landing_url", "referrer", "utm_campaign", "utm_medium", "utm_source"]);
+});
+
+Deno.test("UTM gigante é cortado", () => {
+  assertEquals(montarAtribuicao({ ...BASE, utm_source: "a".repeat(999) })?.utm_source?.length, 200);
 });

@@ -65,6 +65,13 @@ export interface BuildSplitArgs {
    * perna menor que a taxa deixaria o recebedor negativo.
    */
   method?: "pix" | "card";
+  /**
+   * Quem paga a taxa do gateway nesta venda, pela regra de comissão da origem (E0.3.12).
+   * `partner` marca a perna do parceiro. `movepark` (o padrão) marca a da Movepark, com a mesma
+   * volta para o parceiro quando a perna dela não cobre a taxa estimada: com comissão baixa no
+   * cartão (5% de comissão contra ~6% de taxa) a Movepark ficaria negativa na venda.
+   */
+  feePayer?: "movepark" | "partner";
 }
 
 /**
@@ -90,6 +97,7 @@ export function buildSplit({
   requireRecipients = true,
   platformFundedCents = 0,
   method,
+  feePayer = "movepark",
 }: BuildSplitArgs): SplitRule[] {
   if (!Number.isInteger(baseCents) || baseCents <= 0) {
     throw new Error("Valor da cobrança inválido.");
@@ -133,7 +141,8 @@ export function buildSplit({
   // Movepark (take_rate 0 e sem excedente) é que o parceiro fica `liable`, porque o gateway exige
   // um responsável.
   const temPernaMovepark = moveparkAmount > 0;
-  const moveparkPagaTaxa = temPernaMovepark && moveparkAmount >= estimatedGatewayFeeCents(method, chargedCents);
+  const moveparkPagaTaxa =
+    feePayer !== "partner" && temPernaMovepark && moveparkAmount >= estimatedGatewayFeeCents(method, chargedCents);
   const rules: SplitRule[] = [
     {
       role: "partner",
