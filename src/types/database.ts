@@ -6465,6 +6465,7 @@ export type Database = {
         Args: { p_hash: string; p_prefix: string }
         Returns: Json
       }
+      commission_channel_report: { Args: { p_from: string; p_to: string }; Returns: Json }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
       company_is_silent: { Args: { p_company_id: string }; Returns: boolean }
       company_list_members: {
@@ -7409,6 +7410,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      my_commission_channels: { Args: { p_company_id: string }; Returns: Json }
       nearest_destination: {
         Args: { p_lat: number; p_lng: number; p_max_km?: number }
         Returns: string

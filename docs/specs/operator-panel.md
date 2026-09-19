@@ -522,6 +522,11 @@ Tabela de Reservas
   **líquido a receber**, comissão da Movepark + linhas por reserva) e o **histórico de saques**
   (`payout_withdrawal`, taxa diluída). Consome a reconciliação da **E0.3.3**; o escopo é garantido pelas
   RPCs (operator só a sua empresa) e exibe o **status do recebedor** (`payout_recipient`).
+- **Vendas que você traz (E0.3.12, 18/09/2026):** quando a Movepark cadastra uma regra de comissão
+  por origem para a empresa, a tela mostra o canal, a comissão reduzida e o link de cada unidade já
+  com o `utm_source` (RPC `my_commission_channels`, `finance:read`). Sem regra o card não aparece.
+  Na tela da reserva, o card "Canal da venda" mostra de onde veio a venda e a comissão que ela paga.
+  Ver [comissao-por-origem.md](./comissao-por-origem.md).
 - **NFs** ficam como **placeholder** — dependem da camada fiscal (**E0.2**, em definição com a contabilidade).
 
 ## 8.x Preço e disponibilidade na extranet (E1.4)

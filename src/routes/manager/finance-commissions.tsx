@@ -15,6 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { CommissionRulesCard } from "@/features/commission/CommissionRulesCard";
+import { ChannelReportCard } from "@/features/commission/ChannelReportCard";
 import {
   bpsToPctString,
   isCommissionDirty,
@@ -55,8 +57,17 @@ export default function ManagerFinanceCommissions() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Comissões"
-        description="Comissão da Movepark (take rate) por empresa parceira, aplicada no split de cada pagamento."
+        description="Quanto a Movepark fica de cada venda: a regra por origem quando o estacionamento traz o cliente, e o padrão da empresa no resto."
       />
+
+      <CommissionRulesCard />
+
+      <div>
+        <h2 className="text-title-md text-ink">Comissão padrão por empresa</h2>
+        <p className="text-body-sm text-muted">
+          Vale para toda venda que não casa com nenhuma regra acima, como a busca no site da Movepark.
+        </p>
+      </div>
 
       <Card>
         <CardContent className="p-0">
@@ -124,6 +135,8 @@ export default function ManagerFinanceCommissions() {
           )}
         </CardContent>
       </Card>
+
+      <ChannelReportCard />
 
       <p className="text-caption text-muted">
         A comissão é descontada do preço base da reserva no split do pagamento; o parceiro recebe o

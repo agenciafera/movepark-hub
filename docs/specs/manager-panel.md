@@ -337,6 +337,14 @@ Badge de cobrança: `pending` · `invoiced` · `paid` · `overdue`
 
 - Tabela de rates por empresa com histórico de alterações
 - Inline edit da taxa atual
+- **Comissão por origem da venda (E0.3.12, 18/09/2026):** card no topo da tela com as regras que
+  dão comissão diferente à venda que o estacionamento traz (UTM cadastrado ou site white-label),
+  cada uma com comissão, quem paga a taxa do gateway e quem arca com chargeback. Só `hub_admin`.
+  A tabela por empresa passa a ser o "padrão", que vale para toda venda sem regra.
+- **Vendas por canal:** relatório mensal por empresa e canal, com alerta quando o canal do
+  parceiro passa de `commission_partner_share_alert_pct` das vendas dele.
+- Na tela da reserva, o card "Canal da venda" mostra o pacote e a prova da origem, e deixa corrigir
+  o canal antes do pagamento. Ver [comissao-por-origem.md](./comissao-por-origem.md).
 
 ---
 

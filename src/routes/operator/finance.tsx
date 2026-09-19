@@ -29,6 +29,7 @@ import {
 } from "@/features/payouts/api";
 import { PartnerAccount } from "@/features/payouts/PartnerAccount";
 import { PartnerDebtCard } from "@/features/payouts/PartnerDebtCard";
+import { PartnerChannelsCard } from "@/features/commission/PartnerChannelsCard";
 import { resumoSaldo } from "@/features/payouts/saldo.logic";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { formatBRL, formatDate } from "@/lib/format";
@@ -132,6 +133,9 @@ export default function OperatorFinance() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Canais de venda com comissão reduzida e o link rastreado (E0.3.12). Some sem regra. */}
+      <PartnerChannelsCard companyId={companyId} />
 
       {/* Dívida com a Movepark e o que cada reserva abateu (E0.3.5). Some quando não há nada. */}
       <PartnerDebtCard companyId={companyId} />

@@ -7,7 +7,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(37);
+select plan(45);
 
 -- ── schema ──────────────────────────────────────────────────────────────────
 select has_table('public', 'commission_rule', 'commission_rule existe');
@@ -161,6 +161,52 @@ select is((select count(*)::int from public.booking_commission_override where bo
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select is((public.booking_apply_commission('00000000-0000-0000-0000-0000000b0002', null) ->> 'changed')::boolean, false,
   'pacote corrigido à mão fica travado: reaplicar não desfaz a correção');
+
+-- ── o que o estacionamento enxerga ──────────────────────────────────────────
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
+select is(jsonb_array_length(public.my_commission_channels(current_setting('test.a')::uuid) -> 'rules'), 1,
+  'a empresa vê as regras dela, e não as globais');
+select is(public.my_commission_channels(current_setting('test.a')::uuid) -> 'rules' -> 0 ->> 'name', 'Site do parceiro',
+  'com o nome e os UTMs para montar o link');
+select is(jsonb_array_length(public.my_commission_channels(current_setting('test.b')::uuid) -> 'rules'), 0,
+  'empresa sem regra própria não vê regra de outra');
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
+select throws_ok($$select public.my_commission_channels(current_setting('test.a')::uuid)$$, '42501', null,
+  'quem não é da empresa não vê os canais dela');
+
+-- ── relatório por canal e alerta de concentração ────────────────────────────
+-- Empresa A no período: MP-COMM-1 (canal da regra, R$ 200, perna Movepark R$ 10) e uma venda do
+-- Hub de R$ 100 (perna Movepark R$ 20). 200 de 300 = 67% pelo canal do parceiro: acima dos 60%.
+reset role;
+update public.payment set split = '[{"role":"partner","amount":19000},{"role":"movepark","amount":1000}]'::jsonb
+ where booking_id = '00000000-0000-0000-0000-0000000b0001';
+insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount, origin,
+                           commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer)
+  values ('00000000-0000-0000-0000-0000000b0003', 'MP-COMM-3', current_setting('test.cust')::uuid, current_setting('test.la')::uuid,
+          '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z', 'confirmed', 100, 'hub_search', 'hub', 2000, 'movepark', 'each');
+insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, split)
+  values ('00000000-0000-0000-0000-0000000b0003', 'pagarme', 'pix', 'booking', 100, 'paid', now(),
+          '[{"role":"partner","amount":8000},{"role":"movepark","amount":2000}]'::jsonb);
+
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
+select is(
+  (select (c ->> 'gmv_cents') || '/' || (c ->> 'movepark_cents') || '/' || (c ->> 'partner_share_pct') || '/' || (c ->> 'alert')
+     from jsonb_array_elements(public.commission_channel_report(now() - interval '1 hour', now() + interval '1 hour') -> 'companies') c
+    where c ->> 'company_id' = current_setting('test.a')),
+  '30000/3000/67/true', 'a empresa soma o que vendeu, o que ficou com a Movepark e a fatia do canal dela, com alerta');
+select is(
+  (select jsonb_agg(ch ->> 'channel' order by (ch ->> 'gmv_cents')::int desc)
+     from jsonb_array_elements(public.commission_channel_report(now() - interval '1 hour', now() + interval '1 hour') -> 'companies') c,
+          jsonb_array_elements(c -> 'channels') ch
+    where c ->> 'company_id' = current_setting('test.a')),
+  '["Site do parceiro", "hub"]'::jsonb, 'os canais vêm abertos por empresa, do maior para o menor');
+select is(
+  (select count(*)::int
+     from jsonb_array_elements(public.commission_channel_report(now() + interval '1 day', now() + interval '2 days') -> 'companies') c
+    where c ->> 'company_id' = current_setting('test.a')), 0, 'fora do período não conta');
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
+select throws_ok($$select public.commission_channel_report(now() - interval '1 hour', now())$$, '42501', null,
+  'só hub_admin vê o relatório por canal');
 
 select * from finish();
 rollback;

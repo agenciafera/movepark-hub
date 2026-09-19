@@ -34,6 +34,8 @@ export type PayoutRecipient = Tables<"payout_recipient">;
 export type CompanyPayoutAccount = Tables<"company_payout_account">;
 /** Saque real (transferência recebedor → banco do parceiro), E0.3.3. */
 export type PayoutWithdrawal = Tables<"payout_withdrawal">;
+/** Regra de comissão por origem da venda (E0.3.12). */
+export type CommissionRule = Tables<"commission_rule">;
 export type Destination = Tables<"destination">;
 /**
  * Lote que a Movepark mapeou e que NÃO tem contrato (E0.17 · ADR-010). Não tem preço,

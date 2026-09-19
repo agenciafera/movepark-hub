@@ -431,6 +431,11 @@ service_role).
    parceiro: o gateway cobra de quem está marcado e uma perna menor que a taxa ficaria negativa.
    `liable` (chargeback) segue na Movepark desde 15/09/2026.
    `type: "flat"` em centavos; a soma é sempre o total. Comissão 0 → só a perna do parceiro.
+   **Comissão por origem (E0.3.12, 18/09/2026):** o `take_rate` e o pagador da taxa deixaram de
+   vir direto da empresa. A Edge lê o pacote congelado na reserva (`booking.commission_*`, via
+   `commissionForCharge`): sem regra é o padrão acima (`company.take_rate_bps`, Movepark paga); com
+   regra, a comissão e o `feePayer` dela. A exceção da perna pequena continua valendo. Ver
+   [comissao-por-origem.md](./comissao-por-origem.md).
 3. `getGateway("pagarme").createPixCharge(...)` → `POST /orders` com `payments[].pix` (`expires_in`)
    + `payments[].split[]`. Grava `payment` (provider=pagarme, `provider_payment_id`=order id, QR,
    `expires_at`, snapshot do split) e devolve `qr_code` (copia-e-cola) + `qr_code_url`.

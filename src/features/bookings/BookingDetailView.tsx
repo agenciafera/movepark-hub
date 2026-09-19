@@ -15,6 +15,7 @@ import { useBookingByCode, useCancelBookingStaff, useUpdateBookingStatus } from 
 import { useChangeBookingVehicle } from "./customerApi";
 import { BookingMoneyCard } from "./BookingMoneyCard";
 import { GatewayTrail } from "./GatewayTrail";
+import { BookingCommissionCard } from "@/features/commission/BookingCommissionCard";
 import { bookingCustomerName } from "./bookings.logic";
 import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { paymentBadge, paymentState, refundWindow } from "./payment.logic";
@@ -209,6 +210,15 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
       </div>
 
       <BookingMoneyCard money={money} audience={audience} />
+
+      {/* De onde a venda veio e que comissão ela paga (E0.3.12). */}
+      <BookingCommissionCard
+        booking={booking}
+        companyId={booking.location?.company?.id}
+        payments={booking.payments}
+        audience={audience}
+        canFix={effectiveRole === "hub_admin"}
+      />
 
       {(operacoes.length > 0 || (audience === "operator" && ["pending", "confirmed", "checked_in"].includes(booking.status))) && (
         <Card>

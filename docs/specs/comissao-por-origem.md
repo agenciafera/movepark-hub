@@ -1,6 +1,8 @@
 # Comissão por origem da venda (E0.3.12)
 
-> Status: **desenho aprovado em 18/09/2026, implementação não iniciada.**
+> Status: **implementado em 18/09/2026 (fases 1 a 7 e 9). Falta a fase 8: as compras reais do
+> roteiro de validação, que dependem de um cliente pagando.** A regra de teste da Agência Fera já
+> está cadastrada em produção (`utm_source = agenciafera`, 10%, taxa por conta do parceiro).
 > Decisões tomadas pelo Kallef em conversa, registradas na seção "Decisões".
 > Specs relacionadas: [payment-split.md](./payment-split.md),
 > [split-dinamico-e-divida-do-parceiro.md](./split-dinamico-e-divida-do-parceiro.md),
@@ -153,15 +155,19 @@ regra do híbrido.
 
 ## Telas
 
-- **Manager › Configurações › Comissões por origem**: regras globais e os dois padrões do Hub.
-- **Manager › Empresa › Comissões**: regras da empresa (UTMs aceitos, white-label, pacote,
-  vigência), com simulador "venda de R$ 100 no PIX e no cartão: quanto fica com cada um".
-- **Tela da reserva (Manager)**: canal e regra aplicada, prova da origem, e "Corrigir canal"
-  enquanto não há pagamento pago.
-- **Tela da reserva e extrato (Operator)**: canal e comissão que valeram. Sem detalhe de taxa.
-- **Operator › Seu link rastreado**: gera o link das unidades dele com um `utm_source` que esteja
-  cadastrado. Reaproveita o gerador do selo de parceiro.
-- **Financeiro e Atribuição**: recorte por canal (vendas, comissão, taxa).
+- **Manager › Financeiro › Comissões** (`/manager/finance/commissions`): o card "Comissão por
+  origem da venda" cadastra as regras (globais e por empresa: UTMs aceitos, white-label, pacote,
+  vigência, prioridade), mostra o exemplo em reais e avisa quando a comissão não cobre a taxa que
+  a Movepark prometeu pagar. Abaixo, a comissão padrão por empresa (o que já existia) e o relatório
+  "Vendas por canal" com o alerta de concentração. Componentes em `src/features/commission/`.
+- **Tela da reserva (Manager)**: card "Canal da venda" com o canal, o pacote, a prova da origem e
+  "Corrigir canal" enquanto não há pagamento pago (RPC com histórico).
+- **Tela da reserva (Operator)**: o mesmo card com canal e comissão. Sem taxa, chargeback nem prova.
+- **Operator › Repasses**: card "Vendas que você traz", com as regras da empresa dele (RPC
+  `my_commission_channels`, escopo `finance:read`) e o link de cada unidade já com o UTM. Some
+  quando a empresa não tem regra.
+- Os padrões do Hub (`commission_default_*`, janela e percentual do alerta) ficam em `app_setting`,
+  sem tela própria por enquanto: mudam raramente e o valor inicial é o comportamento de hoje.
 
 ## Contra abuso
 
@@ -172,9 +178,34 @@ regra do híbrido.
 
 ## Permissões
 
-Escrita de regra e correção de reserva: só `hub_admin` (RPCs `SECURITY DEFINER` com
-`is_hub_admin()`), sem escopo novo de empresa. Leitura do pacote pelo parceiro: pela própria
-reserva, que a RLS já deixa ele ler.
+Escrita de regra: só `hub_admin`, pela RLS de `commission_rule` (policy única com
+`is_hub_admin()`); o trigger normaliza os UTMs e recusa UTM repetido no mesmo dono. Correção de
+reserva: RPC `admin_set_booking_commission`, só `hub_admin`. Sem escopo novo de empresa. Leitura
+pelo parceiro: o pacote pela própria reserva (a RLS já deixa), e as regras dele por
+`my_commission_channels`, que exige `finance:read` e nunca devolve regra global nem de outra empresa.
+`resolve_commission` e `booking_apply_commission` só rodam para `service_role` e `hub_admin`.
+
+## Como ficou implementado
+
+| Peça | Onde |
+|---|---|
+| Regras, resolução, congelamento, correção | `20261121050000_comissao_por_origem.sql`, pgTAP `commission_rule.test.sql` (45) |
+| Chargeback pela regra | `20261121060000_chargeback_pela_regra.sql`, pgTAP `payout_debt.test.sql` (37), `_shared/payments/commission.ts` (`chargebackDebtCents`), `pagarme-webhook` |
+| Canais do parceiro | `20261121070000_canais_de_venda_do_parceiro.sql` |
+| Relatório e alerta | `20261121080000_relatorio_por_canal.sql` |
+| Prova do clique no front | `src/lib/utm.ts` (localStorage, `clicked_at`, página de entrada, referrer sem query; descarta depois de 30 dias, quem decide a janela é o banco) |
+| Criação da reserva | `create-booking`: `montarAtribuicao` (só campos nomeados e conferidos) e `booking_apply_commission` sempre, mesmo sem UTM |
+| Cobrança | `create-pix-charge` e `create-card-charge`: `commissionForCharge` lê o pacote; reserva que nasceu sem ele (MCP, API, falha na criação) é congelada ali, antes do split; o rastro do gateway grava canal, comissão e pagador da taxa |
+| Split | `buildSplit({ feePayer })` |
+
+Duas decisões de implementação que o desenho não previa:
+
+1. **Congelamento tardio.** A reserva criada por MCP ou pela Public API não passa pelo
+   `create-booking`. Em vez de espalhar a chamada, a Edge de cobrança congela quem chega sem
+   pacote. O resultado é o mesmo (a regra olha `created_at` da reserva, não a hora da cobrança).
+2. **Comissão baixa e taxa por conta da Movepark.** A exceção de segurança do `buildSplit` continua
+   valendo: com 5% de comissão no cartão (taxa estimada de 6%) a taxa volta para a perna do
+   parceiro, senão a Movepark pagaria para vender. A tela avisa isso na hora de cadastrar a regra.
 
 ## Plano de ação
 
@@ -195,14 +226,20 @@ aplicada e spec atualizada. Nenhuma fase muda comportamento para quem não tem r
 
 ### Roteiro de validação em produção (Agência Fera)
 
-Regra de teste: empresa Agência Fera, `utm_source = fera-teste`, comissão 10%, taxa por conta do
-parceiro, chargeback `partner`.
+Regra de teste (já cadastrada, pela própria tela do Manager): empresa Agência Fera,
+`utm_source = agenciafera`, comissão 10%, taxa por conta do parceiro, chargeback `each`. Link:
+`/estacionamentos/jardim-paulista/agencia-fera?utm_source=agenciafera&utm_medium=parceiro`.
+
+Já conferido sem compra: a regra resolve ao vivo (com UTM 10% e taxa no parceiro; sem UTM ou com
+clique de 9 dias, padrão do Hub); o front grava a prova do clique e ela sobrevive a outra
+navegação; `booking_apply_commission` numa reserva real não paga da Fera devolve o pacote da
+regra, e numa já paga não muda nada (rodado em transação revertida).
 
 1. Compra **sem UTM**: split 80/20, taxa na Movepark. Reserva com canal `hub`.
-2. Compra entrando por `?utm_source=fera-teste`: split 90/10, taxa na perna da Fera. Reserva com
+2. Compra entrando por `?utm_source=agenciafera`: split 90/10, taxa na perna da Fera. Reserva com
    a regra, a prova da origem e o `clicked_at`.
 3. Compra com `?utm_source=qualquer-coisa` (não cadastrado): canal `hub`, 80/20.
-4. Clique com `fera-teste` hoje, compra **amanhã** sem UTM na URL: ainda casa a regra.
+4. Clique com `agenciafera` hoje, compra **amanhã** sem UTM na URL: ainda casa a regra.
 5. Cancelar a compra do passo 2: o híbrido devolve a perna dele conforme o que ele recebeu
    (90% menos a taxa que ele pagou).
 6. Conferir em cada uma: gateway trail (split e `charge_processing_fee`), tela da reserva, extrato
