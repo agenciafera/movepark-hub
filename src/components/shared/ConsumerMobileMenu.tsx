@@ -149,7 +149,6 @@ const GRUPOS_DO_SITE: GrupoDeMenu[] = [
     titulo: "Movepark",
     itens: [
       { to: "/sobre", label: "Sobre nós", icone: Buildings },
-      { to: "/grupo", label: "O grupo", icone: SquaresFour },
       // Barra final de propósito: é a URL canônica do blog, herdada do WordPress.
       { to: "/blog/", label: "Blog", icone: Article },
       { to: "/termos", label: "Termos de uso", icone: Scales },

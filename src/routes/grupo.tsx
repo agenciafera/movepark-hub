@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { CtaBanner } from "@/components/shared/CtaBanner";
 import { MarcaLogo } from "@/features/grupo/MarcaLogo";
 import { Organograma } from "@/features/grupo/Organograma";
-import { MARCAS, ESTAGIO_ROTULO, RESPONSAVEIS } from "@/features/grupo/marcas";
+import { MARCAS, ESTAGIO_ROTULO } from "@/features/grupo/marcas";
 import { breadcrumbSchema, organizationSchema } from "@/lib/jsonld";
 import { siteUrl } from "@/lib/site";
 
@@ -65,8 +65,12 @@ export default function GrupoPage() {
 
       {/* Hero: a ilustração entra recortada (alfa de verdade), então ela flutua sobre o
           navy em vez de trazer um retângulo branco junto. */}
-      <section className="relative isolate overflow-hidden bg-mp-navy">
-        <div className="mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 desktop:grid-cols-[1.1fr_1fr] desktop:px-8 desktop:py-24">
+      {/* Sem `overflow-hidden`: é ele que recortaria a arte na borda do navy. A van desce
+          para fora da faixa e invade a seção clara de baixo, que é o que dá profundidade.
+          Só do desktop para cima: em 375px a arte ocupa a largura toda e descer só empurra
+          o conteúdo para baixo, sem sobreposição nenhuma para render. */}
+      <section className="relative isolate bg-mp-navy">
+        <div className="mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 desktop:grid-cols-[1.1fr_1fr] desktop:px-8 desktop:pb-10 desktop:pt-24">
           <div className="flex flex-col gap-5">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-violet-on-navy">
               O grupo
@@ -91,7 +95,7 @@ export default function GrupoPage() {
           {/* Halo atrás da arte. A saia da van é navy #29263F, a mesma cor do hero, então
               sem ele a base do veículo e as rodas somem no fundo. É luz, não caixa: um
               brilho radial fraco que devolve o contorno sem recortar um retângulo. */}
-          <div className="relative mx-auto w-full max-w-[420px] desktop:max-w-none">
+          <div className="relative z-10 mx-auto w-full max-w-[420px] desktop:max-w-none desktop:-mb-28 desktop:translate-y-14">
             <div
               className="pointer-events-none absolute inset-[8%] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.14),rgba(255,255,255,0)_68%)] blur-xl"
               aria-hidden
@@ -110,8 +114,8 @@ export default function GrupoPage() {
       </section>
 
       {/* Mural de marcas: o pedido central da página, os quatro logos juntos. */}
-      <section id="marcas" className="scroll-mt-24 border-b border-hairline bg-canvas">
-        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
+      <section id="marcas" className="relative z-0 scroll-mt-24 border-b border-hairline bg-canvas">
+        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:pb-24 desktop:pt-32">
           <h2 className="text-balance text-display-2xl text-ink">As marcas da casa</h2>
           <ul className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 tablet:grid-cols-2 desktop:grid-cols-4">
             {MARCAS.map((m) => (
@@ -134,8 +138,7 @@ export default function GrupoPage() {
             <h2 className="text-balance text-display-2xl text-ink">Como a casa se organiza?</h2>
             <p className="max-w-[68ch] text-pretty text-body-md text-body">
               A Movepark é a marca que reúne os quatro produtos. Cada um tem o próprio
-              público e o próprio estágio, e a linha de baixo mostra quem responde pela
-              cobrança de cada um hoje.
+              público e o próprio estágio.
             </p>
           </div>
 
@@ -143,61 +146,58 @@ export default function GrupoPage() {
             <Organograma />
           </div>
 
-          <dl className="mt-12 grid gap-4 tablet:grid-cols-2">
-            {RESPONSAVEIS.map((r) => (
-              <div
-                key={r.razao}
-                className="flex flex-col gap-1 rounded-md border border-hairline bg-canvas p-5"
-              >
-                <dt className="text-title-md text-ink">{r.razao}</dt>
-                <dd className="text-body-sm text-body">
-                  {r.cnpj ? `CNPJ ${r.cnpj}. ` : ""}
-                  Responde por: {r.porQuais}.
-                </dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
 
-      {/* Um bloco por produto */}
+      {/* Produto a produto, em timeline vertical: a linha amarra os quatro como uma
+          sequência da casa, e o marcador na cor da marca dá o ritmo da leitura. Antes eram
+          quatro cartões soltos, que empilhavam sem dizer que fazem parte de um conjunto. */}
       <section className="bg-canvas">
-        <div className="mx-auto flex max-w-[1080px] flex-col gap-6 px-4 py-16 desktop:px-8 desktop:py-24">
+        <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
           <h2 className="text-balance text-display-2xl text-ink">Produto a produto</h2>
-          {MARCAS.map((m) => (
-            <article
-              key={m.id}
-              id={m.id}
-              className="scroll-mt-24 overflow-hidden rounded-md border border-hairline bg-canvas"
-            >
-              <div className="h-1 w-full" style={{ backgroundColor: m.cor }} aria-hidden />
-              <div className="grid gap-6 p-6 desktop:grid-cols-[260px_1fr] desktop:p-8">
-                <div className="flex flex-col items-start gap-4">
-                  <MarcaLogo id={m.id} className="h-8 desktop:h-9" />
-                  <SeloEstagio marca={m} />
-                  {m.url && (
-                    <a
-                      href={m.url}
-                      target="_blank"
-                      rel="noopener"
-                      className="inline-flex items-center gap-1 text-body-sm font-semibold text-mp-primary underline underline-offset-4"
-                    >
-                      {m.url.replace("https://", "")}
-                      <ArrowUpRight className="h-4 w-4" aria-hidden />
-                    </a>
-                  )}
+
+          <ol className="relative mt-10 border-l border-hairline pl-7 desktop:mt-12 desktop:pl-12">
+            {MARCAS.map((m) => (
+              <li key={m.id} id={m.id} className="relative scroll-mt-24 pb-12 last:pb-0">
+                {/* O marcador monta em cima da linha, com anel da cor do fundo para a
+                    linha não atravessar o círculo. */}
+                <span
+                  className="absolute top-1.5 h-3.5 w-3.5 rounded-full ring-4 ring-canvas"
+                  style={{ backgroundColor: m.cor, left: "calc(-1.75rem - 7px)" }}
+                  aria-hidden
+                />
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                    {/* O logo É o heading do item. Escrever o nome de novo embaixo dele
+                        repete a informação na tela e no leitor de tela, que já ouve o nome
+                        pelo alt da imagem. O nível 3 mantém a hierarquia da seção. */}
+                    <h3 className="flex items-center">
+                      <MarcaLogo id={m.id} className="h-7 desktop:h-8" />
+                    </h3>
+                    <SeloEstagio marca={m} />
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {m.paragrafos.map((t) => (
+                      <p key={t.slice(0, 24)} className="max-w-[68ch] text-pretty text-body-md text-body">
+                        {t}
+                      </p>
+                    ))}
+                    {m.url && (
+                      <a
+                        href={m.url}
+                        target="_blank"
+                        rel="noopener"
+                        className="inline-flex w-fit items-center gap-1 text-body-sm font-semibold text-mp-primary underline underline-offset-4"
+                      >
+                        {m.url.replace("https://", "")}
+                        <ArrowUpRight className="h-4 w-4" aria-hidden />
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <h3 className="text-title-md text-ink">{m.nome}</h3>
-                  {m.paragrafos.map((p) => (
-                    <p key={p.slice(0, 24)} className="text-pretty text-body-md text-body">
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </article>
-          ))}
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 

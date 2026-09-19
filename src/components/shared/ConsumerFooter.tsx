@@ -41,7 +41,6 @@ const groups: FooterGroup[] = [
     title: "Movepark",
     links: [
       { to: "/sobre", label: "Sobre nós" },
-      { to: "/grupo", label: "O grupo" },
       // Barra final de propósito: é a URL canônica do blog, herdada do WordPress.
       { to: "/blog/", label: "Blog" },
       { to: "/termos", label: "Termos de uso" },

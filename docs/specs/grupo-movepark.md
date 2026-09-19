@@ -10,6 +10,13 @@
 > [mensalista-recorrencia.md](./mensalista-recorrencia.md),
 > [agente-whatsapp-wl.md](./agente-whatsapp-wl.md), [blog.md](./blog.md).
 >
+> **Estado em 18/09/2026: a página existe e NÃO é divulgada.** Saiu do rodapé, do menu do
+> celular, do `/sobre`, do sitemap e do `llms.txt` por decisão do dono ("não pode ser visível
+> ainda ao grande público"). Ela continua acessível pelo endereço e continua emitindo o
+> dado estruturado dela. O motivo está escrito em `SITEMAP_OPT_OUT["/grupo"]`, e um teste em
+> `grupo.test.tsx` impede o link de voltar por descuido. Para lançar: devolver o link nas
+> duas navegações, tirar da lista de opt-out e recolocar a seção no `llms.txt`.
+>
 > Gestão: **E3.11** (Fase 3), com **Q-025**, **Q-026** e **D-011** abertos. Ver §7.
 
 ## 1. Por que existe
@@ -107,10 +114,11 @@ registrado na skill `harmonizar-paginas`.
 1. **Hero** com a tese em uma frase e a ilustração do ecossistema recortada, flutuando
    sobre o navy.
 2. **Mural das quatro marcas**, cada uma com logo, uma linha do que faz e o estágio.
-3. **Organograma**: a marca-casa no topo, os quatro produtos abaixo e, embaixo dele, quem
-   responde pela cobrança de cada um. Ver §5.2.
-4. **Um cartão por produto**, com o traço na cor da marca, o corpo do texto e o link para
-   o site próprio quando existe.
+3. **Organograma**: a marca-casa no topo e os quatro produtos abaixo. Ver §5.2.
+4. **Timeline vertical, um item por produto**, com o marcador na cor da marca, o logo como
+   heading do item, o estágio ao lado e o link para o site próprio quando existe. Eram
+   quatro cartões soltos, que empilhavam sem dizer que fazem parte de um conjunto; a linha
+   é o que costura os quatro como sequência da casa.
 5. **Desambiguação**, que continua necessária: existe homônima no mercado, e o CNPJ é o
    que resolve.
 
@@ -134,10 +142,17 @@ derivada herda gesto; não inventa símbolo sem quem revise.
 ### 5.2 O que o organograma pode dizer
 
 A caixa de cima é a **marca** Movepark, não uma holding, e os quatro ramos são **produtos**,
-não subsidiárias. A linha de baixo é o que impede a leitura errada, porque nomeia quem
-fatura cada um hoje, e a Go2Park ainda fatura pela Agência Fera. Os conectores só existem
-do tablet para cima: em 375px o desenho vira grade de dois por dois, porque quatro ramos
-com linha viram um emaranhado de 2px.
+não subsidiárias. Os conectores só existem do tablet para cima: em 375px o desenho vira
+grade de dois por dois, porque quatro ramos com linha viram um emaranhado de 2px.
+
+**A faixa que nomeava quem fatura cada produto saiu em 18/09/2026**, a pedido do dono, e
+com ela o CNPJ e a menção à Agência Fera. Ela era a peça que explicava a estrutura em
+palavras; o que continua impedindo a leitura errada é o resto: o desenho fala em marca e
+produtos, o texto não usa "empresa do grupo", "controlada" nem "subsidiária", e o JSON-LD
+segue emitindo `brand` com o teste que reprova `subOrganization`. **Essa trava passou a ser
+a única**, então ela não pode cair junto numa limpeza futura. Se a estrutura societária
+precisar voltar à tela, ela volta como esta seção, e não como adjetivo solto no meio de um
+parágrafo.
 
 ### 5.3 A ilustração
 
@@ -146,6 +161,13 @@ provedor, que entrega **alfa de verdade** (conferido pixel a pixel: `a=0` no can
 topo). Isso importa porque o provedor oficial de imagem do projeto, o `gemini-image`, não
 entrega transparência: ele devolve o xadrez **pintado**. O arquivo final é
 `public/images/grupo-ecossistema.webp`, 918x827, 69KB.
+
+**A arte ultrapassa o hero de propósito.** A van desce para fora da faixa navy e invade a
+seção clara de baixo, o que dá profundidade e tira o ar de banner recortado. Isso exige que
+o hero **não** tenha `overflow-hidden` (é ele que cortaria a arte na borda) e que a seção
+seguinte abra espaço no topo. Só do desktop para cima: em 375px a arte ocupa a largura
+inteira, e descer só empurraria o conteúdo. Medido: a arte passa 128px da borda do hero, e
+nada estoura a largura da tela.
 
 **A paleta é a da Movepark, e isso é decisão, não estética.** A primeira arte saiu no azul
 e no verde do Go2Park, que são as cores de **um** dos quatro produtos: no hero da página da

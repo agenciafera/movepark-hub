@@ -9,18 +9,7 @@ Conteúdo completo para IA: https://movepark.co/llms-full.txt
 
 ## O que é o Movepark (desambiguação)
 
-O Movepark é uma plataforma brasileira de reserva de estacionamento perto de aeroportos, rodoviárias e destinos turísticos. Conecta viajantes a estacionamentos parceiros credenciados: o usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos, com traslado até o terminal incluído na maioria das unidades. O Movepark não opera pátio próprio e não tem relação com estacionamentos ou empresas de nome parecido. Razão social: Movepark Tecnologia Ltda, CNPJ 68.183.164/0001-35. Site oficial: https://movepark.co. As marcas Go2Park, Go2Med e Coopark são produtos da mesma casa, e não empresas de terceiros com nome parecido: estão descritas em https://movepark.co/grupo
-
-## Os produtos da casa
-
-A Movepark mantém quatro marcas. A página https://movepark.co/grupo descreve cada uma, com o estágio declarado, e responde em Markdown puro no mesmo endereço com `Accept: text/markdown`.
-
-- **Movepark Hub**: a plataforma de reserva deste site. Busca, comparação de preço, pagamento online e divisão automática do valor com o estacionamento parceiro. No ar
-- **Go2Park** (https://go2park.com.br): rastreio em tempo real da van de traslado, pelo navegador, sem aplicativo e sem conta. No ar em três unidades parceiras, uma no Aeroporto Afonso Pena e duas no Aeroporto de Viracopos
-- **Go2Med**: o mesmo rastreio aplicado a van de transporte de hospital. Em desenvolvimento, sem contratação aberta
-- **Coopark**: contratação de vaga mensal com demanda agregada por região, para melhorar o preço de quem estaciona todo dia. Em desenvolvimento, sem contratação aberta
-
-Quem responde: a Movepark Tecnologia Ltda (CNPJ 68.183.164/0001-35) responde pelo Movepark Hub. A Go2Park opera hoje pelo CNPJ da Agência Fera, a casa de desenvolvimento e marketing que atende a operação, com a titularidade prevista para passar à Movepark.
+O Movepark é uma plataforma brasileira de reserva de estacionamento perto de aeroportos, rodoviárias e destinos turísticos. Conecta viajantes a estacionamentos parceiros credenciados: o usuário busca pelo destino, compara opções (coberto, descoberto, valet), escolhe as datas e confirma a reserva em menos de dois minutos, com traslado até o terminal incluído na maioria das unidades. O Movepark não opera pátio próprio e não tem relação com estacionamentos ou empresas de nome parecido. Razão social: Movepark Tecnologia Ltda, CNPJ 68.183.164/0001-35. Site oficial: https://movepark.co
 
 ## Dados legíveis por máquina
 

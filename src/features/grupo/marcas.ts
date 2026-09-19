@@ -87,23 +87,3 @@ export const ESTAGIO_ROTULO: Record<Estagio, string> = {
   "no-ar": "No ar",
   "em-desenvolvimento": "Em desenvolvimento",
 };
-
-/**
- * Quem responde por cada marca, hoje.
- *
- * Está na página porque muda o nome que aparece na cobrança de quem contrata, e porque
- * é a informação que impede a vitrine de virar afirmação societária: a Go2Park fatura
- * pela Agência Fera até a titularidade passar. Ver docs/specs/grupo-movepark.md §3.
- */
-export const RESPONSAVEIS = [
-  {
-    razao: "Movepark Tecnologia Ltda",
-    cnpj: "68.183.164/0001-35",
-    porQuais: "Movepark Hub",
-  },
-  {
-    razao: "Agência Fera",
-    cnpj: null,
-    porQuais: "Go2Park, até a titularidade passar para a Movepark",
-  },
-] as const;

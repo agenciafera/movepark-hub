@@ -24,7 +24,6 @@ export const SITEMAP_STATIC_ROUTES = [
   "/contato",
   "/cancelamento",
   "/metodologia",
-  "/grupo",
   "/termos",
   "/privacidade",
   "/seja-parceiro",
@@ -43,6 +42,8 @@ export const SITEMAP_OPT_OUT: Record<string, string> = {
     "reserva no Hub, e enquanto `public_coupon_offers().honored_by_units` for zero, indexá-la " +
     "anunciaria desconto que nenhuma unidade cumpre (ADR-009). Ao ligar a primeira unidade hub " +
     "vendável, mova esta rota para SITEMAP_STATIC_ROUTES e devolva o link ao rodapé e ao menu",
+  "/grupo":
+    "área do grupo ainda não divulgada: existe no endereço, mas não entra no índice nem no rodapé até a decisão de lançar (18/09/2026)",
   "/search": "resultado parametrizado; /search?dest=POA já apareceu indexado como duplicata",
   "/docs": "documentação técnica da API, fora da superfície de consumidor",
   "/motor-preview": "ferramenta interna de preço",

@@ -45,13 +45,6 @@ O Coopark é para quem estaciona todo dia no mesmo lugar. Ele junta quem procura
 
 **Em desenvolvimento.** Ainda não está disponível para contratação.
 
-## Quem responde por cada marca
-
-A Movepark é a marca que reúne os quatro produtos. Quem responde pela cobrança de cada um hoje:
-
-- **Movepark Tecnologia Ltda**, CNPJ 68.183.164/0001-35. Responde por: Movepark Hub.
-- **Agência Fera**. Responde por: Go2Park, até a titularidade passar para a Movepark.
-
 ## Para não confundir
 
 A Movepark não opera pátio próprio. Quem guarda o carro é o estacionamento parceiro, com nome, endereço e avaliação na página de cada unidade.

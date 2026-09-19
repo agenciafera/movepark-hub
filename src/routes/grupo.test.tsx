@@ -5,7 +5,7 @@ import { screen, within } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { renderWithProviders } from "@/test/utils";
 import GrupoPage from "@/routes/grupo";
-import { MARCAS, RESPONSAVEIS, ESTAGIO_ROTULO } from "@/features/grupo/marcas";
+import { MARCAS, ESTAGIO_ROTULO } from "@/features/grupo/marcas";
 import { organizationSchema } from "@/lib/jsonld";
 
 function renderPage() {
@@ -54,7 +54,7 @@ describe("GrupoPage — /grupo", () => {
     const { container } = renderPage();
 
     for (const m of MARCAS) {
-      const card = within(container.querySelector(`article#${m.id}`) as HTMLElement);
+      const card = within(container.querySelector(`li#${m.id}`) as HTMLElement);
       expect(card.getByText(ESTAGIO_ROTULO[m.estagio]), m.nome).toBeInTheDocument();
       expect(card.getByText(m.estagioDetalhe), m.nome).toBeInTheDocument();
     }
@@ -68,15 +68,16 @@ describe("GrupoPage — /grupo", () => {
     }
   });
 
-  it("nomeia quem fatura cada marca, com o CNPJ da Movepark", () => {
-    renderPage();
+  /**
+   * A página saiu do rodapé e do menu em 18/09/2026, por decisão de não divulgá-la ainda.
+   * Este teste existe para o link não voltar por descuido: quem reintroduzir tem que
+   * passar por aqui e pela lista do sitemap, onde o motivo está escrito.
+   */
+  it("não é divulgada: continua fora do sitemap enquanto a decisão de lançar não vier", async () => {
+    const { SITEMAP_STATIC_ROUTES, SITEMAP_OPT_OUT } = await import("@/lib/sitemapRoutes");
 
-    for (const r of RESPONSAVEIS) {
-      expect(screen.getByText(r.razao)).toBeInTheDocument();
-    }
-    expect(screen.getByText(/68\.183\.164\/0001-35/)).toBeInTheDocument();
-    // A Go2Park fatura pela Fera hoje, e a página diz isso (ADR do grupo, §3).
-    expect(screen.getByText(/até a titularidade passar/i)).toBeInTheDocument();
+    expect(SITEMAP_STATIC_ROUTES).not.toContain("/grupo");
+    expect(SITEMAP_OPT_OUT["/grupo"]).toMatch(/não divulgada/i);
   });
 
   it("leva ao site do Go2Park sem nofollow", () => {
@@ -87,15 +88,16 @@ describe("GrupoPage — /grupo", () => {
     expect(link.getAttribute("rel") ?? "").not.toContain("nofollow");
   });
 
-  it("tem um cartão por marca, cada um com âncora própria", () => {
+  it("monta a timeline com um item por marca, na ordem do dado e com âncora própria", () => {
     const { container } = renderPage();
 
+    const itens = [...container.querySelectorAll("ol > li[id]")];
+    expect(itens.map((li) => li.id)).toEqual(MARCAS.map((m) => m.id));
+
     for (const m of MARCAS) {
-      const card = container.querySelector(`article#${m.id}`);
-      expect(card, m.id).toBeTruthy();
-      expect(within(card as HTMLElement).getByRole("heading", { level: 3 })).toHaveTextContent(
-        m.nome,
-      );
+      const item = container.querySelector(`li#${m.id}`) as HTMLElement;
+      // O heading do item é o próprio logo: o nome acessível vem do alt/aria-label.
+      expect(within(item).getByRole("heading", { level: 3, name: m.nome })).toBeInTheDocument();
     }
   });
 });
@@ -141,9 +143,7 @@ describe("public/grupo.md", () => {
     }
   });
 
-  it("repete o estágio e quem responde por cada marca", () => {
+  it("repete o estágio de cada marca", () => {
     for (const m of MARCAS) expect(md).toContain(m.estagioDetalhe);
-    for (const r of RESPONSAVEIS) expect(md).toContain(r.razao);
-    expect(md).toContain("68.183.164/0001-35");
   });
 });
