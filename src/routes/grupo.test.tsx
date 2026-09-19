@@ -50,6 +50,25 @@ describe("GrupoPage — /grupo", () => {
     expect(ilu?.getAttribute("alt")).toMatch(/van/i);
   });
 
+  /**
+   * A arte do hero atravessa a borda do navy e entra na seção clara. Isso depende de duas
+   * classes, e as duas já quebraram o efeito: `overflow-hidden` corta a arte na borda, e
+   * `isolate` cria um contexto de empilhamento que prende o z-index da imagem dentro do
+   * hero, deixando a seção seguinte (posterior no DOM) pintar por cima. O sintoma é o
+   * mesmo nos dois casos, uma van cortada na linha exata do navy, e nenhum teste de
+   * conteúdo pega isso. Daí este teste olhar classe: é o que falha antes de ir pro ar.
+   */
+  it("mantém o hero sem recorte e acima da seção seguinte", () => {
+    const { container } = renderPage();
+    const hero = container.querySelector("section") as HTMLElement;
+    const marcas = container.querySelector("section#marcas") as HTMLElement;
+
+    expect(hero.className).not.toMatch(/overflow-hidden/);
+    expect(hero.className).not.toMatch(/(^|\s)isolate(\s|$)/);
+    expect(hero.className).toMatch(/(^|\s)z-10(\s|$)/);
+    expect(marcas.className).toMatch(/(^|\s)z-0(\s|$)/);
+  });
+
   it("declara o estágio no cartão de cada marca, com o detalhe ao lado", () => {
     const { container } = renderPage();
 

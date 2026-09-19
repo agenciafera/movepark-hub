@@ -65,11 +65,15 @@ export default function GrupoPage() {
 
       {/* Hero: a ilustração entra recortada (alfa de verdade), então ela flutua sobre o
           navy em vez de trazer um retângulo branco junto. */}
-      {/* Sem `overflow-hidden`: é ele que recortaria a arte na borda do navy. A van desce
-          para fora da faixa e invade a seção clara de baixo, que é o que dá profundidade.
+      {/* Para a van passar POR CIMA da seção clara, duas coisas precisam ser verdade, e a
+          segunda já esteve errada: (1) o hero não pode ter `overflow-hidden`, que cortaria
+          a arte na borda do navy; (2) o hero precisa de z-index MAIOR que a seção seguinte.
+          O `isolate` que estava aqui fazia justamente o contrário: criava um contexto de
+          empilhamento e prendia o `z-10` da imagem dentro do hero, então a seção de baixo,
+          que vem depois no DOM, pintava por cima e recortava a van na linha exata do navy.
           Só do desktop para cima: em 375px a arte ocupa a largura toda e descer só empurra
           o conteúdo para baixo, sem sobreposição nenhuma para render. */}
-      <section className="relative isolate bg-mp-navy">
+      <section className="relative z-10 bg-mp-navy">
         <div className="mx-auto grid max-w-[1280px] items-center gap-10 px-4 py-16 desktop:grid-cols-[1.1fr_1fr] desktop:px-8 desktop:pb-10 desktop:pt-24">
           <div className="flex flex-col gap-5">
             <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-violet-on-navy">

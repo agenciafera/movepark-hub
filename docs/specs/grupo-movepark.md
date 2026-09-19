@@ -162,12 +162,19 @@ topo). Isso importa porque o provedor oficial de imagem do projeto, o `gemini-im
 entrega transparência: ele devolve o xadrez **pintado**. O arquivo final é
 `public/images/grupo-ecossistema.webp`, 918x827, 69KB.
 
-**A arte ultrapassa o hero de propósito.** A van desce para fora da faixa navy e invade a
-seção clara de baixo, o que dá profundidade e tira o ar de banner recortado. Isso exige que
-o hero **não** tenha `overflow-hidden` (é ele que cortaria a arte na borda) e que a seção
-seguinte abra espaço no topo. Só do desktop para cima: em 375px a arte ocupa a largura
-inteira, e descer só empurraria o conteúdo. Medido: a arte passa 128px da borda do hero, e
-nada estoura a largura da tela.
+**A arte ultrapassa o hero de propósito.** A van desce para fora da faixa navy e passa por
+cima da seção clara de baixo, o que dá profundidade e tira o ar de banner recortado. Só do
+desktop para cima: em 375px a arte ocupa a largura inteira, e descer só empurraria o
+conteúdo. Medido: a arte passa 128px da borda do hero, e nada estoura a largura da tela.
+
+**Duas classes quebram o efeito, e as duas já quebraram.** `overflow-hidden` no hero corta
+a arte na borda. E `isolate` no hero cria um contexto de empilhamento que **prende o
+`z-index` da imagem dentro do hero**: a seção seguinte, posterior no DOM, passa a pintar por
+cima, e o sintoma é idêntico ao do `overflow-hidden`, uma van cortada na linha exata do
+navy. A combinação correta é hero `relative z-10` e seção seguinte `relative z-0`.
+Verificação que não depende de olho: `document.elementFromPoint` num ponto abaixo da borda
+do hero, dentro da área da imagem, tem que devolver a `IMG`; se devolver a `SECTION`, o
+efeito está quebrado. Um teste em `grupo.test.tsx` guarda as classes.
 
 **A paleta é a da Movepark, e isso é decisão, não estética.** A primeira arte saiu no azul
 e no verde do Go2Park, que são as cores de **um** dos quatro produtos: no hero da página da
