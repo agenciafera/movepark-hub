@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { http, HttpResponse } from "msw";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { getStoredCoupon, clearStoredCoupon } from "@/lib/coupon";
 import { renderWithProviders } from "@/test/utils";
 import { server } from "@/test/msw/server";
 import DescontosPage from "./descontos";
@@ -36,6 +38,8 @@ const OFERTA = {
 };
 
 describe("DescontosPage, /descontos (pública)", () => {
+  beforeEach(() => clearStoredCoupon());
+
   it("mostra a campanha com valor, teto e condição, sem exigir login", async () => {
     // `honored_by_units: 0` de propósito: a vitrine deixou de esconder campanha por causa disso,
     // porque a página saiu dos links públicos. Se alguém reintroduzir o guard aqui, este caso cai.
@@ -52,6 +56,10 @@ describe("DescontosPage, /descontos (pública)", () => {
     expect(screen.getByText("BEMVINDO30")).toBeInTheDocument();
     // O selo é o que faz a campanha de aquisição saltar na grade.
     expect(screen.getByText("Para quem nunca reservou")).toBeInTheDocument();
+    // Cupom liberado tem CTA ACIONÁVEL: botão morto aqui faria o cliente achar que ainda não vale.
+    expect(screen.getByRole("button", { name: "Usar agora" })).toBeEnabled();
+    // E o grupo diz de quem é o cupom, que é mais útil que "disponível".
+    expect(screen.getByText("Você está chegando agora")).toBeInTheDocument();
   });
 
   it("lista vazia não vira cartaz inventado", async () => {
@@ -78,10 +86,25 @@ describe("DescontosPage, /descontos (pública)", () => {
 
     renderWithProviders(<DescontosPage />);
 
-    expect(await screen.findByText("Libera conforme você reserva")).toBeInTheDocument();
+    expect(await screen.findByText("Depois da primeira reserva")).toBeInTheDocument();
     expect(screen.getByText("Desbloqueia depois da sua primeira reserva")).toBeInTheDocument();
     // O CTA fica visível, e desabilitado: some o botão e o cartão vira aviso, não cupom.
     expect(screen.getByRole("button", { name: "Usar" })).toBeDisabled();
+  });
+
+  it("tem campo de resgate, e sem sessão ele guarda o código sem prometer validade", async () => {
+    // Sem login não dá para conferir o código (a RPC exige auth.uid()), então a tela guarda e diz
+    // que a conferência é no pagamento. Fingir que aceitou faria a pessoa fechar a reserva
+    // esperando um desconto que talvez não exista.
+    stubVitrine({ offers: [OFERTA], honored_by_units: 0 });
+
+    renderWithProviders(<DescontosPage />);
+
+    const campo = await screen.findByLabelText("Código promocional");
+    await userEvent.type(campo, "promo10");
+    await userEvent.click(screen.getByRole("button", { name: "Resgatar" }));
+
+    await waitFor(() => expect(getStoredCoupon()).toBe("PROMO10"));
   });
 
   it("visitante sem conta é convidado a entrar, não bloqueado", async () => {

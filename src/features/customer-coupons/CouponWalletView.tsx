@@ -95,10 +95,10 @@ export function CouponWalletView({
       <form onSubmit={resgatar} className="flex gap-2">
         <Input
           value={codigo}
-          onChange={(e) => setCodigo(e.target.value)}
+          onChange={(e) => setCodigo(e.target.value.toUpperCase())}
           placeholder="Digite o código"
           aria-label="Código promocional"
-          className="uppercase"
+
         />
         <Button type="submit" variant="secondary" disabled={redeem.isPending || !codigo.trim()}>
           Resgatar

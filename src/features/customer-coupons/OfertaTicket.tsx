@@ -27,7 +27,14 @@ import {
  * `terms` não é renderizado: as condições saem dos campos, e o texto livre repetia as mesmas
  * frases, deixando cada cartão dizendo "Vale na primeira reserva" duas vezes.
  */
-export function OfertaTicket({ oferta }: { oferta: OfertaPublica }) {
+export function OfertaTicket({
+  oferta,
+  onUsar,
+}: {
+  oferta: OfertaPublica;
+  /** Acionar o cupom. Ausente deixa o CTA desabilitado (cupom ainda bloqueado). */
+  onUsar?: (code: string) => void;
+}) {
   const teto = ofertaCapLabel(oferta);
   const condicoes = ofertaCondicoes(oferta);
   const selo = ofertaSelo(oferta.audience);
@@ -101,12 +108,19 @@ export function OfertaTicket({ oferta }: { oferta: OfertaPublica }) {
             <span className="text-caption-sm text-muted">Entra no pagamento da reserva</span>
           )}
 
-          {/* O CTA fica visível mesmo desabilitado, de propósito: ele mostra que o cupom é uma
-              coisa que se usa, não um aviso. Aplicar de verdade acontece no checkout, onde existe
-              um pedido para descontar. */}
-          <Button size="sm" disabled className="shrink-0">
-            Usar
-          </Button>
+          {/* Disponível tem CTA de verdade: guardar o cupom e seguir para a busca é a ação que
+              existe nesta página, e um botão morto no cartão liberado faria o cliente achar que o
+              desconto ainda não vale. Bloqueado mantém o botão visível e desabilitado, para o
+              cartão continuar sendo lido como cupom e não como aviso. */}
+          {bloqueado || !onUsar ? (
+            <Button size="sm" disabled className="shrink-0">
+              Usar
+            </Button>
+          ) : (
+            <Button size="sm" className="shrink-0" onClick={() => onUsar(oferta.code)}>
+              Usar agora
+            </Button>
+          )}
         </div>
       </div>
 

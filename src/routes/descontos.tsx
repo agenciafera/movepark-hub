@@ -1,12 +1,15 @@
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
-import { MagnifyingGlass, Ticket } from "@phosphor-icons/react";
+import { Link, useNavigate } from "react-router-dom";
+import { LockSimple, MagnifyingGlass, Ticket } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
 import { useVitrinePublica } from "@/features/customer-coupons/api";
 import { OfertaTicket } from "@/features/customer-coupons/OfertaTicket";
-import { separarPorEstagio } from "@/features/customer-coupons/publicOffers.logic";
+import { ResgatarCodigo } from "@/features/customer-coupons/ResgatarCodigo";
+import { agruparPorMomento } from "@/features/customer-coupons/publicOffers.logic";
+import { storeCoupon } from "@/lib/coupon";
 
 /**
  * `/descontos`: a vitrine de campanhas da Movepark.
@@ -17,15 +20,26 @@ import { separarPorEstagio } from "@/features/customer-coupons/publicOffers.logi
  * descontos para o cliente seria promessa que nenhuma unidade cumpre (ADR-009). Ao religar os
  * links, confira esse número primeiro.
  *
- * A página é dividida em DOIS estágios porque mostrar tudo junto desperdiça o melhor argumento:
- * o cupom que a pessoa ainda não pode usar é o motivo de ela voltar. Esconder o bloqueado faria
- * a segunda reserva parecer não ter prêmio nenhum.
+ * A página agrupa por MOMENTO do cliente, e não por "disponível/indisponível": cada título
+ * responde "de quem é este cupom", e a ordem dos grupos mostra que sempre existe um próximo.
  */
 export default function DescontosPage() {
   const vitrine = useVitrinePublica();
   const { session } = useAuth();
+  const navigate = useNavigate();
   const ofertas = vitrine.data?.offers ?? [];
-  const { agora, depois } = separarPorEstagio(ofertas);
+  const grupos = agruparPorMomento(ofertas);
+
+  /**
+   * Usar um cupom aqui é guardar o código e seguir para a busca. O código sobrevive ao round-trip
+   * de login (é o mesmo canal do link de campanha, `?cupom=`), e a página da unidade o passa ao
+   * criar a reserva. Quem confere validade é o servidor, no pagamento.
+   */
+  function usar(code: string) {
+    storeCoupon(code);
+    toast.success("Cupom guardado. Escolha o estacionamento e ele entra no pagamento.");
+    navigate("/search");
+  }
 
   return (
     // `bg-surface-soft` não é escolha de gosto: os furos laterais do ticket são pintados com esta
@@ -40,13 +54,15 @@ export default function DescontosPage() {
       </Helmet>
 
       <div className="mx-auto w-full max-w-5xl px-4 py-10 desktop:py-14">
-        <header className="mb-8 max-w-2xl">
+        <header className="mb-6 max-w-2xl">
           <h1 className="text-display-xl text-ink">Cupons de desconto</h1>
           <p className="mt-2 text-body-md text-body">
             Os cupons mudam conforme você usa a Movepark. Começa com o desconto de primeira
             reserva, e cada vez que você volta libera o próximo.
           </p>
         </header>
+
+        <ResgatarCodigo />
 
         {vitrine.isError ? (
           <div className="flex flex-col items-start gap-3 rounded-md border border-error bg-badge-cancelled-bg p-4">
@@ -77,33 +93,29 @@ export default function DescontosPage() {
           </div>
         ) : (
           <>
-            {agora.length > 0 ? (
-              <section className="mb-10">
-                <h2 className="mb-1 text-title-md text-ink">Disponível agora</h2>
-                <p className="mb-4 text-body-sm text-muted">
-                  Vale já na sua próxima reserva. O desconto aparece no pagamento.
-                </p>
+            {grupos.map((g) => (
+              <section key={g.id} className="mb-10">
+                <div className="mb-4 flex items-baseline gap-2">
+                  <h2 className="text-title-md text-ink">{g.titulo}</h2>
+                  {!g.liberado ? (
+                    <span className="flex items-center gap-1 text-caption-sm text-muted">
+                      <LockSimple className="h-3.5 w-3.5" aria-hidden />
+                      ainda bloqueado
+                    </span>
+                  ) : null}
+                </div>
+                <p className="-mt-3 mb-4 text-body-sm text-muted">{g.descricao}</p>
                 <div className="grid gap-4 tablet:grid-cols-2">
-                  {agora.map((o) => (
-                    <OfertaTicket key={o.code} oferta={o} />
+                  {g.ofertas.map((o) => (
+                    <OfertaTicket
+                      key={o.code}
+                      oferta={o}
+                      onUsar={g.liberado ? usar : undefined}
+                    />
                   ))}
                 </div>
               </section>
-            ) : null}
-
-            {depois.length > 0 ? (
-              <section className="mb-10">
-                <h2 className="mb-1 text-title-md text-ink">Libera conforme você reserva</h2>
-                <p className="mb-4 text-body-sm text-muted">
-                  Estes já existem e ficam esperando. Cada reserva concluída destrava o próximo.
-                </p>
-                <div className="grid gap-4 tablet:grid-cols-2">
-                  {depois.map((o) => (
-                    <OfertaTicket key={o.code} oferta={o} />
-                  ))}
-                </div>
-              </section>
-            ) : null}
+            ))}
 
             <div className="flex flex-col gap-3 rounded-md border border-hairline bg-canvas p-5 tablet:flex-row tablet:items-center tablet:justify-between">
               <div>

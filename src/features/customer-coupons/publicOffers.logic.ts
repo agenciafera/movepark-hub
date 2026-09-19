@@ -120,14 +120,68 @@ export function ofertaEstagio(audience: string): EstagioOferta {
   }
 }
 
-/** Separa a vitrine nas duas seções: o que já vale e o que a jornada destrava. */
-export function separarPorEstagio<T extends { audience: string }>(
+export type GrupoDaVitrine<T> = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  /** Os cupons deste grupo já valem para quem está lendo a página. */
+  liberado: boolean;
+  ofertas: T[];
+};
+
+/**
+ * Os momentos do cliente, na ordem em que ele os vive.
+ *
+ * Agrupar por momento, e não por "disponível/indisponível", é o que faz a página ensinar o
+ * caminho: cada título responde "de quem é este cupom", e a ordem mostra que sempre existe um
+ * próximo. Duas seções genéricas diziam apenas se dava para usar, que é a informação menos útil
+ * para quem ainda não é cliente.
+ */
+const MOMENTOS: { id: string; audiences: string[]; titulo: string; descricao: string; liberado: boolean }[] = [
+  {
+    id: "primeira",
+    audiences: ["first_purchase"],
+    titulo: "Você está chegando agora",
+    descricao: "Ainda não reservou com a gente? Este desconto é seu.",
+    liberado: true,
+  },
+  {
+    id: "sempre",
+    audiences: ["public"],
+    titulo: "Vale em qualquer reserva",
+    descricao: "Não depende de quantas vezes você já reservou.",
+    liberado: true,
+  },
+  {
+    id: "segunda",
+    audiences: ["second_purchase"],
+    titulo: "Depois da primeira reserva",
+    descricao: "Fica guardado e aparece quando você concluir a primeira.",
+    liberado: false,
+  },
+  {
+    id: "voltar",
+    audiences: ["winback"],
+    titulo: "Se você ficar um tempo sem reservar",
+    descricao: "A gente chama de volta com desconto.",
+    liberado: false,
+  },
+];
+
+/**
+ * Distribui as ofertas nos momentos, na ordem da jornada, descartando grupo vazio.
+ *
+ * A ordem dentro de cada grupo é preservada: o servidor já ordena por `sort_order`, que é como o
+ * Manager controla o destaque, e reordenar aqui faria o campo virar decoração.
+ */
+export function agruparPorMomento<T extends { audience: string }>(
   ofertas: T[],
-): { agora: T[]; depois: T[] } {
-  const agora: T[] = [];
-  const depois: T[] = [];
-  for (const o of ofertas) {
-    (ofertaEstagio(o.audience).quando === "agora" ? agora : depois).push(o);
-  }
-  return { agora, depois };
+): GrupoDaVitrine<T>[] {
+  return MOMENTOS.map((m) => ({
+    id: m.id,
+    titulo: m.titulo,
+    descricao: m.descricao,
+    liberado: m.liberado,
+    ofertas: ofertas.filter((o) => m.audiences.includes(o.audience)),
+  })).filter((g) => g.ofertas.length > 0);
 }

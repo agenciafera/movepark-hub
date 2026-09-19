@@ -172,25 +172,46 @@ realmente vende. Contar `pricing_rule` sozinho mentiria: as 20 unidades hub têm
 vendável. A RPC não roda `simulate_price` de propósito, porque a chamada é anônima e o `anon` tem
 `statement_timeout` curto.
 
-### Os dois estágios: o que vale agora e o que a pessoa destrava
+### Agrupada por momento do cliente, não por "disponível"
 
 A vitrine é pública, então não há sessão para consultar e o leitor é tratado como **visitante
 novo**. Isso não é chute, é a única leitura honesta possível, e acerta o caso que importa: quem
-descobre a Movepark agora.
+descobre a Movepark agora. Para quem já tem conta, quem dá o veredito real é a carteira, que
+consulta o histórico por `coupon_evaluate`.
 
-| Estágio | Audiências | Como aparece |
-|---|---|---|
-| `agora` | `first_purchase`, `public` | Cartão cheio, valor em verde, selo colorido |
-| `depois` | `second_purchase`, `winback` | Cartão apagado, cadeado e a frase que diz o que destrava |
+| Grupo | Audiência | Liberado | O que o título responde |
+|---|---|---|---|
+| Você está chegando agora | `first_purchase` | sim | de quem é este cupom |
+| Vale em qualquer reserva | `public` | sim | não depende de histórico |
+| Depois da primeira reserva | `second_purchase` | não | o que destrava |
+| Se você ficar um tempo sem reservar | `winback` | não | o que destrava |
+
+Agrupar por momento, e não por "disponível/indisponível", é o que faz a página **ensinar o
+caminho**: cada título diz de quem é o cupom, e a ordem mostra que sempre existe um próximo. Duas
+seções genéricas diziam apenas se dava para usar, que é a informação menos útil para quem ainda não
+é cliente. Grupo sem cupom não vira seção vazia.
 
 **Mostrar o cupom bloqueado é o ponto, não um efeito colateral.** Ele é o argumento de voltar:
-esconder o cupom da segunda reserva faria a segunda reserva parecer não ter prêmio nenhum. Por isso
-o que destrava fica ao lado do CTA, e não no rodapé do cartão.
+esconder o cupom da segunda reserva faria a segunda reserva parecer não ter prêmio nenhum.
 
-O **CTA "Usar" aparece em todo cartão, sempre desabilitado**. Ele existe para o cartão ser lido
-como cupom, e não como aviso; aplicar de verdade acontece no checkout, onde existe um pedido para
-descontar. Para quem já tem conta, quem dá o veredito real é a carteira, que consulta o histórico
-por `coupon_evaluate`.
+### O CTA e o campo de resgate
+
+| Estado | CTA | O que faz |
+|---|---|---|
+| Liberado | **Usar agora**, ativo | Guarda o código (`storeCoupon`) e leva para `/search` |
+| Bloqueado | **Usar**, desabilitado | Mantém o cartão legível como cupom, não como aviso |
+
+O "Usar agora" reaproveita o canal do link de campanha (`?cupom=`): o código sobrevive ao
+round-trip de login e a página da unidade o passa ao criar a reserva. Botão morto no cartão
+liberado faria o cliente achar que o desconto ainda não vale.
+
+O **campo de resgate** tem dois comportamentos, e a diferença não é cosmética:
+
+- **Com sessão**, chama `coupon_redeem`, que confere o código no servidor e guarda na carteira.
+- **Sem sessão**, não há como conferir (a RPC exige `auth.uid()`, e validar por outro caminho
+  exigiria expor o catálogo de códigos). O código é guardado na sessão e a mensagem diz que **a
+  conferência acontece no pagamento**. Fingir que foi aceito faria a pessoa fechar a reserva
+  esperando um desconto que talvez não exista.
 
 ### O cartão em formato de ticket
 
@@ -268,7 +289,7 @@ pessoa tem 0, 1 ou mais reservas pagas.
 | Lógica do formulário | `src/features/customer-coupons/platformCoupons.logic.test.ts` (21 casos) |
 | Os dois modos da tela | `src/routes/account/descontos.test.tsx` (3 casos) |
 | Cartão da vitrine | `src/features/customer-coupons/publicOffers.logic.test.ts` (11 casos) |
-| Estágios e guard da vitrine | `src/routes/descontos.test.tsx` (4 casos) e `coupon_wallet.test.sql` §10 |
+| Grupos, CTA e resgate | `src/routes/descontos.test.tsx` (5 casos) e `coupon_wallet.test.sql` §10 |
 | Split | `supabase/functions/_shared/payments/split.test.ts` (3 casos novos, incluindo a recusa por teto estourado) |
 | Banco | `supabase/tests/coupon_wallet.test.sql` |
 | Navegador | `e2e/windup/account-descontos.json` e `e2e/windup/manager-marketing-cupons.json` |

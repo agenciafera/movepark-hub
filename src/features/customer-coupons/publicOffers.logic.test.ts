@@ -6,7 +6,7 @@ import {
   ofertaCondicoes,
   ofertaSelo,
   ofertaEstagio,
-  separarPorEstagio,
+  agruparPorMomento,
 } from "./publicOffers.logic";
 import type { OfertaPublica } from "./api";
 
@@ -131,25 +131,56 @@ describe("ofertaEstagio", () => {
   });
 });
 
-describe("separarPorEstagio", () => {
-  it("separa o que já vale do que a pessoa destrava reservando", () => {
-    const { agora, depois } = separarPorEstagio([
+describe("agruparPorMomento", () => {
+  it("agrupa por momento do cliente, na ordem em que ele os vive", () => {
+    const grupos = agruparPorMomento([
+      { audience: "winback" },
+      { audience: "first_purchase" },
+      { audience: "second_purchase" },
+      { audience: "public" },
+    ]);
+    // A ordem é da jornada, não da lista que chegou: quem está começando lê primeiro o que é dele.
+    expect(grupos.map((g) => g.id)).toEqual(["primeira", "sempre", "segunda", "voltar"]);
+  });
+
+  it("marca quais grupos já valem para quem está lendo", () => {
+    const grupos = agruparPorMomento([
       { audience: "first_purchase" },
       { audience: "public" },
       { audience: "second_purchase" },
       { audience: "winback" },
     ]);
-    expect(agora).toHaveLength(2);
-    expect(depois.map((o) => o.audience)).toEqual(["second_purchase", "winback"]);
+    expect(grupos.map((g) => [g.id, g.liberado])).toEqual([
+      ["primeira", true],
+      ["sempre", true],
+      ["segunda", false],
+      ["voltar", false],
+    ]);
   });
 
-  it("preserva a ordem que o servidor mandou dentro de cada grupo", () => {
-    // O servidor ordena por `sort_order`, que é como o Manager controla o destaque. Reordenar aqui
-    // faria o campo virar decoração.
-    const { agora } = separarPorEstagio([
+  it("grupo sem cupom não vira seção vazia na tela", () => {
+    const grupos = agruparPorMomento([{ audience: "first_purchase" }]);
+    expect(grupos).toHaveLength(1);
+    expect(grupos[0].id).toBe("primeira");
+  });
+
+  it("preserva a ordem do servidor dentro do grupo, que é o sort_order do Manager", () => {
+    const grupos = agruparPorMomento([
       { audience: "public", code: "b" },
-      { audience: "first_purchase", code: "a" },
+      { audience: "public", code: "a" },
     ] as { audience: string; code: string }[]);
-    expect(agora.map((o) => o.code)).toEqual(["b", "a"]);
+    expect(grupos[0].ofertas.map((o) => o.code)).toEqual(["b", "a"]);
+  });
+
+  it("todo grupo tem título e descrição, porque a seção sem texto não ensina nada", () => {
+    for (const g of agruparPorMomento([
+      { audience: "first_purchase" },
+      { audience: "public" },
+      { audience: "second_purchase" },
+      { audience: "winback" },
+    ])) {
+      expect(g.titulo.length).toBeGreaterThan(0);
+      expect(g.descricao.length).toBeGreaterThan(0);
+    }
   });
 });
