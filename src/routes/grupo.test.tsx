@@ -88,6 +88,24 @@ describe("GrupoPage — /grupo", () => {
   });
 
   /**
+   * Data em vitrine é promessa. O que já está no ar pode dizer desde quando; o que ainda
+   * não existe não pode receber data nem previsão, porque prazo de coisa que a casa ainda
+   * não controla é exatamente o tipo de promessa que volta como cobrança.
+   */
+  it("mostra desde quando cada marca no ar opera, e não data o que não lançou", () => {
+    const { container } = renderPage();
+
+    expect(screen.getByText("Desde 2016")).toBeInTheDocument();
+    expect(screen.getByText("Desde fevereiro de 2026")).toBeInTheDocument();
+
+    for (const m of MARCAS) {
+      const item = container.querySelector(`li#${m.id}`) as HTMLElement;
+      const temData = /Desde /.test(item.textContent ?? "");
+      expect(temData, m.nome).toBe(m.estagio === "no-ar");
+    }
+  });
+
+  /**
    * A página saiu do rodapé e do menu em 18/09/2026, por decisão de não divulgá-la ainda.
    * Este teste existe para o link não voltar por descuido: quem reintroduzir tem que
    * passar por aqui e pela lista do sitemap, onde o motivo está escrito.

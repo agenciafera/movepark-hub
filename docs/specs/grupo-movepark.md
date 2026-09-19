@@ -115,10 +115,10 @@ registrado na skill `harmonizar-paginas`.
    sobre o navy.
 2. **Mural das quatro marcas**, cada uma com logo, uma linha do que faz e o estágio.
 3. **Organograma**: a marca-casa no topo e os quatro produtos abaixo. Ver §5.2.
-4. **Timeline vertical, um item por produto**, com o marcador na cor da marca, o logo como
-   heading do item, o estágio ao lado e o link para o site próprio quando existe. Eram
-   quatro cartões soltos, que empilhavam sem dizer que fazem parte de um conjunto; a linha
-   é o que costura os quatro como sequência da casa.
+4. **Timeline centralizada, um item por produto**: a linha desce pelo meio e os itens
+   alternam os lados, com o marcador na cor da marca, o logo como heading, o estágio e a
+   data de início. Eram quatro cartões soltos, que empilhavam sem dizer que fazem parte de
+   um conjunto; a linha é o que costura os quatro como sequência da casa. Ver §5.4.
 5. **Desambiguação**, que continua necessária: existe homônima no mercado, e o CNPJ é o
    que resolve.
 
@@ -154,6 +154,33 @@ a única**, então ela não pode cair junto numa limpeza futura. Se a estrutura 
 precisar voltar à tela, ela volta como esta seção, e não como adjetivo solto no meio de um
 parágrafo.
 
+### 5.4 A timeline, e o que aprendemos alinhando texto
+
+Os itens alternam os lados no desktop, mas **só o cabeçalho encosta na linha**: o logo, o
+selo e a data acompanham o lado, e o parágrafo fica sempre alinhado à esquerda. A primeira
+versão alinhou o item inteiro à direita, que é o padrão clássico da timeline alternada, e
+ficou ruim de ler: a borda irregular cai justamente onde a leitura começa, e cada linha do
+parágrafo passa a começar num ponto diferente. Simetria que custa legibilidade não vale.
+
+No celular a linha volta para a esquerda e os itens empilham de um lado só. Meia tela para
+cada lado em 375px daria cerca de 160px de texto útil, onde "estacionamento" sozinho já
+quebra em duas linhas.
+
+**As datas são só do que já está no ar** (`desde` em `marcas.ts`, opcional). A Movepark
+opera desde 2016, e o parágrafo dela diz isso com todas as letras, porque o selo sozinho
+("Desde 2016") num item chamado "Movepark Hub" faria parecer que a plataforma de reserva
+tem dez anos. O que tem dez anos é a marca; o Hub é a fase atual dela. Produto em
+desenvolvimento **não** recebe data nem previsão: prazo de coisa que ainda não existe é o
+tipo de promessa que volta como cobrança. Um teste guarda as duas metades da regra.
+
+### 5.5 Por que o organograma é preto e branco
+
+O desenho da estrutura é monocromático, logos incluídos (`grayscale`). Ele mostra como a
+casa se organiza, e a cor ali competiria com a timeline, que é onde cada marca aparece na
+cor dela. Como os selos também ficam cinza, a diferença entre "No ar" e "Em desenvolvimento"
+passa a ser só o texto, que já é explícito: nenhuma informação do desenho depende de
+enxergar cor.
+
 ### 5.3 A ilustração
 
 Gerada no Higgsfield (`gpt_image_2_5`) e recortada pelo `remove_background` do mesmo
@@ -175,6 +202,10 @@ navy. A combinação correta é hero `relative z-10` e seção seguinte `relativ
 Verificação que não depende de olho: `document.elementFromPoint` num ponto abaixo da borda
 do hero, dentro da área da imagem, tem que devolver a `IMG`; se devolver a `SECTION`, o
 efeito está quebrado. Um teste em `grupo.test.tsx` guarda as classes.
+
+**A sombra é `drop-shadow`, não `box-shadow`.** Como o arquivo tem alfa de verdade, o
+`drop-shadow` segue o contorno da van, do celular e da plataforma. `box-shadow` desenharia
+a sombra do **retângulo** da imagem, e apareceria um bloco escuro no meio do navy.
 
 **A paleta é a da Movepark, e isso é decisão, não estética.** A primeira arte saiu no azul
 e no verde do Go2Park, que são as cores de **um** dos quatro produtos: no hero da página da

@@ -9,7 +9,11 @@ São quatro produtos em torno da mesma ideia: vaga e van com hora marcada, preç
 
 Reserva de vaga em estacionamento de aeroporto, com preço fechado na tela.
 
-É a plataforma de reserva onde você está agora. Busca pelo destino, compara os estacionamentos parceiros, escolhe o tipo de vaga e paga online. O valor da tela é o valor da reserva, sem taxa na chegada.
+No ar desde 2016.
+
+A Movepark começou em 2016, levando gente do estacionamento até o terminal do aeroporto. São dez anos de operação, e o Hub é a fase atual dela: a plataforma de reserva onde você está agora.
+
+Busca pelo destino, compara os estacionamentos parceiros, escolhe o tipo de vaga e paga online. O valor da tela é o valor da reserva, sem taxa na chegada.
 
 O pagamento é dividido na hora da compra entre a Movepark e o estacionamento. O parceiro recebe a parte dele direto do meio de pagamento, sem abrir conta em lugar nenhum e sem depender de repasse manual no fim do mês.
 
@@ -20,6 +24,8 @@ Quem prefere resolver pelo WhatsApp fala com um assistente que entende o pedido,
 ## Go2Park
 
 A van do traslado no mapa, em tempo real, sem instalar nada.
+
+No ar desde fevereiro de 2026.
 
 A Go2Park mostra no mapa, em tempo real, a van que está indo buscar você. Não precisa instalar aplicativo nem criar conta: o link abre no navegador do celular e avisa quando a van se aproxima.
 

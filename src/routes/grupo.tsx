@@ -8,6 +8,7 @@ import { Organograma } from "@/features/grupo/Organograma";
 import { MARCAS, ESTAGIO_ROTULO } from "@/features/grupo/marcas";
 import { breadcrumbSchema, organizationSchema } from "@/lib/jsonld";
 import { siteUrl } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 const TITULO = "O grupo Movepark";
 const META =
@@ -96,7 +97,10 @@ export default function GrupoPage() {
             </div>
           </div>
 
-          {/* Halo atrás da arte. A saia da van é navy #29263F, a mesma cor do hero, então
+          {/* A sombra é `drop-shadow`, não `box-shadow`: como o arquivo tem alfa de
+              verdade, ela segue o contorno da van e do celular. `box-shadow` desenharia a
+              sombra do retângulo da imagem, e apareceria um bloco escuro no meio do navy.
+              Halo atrás da arte. A saia da van é navy #29263F, a mesma cor do hero, então
               sem ele a base do veículo e as rodas somem no fundo. É luz, não caixa: um
               brilho radial fraco que devolve o contorno sem recortar um retângulo. */}
           <div className="relative z-10 mx-auto w-full max-w-[420px] desktop:max-w-none desktop:-mb-28 desktop:translate-y-14">
@@ -109,7 +113,7 @@ export default function GrupoPage() {
             alt="Ilustração isométrica de uma van elétrica de traslado ao lado de uma vaga demarcada e de um celular com o mapa da rota"
             width={918}
             height={827}
-            className="relative mx-auto w-full"
+            className="relative mx-auto w-full [filter:drop-shadow(0_24px_28px_rgba(15,14,30,0.38))]"
             loading="eager"
             decoding="async"
           />
@@ -153,54 +157,97 @@ export default function GrupoPage() {
         </div>
       </section>
 
-      {/* Produto a produto, em timeline vertical: a linha amarra os quatro como uma
-          sequência da casa, e o marcador na cor da marca dá o ritmo da leitura. Antes eram
-          quatro cartões soltos, que empilhavam sem dizer que fazem parte de um conjunto. */}
+      {/* Produto a produto, em timeline centralizada: a linha desce pelo meio e os itens
+          alternam os lados. A linha amarra os quatro como uma sequência da casa; antes eram
+          cartões soltos, que empilhavam sem dizer que fazem parte de um conjunto.
+
+          No celular a linha volta para a esquerda e os itens empilham de um lado só. Meia
+          tela para cada lado em 375px daria 160px de texto útil, onde "estacionamento"
+          sozinho já quebra em duas linhas. */}
       <section className="bg-canvas">
         <div className="mx-auto max-w-[1080px] px-4 py-16 desktop:px-8 desktop:py-24">
-          <h2 className="text-balance text-display-2xl text-ink">Produto a produto</h2>
+          <h2 className="text-balance text-center text-display-2xl text-ink">
+            Produto a produto
+          </h2>
 
-          <ol className="relative mt-10 border-l border-hairline pl-7 desktop:mt-12 desktop:pl-12">
-            {MARCAS.map((m) => (
-              <li key={m.id} id={m.id} className="relative scroll-mt-24 pb-12 last:pb-0">
-                {/* O marcador monta em cima da linha, com anel da cor do fundo para a
-                    linha não atravessar o círculo. */}
-                <span
-                  className="absolute top-1.5 h-3.5 w-3.5 rounded-full ring-4 ring-canvas"
-                  style={{ backgroundColor: m.cor, left: "calc(-1.75rem - 7px)" }}
-                  aria-hidden
-                />
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-                    {/* O logo É o heading do item. Escrever o nome de novo embaixo dele
-                        repete a informação na tela e no leitor de tela, que já ouve o nome
-                        pelo alt da imagem. O nível 3 mantém a hierarquia da seção. */}
-                    <h3 className="flex items-center">
-                      <MarcaLogo id={m.id} className="h-7 desktop:h-8" />
-                    </h3>
-                    <SeloEstagio marca={m} />
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {m.paragrafos.map((t) => (
-                      <p key={t.slice(0, 24)} className="max-w-[68ch] text-pretty text-body-md text-body">
-                        {t}
-                      </p>
-                    ))}
-                    {m.url && (
-                      <a
-                        href={m.url}
-                        target="_blank"
-                        rel="noopener"
-                        className="inline-flex w-fit items-center gap-1 text-body-sm font-semibold text-mp-primary underline underline-offset-4"
-                      >
-                        {m.url.replace("https://", "")}
-                        <ArrowUpRight className="h-4 w-4" aria-hidden />
-                      </a>
+          <ol className="relative mx-auto mt-10 max-w-[920px] desktop:mt-14">
+            <span
+              className="absolute inset-y-0 left-[7px] w-px bg-hairline desktop:left-1/2"
+              aria-hidden
+            />
+            {MARCAS.map((m, i) => {
+              const aEsquerda = i % 2 === 0;
+              return (
+                <li
+                  key={m.id}
+                  id={m.id}
+                  className={cn(
+                    "relative scroll-mt-24 pb-12 pl-8 last:pb-0 desktop:w-1/2 desktop:pl-0",
+                    aEsquerda ? "desktop:pr-12" : "desktop:ml-auto desktop:pl-12",
+                  )}
+                >
+                  {/* O marcador monta em cima da linha: no celular ela passa pela esquerda
+                      do item, no desktop pela borda que encosta no meio da tela. */}
+                  <span
+                    className={cn(
+                      "absolute top-1.5 left-0 h-3.5 w-3.5 rounded-full ring-4 ring-canvas",
+                      aEsquerda
+                        ? "desktop:left-auto desktop:-right-[7px]"
+                        : "desktop:-left-[7px]",
                     )}
+                    style={{ backgroundColor: m.cor }}
+                    aria-hidden
+                  />
+                  <div className="flex flex-col gap-4">
+                    <div
+                      className={cn(
+                        "flex flex-wrap items-center gap-x-4 gap-y-2",
+                        aEsquerda && "desktop:justify-end",
+                      )}
+                    >
+                      {/* O logo É o heading do item. Escrever o nome de novo embaixo dele
+                          repete a informação na tela e no leitor de tela, que já ouve o
+                          nome pelo alt da imagem. O nível 3 mantém a hierarquia. */}
+                      <h3 className="flex items-center">
+                        <MarcaLogo id={m.id} className="h-7 desktop:h-8" />
+                      </h3>
+                      <SeloEstagio marca={m} />
+                    </div>
+                    {m.desde && (
+                      <p
+                        className={cn(
+                          "-mt-2 text-caption font-semibold uppercase tracking-[0.4px] text-muted",
+                          aEsquerda && "desktop:text-right",
+                        )}
+                      >
+                        Desde {m.desde}
+                      </p>
+                    )}
+                    <div className="flex flex-col gap-3">
+                      {m.paragrafos.map((t) => (
+                        <p key={t.slice(0, 24)} className="text-pretty text-body-md text-body">
+                          {t}
+                        </p>
+                      ))}
+                      {m.url && (
+                        <a
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener"
+                          className={cn(
+                            "inline-flex w-fit items-center gap-1 text-body-sm font-semibold text-mp-primary underline underline-offset-4",
+                            aEsquerda && "desktop:ml-auto",
+                          )}
+                        >
+                          {m.url.replace("https://", "")}
+                          <ArrowUpRight className="h-4 w-4" aria-hidden />
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>

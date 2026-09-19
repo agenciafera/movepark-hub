@@ -11,6 +11,11 @@ import { MarcaLogo } from "./MarcaLogo";
  *
  * Os conectores só aparecem do tablet para cima. Em 375px, quatro ramos com linha viram
  * um emaranhado de 2px: lá o desenho vira lista, que é o que cabe num polegar.
+ *
+ * **O desenho inteiro é preto e branco**, logos incluídos. Ele mostra a estrutura, e cor
+ * aqui só competiria com a timeline de produtos, que é onde cada marca aparece na cor
+ * dela. Como os selos também ficam cinza, a diferença entre "No ar" e "Em desenvolvimento"
+ * passa a ser só o texto, que já é explícito: nenhuma informação depende de enxergar cor.
  */
 export function Organograma() {
   return (
@@ -20,7 +25,7 @@ export function Organograma() {
         <img
           src="/brand/logo-movepark.svg"
           alt="Movepark"
-          className="h-7 w-auto"
+          className="h-7 w-auto grayscale"
           loading="lazy"
           decoding="async"
         />
@@ -47,15 +52,12 @@ export function Organograma() {
               />
               <div
                 className="flex h-full flex-col items-center gap-3 rounded-md border border-hairline bg-canvas px-4 py-5 text-center"
-                style={{ borderTopColor: m.cor, borderTopWidth: 3 }}
+                style={{ borderTopColor: "#9A9AA5", borderTopWidth: 3 }}
               >
-                <MarcaLogo id={m.id} />
+                <MarcaLogo id={m.id} className="grayscale" />
                 <span
                   className="rounded-full px-2.5 py-0.5 text-caption font-bold"
-                  style={{
-                    color: m.estagio === "no-ar" ? "#0F7A3D" : "#6A6A6A",
-                    backgroundColor: m.estagio === "no-ar" ? "#E6F6EC" : "#F0F0F1",
-                  }}
+                  style={{ color: "#4A4A55", backgroundColor: "#EFEFF1" }}
                 >
                   {ESTAGIO_ROTULO[m.estagio]}
                 </span>

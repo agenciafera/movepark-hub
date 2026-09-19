@@ -21,6 +21,14 @@ export type Marca = {
   estagio: Estagio;
   /** Frase curta ao lado do selo de estágio. */
   estagioDetalhe: string;
+  /**
+   * Quando aquela marca começou a operar, como ela aparece na timeline.
+   *
+   * Só existe para o que já está no ar. Produto em desenvolvimento **não** recebe data,
+   * nem "em breve" nem previsão: data em vitrine é promessa, e prazo de coisa que ainda
+   * não existe é o tipo de promessa que a casa não controla.
+   */
+  desde?: string;
   /** Site próprio, quando existe. */
   url?: string;
   /** Cor da marca, usada no selo e no traço do cartão. Não é token: é identidade. */
@@ -34,12 +42,14 @@ export const MARCAS: Marca[] = [
     nome: "Movepark Hub",
     resumo: "Reserva de vaga em estacionamento de aeroporto, com preço fechado na tela.",
     paragrafos: [
-      "É a plataforma de reserva onde você está agora. Busca pelo destino, compara os estacionamentos parceiros, escolhe o tipo de vaga e paga online. O valor da tela é o valor da reserva, sem taxa na chegada.",
+      "A Movepark começou em 2016, levando gente do estacionamento até o terminal do aeroporto. São dez anos de operação, e o Hub é a fase atual dela: a plataforma de reserva onde você está agora.",
+      "Busca pelo destino, compara os estacionamentos parceiros, escolhe o tipo de vaga e paga online. O valor da tela é o valor da reserva, sem taxa na chegada.",
       "O pagamento é dividido na hora da compra entre a Movepark e o estacionamento. O parceiro recebe a parte dele direto do meio de pagamento, sem abrir conta em lugar nenhum e sem depender de repasse manual no fim do mês.",
       "Quem prefere resolver pelo WhatsApp fala com um assistente que entende o pedido, consulta o preço daquela unidade e devolve o link de pagamento na própria conversa.",
     ],
     estagio: "no-ar",
     estagioDetalhe: "Reserva e pagamento funcionando em todas as unidades parceiras.",
+    desde: "2016",
     cor: "#4041A3",
     acento: "#5D5FEF",
   },
@@ -53,6 +63,7 @@ export const MARCAS: Marca[] = [
     ],
     estagio: "no-ar",
     estagioDetalhe: "Em três unidades com contrato.",
+    desde: "fevereiro de 2026",
     url: "https://go2park.com.br",
     cor: "#1B5FFF",
     acento: "#A4E244",
