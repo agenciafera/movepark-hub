@@ -7,7 +7,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(45);
+select plan(49);
 
 -- ── schema ──────────────────────────────────────────────────────────────────
 select has_table('public', 'commission_rule', 'commission_rule existe');
@@ -173,6 +173,25 @@ select is(jsonb_array_length(public.my_commission_channels(current_setting('test
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
 select throws_ok($$select public.my_commission_channels(current_setting('test.a')::uuid)$$, '42501', null,
   'quem não é da empresa não vê os canais dela');
+
+-- ── ninguém edita a comissão por escrita direta ──────────────────────────────
+-- A RLS deixa o dono e o membro da empresa darem UPDATE na reserva. O pacote e a prova não podem
+-- ir junto: seria o parceiro zerando a própria comissão antes do cliente pagar.
+insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount, origin)
+  values ('00000000-0000-0000-0000-0000000b0004', 'MP-COMM-4', current_setting('test.cust')::uuid, current_setting('test.la')::uuid,
+          '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z', 'pending', 200, 'api');
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
+select throws_ok($$update public.booking set commission_take_rate_bps = 0, commission_channel = 'x' where id = '00000000-0000-0000-0000-0000000b0004'$$,
+  '42501', null, 'escrita direta não muda a comissão da reserva');
+select throws_ok($$update public.booking set utm_source = 'comm-a-site' where id = '00000000-0000-0000-0000-0000000b0004'$$,
+  '42501', null, 'nem a prova da origem, que faria o congelamento tardio casar a regra');
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
+select throws_ok($$update public.booking set commission_take_rate_bps = 0 where id = '00000000-0000-0000-0000-0000000b0004'$$,
+  '42501', null, 'nem hub_admin por escrita direta: a correção passa pela RPC, que deixa histórico');
+select is(public.admin_set_booking_commission('00000000-0000-0000-0000-0000000b0004', '00000000-0000-0000-0000-0000000c0001', 'correção de teste') ->> 'channel',
+  'Site do parceiro', 'pela RPC o hub_admin corrige, com o guarda ligado');
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
 
 -- ── relatório por canal e alerta de concentração ────────────────────────────
 -- Empresa A no período: MP-COMM-1 (canal da regra, R$ 200, perna Movepark R$ 10) e uma venda do

@@ -185,11 +185,18 @@ pelo parceiro: o pacote pela própria reserva (a RLS já deixa), e as regras del
 `my_commission_channels`, que exige `finance:read` e nunca devolve regra global nem de outra empresa.
 `resolve_commission` e `booking_apply_commission` só rodam para `service_role` e `hub_admin`.
 
+**Guarda de escrita (achado na revisão de segurança):** a RLS de `booking` deixa o dono e qualquer
+membro da empresa darem UPDATE na linha, e o `booking_guard_status_transition` libera o membro da
+empresa sem olhar coluna. Com o pacote na reserva isso viraria caminho de dinheiro (PATCH em
+`commission_take_rate_bps = 0` antes do cliente pagar, ou troca de `utm_source` numa reserva ainda
+sem pacote). O trigger `booking_guard_commission` recusa, em escrita direta, mudança em
+`commission_*`, `attribution`, `origin` e `utm_*`, inclusive de hub_admin: a correção é só pela RPC.
+
 ## Como ficou implementado
 
 | Peça | Onde |
 |---|---|
-| Regras, resolução, congelamento, correção | `20261121050000_comissao_por_origem.sql`, pgTAP `commission_rule.test.sql` (45) |
+| Regras, resolução, congelamento, correção | `20261121050000_comissao_por_origem.sql`, pgTAP `commission_rule.test.sql` (49) |
 | Chargeback pela regra | `20261121060000_chargeback_pela_regra.sql`, pgTAP `payout_debt.test.sql` (37), `_shared/payments/commission.ts` (`chargebackDebtCents`), `pagarme-webhook` |
 | Canais do parceiro | `20261121070000_canais_de_venda_do_parceiro.sql` |
 | Relatório e alerta | `20261121080000_relatorio_por_canal.sql` |
