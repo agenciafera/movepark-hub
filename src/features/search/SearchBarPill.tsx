@@ -69,7 +69,7 @@ export function SearchBarPill({
   }
 
   // Padding vertical que dá altura aos campos quando empilhados no mobile; no pill (tablet+)
-  // a altura vem da própria barra (h-[76px]/h-14) e o py volta a zero.
+  // a altura vem da própria barra (h-[72px]/h-14) e o py volta a zero.
   const fieldTrigger = "py-3.5 tablet:py-0";
 
   return (
@@ -82,11 +82,11 @@ export function SearchBarPill({
         // Mobile: card empilhado (coluna). Tablet+: pill horizontal.
         "flex w-full max-w-4xl flex-col rounded-3xl border border-hairline bg-canvas shadow-tier",
         "tablet:flex-row tablet:items-stretch tablet:rounded-full",
-        variant === "hero" ? "tablet:h-[76px]" : "tablet:h-14",
+        variant === "hero" ? "tablet:h-[72px]" : "tablet:h-14",
         className,
       )}
     >
-      <div className={cn("min-w-0 flex-[1.5]", SEARCH_FIELD_DIVIDER)}>
+      <div className={cn("min-w-0 flex-[1.4]", SEARCH_FIELD_DIVIDER)}>
         <DestinationCombobox
           value={dest}
           pointValue={point}
@@ -108,7 +108,7 @@ export function SearchBarPill({
           }}
         />
       </div>
-      <div className={cn("min-w-0 tablet:w-[156px]", SEARCH_FIELD_DIVIDER)}>
+      <div className={cn("min-w-0 tablet:w-[140px]", SEARCH_FIELD_DIVIDER)}>
         <VehicleField value={vehicle} onChange={setVehicle} />
       </div>
       {/* O respiro lateral do botão acompanha o vertical (a folga entre ele e a borda da barra),
@@ -116,7 +116,7 @@ export function SearchBarPill({
       <div
         className={cn(
           "flex items-center p-2 tablet:py-0",
-          variant === "hero" ? "tablet:px-3.5" : "tablet:px-2",
+          variant === "hero" ? "tablet:px-3" : "tablet:px-2",
         )}
       >
         <Button
