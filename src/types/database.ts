@@ -589,12 +589,19 @@ export type Database = {
       }
       booking: {
         Row: {
+          attribution: Json | null
           cancellation_email_sent_at: string | null
           check_in_at: string
           check_out_at: string
           checked_in_at: string | null
           checked_out_at: string | null
           code: string
+          commission_chargeback_bearer: string | null
+          commission_channel: string | null
+          commission_fee_payer: string | null
+          commission_locked: boolean
+          commission_rule_id: string | null
+          commission_take_rate_bps: number | null
           confirmation_email_sent_at: string | null
           created_at: string
           created_via_api_key_id: string | null
@@ -635,12 +642,19 @@ export type Database = {
           voucher_url: string | null
         }
         Insert: {
+          attribution?: Json | null
           cancellation_email_sent_at?: string | null
           check_in_at: string
           check_out_at: string
           checked_in_at?: string | null
           checked_out_at?: string | null
           code: string
+          commission_chargeback_bearer?: string | null
+          commission_channel?: string | null
+          commission_fee_payer?: string | null
+          commission_locked?: boolean
+          commission_rule_id?: string | null
+          commission_take_rate_bps?: number | null
           confirmation_email_sent_at?: string | null
           created_at?: string
           created_via_api_key_id?: string | null
@@ -681,12 +695,19 @@ export type Database = {
           voucher_url?: string | null
         }
         Update: {
+          attribution?: Json | null
           cancellation_email_sent_at?: string | null
           check_in_at?: string
           check_out_at?: string
           checked_in_at?: string | null
           checked_out_at?: string | null
           code?: string
+          commission_chargeback_bearer?: string | null
+          commission_channel?: string | null
+          commission_fee_payer?: string | null
+          commission_locked?: boolean
+          commission_rule_id?: string | null
+          commission_take_rate_bps?: number | null
           confirmation_email_sent_at?: string | null
           created_at?: string
           created_via_api_key_id?: string | null
@@ -767,6 +788,44 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_commission_override: {
+        Row: {
+          booking_id: string
+          changed_by: string | null
+          created_at: string
+          from_package: Json | null
+          id: string
+          reason: string
+          to_package: Json
+        }
+        Insert: {
+          booking_id: string
+          changed_by?: string | null
+          created_at?: string
+          from_package?: Json | null
+          id?: string
+          reason: string
+          to_package: Json
+        }
+        Update: {
+          booking_id?: string
+          changed_by?: string | null
+          created_at?: string
+          from_package?: Json | null
+          id?: string
+          reason?: string
+          to_package?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_commission_override_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
             referencedColumns: ["id"]
           },
         ]
@@ -1081,6 +1140,71 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_rule: {
+        Row: {
+          chargeback_bearer: string
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          gateway_fee_payer: string
+          id: string
+          is_active: boolean
+          match_white_label: boolean
+          name: string
+          priority: number
+          take_rate_bps: number
+          updated_at: string
+          utm_sources: string[]
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          chargeback_bearer: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          gateway_fee_payer: string
+          id?: string
+          is_active?: boolean
+          match_white_label?: boolean
+          name: string
+          priority?: number
+          take_rate_bps: number
+          updated_at?: string
+          utm_sources?: string[]
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          chargeback_bearer?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          gateway_fee_payer?: string
+          id?: string
+          is_active?: boolean
+          match_white_label?: boolean
+          name?: string
+          priority?: number
+          take_rate_bps?: number
+          updated_at?: string
+          utm_sources?: string[]
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rule_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
             referencedColumns: ["id"]
           },
         ]
@@ -5954,6 +6078,10 @@ export type Database = {
           title: string
         }[]
       }
+      admin_set_booking_commission: {
+        Args: { p_booking_id: string; p_reason: string; p_rule_id: string | null }
+        Returns: Json
+      }
       admin_set_fare: {
         Args: {
           p_benefits: Json
@@ -6301,6 +6429,10 @@ export type Database = {
           remaining: number
           sold_out: boolean
         }[]
+      }
+      booking_apply_commission: {
+        Args: { p_attribution?: Json; p_booking_id: string }
+        Returns: Json
       }
       booking_attribution: {
         Args: { p_from: string; p_location_ids?: string[]; p_to: string }
@@ -7625,6 +7757,16 @@ export type Database = {
         Returns: undefined
       }
       review_request_expected_key: { Args: never; Returns: string }
+      resolve_commission: {
+        Args: {
+          p_at?: string
+          p_clicked_at: string | null
+          p_company_id: string
+          p_origin: string | null
+          p_utm_source: string | null
+        }
+        Returns: Json
+      }
       seo_label_primary: { Args: { p_label: string }; Returns: string }
       set_booking_addons: {
         Args: { p_add_on_ids: string[]; p_code: string }
