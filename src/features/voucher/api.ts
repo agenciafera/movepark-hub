@@ -75,6 +75,8 @@ export function useBookingByCode(code: string | undefined) {
 /**
  * Registra a entrada: confirmed → checked_in + checked_in_at = now.
  * UPDATE direto gateado pela RLS `booking_operator_update` (operador da empresa / hub_admin).
+ * O trigger `booking_guard_write_allowlist` só aceita status, carimbos de operação e notas aqui:
+ * coluna nova neste PATCH precisa entrar na allowlist por migration (docs/specs/booking-flow.md).
  */
 export function useVoucherCheckIn(code: string | undefined) {
   const qc = useQueryClient();

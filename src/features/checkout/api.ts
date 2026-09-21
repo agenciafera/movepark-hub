@@ -193,6 +193,9 @@ export function useCheckoutBooking(code: string | undefined) {
   });
 }
 
+// Escritas diretas do dono na reserva `pending` (veículo, viagem, dados do checkout e abandono). O
+// trigger `booking_guard_write_allowlist` recusa qualquer coluna fora da lista: campo novo aqui
+// exige migration na allowlist (docs/specs/booking-flow.md).
 export function useUpdateBookingVehicle() {
   const qc = useQueryClient();
   return useMutation({

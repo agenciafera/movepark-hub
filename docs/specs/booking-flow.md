@@ -104,6 +104,32 @@ no_show ──────→ (terminal, sem transições)
 > (que só checavam `profile_id = auth.uid()`). Confirmar, estornar, upgrade de tarifa e troca de datas
 > passam por Edge/RPC server-authoritative. Cobertura: `supabase/tests/booking_status_guard.test.sql`.
 
+> **Allowlist de colunas na escrita direta (trigger, migration `20261121100000`).** O guarda de
+> transição decide **quais status** valem; quem decide **quais colunas** mudam é o
+> `booking_guard_write_allowlist` (BEFORE UPDATE). Até 21/09/2026 o ramo do staff no guarda de
+> transição devolvia `new` sem olhar coluna, e um `company_operator` dava PATCH por PostgREST em
+> `total_amount`, `price_breakdown`, `fare_tier`, `fare_price_cents`, datas e `profile_id` de qualquer
+> reserva das unidades dele. O ramo do dono era denylist e deixava `fare_price_cents`,
+> `fare_cancel_until` e `expires_at` abertos no `pending`. Agora a escrita direta (papel
+> `authenticated` ou `anon`) só muda coluna que está na lista do ator, e **coluna nova nasce
+> negada**. A lista saiu do que o código escreve de fato:
+>
+> | Ator | Colunas | Quem escreve |
+> |---|---|---|
+> | **Staff**: hub_admin, ou membro da empresa com `bookings:write` ou `bookings:checkin` (ADR-005) | `status`, `checked_in_at`, `checked_out_at`, `notes` | `useUpdateBookingStatus` (`features/bookings/api.ts`), `useVoucherCheckIn` (`features/voucher/api.ts`) |
+> | **Dono**, só com a reserva `pending` | `vehicle_id`, `passenger_count`, `has_pcd`, `customer_first_name`, `customer_last_name`, `customer_name`, `customer_phone`, `customer_email`, `customer_tax_id`, `passenger_first_name`, `passenger_last_name`, `passenger_phone`, `status`, `deleted_at` | `features/checkout/api.ts` e as tools de cliente da Edge `mcp` (rodam com o JWT do usuário) |
+>
+> Qualquer outra coluna responde `42501` com o nome dos campos recusados. O **hub_admin segue a lista
+> do staff**, como no guarda da comissão: o Manager não escreve mais nada direto na reserva, e
+> correção de dinheiro, tarifa ou data passa por RPC/Edge, que deixa rastro. Membro sem escopo de
+> reserva (papel Financeiro) não escreve nada. PATCH que repete o valor atual de uma coluna proibida
+> não conta como mudança. O servidor (service_role e SECURITY DEFINER) passa livre.
+> **Ao criar uma escrita direta nova na `booking` pelo front, a coluna tem que entrar na allowlist
+> por migration**, senão o PATCH volta 403. O nome do trigger é parte do desenho: os BEFORE disparam
+> em ordem alfabética, então ele roda depois do guarda de transição (os `P0001` de sempre continuam
+> iguais) e antes do `booking_reconcile_customer_name` (o nome remontado não conta como escrita do
+> cliente). Cobertura: `supabase/tests/booking_write_allowlist.test.sql` (24).
+
 ---
 
 ## Sequência de checkout

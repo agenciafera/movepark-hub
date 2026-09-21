@@ -117,6 +117,9 @@ type UpdateStatusInput = {
   notes?: string;
 };
 
+// Escrita direta na reserva: o trigger `booking_guard_write_allowlist` só aceita do staff `status`,
+// `checked_in_at`, `checked_out_at` e `notes`. Campo novo neste patch exige migration na allowlist
+// (docs/specs/booking-flow.md), senão o PATCH volta 403.
 export function useUpdateBookingStatus() {
   const qc = useQueryClient();
   return useMutation({
