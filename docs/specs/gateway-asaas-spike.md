@@ -1,4 +1,4 @@
-# Spike Asaas — o que foi medido no sandbox (14/08/2026)
+# Spike Asaas: o que foi medido no sandbox (14/08/2026)
 
 > **Status:** spike de avaliação, sem decisão de arquitetura tomada. Nada aqui é ADR ainda.
 > Reproduzível por [`scripts/asaas-probe.ts`](../../scripts/asaas-probe.ts).
@@ -12,7 +12,7 @@ Conta usada: `MOVEPARK TECNOLOGIA LTDA`, sandbox, status `APPROVED`.
 
 ## Os dois desenhos possíveis, e o que cada um faz
 
-### Desenho 1 — cobrança na conta raiz, split para a subconta
+### Desenho 1: cobrança na conta raiz, split para a subconta
 
 É o que mais se parece com o que rodamos hoje. A Movepark é a titular da cobrança e o parceiro
 recebe a parte dele por split.
@@ -28,7 +28,7 @@ na subconta** (`enabled: true`, `daysToExpire: 7`).
 **A Conta Escrow não retém crédito recebido via split.** Habilitar a Escrow na subconta não tem
 efeito nenhum sobre o dinheiro que chega nela por split de uma cobrança de outra conta.
 
-### Desenho 2 — cobrança na própria subconta, split da comissão para a raiz
+### Desenho 2: cobrança na própria subconta, split da comissão para a raiz
 
 Medido: cobrança de R$ 100 criada com a **apiKey da subconta**, split de 15% para a carteira da
 raiz, mesma Escrow habilitada.
