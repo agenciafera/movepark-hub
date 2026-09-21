@@ -48,6 +48,16 @@ Só hub_admin, ou membro da empresa com `finance:read`. Devolve:
   `debt_recovered_cents`, `net_cents` (efeito no saldo do recebedor), `debt_delta_cents`
   (efeito na dívida), `release_at`/`release_status` (venda), `origin` (estorno), `status`, `note`:
 
+
+| kind | O que é | No saldo | Na dívida |
+|---|---|---|---|
+| `sale` | venda com split: parte do parceiro menos taxa que ele paga menos abatimento | + líquido | − abatimento |
+| `refund` | estorno em que o gateway debitou o parceiro (híbrido) | − o que ele devolveu | 0 |
+| `debt` | estorno em que a Movepark absorveu | 0 | + parte do parceiro |
+| `settlement` | acerto manual (`payout_debt_settlement`) | 0 | − valor |
+| `transfer_in` | repasse da custódia (`payout_transfer`) | + valor | 0 |
+| `withdrawal` | saque para o banco (`payout_withdrawal`) | − valor − taxa de saque | 0 |
+
 **Liberação da venda (corrigido em 21/09/2026).** `release_at` é a **maior** entre a data em que a
 Pagar.me libera o recebível (`payment.partner_release_at`) e `paid_at + prazo de saque da empresa`
 (`payout_release_days`), a mesma conta do `payout_withdrawable`. A data existe desde o pagamento:
@@ -61,16 +71,6 @@ primeiros minutos.
 `commission_channel` e `commission_take_rate_bps` no movimento, e a tela mostra o selo do canal
 sob o código da reserva. Na visão do estacionamento, a legenda da taxa de processamento distingue
 "venda anterior a 18/09/2026" de "neste canal a taxa do gateway é por sua conta".
-
-
-| kind | O que é | No saldo | Na dívida |
-|---|---|---|---|
-| `sale` | venda com split: parte do parceiro menos taxa que ele paga menos abatimento | + líquido | − abatimento |
-| `refund` | estorno em que o gateway debitou o parceiro (híbrido) | − o que ele devolveu | 0 |
-| `debt` | estorno em que a Movepark absorveu | 0 | + parte do parceiro |
-| `settlement` | acerto manual (`payout_debt_settlement`) | 0 | − valor |
-| `transfer_in` | repasse da custódia (`payout_transfer`) | + valor | 0 |
-| `withdrawal` | saque para o banco (`payout_withdrawal`) | − valor − taxa de saque | 0 |
 
 ## Saque (Edge `recipient-withdraw`)
 
