@@ -8,7 +8,7 @@
 --   5. os grants dos ajudantes internos, que vazariam histórico de terceiro se afrouxarem.
 
 begin;
-select plan(26);
+select plan(27);
 
 -- ---------------------------------------------------------------------------
 -- Fixture
@@ -23,13 +23,36 @@ insert into t_ids (k, v)
 select 'company_hub', l.company_id from public.location l
 join t_ids t on t.k = 'loc_hub' and t.v = l.id;
 
--- Perfil sem nenhuma reserva paga: é o "primeira compra" do teste.
-insert into t_ids (k, v) select 'perfil_novo', p.id from public.profiles p
-where not exists (
-  select 1 from public.booking b
-  where b.profile_id = p.id and b.deleted_at is null
-    and b.status in ('confirmed','checked_in','completed','no_show'))
-limit 1;
+-- Perfil sem nenhuma reserva paga: é o "primeira compra" do teste. Nasce aqui, e não de um
+-- `select ... limit 1` sobre o seed: no stack limpo do CI não havia perfil sem compra, a linha não
+-- entrava em t_ids e toda avaliação com audiência caía em `login_required`.
+do $$
+declare u uuid := gen_random_uuid();
+begin
+  insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+            'cupom-perfil-novo@ex.com',now(),now());
+  -- O perfil nasce por gatilho junto com auth.users; o insert cobre o stack sem o gatilho.
+  insert into public.profiles(id, role) values (u,'customer') on conflict (id) do nothing;
+  insert into t_ids (k, v) values ('perfil_novo', u);
+end $$;
+
+-- Unidade externa própria. Virar a `loc_hub` do seed com um update não serve: o pré-voo do
+-- checkout externo (location_checkout_mode_guard) cobra o white-label da empresa e o mapa das
+-- vagas, e a unidade do seed não tem nenhum dos dois. Com a empresa configurada e sem vaga ativa
+-- a unidade já nasce externa, que é o mesmo caminho da fixture de external_exit_click.
+do $$
+declare v_co uuid; v_loc uuid;
+begin
+  insert into public.company(name, slug, wl_public_domain, wl_domain, wl_tenant_key, wl_sync_enabled)
+    values ('Cupom Parceiro Externo','cupom-parceiro-externo',
+            'https://cupom-externo.movepark.co/','cupom-externo-app.movepark.co','cupomexterno', false)
+    returning id into v_co;
+  insert into public.location(company_id, name, slug, checkout_mode)
+    values (v_co, 'Cupom Unidade Externa','cupom-unidade-externa','external')
+    returning id into v_loc;
+  insert into t_ids (k, v) values ('loc_external', v_loc);
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 1. Schema
@@ -119,20 +142,12 @@ select is(
 -- ---------------------------------------------------------------------------
 -- 5. ADR-009: unidade externa não promete cupom
 -- ---------------------------------------------------------------------------
--- Vira a própria unidade em externa dentro da transação, em vez de depender de o seed ter uma.
--- Seed que muda não pode derrubar um teste de regra.
-update public.location set checkout_mode = 'external'
-where id = (select v from t_ids where k = 'loc_hub');
-
 select is(
   (select e.error_code from t_ids t, lateral public.coupon_evaluate(
      'LONGA25', t.v, (select v from t_ids where k = 'perfil_novo'), 700, 7, null) e
-   where t.k = 'loc_hub'),
+   where t.k = 'loc_external'),
   'not_available_here',
   'unidade com checkout_mode=external recusa cupom no BANCO, não só na tela');
-
-update public.location set checkout_mode = 'hub'
-where id = (select v from t_ids where k = 'loc_hub');
 
 -- ---------------------------------------------------------------------------
 -- 6. Precedência: cupom da empresa vence o de plataforma com o mesmo código
@@ -208,26 +223,35 @@ select is(
   'a recusa acontece ANTES do update, não depois');
 
 -- ---------------------------------------------------------------------------
--- 10. Vitrine pública: o guard de capacidade (ADR-009)
+-- 10. Vitrine de campanhas
 -- ---------------------------------------------------------------------------
--- É a regra mais cara de errar do E3.3: se o guard falhar, a página pública anuncia 30% num dia
--- em que nenhuma unidade aceita cupom. A promessa vira dívida com o cliente e com o CDC art. 30.
+-- O guard de capacidade saiu da lista em 20260918234249 (a página deixou de ser linkada para o
+-- cliente). O que sobra para proteger: a vitrine mostra toda campanha anunciada e vigente, e
+-- `honored_by_units` segue no payload, porque é ele que diz se a página pode voltar a ser pública
+-- sem ferir o ADR-009.
 
 select ok(
   has_function_privilege('anon', 'public.public_coupon_offers()', 'execute'),
   'anônimo executa a vitrine: a página existe justamente para quem não tem conta');
 
--- Nenhuma unidade hub vendável no ambiente de teste, então a vitrine tem que sair vazia mesmo
--- havendo campanha anunciada no catálogo.
-select is(
-  jsonb_array_length(public.public_coupon_offers() -> 'offers'),
-  0,
-  'sem unidade que honre cupom, a vitrine não anuncia nada');
-
 select cmp_ok(
   (select count(*)::int from public.coupon where company_id is null and is_advertised),
   '>', 0,
-  'e isso NÃO é por falta de campanha: há cupom anunciado no catálogo');
+  'há campanha anunciada no catálogo');
+
+select is(
+  jsonb_array_length(public.public_coupon_offers() -> 'offers'),
+  (select count(*)::int from public.coupon c
+   where c.company_id is null and c.is_advertised and c.is_active
+     and (c.valid_from is null or c.valid_from <= now())
+     and (c.valid_until is null or c.valid_until >= now())
+     and (c.max_uses is null or c.times_used < c.max_uses)),
+  'a vitrine mostra toda campanha de plataforma anunciada e vigente, e só elas');
+
+select is(
+  jsonb_typeof(public.public_coupon_offers() -> 'honored_by_units'),
+  'number',
+  'honored_by_units continua no payload: é o sinal que autoriza religar a página ao cliente');
 
 -- Cupom de parceiro não pode virar cartaz da Movepark.
 select throws_ok(
