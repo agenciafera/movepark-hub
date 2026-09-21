@@ -28,7 +28,7 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { usePartnerAccountStatement, usePayoutWithdrawable, useWithdraw } from "./api";
-import { MOVEMENT_LABEL, maxWithdrawReason, negativeRecipientAlert, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
+import { MOVEMENT_LABEL, channelBadge, maxWithdrawReason, negativeRecipientAlert, partnerFeeCaption, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
 import { WithdrawalsCard } from "./WithdrawalsCard";
@@ -403,6 +403,7 @@ function MovementRow({ m, canRefund, partnerView = false }: { m: AccountMovement
   // taxa de processamento (regra até 17/09/2026) explica a diferença numa legenda, sem coluna.
   const taxaNaColuna = partnerView && m.kind !== "withdrawal" ? 0 : m.fee_cents;
   const tone = m.net_cents > 0 ? "text-success" : m.net_cents < 0 ? "text-error" : "text-muted";
+  const canal = channelBadge(m);
   return (
     <TableRow>
       <TableCell className="text-muted">{formatDateTime(m.at)}</TableCell>
@@ -417,8 +418,8 @@ function MovementRow({ m, canRefund, partnerView = false }: { m: AccountMovement
           {m.kind === "refund" && m.origin === "partner" && (
             <span className="text-caption text-muted">o gateway debitou do seu saldo</span>
           )}
-          {partnerView && m.kind === "sale" && m.fee_cents > 0 && (
-            <span className="text-caption text-muted">venda anterior a 18/09/2026: {brl(m.fee_cents)} de processamento descontados</span>
+          {partnerView && partnerFeeCaption(m, brl) && (
+            <span className="text-caption text-muted">{partnerFeeCaption(m, brl)}</span>
           )}
           {m.kind === "custody_sale" && (
             <span className="text-caption text-muted">o valor ficou com a Movepark e chega por repasse</span>
@@ -432,7 +433,16 @@ function MovementRow({ m, canRefund, partnerView = false }: { m: AccountMovement
           {m.note && m.kind !== "custody_sale" && <span className="text-caption text-muted">{m.note}</span>}
         </div>
       </TableCell>
-      <TableCell className="font-mono text-caption">{m.booking_code ?? "-"}</TableCell>
+      <TableCell>
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-caption">{m.booking_code ?? "-"}</span>
+          {canal && (
+            <Badge tone="active" className="w-fit" title={canal.title}>
+              {canal.label}
+            </Badge>
+          )}
+        </div>
+      </TableCell>
       <TableCell className="text-right">{m.gross_cents ? brl(m.gross_cents) : "-"}</TableCell>
       <TableCell className="text-right text-muted" data-testid="mov-taxa">{taxaNaColuna ? `−${brl(taxaNaColuna)}` : "-"}</TableCell>
       <TableCell className="text-right text-muted">

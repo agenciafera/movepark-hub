@@ -28,6 +28,9 @@ export interface AccountMovement {
   origin: "partner" | "master" | null;
   status: string | null;
   note: string | null;
+  /** Venda que veio por regra de comissão (E0.3.12): nome do canal. Ausente na venda do Hub. */
+  commission_channel?: string | null;
+  commission_take_rate_bps?: number | null;
 }
 
 export interface AccountHeader {
@@ -85,7 +88,41 @@ export function releaseLabel(m: Pick<AccountMovement, "kind" | "release_status" 
   if (m.kind !== "sale") return "";
   if (m.release_status === "released") return "liberado";
   if (m.release_status === "waiting" && m.release_at) return `libera em ${fmt(m.release_at)}`;
-  return "sem previsão";
+  // O prazo de saque já passou, mas a Pagar.me ainda não informou a data do recebível.
+  return "aguardando a Pagar.me";
+}
+
+/**
+ * Selo do canal na movimentação (E0.3.12): só aparece na venda que veio por regra de comissão,
+ * para a origem ser reconhecida sem abrir a reserva. Venda do Hub não leva selo.
+ */
+export function channelBadge(
+  m: Pick<AccountMovement, "commission_channel" | "commission_take_rate_bps">,
+): { label: string; title: string } | null {
+  const channel = m.commission_channel?.trim();
+  if (!channel) return null;
+  const pct = m.commission_take_rate_bps == null ? null : m.commission_take_rate_bps / 100;
+  return {
+    label: pct == null ? channel : `${channel} · ${pct}%`,
+    title: pct == null ? `Venda pelo canal ${channel}` : `Venda pelo canal ${channel}, com comissão de ${pct}%`,
+  };
+}
+
+/**
+ * Legenda da taxa de processamento na visão do ESTACIONAMENTO, que não tem coluna para ela. Ele só
+ * paga essa taxa em dois casos: venda antiga (até 17/09/2026 a regra era essa) ou venda por um
+ * canal cuja regra de comissão põe a taxa na conta dele (E0.3.12). Dizer "venda antiga" no segundo
+ * caso seria mentira.
+ */
+export function partnerFeeCaption(
+  m: Pick<AccountMovement, "kind" | "fee_cents" | "commission_channel">,
+  brl: (cents: number) => string,
+): string | null {
+  if (m.kind !== "sale" || !(m.fee_cents > 0)) return null;
+  if (m.commission_channel?.trim()) {
+    return `neste canal a taxa do gateway é por sua conta: ${brl(m.fee_cents)} descontados`;
+  }
+  return `venda anterior a 18/09/2026: ${brl(m.fee_cents)} de processamento descontados`;
 }
 
 /** Soma do período: o que entrou, o que saiu do saldo e o que mudou na dívida. */

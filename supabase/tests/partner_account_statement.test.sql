@@ -3,7 +3,7 @@
 -- finance:read lê. Transação com rollback.
 
 begin;
-select plan(17);
+select plan(21);
 
 select has_column('public', 'payment', 'partner_release_at', 'payment.partner_release_at existe');
 
@@ -39,6 +39,20 @@ begin
     values (b3,'MP-PA-3',cust,loc,'2026-12-15T12:00:00Z','2026-12-16T12:00:00Z','cancelled',100);
   insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, refunded_at, refunded_amount, refund_reason, split_sent_to_gateway, refund_absorbed_by_master, refund_partner_cents, split, gateway_fee_cents, partner_release_at)
     values (b3,'pagarme','pix','booking',100,'refunded','2026-08-04T13:00:00Z','2026-08-05T10:00:00Z',100,'cancelamento (staff)', true, false, 7900, split_novo, 100, '2026-08-04T13:00:00Z');
+  -- 5: venda de HOJE, PIX que a Pagar.me já liberou, vinda por regra de comissão (E0.3.12)
+  insert into public.commission_rule(id, company_id, name, utm_sources, take_rate_bps, gateway_fee_payer, chargeback_bearer)
+    values ('00000000-0000-0000-0000-00000000c0a1', cid, 'Site da Conta', array['conta-site'], 1000, 'partner', 'each');
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount,
+                             commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer)
+    values (gen_random_uuid(),'MP-PA-5',cust,loc,'2026-12-18T12:00:00Z','2026-12-19T12:00:00Z','confirmed',100,
+            '00000000-0000-0000-0000-00000000c0a1', 'Site da Conta', 1000, 'partner', 'each');
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, split_sent_to_gateway, split, gateway_fee_cents, partner_release_at)
+    values ((select id from public.booking where code='MP-PA-5'),'pagarme','pix','booking',100,'paid', now() - interval '1 hour', true, split_novo, 100, now() - interval '12 hours');
+  -- 6: venda de agora, recebíveis ainda não apurados (sem data do gateway)
+  insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
+    values (gen_random_uuid(),'MP-PA-6',cust,loc,'2026-12-20T12:00:00Z','2026-12-21T12:00:00Z','confirmed',100);
+  insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, split_sent_to_gateway, split)
+    values ((select id from public.booking where code='MP-PA-6'),'pagarme','pix','booking',100,'paid', now() - interval '5 minutes', true, split_novo);
   -- 4: venda em custódia (sem split no gateway), estornada: entra na conta com efeito zero no saldo
   insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
     values (gen_random_uuid(),'MP-PA-4',cust,loc,'2026-12-16T12:00:00Z','2026-12-17T12:00:00Z','cancelled',100);
@@ -73,7 +87,10 @@ create temporary table _st as
 select is((select (j -> 'header' ->> 'available_cents')::int from _st), 12849, 'cabeçalho traz o saldo disponível do gateway');
 select is((select j -> 'header' ->> 'transfer_interval' from _st), 'Monthly', 'cabeçalho traz o ciclo de transferência');
 select is((select (j -> 'header' ->> 'debt_cents')::int from _st), 4900, 'dívida = 7900 absorvidos (8000 menos a taxa de 100) menos 3000 de acerto');
-select is((select jsonb_array_length(j -> 'movements') from _st), 11, 'onze movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 3 saques, venda e cancelamento em custódia');
+-- As duas vendas de hoje (MP-PA-5 e MP-PA-6) ficam de fora desta contagem: a janela delas é outra.
+select is((select count(*)::int from _st, jsonb_array_elements(j -> 'movements') m
+            where coalesce(m ->> 'booking_code', '') not in ('MP-PA-5', 'MP-PA-6')), 11,
+  'onze movimentos: 3 vendas, 1 dívida, 1 estorno, 1 acerto, 3 saques, venda e cancelamento em custódia');
 
 select is(
   (select (m ->> 'net_cents')::int from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'sale' and m ->> 'booking_code' = 'MP-PA-1'),
@@ -108,6 +125,24 @@ select is(
 select is(
   (select (m ->> 'gross_cents') || '|' || (m ->> 'net_cents') from _st, jsonb_array_elements(j -> 'movements') m where m ->> 'kind' = 'custody_refund'),
   '-8000|0', 'cancelamento da venda em custódia aparece, sem mexer no saldo');
+-- Liberação = a maior entre a data do gateway e pagamento + prazo de saque (o mesmo do saque).
+create temporary table _hoje as
+  select public.partner_account_statement(current_setting('test.cid')::uuid, now() - interval '1 day', now() + interval '1 day') as j;
+select is(
+  (select m ->> 'release_status' from _hoje, jsonb_array_elements(j -> 'movements') m where m ->> 'booking_code' = 'MP-PA-5'),
+  'waiting', 'PIX de hoje que o gateway já liberou NÃO está liberado para saque: o prazo da empresa segura');
+select is(
+  (select (m ->> 'release_at')::timestamptz from _hoje, jsonb_array_elements(j -> 'movements') m where m ->> 'booking_code' = 'MP-PA-5'),
+  (select p.paid_at + make_interval(days => public.payout_release_days(current_setting('test.cid')::uuid))
+     from public.payment p join public.booking b on b.id = p.booking_id where b.code = 'MP-PA-5'),
+  'a data de liberação é pagamento + prazo de saque da empresa');
+select is(
+  (select (m ->> 'release_status') || '|' || ((m ->> 'release_at') is not null)::text from _hoje, jsonb_array_elements(j -> 'movements') m where m ->> 'booking_code' = 'MP-PA-6'),
+  'waiting|true', 'venda recém-paga já nasce com data de liberação, antes de o gateway informar a dele');
+select is(
+  (select (m ->> 'commission_channel') || '|' || (m ->> 'commission_take_rate_bps') from _hoje, jsonb_array_elements(j -> 'movements') m where m ->> 'booking_code' = 'MP-PA-5')
+  || '/' || coalesce((select m ->> 'commission_channel' from _hoje, jsonb_array_elements(j -> 'movements') m where m ->> 'booking_code' = 'MP-PA-6'), 'sem canal'),
+  'Site da Conta|1000/sem canal', 'venda por regra de comissão leva o canal e o percentual; venda do Hub não leva nada');
 reset role;
 
 select * from finish();
