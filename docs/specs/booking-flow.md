@@ -129,6 +129,18 @@ Isso resolve o bug de perder as datas/cupom/tarifa ao logar no meio da reserva (
 retomar destino" já existia via `next`; faltava a parte **stateful** do card). Cobertura:
 `bookingIntent.test.ts` (round-trip do storage + gate de auto-submit).
 
+**Só cliente reserva, e quem não é vai pro login** (21/09/2026). A decisão de desviar está em
+`loginGatePath` (`src/features/listing/reservation.logic.ts`), e vale para os dois casos: anônimo e
+sessão logada num papel que não compra (`company_operator`, `hub_admin`). Antes, o papel errado só
+levava um toast de erro, que é um beco sem saída: a pessoa não tem o que fazer na tela. Agora os dois
+guardam a intenção e vão para `/login?next=<listing>`; quando já existe sessão, o link leva também
+`trocar=1`. Essa marca é necessária porque a tela de login redireciona quem já está logado, e sem ela
+o operador voltaria pra ficha no mesmo instante, em silêncio. Com `trocar=1`, o login fica na tela,
+diz qual conta está ativa e oferece entrar com outra; ao autenticar como cliente, o redirect e o
+auto-submit seguem o caminho normal. Cobertura: `reservation.logic.test.ts` (`loginGatePath`),
+`ReservationCard.test.tsx` (clique de anônimo e de operador) e `login.test.tsx` (a tela com
+`trocar=1`).
+
 ### 1. Simulação de preço
 
 ```

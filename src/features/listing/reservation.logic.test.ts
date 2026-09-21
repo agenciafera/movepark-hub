@@ -9,6 +9,7 @@ import {
   showcaseFromPrice,
   buildPriceShowcase,
   counterSavings,
+  loginGatePath,
 } from "./reservation.logic";
 
 const OPTS: AddOnOption[] = [
@@ -221,5 +222,27 @@ describe("buildPriceShowcase", () => {
 
   it("zero não é preço, do mesmo jeito que em showcaseFromPrice", () => {
     expect(buildPriceShowcase([{ days: 7, total: 0 }])).toBeNull();
+  });
+});
+
+describe("loginGatePath — só cliente reserva", () => {
+  const base = { pathname: "/p/aeropark/unidade-1/coberto", search: "?cupom=volta10" };
+
+  it("cliente logado passa direto (sem desvio)", () => {
+    expect(loginGatePath({ ...base, hasSession: true, role: "customer" })).toBeNull();
+  });
+
+  it("deslogado vai pro login com a ficha como next", () => {
+    expect(loginGatePath({ ...base, hasSession: false, role: null })).toBe(
+      "/login?next=%2Fp%2Faeropark%2Funidade-1%2Fcoberto%3Fcupom%3Dvolta10",
+    );
+  });
+
+  it("conta que não reserva leva trocar=1, senão o login a devolveria em silêncio", () => {
+    for (const role of ["company_operator", "hub_admin"]) {
+      expect(loginGatePath({ ...base, hasSession: true, role })).toBe(
+        "/login?next=%2Fp%2Faeropark%2Funidade-1%2Fcoberto%3Fcupom%3Dvolta10&trocar=1",
+      );
+    }
   });
 });

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { waitFor } from "@testing-library/react";
-import { renderWithProviders, mockAuth } from "@/test/utils";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useLocation } from "react-router-dom";
+import { getBookingIntent } from "@/lib/bookingIntent";
+import { renderWithProviders, mockAuth, mockSession } from "@/test/utils";
 import { ReservationCard } from "./ReservationCard";
 
 // mutateAsync do useValidateCoupon — hoisted pra poder ser referenciado no vi.mock.
@@ -68,5 +71,53 @@ describe("ReservationCard — cupom por query string", () => {
     // dá tempo do effect (não) rodar
     await new Promise((r) => setTimeout(r, 50));
     expect(validateMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe("ReservationCard — quem não é cliente vai pro login, não pro toast", () => {
+  beforeEach(() => sessionStorage.clear());
+
+  function Sonda() {
+    const loc = useLocation();
+    return <span data-testid="loc">{loc.pathname + loc.search}</span>;
+  }
+
+  it("deslogado: clicar em reservar leva ao /login com a ficha como next", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ReservationCard listing={listing} initialFrom={from} initialTo={to} />
+        <Sonda />
+      </>,
+      { auth: mockAuth({ session: null }), route: "/p/aeropark/unidade-1/coberto" },
+    );
+
+    await user.click(screen.getByRole("button", { name: "Reservar agora" }));
+
+    await waitFor(() => expect(screen.getByTestId("loc").textContent).toContain("/login?next="));
+    expect(screen.getByTestId("loc").textContent).not.toContain("trocar=1");
+    // A intenção fica guardada pra retomar a reserva depois do login.
+    expect(getBookingIntent()?.listingId).toBe("lpt-1");
+  });
+
+  it("operador logado: vai pro login com trocar=1, em vez de ficar sem saída", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ReservationCard listing={listing} initialFrom={from} initialTo={to} />
+        <Sonda />
+      </>,
+      {
+        auth: mockAuth({
+          session: mockSession("company_operator"),
+          effectiveRole: "company_operator",
+        }),
+        route: "/p/aeropark/unidade-1/coberto",
+      },
+    );
+
+    await user.click(screen.getByRole("button", { name: "Reservar agora" }));
+
+    await waitFor(() => expect(screen.getByTestId("loc").textContent).toContain("trocar=1"));
   });
 });

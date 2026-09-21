@@ -54,6 +54,7 @@ import {
   perDayPrice,
   counterSavings,
   showcaseFromPrice,
+  loginGatePath,
 } from "./reservation.logic";
 import { cn } from "@/lib/utils";
 
@@ -259,9 +260,17 @@ export function ReservationCard({
 
   async function handleReserve() {
     if (!from || !to) return;
-    if (!session) {
-      // Guarda a intenção completa pra retomar de onde parou depois do login (as datas/tarifa/
-      // passageiros/add-ons vivem só em estado local e se perderiam no round-trip).
+    // Só cliente reserva. Quem não está logado, e quem está numa conta que não reserva
+    // (operador, hub_admin), vai pro login em vez de levar um toast sem saída. A intenção
+    // completa é guardada antes, pra retomar de onde parou: datas, tarifa, passageiros e
+    // cupom vivem só em estado local e se perderiam no round-trip.
+    const gate = loginGatePath({
+      hasSession: !!session,
+      role: effectiveRole,
+      pathname: location.pathname,
+      search: location.search,
+    });
+    if (gate) {
       storeBookingIntent({
         listingId: listing.id,
         returnTo: location.pathname,
@@ -273,14 +282,7 @@ export function ReservationCard({
         addOnIds: [],
         coupon: applied?.code ?? couponCode ?? null,
       });
-      const next = encodeURIComponent(location.pathname + location.search);
-      navigate(`/login?next=${next}`);
-      return;
-    }
-    // Só cliente reserva. Quem testa rascunho entra com conta de cliente marcada como
-    // testador (16/09/2026); operador de empresa e hub_admin continuam fora, por desenho.
-    if (effectiveRole !== "customer") {
-      toast.error("Faça login com uma conta de cliente pra reservar.");
+      navigate(gate);
       return;
     }
     try {

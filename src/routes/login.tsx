@@ -28,6 +28,10 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get("next");
+  // Veio de uma ação que exige conta de cliente (o "Reservar agora") estando logado em
+  // operador ou hub_admin. Sem esta marca o efeito abaixo devolveria a pessoa pro `next`
+  // no mesmo instante, e ela ficaria presa no vaivém sem entender por quê.
+  const trocandoConta = params.get("trocar") === "1";
   const {
     session,
     effectiveRole,
@@ -44,11 +48,16 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [resendIn, setResendIn] = React.useState(0);
 
+  const contaNaoReserva = trocandoConta && !!session && effectiveRole !== "customer";
+
   React.useEffect(() => {
     if (!session || !effectiveRole) return;
+    // Conta logada que não reserva: fica na tela pra entrar com outra. Quando a nova sessão
+    // é de cliente, o efeito roda de novo e o redirect acontece normalmente.
+    if (trocandoConta && effectiveRole !== "customer") return;
     // Login universal: detecta o role e manda pro destino certo (next tem prioridade).
     navigate(postLoginPath(effectiveRole, next), { replace: true });
-  }, [session, effectiveRole, navigate, next]);
+  }, [session, effectiveRole, navigate, next, trocandoConta]);
 
   React.useEffect(() => {
     if (resendIn <= 0) return;
@@ -161,7 +170,15 @@ export default function LoginPage() {
             {mode === "phone-code" && "Confirme o código"}
           </CardTitle>
           <CardDescription>
-            {mode === "choice" && "Reserve em segundos. Sem senha."}
+            {mode === "choice" &&
+              (contaNaoReserva ? (
+                <>
+                  A conta <span className="text-ink">{session?.email ?? session?.phone}</span>{" "}
+                  não faz reservas. Entre com uma conta de cliente pra continuar.
+                </>
+              ) : (
+                "Reserve em segundos. Sem senha."
+              ))}
             {mode === "email" && "Mandamos um código de 6 dígitos pro e-mail."}
             {mode === "email-code" && (
               <>

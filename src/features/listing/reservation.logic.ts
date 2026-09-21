@@ -169,3 +169,21 @@ export function buildPriceShowcase(
     porDuracao: validas.map((t) => ({ days: t.days, total: t.total })),
   };
 }
+
+/**
+ * Destino do login quando a reserva não pode seguir com a sessão atual (E2: só cliente reserva).
+ *
+ * Devolve null quando a pessoa já pode reservar. Deslogado vai pro login com o `next` da própria
+ * ficha; logado numa conta que não reserva (operador, hub_admin) leva `trocar=1` junto, porque a
+ * tela de login redireciona quem já tem sessão e devolveria essa pessoa pra cá sem dizer nada.
+ */
+export function loginGatePath(s: {
+  hasSession: boolean;
+  role: string | null;
+  pathname: string;
+  search: string;
+}): string | null {
+  if (s.hasSession && s.role === "customer") return null;
+  const next = encodeURIComponent(s.pathname + s.search);
+  return `/login?next=${next}${s.hasSession ? "&trocar=1" : ""}`;
+}
