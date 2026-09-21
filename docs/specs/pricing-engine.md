@@ -341,7 +341,10 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
   p_days)` simula pelo motor as durações de referência da vitrine (`[1, 7, 15, 30]`, as mesmas de
   `destination_price_index`, para card e tabela de preços não brigarem) mais a **menor estadia que
   o lote vende**, e devolve a duração em que a diária sai mais barata. Empate resolve pela menor
-  duração, que é a promessa que exige menos dias do cliente. É uma chamada por página, não N
+  duração, que é a promessa que exige menos dias do cliente. **Duração abaixo da estadia mínima
+  não é candidata:** `simulate_price` precifica qualquer duração sem olhar o mínimo, então é a
+  própria RPC que barra (`d >= piso`, migration `20261121094512`); sem isso um lote de tabela
+  plana que exige 3 diárias sairia no card em 1 diária (ADR-009). É uma chamada por página, não N
   chamadas: quem lê a tabela de preço é o Postgres, e o TypeScript que fazia essa conta
   (`src/features/search/fromPrice.ts`) foi removido. Migration
   `20261121040000_menor_diaria_do_lote.sql`; ver `docs/specs/customer/search-results.md` §8b.

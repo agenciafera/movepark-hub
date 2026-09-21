@@ -64,7 +64,9 @@ end $$;
 -- ── 1) o card mostra a MENOR diária, não a da estadia mais curta ───────────
 select is(pg_temp.menor('daily'), '24.90', 'a menor diária é a da faixa de 7+, não os R$ 40,00 de 1 diária');
 select is(pg_temp.menor('days'), '7', 'devolve a estadia em que essa diária vale');
-select is(pg_temp.menor('total'), '174.30', 'o total é o da estadia de 7 dias');
+-- Comparado como número: o total vem do jsonb de `simulate_price`, que não garante duas casas
+-- no texto ('174.3'), e o que o teste protege é o valor, não a máscara.
+select is(pg_temp.menor('total')::numeric, 174.30::numeric, 'o total é o da estadia de 7 dias');
 select is(pg_temp.menor('min_stay_days'), null, 'lote que vende 1 diária não anuncia mínimo');
 
 -- ── 2) empate na diária resolve pela MENOR duração ─────────────────────────
