@@ -30,6 +30,16 @@ do $$ begin
     check (not is_advertised or company_id is null);
 exception when duplicate_object then null; end $$;
 
+-- GUARDA DE REPLAY (no-op em produção). A função abaixo é `language sql`, e o Postgres valida o
+-- corpo na criação: `l.checkout_mode` tem que existir AGORA. No vivo a coluna existe desde
+-- 04/08/2026, mas no repo ela nasce em `20260921000000_checkout_mode_external`, cujo carimbo
+-- futuro-datado roda DEPOIS desta migration no `supabase db reset`. Sem a guarda o replay morre
+-- aqui com "column l.checkout_mode does not exist" e nenhum pgTAP roda no CI. A definição é a
+-- mesma de lá (que usa `add column if not exists` e segue dona do CHECK, do comentário e do
+-- trigger de guarda). Cobre também a `20260918234249`, que redefine esta função.
+alter table public.location
+  add column if not exists checkout_mode text not null default 'hub';
+
 create or replace function public.public_coupon_offers()
 returns jsonb
 language sql
