@@ -61,11 +61,24 @@ select set_eq(
     'home_featured_offers',     -- vitrine curada da home, lida pelo visitante deslogado
     'locations_high_demand_today',
     'simulate_price',
-    -- cupom e desconto avaliados antes do login, no checkout
-    'coupon_evaluate',
+    -- cupom e desconto avaliados antes do login, no checkout.
+    -- 18/09/2026: `coupon_evaluate` SAIU daqui de propósito (20260918160600). Ela voltou a ser
+    -- ajudante interno porque `p_profile_id` vem do chamador: um anônimo passava o id de outra
+    -- pessoa e lia do erro (not_first_purchase, not_second_purchase, not_winback) quantas reservas
+    -- pagas ela tem, além de poder varrer código que agora vale dinheiro da Movepark. Nada quebra:
+    -- quem a chama (validate_coupon, validate_coupon_public, customer_coupon_wallet,
+    -- apply_coupon_to_booking, _create_booking_core) é tudo SECURITY DEFINER e roda como dono.
+    -- Se ela reaparecer nesta lista, alguém reabriu o vazamento.
     'discount_evaluate',
     'validate_coupon',
     'validate_coupon_public',
+    -- E3.3: vitrine de campanhas em /descontos, feita para quem ainda não tem conta, então anon
+    -- precisa executar. Definer porque a RLS de `coupon` não abre leitura anônima. Não recebe
+    -- parâmetro (nada a varrer) e só devolve campanha de plataforma (`company_id is null`, com o
+    -- CHECK coupon_advertised_is_platform por trás) marcada `is_advertised`, ativa e no prazo.
+    -- Os campos são os do cartaz: código, título, condições e audiência. Nunca devolve id, empresa,
+    -- quem banca o desconto nem contagem de uso. Ver coupon-wallet.md.
+    'public_coupon_offers',
     -- restante da superfície pública
     'external_checkout_url',    -- URL de saída do white-label, nada sensível
     'get_booking_hold_max_minutes',
