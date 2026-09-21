@@ -208,10 +208,12 @@ select throws_ok(
   null,
   'pausar campanha sem ser hub_admin é recusado');
 
+-- 19 argumentos desde 20260918231159 (entrou `p_is_advertised`). Com a assinatura velha o erro era
+-- 42883 (função não existe), que também "recusa" mas não prova o gate.
 select throws_ok(
   $$select public.manager_upsert_platform_coupon(
       null, 'QUALQUER', null, null, null, 'fixed', 10, null, 'public', null,
-      null, null, null, null, null, null, true, 0)$$,
+      null, null, null, null, null, null, true, false, 0)$$,
   '42501',
   null,
   'criar campanha sem ser hub_admin é recusado');
