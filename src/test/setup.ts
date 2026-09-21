@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
+import { disableScrollTriggerIfLoaded } from "./gsap-teardown";
 import { server } from "./msw/server";
 
 // Estado ambiente limpo antes de CADA teste. sessionStorage é global do happy-dom e, dependendo da
@@ -24,7 +25,10 @@ vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "");
 vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "on");
 
 // MSW: intercepta chamadas a Edge Functions / REST do Supabase nos testes de
-// componente/integração. Handlers vazios por ora — adicionados conforme a leva.
+// componente/integração. Handlers vazios por ora, adicionados conforme a leva.
 beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+// Desliga o intervalo do ScrollTrigger antes de o ambiente ser desmontado (ver gsap-teardown.ts).
+afterAll(() => disableScrollTriggerIfLoaded());
