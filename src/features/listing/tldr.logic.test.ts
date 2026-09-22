@@ -9,11 +9,13 @@ function makeListing(o: Partial<{
   review_count: number;
   base_price: number;
   checkout_mode: "hub" | "external";
+  company_name: string;
+  location_name: string;
 }> = {}): ListingDetail {
   return {
-    company: { name: "Aeropark" },
+    company: { name: o.company_name ?? "Aeropark" },
     location: {
-      name: "Aeroporto Guarulhos",
+      name: o.location_name ?? "Aeroporto Guarulhos",
       checkout_mode: o.checkout_mode ?? "hub",
       shuttle_to_terminal_minutes:
         "shuttle_to_terminal_minutes" in o ? o.shuttle_to_terminal_minutes! : null,
@@ -210,5 +212,24 @@ describe("buildListingTldr · piso de diária do motor", () => {
   it("sem faixa do motor, continua caindo no base_price", () => {
     const { summary } = buildListingTldr(makeListing({ base_price: 40 }), { fromDaily: null });
     expect(summary).toMatch(/A partir de R\$\s40,00 por diária/);
+  });
+});
+
+describe("buildListingTldr · nome da unidade igual ao da empresa", () => {
+  // Parceiro de praça única: a `company` e a `location` se chamam igual, e a meta abria com
+  // "Vaga Coberta no Virapark, em Virapark".
+  it("não repete o nome quando a unidade se chama como a empresa", () => {
+    const { summary } = buildListingTldr(
+      makeListing({ company_name: "Virapark", location_name: "Virapark" }),
+    );
+    expect(summary).toContain("Vaga Coberta no Virapark.");
+    expect(summary).not.toContain("Virapark, em Virapark");
+  });
+
+  it("mantém o lugar quando ele acrescenta informação", () => {
+    const { summary } = buildListingTldr(
+      makeListing({ company_name: "Garageinn", location_name: "Aeroporto de Viracopos" }),
+    );
+    expect(summary).toContain("Vaga Coberta no Garageinn, em Aeroporto de Viracopos.");
   });
 });

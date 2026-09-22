@@ -135,7 +135,16 @@ function buildSummary(
   const parts: string[] = [];
 
   // Frase 1: o quê e onde. Fato da unidade, sempre vale.
-  parts.push(`${listing.parking_type.name} no ${listing.company.name}, em ${listing.location.name}.`);
+  //
+  // O ", em <unidade>" some quando a unidade se chama igual à empresa. É o caso do parceiro de
+  // praça única: a `company` é "Virapark" e a `location` também, então a meta que ia pro índice
+  // abria com "Vaga Coberta no Virapark, em Virapark". Nome repetido em orações seguidas não
+  // acrescenta lugar nenhum, e ainda gasta os 160 caracteres do snippet.
+  const nomeDaEmpresa = listing.company.name.trim();
+  const ondeFica = listing.location.name.trim();
+  const local =
+    ondeFica && ondeFica.toLowerCase() !== nomeDaEmpresa.toLowerCase() ? `, em ${ondeFica}` : "";
+  parts.push(`${listing.parking_type.name} no ${nomeDaEmpresa}${local}.`);
 
   // Frase 2: preço, proximidade e traslado. Cada pedaço pode faltar, inclusive o preço, então a
   // frase é montada por junção em vez de concatenação: sem isso, unidade sem preço abria com
