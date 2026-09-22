@@ -24,7 +24,9 @@ import { formatBRL } from "@/lib/format";
 import { computeInstallmentPlan } from "@/lib/installments";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { parseValidade } from "@/lib/card-expiry";
-import { documentMask, onlyDigits, cardExpiryMask } from "@/lib/masks";
+import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
+import { brandLabel, detectBrand } from "@/lib/card-brand";
+import { CardBrandMark } from "@/components/shared/CardBrandMark";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
@@ -354,7 +356,12 @@ export function Step4Payment({
                     <SelectContent>
                       {(savedCards.data ?? []).map((pm) => (
                         <SelectItem key={pm.id} value={pm.id}>
-                          {pm.brand} •••• {pm.last4}
+                          <span className="inline-flex items-center gap-2">
+                            <CardBrandMark brand={pm.brand} />
+                            <span>
+                              {brandLabel(pm.brand)} •••• {pm.last4}
+                            </span>
+                          </span>
                         </SelectItem>
                       ))}
                       <SelectItem value="new">Usar outro cartão</SelectItem>
@@ -367,14 +374,22 @@ export function Step4Payment({
                 <>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="card-number">Número do cartão</Label>
-                    <Input
-                      id="card-number"
-                      inputMode="numeric"
-                      placeholder="0000 0000 0000 0000"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="card-number"
+                        inputMode="numeric"
+                        autoComplete="cc-number"
+                        placeholder="0000 0000 0000 0000"
+                        className="pr-14"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(cardNumberMask(e.target.value))}
+                        required
+                      />
+                      {/* A bandeira aparece assim que dá para reconhecer, antes de o cliente terminar. */}
+                      {detectBrand(cardNumber) !== "card" && (
+                        <CardBrandMark brand={detectBrand(cardNumber)} className="absolute right-3 top-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="card-name">Nome no cartão</Label>

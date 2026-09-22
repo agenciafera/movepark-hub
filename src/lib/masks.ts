@@ -87,3 +87,12 @@ export function plateMask(value: string): string {
   if (v.length <= 3) return v;
   return `${v.slice(0, 3)}-${v.slice(3)}`;
 }
+
+/** Número do cartão em grupos de 4 ("4111 1111 1111 1111"); Amex tem 15 dígitos e vai 4-6-5. */
+export function cardNumberMask(value: string): string {
+  const v = onlyDigits(value).slice(0, 19);
+  if (/^3[47]/.test(v)) {
+    return [v.slice(0, 4), v.slice(4, 10), v.slice(10, 15)].filter(Boolean).join(" ");
+  }
+  return v.replace(/(\d{4})(?=\d)/g, "$1 ");
+}

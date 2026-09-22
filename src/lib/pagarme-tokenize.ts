@@ -1,6 +1,11 @@
 // Tokenização de cartão no browser (E0.1.3). O PAN/CVV vão DIRETO para o Pagar.me com a public key
 // (publishable) — nunca passam pelo nosso backend. Devolve um token single-use p/ a Edge create-card-charge.
 
+import { detectBrand } from "./card-brand";
+
+// A detecção da bandeira mora em `@/lib/card-brand`, a mesma da conta do cliente.
+export { detectBrand };
+
 const PAGARME_TOKENS_URL = "https://api.pagar.me/core/v5/tokens";
 
 export interface CardData {
@@ -9,16 +14,6 @@ export interface CardData {
   exp_month: number;
   exp_year: number;
   cvv: string;
-}
-
-/** Detecta a bandeira pelo início do PAN (suficiente p/ exibir/salvar; o gateway valida de fato). */
-export function detectBrand(panDigits: string): string {
-  if (/^4/.test(panDigits)) return "visa";
-  if (/^(5[1-5]|2[2-7])/.test(panDigits)) return "mastercard";
-  if (/^3[47]/.test(panDigits)) return "amex";
-  if (/^(636|438935|504175|451416|636297|5067|4576|4011)/.test(panDigits)) return "elo";
-  if (/^(606282|3841)/.test(panDigits)) return "hipercard";
-  return "card";
 }
 
 export interface TokenizeResult {

@@ -32,6 +32,7 @@ import {
   needsCommissionFreeze,
 } from "../_shared/payments/commission.ts";
 import { chargeFailureDetail } from "../_shared/payments/pagarme.ts";
+import { normalizeBrand } from "../_shared/payments/card-brand.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -442,7 +443,7 @@ Deno.serve(async (req: Request) => {
         profile_id: booking.profile_id,
         provider: "pagarme",
         provider_token: cardId,
-        brand: input.card.brand ?? "card",
+        brand: normalizeBrand(input.card.brand),
         last4: input.card.last4 ?? "0000",
         holder_name: input.card.holderName,
         expiry_month: input.card.expMonth,

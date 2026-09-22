@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { detectBrand } from "@/lib/card-brand";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
 
@@ -26,18 +27,9 @@ export function useMyPaymentMethods(profileId: string | undefined) {
   });
 }
 
-/**
- * Detecta brand do cartão pelo primeiro dígito (rudimentar; gateway real faria via BIN check).
- */
-export function detectBrand(cardNumber: string): string {
-  const n = cardNumber.replace(/\D/g, "");
-  if (n.startsWith("4")) return "visa";
-  if (n.startsWith("5") || n.startsWith("2")) return "mastercard";
-  if (n.startsWith("34") || n.startsWith("37")) return "amex";
-  if (n.startsWith("6")) return "elo";
-  if (n.startsWith("38") || n.startsWith("60")) return "hipercard";
-  return "unknown";
-}
+// A detecção da bandeira é a mesma do checkout (`@/lib/card-brand`); a antiga daqui dizia que
+// todo cartão começado em 6 era Elo.
+export { detectBrand };
 
 export function useCreatePaymentMethod() {
   const qc = useQueryClient();

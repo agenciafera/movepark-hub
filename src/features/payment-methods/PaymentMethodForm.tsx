@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/auth/context";
 import { detectBrand, useCreatePaymentMethod } from "./api";
+import { CardBrandMark } from "@/components/shared/CardBrandMark";
 import { parseValidade } from "@/lib/card-expiry";
 
 type Props = {
@@ -104,10 +105,8 @@ export function PaymentMethodForm({ open, onOpenChange }: Props) {
                 autoComplete="cc-number"
                 required
               />
-              {brand && brand !== "unknown" && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption-sm uppercase text-muted">
-                  {brand}
-                </span>
+              {brand && brand !== "card" && (
+                <CardBrandMark brand={brand} className="absolute right-3 top-1/2 -translate-y-1/2" />
               )}
             </div>
           </div>

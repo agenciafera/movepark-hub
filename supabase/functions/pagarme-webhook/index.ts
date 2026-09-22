@@ -43,6 +43,7 @@ import {
 import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { chargebackDebtCents } from "../_shared/payments/commission.ts";
+import { normalizeBrand } from "../_shared/payments/card-brand.ts";
 
 /**
  * Notifica a confirmação por WhatsApp — só Tarifas Flex+ (`fare_benefits.notifications_sms`).
@@ -242,7 +243,7 @@ Deno.serve(async (req: Request) => {
         ? { deleted_at: new Date().toISOString() }
         : {
             // Só sobrescreve o que veio no payload: campo ausente não apaga o que já temos.
-            ...(card.brand ? { brand: card.brand } : {}),
+            ...(card.brand ? { brand: normalizeBrand(card.brand) } : {}),
             ...(card.last4 ? { last4: card.last4 } : {}),
             ...(card.holderName ? { holder_name: card.holderName } : {}),
             ...(card.expMonth ? { expiry_month: card.expMonth } : {}),

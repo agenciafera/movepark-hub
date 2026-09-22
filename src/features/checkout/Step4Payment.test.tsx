@@ -122,6 +122,9 @@ describe("Step4Payment", () => {
     await screen.findByLabelText("Número do cartão");
 
     fireEvent.change(screen.getByLabelText("Número do cartão"), { target: { value: "4111111111111111" } });
+    // A bandeira aparece enquanto digita, e o número ganha espaço a cada 4 dígitos.
+    expect(screen.getByLabelText("Número do cartão")).toHaveValue("4111 1111 1111 1111");
+    expect(screen.getByRole("img", { name: "Visa" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nome no cartão"), { target: { value: "Tony Stark" } });
     fireEvent.change(screen.getByLabelText("Validade (MM/AA)"), { target: { value: "12/30" } });
     fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "123" } });
@@ -161,7 +164,9 @@ describe("Step4Payment", () => {
       await user.click(screen.getByRole("tab", { name: /Cartão/i }));
       // Sem formulário de cartão novo: o salvo está escolhido.
       await waitFor(() => expect(screen.queryByLabelText("Número do cartão")).not.toBeInTheDocument());
-      expect(screen.getByRole("combobox", { name: "Cartão" })).toHaveTextContent("0466");
+      // 22/09/2026: a bandeira vem do vocabulário único, com a marca visual ao lado.
+      expect(screen.getByRole("combobox", { name: "Cartão" })).toHaveTextContent("Visa •••• 0466");
+      expect(screen.getByRole("img", { name: "Visa" })).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
       await waitFor(() =>
         expect(cardMutate).toHaveBeenCalledWith({ booking_code: "MP-ABC123", installments: 1, payment_method_id: "pm_1" }),

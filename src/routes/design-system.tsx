@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Bell, Calendar, Car, CaretLeft, CaretRight, CheckCircle, Clock, Globe, Heart, House, Info, MagnifyingGlass, MapPin, QrCode, Shield, Star, Warning, X } from "@phosphor-icons/react";
 import { Wordmark, Monogram } from "@/components/shared/Brand";
+import { CardBrandMark } from "@/components/shared/CardBrandMark";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -1058,6 +1059,22 @@ export default function DesignSystemPage() {
                   <Button size="sm">Confirmar</Button>
                 </CardContent>
               </Card>
+            </Specimen>
+
+            <h3 className="mb-3 mt-8 text-display-sm text-ink">Bandeira do cartão</h3>
+            <p className="mb-3 max-w-2xl text-body-sm text-muted">
+              A marca de cada bandeira, no checkout e na conta. Mesma caixa para todas; cartão
+              desconhecido cai no ícone.
+            </p>
+            <Specimen>
+              <div className="flex flex-wrap items-center gap-4">
+                {(["visa", "mastercard", "amex", "elo", "hipercard", "card"] as const).map((b) => (
+                  <div key={b} className="flex items-center gap-2">
+                    <CardBrandMark brand={b} />
+                    <span className="text-body-sm text-muted">{b}</span>
+                  </div>
+                ))}
+              </div>
             </Specimen>
           </section>
 

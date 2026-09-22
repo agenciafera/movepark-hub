@@ -14,17 +14,10 @@ import {
 } from "@/features/payment-methods/api";
 import { useAuth } from "@/auth/context";
 import type { Database } from "@/types/database";
+import { brandLabel } from "@/lib/card-brand";
+import { CardBrandMark } from "@/components/shared/CardBrandMark";
 
 type PaymentMethodRow = Database["public"]["Tables"]["payment_method"]["Row"];
-
-const brandLabels: Record<string, string> = {
-  visa: "Visa",
-  mastercard: "Mastercard",
-  amex: "American Express",
-  elo: "Elo",
-  hipercard: "Hipercard",
-  unknown: "Cartão",
-};
 
 function formatExpiry(month: number | null, year: number | null) {
   if (!month || !year) return null;
@@ -99,8 +92,8 @@ export default function CardsPage() {
                 return (
                   <AccountRow
                     key={c.id}
-                    icon={<CreditCard className="h-5 w-5" />}
-                    title={`${brandLabels[c.brand] ?? "Cartão"} •••• ${c.last4}`}
+                    icon={<CardBrandMark brand={c.brand} />}
+                    title={`${brandLabel(c.brand)} •••• ${c.last4}`}
                     isDefault={c.is_default}
                     detail={
                       [c.holder_name, vence ? `vence ${vence}` : null]
