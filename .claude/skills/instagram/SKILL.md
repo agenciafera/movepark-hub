@@ -200,7 +200,9 @@ a capacidade vive na unidade e varia por lote.
 ## Passo 7: imagens no Higgsfield
 
 Toda imagem de post do Instagram nasce no **Higgsfield**, mesma regra do blog.
-Não use `gerar-imagens-gemini` aqui.
+Não use `gerar-imagens-gemini` aqui. A regra de frota moderna e cenário atual
+adiante acompanha a imagem, e não o gerador: se um dia a imagem vier do Gemini ou
+de uma edição, ela vale igual.
 
 ### Escolha do modelo
 
@@ -232,13 +234,53 @@ Em inglês, descritivo, fotográfico e **sem texto na imagem**. Diga assunto,
 enquadramento, luz e clima. O que funciona para a marca: luz natural de fim de
 tarde, cor dessaturada, ponto de vista de quem está ali, nada de stock sorridente.
 
-> `wide shot of a covered airport parking lot at golden hour, rows of cars, a
-> traveler pulling a suitcase toward a shuttle van, warm natural light, muted
-> colors, realistic photography, no text, no logos`
+> `wide shot of a covered airport parking lot at golden hour, rows of late-model
+> 2020s crossovers and hatchbacks with clean glossy paint and alloy wheels, fresh
+> line markings, a traveler pulling a suitcase toward a recent shuttle van, warm
+> natural light, muted colors, realistic photography, no text, no logos, no
+> vintage or 1990s cars, no rust or faded paint, no legible license plate`
 
 **Nunca peça texto dentro da imagem.** Modelo de difusão erra número e erra
 acento, e a tipografia da marca é Inter, que ele não reproduz. O texto entra por
 cima, no template.
+
+#### Frota moderna e cenário atual, em todo prompt
+
+Mesma regra do blog (Passo 5 da skill `blogpost-seo-geo`), e no Instagram ela
+pesa mais, porque a foto é a primeira coisa que a pessoa vê e muitas vezes a
+única. Pedir "rows of cars" e mais nada faz o modelo devolver sedã dos anos 80 e
+90, pintura fosca, calota, farol amarelado e placa antiga, num pátio de poste de
+sódio com faixa apagada. A imagem envelhece o serviço antes de alguém ler o
+gancho: quem vai deixar o carro duas semanas está avaliando se o lugar cuida de
+um carro como o dele, e um pátio de carro velho responde que não.
+
+Carro e cenário entram no prompt já datados, nunca no genérico:
+
+- **Carros:** `late-model vehicles from the 2020s, current-generation compact
+  SUVs, crossovers, hatchbacks and sedans, clean glossy paint, alloy wheels, LED
+  headlights and daytime running lights`. Frota variada em cor (branco, prata,
+  cinza, um azul ou vermelho), não o mesmo modelo repetido em fila.
+- **Cenário:** `modern parking facility, fresh painted line markings, LED
+  lighting, clean concrete or new asphalt, current signage, well-kept
+  landscaping, contemporary architecture`. Em slide de traslado, van recente de
+  passageiros; em slide de portaria, cancela e leitor atuais, não guarita de
+  madeira.
+- **Sempre no negativo:** `no vintage, classic, retro, 1980s or 1990s cars, no
+  rust, dents or faded paint, no dated or run-down infrastructure, no cracked
+  asphalt, no sodium vapor lighting, no legible license plate`.
+
+A placa entra no negativo por dois motivos: a placa amarela antiga é o sinal mais
+rápido de carro velho para quem lê a foto no Brasil, e placa legível inventada é
+dado falso numa imagem que se apresenta como foto do pátio. Vale lembrar que
+placa já cai na regra de não pedir texto na imagem.
+
+**Olhe cada imagem antes de compor o slide.** Prompt não é garantia, e é comum um
+carro antigo entrar no fundo mesmo com o negativo escrito. Num carrossel a
+armadilha é outra: passa o slide 1 e o 4 entra torto, então confira slide por
+slide, não só a capa. Se achar carro fora de época, ferrugem, pátio degradado ou
+placa legível, gere de novo com o termo reforçado. O analisador lê legenda,
+hashtag, alt e nome de arquivo, e nunca os pixels: essa conferência é a única
+barreira.
 
 ### O texto por cima da imagem
 
@@ -410,5 +452,8 @@ Antes de dizer que está pronto:
 6. Um CTA só, com UTM na URL da bio.
 7. Alt em toda imagem, e nenhum repetido.
 8. Imagens em JPEG, 1080 x 1350, abaixo de 8 MB, nome com a palavra-chave.
-9. Todo R$ com data de referência.
-10. Carrossel com no máximo 10 slides.
+9. Nenhum slide com carro antigo ou cenário datado. Cada imagem foi olhada, não
+   só gerada: frota dos anos 2020, pátio conservado, sem ferrugem, sem pintura
+   fosca e sem placa legível.
+10. Todo R$ com data de referência.
+11. Carrossel com no máximo 10 slides.
