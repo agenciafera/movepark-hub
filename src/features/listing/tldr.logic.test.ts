@@ -188,3 +188,27 @@ describe("buildListingTldr · preço zero", () => {
     );
   });
 });
+
+describe("buildListingTldr · piso de diária do motor", () => {
+  // O caso real é o Virapark: tabela de R$ 40,00 na primeira diária, R$ 28,90 de 2 a 6 e
+  // R$ 24,90 da sétima em diante. Como ele é espelhado, `base_price` é 0 e o resumo saía sem
+  // preço nenhum, enquanto o card e o `AggregateOffer` já publicavam o piso de R$ 24,90.
+  it("usa o lowDaily do motor quando o base_price do catálogo é zero", () => {
+    const { facts, summary } = buildListingTldr(makeListing({ base_price: 0 }), {
+      fromDaily: 24.9,
+    });
+    expect(facts.find((f) => f.key === "price")?.value).toMatch(/R\$\s24,90 \/ diária/);
+    expect(summary).toMatch(/A partir de R\$\s24,90 por diária/);
+  });
+
+  it("o piso do motor vence o base_price, que é a diária mais cara e não o 'a partir de'", () => {
+    const { summary } = buildListingTldr(makeListing({ base_price: 40 }), { fromDaily: 24.9 });
+    expect(summary).toMatch(/R\$\s24,90 por diária/);
+    expect(summary).not.toContain("40,00");
+  });
+
+  it("sem faixa do motor, continua caindo no base_price", () => {
+    const { summary } = buildListingTldr(makeListing({ base_price: 40 }), { fromDaily: null });
+    expect(summary).toMatch(/A partir de R\$\s40,00 por diária/);
+  });
+});

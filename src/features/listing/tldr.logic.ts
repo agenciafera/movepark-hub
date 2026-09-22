@@ -60,7 +60,7 @@ export function shuttleLabel(listing: ListingDetail): string | null {
 
 export function buildListingTldr(
   listing: ListingDetail,
-  opts?: { nearest?: TerminalDistance | null },
+  opts?: { nearest?: TerminalDistance | null; fromDaily?: number | null },
 ): ListingTldr {
   const caps = getLocationCapabilities(listing.location);
   const facts: TldrFact[] = [];
@@ -69,7 +69,14 @@ export function buildListingTldr(
   // catálogo nunca foi preenchido. Zero não é preço. O card visível já usa `showcaseFromPrice`
   // para omitir; o resumo não usava, e publicava "a partir de R$ 0,00" em TODAS as unidades
   // conferidas, própria ou externa. Preço ausente é ruim; preço zero indexado é pior.
-  const price = showcaseFromPrice(listing.company_parking_type.base_price);
+  //
+  // Omitir, porém, custava caro do outro lado: nas espelhadas o resumo saía SEM preço nenhum, e
+  // a meta description do parceiro ia para o índice sem o número que decide a busca. O piso real
+  // já existe e é o `lowDaily` do motor (`buildPriceShowcase`), o MESMO que o card e o
+  // `AggregateOffer` publicam. Na tabela escalonada do Virapark ele é R$ 24,90, não os R$ 40,00
+  // da primeira diária: "a partir de" é a menor diária que a unidade pratica, não a mais cara.
+  // Precedência idêntica à do `ReservationCard`, para os três lugares dizerem o mesmo número.
+  const price = opts?.fromDaily ?? showcaseFromPrice(listing.company_parking_type.base_price);
   if (price != null) {
     facts.push({ key: "price", label: "A partir de", value: `${formatBRL(price)} / diária` });
   }

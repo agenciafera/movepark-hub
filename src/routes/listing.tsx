@@ -152,7 +152,12 @@ export default function ListingPage() {
   // Reusa a query de terminais do bloco "Distância aos terminais" (cache, sem fetch extra).
   const { data: terminals } = useLocationTerminals(listing?.location.id);
   const tldr = listing
-    ? buildListingTldr(listing, { nearest: nearestTerminal(terminals ?? []) })
+    ? buildListingTldr(listing, {
+        nearest: nearestTerminal(terminals ?? []),
+        // Mesma fonte do "a partir de" do card e do `AggregateOffer`: a menor diária do motor.
+        // Sem isso a unidade espelhada (`base_price` 0) ia pro índice sem preço na meta.
+        fromDaily: showcase?.lowDaily ?? null,
+      })
     : null;
 
   const fromStr = searchParams.get("from");

@@ -723,9 +723,14 @@ function tabelaTopMarkdown(dest, limit = 5) {
     linhas.push("", "## Índice de preços (motor de reservas, valor do checkout)", "");
     for (const dest of destinosComPreco) {
       linhas.push(`### ${nomeCurto(dest)}`, "", `URL: ${SITE_URL}${cPrecos(dest)}`, "");
+      // O R$/dia sai junto, igual ao `precos.md` de cada destino. Sem ele o arquivo publicava
+      // só o total da faixa, e a diária mais barata do parceiro (a que decide a comparação na
+      // resposta de uma IA) ficava de fora: o Virapark aparecia com os R$ 40,00 da primeira
+      // diária, nunca com os R$ 24,90 que ele pratica da sétima em diante.
       for (const r of resumoPorDuracao(dest, diasIndice)) {
+        const porDia = r.dias > 1 ? `, ${brl(r.total / r.dias)} por diária` : "";
         linhas.push(
-          `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name})`,
+          `- ${durLabel(r.dias)}: a partir de ${brl(r.total)} no ${r.u.company_name} (${r.u.parking_type_name}${porDia})`,
         );
       }
       linhas.push(...tabelaMarkdown(dest, diasIndice), "");
@@ -921,8 +926,18 @@ function tabelaTopMarkdown(dest, limit = 5) {
 }
 
 // ---------------------------------------------------------------------------
-// p/<company>/<location>/<type>.md — o gêmeo Markdown da página da unidade.
-// Sem ele, Accept: text/markdown numa unidade caía no llms.txt genérico.
+// estacionamentos/<destino>/<lote>.md: o gêmeo Markdown da página da unidade.
+// Sem ele, Accept: text/markdown numa unidade cai no llms.txt genérico.
+//
+// Ele nascia em `p/<company>/<location>/<type>.md`, que era a URL da ficha ANTES da migração
+// para `/estacionamentos/<destino>/<lote>`. O arquivo continuou sendo escrito, mas no endereço
+// que ninguém mais pede: o worker procura o `.md` do caminho pedido, não achava, e devolvia o
+// llms.txt com 200. Na prática, um agente que buscasse a ficha do Virapark em Markdown recebia
+// o índice do site inteiro, sem os R$ 24,90 por diária que são o piso da tabela dele.
+//
+// O arquivo agora é UM POR UNIDADE, não por tipo de vaga, porque a URL também é: a ficha mostra
+// coberta, descoberta e valet na mesma página (`?vaga=` escolhe a que fica em evidência, sem
+// criar outra página). Cada tipo vira uma tabela dentro do mesmo gêmeo.
 // ---------------------------------------------------------------------------
 /** So codigo IATA de verdade merece parenteses; slug de terminal nao e codigo. */
 const comCodigo = (dest, nome) => (/^[A-Z]{3}$/.test(dest.code ?? "") ? `${nome} (${dest.code})` : nome);
@@ -930,40 +945,62 @@ const comCodigo = (dest, nome) => (/^[A-Z]{3}$/.test(dest.code ?? "") ? `${nome}
 let unidadesMd = 0;
 for (const dest of destinosComPreco) {
   const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
-  for (const u of unidadesCarro(dest)) {
-    const tabela = [];
-    for (const d of diasIndice) {
-      const total = totalDe(u, d);
-      if (total == null) continue;
-      tabela.push(`| ${durLabel(d)} | ${brl(total)} | ${brl(total / d)}/dia |`);
-    }
-    if (tabela.length === 0) continue;
 
-    const urlPagina = `${SITE_URL}/p/${u.company_slug}/${u.location_slug}/${u.parking_type_code}`;
-    const distancia = u.distance_m != null ? ` a ${fmtDistancia(u.distance_m)} do terminal` : "";
+  // Agrupa por `public_path`, que é o caminho real da ficha (o mesmo que o índice de preços
+  // usa no botão Reservar). Unidade sem caminho público fica de fora: escrever num palpite de
+  // rota recria exatamente o bug que este bloco conserta.
+  const porFicha = new Map();
+  for (const u of unidadesCarro(dest)) {
+    if (!u.public_path) continue;
+    const atual = porFicha.get(u.public_path) ?? [];
+    atual.push(u);
+    porFicha.set(u.public_path, atual);
+  }
+
+  for (const [caminho, tipos] of porFicha) {
+    const corpo = [];
+    for (const u of tipos) {
+      const tabela = [];
+      for (const d of diasIndice) {
+        const total = totalDe(u, d);
+        if (total == null) continue;
+        tabela.push(`| ${durLabel(d)} | ${brl(total)} | ${brl(total / d)}/dia |`);
+      }
+      if (tabela.length === 0) continue;
+      corpo.push(
+        `## ${u.parking_type_name}`,
+        "",
+        "| Período | Total | Por dia |",
+        "| --- | --- | --- |",
+        ...tabela,
+        "",
+      );
+    }
+    if (corpo.length === 0) continue;
+
+    const primeira = tipos[0];
+    const urlPagina = `${SITE_URL}${caminho}`;
+    const distancia = primeira.distance_m != null ? ` a ${fmtDistancia(primeira.distance_m)} do terminal` : "";
     const linhas = [
       "---",
-      `title: "${u.company_name} (${u.parking_type_name}) perto de ${comCodigo(dest, nome)} | Movepark"`,
+      `title: "${primeira.company_name} perto de ${comCodigo(dest, nome)}: preço por diária | Movepark"`,
       `canonical: ${urlPagina}`,
       `updated: ${hoje}`,
       "---",
       "",
-      `# ${u.company_name}: ${u.parking_type_name} perto de ${nome}`,
+      `# ${primeira.company_name}: quanto custa perto de ${nome}`,
       "",
-      `O ${u.company_name} é um estacionamento perto de ${comCodigo(dest, nome)}${distancia}, com reserva online pela Movepark. Preços do motor de reservas, os mesmos do checkout:`,
+      `O ${primeira.company_name} é um estacionamento perto de ${comCodigo(dest, nome)}${distancia}, com reserva online pela Movepark. Preços do motor de reservas, os mesmos do checkout. A coluna "Por dia" mostra a diária de cada faixa de duração, e é onde está o menor valor da tabela:`,
       "",
-      "| Período | Total | Por dia |",
-      "| --- | --- | --- |",
-      ...tabela,
-      "",
+      ...corpo,
       `Reservar ou ver a página completa (fotos, traslado, avaliações): ${urlPagina}`,
-      `Comparar com os outros estacionamentos da região: ${SITE_URL}/precos/${dest.slug}`,
-      `Todos os estacionamentos em ${nome}: ${SITE_URL}/destinos/${dest.slug}`,
+      `Comparar com os outros estacionamentos da região: ${SITE_URL}${cPrecos(dest)}`,
+      `Todos os estacionamentos em ${nome}: ${SITE_URL}${cDestino(dest)}`,
       "",
     ];
-    const dir = path.join(DIST, "p", u.company_slug, u.location_slug);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, `${u.parking_type_code}.md`), linhas.join("\n"));
+    const destino = path.join(DIST, caminho.replace(/^\/+/, ""));
+    fs.mkdirSync(path.dirname(destino), { recursive: true });
+    fs.writeFileSync(`${destino}.md`, linhas.join("\n"));
     unidadesMd += 1;
   }
 }
@@ -978,7 +1015,10 @@ for (const d of destinations) {
   if (cards.length === 0) continue;
   const nome = (d.short_name ?? d.name).replace(/\s*\([^)]*\)\s*$/, "").trim();
   for (const m of cards) {
-    const urlFicha = `${SITE_URL}/estacionamentos/${d.slug}/${m.slug}`;
+    // `pubSlug`, não `d.slug`: o slug do banco e o da URL divergem em alguns destinos
+    // (`aeroporto-de-viracopos` contra `aeroporto-viracopos`), e o gêmeo escrito no slug do
+    // banco ficava num caminho que ninguém pede, caindo no llms.txt igual ao da unidade.
+    const urlFicha = `${SITE_URL}${cDestino(d)}/${m.slug}`;
     const distancia = m.distance_km != null ? ` a ${m.distance_km.toFixed(1).replace(".", ",")} km` : "";
     const linhas = [
       "---",
@@ -992,10 +1032,10 @@ for (const d of destinations) {
       `O ${m.name} é um estacionamento mapeado pela Movepark perto de ${nome}${distancia}. Ele ainda não vende reserva online por aqui, então o preço se confirma na cotação com o próprio estacionamento; a ficha traz endereço, mapa e a nota do Google.`,
       "",
       `Ficha completa: ${urlFicha}`,
-      `Estacionamentos com reserva online e preço na hora em ${nome}: ${SITE_URL}/destinos/${d.slug}`,
+      `Estacionamentos com reserva online e preço na hora em ${nome}: ${SITE_URL}${cDestino(d)}`,
       "",
     ];
-    const dir = path.join(DIST, "estacionamentos", d.slug);
+    const dir = path.join(DIST, "estacionamentos", pubSlug(d));
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, `${m.slug}.md`), linhas.join("\n"));
     lotesMd += 1;
