@@ -33,6 +33,7 @@ import {
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useCompanies } from "@/features/companies/api";
+import { useAppSettings } from "@/features/settings/api";
 import { formatBRL } from "@/lib/format";
 import type { CommissionRule } from "@/types/domain";
 import { useCommissionRules, useDeleteCommissionRule, useSaveCommissionRule } from "./api";
@@ -75,6 +76,8 @@ export function CommissionRulesCard() {
   const del = useDeleteCommissionRule();
   const [editing, setEditing] = React.useState<RuleForm | null>(null);
   const [removing, setRemoving] = React.useState<CommissionRule | null>(null);
+  const settings = useAppSettings();
+  const globalWindow = Number(settings.data?.commission_attribution_window_days ?? 7) || 7;
 
   const companyName = (id: string | null) =>
     id ? (companies.data?.find((c) => c.id === id)?.name ?? "Empresa removida") : "Todas as empresas";
@@ -120,6 +123,7 @@ export function CommissionRulesCard() {
                   <TableHead className="text-right">Comissão</TableHead>
                   <TableHead>Taxa do gateway</TableHead>
                   <TableHead>Chargeback</TableHead>
+                  <TableHead>Janela</TableHead>
                   <TableHead>Situação</TableHead>
                   <TableHead className="w-40" />
                 </TableRow>
@@ -144,6 +148,9 @@ export function CommissionRulesCard() {
                       <TableCell className="text-right tabular-nums">{r.take_rate_bps / 100}%</TableCell>
                       <TableCell>{FEE_PAYER_LABEL[r.gateway_fee_payer as FeePayer] ?? r.gateway_fee_payer}</TableCell>
                       <TableCell>{CHARGEBACK_LABEL[r.chargeback_bearer as ChargebackBearer] ?? r.chargeback_bearer}</TableCell>
+                      <TableCell className="tabular-nums text-muted">
+                        {r.attribution_window_days ?? globalWindow} dias{r.attribution_window_days == null ? " (padrão)" : ""}
+                      </TableCell>
                       <TableCell>
                         <Badge tone={STATUS_TONE[st]}>{RULE_STATUS_LABEL[st]}</Badge>
                       </TableCell>
@@ -172,6 +179,7 @@ export function CommissionRulesCard() {
           onChange={setEditing}
           onClose={() => setEditing(null)}
           companies={(companies.data ?? []).map((c) => ({ id: c.id, name: c.name }))}
+          globalWindow={globalWindow}
         />
       )}
 
@@ -201,11 +209,13 @@ function RuleDialog({
   onChange,
   onClose,
   companies,
+  globalWindow,
 }: {
   form: RuleForm;
   onChange: (f: RuleForm) => void;
   onClose: () => void;
   companies: { id: string; name: string }[];
+  globalWindow: number;
 }) {
   const save = useSaveCommissionRule();
   const set = <K extends keyof RuleForm>(k: K, v: RuleForm[K]) => onChange({ ...form, [k]: v });
@@ -365,6 +375,21 @@ function RuleDialog({
               {warning}
             </p>
           )}
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rule-window">Janela de atribuição (dias)</Label>
+            <Input
+              id="rule-window"
+              inputMode="numeric"
+              value={form.windowDays}
+              onChange={(e) => set("windowDays", e.target.value)}
+              placeholder={String(globalWindow)}
+            />
+            <span className="text-caption text-muted">
+              Quantos dias depois de clicar no link a reserva ainda conta como trazida pelo estacionamento.
+              Vazio usa o padrão de {globalWindow} dias.
+            </span>
+          </div>
 
           <div className="grid gap-4 tablet:grid-cols-2">
             <div className="flex flex-col gap-1.5">

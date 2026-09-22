@@ -166,8 +166,16 @@ regra do híbrido.
 - **Operator › Repasses**: card "Vendas que você traz", com as regras da empresa dele (RPC
   `my_commission_channels`, escopo `finance:read`) e o link de cada unidade já com o UTM. Some
   quando a empresa não tem regra.
-- Os padrões do Hub (`commission_default_*`, janela e percentual do alerta) ficam em `app_setting`,
-  sem tela própria por enquanto: mudam raramente e o valor inicial é o comportamento de hoje.
+- **Janela de atribuição por regra (22/09/2026):** cada regra pode ter o próprio prazo entre o
+  clique e a reserva (`commission_rule.attribution_window_days`, 1 a 90); vazio herda
+  `app_setting.commission_attribution_window_days` (7). É característica do canal: link de
+  Instagram merece dias, link de WhatsApp para cliente decidido merece menos. O Operator vê o prazo
+  de cada canal no card de links.
+- **Alerta de concentração:** `commission_partner_share_alert_pct` é editável no cabeçalho do
+  relatório "Vendas por canal". É vigilância da Movepark sobre a empresa, não parâmetro de regra.
+- **Padrões do Hub** (`commission_default_fee_payer`, `commission_default_chargeback_bearer`) ficam
+  só em `app_setting`, de propósito: valem para toda venda sem regra e mudam por decisão de
+  política geral, que merece registro na spec, não um campo na tela.
 
 ## Contra abuso
 

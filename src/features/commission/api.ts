@@ -63,6 +63,8 @@ export type PartnerChannels = {
     match_white_label: boolean;
     take_rate_bps: number;
     valid_until: string | null;
+    /** Janela própria da regra; nulo usa `window_days`. */
+    window_days?: number | null;
   }[];
   locations: { id: string; name: string; public_path: string }[];
 };

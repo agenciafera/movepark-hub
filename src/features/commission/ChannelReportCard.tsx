@@ -1,4 +1,8 @@
 import * as React from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAppSettings, useUpdateAppSettings } from "@/features/settings/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +39,28 @@ export function ChannelReportCard() {
   const period = months.find((m) => m.value === monthKey) ?? months[0];
   const report = useChannelReport(period.from, period.to);
   const companies = report.data?.companies ?? [];
+  const settings = useAppSettings();
+  const updateSettings = useUpdateAppSettings();
+  const alertSaved = settings.data?.commission_partner_share_alert_pct ?? "60";
+  const [alertDraft, setAlertDraft] = React.useState<string | null>(null);
+  const alertValue = alertDraft ?? alertSaved;
+  const alertDirty = alertDraft != null && alertDraft.trim() !== alertSaved;
+
+  async function saveAlert() {
+    const n = Number(alertValue.trim());
+    if (!Number.isInteger(n) || n < 1 || n > 100) {
+      toast.error("O alerta é um número inteiro de 1 a 100.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({ commission_partner_share_alert_pct: String(n) });
+      setAlertDraft(null);
+      toast.success("Alerta atualizado.");
+      report.refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao salvar o alerta.");
+    }
+  }
 
   return (
     <Card>
@@ -43,8 +69,30 @@ export function ChannelReportCard() {
           <CardTitle>Vendas por canal</CardTitle>
           <p className="mt-1 max-w-[68ch] text-pretty text-body-sm text-muted">
             Reservas pagas no mês, abertas por canal. O alerta acende quando o canal do estacionamento
-            passa de {report.data?.alert_pct ?? 60}% das vendas dele.
+            passa de uma fatia das vendas dele.
           </p>
+          <div className="mt-2 flex items-center gap-2">
+            <label htmlFor="alert-pct" className="text-caption text-muted">
+              Alerta a partir de
+            </label>
+            <Input
+              id="alert-pct"
+              inputMode="numeric"
+              value={alertValue}
+              onChange={(e) => setAlertDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && alertDirty) saveAlert();
+              }}
+              className="h-8 w-16 text-right tabular-nums"
+              aria-label="Alerta de concentração em porcentagem"
+            />
+            <span className="text-caption text-muted">% pelo canal dele</span>
+            {alertDirty && (
+              <Button size="sm" variant="secondary" onClick={saveAlert} disabled={updateSettings.isPending}>
+                {updateSettings.isPending ? "Salvando…" : "Salvar"}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="w-48 shrink-0">
           <Select value={monthKey} onValueChange={setMonthKey}>

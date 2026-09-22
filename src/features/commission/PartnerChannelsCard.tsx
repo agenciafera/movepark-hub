@@ -45,7 +45,7 @@ export function PartnerChannelsCard({ companyId }: { companyId: string }) {
         <div>
           <CardTitle>Vendas que você traz</CardTitle>
           <p className="mt-1 max-w-[68ch] text-pretty text-body-sm text-muted">
-            Quando o cliente chega por um destes links e reserva em até {data?.window_days ?? 7} dias, a venda paga a
+            Quando o cliente chega por um destes links e reserva dentro do prazo do canal, a venda paga a
             comissão reduzida. Nas outras vendas a comissão é de {(data?.default_take_rate_bps ?? 0) / 100}%.
           </p>
         </div>
@@ -72,6 +72,7 @@ export function PartnerChannelsCard({ companyId }: { companyId: string }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-title-sm text-ink">{r.name}</span>
               <Badge tone="active">comissão de {r.take_rate_bps / 100}%</Badge>
+              <Badge tone="neutral">vale por {r.window_days ?? data?.window_days ?? 7} dias depois do clique</Badge>
               {r.match_white_label && <Badge tone="neutral">vale também no seu site Movepark</Badge>}
             </div>
             {location ? (

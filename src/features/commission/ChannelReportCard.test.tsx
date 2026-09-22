@@ -3,8 +3,15 @@ import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test/utils";
 
 const report = vi.hoisted(() => ({ current: undefined as unknown }));
-vi.mock("./api", () => ({ useChannelReport: () => ({ data: report.current, isLoading: false }) }));
+vi.mock("./api", () => ({ useChannelReport: () => ({ data: report.current, isLoading: false, refetch: vi.fn() }) }));
+const updateSettings = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+vi.mock("@/features/settings/api", () => ({
+  useAppSettings: () => ({ data: { commission_partner_share_alert_pct: "60" } }),
+  useUpdateAppSettings: () => ({ mutateAsync: updateSettings, isPending: false }),
+}));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
+import { fireEvent, waitFor } from "@testing-library/react";
 import { ChannelReportCard } from "./ChannelReportCard";
 
 describe("ChannelReportCard", () => {
@@ -42,5 +49,27 @@ describe("ChannelReportCard", () => {
     const vira = screen.getByText("Virapark").closest("tr")!;
     expect(within(vira).queryByText(/pelo canal dele/)).not.toBeInTheDocument();
     expect(screen.getAllByText("Movepark (busca e site)")).toHaveLength(2);
+  });
+});
+
+describe("alerta de concentração", () => {
+  it("o percentual é editável ali mesmo e grava na configuração", async () => {
+    report.current = { alert_pct: 60, companies: [] };
+    renderWithProviders(<ChannelReportCard />);
+    const campo = screen.getByLabelText("Alerta de concentração em porcentagem");
+    expect(campo).toHaveValue("60");
+    expect(screen.queryByRole("button", { name: "Salvar" })).not.toBeInTheDocument();
+    fireEvent.change(campo, { target: { value: "50" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(updateSettings).toHaveBeenCalledWith({ commission_partner_share_alert_pct: "50" }));
+  });
+  it("valor fora de 1 a 100 não grava", async () => {
+    updateSettings.mockClear();
+    report.current = { alert_pct: 60, companies: [] };
+    renderWithProviders(<ChannelReportCard />);
+    fireEvent.change(screen.getByLabelText("Alerta de concentração em porcentagem"), { target: { value: "150" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(updateSettings).not.toHaveBeenCalled();
   });
 });

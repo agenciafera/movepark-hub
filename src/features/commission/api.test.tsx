@@ -16,6 +16,7 @@ const REGRA: RulePayload = {
   gateway_fee_payer: "partner",
   chargeback_bearer: "partner",
   priority: 0,
+  attribution_window_days: null,
   is_active: true,
   valid_from: null,
   valid_until: null,

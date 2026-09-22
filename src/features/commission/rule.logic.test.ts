@@ -34,6 +34,7 @@ describe("validateRuleForm", () => {
         gateway_fee_payer: "partner",
         chargeback_bearer: "partner",
         priority: 3,
+        attribution_window_days: null,
         is_active: true,
         valid_from: null,
         valid_until: null,
@@ -60,7 +61,14 @@ describe("validateRuleForm", () => {
     expect(validateRuleForm({ ...ok, takeRatePct: "100" })).toMatchObject({ ok: false });
     expect(validateRuleForm({ ...ok, takeRatePct: "abc" })).toMatchObject({ ok: false });
     expect(validateRuleForm({ ...ok, priority: "1.5" })).toMatchObject({ ok: false });
+    expect(validateRuleForm({ ...ok, windowDays: "0" })).toMatchObject({ ok: false, error: expect.stringMatching(/1 a 90/) });
+    expect(validateRuleForm({ ...ok, windowDays: "91" })).toMatchObject({ ok: false });
     expect(validateRuleForm({ ...ok, validFrom: "2026-10-10", validUntil: "2026-10-01" })).toMatchObject({ ok: false });
+  });
+
+  it("janela por regra: vazio herda o global, número vira a janela da regra", () => {
+    expect(validateRuleForm({ ...ok, windowDays: "" })).toMatchObject({ payload: { attribution_window_days: null } });
+    expect(validateRuleForm({ ...ok, windowDays: " 30 " })).toMatchObject({ payload: { attribution_window_days: 30 } });
   });
 
   it("white-label sem UTM é regra válida", () => {
@@ -79,14 +87,14 @@ describe("formFromRule", () => {
   it("ida e volta: o que sai do banco entra no formulário e valida no mesmo payload", () => {
     const rule = {
       id: "r1", company_id: "c1", name: "Site", utm_sources: ["abbapark", "abbapark-insta"], match_white_label: true,
-      take_rate_bps: 750, gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, is_active: true,
+      take_rate_bps: 750, gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, attribution_window_days: 14, is_active: true,
       valid_from: "2026-10-01T03:00:00.000Z", valid_until: null,
       created_at: "", updated_at: "", created_by: null, deleted_at: null,
     } satisfies CommissionRule;
     const v = validateRuleForm(formFromRule(rule));
     expect(v.ok && v.payload).toMatchObject({
       id: "r1", company_id: "c1", utm_sources: ["abbapark", "abbapark-insta"], take_rate_bps: 750,
-      gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, valid_from: "2026-10-01T03:00:00.000Z",
+      gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, attribution_window_days: 14, valid_from: "2026-10-01T03:00:00.000Z",
     });
   });
 });

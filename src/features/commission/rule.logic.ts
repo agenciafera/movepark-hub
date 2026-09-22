@@ -32,6 +32,8 @@ export type RuleForm = {
   feePayer: FeePayer;
   chargebackBearer: ChargebackBearer;
   priority: string;
+  /** Dias entre o clique e a reserva; "" herda o global. */
+  windowDays: string;
   isActive: boolean;
   /** yyyy-mm-dd, ou "" para sem limite. */
   validFrom: string;
@@ -47,6 +49,7 @@ export const EMPTY_RULE_FORM: RuleForm = {
   feePayer: "movepark",
   chargebackBearer: "each",
   priority: "0",
+  windowDays: "",
   isActive: true,
   validFrom: "",
   validUntil: "",
@@ -72,6 +75,7 @@ export type RulePayload = {
   gateway_fee_payer: FeePayer;
   chargeback_bearer: ChargebackBearer;
   priority: number;
+  attribution_window_days: number | null;
   is_active: boolean;
   valid_from: string | null;
   valid_until: string | null;
@@ -97,6 +101,11 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
   if (pct.bps >= 10000) return { ok: false, error: "A comissão não pode consumir todo o valor da reserva." };
   const priority = Number(f.priority.trim() === "" ? "0" : f.priority);
   if (!Number.isInteger(priority)) return { ok: false, error: "Prioridade é um número inteiro." };
+  const windowRaw = f.windowDays.trim();
+  const windowDays = windowRaw === "" ? null : Number(windowRaw);
+  if (windowDays != null && (!Number.isInteger(windowDays) || windowDays < 1 || windowDays > 90)) {
+    return { ok: false, error: "A janela de atribuição é um número inteiro de 1 a 90 dias. Deixe vazio para usar o padrão." };
+  }
   const from = dayStart(f.validFrom);
   const until = dayStart(f.validUntil);
   if (from && until && until <= from) return { ok: false, error: "O fim da vigência tem que ser depois do início." };
@@ -112,6 +121,7 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
       gateway_fee_payer: f.feePayer,
       chargeback_bearer: f.chargebackBearer,
       priority,
+      attribution_window_days: windowDays,
       is_active: f.isActive,
       valid_from: from,
       valid_until: until,
@@ -132,6 +142,7 @@ export function formFromRule(r: CommissionRule): RuleForm {
     chargebackBearer:
       r.chargeback_bearer === "partner" || r.chargeback_bearer === "movepark" ? r.chargeback_bearer : "each",
     priority: String(r.priority),
+    windowDays: r.attribution_window_days == null ? "" : String(r.attribution_window_days),
     isActive: r.is_active,
     validFrom: day(r.valid_from),
     validUntil: day(r.valid_until),

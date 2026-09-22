@@ -7,7 +7,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(49);
+select plan(52);
 
 -- ── schema ──────────────────────────────────────────────────────────────────
 select has_table('public', 'commission_rule', 'commission_rule existe');
@@ -81,6 +81,16 @@ select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search
   'sem data do clique (cliente antigo, API) vale a hora da reserva');
 select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', 'comm-a-site', now() + interval '2 days', now()) ->> 'channel', 'hub',
   'clique datado no futuro é prova forjada e não casa');
+
+-- janela por regra (22/09/2026): a regra pode ter o próprio prazo; vazio herda o global
+update public.commission_rule set attribution_window_days = 2 where id = '00000000-0000-0000-0000-0000000c0001';
+select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', 'comm-a-site', now() - interval '3 days', now()) ->> 'channel', 'hub',
+  'com janela de 2 dias na regra, clique de 3 dias não conta mesmo cabendo nos 7 globais');
+select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', 'comm-a-site', now() - interval '1 day', now()) ->> 'channel', 'Site do parceiro',
+  'dentro da janela da regra conta');
+update public.commission_rule set attribution_window_days = null where id = '00000000-0000-0000-0000-0000000c0001';
+select throws_ok($$update public.commission_rule set attribution_window_days = 0 where id = '00000000-0000-0000-0000-0000000c0001'$$, '23514', null,
+  'janela tem que ficar entre 1 e 90 dias');
 
 -- white-label
 select is(public.resolve_commission(current_setting('test.a')::uuid, 'white_label', null, null, now()) ->> 'channel', 'Site do parceiro',

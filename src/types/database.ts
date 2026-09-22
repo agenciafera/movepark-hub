@@ -1146,6 +1146,7 @@ export type Database = {
       }
       commission_rule: {
         Row: {
+          attribution_window_days: number | null
           chargeback_bearer: string
           company_id: string | null
           created_at: string
@@ -1164,6 +1165,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
+          attribution_window_days: number | null
           chargeback_bearer: string
           company_id?: string | null
           created_at?: string
@@ -1182,6 +1184,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
+          attribution_window_days?: number | null
           chargeback_bearer?: string
           company_id?: string | null
           created_at?: string

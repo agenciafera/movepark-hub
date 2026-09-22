@@ -24,7 +24,7 @@ describe("PartnerChannelsCard", () => {
     renderWithProviders(<PartnerChannelsCard companyId="c1" />);
     expect(screen.getByText("comissão de 5%")).toBeInTheDocument();
     expect(screen.getByText(/comissão é de 20%/)).toBeInTheDocument();
-    expect(screen.getByText(/reserva em até 10 dias/)).toBeInTheDocument();
+    expect(screen.getByText("vale por 10 dias depois do clique")).toBeInTheDocument();
     expect(
       screen.getByText(`${siteUrl("/estacionamentos/gru/abbapark")}?utm_source=abbapark&utm_medium=parceiro`),
     ).toBeInTheDocument();

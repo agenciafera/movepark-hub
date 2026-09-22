@@ -12,6 +12,7 @@ vi.mock("./api", () => ({
   useSaveCommissionRule: () => ({ mutateAsync: saveRule, isPending: false }),
   useDeleteCommissionRule: () => ({ mutateAsync: deleteRule, isPending: false }),
 }));
+vi.mock("@/features/settings/api", () => ({ useAppSettings: () => ({ data: { commission_attribution_window_days: "7" } }) }));
 vi.mock("@/features/companies/api", () => ({
   useCompanies: () => ({ data: [{ id: "c1", name: "Abbapark", take_rate_bps: 2000 }] }),
 }));
@@ -29,6 +30,7 @@ const REGRA: CommissionRule = {
   gateway_fee_payer: "partner",
   chargeback_bearer: "partner",
   priority: 0,
+  attribution_window_days: null,
   is_active: true,
   valid_from: null,
   valid_until: null,
@@ -62,6 +64,19 @@ describe("CommissionRulesCard", () => {
     expect(within(row).getByText("Estacionamento paga")).toBeInTheDocument();
     expect(within(row).getByText("Estacionamento arca com tudo")).toBeInTheDocument();
     expect(within(row).getByText("Ativa")).toBeInTheDocument();
+    expect(within(row).getByText("7 dias (padrão)")).toBeInTheDocument();
+  });
+
+  it("regra com janela própria mostra a dela, e o formulário grava o número", async () => {
+    rulesData.current = [{ ...REGRA, attribution_window_days: 30 }];
+    renderWithProviders(<CommissionRulesCard />);
+    expect(screen.getByText("30 dias")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    expect(screen.getByLabelText("Janela de atribuição (dias)")).toHaveValue("30");
+    fireEvent.change(screen.getByLabelText("Janela de atribuição (dias)"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar regra" }));
+    await waitFor(() => expect(saveRule).toHaveBeenCalledTimes(1));
+    expect(saveRule.mock.calls[0][0]).toMatchObject({ id: "r1", attribution_window_days: null });
   });
 
   it("nova regra: mostra o exemplo em reais, avisa quando a comissão não cobre a taxa e salva o payload", async () => {
