@@ -258,6 +258,29 @@ export function listingDescription(args: {
  * não entrega é a mesma quebra de promessa do ADR-009, só que antes do clique.
  */
 
+/**
+ * Teto do `<title>`. O Google corta em torno de 580px, e 62 caracteres é a aproximação
+ * prática que o projeto usa desde a varredura de 22/09/2026.
+ */
+export const TITLE_MAX = 62;
+
+/**
+ * O título que couber, na ordem em que as partes importam.
+ *
+ * Título de página gerada varia de tamanho com o nome do aeroporto e com o texto da
+ * pergunta: `Estacionamento mais barato em Guarulhos (GRU): setembro/2026 | Movepark` deu
+ * 71 caracteres em produção, e o que o Google cortou foi justamente a marca. Em vez de
+ * escrever o corte em cada rota, cada uma lista as variações da mais completa para a mais
+ * enxuta e esta função devolve a primeira que cabe. Se nenhuma couber, corta a última em
+ * palavra inteira, porque título pela metade de palavra é pior que título curto.
+ */
+export function pickTitle(...variacoes: string[]): string {
+  const limpas = variacoes.map((v) => v.trim()).filter(Boolean);
+  for (const v of limpas) if (v.length <= TITLE_MAX) return v;
+  const ultima = limpas.at(-1) ?? "";
+  return ultima.length <= TITLE_MAX ? ultima : cortarEmPalavra(ultima, TITLE_MAX);
+}
+
 /** O teto que o Google corta. Abaixo do piso, a description desperdiça espaço da SERP. */
 export const META_MIN = 120;
 export const META_MAX = 160;

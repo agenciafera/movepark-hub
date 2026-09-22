@@ -15,7 +15,7 @@ import {
 } from "@/features/faqs/faqPagina.logic";
 import type { FaqPageData } from "@/features/faqs/api";
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
-import { buildMetaDescription, priceHook } from "@/lib/seo";
+import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
@@ -78,7 +78,14 @@ export default function FaqPerguntaPage() {
   const destinoCurto = destino ? shortSemCodigo(destino.short_name, destino.name) : null;
   const canonical = `${SITE_URL}/faq/${faq.slug}`;
   const keyword = keywordDoTitulo(destino);
-  const title = `${faq.question} · ${keyword} | Movepark`;
+  // A pergunta é o que a pessoa digitou: ela fica inteira, e o que sai quando a frase
+  // estoura é o sufixo, primeiro a marca e depois a palavra-chave do destino.
+  const title = pickTitle(
+    `${faq.question} · ${keyword} | Movepark`,
+    `${faq.question} · ${keyword}`,
+    `${faq.question} | Movepark`,
+    faq.question,
+  );
   // O corte fino fica com `buildMetaDescription`, que sabe quanto espaço sobra depois do
   // preço e do CTA. Aqui só tiramos a marcação e as frases que não caberiam de jeito nenhum.
   const resumoResposta = metaDescriptionFrom(faq.answer, 120);

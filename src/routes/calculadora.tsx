@@ -462,7 +462,9 @@ export default function CalculadoraPage() {
       ? DESCRIPTION_SEM_PRECO
       : buildMetaDescription({
           keyword: "Calculadora de estacionamento de aeroporto",
-          extra: "escolha o aeroporto e as diárias e veja o ranking do mais barato ao mais caro",
+          // Curto de propósito: com o preço e o CTA na frase, sobram ~51 caracteres para o
+          // complemento, e um mais longo era descartado inteiro (a description fechava em 113).
+          extra: "escolha o aeroporto e o número de diárias",
           price: priceHook(menorDiaria),
           cta: "comparar",
         });

@@ -10,7 +10,7 @@ import {
   type MaisBaratoLinha,
 } from "@/features/price-index/maisBarato.logic";
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
-import { buildMetaDescription, priceHook } from "@/lib/seo";
+import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema, priceTableOffersSchema } from "@/lib/jsonld";
 import { SITE_URL } from "@/lib/site";
@@ -114,12 +114,19 @@ export default function EstacionamentoMaisBaratoPage() {
       })
     : null;
 
-  const title = `Estacionamento mais barato em ${curto} (${destino.code}): ${mesAno} | Movepark`;
+  // O mês é sinal de frescor na SERP, mas é a primeira coisa a sair quando o nome do
+  // aeroporto é longo: a versão com mês deu 71 caracteres em Guarulhos e o Google cortou
+  // justamente a marca.
+  const title = pickTitle(
+    `Estacionamento mais barato em ${curto} (${destino.code}): ${mesAno} | Movepark`,
+    `Estacionamento mais barato em ${curto} (${destino.code}) | Movepark`,
+    `Estacionamento mais barato em ${curto} (${destino.code})`,
+  );
   // Estrutura única da description do site: palavra-chave, menor preço real e CTA. O número é
   // o mesmo vencedor que a tabela mostra logo abaixo, então snippet e página não divergem.
   const description = buildMetaDescription({
     keyword: `Estacionamento mais barato perto do ${prosa}`,
-    extra: "vencedor e segunda opção por duração",
+    extra: "vencedor e segunda opção",
     price: priceHook(diaria.vencedor.total, diaria.days),
     cta: "comparar",
   });

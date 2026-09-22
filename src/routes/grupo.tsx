@@ -46,7 +46,9 @@ export default function GrupoPage() {
   return (
     <>
       <Helmet>
-        <title>{`${TITULO} | Movepark`}</title>
+        {/* O `TITULO` já traz a marca; o sufixo dobrava "Movepark" e gastava 11 dos 62
+            caracteres sem dizer do que a página trata. */}
+        <title>O grupo Movepark: reserva de vaga e rastreio da van</title>
         <meta name="description" content={META} />
         <meta property="og:title" content={TITULO} />
         <meta property="og:description" content={META} />

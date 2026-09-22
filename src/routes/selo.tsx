@@ -83,9 +83,11 @@ export default function SeloPage() {
   return (
     <>
       <Helmet>
-        <title>{`${TITULO} | Movepark`}</title>
+        {/* O `TITULO` já traz a marca, e o H1 continua sendo ele. O `<title>` abre pelo que
+            a página entrega ao parceiro, que é o selo no site do estacionamento dele. */}
+        <title>Selo de parceiro para o seu estacionamento | Movepark</title>
         <meta name="description" content={META} />
-        <meta property="og:title" content={`${TITULO} | Movepark`} />
+        <meta property="og:title" content="Selo de parceiro para o seu estacionamento | Movepark" />
         <meta property="og:url" content={siteUrl("/selo")} />
         <link rel="canonical" href={siteUrl("/selo")} />
       </Helmet>

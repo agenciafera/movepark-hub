@@ -95,6 +95,21 @@ Nos artefatos GEO a mesma estrutura é reimplementada em
 porque o script roda em Node puro, fora do bundle do Vite. No blog, a frase é escrita à mão e
 cobrada pelo analisador da skill `blogpost-seo-geo`.
 
+**O teste de contrato não vê tudo, e é por isso que existe um segundo passo.** Ele lê texto
+literal; metade das descriptions é montada em runtime com o preço do motor, e o `<title>` de
+página gerada muda de tamanho conforme o nome do aeroporto e o texto da pergunta. Depois de um
+deploy que mexeu em copy de SERP, rode **`bun run lint:meta`**
+([`scripts/check-meta-producao.mjs`](../../scripts/check-meta-producao.mjs)), que busca uma URL de
+cada formato no ar e cobra a mesma regra sobre o HTML renderizado. Foi ele que achou, depois do
+commit `f83c53b4`, o título de `/mais-barato` com 71 caracteres e a description da calculadora com
+107. Para o `<title>` variável use `pickTitle`, que recebe as variações da mais completa para a
+mais enxuta e devolve a primeira que cabe nos 62.
+
+**Título institucional não recebe palavra-chave enfiada.** "Termos de Uso" e "Política de
+Privacidade" são a consulta de quem procura por elas; escrever "Termos de Uso de estacionamento"
+seria stuffing. As duas estão na lista `SEM_PALAVRA_CHAVE` do script, e seguem obrigadas a
+tamanho, CTA e ausência de travessão.
+
 
 ### Head por rota e structured data
 

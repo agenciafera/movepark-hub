@@ -23,6 +23,7 @@
     "gen:cards": "node scripts/gen-card-hashes.mjs",
     "gen:selo": "bun scripts/gerar-selo-png.ts",
     "lint:openapi": "node scripts/check-openapi-drift.mjs",
+    "lint:meta": "node scripts/check-meta-producao.mjs",
     "lint:distancias": "node scripts/check-distancias-faq.mjs",
     "lint:precos": "node scripts/check-precos-faq.mjs",
     "lint:bloco-fato": "node scripts/bloco-de-fato.mjs",
