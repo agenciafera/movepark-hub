@@ -59,11 +59,13 @@ export function BookingMoneyCard({ money, audience = "manager" }: { money: Money
                 ? parceiro
                   ? "o valor ficou com a Movepark e chega por repasse"
                   : "cobrança sem split: o valor ficou com a Movepark e chega por repasse"
-                : split.partner.releaseAt
+                : split.partner.withdrawAt
                   ? parceiro
-                    ? `entra no seu saldo em ${formatDate(split.partner.releaseAt)}; o saque libera pelo prazo da conta`
-                    : `libera no gateway em ${formatDate(split.partner.releaseAt)}`
-                  : "data de liberação ainda não apurada"
+                    ? `libera para saque em ${formatDate(split.partner.withdrawAt)}`
+                    : `libera para saque em ${formatDate(split.partner.withdrawAt)}${split.partner.releaseAt ? `; o gateway libera o recebível em ${formatDate(split.partner.releaseAt)}` : ""}`
+                  : split.partner.releaseAt
+                    ? `libera no gateway em ${formatDate(split.partner.releaseAt)}`
+                    : "data de liberação ainda não apurada"
           }
         >
           {split ? (
@@ -71,7 +73,10 @@ export function BookingMoneyCard({ money, audience = "manager" }: { money: Money
               <Linha label="Parte do estacionamento" value={brl(split.partner.grossCents)} />
               {split.partner.debtRecoveredCents > 0 && <Linha label="Abatimento de dívida" value={signed(-split.partner.debtRecoveredCents)} muted />}
               {split.partner.feeCents > 0 && (
-                <Linha label={parceiro ? "Processamento (venda anterior a 18/09/2026)" : "Taxa do gateway"} value={signed(-split.partner.feeCents)} muted />
+                <Linha label={parceiro ? "Taxa do gateway (por sua conta nesta venda)" : "Taxa do gateway"} value={signed(-split.partner.feeCents)} muted />
+              )}
+              {split.feePending && split.feePayer === "partner" && !split.custody && (
+                <Linha label={parceiro ? "Taxa do gateway (por sua conta nesta venda)" : "Taxa do gateway"} value="apurando…" muted />
               )}
               <Linha label={split.custody ? "A repassar" : parceiro ? "Você recebe" : "Líquido do estacionamento"} value={brl(split.partner.netCents)} strong testId="valores-parceiro" />
             </>
@@ -81,7 +86,7 @@ export function BookingMoneyCard({ money, audience = "manager" }: { money: Money
         </Bloco>
 
         {!parceiro && (
-          <Bloco title="Movepark" hint={split?.feePending ? "taxa do gateway ainda não apurada (até 30 min depois do pagamento)" : undefined}>
+          <Bloco title="Movepark" hint={split?.feePending ? "taxa do gateway ainda não apurada; a Pagar.me informa segundos depois do pagamento" : undefined}>
           {split ? (
             <>
               <Linha label="Comissão" value={brl(split.movepark.commissionCents)} />
@@ -89,6 +94,11 @@ export function BookingMoneyCard({ money, audience = "manager" }: { money: Money
               {split.movepark.interestCents > 0 && <Linha label="Juros do parcelamento" value={brl(split.movepark.interestCents)} />}
               {split.movepark.debtRecoveredCents > 0 && <Linha label="Dívida recuperada" value={brl(split.movepark.debtRecoveredCents)} />}
               {split.movepark.feeCents > 0 && <Linha label="Taxa do gateway" value={signed(-split.movepark.feeCents)} muted />}
+              {split.feePending && split.feePayer === "movepark" && <Linha label="Taxa do gateway" value="apurando…" muted />}
+              {/* Quando o estacionamento paga a taxa, o líquido da Movepark é a comissão inteira; a linha diz isso para ninguém procurar o desconto. */}
+              {!split.feePending && split.feePayer === "partner" && !split.custody && (
+                <Linha label="Taxa do gateway" value="por conta do estacionamento" muted testId="valores-taxa-parceiro" />
+              )}
               <Linha label="Líquido da Movepark" value={brl(split.movepark.netCents)} strong testId="valores-movepark" />
             </>
           ) : (

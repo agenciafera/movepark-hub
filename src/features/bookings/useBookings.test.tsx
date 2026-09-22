@@ -4,7 +4,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { useBookings } from "./api";
+import { useBookings, useReconcileBookingFees } from "./api";
+import { supabase } from "@/lib/supabase";
+import { edge, falha, renderMutation } from "@/test/msw/supabase";
+import { vi } from "vitest";
 
 const SUPABASE_URL = "http://localhost:54321";
 
@@ -87,5 +90,23 @@ describe("useBookings", () => {
     const url = decodeURIComponent(capturedUrl);
     expect(url).toContain("check_in_at=gte.2026-09-01");
     expect(url).toContain("order=check_in_at.desc");
+  });
+});
+
+describe("useReconcileBookingFees", () => {
+  it("pede à Edge reconcile-gateway-fees a apuração de UMA reserva, com o JWT do hub_admin", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({ data: { session: { access_token: "jwt" } as never }, error: null } as never);
+    const chamada = edge("reconcile-gateway-fees", { json: { ok: true, checked: 1, updated: 1 } });
+    const { result } = renderMutation(() => useReconcileBookingFees());
+    const r = await result.current.mutateAsync("bk-1");
+    expect(chamada.ultimoBody).toEqual({ booking_id: "bk-1" });
+    expect(chamada.chamadas[0].headers.get("authorization")).toBe("Bearer jwt");
+    expect(r.updated).toBe(1);
+  });
+  it("sem ser hub_admin a Edge recusa e a mensagem chega", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({ data: { session: { access_token: "jwt" } as never }, error: null } as never);
+    falha("edge", "reconcile-gateway-fees", 401, "unauthorized");
+    const { result } = renderMutation(() => useReconcileBookingFees());
+    await expect(result.current.mutateAsync("bk-1")).rejects.toThrow(/unauthorized/);
   });
 });

@@ -8,10 +8,16 @@ import type { GatewayPayable } from "./types.ts";
  * Custo total da cobrança no gateway: MDR + antecipação + proteção contra fraude, somado sobre
  * TODAS as parcelas. Devolve `null` quando não há recebível, porque zero e "ainda não sei" são
  * coisas diferentes: gravar zero como se fosse medida esconde o que falta apurar.
+ *
+ * Só os recebíveis de CRÉDITO (a venda). Depois de um estorno a Pagar.me cria recebíveis de
+ * `refund` com a taxa negativa (ela devolve o MDR no estorno total), e somar tudo zerava a taxa
+ * de qualquer cobrança apurada depois de estornada (MP-3535C3, 22/09/2026): a venda custou
+ * R$ 1,85 e a tela dizia zero. O que o estorno devolve é outra conta, a do razão.
  */
 export function totalGatewayFeeCents(payables: GatewayPayable[]): number | null {
-  if (!payables.length) return null;
-  return payables.reduce(
+  const credits = payables.filter((p) => !p.type || p.type === "credit");
+  if (!credits.length) return null;
+  return credits.reduce(
     (acc, p) =>
       acc + (p.feeCents ?? 0) + (p.anticipationFeeCents ?? 0) + (p.fraudCoverageFeeCents ?? 0),
     0,

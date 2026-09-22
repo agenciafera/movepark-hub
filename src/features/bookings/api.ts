@@ -241,3 +241,35 @@ export function useBookingGatewayTrail(bookingId: string | undefined, enabled = 
     },
   });
 }
+
+const RECONCILE_FEES_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reconcile-gateway-fees`;
+
+/**
+ * Apura no gateway a taxa e a data de liberação das cobranças de UMA reserva (hub_admin). A tela
+ * da reserva chama ao abrir quando a taxa ainda não foi apurada: o cron demora até 30 min e o
+ * recebível já existe segundos depois do pagamento.
+ */
+export function useReconcileBookingFees() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingId: string): Promise<{ ok: boolean; checked: number; updated: number }> => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(RECONCILE_FEES_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ booking_id: bookingId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all }),
+  });
+}

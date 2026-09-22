@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
 import type { BookingStatus } from "@/types/domain";
-import { useBookingByCode, useCancelBookingStaff, useUpdateBookingStatus } from "./api";
+import { useBookingByCode, useCancelBookingStaff, useReconcileBookingFees, useUpdateBookingStatus } from "./api";
+import { usePayoutReleaseDays } from "@/features/payouts/api";
 import { useChangeBookingVehicle } from "./customerApi";
 import { BookingMoneyCard } from "./BookingMoneyCard";
 import { GatewayTrail } from "./GatewayTrail";
@@ -61,6 +62,28 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
   const changeVehicle = useChangeBookingVehicle();
   const [confirming, setConfirming] = React.useState(false);
   const [plate, setPlate] = React.useState("");
+  const reconcileFees = useReconcileBookingFees();
+  const releaseDaysQ = usePayoutReleaseDays(bookingQ.data?.location?.company?.id);
+  const releaseDays = releaseDaysQ.data ?? null;
+
+  // Taxa do gateway sob demanda (22/09/2026): quando o Manager abre uma reserva paga cuja taxa
+  // ainda não foi apurada, pede à Edge na hora, em vez de esperar até 30 min pelo cron. Uma vez
+  // por reserva aberta; se o recebível ainda não existir, a próxima abertura tenta de novo.
+  const pendingFeeId = React.useMemo(() => {
+    const b = bookingQ.data;
+    if (!b || effectiveRole !== "hub_admin") return null;
+    const pago = (b.payments ?? []).find(
+      (p) => (p.status === "paid" || p.status === "refunded") && (p as { gateway_fee_cents?: number | null }).gateway_fee_cents == null,
+    );
+    return pago ? b.id : null;
+  }, [bookingQ.data, effectiveRole]);
+  const askedRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!pendingFeeId || askedRef.current === pendingFeeId) return;
+    askedRef.current = pendingFeeId;
+    reconcileFees.mutate(pendingFeeId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFeeId]);
 
   const base = audience === "manager" ? "/manager" : "/operator";
   const back = { to: `${base}/bookings`, label: "Voltar para Reservas" };
@@ -98,6 +121,7 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
     (booking as unknown as { price_breakdown?: PriceBreakdownLike | null }).price_breakdown ?? null,
     Number(booking.total_amount),
     pagamento ? { ...pagamento, amount: Number(pagamento.amount), debt_recovered_cents: pagamento.debt_recovered_cents ?? 0, refund_partner_cents: pagamento.refund_partner_cents ?? 0 } : null,
+    releaseDays,
   );
   const fareTier = (booking as unknown as { fare_tier?: string | null }).fare_tier ?? null;
   const fareCancelUntil = (booking as unknown as { fare_cancel_until?: string | null }).fare_cancel_until ?? null;

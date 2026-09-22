@@ -27,7 +27,8 @@ describe("buildMoneyBreakdown", () => {
       { kind: "fare", label: "Plano Flex", cents: 1290 },
     ]);
     expect(m.customer.chargedCents).toBe(3090);
-    expect(m.split?.partner).toEqual({ grossCents: 1440, debtRecoveredCents: 0, feeCents: 117, netCents: 1323, releaseAt: "2026-10-20T03:00:00Z" });
+    expect(m.split?.partner).toEqual({ grossCents: 1440, debtRecoveredCents: 0, feeCents: 117, netCents: 1323, releaseAt: "2026-10-20T03:00:00Z", withdrawAt: null });
+    expect(m.split?.feePayer).toBe("partner");
     expect(m.split?.movepark).toMatchObject({ commissionCents: 360, fareCents: 1290, feeCents: 0, netCents: 1650 });
     expect(m.refund).toBeNull();
   });
@@ -68,5 +69,30 @@ describe("buildMoneyBreakdown", () => {
     const pago = { status: "paid", created_at: "2026-09-18T17:36:00Z" };
     expect(mainPayment([{ status: "failed", created_at: "2026-09-18T17:40:00Z" }, pago])).toBe(pago);
     expect(mainPayment([])).toBeNull();
+  });
+});
+
+// 22/09/2026: quem paga a taxa e quando a venda libera para saque.
+describe("taxa e liberação para saque", () => {
+  it("com a Movepark pagando a taxa, feePayer é movepark e o líquido dela desconta a taxa", () => {
+    const m = buildMoneyBreakdown(breakdown, 30.9, pay({
+      split: [
+        { role: "partner", amount: 1440, liable: false, chargeProcessingFee: false },
+        { role: "movepark", amount: 1650, liable: true, chargeProcessingFee: true },
+      ],
+    }));
+    expect(m.split?.feePayer).toBe("movepark");
+    expect(m.split?.partner.feeCents).toBe(0);
+    expect(m.split?.movepark.feeCents).toBe(117);
+    expect(m.split?.movepark.netCents).toBe(1533);
+  });
+  it("a data de saque é o pagamento mais o prazo da empresa, e existe antes de o gateway informar o recebível", () => {
+    const m = buildMoneyBreakdown(breakdown, 30.9, pay({ paid_at: "2026-09-22T12:22:06Z", partner_release_at: null, gateway_fee_cents: null }), 30);
+    expect(m.split?.partner.withdrawAt).toBe("2026-10-22T12:22:06.000Z");
+    expect(m.split?.partner.releaseAt).toBeNull();
+    expect(m.split?.feePending).toBe(true);
+  });
+  it("sem o prazo da empresa a data de saque fica vazia em vez de inventada", () => {
+    expect(buildMoneyBreakdown(breakdown, 30.9, pay({ paid_at: "2026-09-22T12:22:06Z" })).split?.partner.withdrawAt).toBeNull();
   });
 });

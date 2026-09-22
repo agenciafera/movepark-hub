@@ -524,6 +524,21 @@ Deno.test("totalGatewayFeeCents: soma as três taxas de todas as parcelas", () =
   assertEquals(totalGatewayFeeCents(buildPayablesResult(200, payablesBody).payables), 310);
 });
 
+Deno.test("totalGatewayFeeCents: depois do estorno, os recebíveis de refund (taxa negativa) ficam de fora", () => {
+  // MP-3535C3 (22/09/2026): venda de 4890 com taxa 185 no parceiro; estorno total devolve o MDR ao master.
+  const r = buildPayablesResult(200, {
+    data: [
+      { id: 1, charge_id: "ch_x", type: "refund", amount: -1835, fee: -185, recipient_id: "re_mp" },
+      { id: 2, charge_id: "ch_x", type: "refund", amount: -3055, fee: 0, recipient_id: "re_p" },
+      { id: 3, charge_id: "ch_x", type: "credit", amount: 1650, fee: 0, recipient_id: "re_mp" },
+      { id: 4, charge_id: "ch_x", type: "credit", amount: 3240, fee: 185, recipient_id: "re_p" },
+    ],
+  });
+  assertEquals(totalGatewayFeeCents(r.payables), 185);
+  // só refund, sem crédito: não dá para saber a taxa da venda
+  assertEquals(totalGatewayFeeCents(r.payables.filter((p) => p.type === "refund")), null);
+});
+
 Deno.test("totalGatewayFeeCents: sem recebível não inventa zero como se soubesse", () => {
   assertEquals(totalGatewayFeeCents([]), null);
 });

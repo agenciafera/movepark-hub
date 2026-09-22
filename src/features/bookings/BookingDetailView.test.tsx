@@ -6,13 +6,16 @@ import { mockAuth, renderWithProviders } from "@/test/utils";
 const state = vi.hoisted(() => ({ booking: null as unknown, trail: null as unknown }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const updateMutate = vi.hoisted(() => vi.fn());
+const reconcileFees = vi.hoisted(() => vi.fn());
 vi.mock("./api", () => ({
+  useReconcileBookingFees: () => ({ mutate: reconcileFees, isPending: false }),
   useBookingByCode: () => ({ data: state.booking, isLoading: false }),
   useBookingGatewayTrail: () => ({ data: state.trail, isLoading: false, isError: false }),
   useCancelBookingStaff: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateBookingStatus: () => ({ mutate: updateMutate, isPending: false }),
 }));
 vi.mock("./customerApi", () => ({ useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }) }));
+vi.mock("@/features/payouts/api", () => ({ usePayoutReleaseDays: () => ({ data: 30 }) }));
 
 import { BookingDetailView } from "./BookingDetailView";
 
@@ -71,8 +74,31 @@ describe("BookingDetailView", () => {
     expect(norm(screen.getByTestId("valores-total").textContent)).toBe("R$ 30,90");
     expect(norm(screen.getByTestId("valores-parceiro").textContent)).toBe("R$ 13,23");
     expect(norm(screen.getByTestId("valores-movepark").textContent)).toBe("R$ 16,50");
+    // 22/09/2026: a taxa está na perna do estacionamento, e o bloco da Movepark diz isso em vez de
+    // deixar o líquido dela parecer "sem desconto". A data de saque sai do pagamento + prazo (30 dias).
+    expect(screen.getByTestId("valores-taxa-parceiro")).toHaveTextContent("por conta do estacionamento");
+    expect(screen.getByText(/libera para saque em 18\/10\/2026/)).toBeInTheDocument();
+    expect(reconcileFees).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Cancelar reserva" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Voltar para Reservas/ })).toHaveAttribute("href", "/manager/bookings");
+  });
+
+  it("taxa ainda não apurada: o Manager pede a apuração ao abrir, e a tela diz que está apurando", () => {
+    reconcileFees.mockClear();
+    state.booking = booking("confirmed", [{ ...pago, gateway_fee_cents: null, partner_release_at: null }]);
+    state.trail = trailPago;
+    abre();
+    expect(reconcileFees).toHaveBeenCalledWith("bk-1");
+    expect(screen.getByText("apurando…")).toBeInTheDocument();
+    expect(screen.queryByTestId("valores-taxa-parceiro")).not.toBeInTheDocument();
+  });
+
+  it("Operator não dispara a apuração da taxa (é porta de hub_admin)", () => {
+    reconcileFees.mockClear();
+    state.booking = booking("confirmed", [{ ...pago, gateway_fee_cents: null }]);
+    state.trail = trailPago;
+    abre("operator");
+    expect(reconcileFees).not.toHaveBeenCalled();
   });
 
   it("cancelada com estorno recusado avisa e aponta para a fila manual; não oferece cancelar de novo", () => {

@@ -67,6 +67,16 @@ prazo passou e o gateway ainda não informou o recebível. Antes disso o extrato
 um PIX do dia aparecia "liberado" com o saque ainda retido por 30 dias, e ficava "sem previsão" nos
 primeiros minutos.
 
+**Taxa do gateway na tela da reserva (22/09/2026).** O card Valores mostra a taxa e o líquido de
+cada lado; quando o estacionamento paga a taxa (regra de comissão), o bloco da Movepark diz "por
+conta do estacionamento" para o líquido dela não parecer sem desconto. A taxa sai de `/payables`,
+que o cron apura a cada 30 min com 10 min de atraso; ao abrir uma reserva paga sem taxa apurada, o
+Manager chama `reconcile-gateway-fees` com `{ booking_id }` (porta de hub_admin, sem atraso nem
+recuo) e a taxa aparece na hora. A data de saque da venda é `paid_at + payout_release_days`, a
+mesma conta do extrato. Bug corrigido no mesmo dia: `totalGatewayFeeCents` somava os recebíveis de
+`refund` (taxa negativa, a Pagar.me devolve o MDR no estorno total) e zerava a taxa de qualquer
+cobrança apurada depois de estornada; agora só os de crédito contam.
+
 **Canal na movimentação (E0.3.12).** Venda que veio por regra de comissão leva
 `commission_channel` e `commission_take_rate_bps` no movimento, e a tela mostra o selo do canal
 sob o código da reserva. Na visão do estacionamento, a legenda da taxa de processamento distingue

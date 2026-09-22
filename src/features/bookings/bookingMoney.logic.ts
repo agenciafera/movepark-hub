@@ -32,6 +32,7 @@ export interface MoneyPaymentLike {
   debt_recovered_cents: number;
   gateway_fee_cents: number | null;
   partner_release_at: string | null;
+  paid_at?: string | null;
   refunded_amount: number | null;
   refund_absorbed_by_master: boolean;
   refund_partner_cents: number;
@@ -54,7 +55,18 @@ export interface MoneyBreakdown {
   split: {
     /** Cobrança sem split no gateway: o valor inteiro ficou na Movepark, e a parte do parceiro é "a repassar". */
     custody: boolean;
-    partner: { grossCents: number; debtRecoveredCents: number; feeCents: number; netCents: number; releaseAt: string | null };
+    partner: {
+      grossCents: number;
+      debtRecoveredCents: number;
+      feeCents: number;
+      netCents: number;
+      /** Quando o gateway libera o recebível da parte do parceiro. */
+      releaseAt: string | null;
+      /** Quando a venda entra no disponível para saque: pagamento + prazo da empresa. */
+      withdrawAt: string | null;
+    };
+    /** Quem paga a taxa do gateway nesta venda (pela regra de comissão, E0.3.12). */
+    feePayer: "partner" | "movepark";
     movepark: { commissionCents: number; fareCents: number; interestCents: number; debtRecoveredCents: number; feeCents: number; netCents: number };
     /** Taxa do gateway ainda não apurada (até 30 min depois do pagamento). */
     feePending: boolean;
@@ -80,6 +92,8 @@ export function buildMoneyBreakdown(
   priceBreakdown: PriceBreakdownLike | null | undefined,
   bookingTotal: number,
   payment: MoneyPaymentLike | null,
+  /** Prazo de saque da empresa em dias (`payout_release_days`); sem ele, a data de saque fica vazia. */
+  releaseDays: number | null = null,
 ): MoneyBreakdown {
   const totalCents = toCents(bookingTotal);
   const lines: MoneyBreakdown["customer"]["lines"] = [];
@@ -137,7 +151,12 @@ export function buildMoneyBreakdown(
         feeCents: partnerFee,
         netCents: Math.max(0, partnerGross - debt - partnerFee),
         releaseAt: payment.partner_release_at,
+        withdrawAt:
+          releaseDays != null && payment.paid_at
+            ? new Date(new Date(payment.paid_at).getTime() + releaseDays * 86_400_000).toISOString()
+            : null,
       },
+      feePayer: partnerPaysFee ? "partner" : "movepark",
       movepark: {
         commissionCents,
         fareCents,

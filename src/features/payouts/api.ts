@@ -21,6 +21,23 @@ export const payoutKeys = {
   detail: (companyId: string) => [...payoutKeys.all, "detail", companyId] as const,
 };
 
+/**
+ * Prazo de saque da empresa em dias (`payout_release_days`: o da empresa, senão o global, senão
+ * 30). A tela da reserva usa para dizer quando a venda entra no disponível para saque.
+ */
+export function usePayoutReleaseDays(companyId: string | undefined) {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "release-days", companyId ?? ""] as const,
+    enabled: !!companyId,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc("payout_release_days", { p_company_id: companyId! });
+      if (error) throw error;
+      return Number(data ?? 30);
+    },
+  });
+}
+
 export const payoutAccountKeys = {
   all: ["payout-accounts"] as const,
   detail: (companyId: string) => [...payoutAccountKeys.all, "detail", companyId] as const,
