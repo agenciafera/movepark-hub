@@ -75,6 +75,13 @@ do link. Alt é acessibilidade antes de ser SEO: é o que o leitor de tela anunc
 extensão é vermelho. É regra do projeto (Passo 5 da skill): a imagem nasce no
 Higgsfield em PNG/JPEG e é convertida antes de subir ao Storage.
 
+**O que o analisador não mede: o conteúdo da imagem.** Ele lê nome, alt e
+extensão, nunca os pixels. Então carro dos anos 90, pátio degradado, ferrugem e
+placa legível passam verdes, e a única barreira é olhar o arquivo antes de
+converter. A regra de frota moderna e cenário atual está no Passo 5 da skill e
+vale para qualquer gerador, Higgsfield ou Gemini. Verde no analisador não
+significa que a foto serve.
+
 **Palavra-chave no nome do arquivo.** Medida imagem a imagem, porque toda imagem
 é uma vaga no Google Imagens e o padrão que falhava era otimizar só a capa. O
 nome (kebab-case, sem acento) precisa do **núcleo**: duas palavras do campo

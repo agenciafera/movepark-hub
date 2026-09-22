@@ -309,7 +309,9 @@ prolixidade) e vale para o post inteiro, não só para os títulos.
 
 Toda imagem do post nasce no **Higgsfield** e chega ao leitor em **`.webp`**. Sem
 exceção: para post de blog, esta regra **sobrepõe a skill `gerar-imagens-gemini`**
-(que segue valendo para o resto do projeto).
+(que segue valendo para o resto do projeto). O que muda de gerador é a ferramenta,
+não o padrão da foto: a regra de frota moderna e cenário atual do item 3 vale para
+imagem do Higgsfield, do Gemini ou de qualquer outro caminho.
 
 **A otimização vale para a última imagem igual à capa.** O erro que se repete é
 caprichar no nome da capa e deixar o resto virar `imagem2.webp` ou
@@ -354,7 +356,7 @@ Banco de variações, para não travar na hora (combine com as `tags` do post):
 | confiança | `seguranca`, `cameras`, `portao`, `24-horas`, `equipe` |
 | uso | `reserva-online`, `check-in`, `longa-permanencia`, `viagem-em-familia`, `bagagem` |
 
-### 3. Gerar no Higgsfield
+### 3. Gerar a imagem
 
 Use o conector MCP do Higgsfield: `generate_image` para uma imagem,
 `generate_image_batch` + `jobs_wait` para várias independentes. Se as tools não
@@ -363,6 +365,47 @@ Prompt descritivo em inglês (assunto, enquadramento, luz, estilo fotográfico
 realista, sem texto sobreposto); aspect ratio 16:9 para capa e corpo. O prompt
 segue a linha da tabela: se a variação é `vaga-coberta`, a imagem mostra
 cobertura, senão o alt vira legenda de uma foto que não existe.
+
+**As regras de prompt desta seção pertencem ao post, e não ao Higgsfield.** Se a
+imagem sair pelo Gemini (skill `gerar-imagens-gemini`), por edição de uma imagem
+existente ou por qualquer outro caminho, elas valem igual: o gerador muda, o
+padrão da foto fica.
+
+#### Frota moderna e cenário atual, em todo prompt
+
+Pedir "car parked at the airport" e mais nada faz os dois geradores devolverem
+sedã dos anos 80 e 90, pintura fosca, calota, farol amarelado e placa antiga, num
+pátio de poste de sódio com faixa apagada e placa desbotada. A foto envelhece o
+serviço antes de o leitor ler a primeira linha: quem procura onde deixar o carro
+por duas semanas está avaliando se o lugar cuida de um carro como o dele, e um
+pátio de carro velho responde que não. É o tipo de detalhe que nenhum critério do
+analisador pega, porque ele lê nome e alt, não a imagem.
+
+Então **carro e cenário entram no prompt já datados**, nunca no genérico:
+
+- **Carros:** `late-model vehicles from the 2020s, current-generation compact
+  SUVs, crossovers, hatchbacks and sedans, clean glossy paint, alloy wheels, LED
+  headlights and daytime running lights`. Frota variada em cor (branco, prata,
+  cinza, um azul ou vermelho), não o mesmo modelo repetido em fila.
+- **Cenário:** `modern parking facility, fresh painted line markings, LED
+  lighting, clean concrete or new asphalt, current signage, well-kept
+  landscaping, contemporary architecture`. Em imagem de traslado, van recente de
+  passageiros; em imagem de portaria, cancela e leitor atuais, não guarita de
+  madeira.
+- **Sempre no negativo:** `no vintage, classic, retro, 1980s or 1990s cars, no
+  rust, dents or faded paint, no dated or run-down infrastructure, no cracked
+  asphalt, no sodium vapor lighting, no legible license plate`.
+
+A placa entra no negativo por dois motivos: a placa amarela antiga é o sinal mais
+rápido de carro velho para quem lê a foto no Brasil, e placa legível inventada é
+dado falso numa imagem que se apresenta como foto do lugar.
+
+**Olhe a imagem antes de converter.** Prompt não é garantia, e é comum um carro
+antigo entrar no fundo mesmo com o negativo escrito. Abra o arquivo, procure
+carro fora de época, ferrugem, pátio degradado e placa legível. Se achar, gere de
+novo com o termo reforçado em vez de seguir com o que veio: a imagem fica no post
+por anos e uma foto que contradiz o texto custa mais do que um segundo
+processamento.
 
 ### 4. Converter para `.webp`
 
@@ -487,7 +530,10 @@ Antes de dizer que o post está pronto:
 10. Imagens geradas no Higgsfield, em `.webp`, e **cada uma** com a palavra-chave
     mais uma variação própria no nome do arquivo e no alt, sem nome nem alt
     repetido (o gêmeo markdown sai do banco, não é arquivo seu).
-11. Publicação só depois do "pode publicar" do usuário.
+11. Nenhuma imagem com carro antigo ou cenário datado. Cada uma foi olhada, não
+    só gerada: frota dos anos 2020, pátio conservado, sem ferrugem, sem pintura
+    fosca e sem placa legível.
+12. Publicação só depois do "pode publicar" do usuário.
 
 ## Referências
 
