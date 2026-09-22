@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 const TITULO = "O grupo Movepark";
 const META =
-  "As quatro marcas da Movepark: o Hub de reserva de vaga, a Go2Park de rastreio da van, a Go2Med e o Coopark. O que cada uma faz, em que estágio está e quem responde por ela.";
+  "As quatro marcas da Movepark: o Hub de reserva de vaga de estacionamento, a Go2Park de rastreio da van, a Go2Med e o Coopark. Veja o que cada uma faz.";
 const LEAD =
   "São quatro produtos em torno da mesma ideia: vaga e van com hora marcada, preço combinado antes e acompanhamento até o fim.";
 

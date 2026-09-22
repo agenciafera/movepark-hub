@@ -367,18 +367,19 @@ export default function DestinoPage() {
   const fromPriceMatrix = priceDest ? lowestMatrixDaily(carUnits(priceDest.units)) : null;
   const fromPrice = fromPriceMatrix ?? lowestPerDay(results);
 
-  // Meta description: a geografia escrita à mão MAIS o preço do dado, dentro dos 160.
-  // As 26 descrições do banco não trazem um único valor, e snippet sem número perde para
-  // snippet com número na mesma SERP; por outro lado elas trazem o que dado nenhum sabe
-  // (os Terminais 1/2/3 de Guarulhos, "na Ilha do Governador"). A função encaixa as duas,
-  // e devolve o texto humano intacto quando não cabem juntas.
+  // Meta description: a abertura escrita à mão no banco (a geografia que dado nenhum sabe)
+  // MAIS o menor preço do motor MAIS o CTA. A estrutura mora em `destinationMetaDescription`;
+  // aqui só entram os insumos. O CTA depende da capacidade: onde nenhuma unidade fecha a
+  // reserva no Hub, ele convida a comparar em vez de prometer um checkout que roda fora.
+  const hubCheckout = (prices?.matrix.rows ?? []).some((r) => r.unit.checkout_mode === "hub");
   const description = destinationMetaDescription({
     label: seoLabelPrimary(destination),
     city: destination.city,
     authored: destination.meta_description,
     summary: prices?.summary ?? null,
     prospectCount: prospectItems.length,
-    fallback: `Reserve estacionamento próximo a ${destination.name}, em ${destination.city}. Compare preços, comodidades e garanta sua vaga com antecedência.`,
+    hubCheckout,
+    fallback: `Estacionamento ${seoLabelPrimary(destination)}, em ${destination.city}. Compare os preços das opções perto do terminal e reserve pela Movepark.`,
   });
 
   // O cross-link entre destinos agora vem do loader: dependia de um hook de cliente e por

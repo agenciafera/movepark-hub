@@ -218,11 +218,18 @@ export default function ListingPage() {
       }
     : null;
   const pageTitle = seoArgs ? listingTitle(seoArgs) : "Estacionamento | Movepark";
+  // A SERP recebe a description persuasiva (palavra-chave, menor preço, CTA) e o JSON-LD segue
+  // recebendo o resumo factual do `tldr`. Antes as duas eram a mesma frase, e a SERP abria com
+  // "Vaga Coberta no Aeropark", que não é a consulta de ninguém.
   const pageDesc =
-    tldr?.summary ??
-    (seoArgs && listing
-      ? listingDescription({ ...seoArgs, city: listing.location.destination?.city ?? null })
-      : "");
+    seoArgs && listing
+      ? listingDescription({
+          ...seoArgs,
+          city: listing.location.destination?.city ?? null,
+          fromPrice: showcase?.lowDaily ?? null,
+          hubCheckout: getLocationCapabilities(listing.location).hubCheckout,
+        })
+      : "";
   // Canonical sem a query: `?vaga=` escolhe a oferta em evidência, não cria outra página.
   const caminho =
     listing?.location.destination?.public_slug && listing.location.public_slug

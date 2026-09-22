@@ -1098,8 +1098,10 @@ describe("DestinoPage · quanto custa e distância", () => {
     await waitFor(() => {
       const meta =
         document.querySelector('meta[name="description"]')?.getAttribute("content") ?? "";
-      expect(meta).toMatch(/Diária a partir de R\$\s?40,00/);
-      expect(meta).toMatch(/7 diárias por R\$\s?174,30/);
+      // Estrutura única da description: palavra-chave na abertura, menor preço real e CTA.
+      expect(meta.startsWith("Estacionamento Aeroporto Guarulhos")).toBe(true);
+      expect(meta).toMatch(/A partir de R\$\s?40,00 a diária\./);
+      expect(meta.endsWith("Compare e reserve pela Movepark.")).toBe(true);
       expect(meta.length).toBeLessThanOrEqual(160);
     });
   });

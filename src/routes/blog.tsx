@@ -28,6 +28,11 @@ import type { BlogPostListItem } from "@/types/domain";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 
+/** A única página indexável do blog: o índice. Arquivo e página 2 saem do índice. */
+const DESCRIPTION_INDICE =
+  "Blog de estacionamento de aeroporto: guia de preço por diária, distância do terminal " +
+  "e traslado em cada aeroporto. Confira a tabela atualizada.";
+
 /** Largura de app. O padding vertical fica com cada faixa. */
 const CONTAINER = "mx-auto w-full max-w-[1280px] px-4 desktop:px-8";
 
@@ -208,11 +213,16 @@ export default function BlogListingPage() {
   const canonical = `${SITE_URL}${pageHref(page, base)}`;
   // "Blog | Blog Movepark" era o que saía na página 2 do índice.
   const sufixo = kind === "index" ? "Movepark" : "Blog Movepark";
-  const metaTitle = page > 1 ? `${titulo}, página ${page} | ${sufixo}` : `${titulo} | ${sufixo}`;
-  const metaDesc =
-    kind === "index"
-      ? "Guias de estacionamento em aeroportos: preço, distância do terminal e o que olhar antes de reservar sua vaga."
-      : lead;
+  // O índice é a única página indexável daqui (arquivo e página 2 saem do índice logo abaixo),
+  // e é ela que precisa carregar a palavra-chave: "Blog | Movepark" não disputa consulta
+  // nenhuma. As páginas de arquivo seguem com o rótulo do eixo, que é o que descreve a lista.
+  const metaTitle =
+    kind === "index" && page === 1
+      ? "Blog de estacionamento de aeroporto | Movepark"
+      : page > 1
+        ? `${titulo}, página ${page} | ${sufixo}`
+        : `${titulo} | ${sufixo}`;
+  const metaDesc = kind === "index" ? DESCRIPTION_INDICE : lead;
 
   /*
     Arquivo de taxonomia e página 2 em diante saem do índice.

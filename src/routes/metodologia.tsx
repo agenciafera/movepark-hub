@@ -32,12 +32,12 @@ export default function MetodologiaPage() {
   return (
     <>
       <Helmet>
-        <title>Metodologia: de onde vem cada número da Movepark</title>
+        <title>Metodologia: de onde vem cada preço de estacionamento</title>
         <meta
           name="description"
-          content="A fonte de cada dado do site, campo a campo: preço do motor de reservas, distância medida em PostGIS, traslado declarado pelo parceiro e a data em que cada tabela mudou."
+          content="De onde vem cada preço de estacionamento do site: o motor de reservas, o mesmo do checkout, com distância medida em PostGIS. Veja a fonte campo a campo."
         />
-        <meta property="og:title" content="Metodologia: de onde vem cada número da Movepark" />
+        <meta property="og:title" content="Metodologia: de onde vem cada preço de estacionamento" />
         <meta
           property="og:description"
           content="Preço, distância, traslado e piso de permanência: qual é a origem de cada um, o que a Movepark não publica e por quê, e com que frequência cada tabela muda."

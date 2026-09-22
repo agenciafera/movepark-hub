@@ -262,7 +262,10 @@ describe("metaDescription", () => {
     const s = destinationSummary(d, DIAS);
     const meta = metaDescription(d, s);
     expect(meta).toContain("Teste (TST)");
-    expect(meta).toContain("diária a partir de");
+    // Estrutura única do site: palavra-chave na abertura, menor preço real e CTA no fim.
+    expect(meta.startsWith("Estacionamento Aeroporto Teste (TST)")).toBe(true);
+    expect(meta).toMatch(/A partir de R\$\s30,00 a diária\./);
+    expect(meta.endsWith("Compare e reserve pela Movepark.")).toBe(true);
     expect(meta.length).toBeLessThanOrEqual(160);
   });
 });

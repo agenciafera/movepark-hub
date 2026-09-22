@@ -12,8 +12,9 @@ import { GoogleReviewsBlock } from "@/features/reviews/GoogleReviewsBlock";
 import { Button } from "@/components/ui/button";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
-import { tituloLoteMapeado } from "@/features/destinations/loteMapeado.logic";
+import { nomeDoLoteParaTitulo, tituloLoteMapeado } from "@/features/destinations/loteMapeado.logic";
 import { precoPesquisado, postsDoLote } from "@/features/destinations/loteMapeadoPreco.logic";
+import { buildMetaDescription } from "@/lib/seo";
 import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
 import { formatBRL, formatDate, formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
@@ -78,9 +79,15 @@ export default function EstacionamentoMapeadoPage() {
   const distancia = prospect.distance_km == null ? null : formatDistance(prospect.distance_km);
 
   const title = tituloLoteMapeado(prospect.name, destination.city);
-  const description = distancia
-    ? `${prospect.name} fica a ${distancia} do ${destinationLabel}, em ${destination.city}. Este estacionamento ainda não tem reserva online pela Movepark.`
-    : `${prospect.name}, em ${destination.city}. Este estacionamento ainda não tem reserva online pela Movepark.`;
+  // A única página do site que não promete preço, e por escolha: lote mapeado não tem tabela
+  // (ADR-010). Prometer "a partir de R$" aqui seria vender o que a ficha não entrega, então a
+  // prova é a distância medida no banco e o CTA leva à comparação, não ao carrinho.
+  const description = buildMetaDescription({
+    keyword: `${nomeDoLoteParaTitulo(prospect.name)}, ${destinationLabel}`,
+    extra: distancia ? `a ${distancia} do terminal, em ${destination.city}` : destination.city,
+    price: null,
+    cta: "consultar",
+  });
 
   return (
     <>

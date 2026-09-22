@@ -271,12 +271,12 @@ export default function ComoFuncionaPage() {
   return (
     <>
       <Helmet>
-        <title>Como funciona | Movepark</title>
+        <title>Como funciona a reserva de estacionamento | Movepark</title>
         <meta
           name="description"
-          content="Compare estacionamentos parceiros perto do seu aeroporto e siga direto para a reserva. Sem taxa da Movepark."
+          content="Como funciona a reserva de estacionamento de aeroporto: busque o destino, compare o menor preço por diária e siga para a reserva, sem taxa da Movepark."
         />
-        <meta property="og:title" content="Como funciona | Movepark" />
+        <meta property="og:title" content="Como funciona a reserva de estacionamento | Movepark" />
         <meta
           property="og:description"
           content="Reservar estacionamento de aeroporto pela Movepark: busque o destino, compare preços, reserve online e chegue com a vaga garantida."

@@ -206,13 +206,42 @@ if (tituloSeo) {
   else verde(G_SEO, "Tamanho do título de SERP", `${n} caracteres.`);
 }
 if (meta.meta_description) {
-  const n = meta.meta_description.length;
+  const md = meta.meta_description;
+  const n = md.length;
   if (n < 120) laranja(G_SEO, "Meta description", `${n} caracteres. Abaixo de 120 desperdiça o espaço da SERP.`);
-  else if (n > 156) laranja(G_SEO, "Meta description", `${n} caracteres. Acima de 156 o Google corta.`);
+  else if (n > 160) laranja(G_SEO, "Meta description", `${n} caracteres. Acima de 160 o Google corta.`);
   else verde(G_SEO, "Meta description", `${n} caracteres.`);
-  if (chave && contarFrase(norm(meta.meta_description), chave) === 0)
-    laranja(G_SEO, "Frase-chave na meta description", "Ausente. É ela que fica em negrito na SERP.");
-  else if (chave) verde(G_SEO, "Frase-chave na meta description", "Presente.");
+
+  // Estrutura de três partes (Passo 3.1 da skill): palavra-chave na ABERTURA, menor
+  // preço real e CTA no fim. A ordem importa: a chave é o que fica em negrito na SERP,
+  // o número é o que ganha de quem descreve sem número, e o verbo é o que vende o clique.
+  if (chave) {
+    const abertura = norm(md).slice(0, 60);
+    if (contarFrase(norm(md), chave) === 0)
+      vermelho(G_SEO, "Frase-chave na meta description", "Ausente. É ela que fica em negrito na SERP.");
+    else if (contarFrase(abertura, chave) === 0)
+      laranja(G_SEO, "Frase-chave na meta description", "Aparece, mas não na abertura. Puxe para o começo da frase.");
+    else verde(G_SEO, "Frase-chave na meta description", "Abre a frase.");
+  }
+
+  const temPreco = /R\$\s?\d/.test(md);
+  const temPeriodo = /\b(diárias?|horas?|dias?|mês|meses|mensal|semanas?|noites?)\b/i.test(md);
+  if (!temPreco)
+    laranja(G_SEO, "Menor preço na meta description", "Sem nenhum R$. Snippet com número ganha de snippet sem número na mesma consulta. Só fica sem se o post não tiver preço conferido.");
+  else if (!temPeriodo)
+    laranja(G_SEO, "Menor preço na meta description", "Tem valor, mas não diz o período (a diária, a hora, em 7 diárias). Preço sem período não dá para comparar.");
+  else verde(G_SEO, "Menor preço na meta description", "Valor com período.");
+
+  // O CTA é a última frase, no imperativo. A lista é curta de propósito: verbo fora
+  // dela costuma ser descrição disfarçada de convite ("Saiba mais sobre...").
+  const ultimaFrase = md.split(/(?<=[.!?])\s+/).at(-1) ?? md;
+  const CTA = /\b(reserve|compare|confira|veja|fale|leia|chame|cadastre|busque|escolha|conheça)\b/i;
+  if (!CTA.test(ultimaFrase))
+    laranja(G_SEO, "CTA na meta description", `A frase fecha sem verbo de ação: "${ultimaFrase}". Use "Compare e reserve pela Movepark." ou "Confira a tabela atualizada."`);
+  else verde(G_SEO, "CTA na meta description", ultimaFrase.trim());
+
+  if (/[—–]/.test(md))
+    vermelho(G_SEO, "Travessão na meta description", "Regra de marca do CLAUDE.md: nem travessão nem traço.");
 }
 if (chave && meta.slug) {
   const alvo = norm(meta.slug.replace(/-/g, " "));

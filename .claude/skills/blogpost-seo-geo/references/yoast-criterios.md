@@ -22,7 +22,7 @@ antes de torcer o texto para agradar a métrica.
 | `slug` | sim | kebab-case sem acento. Publicado, nunca muda |
 | `title` | sim | H1 do post |
 | `meta_title` | não | Título da SERP. Sem ele, cai no `title` |
-| `meta_description` | sim | 120 a 156 caracteres |
+| `meta_description` | sim | 120 a 160 caracteres, na estrutura palavra-chave + menor preço + CTA |
 | `keyphrase` | sim | Uma por post |
 | `sinonimos` | recomendado | 2 a 4 variações reais |
 | `category`, `tags`, `author`, `destination` | recomendado | Slugs dos catálogos |
@@ -51,8 +51,22 @@ metade: quanto mais à esquerda, mais peso, e o título trunca em ~60 caracteres
 **Tamanho do título de SERP.** Verde entre 30 e 60 caracteres. O Yoast mede em
 pixel (400 a 580px); caractere é a aproximação prática.
 
-**Meta description.** Verde entre 120 e 156 caracteres, com a frase-chave dentro
-(ela fica em negrito na SERP e sobe o CTR). O Yoast mede em pixel, teto ~920px.
+**Meta description.** Verde entre 120 e 160 caracteres. O Yoast mede em pixel (teto
+~920px); caractere é a aproximação prática. Aqui o critério vai além do tamanho,
+porque a description do Movepark tem **estrutura fixa** (Passo 3.1 da skill):
+
+| Checagem | Falha | O que fazer |
+|---|---|---|
+| Frase-chave presente | `XX` | Sem ela não há o que o Google marque em negrito. Reescreva a abertura |
+| Frase-chave nos 60 primeiros caracteres | `!!` | Puxe para o começo: peso e reconhecimento caem quando ela aparece no fim |
+| Um valor em `R$` | `!!` | Snippet com número ganha do sem número na mesma consulta. Só fica sem se o post não tiver preço conferido |
+| O período do valor ("a diária", "em 7 diárias", "a hora") | `!!` | Preço sem período não dá para comparar, e vira promessa ambígua |
+| A última frase fecha num verbo de ação | `!!` | "Compare e reserve pela Movepark." ou "Confira a tabela atualizada.". Sem verbo, a frase descreve em vez de vender o clique |
+| Zero travessão | `XX` | Regra de marca do `CLAUDE.md` |
+
+O preço é sempre **um número que o post já publica**, com a mesma data de
+referência. Inventar um valor para caber na frase é a quebra do ADR-009 antes do
+clique: a oferta vincula onde quer que ela seja publicada, e o snippet é publicação.
 
 **Frase-chave no slug.** Vermelho se ausente. O slug é o único elemento que não
 dá para corrigir depois: publicado, ele é contrato.

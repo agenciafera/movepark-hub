@@ -19,6 +19,7 @@
  */
 
 import { caminhoFicha } from "@/lib/urls";
+import { buildMetaDescription, priceHook } from "@/lib/seo";
 import {
   buildMatrix,
   carUnits,
@@ -257,97 +258,64 @@ export function buildDestinoPrices(
   };
 }
 
-const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
-const MAX_META = 160;
 /**
- * Piso do texto escrito à mão que precisa sobrar para valer a pena abrir espaço ao
- * preço. Abaixo disso a frase que sobra vira um toco (o caso de Guarulhos, cuja
- * primeira frase é só "Procurando estacionamento perto do Aeroporto de Guarulhos
- * (GRU)?"), e a geografia local vale mais que o número.
- */
-const PISO_AUTORAL = 80;
-
-/**
- * Meta description da página de destino: geografia escrita à mão MAIS o preço do dado.
+ * Meta description da página de destino, na estrutura única do site: palavra-chave,
+ * menor preço real e CTA, nesta ordem.
  *
- * Snippet sem número perde para snippet com número na mesma SERP, e nenhuma das 26
- * descrições do banco traz um valor. Mas elas trazem o que dado nenhum sabe (os
- * Terminais 1/2/3 de Guarulhos, "na Ilha do Governador", "traslado a Curitiba"), então
- * a saída não é escolher entre as duas: é encaixar as duas dentro dos 160.
+ * A divisão de trabalho é fixa. O **banco** guarda a abertura (`destination.meta_description`):
+ * a palavra-chave mais a geografia que dado nenhum sabe (os Terminais 1/2/3 de Guarulhos, "na
+ * Ilha do Governador", "traslado a Curitiba"). O **código** acrescenta o que o banco não tem
+ * como saber: o menor preço vivo do motor e o CTA que a página consegue cumprir. Por isso o
+ * texto do banco **não** traz CTA próprio: ele viraria o segundo "reserve" da mesma frase.
  *
- * A ordem de tentativa vai da mais informativa para a mais conservadora, e a última é
- * sempre devolver o texto humano intacto. Frase escrita por gente **nunca** é cortada no
- * meio: o encurtamento só acontece descartando frases inteiras a partir do fim, que é
- * onde mora o fecho genérico ("Compare preços e reserve a sua vaga pela Movepark").
+ * Snippet sem número perde para snippet com número na mesma SERP, e a consulta que traz essa
+ * gente é de preço. Quando estoura os 160, quem sai é a abertura (encurtada em
+ * `buildMetaDescription`), nunca o preço nem o CTA.
  */
 export function destinationMetaDescription(args: {
   label: string;
   city: string;
-  /** Texto escrito à mão no banco (`destination.meta_description`). */
+  /** Abertura escrita à mão no banco (`destination.meta_description`), sem CTA. */
   authored?: string | null;
   /** Usado quando não há texto autoral nem preço. */
   fallback: string;
   summary?: DestinationSummary | null;
   prospectCount?: number;
+  /** A reserva fecha no Hub em ao menos uma unidade do destino (ADR-009). */
+  hubCheckout?: boolean;
 }): string {
   const s = args.summary;
-  const diaria = s?.byDuration.find((d) => d.days === 1);
-  const sete = s?.byDuration.find((d) => d.days === 7);
-  const autoral = args.authored?.trim() || null;
+  const menor = s?.byDuration.find((d) => d.days === 1) ?? s?.byDuration[0] ?? null;
+  const autoral = args.authored?.trim().replace(/\s*[.!?]+\s*$/, "") || null;
 
-  // Sem preço não há o que acrescentar: manda o texto humano, ou o genérico.
-  if (!s || !diaria) return autoral ?? args.fallback;
+  // Preço escrito à mão no banco: quem escreveu um valor ali sabia o que queria dizer, e a
+  // frase sai inteira, sem o número do motor discordando dela na mesma linha.
+  if (autoral && /R\$/.test(autoral)) return `${autoral}.`;
 
-  const longa = sete
-    ? `Diária a partir de ${brl.format(diaria.from)}, 7 diárias por ${brl.format(sete.from)}.`
-    : `Diária a partir de ${brl.format(diaria.from)}.`;
-  const curta = `Diária a partir de ${brl.format(diaria.from)}.`;
+  const cta = args.hubCheckout ? "reservar" : "comparar";
 
-  if (autoral) {
-    // Quem já escreveu um preço à mão sabe o que quer: não mexemos.
-    if (/R\$/.test(autoral)) return autoral;
-    for (const bloco of frasesDecrescentes(autoral)) {
-      if (bloco.length < PISO_AUTORAL) break;
-      for (const preco of [longa, curta]) {
-        const junto = `${bloco} ${preco}`;
-        if (junto.length <= MAX_META) return junto;
-      }
-    }
-    return autoral;
-  }
+  if (!autoral && !menor) return args.fallback;
 
-  const quantos =
-    s.unitCount === 1 ? "1 estacionamento parceiro" : `${s.unitCount} estacionamentos parceiros`;
-  const comparados = args.prospectCount
-    ? `${quantos} e mais ${args.prospectCount} mapeados`
-    : quantos;
-  const texto =
-    `Estacionamento perto do ${args.label}, em ${args.city}. ${longa} ` +
-    `${comparados}, com preço do motor de reservas.`;
-  return cortar(texto, MAX_META);
-}
+  // A prova de quantidade entra SEMPRE que sobra espaço, inclusive quando o destino ainda
+  // não tem preço. Sem ela, a description dos aeroportos só com lote mapeado ficava em 96
+  // caracteres e jogava fora um terço do espaço que o Google dá.
+  const n = s?.unitCount ?? 0;
+  const parceiros = n > 0 ? `${n} ${n === 1 ? "estacionamento parceiro" : "estacionamentos parceiros"}` : null;
+  const m = args.prospectCount ?? 0;
+  const mapeados =
+    m > 0
+      ? parceiros
+        ? `mais ${m} ${m === 1 ? "mapeado" : "mapeados"}`
+        : `${m} ${m === 1 ? "estacionamento mapeado" : "estacionamentos mapeados"}`
+      : null;
+  const comparados = [parceiros, mapeados].filter(Boolean).join(" e ") || null;
 
-/**
- * O texto autoral inteiro, depois sem a última frase, depois sem as duas últimas, e
- * assim por diante. Quebra em `.`, `!` e `?`, preservando a pontuação.
- */
-function frasesDecrescentes(texto: string): string[] {
-  const frases = texto
-    .match(/[^.!?]+[.!?]*/g)
-    ?.map((f) => f.trim())
-    .filter(Boolean) ?? [texto];
-  const saidas: string[] = [];
-  for (let n = frases.length; n >= 1; n--) saidas.push(frases.slice(0, n).join(" "));
-  return saidas;
-}
-
-/** Corta em `max` sem quebrar palavra, com reticência. */
-function cortar(texto: string, max: number): string {
-  if (texto.length <= max) return texto;
-  const corte = texto.slice(0, max - 1);
-  const espaco = corte.lastIndexOf(" ");
-  return `${(espaco > 0 ? corte.slice(0, espaco) : corte).replace(/[.,;:]$/, "")}…`;
+  return buildMetaDescription({
+    keyword: autoral ?? `Estacionamento ${args.label}`,
+    extra: comparados ?? args.city,
+    price: menor ? priceHook(menor.from, menor.days) : null,
+    cta,
+  });
 }
 
 /**

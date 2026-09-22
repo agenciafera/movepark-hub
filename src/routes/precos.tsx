@@ -44,6 +44,7 @@ import {
   type MatrixRow,
   type PriceIndexData,
 } from "@/features/price-index/priceIndex.logic";
+import { buildMetaDescription, priceHook } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
 
@@ -61,9 +62,10 @@ export type PrecosIndexData = {
   generatedAt: string;
 };
 
-const DESCRIPTION =
-  "Preços de estacionamento em todos os aeroportos: diária avulsa, 7 e 15 dias, preço de " +
-  "balcão e reserva online. O valor da tabela é o mesmo do checkout.";
+/** Usada só quando o índice sobe sem nenhuma diária cotada, o que é falha de dado, não de copy. */
+const DESCRIPTION_SEM_PRECO =
+  "Preço de estacionamento de aeroporto em tabela: diária avulsa, 7 e 15 dias e o preço de " +
+  "balcão ao lado. Compare e reserve pela Movepark.";
 
 /**
  * De onde vêm os preços, em pergunta e resposta. Fica em accordion, mas com
@@ -447,7 +449,21 @@ export default function PrecosPage() {
   );
 
   const canonical = `${SITE_URL}/precos`;
-  const titulo = "Índice de preços de estacionamento";
+  // O `<title>` e a description são da SERP, e por isso abrem pela consulta ("preço de
+  // estacionamento de aeroporto"). O H1 da página não muda.
+  const tituloSeo = "Preço de estacionamento de aeroporto por diária | Movepark";
+  // A description carrega o menor número que a própria tabela mostra: snippet com preço ganha
+  // de snippet sem preço na mesma SERP, e aqui o número não pode divergir da página porque sai
+  // do mesmo `overallStats`.
+  const description =
+    stats.minDailyFrom == null
+      ? DESCRIPTION_SEM_PRECO
+      : buildMetaDescription({
+          keyword: "Preço de estacionamento de aeroporto em tabela",
+          extra: `${stats.destinationCount} aeroportos e ${listados} estacionamentos`,
+          price: priceHook(stats.minDailyFrom),
+          cta: "comparar",
+        });
 
   const breadcrumb = breadcrumbSchema([
     { name: "Início", url: SITE_URL },
@@ -479,12 +495,12 @@ export default function PrecosPage() {
   return (
     <>
       <Helmet>
-        <title>{`${titulo}: diária, 7 e 15 dias por aeroporto | Movepark`}</title>
-        <meta name="description" content={DESCRIPTION} />
+        <title>{tituloSeo}</title>
+        <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content={`${titulo} | Movepark`} />
-        <meta property="og:description" content={DESCRIPTION} />
+        <meta property="og:title" content={tituloSeo} />
+        <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(lista)}</script>

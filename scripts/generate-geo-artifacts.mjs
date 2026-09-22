@@ -122,6 +122,91 @@ async function rpc(name, body = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// meta description: a mesma estrutura do site (src/lib/seo.ts)
+//
+// Palavra-chave na abertura, menor preço real e CTA no fim, dentro de 160
+// caracteres. Os artefatos GEO carregam a mesma frase que a página React, senão
+// o agente lê uma promessa e o humano lê outra na mesma URL. O arquivo não
+// importa `@/lib/seo` porque roda em Node puro, fora do bundle do Vite; o teste
+// de contrato `src/seo-meta.contract.test.ts` é quem impede as duas de divergir.
+// ---------------------------------------------------------------------------
+const META_MAX = 160;
+
+const CTA_META = {
+  reservar: "Reserve online em 2 minutos.",
+  comparar: "Compare e reserve pela Movepark.",
+  consultar: "Veja as opções e como chegar.",
+  conferir: "Confira a tabela atualizada.",
+};
+
+/** "A partir de R$ 18,49 a diária." Valor ausente ou zero não vira frase. */
+function ganchoDePreco(valor, dias = 1) {
+  if (valor == null || !Number.isFinite(valor) || valor <= 0) return null;
+  return `A partir de ${brl(valor)} ${dias === 1 ? "a diária" : `em ${dias} diárias`}.`;
+}
+
+/**
+ * Monta a description cabendo em 160. A ordem de descarte protege o que não pode
+ * faltar: sai primeiro o complemento, depois o preço; palavra-chave e CTA ficam.
+ */
+function metaDescricao({ keyword, fill, extra, price, cta }) {
+  const fecho = CTA_META[cta];
+  const complemento = (extra ?? "").trim().replace(/[.\s]+$/, "") || null;
+  const preco = (price ?? "").trim() || null;
+  // Espaço que sobra para o `fill` com a frase montada. Sem esta conta o resumo tinha um
+  // teto fixo e 161 gêmeos fechavam em 115 caracteres, jogando fora o espaço da SERP.
+  const fixo = keyword.length + 2 + 1 + (preco ? preco.length + 1 : 0) + fecho.length + 1;
+  const resumo = fill ? resumoCurto(fill, META_MAX - fixo) : null;
+  const abertura = resumo && resumo.length >= 40 ? `${keyword}: ${resumo}` : keyword;
+  const montar = (comExtra, comPreco) =>
+    [
+      `${abertura}${comExtra && complemento ? `, ${complemento}` : ""}.`,
+      comPreco && preco ? preco : null,
+      fecho,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  for (const [e, pr] of [
+    [true, true],
+    [false, true],
+    [true, false],
+    [false, false],
+  ]) {
+    const texto = montar(e, pr);
+    if (texto.length <= META_MAX) return texto;
+  }
+  return `${keyword}.`.slice(0, META_MAX).trim();
+}
+
+/** As primeiras `max` letras de um texto, fechando em palavra inteira e sem pontuação solta. */
+function resumoCurto(texto, max) {
+  const limpo = String(texto ?? "")
+    .replace(/[#*_`>\[\]]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (limpo.length <= max) return limpo.replace(/[.,;:]$/, "");
+  const corte = limpo.slice(0, max);
+  const espaco = corte.lastIndexOf(" ");
+  return (espaco > 0 ? corte.slice(0, espaco) : corte).replace(/[.,;:]$/, "");
+}
+
+/** Escapa aspas para o valor caber numa linha de front matter. */
+const fm = (texto) => `"${String(texto).replaceAll('"', "'")}"`;
+
+/**
+ * A palavra-chave do destino na forma em que a pessoa digita. Espelha
+ * `destinationKeyword` de `src/lib/seo.ts`: o "Aeroporto" entra na frente quando o
+ * rótulo do banco não o traz, porque é o bigrama que responde pelos cliques.
+ */
+const keywordDestino = (dest) => {
+  const rotulo = (dest.short_name ?? dest.name).trim();
+  const jaNomeado = /^(aeroporto|rodovi|terminal|centro|jardim|bairro)/i.test(rotulo);
+  return !jaNomeado && dest.type === "airport"
+    ? `Estacionamento Aeroporto ${rotulo}`
+    : `Estacionamento ${rotulo}`;
+};
+
+// ---------------------------------------------------------------------------
 // dados
 // ---------------------------------------------------------------------------
 const [faqs, destinations, posts, priceIndex] = await Promise.all([
@@ -137,7 +222,7 @@ const [faqs, destinations, posts, priceIndex] = await Promise.all([
       "&is_published=eq.true&order=sort_order.asc",
   ),
   rest(
-    "blog_post?select=slug,title,published_at,ai_summary,excerpt,body_md,destination_id" +
+    "blog_post?select=slug,title,published_at,ai_summary,excerpt,meta_description,body_md,destination_id" +
       "&is_published=eq.true&deleted_at=is.null&order=published_at.desc",
   ),
   rpc("destination_price_index"),
@@ -280,9 +365,18 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
       ? `Pergunta comum de quem procura estacionamento no ${aeroportoProsa(dest)} (${dest.code}). A resposta curta vem primeiro; ${fecho}.`
       : "Pergunta comum de quem procura estacionamento de aeroporto com reserva online. A resposta curta vem primeiro; os detalhes estão logo abaixo.";
 
+    const diaria1 = resumoPreco.find((r) => r.dias === 1) ?? resumoPreco[0] ?? null;
     const linhas = [
       "---",
       `title: "${f.question.replaceAll('"', "'")} · ${keyword} | Movepark"`,
+      `description: ${fm(
+        metaDescricao({
+          keyword,
+          fill: f.answer,
+          price: diaria1 ? ganchoDePreco(diaria1.total, diaria1.dias) : null,
+          cta: diaria1 ? "comparar" : "conferir",
+        }),
+      )}`,
       `canonical: ${urlPergunta(f)}`,
       `updated: ${String(f.updated_at).slice(0, 10)}`,
       ...(dest ? [`destino: ${nomeDestino(f)}`] : []),
@@ -368,40 +462,6 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// faq.md (índice)
-// ---------------------------------------------------------------------------
-{
-  const linhas = [
-    "---",
-    'title: "Perguntas frequentes | Movepark"',
-    `canonical: ${SITE_URL}/faq`,
-    `updated: ${hoje}`,
-    "---",
-    "",
-    "# Perguntas frequentes",
-    "",
-    "Reservas, pagamentos e check-in, com as respostas que o suporte mais repete.",
-    "Cada pergunta tem página própria; a versão Markdown responde no mesmo endereço",
-    'com o header `Accept: text/markdown`.',
-    "",
-    "## Perguntas gerais",
-    "",
-  ];
-  for (const f of globais) {
-    linhas.push(f.slug ? `- [${f.question}](${urlPergunta(f)})` : `- ${f.question}`);
-  }
-  for (const [, itens] of [...porDestino.entries()].sort((a, b) =>
-    nomeDestino(a[1][0]).localeCompare(nomeDestino(b[1][0]), "pt-BR"),
-  )) {
-    linhas.push("", `## Sobre ${nomeDestino(itens[0])}`, "");
-    for (const f of itens) {
-      linhas.push(f.slug ? `- [${f.question}](${urlPergunta(f)})` : `- ${f.question}`);
-    }
-  }
-  linhas.push("", `Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
-  fs.writeFileSync(path.join(DIST, "faq.md"), linhas.join("\n"));
-}
 
 // ---------------------------------------------------------------------------
 // precos.md + precos/<slug>.md — o gêmeo Markdown do índice de preços.
@@ -469,6 +529,68 @@ const diasIndice = priceIndex?.days ?? [1, 7, 15, 30];
 const destinosComPreco = priceIndex?.destinations ?? [];
 
 /**
+ * A menor diária do site inteiro. É o número que abre os índices (llms.txt, faq.md,
+ * precos.md): o mesmo `overallStats().minDailyFrom` que a página /precos mostra, e é o que
+ * dá à description do índice um número para brigar na SERP.
+ */
+const menorDiariaDoSite = (() => {
+  let menor = null;
+  for (const dest of destinosComPreco) {
+    for (const u of unidadesCarro(dest)) {
+      const total = totalDe(u, 1);
+      if (total != null && (menor === null || total < menor)) menor = total;
+    }
+  }
+  return menor;
+})();
+
+// O índice do FAQ vive aqui, e não junto das páginas de pergunta, porque a description dele
+// abre com a menor diária do site: antes de `menorDiariaDoSite` existir, o bloco lia uma
+// const na zona morta e o build abortava com ReferenceError.
+// ---------------------------------------------------------------------------
+// faq.md (índice)
+// ---------------------------------------------------------------------------
+{
+  const linhas = [
+    "---",
+    'title: "Perguntas frequentes: estacionamento de aeroporto | Movepark"',
+    `description: ${fm(
+      metaDescricao({
+        keyword: "Perguntas frequentes de estacionamento de aeroporto",
+        extra: "reserva, pagamento, check-in, cancelamento",
+        price: ganchoDePreco(menorDiariaDoSite),
+        cta: "comparar",
+      }),
+    )}`,
+    `canonical: ${SITE_URL}/faq`,
+    `updated: ${hoje}`,
+    "---",
+    "",
+    "# Perguntas frequentes",
+    "",
+    "Reservas, pagamentos e check-in, com as respostas que o suporte mais repete.",
+    "Cada pergunta tem página própria; a versão Markdown responde no mesmo endereço",
+    'com o header `Accept: text/markdown`.',
+    "",
+    "## Perguntas gerais",
+    "",
+  ];
+  for (const f of globais) {
+    linhas.push(f.slug ? `- [${f.question}](${urlPergunta(f)})` : `- ${f.question}`);
+  }
+  for (const [, itens] of [...porDestino.entries()].sort((a, b) =>
+    nomeDestino(a[1][0]).localeCompare(nomeDestino(b[1][0]), "pt-BR"),
+  )) {
+    linhas.push("", `## Sobre ${nomeDestino(itens[0])}`, "");
+    for (const f of itens) {
+      linhas.push(f.slug ? `- [${f.question}](${urlPergunta(f)})` : `- ${f.question}`);
+    }
+  }
+  linhas.push("", `Conteúdo integral: ${SITE_URL}/llms-full.txt`, "");
+  fs.writeFileSync(path.join(DIST, "faq.md"), linhas.join("\n"));
+}
+
+/**
  * Os achados citáveis do índice, sempre com a mesma redação (o mesmo número
  * repetido do mesmo jeito é o que a IA aprende a citar): menor diária da rede,
  * tamanho do comparativo e a maior economia contra o balcão.
@@ -522,7 +644,22 @@ for (const dest of destinosComPreco) {
   const nome = nomeCurto(dest);
   const linhas = [
     "---",
-    `title: "Preços de estacionamento em ${nome}: diária, 7, 15 e 30 dias | Movepark"`,
+    `title: "${keywordDestino(dest)}: preços | Movepark"`,
+    `description: ${fm(
+      metaDescricao({
+        keyword: `${keywordDestino(dest)}: quanto custa`,
+        extra: (() => {
+          const n = new Set(unidadesCarro(dest).map((u) => u.company_slug)).size;
+          return `${n} ${n === 1 ? "parceiro" : "parceiros"} e preço de balcão`;
+        })(),
+        price: (() => {
+          const r = resumoPorDuracao(dest, diasIndice);
+          const menor = r.find((x) => x.dias === 1) ?? r[0];
+          return menor ? ganchoDePreco(menor.total, menor.dias) : null;
+        })(),
+        cta: "comparar",
+      }),
+    )}`,
     `canonical: ${SITE_URL}${cPrecos(dest)}`,
     `updated: ${hoje}`,
     "---",
@@ -596,7 +733,15 @@ function tabelaTopMarkdown(dest, limit = 5) {
 {
   const linhas = [
     "---",
-    'title: "Índice de preços de estacionamento | Movepark"',
+    'title: "Preço de estacionamento de aeroporto por diária | Movepark"',
+    `description: ${fm(
+      metaDescricao({
+        keyword: "Preço de estacionamento de aeroporto em tabela",
+        extra: `${destinosComPreco.length} aeroportos com reserva online`,
+        price: ganchoDePreco(menorDiariaDoSite),
+        cta: "comparar",
+      }),
+    )}`,
     `canonical: ${SITE_URL}/precos`,
     `updated: ${hoje}`,
     "---",
@@ -739,7 +884,14 @@ function tabelaTopMarkdown(dest, limit = 5) {
 
   linhas.push("", "## Blog (índice)", "");
   for (const p of posts) {
+    // A frase do post entra junto do título: índice de títulos soltos obriga o agente a abrir
+    // 86 URLs para descobrir qual responde a pergunta dele. Com a description ao lado, ele
+    // escolhe na lista, e é a mesma frase que a SERP mostra.
+    const resumo = (p.meta_description ?? p.ai_summary ?? p.excerpt ?? "")
+      .replace(/\s+/g, " ")
+      .trim();
     linhas.push(`- ${p.title}: ${SITE_URL}/blog/${p.slug}/`);
+    if (resumo) linhas.push(`  ${resumo}`);
   }
   linhas.push(
     "",
@@ -764,6 +916,27 @@ function tabelaTopMarkdown(dest, limit = 5) {
     const linhas = [
       "---",
       `title: "Estacionamento ${rotulo} | Movepark"`,
+      `description: ${fm(
+        metaDescricao({
+          keyword: `Estacionamento ${rotulo.replace(/\s*\([^)]*\)\s*$/, "")}`,
+          // A prova de quantidade entra sempre que sobra espaço, inclusive no destino sem
+          // preço: sem ela o gêmeo dos aeroportos só com lote mapeado fechava em 73
+          // caracteres e jogava fora metade do que a SERP mostra.
+          extra: (() => {
+            const cidade = [d.city, d.state].filter(Boolean).join("/") || null;
+            const m = (prospectsPorDestino.get(d.slug) ?? []).length;
+            const mapeados = m > 0 ? `${m} ${m === 1 ? "estacionamento mapeado" : "estacionamentos mapeados"}` : null;
+            return [cidade, mapeados].filter(Boolean).join(", ") || null;
+          })(),
+          price: (() => {
+            const dp = precoPorSlugDest.get(d.slug);
+            const r = dp ? resumoPorDuracao(dp, diasIndice) : [];
+            const menor = r.find((x) => x.dias === 1) ?? r[0];
+            return menor ? ganchoDePreco(menor.total, menor.dias) : null;
+          })(),
+          cta: precoPorSlugDest.get(d.slug) ? "comparar" : "consultar",
+        }),
+      )}`,
       `canonical: ${SITE_URL}${cDestino(d)}`,
       `updated: ${hoje}`,
       "---",
@@ -892,6 +1065,18 @@ function tabelaTopMarkdown(dest, limit = 5) {
     const linhas = [
       "---",
       `title: "Estacionamento mais barato em ${nome} (${dest.code}) | Movepark"`,
+      `description: ${fm(
+        metaDescricao({
+          keyword: `Estacionamento mais barato em ${nome} (${dest.code})`,
+          extra: "vencedor e segunda opção por duração",
+          price: (() => {
+            const r = resumoPorDuracao(dest, diasIndice);
+            const menor = r.find((x) => x.dias === 1) ?? r[0];
+            return menor ? ganchoDePreco(menor.total, menor.dias) : null;
+          })(),
+          cta: "comparar",
+        }),
+      )}`,
       `canonical: ${SITE_URL}${cMaisBarato(dest)}`,
       `updated: ${hoje}`,
       "---",
@@ -984,6 +1169,21 @@ for (const dest of destinosComPreco) {
     const linhas = [
       "---",
       `title: "${primeira.company_name} perto de ${comCodigo(dest, nome)}: preço por diária | Movepark"`,
+      `description: ${fm(
+        metaDescricao({
+          keyword: `${keywordDestino(dest)}: ${primeira.company_name}`,
+          extra: fmtDistancia(primeira.distance_m)
+            ? `a ${fmtDistancia(primeira.distance_m)} do terminal`
+            : null,
+          // A diária avulsa primeiro; sem ela (estadia mínima), a menor duração que a
+          // unidade cota. Unidade com piso de 2 diárias ia para o índice sem número nenhum.
+          price: (() => {
+            const cotada = diasIndice.map((d) => ({ d, t: totalDe(primeira, d) })).find((x) => x.t != null);
+            return cotada ? ganchoDePreco(cotada.t, cotada.d) : null;
+          })(),
+          cta: primeira.checkout_mode === "hub" ? "reservar" : "comparar",
+        }),
+      )}`,
       `canonical: ${urlPagina}`,
       `updated: ${hoje}`,
       "---",
@@ -1023,6 +1223,17 @@ for (const d of destinations) {
     const linhas = [
       "---",
       `title: "${m.name} perto de ${nome} | Movepark"`,
+      `description: ${fm(
+        metaDescricao({
+          keyword: `${m.name}, perto de ${comCodigo(d, nome)}`,
+          extra:
+            m.distance_km != null
+              ? `a ${fmtDistancia(Math.round(m.distance_km * 1000))} do terminal`
+              : null,
+          price: null,
+          cta: "consultar",
+        }),
+      )}`,
       `canonical: ${urlFicha}`,
       `updated: ${hoje}`,
       "---",
@@ -1076,7 +1287,10 @@ for (const d of destinations) {
 
   for (const p of posts) {
     const dest = p.destination_id ? destinoPorId.get(p.destination_id) : null;
-    const resumo = (p.ai_summary ?? p.excerpt ?? "").trim();
+    // A `meta_description` vem primeiro: é a frase revisada, na estrutura do site
+    // (palavra-chave, menor preço, CTA), e é a mesma que a SERP mostra. O `ai_summary` e o
+    // `excerpt` continuam como plano B para post que ainda não tem a frase escrita.
+    const resumo = (p.meta_description ?? p.ai_summary ?? p.excerpt ?? "").trim();
     const linhas = [`# ${p.title}`, ""];
     if (resumo) linhas.push(`> ${resumo}`, "");
     linhas.push(`- Publicado em: ${String(p.published_at).slice(0, 10)}`);
@@ -1188,6 +1402,20 @@ for (const d of destinations) {
       const base = `${SITE_URL}/estacionamentos/${pubSlug(meta)}`;
 
       const bloco = [`### ${comCodigo(dest, nome)}${meta.city ? `, ${meta.city}` : ""}${meta.state ? ` (${meta.state})` : ""}`, ""];
+      // A frase de abertura da praça segue a mesma estrutura das páginas: palavra-chave,
+      // menor preço real e CTA. Sem ela o agente tinha que somar a tabela inteira para
+      // responder "quanto custa no mínimo".
+      const resumoDaPraca = resumoPorDuracao(dest, diasIndice);
+      const menorDaPraca = resumoDaPraca.find((r) => r.dias === 1) ?? resumoDaPraca[0] ?? null;
+      bloco.push(
+        metaDescricao({
+          keyword: `${keywordDestino(dest)}: quanto custa`,
+          extra: `${unidades.length} ${unidades.length === 1 ? "vaga de parceiro" : "vagas de parceiro"}`,
+          price: menorDaPraca ? ganchoDePreco(menorDaPraca.total, menorDaPraca.dias) : null,
+          cta: "comparar",
+        }),
+        "",
+      );
       bloco.push(`Página: ${base}`, `Tabela de preços: ${base}/precos`, "");
       bloco.push("Com reserva online pela Movepark:");
       for (const u of unidades) bloco.push(linhaUnidade(u));
@@ -1209,7 +1437,17 @@ for (const d of destinations) {
       secoes.push(bloco.join("\n"));
     }
 
-    const bloco = [`## Aeroportos e operadoras (em ${hojeBR})`, "", ...secoes].join("\n");
+    const abertura =
+      menorDiariaDoSite == null
+        ? "Sem diária cotada no momento deste retrato."
+        : `Menor diária do site em ${hojeBR}: ${brl(menorDiariaDoSite)}. Compare e reserve em ${SITE_URL}/precos`;
+    const bloco = [
+      `## Aeroportos e operadoras (em ${hojeBR})`,
+      "",
+      abertura,
+      "",
+      ...secoes,
+    ].join("\n");
     let conteudo = fs
       .readFileSync(alvo, "utf8")
       .replace(/^Última atualização:.*$/m, `Última atualização: ${hoje}`);

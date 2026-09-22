@@ -15,6 +15,7 @@ import {
 } from "@/features/faqs/faqPagina.logic";
 import type { FaqPageData } from "@/features/faqs/api";
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
+import { buildMetaDescription, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
@@ -78,12 +79,23 @@ export default function FaqPerguntaPage() {
   const canonical = `${SITE_URL}/faq/${faq.slug}`;
   const keyword = keywordDoTitulo(destino);
   const title = `${faq.question} · ${keyword} | Movepark`;
-  const description = `${keyword}: ${metaDescriptionFrom(faq.answer, 120)}`;
+  // O corte fino fica com `buildMetaDescription`, que sabe quanto espaço sobra depois do
+  // preço e do CTA. Aqui só tiramos a marcação e as frases que não caberiam de jeito nenhum.
+  const resumoResposta = metaDescriptionFrom(faq.answer, 120);
   const contexto = destino ? (destino.short_name ?? destino.name) : (faq.category?.label ?? "Geral");
 
   const precoDestino = precos?.kind === "destino" ? precos.destino : null;
   const precoRede = precos?.kind === "rede" ? precos.rede : null;
   const diaria1 = precoDestino?.byDuration.find((d) => d.days === 1) ?? null;
+  // Estrutura única da description: palavra-chave, resposta curta, menor preço do destino e
+  // CTA. O resumo entra colado na palavra-chave (e não como complemento) para nunca ser o
+  // primeiro a sair quando a frase estoura: numa página de FAQ, a resposta é o snippet.
+  const description = buildMetaDescription({
+    keyword,
+    fill: resumoResposta,
+    price: priceHook(diaria1?.from ?? null),
+    cta: diaria1 ? "comparar" : "conferir",
+  });
   // Aeroporto sem parceiro precificado: a página não pode prometer reserva pela
   // Movepark (coerência com a resposta rápida, e ADR-009). As seções de fechamento
   // e os CTAs mudam de contexto junto. O sinal é a ausência de preço do motor,

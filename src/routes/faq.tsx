@@ -71,12 +71,12 @@ export default function FaqPage() {
   return (
     <>
       <Helmet>
-        <title>Perguntas Frequentes | Movepark</title>
+        <title>Perguntas frequentes: estacionamento de aeroporto | Movepark</title>
         <meta
           name="description"
-          content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais. FAQ completo do Movepark."
+          content="Perguntas frequentes de estacionamento de aeroporto: reserva, pagamento, check-in, cancelamento e o menor preço por diária. Compare e reserve pela Movepark."
         />
-        <meta property="og:title" content="Perguntas Frequentes | Movepark" />
+        <meta property="og:title" content="Perguntas frequentes: estacionamento de aeroporto | Movepark" />
         <meta
           property="og:description"
           content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais."

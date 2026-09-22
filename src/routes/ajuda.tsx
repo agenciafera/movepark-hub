@@ -56,12 +56,12 @@ export default function AjudaPage() {
   return (
     <>
       <Helmet>
-        <title>Central de Ajuda | Movepark</title>
+        <title>Central de ajuda: reserva de estacionamento | Movepark</title>
         <meta
           name="description"
-          content="Central de ajuda Movepark: tire dúvidas sobre reservas, pagamentos, check-in, cancelamentos e muito mais."
+          content="Central de ajuda da Movepark: reserva de estacionamento de aeroporto, pagamento, check-in, cancelamento e preço por diária. Fale com a gente ou reserve."
         />
-        <meta property="og:title" content="Central de Ajuda | Movepark" />
+        <meta property="og:title" content="Central de ajuda: reserva de estacionamento | Movepark" />
         <meta property="og:url" content={siteUrl("/ajuda")} />
         <link rel="canonical" href={siteUrl("/ajuda")} />
       </Helmet>

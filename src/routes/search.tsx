@@ -38,12 +38,14 @@ export default function SearchResultsPage() {
   const dest = params.get("dest") ?? undefined;
   const point = params.get("point") ?? undefined;
 
+  // A busca fica fora do sitemap (resultado parametrizado), mas o `<title>` e a description
+  // ainda aparecem na aba e no compartilhamento, e seguem a mesma estrutura do resto do site.
   const searchTitle = dest
-    ? `Estacionamentos em ${dest} | Movepark`
-    : "Busca de Estacionamentos | Movepark";
+    ? `Estacionamento ${dest}: compare o menor preço | Movepark`
+    : "Busca de estacionamento de aeroporto | Movepark";
   const searchDesc = dest
-    ? `Veja e reserve estacionamentos próximos a ${dest}. Coberto, descoberto, valet e mais.`
-    : "Busque e compare estacionamentos nos melhores destinos do Brasil.";
+    ? `Estacionamento ${dest}: compare o menor preço por diária entre as vagas coberta, descoberta e valet perto do terminal. Compare e reserve pela Movepark.`
+    : "Busca de estacionamento de aeroporto: compare o menor preço por diária entre os parceiros perto do terminal. Compare e reserve pela Movepark.";
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
   const vehicle = (params.get("vehicle") as SearchVehicle | null) ?? "car";

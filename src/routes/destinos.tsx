@@ -8,9 +8,9 @@ import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino } from "@/lib/urls";
 
-const TITLE = "Destinos atendidos | Estacionamento perto de aeroportos | Movepark";
+const TITLE = "Estacionamento de aeroporto por destino | Movepark";
 const DESCRIPTION =
-  "Conheça os aeroportos e destinos atendidos pela Movepark. Reserve estacionamento com antecedência, compare preços e garanta sua vaga perto do seu embarque.";
+  "Estacionamento de aeroporto em todos os destinos atendidos, com o menor preço por diária de cada um. Compare e reserve pela Movepark.";
 
 /** Card de um destino na grade do índice. */
 function DestinoCard({ d }: { d: Destination }) {

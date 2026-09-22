@@ -108,15 +108,15 @@ export default function SobrePage() {
   return (
     <>
       <Helmet>
-        <title>Sobre nós | Movepark</title>
+        <title>Sobre a Movepark: reserva de estacionamento de aeroporto</title>
         <meta
           name="description"
-          content="Conheça a Movepark: o marketplace de reserva de vagas em estacionamentos de aeroportos, centros e terminais, com preço fixo e parceiro certificado."
+          content="A Movepark compara estacionamento de aeroporto: o menor preço por diária entre parceiros conferidos, com reserva online. Conheça quem está por trás."
         />
-        <meta property="og:title" content="Sobre nós | Movepark" />
+        <meta property="og:title" content="Sobre a Movepark: reserva de estacionamento de aeroporto" />
         <meta
           property="og:description"
-          content="Conheça a Movepark: o marketplace de reserva de vagas em estacionamentos de aeroportos, centros e terminais, com preço fixo e parceiro certificado."
+          content="A Movepark compara estacionamento de aeroporto: o menor preço por diária entre parceiros conferidos, com reserva online. Conheça quem está por trás."
         />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl("/sobre")} />

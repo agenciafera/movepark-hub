@@ -56,6 +56,23 @@ export function seoLabelPrimaryWithCode(d: SeoDestination): string {
   return codigo ? `${primary} ${codigo.trim()}` : primary;
 }
 
+/**
+ * A palavra-chave do destino, na forma em que a pessoa digita: "Estacionamento Aeroporto
+ * Guarulhos (GRU)". É o que abre `<title>` e meta description de toda página comercial do
+ * destino (destino, preços, mais barato, calculadora), para as quatro dizerem a mesma coisa.
+ *
+ * O "Aeroporto" entra na frente quando o rótulo não o traz: em `destination` o `seo_label` já
+ * vem escrito ("Aeroporto Curitiba, Afonso Pena"), mas a matriz de preço só carrega o
+ * `short_name` ("Guarulhos (GRU)"), e sem o prefixo o título perderia o bigrama que responde
+ * por 40,6% dos cliques.
+ */
+export function destinationKeyword(d: SeoDestination): string {
+  const label = seoLabelPrimaryWithCode(d);
+  const jaNomeado = /^(aeroporto|rodovi|terminal|centro|jardim|bairro)/i.test(label);
+  if (!jaNomeado && d.type === "airport") return `Estacionamento Aeroporto ${label}`;
+  return `Estacionamento ${label}`;
+}
+
 /** `<title>` do destino: "Estacionamento Aeroporto Curitiba, Afonso Pena (CWB) | Movepark". */
 export function destinationTitle(d: SeoDestination): string {
   return `Estacionamento ${seoLabel(d)} | Movepark`;
@@ -190,15 +207,164 @@ export function listingHeading(args: {
   return nomeDaFicha(args);
 }
 
-/** Meta description da unidade, usada quando não existe resumo escrito para ela. */
+/**
+ * Meta description da unidade, na estrutura do site: palavra-chave, menor preço, CTA.
+ *
+ * O `<meta name="description">` e o `description` do JSON-LD **não** são a mesma frase, e é
+ * de propósito. O schema recebe o resumo factual (`buildListingTldr`), que é o que a IA cita;
+ * a SERP recebe esta, que é o que a pessoa lê antes de clicar. O resumo factual abria com o
+ * tipo de vaga ("Vaga Coberta no Aeropark"), que não é a consulta de ninguém.
+ *
+ * `hubCheckout` vem do ADR-009: onde a reserva fecha no parceiro, o CTA convida a comparar,
+ * não promete um checkout de dois minutos que a Movepark não roda ali.
+ */
 export function listingDescription(args: {
   companyName: string;
   parkingTypeName: string;
   destination?: SeoDestination | null;
   locationName: string;
   city?: string | null;
+  /** Diária mais barata da unidade, já filtrada (zero de catálogo não é preço). */
+  fromPrice?: number | null;
+  hubCheckout?: boolean;
 }): string {
   const lugar = args.destination ? seoLabelPrimary(args.destination) : args.locationName;
-  const onde = args.city ? `${lugar}, ${args.city}` : lugar;
-  return `${args.parkingTypeName} no ${args.companyName}. Estacionamento ${onde}. Reserve pela Movepark.`;
+  return buildMetaDescription({
+    keyword: `Estacionamento ${lugar}: ${args.parkingTypeName} no ${args.companyName}`,
+    extra: args.city,
+    price: priceHook(args.fromPrice),
+    cta: args.hubCheckout ? "reservar" : "comparar",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Meta description: a estrutura única do site
+// ---------------------------------------------------------------------------
+
+/**
+ * Toda meta description do Movepark tem a mesma estrutura, em três partes e nesta ordem:
+ *
+ *   1. **palavra-chave** da página, na abertura, na forma em que a pessoa digita;
+ *   2. **menor preço real**, com o período a que ele se refere ("a partir de R$ 18,49 a diária");
+ *   3. **CTA** no imperativo, escolhido pela capacidade da página (ADR-009).
+ *
+ * Por que o preço: snippet com número ganha de snippet sem número na mesma SERP, e a
+ * consulta que traz essa gente é de preço. Por que o CTA: description sem verbo descreve
+ * a página em vez de vender o clique.
+ *
+ * O número **nunca** é escrito à mão aqui: entra o mesmo valor que a página mostra, vindo
+ * do motor de reservas. Página sem preço não inventa um: cai na prova alternativa (quantos
+ * parceiros compara) e no CTA que ela consegue cumprir. Prometer no snippet o que a página
+ * não entrega é a mesma quebra de promessa do ADR-009, só que antes do clique.
+ */
+
+/** O teto que o Google corta. Abaixo do piso, a description desperdiça espaço da SERP. */
+export const META_MIN = 120;
+export const META_MAX = 160;
+
+/**
+ * CTA por capacidade. Só a página cuja reserva fecha no Hub promete o tempo de checkout;
+ * onde a reserva fecha no parceiro, o verbo é comparar, que é o que a Movepark entrega ali.
+ */
+export const META_CTA = {
+  /** Reserva fecha no Hub (`checkout_mode = 'hub'`). */
+  reservar: "Reserve online em 2 minutos.",
+  /** Vitrine com preço: compara e leva ao parceiro. Serve para checkout externo. */
+  comparar: "Compare e reserve pela Movepark.",
+  /** Página sem preço e sem reserva (lote mapeado, institucional). */
+  consultar: "Veja as opções e como chegar.",
+  /** Conteúdo (blog, FAQ): o clique é para a informação, não para o carrinho. */
+  conferir: "Confira a tabela atualizada.",
+} as const;
+
+export type MetaCta = keyof typeof META_CTA;
+
+const brlMeta = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+/** "a partir de R$ 18,49 a diária" / "... em 7 diárias". Valor inválido não vira frase. */
+export function priceHook(from: number | null | undefined, days = 1): string | null {
+  if (from == null || !Number.isFinite(from) || from <= 0) return null;
+  const periodo = days === 1 ? "a diária" : `em ${days} diárias`;
+  return `A partir de ${brlMeta.format(from)} ${periodo}.`;
+}
+
+/**
+ * Monta a description na estrutura acima, cabendo em `META_MAX`.
+ *
+ * A ordem de descarte protege o que não pode faltar: se estourar, sai primeiro o `extra`
+ * (a geografia, que é enfeite), depois o preço. A palavra-chave e o CTA nunca saem, porque
+ * são os dois motivos de a frase existir.
+ */
+export function buildMetaDescription(args: {
+  /** Abre a frase. É a palavra-chave da página, sem ponto final. */
+  keyword: string;
+  /**
+   * Texto que entra colado na palavra-chave (`chave: texto`) e é **encurtado para caber**,
+   * em vez de descartado. É o caso da resposta numa página de FAQ: ela é o snippet, então
+   * ela cede espaço ao preço, mas não sai da frase. Abaixo de `FILL_MIN` sai inteiro.
+   */
+  fill?: string | null;
+  /** Prova de preço pronta (`priceHook`) ou qualquer outra prova numérica. */
+  price?: string | null;
+  /** Complemento da abertura: bairro, cidade, quantos parceiros. Sem ponto final. */
+  extra?: string | null;
+  cta: MetaCta;
+}): string {
+  const cta = META_CTA[args.cta];
+  const preco = args.price?.trim() || null;
+  const extra = args.extra?.trim().replace(/[.\s]+$/, "") || null;
+
+  // Espaço que sobra para o `fill` com a frase inteira montada: chave + ": " + fill + "." +
+  // " " + preço + " " + CTA. Sem esta conta o `fill` era um número fixo e a description
+  // fechava em 115 caracteres, jogando fora um quarto do que o Google mostra.
+  const fixo = args.keyword.length + 2 + 1 + (preco ? preco.length + 1 : 0) + cta.length + 1;
+  const fill = args.fill?.trim() ? encolher(args.fill.trim(), META_MAX - fixo) : null;
+
+  const abertura = fill && fill.length >= FILL_MIN ? `${args.keyword}: ${fill}` : args.keyword;
+
+  const montar = (comExtra: boolean, comPreco: boolean) =>
+    [
+      `${abertura}${comExtra && extra ? `, ${extra}` : ""}.`,
+      comPreco && preco ? preco : null,
+      cta,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  for (const [comExtra, comPreco] of [
+    [true, true],
+    [false, true],
+    [true, false],
+    [false, false],
+  ] as const) {
+    const texto = montar(comExtra, comPreco);
+    if (texto.length <= META_MAX) return texto;
+  }
+
+  // Nem a palavra-chave com o CTA coube: a palavra-chave é o que resta, porque ela é a
+  // frase, e o corte fecha em palavra inteira. Fatiar em `META_MAX` cru publicava um "Compare
+  // e reserv" no fim do snippet.
+  const soChave = `${args.keyword}.`;
+  return soChave.length <= META_MAX ? soChave : cortarEmPalavra(soChave, META_MAX);
+}
+
+/** Abaixo disto o `fill` vira um toco e sai inteiro da frase. */
+const FILL_MIN = 40;
+
+/** Corta em `max` sem quebrar palavra e sem reticência: o texto segue sendo uma frase. */
+function encolher(texto: string, max: number): string {
+  const limpo = texto.replace(/\s+/g, " ").trim().replace(/[.,;:]+$/, "");
+  if (max <= 0) return "";
+  if (limpo.length <= max) return limpo;
+  const corte = limpo.slice(0, max);
+  const espaco = corte.lastIndexOf(" ");
+  return (espaco > 0 ? corte.slice(0, espaco) : corte).replace(/[.,;:]+$/, "");
+}
+
+/** Corta em `max` sem quebrar palavra, fechando com reticência e sem pontuação solta. */
+function cortarEmPalavra(texto: string, max: number): string {
+  if (texto.length <= max) return texto;
+  const corte = texto.slice(0, max - 1);
+  const espaco = corte.lastIndexOf(" ");
+  return `${(espaco > 0 ? corte.slice(0, espaco) : corte).replace(/[.,;:]$/, "")}…`;
 }

@@ -200,6 +200,7 @@ ou uma regra de arquitetura do projeto.
 | Só estes blocos: `##` `###` `####`, parágrafo, lista (um nível de sublista), citação `>`, imagem, `---`, tabela | É o escopo fechado do parser. **Bloco de código, crase inline, `~~riscado~~`, HTML e `#` de nível 1 saem literais na tela** |
 | O `#` do título nunca vai no corpo | O H1 é o `title` do post, renderizado pela página |
 | Zero travessão `—` e traço `–` | Regra do `CLAUDE.md` para o projeto inteiro. Use ponto, vírgula, dois-pontos ou " - " |
+| `meta_description` na estrutura de três partes: **palavra-chave, menor preço real, CTA** | É a frase que disputa o clique na SERP e a que o gêmeo Markdown e o `llms-full.txt` mostram ao agente. Snippet sem número perde para snippet com número na mesma consulta, e snippet sem verbo descreve a página em vez de vender o clique. A estrutura é a mesma do site inteiro (`buildMetaDescription` em `src/lib/seo.ts`); o detalhe está no Passo 3.1 |
 | Nenhuma promessa de transação | **ADR-009**: post não declara capacidade. Nada de "vaga garantida", "cancelamento grátis", "preço fixo". A promessa mora na unidade, onde `getLocationCapabilities` manda |
 | Todo valor em R$ carrega **data de referência**. De parceiro, mais o link para `/estacionamentos/<slug>`; de não-parceiro, mais o **nome da fonte** | Tarifa sem data vira promessa que o código não consegue retirar. O do parceiro tem o preço vivo a um clique; o do não-parceiro não tem para onde apontar, então a fonte nomeada é o que o substitui (portão 1.4) |
 | Link externo **nunca** para quem vende vaga | Inclui agregador, comparador, site próprio de parceiro, site de lote mapeado e a página de estacionamento do próprio aeroporto. Vale **mesmo quando ele é a fonte do preço**: cite pelo nome, não linke. Lista em [`scripts/fontes.json`](scripts/fontes.json), regra em [`references/links-e-fontes.md`](references/links-e-fontes.md) |
@@ -218,7 +219,7 @@ passagem. Guarde o rascunho no scratchpad da sessão até publicar.
 slug: estacionamento-no-aeroporto-de-confins-guia-completo
 title: Estacionamento no aeroporto de Confins: o guia que resolve
 meta_title: Estacionamento no aeroporto de Confins: preços e como escolher
-meta_description: Como escolher o estacionamento no aeroporto de Confins sem pagar caro: traslado, cobertura, distância e o que muda no preço em 2026.
+meta_description: Estacionamento no aeroporto de Confins com traslado ao terminal. A partir de R$ 45,00 a diária em setembro de 2026. Compare e reserve pela Movepark.
 keyphrase: estacionamento no aeroporto de Confins
 sinonimos: [estacionar em Confins, estacionamento CNF, deixar o carro em Confins]
 category: guias
@@ -236,6 +237,71 @@ cover_alt: estacionamento no aeroporto de Confins com vagas cobertas
 dois catálogos vivem em [`scripts/blog-taxonomy.mjs`](../../../scripts/blog-taxonomy.mjs);
 slug fora deles é recusado na escrita. `destination` é o slug do aeroporto em
 `destination`, e é ele que liga o post ao CTA que converte.
+
+### 3.1 A `meta_description`: palavra-chave, menor preço, CTA
+
+Esta é a única frase do post que a maioria das pessoas vai ler. Ela aparece na
+SERP, no cartão do WhatsApp, no índice do `llms-full.txt` e no gêmeo Markdown que
+o agente lê. Ela tem **uma estrutura fixa**, a mesma do site inteiro (o construtor
+`buildMetaDescription` em [`src/lib/seo.ts`](../../../src/lib/seo.ts)):
+
+```
+<frase-chave>[, complemento curto]. A partir de R$ <menor preço> <período>. <CTA>.
+```
+
+Entre **120 e 160 caracteres**, nesta ordem e sem exceção de gosto:
+
+1. **Frase-chave na abertura.** É ela que o Google marca em negrito no snippet, e
+   o que o leitor reconhece como "esta página é sobre o que eu pesquisei".
+2. **Menor preço real, com o período.** "A partir de R$ 45,00 a diária", "A partir
+   de R$ 93,17 em 7 diárias". O número é o que ganha o clique de quem compara.
+3. **CTA no imperativo, no fim.** Verbo concreto, não "saiba mais".
+
+**De onde sai o número (e de onde ele nunca sai).** O preço da description é
+**um número que o próprio post já publica**, com a mesma data de referência:
+
+| Situação | Preço da description |
+|---|---|
+| O `destination` do post tem parceiro precificado | O menor total do motor de reservas, o mesmo que `/precos/<slug>` mostra. Confira na página, não no post antigo |
+| Aeroporto sem parceiro | O menor valor da tabela que **você** conferiu na fonte para este post (portão 1.4), com o mês no texto |
+| O post não tem nenhum preço conferido | Sem número. Entra a prova que o post sustenta ("compara 6 estacionamentos", "a 2,6 km do terminal") e o CTA continua |
+
+**Nunca** invente um valor para a description, nem repita o de um post vizinho, nem
+deixe o número sem o período. Preço que a página não mostra é promessa que ninguém
+consegue retirar depois, e é a mesma quebra do ADR-009, só que antes do clique.
+
+**O CTA sai de um catálogo curto**, porque ele declara o que a Movepark entrega
+naquele destino:
+
+| CTA | Quando |
+|---|---|
+| `Compare e reserve pela Movepark.` | O padrão do blog. Serve em todo destino com parceiro, inclusive onde a reserva fecha no site do parceiro |
+| `Confira a tabela atualizada.` | Post de preço em aeroporto **sem** parceiro: não há o que reservar pela Movepark ali |
+| `Veja as opções e como chegar.` | Post que compara estrutura, distância ou acesso, sem preço |
+
+`Reserve online em 2 minutos.` é do site, não do blog: ele promete o checkout do
+Hub, e o post não declara capacidade de unidade nenhuma.
+
+**Exemplos:**
+
+```
+Estacionamento no aeroporto de Confins com traslado ao terminal. A partir de
+R$ 45,00 a diária em setembro de 2026. Compare e reserve pela Movepark.        (148)
+
+Estacionamento no aeroporto de Teresina: tarifa oficial do pátio, a partir de
+R$ 12,00 a hora em agosto de 2026. Confira a tabela atualizada.                (139)
+```
+
+E o que **não** passa:
+
+```
+Descubra tudo sobre o Aeroporto de Congonhas: sua história, estrutura, serviços
+e dicas úteis para tornar sua viagem mais tranquila.        (sem chave na abertura,
+                                                             sem preço, sem CTA)
+```
+
+O analisador cobra os três pedaços: `XX` quando falta a frase-chave, `!!` quando
+falta o preço ou o CTA.
 
 ## Passo 4: escrever
 
@@ -516,24 +582,26 @@ Antes de dizer que o post está pronto:
 2. Passou pela skill `revisar-texto` (portão anti-IA) e por uma leitura de
    ortografia feita com atenção, não em diagonal.
 3. Zero HTML, zero travessão, zero bloco de código, títulos entre `##` e `####`.
-4. Frase-chave no título, na primeira frase, em parte dos H2/H3, no slug e na
-   meta description.
-5. Pelo menos um link para `/estacionamentos/<slug>`, dois ou três para outros posts, e
+4. Frase-chave no título, na primeira frase, em parte dos H2/H3 e no slug.
+5. `meta_description` nas três partes do Passo 3.1: frase-chave abrindo, menor
+   preço com o período e CTA no fim, entre 120 e 160 caracteres. O valor é um que
+   o post já publica, nunca um inventado para caber na frase.
+6. Pelo menos um link para `/estacionamentos/<slug>`, dois ou três para outros posts, e
    um externo de fonte reconhecida com rótulo que diz o que é.
-6. 3.000 palavras ou mais, com tabela onde houver dado comparável.
-7. Todo R$ com data de referência. De parceiro, com link para o preço vivo; de
+7. 3.000 palavras ou mais, com tabela onde houver dado comparável.
+8. Todo R$ com data de referência. De parceiro, com link para o preço vivo; de
    não-parceiro, conferido na fonte com o nome dela no post e sem link para ela.
-8. FAQ escrita no formato que liga o `FAQPage` (pergunta em `###` terminada em
+9. FAQ escrita no formato que liga o `FAQPage` (pergunta em `###` terminada em
    `?`, resposta em parágrafo logo abaixo, no mínimo duas), com pergunta própria do
    post e não cópia de `/faq/<slug>`. Abertura autossuficiente, números com unidade.
-9. Front matter completo, `category`, `tags` e `destination` dentro dos catálogos.
-10. Imagens geradas no Higgsfield, em `.webp`, e **cada uma** com a palavra-chave
+10. Front matter completo, `category`, `tags` e `destination` dentro dos catálogos.
+11. Imagens geradas no Higgsfield, em `.webp`, e **cada uma** com a palavra-chave
     mais uma variação própria no nome do arquivo e no alt, sem nome nem alt
     repetido (o gêmeo markdown sai do banco, não é arquivo seu).
-11. Nenhuma imagem com carro antigo ou cenário datado. Cada uma foi olhada, não
+12. Nenhuma imagem com carro antigo ou cenário datado. Cada uma foi olhada, não
     só gerada: frota dos anos 2020, pátio conservado, sem ferrugem, sem pintura
     fosca e sem placa legível.
-12. Publicação só depois do "pode publicar" do usuário.
+13. Publicação só depois do "pode publicar" do usuário.
 
 ## Referências
 

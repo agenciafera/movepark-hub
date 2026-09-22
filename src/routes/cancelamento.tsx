@@ -9,12 +9,12 @@ export default function CancelamentoPage() {
   return (
     <>
       <Helmet>
-        <title>Política de Cancelamento | Movepark</title>
+        <title>Política de cancelamento da reserva | Movepark</title>
         <meta
           name="description"
-          content="Regras de cancelamento e reembolso da Movepark. O prazo e a política dependem de como você reservou: veja os detalhes por tipo de reserva."
+          content="Cancelamento da reserva de estacionamento de aeroporto: o prazo e o reembolso dependem de como você reservou. Confira as regras por tipo de reserva."
         />
-        <meta property="og:title" content="Política de Cancelamento | Movepark" />
+        <meta property="og:title" content="Política de cancelamento da reserva | Movepark" />
         <meta property="og:url" content={siteUrl("/cancelamento")} />
         <link rel="canonical" href={siteUrl("/cancelamento")} />
       </Helmet>

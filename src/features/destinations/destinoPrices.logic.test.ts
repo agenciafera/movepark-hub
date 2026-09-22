@@ -143,30 +143,45 @@ describe("destinationMetaDescription", () => {
   };
   const comPreco = destinationSummary(viracopos(), DESTINO_DURATIONS);
 
-  // Os textos reais do banco em 17/08/2026. São os que mandam na SERP hoje, e nenhum
-  // deles traz um único número.
+  // A abertura como ela passa a viver no banco: palavra-chave mais a geografia que dado
+  // nenhum sabe, e SEM CTA. O CTA passou a ser do código, porque ele depende da capacidade
+  // da unidade (ADR-009) e o banco não tem como saber disso.
   const VCP =
+    "Estacionamento perto do Aeroporto de Viracopos (VCP), em Campinas, com traslado ao terminal";
+  // O texto legado, que ainda trazia o fecho escrito à mão. Ele cabe inteiro e nada mais,
+  // então sai como está: melhor a frase humana inteira que a frase cortada.
+  const VCP_LEGADO =
     "Estacionamento perto do Aeroporto de Viracopos (VCP), em Campinas, com traslado ao terminal. Compare preços e reserve a sua vaga pela Movepark.";
-  const GRU =
-    "Procurando estacionamento perto do Aeroporto de Guarulhos (GRU)? Veja opções com traslado para os Terminais 1, 2 e 3 e reserve a sua vaga pela Movepark.";
 
-  it("abre espaço para o preço descartando o fecho genérico, e mantém a geografia", () => {
+  it("junta a abertura do banco com o menor preço e o CTA", () => {
     const texto = destinationMetaDescription({ ...base, authored: VCP, summary: comPreco });
-    // Sobrou a frase que localiza (Campinas, traslado ao terminal) e entrou o número.
-    expect(texto).toContain("em Campinas, com traslado ao terminal.");
+    expect(texto.startsWith(VCP)).toBe(true);
     // O Intl separa símbolo e valor com espaço NÃO quebrável; comparar com espaço
     // comum daria um falso negativo e esconderia a asserção que interessa.
     expect(texto).toContain(brl(40));
-    expect(texto).toContain(brl(174.3));
-    // O fecho genérico foi o que saiu, e saiu inteiro (nunca no meio da frase).
-    expect(texto).not.toContain("reserve a sua vaga pela Movepark");
+    expect(texto.endsWith("Compare e reserve pela Movepark.")).toBe(true);
     expect(texto.length).toBeLessThanOrEqual(160);
   });
 
-  it("prefere a geografia ao número quando o que sobraria vira um toco", () => {
-    // Guarulhos: descartar o fecho deixaria só "Procurando estacionamento perto do
-    // Aeroporto de Guarulhos (GRU)?", e os Terminais 1, 2 e 3 valem mais que o preço.
-    expect(destinationMetaDescription({ ...base, authored: GRU, summary: comPreco })).toBe(GRU);
+  it("promete o checkout de dois minutos só onde a reserva fecha no Hub", () => {
+    const externo = destinationMetaDescription({ ...base, authored: VCP, summary: comPreco });
+    const noHub = destinationMetaDescription({
+      ...base,
+      authored: VCP,
+      summary: comPreco,
+      hubCheckout: true,
+    });
+    expect(externo).toContain("Compare e reserve pela Movepark.");
+    expect(noHub).toContain("Reserve online em 2 minutos.");
+  });
+
+  it("texto legado que já traz o próprio fecho sai inteiro, sem CTA repetido", () => {
+    const texto = destinationMetaDescription({
+      ...base,
+      authored: VCP_LEGADO,
+      summary: comPreco,
+    });
+    expect(texto).toBe(VCP_LEGADO);
   });
 
   it("não mexe em texto que já foi escrito com preço à mão", () => {
@@ -176,10 +191,15 @@ describe("destinationMetaDescription", () => {
     );
   });
 
-  it("sem preço, devolve o texto humano intacto", () => {
-    expect(destinationMetaDescription({ ...base, authored: VCP, summary: null })).toBe(VCP);
+  it("sem preço, mantém a abertura humana, a prova de quantidade e o CTA", () => {
     const vazio = destinationSummary(viracopos({ units: [] }), DESTINO_DURATIONS);
-    expect(destinationMetaDescription({ ...base, authored: VCP, summary: vazio })).toBe(VCP);
+    for (const summary of [null, vazio]) {
+      const texto = destinationMetaDescription({ ...base, authored: VCP, summary, prospectCount: 9 });
+      expect(texto).toBe(`${VCP}, 9 estacionamentos mapeados. Compare e reserve pela Movepark.`);
+      // O espaço da SERP é usado: sem a prova de quantidade a frase parava em 124.
+      expect(texto.length).toBeGreaterThanOrEqual(120);
+      expect(texto.length).toBeLessThanOrEqual(160);
+    }
   });
 
   it("sem texto humano nem preço, cai no genérico", () => {
@@ -193,10 +213,23 @@ describe("destinationMetaDescription", () => {
     expect(texto.length).toBeLessThanOrEqual(160);
   });
 
-  it("nunca corta no meio de uma palavra", () => {
+  it("estourando o limite, descarta o preço antes de cortar a frase", () => {
     const texto = destinationMetaDescription({
       ...base,
       label: "Aeroporto Internacional de São Paulo, Guarulhos, Governador André Franco Montoro",
+      summary: comPreco,
+    });
+    expect(texto.length).toBeLessThanOrEqual(160);
+    // O CTA é o motivo de a frase existir: ele fica, e quem sai é o preço.
+    expect(texto).toContain("Compare e reserve pela Movepark.");
+    expect(texto.endsWith("…")).toBe(false);
+  });
+
+  it("nunca corta no meio de uma palavra", () => {
+    const enorme = "Aeroporto Internacional de São Paulo, Guarulhos, Governador André Franco Montoro";
+    const texto = destinationMetaDescription({
+      ...base,
+      label: `${enorme} ${enorme}`,
       summary: comPreco,
     });
     expect(texto.length).toBeLessThanOrEqual(160);

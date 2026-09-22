@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { destinationKeyword } from "@/lib/seo";
 import { formatBRL, formatDate } from "@/lib/format";
 import { temVolumeParaNota } from "@/lib/reviews-volume.mjs";
 import {
@@ -102,6 +103,9 @@ export default function PrecosDestinoPage() {
 
   const canonical = `${SITE_URL}${caminhoPrecos(destinoSlug)}`;
   const titulo = `Preços de estacionamento em ${nome}: diária, 7, 15 e 30 dias`;
+  // O `<title>` abre pela consulta ("estacionamento aeroporto <X>"), que é o bigrama com
+  // 40,6% dos cliques do período, e cabe nos 60 caracteres. O H1 da página não muda.
+  const tituloSeo = `${destinationKeyword(destination)}: preços | Movepark`;
   const description = metaDescription(destination, summary);
 
   const breadcrumb = breadcrumbSchema([
@@ -133,11 +137,11 @@ export default function PrecosDestinoPage() {
   return (
     <>
       <Helmet>
-        <title>{`${titulo} | Movepark`}</title>
+        <title>{tituloSeo}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content={`${titulo} | Movepark`} />
+        <meta property="og:title" content={tituloSeo} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>

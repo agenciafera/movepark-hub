@@ -54,6 +54,50 @@ por SSG, não por SSR.** (POC recomendado para validar o ciclo webhook→deploy.
 
 ## SEO por página
 
+### A meta description tem uma estrutura só, e ela vale para o site inteiro
+
+Toda `<meta name="description">` e todo `description:` de gêmeo Markdown do Movepark têm a
+mesma forma, em três partes e nesta ordem, dentro de 120 a 160 caracteres:
+
+1. **palavra-chave da página**, na abertura, na forma em que a pessoa digita ("Estacionamento
+   Aeroporto Guarulhos (GRU)"). É o trecho que o Google marca em negrito no snippet;
+2. **menor preço real**, com o período ("A partir de R$ 18,49 a diária"). O número sai do motor
+   de reservas, o mesmo do checkout, e é o mesmo que a página mostra;
+3. **CTA no imperativo**, escolhido pela capacidade da página (ADR-009).
+
+Quem monta é `buildMetaDescription` em [`src/lib/seo.ts`](../../src/lib/seo.ts): o `<title>` e a
+description de toda rota indexável passam por ele ou por um texto literal que obedece à mesma
+regra. Quando a frase estoura os 160, a ordem de descarte é fixa: sai o complemento, depois o
+preço; a palavra-chave e o CTA nunca saem, porque são os dois motivos de a frase existir.
+
+**O catálogo de CTA não é livre**, porque cada um declara o que a Movepark entrega ali:
+
+| CTA | Quando |
+|---|---|
+| `Reserve online em 2 minutos.` | A reserva fecha no Hub (`checkout_mode = 'hub'`) |
+| `Compare e reserve pela Movepark.` | Vitrine com preço, inclusive checkout externo |
+| `Veja as opções e como chegar.` | Página sem preço e sem reserva (lote mapeado, ADR-010) |
+| `Confira a tabela atualizada.` | Conteúdo: blog e FAQ sem parceiro precificado |
+
+**Página sem preço não inventa um.** No lugar do número entra a prova que ela sustenta (quantos
+parceiros compara, quantos lotes mapeados, a distância medida), e o CTA cai para o que ela
+consegue cumprir. Publicar no snippet o que a página não entrega é a mesma quebra do ADR-009,
+só que antes do clique: a oferta vincula onde quer que seja publicada, e o snippet é publicação.
+
+Quem impede a regra de envelhecer é
+[`src/seo-meta.contract.test.ts`](../../src/seo-meta.contract.test.ts): ele varre os arquivos de
+rota, cobra tamanho, palavra-chave na abertura, CTA no fim e ausência de travessão em todo texto
+literal, e exige que a rota de description dinâmica importe o construtor. Rota fora da regra
+precisa estar na lista de exceções, com o motivo escrito.
+
+Nos artefatos GEO a mesma estrutura é reimplementada em
+[`scripts/generate-geo-artifacts.mjs`](../../scripts/generate-geo-artifacts.mjs) (`metaDescricao`),
+porque o script roda em Node puro, fora do bundle do Vite. No blog, a frase é escrita à mão e
+cobrada pelo analisador da skill `blogpost-seo-geo`.
+
+
+### Head por rota e structured data
+
 - **Head por rota:** migrar para **`@unhead/react`** (componente `<Head>`/`useHead`, com shim `<Helmet>`
   drop-in). Motivo: `react-helmet-async` teve >1 ano sem manutenção e só voltou na v3 (mar/2026) — risco.
   Gerencia `title`, `meta description`, `canonical` e Open Graph por rota. Para SSG, envolver com `<UnheadProvider>`.

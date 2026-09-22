@@ -7,6 +7,8 @@
  * answer-first que saem no HTML, na meta description e no gêmeo Markdown.
  */
 
+import { buildMetaDescription, destinationKeyword, priceHook } from "@/lib/seo";
+
 export const INDEX_DURATIONS = [1, 7, 15, 30] as const;
 
 export type PriceEntry = {
@@ -451,26 +453,21 @@ export function formatDistance(m: number | null): string | null {
   return `${texto} km`;
 }
 
-const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
 /**
  * Meta description da página do destino, derivada do dado (não escrita à mão):
  * responde "quanto custa" já no snippet. Corta em 160 sem quebrar palavra.
  */
 export function metaDescription(dest: PriceDestination, summary: DestinationSummary): string {
-  const nome = dest.short_name ?? dest.name;
-  const diaria = summary.byDuration.find((s) => s.days === 1);
-  const sete = summary.byDuration.find((s) => s.days === 7);
-  const partes: string[] = [];
-  if (diaria) partes.push(`diária a partir de ${brl.format(diaria.from)}`);
-  if (sete) partes.push(`7 diárias por ${brl.format(sete.from)}`);
-  const precos = partes.length > 0 ? `: ${partes.join(", ")}` : "";
-  const texto =
-    `Preços de estacionamento perto de ${nome}${precos}. ` +
-    `Tabela com ${summary.unitCount} ${summary.unitCount === 1 ? "opção de parceiro" : "opções de parceiros"}, preço de balcão e reserva online.`;
-  if (texto.length <= 160) return texto;
-  const corte = texto.slice(0, 157);
-  return `${corte.slice(0, corte.lastIndexOf(" "))}…`;
+  const menor =
+    summary.byDuration.find((s) => s.days === 1) ??
+    [...summary.byDuration].sort((a, b) => a.days - b.days)[0];
+  const quantos = `${summary.unitCount} ${summary.unitCount === 1 ? "parceiro" : "parceiros"} e preço de balcão`;
+  return buildMetaDescription({
+    keyword: `${destinationKeyword(dest)}: quanto custa`,
+    extra: quantos,
+    price: menor ? priceHook(menor.from, menor.days) : null,
+    cta: "comparar",
+  });
 }
 
 /**

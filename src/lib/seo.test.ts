@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  META_CTA,
+  META_MAX,
+  buildMetaDescription,
   destinationHeading,
+  destinationKeyword,
   destinationListHeading,
   destinationTitle,
   faqHeading,
@@ -10,6 +14,7 @@ import {
   listingTitle,
   locationHeading,
   priceHeading,
+  priceHook,
   proximityHeading,
   seoLabel,
   seoLabelPrimary,
@@ -178,12 +183,86 @@ describe("título e H1 da unidade", () => {
     ).toBe("Aerovalet - Estacionamento Rodoviária Tietê");
   });
 
-  it("a descrição nomeia marca, tipo de vaga e destino dentro do limite de meta", () => {
-    const desc = listingDescription({ ...abba, city: "São José dos Pinhais" });
+  it("a descrição abre pela palavra-chave, leva o menor preço e fecha no CTA", () => {
+    const desc = listingDescription({
+      ...abba,
+      city: "São José dos Pinhais",
+      fromPrice: 29.9,
+      hubCheckout: true,
+    });
     expect(desc).toBe(
-      "Vaga Coberta no Abbapark. Estacionamento Aeroporto Curitiba, São José dos Pinhais. Reserve pela Movepark.",
+      "Estacionamento Aeroporto Curitiba: Vaga Coberta no Abbapark, São José dos Pinhais. " +
+        "A partir de R$\u00a029,90 a diária. Reserve online em 2 minutos.",
     );
     expect(desc.length).toBeLessThanOrEqual(160);
+  });
+
+  it("sem preço e com reserva fora do Hub, o CTA convida a comparar (ADR-009)", () => {
+    const desc = listingDescription({ ...abba, city: "São José dos Pinhais", fromPrice: 0 });
+    expect(desc).not.toContain("R$");
+    expect(desc).not.toContain("Reserve online em 2 minutos");
+    expect(desc.endsWith("Compare e reserve pela Movepark.")).toBe(true);
+  });
+});
+
+describe("estrutura da meta description", () => {
+  it("monta palavra-chave, complemento, preço e CTA nesta ordem", () => {
+    expect(
+      buildMetaDescription({
+        keyword: "Estacionamento Aeroporto Confins",
+        extra: "a 8 km do terminal, em Belo Horizonte",
+        price: priceHook(45),
+        cta: "reservar",
+      }),
+    ).toBe(
+      "Estacionamento Aeroporto Confins, a 8 km do terminal, em Belo Horizonte. " +
+        "A partir de R$\u00a045,00 a diária. Reserve online em 2 minutos.",
+    );
+  });
+
+  it("estourando o limite, descarta o complemento antes do preço", () => {
+    const texto = buildMetaDescription({
+      keyword: "Estacionamento Aeroporto Internacional de São Paulo, Guarulhos (GRU)",
+      extra: "com traslado para os Terminais 1, 2 e 3, a 2,6 km do embarque, em Guarulhos",
+      price: priceHook(18.49),
+      cta: "comparar",
+    });
+    expect(texto.length).toBeLessThanOrEqual(META_MAX);
+    expect(texto).not.toContain("Terminais");
+    expect(texto).toContain("18,49");
+    expect(texto.endsWith("Compare e reserve pela Movepark.")).toBe(true);
+  });
+
+  it("preço ausente, zero ou inválido não vira frase", () => {
+    expect(priceHook(null)).toBeNull();
+    expect(priceHook(0)).toBeNull();
+    expect(priceHook(Number.NaN)).toBeNull();
+    expect(priceHook(93.17, 7)).toBe("A partir de R$\u00a093,17 em 7 diárias.");
+  });
+
+  it("o CTA sai do catálogo, e o de checkout no Hub é o único que promete os 2 minutos", () => {
+    expect(META_CTA.reservar).toBe("Reserve online em 2 minutos.");
+    expect(Object.values(META_CTA).filter((c) => c.includes("2 minutos"))).toHaveLength(1);
+    for (const cta of Object.values(META_CTA)) {
+      expect(cta).not.toMatch(/[—–]/);
+      expect(cta.endsWith(".")).toBe(true);
+    }
+  });
+});
+
+describe("destinationKeyword", () => {
+  it("usa o rótulo do banco quando ele já nomeia o aeroporto", () => {
+    expect(destinationKeyword(cwb)).toBe("Estacionamento Aeroporto Curitiba (CWB)");
+  });
+
+  it("prefixa 'Aeroporto' quando só existe o short_name, que é o caso da matriz de preço", () => {
+    expect(
+      destinationKeyword({ name: "Aeroporto Internacional de São Paulo/Guarulhos", short_name: "Guarulhos (GRU)", type: "airport" }),
+    ).toBe("Estacionamento Aeroporto Guarulhos (GRU)");
+  });
+
+  it("não inventa aeroporto em destino que não é aeroporto", () => {
+    expect(destinationKeyword(tiete)).toBe("Estacionamento Rodoviária Tietê");
   });
 });
 

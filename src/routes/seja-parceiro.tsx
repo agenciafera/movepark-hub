@@ -495,13 +495,13 @@ export default function SejaParceiroPage() {
   return (
     <>
       <Helmet>
-        <title>Seja parceiro | Movepark</title>
+        <title>Seja parceiro: cadastre seu estacionamento | Movepark</title>
         {/* Sem este bloco o Search Console recusa indexar o vídeo por falta de miniatura:
             o iframe é do YouTube, mas quem declara o vídeo é a página que o exibe. */}
         <script type="application/ld+json">{JSON.stringify(VIDEO_SCHEMA)}</script>
         <meta
           name="description"
-          content="Coloque seu estacionamento na Movepark e receba reservas online com pagamento garantido. Sem mensalidade e sem custo de adesão para começar."
+          content="Cadastre o seu estacionamento de aeroporto na Movepark e receba reservas online com pagamento garantido, sem mensalidade e sem adesão. Fale com a gente."
         />
       </Helmet>
 

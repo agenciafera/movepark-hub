@@ -75,7 +75,7 @@ const REGRAS = [
 const TITULO = "Selo de parceiro Movepark";
 /** Serve de meta description, então precisa da marca. */
 const META =
-  "Monte o selo de parceiro Movepark e copie o código pronto para colar no rodapé do seu site.";
+  "Selo de parceiro Movepark para o seu estacionamento: monte o selo, escolha o que ele diz e copie o código pronto para colar no rodapé do seu site.";
 /** Lead da página. Não repete a marca, que já está no h1 logo acima. */
 const LEAD = "Escolha o que o selo diz e copie o código para colar no rodapé do seu site.";
 

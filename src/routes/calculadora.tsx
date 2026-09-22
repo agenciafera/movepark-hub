@@ -24,6 +24,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHero } from "@/components/shared/PageHero";
 import { formatBRL, formatDate } from "@/lib/format";
+import { buildMetaDescription, priceHook } from "@/lib/seo";
 import { breadcrumbSchema, webApplicationSchema } from "@/lib/jsonld";
 import { cn } from "@/lib/utils";
 import { JOURNEY_COMPARISON } from "@/features/how-it-works/journey";
@@ -56,6 +57,7 @@ import {
   durationLabel,
   formatDistance,
   listingPath,
+  overallStats,
   type PriceDestination,
   type PriceIndexData,
 } from "@/features/price-index/priceIndex.logic";
@@ -94,9 +96,10 @@ export type CalculadoraData = {
   generatedAt: string;
 };
 
-const DESCRIPTION =
-  "Escolha o aeroporto e o número de diárias e veja quanto custa em cada estacionamento, " +
-  "do mais barato ao mais caro. Parceiros Movepark reservam online pelo preço do checkout.";
+/** Usada quando o índice sobe sem nenhuma diária cotada, o que é falha de dado, não de copy. */
+const DESCRIPTION_SEM_PRECO =
+  "Calculadora de estacionamento de aeroporto: escolha o aeroporto e as diárias e veja o " +
+  "menor preço por parceiro. Compare e reserve pela Movepark.";
 
 const celulaBase =
   "tablet:table-cell tablet:border-b tablet:border-hairline-soft tablet:px-3 tablet:py-5 tablet:align-top";
@@ -446,12 +449,23 @@ export default function CalculadoraPage() {
   const grupos = agruparPorRegiao(catalogo);
 
   const canonical = `${SITE_URL}/calculadora-estacionamento-aeroporto`;
-  const titulo = "Calculadora de estacionamento de aeroporto";
   const breadcrumb = breadcrumbSchema([
     { name: "Início", url: SITE_URL },
     { name: "Índice de preços", url: `${SITE_URL}/precos` },
     { name: "Calculadora", url: canonical },
   ]);
+  // O `<title>` e a description são da SERP; o H1 da página não muda.
+  const tituloSeo = "Calculadora de estacionamento de aeroporto | Movepark";
+  const menorDiaria = loaded ? overallStats(loaded.data).minDailyFrom : null;
+  const description =
+    menorDiaria == null
+      ? DESCRIPTION_SEM_PRECO
+      : buildMetaDescription({
+          keyword: "Calculadora de estacionamento de aeroporto",
+          extra: "escolha o aeroporto e as diárias e veja o ranking do mais barato ao mais caro",
+          price: priceHook(menorDiaria),
+          cta: "comparar",
+        });
 
   const campo =
     "h-12 w-full rounded-sm border border-hairline bg-canvas px-3 text-body-md text-ink focus:border-mp-primary focus:outline-none";
@@ -462,12 +476,12 @@ export default function CalculadoraPage() {
   return (
     <>
       <Helmet>
-        <title>{`${titulo}: quanto custa por diárias | Movepark`}</title>
-        <meta name="description" content={DESCRIPTION} />
+        <title>{tituloSeo}</title>
+        <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content={`${titulo} | Movepark`} />
-        <meta property="og:description" content={DESCRIPTION} />
+        <meta property="og:title" content={tituloSeo} />
+        <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">
