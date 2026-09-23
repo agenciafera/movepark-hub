@@ -165,7 +165,9 @@ Deno.serve(async (req: Request) => {
   // receber", que o E1.9 separou de propósito (o parceiro publica antes do KYC).
   // Recebedor que o gateway não reconhece (`gateway_missing_at`) conta como ausente: a cobrança
   // com split apontando para ele falharia na venda (decisão 5 do E0.3.5: bloqueia).
-  if (splitEnabled && (!recipient?.external_recipient_id || recipient.gateway_missing_at)) {
+  // 23/09/2026: o status entra no gate, como no cartão. Recebedor `pending`/`refused` com id passava
+  // pela Edge e quebrava no gateway, com a reserva já criada.
+  if (splitEnabled && (!recipient?.external_recipient_id || recipient.gateway_missing_at || recipient.status !== "active")) {
     return jsonResponse(
       { error: "O estacionamento ainda não tem recebedor ativo no gateway." },
       409,

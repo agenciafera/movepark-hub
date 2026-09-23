@@ -356,6 +356,8 @@ Deno.serve(async (req: Request) => {
       kyc_url_expires_at: result.kycExpiresAt,
       kyc_link_email_sent_at: null,
       requirements: result.requirements,
+      // O gateway acabou de criar este id: a marca de "não encontrado" do id antigo não vale mais.
+      gateway_missing_at: null,
     })
     .eq("id", recipient.id);
 

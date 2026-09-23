@@ -8,6 +8,7 @@
 
 import { getEmailConfig, sendEmail, siteUrl, tplBookingConfirmation } from "./email.ts";
 import { mapBookingRowToVoucher, VOUCHER_BOOKING_SELECT } from "./voucher/fields.ts";
+import { sendWhatsAppTemplate } from "./whatsapp.ts";
 
 // deno-lint-ignore no-explicit-any
 export async function sendBookingConfirmationEmail(admin: any, bookingId: string): Promise<void> {
@@ -68,3 +69,45 @@ export async function sendBookingConfirmationEmail(admin: any, bookingId: string
     throw e;
   }
 }
+
+/**
+ * Notifica a confirmação por WhatsApp — só Tarifas Flex+ (`fare_benefits.notifications_sms`).
+ * Best-effort: degrada sem config/template e nunca derruba o webhook.
+ */
+// deno-lint-ignore no-explicit-any
+export async function notifyBookingConfirmed(admin: any, bookingId: string): Promise<void> {
+  const { data: b } = await admin
+    .from("booking")
+    .select("code, customer_name, customer_phone, profile_id, fare_benefits")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!b || !b.fare_benefits?.notifications_sms) return;
+
+  let phone: string | null = b.customer_phone ?? null;
+  let name: string | null = b.customer_name ?? null;
+  if ((!phone || !name) && b.profile_id) {
+    // ADR-006: nome vem do profiles; telefone (credencial) vem do auth.users — nunca do profiles.
+    if (!name) {
+      const { data: p } = await admin
+        .from("profiles")
+        .select("first_name")
+        .eq("id", b.profile_id)
+        .maybeSingle();
+      name = p?.first_name ?? null;
+    }
+    if (!phone) {
+      const { data: u } = await admin.auth.admin.getUserById(b.profile_id);
+      const raw = u?.user?.phone ?? null;
+      phone = raw ? (raw.startsWith("+") ? raw : `+${raw}`) : null;
+    }
+  }
+  if (!phone) return;
+
+  const template = Deno.env.get("WHATSAPP_BOOKING_CONFIRMED_TEMPLATE") ?? "";
+  await sendWhatsAppTemplate({
+    to: phone,
+    template,
+    bodyParams: [name ?? "cliente", b.code],
+  });
+}
+

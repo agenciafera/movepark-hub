@@ -15,6 +15,7 @@ import { executeRefund, partnerRecipientMissing, persistPartnerBalance } from ".
 import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
+import { notifyBookingConfirmed, sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 
@@ -130,6 +131,14 @@ Deno.serve(async (req: Request) => {
       } else if (acao.tipo === "confirmar") {
         // Webhook perdido → o voucher pode não ter sido gerado; gera aqui (idempotente).
         await generateAndStoreVoucher(admin, p.booking_id, site).catch(() => null);
+        // 23/09/2026: e o cliente também não tinha recebido nada. O e-mail é idempotente por
+        // `confirmation_email_sent_at`; o WhatsApp só sai para quem tem o benefício.
+        await sendBookingConfirmationEmail(admin, p.booking_id).catch((e) =>
+          console.error("[reconcile-confirmations] e-mail de confirmação falhou:", p.booking_id, e),
+        );
+        await notifyBookingConfirmed(admin, p.booking_id).catch((e) =>
+          console.error("[reconcile-confirmations] WhatsApp de confirmação falhou:", p.booking_id, e),
+        );
         confirmed += 1;
       }
     } catch (e) {
