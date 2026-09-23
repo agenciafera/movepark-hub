@@ -13,13 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/format";
+import { SITE_URL } from "@/lib/site";
 import {
   useCompanyAccessLinks,
   useCompanyContactEmail,
   useCreateCompanyAccessLink,
   useRevokeCompanyAccessLink,
 } from "./api";
-import { activeAccessLink, describeAccessLink, shareMessage } from "./accessLink.logic";
+import { accessLinkUrl, activeAccessLink, describeAccessLink, shareMessage } from "./accessLink.logic";
 
 type Props = {
   companyId: string;
@@ -30,8 +31,8 @@ type Props = {
 
 /**
  * Link de acesso ao Recebimento (23/09/2026, hub_admin). Gera um link que faz o dono cair logado
- * em /operator/recebimento. A URL só aparece aqui, uma vez: a tabela guarda o hash. Gerar de
- * novo revoga o anterior. Spec: docs/specs/link-de-acesso-recebimento.md
+ * em /operator/recebimento. A URL fica guardada e pode ser copiada de novo a qualquer hora. Gerar
+ * de novo revoga o anterior. Spec: docs/specs/link-de-acesso-recebimento.md
  */
 export function AccessLinkDialog({ companyId, companyName, open, onOpenChange }: Props) {
   const links = useCompanyAccessLinks(open ? companyId : undefined);
@@ -39,21 +40,23 @@ export function AccessLinkDialog({ companyId, companyName, open, onOpenChange }:
   const create = useCreateCompanyAccessLink();
   const revoke = useRevokeCompanyAccessLink();
   const [email, setEmail] = React.useState("");
-  const [url, setUrl] = React.useState<string | null>(null);
+  const [gerada, setGerada] = React.useState<string | null>(null);
   const vivo = activeAccessLink(links.data);
+  // A URL recém-gerada vale até a lista recarregar; depois vem do segredo guardado na linha.
+  const url = gerada ?? accessLinkUrl(SITE_URL, vivo);
 
   React.useEffect(() => {
-    if (open) setUrl(null);
+    if (open) setGerada(null);
   }, [open]);
   React.useEffect(() => {
-    if (open && !email && contact.data) setEmail(contact.data);
-  }, [open, email, contact.data]);
+    if (open && !email && (vivo?.email || contact.data)) setEmail(vivo?.email ?? contact.data ?? "");
+  }, [open, email, vivo?.email, contact.data]);
 
   async function gerar() {
     try {
       const r = await create.mutateAsync({ company_id: companyId, email: email.trim() });
-      setUrl(r.url);
-      toast.success("Link gerado. Copie agora: ele não aparece de novo.");
+      setGerada(r.url);
+      toast.success("Link gerado.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao gerar o link.");
     }
@@ -63,7 +66,7 @@ export function AccessLinkDialog({ companyId, companyName, open, onOpenChange }:
     if (!vivo) return;
     try {
       await revoke.mutateAsync(vivo.id);
-      setUrl(null);
+      setGerada(null);
       toast.success("Link revogado.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao revogar.");
@@ -96,9 +99,11 @@ export function AccessLinkDialog({ companyId, companyName, open, onOpenChange }:
           {vivo && (
             <div className="rounded-md bg-surface-soft p-3 text-body-sm text-body">
               <p>{describeAccessLink(vivo, formatDateTime)}</p>
-              <p className="mt-1 text-caption text-muted">
-                A URL não fica guardada. Se ele perdeu, gere outro: o anterior deixa de valer.
-              </p>
+              {!url && (
+                <p className="mt-1 text-caption text-muted">
+                  Link de antes de 23/09/2026, sem a URL guardada. Gere outro: o anterior deixa de valer.
+                </p>
+              )}
             </div>
           )}
 
@@ -152,7 +157,7 @@ export function AccessLinkDialog({ companyId, companyName, open, onOpenChange }:
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>
-            {!url && (
+            {!gerada && (
               <Button onClick={gerar} disabled={create.isPending || !email.trim()}>
                 {create.isPending ? "Gerando…" : vivo ? "Gerar outro link" : "Gerar link"}
               </Button>

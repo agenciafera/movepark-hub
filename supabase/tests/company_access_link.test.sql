@@ -2,7 +2,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(14);
+select plan(15);
 
 do $$
 declare dono uuid := gen_random_uuid(); adm uuid := gen_random_uuid(); outro uuid := gen_random_uuid(); v_company uuid; v_link uuid;
@@ -58,6 +58,8 @@ select lives_ok(format('select public.company_access_link_revoke(%L)', current_s
 reset role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select is(public.company_access_link_redeem('PREFIXO0123456789', 'hash-certo') ->> 'reason', 'invalid', 'revogado não resgata');
+
+select has_column('public', 'company_access_link', 'token_secret', 'o segredo fica guardado para o Manager copiar a URL de novo');
 
 select * from finish();
 rollback;

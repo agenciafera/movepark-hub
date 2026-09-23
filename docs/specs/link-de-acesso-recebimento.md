@@ -22,8 +22,10 @@ Um link por empresa, `https://movepark.co/acesso/<segredo>`, gerado pelo Manager
   **e** contrato aceito: `company_access_link_done`) ou até o Manager revogar. Reutilizável de
   propósito: o dono pode voltar no mesmo link.
 - **Um link vivo por empresa.** Gerar outro revoga o anterior.
-- **A URL aparece uma vez**, na resposta da Edge. O banco guarda só o hash (sha256) e um prefixo
-  indexável, no molde do `checkout_handoff`. Perdeu o link, gera outro.
+- **A URL pode ser copiada de novo** a qualquer hora no diálogo: o segredo fica em
+  `company_access_link.token_secret`, legível só por hub_admin (RLS) e pelo service_role. O hash
+  (sha256) e o prefixo indexável, no molde do `checkout_handoff`, continuam sendo o que o resgate
+  compara. Decidido em 23/09/2026: guardar só o hash obrigava a gerar outro link a cada cópia.
 - **Cada abertura fica registrada** (`use_count`, `last_used_at`), e o diálogo mostra.
 - **É credencial.** Quem tem o link entra como Dono. Por isso não vai em página indexável
   (`/acesso` está em `ROTAS_PRIVADAS` do worker e em `PRIVADOS` do sitemap) e o Manager revoga
@@ -47,7 +49,8 @@ Um link por empresa, `https://movepark.co/acesso/<segredo>`, gerado pelo Manager
 ## Banco
 
 `supabase/migrations/20261123170000_link_de_acesso_ao_recebimento.sql`: tabela
-`company_access_link` (RLS: hub_admin lê; escrita só pelas Edges com service_role),
+`company_access_link` (RLS: hub_admin lê; escrita só pelas Edges com service_role) e
+`20261123180000_link_de_acesso_guarda_url.sql` (coluna `token_secret`),
 `company_access_link_done(uuid)`, `company_access_link_redeem(text, text)` (service_role) e
 `company_access_link_revoke(uuid)` (hub_admin). pgTAP `company_access_link.test.sql` (14).
 

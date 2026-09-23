@@ -1,8 +1,8 @@
 // Edge Function: /create-company-access-link
 // Link de acesso ao Recebimento (23/09/2026): o Manager gera, por empresa, um link que faz o dono
 // cair LOGADO em /operator/recebimento (KYC + contrato). Cria ou reaproveita o usuário do dono
-// (auth.users + profile_company como Dono), grava só o hash do segredo em company_access_link e
-// devolve a URL. Gerar de novo revoga o link anterior da empresa. Não vence em dias: morre quando
+// (auth.users + profile_company como Dono), grava o segredo (e o hash, que é o que o resgate
+// compara) em company_access_link e devolve a URL; o Manager copia de novo quando quiser. Gerar de novo revoga o link anterior da empresa. Não vence em dias: morre quando
 // a empresa termina o Recebimento (RPC company_access_link_done) ou quando o Manager revoga.
 // Ver docs/specs/link-de-acesso-recebimento.md
 //
@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
   const { secret, prefix } = makeToken();
   const { data: row, error: insErr } = await admin
     .from("company_access_link")
-    .insert({ company_id: companyId, profile_id: profileId, email, token_prefix: prefix, token_hash: await sha256Hex(secret), created_by: userData.user.id })
+    .insert({ company_id: companyId, profile_id: profileId, email, token_prefix: prefix, token_hash: await sha256Hex(secret), token_secret: secret, created_by: userData.user.id })
     .select("id")
     .single();
   if (insErr) return json({ error: insErr.message }, 400);

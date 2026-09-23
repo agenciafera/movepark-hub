@@ -3,6 +3,7 @@
 
 export type AccessLinkLike = {
   email: string;
+  token_secret?: string | null;
   created_at: string;
   revoked_at: string | null;
   last_used_at: string | null;
@@ -29,4 +30,10 @@ export function shareMessage(companyName: string, url: string): string {
     url,
     "Ao abrir, você já entra logado e cai direto no cadastro de recebimento (dados bancários, CNPJ e contrato). Leva uns 5 minutos. Se precisar parar no meio, é só abrir o mesmo link de novo.",
   ].join("\n");
+}
+
+/** URL do link vivo, quando o segredo ficou guardado (links de antes de 23/09/2026 não têm). */
+export function accessLinkUrl(site: string, link: { token_secret?: string | null } | null): string | null {
+  if (!link?.token_secret) return null;
+  return `${site.replace(/\/$/, "")}/acesso/${link.token_secret}`;
 }

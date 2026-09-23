@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeAccessLink, describeAccessLink, shareMessage } from "./accessLink.logic";
+import { accessLinkUrl, activeAccessLink, describeAccessLink, shareMessage } from "./accessLink.logic";
 
 const fmt = (iso: string) => `[${iso}]`;
 
@@ -32,5 +32,13 @@ describe("shareMessage", () => {
     expect(m).toContain("BePark");
     expect(m).toContain("https://movepark.co/acesso/x");
     expect(m).not.toMatch(/[–—]/);
+  });
+});
+
+describe("accessLinkUrl", () => {
+  it("monta a URL com o segredo guardado e devolve null sem ele", () => {
+    expect(accessLinkUrl("https://movepark.co/", { token_secret: "abc" })).toBe("https://movepark.co/acesso/abc");
+    expect(accessLinkUrl("https://movepark.co", { token_secret: null })).toBeNull();
+    expect(accessLinkUrl("https://movepark.co", null)).toBeNull();
   });
 });

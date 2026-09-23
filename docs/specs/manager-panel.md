@@ -542,5 +542,5 @@ Implementação: `20261031090000_home_featured_offer.sql` (tabela `home_featured
 
 Em **Financeiro › Recebedores**, empresa sem KYC tem o botão **Link de acesso**: gera a URL
 `movepark.co/acesso/<segredo>` que faz o dono entrar logado e cair no cadastro de recebimento.
-A URL aparece uma vez (o banco guarda o hash), vale até a empresa terminar ou até ser revogada,
+A URL fica guardada e pode ser copiada de novo, vale até a empresa terminar ou até ser revogada,
 e o diálogo mostra quantas vezes foi aberta. Ver [link-de-acesso-recebimento.md](./link-de-acesso-recebimento.md).

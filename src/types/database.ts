@@ -1239,6 +1239,7 @@ export type Database = {
           revoked_at: string | null
           token_hash: string
           token_prefix: string
+          token_secret: string | null
           use_count: number
         }
         Insert: {
@@ -1252,6 +1253,7 @@ export type Database = {
           revoked_at?: string | null
           token_hash: string
           token_prefix: string
+          token_secret?: string | null
           use_count?: number
         }
         Update: {
@@ -1265,6 +1267,7 @@ export type Database = {
           revoked_at?: string | null
           token_hash?: string
           token_prefix?: string
+          token_secret?: string | null
           use_count?: number
         }
         Relationships: [
