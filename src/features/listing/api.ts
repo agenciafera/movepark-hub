@@ -1,3 +1,5 @@
+import { fetchUnitFares } from "@/features/fares/api";
+import type { FareOption } from "@/lib/fares";
 import * as React from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -26,6 +28,8 @@ export type TipoDeVaga = {
 
 export type ListingDetail = {
   id: string; // location_parking_type_id
+  /** Catálogo de tarifas da unidade (`get_unit_fares`), carregado no loader para a barra de confiança e o resumo SSG. */
+  fares?: FareOption[];
   capacity: number;
   is_active: boolean;
   /**
@@ -206,6 +210,9 @@ export async function fetchListing(
     location: { id: string; company: { id: string } };
   };
   const companyId = matched.location.company.id;
+  // Catálogo de tarifas da unidade, no mesmo loader: a barra de confiança e o resumo da meta
+  // precisam da janela real de cancelamento no HTML do build. Falha vira lista vazia (padrão).
+  const fares = await fetchUnitFares(escolhido.id).catch(() => [] as FareOption[]);
   const { data: others } = await supabase
     .from("location")
     .select("id, name, slug")
@@ -289,6 +296,7 @@ export async function fetchListing(
     tipos,
     amenities: amenitiesRaw,
     other_locations: (others ?? []) as { id: string; name: string; slug: string }[],
+    fares,
     google,
   };
 }

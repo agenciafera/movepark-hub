@@ -1,5 +1,5 @@
 import { formatBRL, formatDistance, formatRating } from "@/lib/format";
-import { FREE_CANCEL_WINDOW_HOURS } from "@/features/bookings/cancellation.logic";
+import { basicCancelLabel } from "./fareMatrix.logic";
 import { getLocationCapabilities, type LocationCapabilities } from "./capabilities";
 import { showcaseFromPrice } from "./reservation.logic";
 import type { ListingDetail, TerminalDistance } from "./api";
@@ -63,6 +63,8 @@ export function buildListingTldr(
   opts?: { nearest?: TerminalDistance | null; fromDaily?: number | null },
 ): ListingTldr {
   const caps = getLocationCapabilities(listing.location);
+  // A janela da Básica vem do catálogo carregado no loader; sem ele, o padrão de 24h.
+  const cancelLabel = basicCancelLabel(listing.fares) ?? "até 24h antes";
   const facts: TldrFact[] = [];
 
   // `base_price` é 0 nas unidades espelhadas, porque a tabela vem do parceiro e esse campo do
@@ -109,11 +111,11 @@ export function buildListingTldr(
     facts.push({
       key: "cancel",
       label: "Cancelamento",
-      value: `Grátis até ${FREE_CANCEL_WINDOW_HOURS}h antes do check-in`,
+      value: `Grátis ${cancelLabel} do check-in`,
     });
   }
 
-  return { summary: buildSummary(listing, { nearest, shuttle, count, avg, price, caps }), facts };
+  return { summary: buildSummary(listing, { nearest, shuttle, count, avg, price, caps, cancelLabel }), facts };
 }
 
 /** Primeira letra maiúscula, para o segmento que sobrar na frente virar início de frase. */
@@ -130,6 +132,7 @@ function buildSummary(
     avg: number | null;
     price: number | null;
     caps: LocationCapabilities;
+    cancelLabel: string;
   },
 ): string {
   const parts: string[] = [];
@@ -162,7 +165,7 @@ function buildSummary(
   // externa as duas somem e a frase inteira deixa de existir.
   const s3 = [
     ctx.caps.cancellation
-      ? `Cancelamento grátis até ${FREE_CANCEL_WINDOW_HOURS}h antes do check-in`
+      ? `Cancelamento grátis ${ctx.cancelLabel} do check-in`
       : null,
     ctx.count > 0 && ctx.avg != null
       ? `Nota ${formatRating(ctx.avg)} de 5 em ${ctx.count} ${ctx.count === 1 ? "avaliação" : "avaliações"}`

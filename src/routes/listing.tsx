@@ -14,6 +14,7 @@ import { ReservationCard } from "@/features/listing/ReservationCard";
 import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
 import type { PriceShowcase, ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
+import { basicCancelLabel } from "@/features/listing/fareMatrix.logic";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
@@ -343,7 +344,7 @@ export default function ListingPage() {
     <>
       {/* Vaga garantida, cancelamento grátis e preço travado: as três são promessa de
           transação, e nenhuma é nossa quando a reserva fecha fora. */}
-      {caps.guaranteedSpot && <ListingTrustBar />}
+      {caps.guaranteedSpot && <ListingTrustBar cancelSub={basicCancelLabel(listing.fares) ?? undefined} />}
       {/* pb no mobile reserva a altura da barra fixa de preço (que agora nasce
           visível), pra o fim do conteúdo não ficar atrás dela. No desktop a barra
           não existe, então volta ao py-8. */}

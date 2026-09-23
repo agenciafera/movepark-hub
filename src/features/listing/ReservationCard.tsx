@@ -40,7 +40,8 @@ import {
 } from "./api";
 import { availabilityUi } from "./availability.logic";
 import { useUnitFares } from "@/features/fares/api";
-import { fareBenefitLabel, fareReais } from "@/lib/fares";
+import { fareReais, type FareOption as CatalogFare } from "@/lib/fares";
+import { DEFAULT_CATALOG, UI_TIER_OF, farePresentation, sortCatalog } from "./fareMatrix.logic";
 import { PriceTableDialog } from "./PriceTableDialog";
 import { getLocationCapabilities } from "./capabilities";
 import { withSearchDates } from "./externalCheckout";
@@ -49,7 +50,6 @@ import { FareComparisonDialog } from "./FareComparisonDialog";
 import { couponDiscountLabel, couponErrorMessage, type CouponPreview } from "./coupon.logic";
 import {
   bookingTotal,
-  mergeUnitFares,
   type ReservationSummary,
   perDayPrice,
   counterSavings,
@@ -81,41 +81,27 @@ type FareOption = {
   tooltip: string[];
   badgeText: string;
   cancellationLine: string;
-  guaranteeContext: string;
 };
 
-const FARE_OPTIONS: FareOption[] = [
-  {
-    id: "basic",
-    label: "Básica",
-    surcharge: 0,
-    tagline: "Grátis",
-    tooltip: ["Cancele grátis até 24h", "Confirmação por e-mail", "Vaga garantida"],
-    badgeText: "Cancelamento grátis até 24h",
-    cancellationLine: "Cancelamento grátis até 24h antes",
-    guaranteeContext: "cancele grátis até 24h",
-  },
-  {
-    id: "flex",
-    label: "Flex",
-    surcharge: 12.9,
-    tagline: "+ R$ 12,90",
-    tooltip: ["Tudo da Básica", "Troca de placa e data", fareBenefitLabel("notifications_sms")],
-    badgeText: "Cancelamento grátis até 24h",
-    cancellationLine: "Cancelamento grátis até 24h antes · troca de placa liberada",
-    guaranteeContext: "cancele grátis até 24h · troca de placa liberada",
-  },
-  {
-    id: "superflex",
-    label: "Superflex",
-    surcharge: 24.9,
-    tagline: "+ R$ 24,90",
-    tooltip: ["Tudo da Flex", "Cancele até 1 min antes", "Proteção de voo", "Suporte prioritário"],
-    badgeText: "Cancele até 1 min antes",
-    cancellationLine: "Cancelamento até 1 min antes da entrada",
-    guaranteeContext: "cancela até 1 min antes · proteção de voo incluída",
-  },
-];
+/**
+ * As tarifas do card, montadas a partir do CATÁLOGO (`get_unit_fares`): preço, on/off, janela de
+ * cancelamento e benefícios. Até o catálogo responder vale o padrão (`DEFAULT_CATALOG`). Antes a
+ * matriz era escrita aqui e ignorava Manager › Tarifas.
+ */
+function fareOptionsFromCatalog(catalog: CatalogFare[]): FareOption[] {
+  const cat = sortCatalog(catalog.length ? catalog : DEFAULT_CATALOG);
+  return cat.map((f, i) => {
+    const surcharge = fareReais(f.price_cents);
+    return {
+      id: UI_TIER_OF[f.tier],
+      label: f.label,
+      surcharge,
+      tagline: surcharge === 0 ? "Grátis" : `+ ${formatBRL(surcharge)}`,
+      ...farePresentation(f, cat[i - 1] ?? null),
+    };
+  });
+}
+const FARE_OPTIONS: FareOption[] = fareOptionsFromCatalog(DEFAULT_CATALOG);
 
 function daysBetween(a: Date | null, b: Date | null): number {
   if (!a || !b || b <= a) return 0;
@@ -170,14 +156,8 @@ export function ReservationCard({
 
   // Tarifas com preço/on-off REAIS da unidade (E2.8-f); cai nos defaults se o catálogo não carregar.
   const unitFaresQuery = useUnitFares(listing.id);
-  const pricedFares: FareOption[] = React.useMemo(
-    () =>
-      mergeUnitFares(FARE_OPTIONS, unitFaresQuery.data ?? [], {
-        reais: fareReais,
-        brl: formatBRL,
-      }),
-    [unitFaresQuery.data],
-  );
+  const catalog = React.useMemo(() => sortCatalog(unitFaresQuery.data?.length ? unitFaresQuery.data : DEFAULT_CATALOG), [unitFaresQuery.data]);
+  const pricedFares: FareOption[] = React.useMemo(() => fareOptionsFromCatalog(catalog), [catalog]);
 
   const days = daysBetween(from, to);
   const debouncedDays = useDebounced(days, 300);
@@ -467,8 +447,7 @@ export function ReservationCard({
           onOpenChange={setFareComparisonOpen}
           selectedFare={selectedFare}
           onSelect={setSelectedFare}
-          priceLabelByTier={Object.fromEntries(pricedFares.map((f) => [f.id, f.tagline]))}
-          availableTiers={pricedFares.map((f) => f.id)}
+          fares={catalog}
         />
 
         <div className="my-5 h-px bg-hairline" />

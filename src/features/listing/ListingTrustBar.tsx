@@ -18,15 +18,19 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  * e o usuário pode arrastar (swipe) pro lado. Sob `prefers-reduced-motion` o avanço
  * automático para; o swipe continua funcionando.
  */
-const DIFERENCIAIS: { icon: Icon; title: string; sub: string }[] = [
-  { icon: ShieldCheck, title: "Vaga garantida", sub: "ou cobrimos a diferença" },
-  { icon: CalendarX, title: "Cancelamento grátis", sub: "até 24h antes" },
-  { icon: Tag, title: "Preço travado", sub: "sem surpresa no balcão" },
-];
+/** A janela de cancelamento vem do catálogo (Básica); o texto não é escrito aqui. */
+function diferenciais(cancelSub: string): { icon: Icon; title: string; sub: string }[] {
+  return [
+    { icon: ShieldCheck, title: "Vaga garantida", sub: "ou cobrimos a diferença" },
+    { icon: CalendarX, title: "Cancelamento grátis", sub: cancelSub },
+    { icon: Tag, title: "Preço travado", sub: "sem surpresa no balcão" },
+  ];
+}
+type Diferencial = ReturnType<typeof diferenciais>[number];
 
 const AUTO_ADVANCE_MS = 3500;
 
-function TrustItem({ d, showSub = false }: { d: (typeof DIFERENCIAIS)[number]; showSub?: boolean }) {
+function TrustItem({ d, showSub = false }: { d: Diferencial; showSub?: boolean }) {
   return (
     <div className="flex shrink-0 items-center gap-2.5">
       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mp-pale text-mp-indigo">
@@ -45,7 +49,7 @@ function TrustItem({ d, showSub = false }: { d: (typeof DIFERENCIAIS)[number]; s
  * nativo. O auto-avanço rola pro próximo slide a cada alguns segundos, em loop, e
  * pausa enquanto o dedo está na tela. Sob reduced-motion o timer nem monta.
  */
-function TrustCarousel() {
+function TrustCarousel({ itens }: { itens: Diferencial[] }) {
   const reduced = usePrefersReducedMotion();
   const trackRef = React.useRef<HTMLDivElement>(null);
   const [index, setIndex] = React.useState(0);
@@ -58,19 +62,20 @@ function TrustCarousel() {
     el.scrollTo({ left: i * el.clientWidth, behavior: smooth ? "smooth" : "auto" });
   }, []);
 
+  const total = itens.length;
   React.useEffect(() => {
     if (reduced) return;
     const id = window.setInterval(() => {
       if (pausedRef.current) return;
       const el = trackRef.current;
       if (!el) return;
-      const count = DIFERENCIAIS.length;
+      const count = total;
       // Lê a posição real (fonte da verdade) pra retomar de onde o usuário parou.
       const cur = el.clientWidth ? Math.round(el.scrollLeft / el.clientWidth) : 0;
       goTo((cur + 1) % count, true);
     }, AUTO_ADVANCE_MS);
     return () => window.clearInterval(id);
-  }, [reduced, goTo]);
+  }, [reduced, goTo, total]);
 
   const onScroll = () => {
     const el = trackRef.current;
@@ -90,7 +95,7 @@ function TrustCarousel() {
         onPointerLeave={() => (pausedRef.current = false)}
         className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain scrollbar-none"
       >
-        {DIFERENCIAIS.map((d) => (
+        {itens.map((d) => (
           <div
             key={d.title}
             className="flex w-full shrink-0 snap-center items-center justify-center px-4 py-2.5"
@@ -102,7 +107,7 @@ function TrustCarousel() {
 
       {/* Indicador de posição (também navega ao toque) */}
       <div className="flex justify-center gap-1.5 pb-2">
-        {DIFERENCIAIS.map((d, i) => (
+        {itens.map((d, i) => (
           <button
             key={d.title}
             type="button"
@@ -120,14 +125,15 @@ function TrustCarousel() {
   );
 }
 
-export function ListingTrustBar() {
+export function ListingTrustBar({ cancelSub = "até 24h antes" }: { cancelSub?: string } = {}) {
+  const itens = diferenciais(cancelSub);
   return (
     <div className="border-b border-hairline bg-canvas">
-      <TrustCarousel />
+      <TrustCarousel itens={itens} />
 
       {/* Desktop: linha centralizada que rola junto com o conteúdo (sem sticky). */}
       <div className="mx-auto hidden max-w-[1280px] items-center justify-center gap-12 px-8 py-2.5 tablet:flex">
-        {DIFERENCIAIS.map((d) => (
+        {itens.map((d) => (
           <TrustItem key={d.title} d={d} showSub />
         ))}
       </div>

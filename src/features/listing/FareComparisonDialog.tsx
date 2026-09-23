@@ -1,43 +1,20 @@
-import { Check, X } from "@phosphor-icons/react";
+import { Check, Info, X } from "@phosphor-icons/react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { fareBenefitLabel } from "@/lib/fares";
+import { fareReais, type FareOption } from "@/lib/fares";
+import { formatBRL } from "@/lib/format";
+import { buildFareMatrix } from "./fareMatrix.logic";
 
 type FareTier = "basic" | "flex" | "superflex";
-
-// As linhas de benefício pegam o texto de `FARE_BENEFIT_LABELS` (fonte única da promessa). Só as
-// linhas de janela de cancelamento são texto próprio, porque dependem do prazo e não de uma flag.
-const FEATURES: { label: string; tiers: [boolean, boolean, boolean] }[] = [
-  { label: "Cancelamento grátis até 24h", tiers: [true, true, true] },
-  { label: fareBenefitLabel("email_confirmation"), tiers: [true, true, true] },
-  { label: fareBenefitLabel("guaranteed_spot"), tiers: [true, true, true] },
-  { label: fareBenefitLabel("notifications_sms"), tiers: [false, true, true] },
-  { label: fareBenefitLabel("plate_change"), tiers: [false, true, true] },
-  { label: fareBenefitLabel("date_change"), tiers: [false, true, true] },
-  { label: "Cancelar até 1 min antes", tiers: [false, false, true] },
-  { label: fareBenefitLabel("flight_delay_protection"), tiers: [false, false, true] },
-  { label: fareBenefitLabel("priority_support"), tiers: [false, false, true] },
-];
-
-const TIERS: {
-  id: FareTier;
-  label: string;
-  tagline: string;
-  popular?: boolean;
-}[] = [
-  { id: "basic", label: "Básica", tagline: "Grátis" },
-  { id: "flex", label: "Flex", tagline: "+ R$ 12,90", popular: true },
-  { id: "superflex", label: "Superflex", tagline: "+ R$ 24,90" },
-];
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedFare: FareTier;
   onSelect: (fare: FareTier) => void;
-  priceLabelByTier?: Partial<Record<FareTier, string>>;
-  availableTiers?: FareTier[];
+  /** O catálogo da unidade (`get_unit_fares`). Vazio cai no padrão. */
+  fares: FareOption[];
 };
 
 export function FareComparisonDialog({
@@ -45,15 +22,11 @@ export function FareComparisonDialog({
   onOpenChange,
   selectedFare,
   onSelect,
-  priceLabelByTier,
-  availableTiers,
+  fares,
 }: Props) {
-  const visibleTiers = availableTiers
-    ? TIERS.filter((t) => availableTiers.includes(t.id))
-    : TIERS;
-
-  const taglineOf = (t: (typeof TIERS)[number]) => priceLabelByTier?.[t.id] ?? t.tagline;
-  const tierIndex = (id: FareTier) => TIERS.findIndex((t) => t.id === id);
+  // A matriz sai do catálogo (Manager › Tarifas), não de booleanos escritos aqui.
+  const { tiers, rows } = buildFareMatrix(fares);
+  const taglineOf = (t: (typeof tiers)[number]) => (t.priceCents === 0 ? "Grátis" : `+ ${formatBRL(fareReais(t.priceCents))}`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,9 +34,8 @@ export function FareComparisonDialog({
         <p className="mb-8 text-display-sm text-ink">O que cada tarifa inclui</p>
 
         <div className="grid grid-cols-1 gap-6 tablet:grid-cols-3">
-          {visibleTiers.map((tier) => {
+          {tiers.map((tier, ti) => {
             const isSelected = selectedFare === tier.id;
-            const ti = tierIndex(tier.id);
 
             return (
               <div
@@ -102,8 +74,8 @@ export function FareComparisonDialog({
 
                 {/* Features */}
                 <ul className="flex-1 space-y-4">
-                  {FEATURES.map((f, fi) => {
-                    const included = f.tiers[ti];
+                  {rows.map((f, fi) => {
+                    const included = f.included[ti];
                     return (
                       <li
                         key={fi}
@@ -139,6 +111,20 @@ export function FareComparisonDialog({
             );
           })}
         </div>
+
+        {/* Vale em qualquer tarifa: fica fora do grid para não ocupar três colunas sem diferenciar. */}
+        <ul className="mt-8 flex flex-col gap-1 text-body-sm text-muted">
+          <li className="flex items-start gap-2.5">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-badge-confirmed-fg" />
+            Vaga garantida em qualquer tarifa.
+          </li>
+          {rows.some((r) => r.label === "Alteração de data/horário") && (
+            <li className="flex items-start gap-2.5">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              Ao alterar a data, a estadia é recalculada pelo preço do dia da alteração.
+            </li>
+          )}
+        </ul>
       </DialogContent>
     </Dialog>
   );

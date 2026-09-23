@@ -21,7 +21,8 @@ vi.mock("./api", async (importOriginal) => {
     useDebounced: <T,>(v: T) => v,
   };
 });
-vi.mock("@/features/fares/api", () => ({ useUnitFares: () => ({ data: [] }) }));
+const unitFares = vi.hoisted(() => ({ data: [] as unknown[] }));
+vi.mock("@/features/fares/api", () => ({ useUnitFares: () => ({ data: unitFares.data }) }));
 
 // deno-lint-ignore no-explicit-any
 const listing = {
@@ -119,5 +120,19 @@ describe("ReservationCard — quem não é cliente vai pro login, não pro toast
     await user.click(screen.getByRole("button", { name: "Reservar agora" }));
 
     await waitFor(() => expect(screen.getByTestId("loc").textContent).toContain("trocar=1"));
+  });
+});
+
+// 23/09/2026: a promessa do card sai do catálogo (Manager › Tarifas), não de texto no componente.
+describe("ReservationCard — tarifas lidas do catálogo", () => {
+  it("janela de 12h na Flex do catálogo vira o selo do card", async () => {
+    unitFares.data = [
+      { tier: "basica", label: "Básica", price_cents: 0, is_popular: false, sort_order: 0, cancel_window_minutes: 720, benefits: { guaranteed_spot: true, email_confirmation: true } },
+      { tier: "flex", label: "Flex", price_cents: 1290, is_popular: true, sort_order: 1, cancel_window_minutes: 720, benefits: { guaranteed_spot: true, email_confirmation: true, plate_change: true, date_change: true } },
+    ];
+    renderWithProviders(<ReservationCard listing={listing} initialFrom={from} initialTo={to} />, { route: "/p/x" });
+    expect(await screen.findByText("Cancelamento grátis até 12h antes")).toBeInTheDocument();
+    expect(screen.queryByText("Superflex")).not.toBeInTheDocument();
+    unitFares.data = [];
   });
 });

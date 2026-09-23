@@ -33,7 +33,7 @@ function rowToOption(r: {
   };
 }
 
-async function fetchUnitFares(lptId: string | null): Promise<FareOption[]> {
+export async function fetchUnitFares(lptId: string | null): Promise<FareOption[]> {
   const { data, error } = await supabase.rpc("get_unit_fares", {
     p_location_parking_type_id: lptId ?? undefined,
   });
