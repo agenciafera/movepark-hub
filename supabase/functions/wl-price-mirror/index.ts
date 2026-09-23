@@ -70,7 +70,9 @@ Deno.serve(async (req: Request) => {
         "company:company!inner(slug, wl_domain, wl_tenant_key, wl_sync_enabled))",
     )
     .eq("is_active", true)
-    .eq("location.checkout_mode", "external")
+    // 23/09/2026: unidade hub com domínio WL também espelha (o parceiro segue mudando preço lá).
+    .in("location.checkout_mode", ["external", "hub"])
+    .not("location.company.wl_domain", "is", null)
     .not("wl_category_slug", "is", null)
     .not("wl_product_slug", "is", null);
   if (onlyId) q = q.eq("id", onlyId);

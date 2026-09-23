@@ -6842,6 +6842,7 @@ export type Database = {
         Returns: Json
       }
       location_has_photo: { Args: { p_photos: Json }; Returns: boolean }
+      location_hub_readiness: { Args: { p_location_id: string }; Returns: Json }
       location_public_path: {
         Args: { l: Database["public"]["Tables"]["location"]["Row"] }
         Returns: string

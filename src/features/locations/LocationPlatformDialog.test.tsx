@@ -3,8 +3,8 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
 import { rpc, tabela } from "@/test/msw/supabase";
-import { LocationPlatformDialog, describeBlockers } from "./LocationPlatformDialog";
-import type { LocationExternalReadiness } from "@/types/domain";
+import { LocationPlatformDialog, describeBlockers, describeHubBlockers } from "./LocationPlatformDialog";
+import type { LocationExternalReadiness, LocationHubReadiness } from "@/types/domain";
 
 const PRONTO: LocationExternalReadiness = {
   ready: true,
@@ -205,5 +205,39 @@ describe("LocationPlatformDialog · WhatsApp da van", () => {
 
     await waitFor(() => expect(patch.chamadas.length).toBe(1));
     expect(patch.ultimoBody).not.toHaveProperty("go2park_enabled");
+  });
+});
+
+// 23/09/2026: a volta para o Hub também tem pré-voo.
+describe("pré-voo da volta para o Hub", () => {
+  const FALTA: LocationHubReadiness = { ready: false, missing: ["contract", "recipient", "split"] };
+  const PRONTO_HUB: LocationHubReadiness = { ready: true, missing: [] };
+
+  it("describeHubBlockers traduz cada código no que resolver", () => {
+    expect(describeHubBlockers(FALTA)).toEqual([
+      "O dono ainda não aceitou o contrato (Operator › Recebimento)",
+      "Sem recebedor ativo na Pagar.me (Financeiro › Recebedores: KYC e sincronizar)",
+      "O split está desligado para a empresa (Financeiro › Recebedores)",
+    ]);
+    expect(describeHubBlockers(PRONTO_HUB)).toEqual([]);
+  });
+
+  it("unidade externa com pendências: o toggle fica travado e a lista aparece", async () => {
+    rpc("location_external_readiness", { json: PRONTO });
+    rpc("location_hub_readiness", { json: FALTA });
+    abre("external");
+    await screen.findByText("Falta resolver antes de vender pelo Hub");
+    expect(screen.getByText(/aceitou o contrato/)).toBeInTheDocument();
+    expect(toggleCheckout()).toBeDisabled();
+  });
+
+  it("unidade externa com tudo pronto: o toggle desliga e grava hub", async () => {
+    rpc("location_external_readiness", { json: PRONTO });
+    rpc("location_hub_readiness", { json: PRONTO_HUB });
+    const upd = tabela("location", "patch", { json: [{ id: "loc-1", checkout_mode: "hub" }] });
+    abre("external");
+    await waitFor(() => expect(toggleCheckout()).not.toBeDisabled());
+    await userEvent.click(toggleCheckout());
+    await waitFor(() => expect(upd.ultimoBody).toEqual({ checkout_mode: "hub" }));
   });
 });

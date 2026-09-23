@@ -198,6 +198,20 @@ parceiro. É o tipo de coisa que quebra em produção uma vez, e de forma irreve
 Nenhum parceiro real tem login: todos os perfis ligados às empresas são `@fera.ag` (interno)
 ou `@teste.com`. A premissa do silêncio se sustenta hoje.
 
+## Voltar para o Hub (23/09/2026)
+
+A virada `external → hub` ganhou o pré-voo simétrico: `location_hub_readiness(uuid)` devolve
+`{ready, missing[]}` com os códigos `hub_relationship`, `company_status`, `onboarding_status`,
+`contract`, `take_rate`, `recipient`, `split`, `parking_types`, `pricing`, `capacity`, e o
+`location_checkout_mode_guard` recusa a virada com pendência. O diálogo "Configuração da unidade"
+lista o que falta e trava o toggle. O motivo de cada item: sem recebedor e split o dinheiro cai
+inteiro no master e não há caminho de repasse (a Pagar.me nunca liberou transferência entre
+recebedores); sem preço ou capacidade a primeira compra falha; empresa silenciosa não pode ser
+avisada de nada. O espelho de preço deixou de parar na virada: unidade `hub` com domínio WL segue
+espelhando, para o parceiro continuar mudando preço no site dele (decisão do Kallef, 23/09/2026).
+Medido no mesmo dia: a BePark, piloto da venda pelo Hub, tem `contract`, `recipient` e `split`
+faltando.
+
 ## Como ficou (04/08/2026)
 
 | Peça | Onde |

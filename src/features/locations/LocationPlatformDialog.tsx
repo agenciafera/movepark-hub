@@ -13,8 +13,8 @@ import { PhoneField } from "@/components/ui/phone-field";
 import { normalizePhoneE164 } from "@/lib/identifiers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { useLocationExternalReadiness, useSetCheckoutMode, useSetGo2Park } from "./api";
-import type { CheckoutMode, LocationExternalReadiness } from "@/types/domain";
+import { useLocationExternalReadiness, useLocationHubReadiness, useSetCheckoutMode, useSetGo2Park } from "./api";
+import type { CheckoutMode, HubReadinessItem, LocationExternalReadiness, LocationHubReadiness } from "@/types/domain";
 
 type Props = {
   open: boolean;
@@ -46,12 +46,17 @@ export function LocationPlatformDialog({
   onOpenChange,
 }: Props) {
   const readiness = useLocationExternalReadiness(locationId, open);
+  const hubReadiness = useLocationHubReadiness(locationId, open && mode === "external");
   const setMode = useSetCheckoutMode();
   const setGo2Park = useSetGo2Park();
   const isExternal = mode === "external";
 
   const blockers = readiness.data ? describeBlockers(readiness.data) : [];
   const canTurnOn = readiness.data?.ready === true;
+  // Voltar para o Hub também tem pré-voo (23/09/2026): a primeira venda exige contrato, recebedor,
+  // split, preço e capacidade. Sem isso o toggle não desliga, e a lista diz o que falta.
+  const hubBlockers = hubReadiness.data ? describeHubBlockers(hubReadiness.data) : [];
+  const canTurnOff = hubReadiness.data?.ready === true;
 
   async function handleToggle(next: boolean) {
     try {
@@ -106,7 +111,7 @@ export function LocationPlatformDialog({
             </div>
             <Switch
               checked={isExternal}
-              disabled={setMode.isPending || (!isExternal && !canTurnOn)}
+              disabled={setMode.isPending || (!isExternal && !canTurnOn) || (isExternal && !canTurnOff)}
               onCheckedChange={handleToggle}
               aria-labelledby="checkout-mode-title"
               aria-describedby="checkout-mode-desc"
@@ -124,6 +129,22 @@ export function LocationPlatformDialog({
                 </p>
                 <ul className="flex list-disc flex-col gap-0.5 pl-4 text-caption text-muted">
                   {blockers.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : null}
+
+          {isExternal && hubReadiness.isLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : isExternal && hubBlockers.length > 0 ? (
+            <div className="flex gap-3 rounded-md border border-hairline bg-surface-soft p-4">
+              <Warning className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
+              <div className="flex flex-col gap-1">
+                <p className="text-body-sm font-medium text-ink">Falta resolver antes de vender pelo Hub</p>
+                <ul className="flex list-disc flex-col gap-0.5 pl-4 text-caption text-muted">
+                  {hubBlockers.map((b) => (
                     <li key={b}>{b}</li>
                   ))}
                 </ul>
@@ -259,6 +280,24 @@ function VanWhatsappField({
       )}
     </div>
   );
+}
+
+const HUB_BLOCKER: Record<HubReadinessItem, string> = {
+  hub_relationship: "A empresa está como relação silenciosa: mude para onboarded no cadastro dela",
+  company_status: "A empresa não está ativa",
+  onboarding_status: "O onboarding da empresa não está concluído",
+  contract: "O dono ainda não aceitou o contrato (Operator › Recebimento)",
+  take_rate: "A comissão da empresa não está definida (Financeiro › Comissões)",
+  recipient: "Sem recebedor ativo na Pagar.me (Financeiro › Recebedores: KYC e sincronizar)",
+  split: "O split está desligado para a empresa (Financeiro › Recebedores)",
+  parking_types: "A unidade não tem tipo de vaga ativo",
+  pricing: "Há tipo de vaga sem regra de preço",
+  capacity: "Há tipo de vaga com capacidade zero",
+};
+
+/** Traduz o pré-voo da volta para o Hub no que a pessoa precisa resolver. */
+export function describeHubBlockers(r: LocationHubReadiness): string[] {
+  return (r.missing ?? []).map((m) => HUB_BLOCKER[m] ?? `Falta: ${m}`);
 }
 
 /** Traduz o retorno da RPC de pré-voo no que a pessoa precisa resolver. */

@@ -180,7 +180,7 @@ export function useOperatorSetPricing() {
 }
 
 /**
- * Dispara manualmente o espelho de preço WL (E0.13) pra UMA vaga externa mapeada, em caso de
+ * Dispara manualmente o espelho de preço WL (E0.13) pra UMA vaga mapeada (externa ou hub com site WL), em caso de
  * emergência (hub_admin). RPC SECURITY DEFINER: o gate real é is_hub_admin() no servidor, o
  * frontend só espelha (ADR-005). A Edge que amostra de verdade roda assíncrona (uns 40s via
  * net.http_post), então a mutation só confirma que a chamada foi aceita e enfileirada, nunca o

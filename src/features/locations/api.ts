@@ -5,6 +5,7 @@ import type {
   CheckoutMode,
   Location,
   LocationExternalReadiness,
+  LocationHubReadiness,
   LocationWithDestination,
 } from "@/types/domain";
 import type { LocationOption } from "@/features/manager-filters/managerFilters.logic";
@@ -30,6 +31,7 @@ export const locationsKeys = {
   nearestDestination: (lat: number, lng: number) =>
     [...locationsKeys.all, "nearest-destination", lat, lng] as const,
   externalReadiness: (id: string) => [...locationsKeys.all, "external-readiness", id] as const,
+  hubReadiness: (id: string) => [...locationsKeys.all, "hub-readiness", id] as const,
 };
 
 export function useLocationsByCompany(companyId: string | undefined) {
@@ -196,6 +198,20 @@ export function useLocation(id: string | undefined) {
  * white-label e, quando não dá, o que falta. Só hub_admin recebe resposta: a RPC
  * recusa qualquer outro JWT.
  */
+/** O que falta para a unidade vender pelo Hub (RPC `location_hub_readiness`, hub_admin). */
+export function useLocationHubReadiness(id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: id ? locationsKeys.hubReadiness(id) : ["locations", "hub-readiness", "none"],
+    queryFn: async (): Promise<LocationHubReadiness | null> => {
+      if (!id) return null;
+      const { data, error } = await supabase.rpc("location_hub_readiness", { p_location_id: id });
+      if (error) throw error;
+      return data as unknown as LocationHubReadiness;
+    },
+    enabled: enabled && !!id,
+  });
+}
+
 export function useLocationExternalReadiness(id: string | undefined, enabled = true) {
   return useQuery({
     queryKey: id ? locationsKeys.externalReadiness(id) : ["locations", "external-readiness", "none"],

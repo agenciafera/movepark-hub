@@ -290,6 +290,23 @@ export type CheckoutMode = "hub" | "external";
 export type HubRelationship = "silent" | "onboarded";
 
 /** Pré-voo do modo externo (RPC `location_external_readiness`). */
+/** Pré-voo da virada para o checkout do Hub (23/09/2026). Códigos traduzidos no diálogo. */
+export type LocationHubReadiness = {
+  ready: boolean;
+  missing: HubReadinessItem[];
+};
+export type HubReadinessItem =
+  | "hub_relationship"
+  | "company_status"
+  | "onboarding_status"
+  | "contract"
+  | "take_rate"
+  | "recipient"
+  | "split"
+  | "parking_types"
+  | "pricing"
+  | "capacity";
+
 export type LocationExternalReadiness = {
   ready: boolean;
   /** Campos que faltam na empresa: wl_public_domain, wl_domain, wl_tenant_key. */
