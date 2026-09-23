@@ -303,6 +303,9 @@ Sem o segredo, o evento sai por e-mail e o `notification_log` registra o canal u
   transacionais novos: lembrete de entrada, lembrete de retirada, datas alteradas, veículo
   alterado, saída estendida. Falta só a aprovação dos templates na Meta (1.1), que é da Movepark;
   até lá, o benefício é entregue por e-mail.
+- **Propagar ao parceiro (2.8):** troca de data (pendente e paga) e extensão por voo liberam a
+  reserva vigente no white-label e reservam de novo com id versionado (`<id>#2`, `#3`...); o
+  cancelamento libera a versão vigente. Placa não vai: o sync do WL só entende disponibilidade.
 - **Vaga garantida (1.3 e o registro):** WhatsApp central preenchido da fonte única; o acionamento
   fica em `guarantee_claim` e a Movepark fecha com desfecho e valor (ver spot-guarantee.md).
 

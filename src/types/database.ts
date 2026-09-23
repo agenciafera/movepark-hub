@@ -640,6 +640,7 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           vehicle_id: string | null
+          wl_external_version: number
           voucher_url: string | null
         }
         Insert: {
@@ -694,6 +695,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           vehicle_id?: string | null
+          wl_external_version?: number
           voucher_url?: string | null
         }
         Update: {
@@ -748,6 +750,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           vehicle_id?: string | null
+          wl_external_version?: number
           voucher_url?: string | null
         }
         Relationships: [

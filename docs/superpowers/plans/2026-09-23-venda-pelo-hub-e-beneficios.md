@@ -170,6 +170,12 @@ no banco vivo em transação revertida (`bash $SP/tap.sh <teste> <migration>`), 
 4. Virada pelo diálogo com o pré-voo verde. Compra de teste real (PIX e cartão), check-in no
    Operator pelo dono, cancelamento, e a conferência do split e do extrato.
 
+## Estado em 23/09/2026 (fim do dia)
+
+Feito e publicado: A1 a A7, B1 a B8. Pendente: bloco C (piloto BePark, depende do parceiro) e a
+aprovação dos templates do WhatsApp na Meta (1.1, do Kallef). Sem os templates, os avisos saem
+por e-mail e o `notification_log` registra o canal.
+
 ## Ordem de execução
 
 A1, A3, A4, A5, A7 (pequenos, fecham buracos) → B1, B3 (bugs) → A2, A6 → B2 → B4 → B7 → B6 →
