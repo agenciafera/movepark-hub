@@ -17,12 +17,14 @@ import {
   canCustomerChangeDates,
   canCustomerChangePaidDates,
   canCustomerChangeVehicle,
+  canCustomerExtendFlight,
 } from "@/features/bookings/booking-modifications.logic";
 import { UpgradeActionHint } from "@/features/bookings/UpgradeActionHint";
 import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
 import { ChangeDatesDialog } from "@/features/bookings/ChangeDatesDialog";
 import { ChangeDatesPaidDialog } from "@/features/bookings/ChangeDatesPaidDialog";
+import { FlightDelayDialog } from "@/features/bookings/FlightDelayDialog";
 import { useBookingDetail } from "@/features/bookings/customerApi";
 import { useAuth } from "@/auth/context";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
@@ -49,6 +51,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
   const [upgradeOpen, setUpgradeOpen] = React.useState(false);
   const [vehicleOpen, setVehicleOpen] = React.useState(false);
   const [datesOpen, setDatesOpen] = React.useState(false);
+  const [flightOpen, setFlightOpen] = React.useState(false);
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
@@ -154,7 +157,15 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
   });
   const cancelNote = freeCancelNote(booking.fare_cancel_until);
   const beneficios = FARE_BENEFIT_LABELS.filter((b) => booking.fare_benefits?.[b.key] === true);
-  const temAcao = canChangeDates || canChangePaidDates || canChangeVehicle || selfCancel.allowed;
+  // Proteção de voo (Superflex): uma vez, até 120 min depois da saída prevista.
+  const canExtendFlight = canCustomerExtendFlight(
+    booking.fare_benefits,
+    booking.status,
+    booking.check_out_at,
+    booking.fare_extensions?.length ?? 0,
+    now,
+  );
+  const temAcao = canChangeDates || canChangePaidDates || canChangeVehicle || canExtendFlight || selfCancel.allowed;
   const guarantee = guaranteeChannel({
     unitPhone: booking.location_detail.phone,
     code: booking.code,
@@ -319,6 +330,9 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
                   {canChangeVehicle && (
                     <FareAction onClick={() => setVehicleOpen(true)}>Trocar veículo</FareAction>
                   )}
+                  {canExtendFlight && (
+                    <FareAction onClick={() => setFlightOpen(true)}>Meu voo atrasou</FareAction>
+                  )}
                   {selfCancel.allowed && (
                     <button
                       type="button"
@@ -465,6 +479,14 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
         currentFarePriceCents={booking.fare_price_cents}
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
+      />
+
+      <FlightDelayDialog
+        bookingCode={booking.code}
+        currentCheckOut={booking.check_out_at}
+        flightNumber={booking.flight_number ?? null}
+        open={flightOpen}
+        onOpenChange={setFlightOpen}
       />
 
       {session?.userId && (

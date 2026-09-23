@@ -5,6 +5,7 @@ import {
   canCustomerChangePaidDates,
   canCustomerChangeVehicle,
   customerSelfCancel,
+  canCustomerExtendFlight,
 } from "./booking-modifications.logic";
 
 // Matriz canônica dos 3 tiers, espelhando o seed da tabela `fare` (fonte da verdade travada pelo
@@ -134,5 +135,18 @@ describe("customerSelfCancel — por tier (gate por JANELA de tempo)", () => {
         free: false,
       });
     }
+  });
+});
+
+describe("canCustomerExtendFlight (Q-025)", () => {
+  const now = new Date("2026-12-12T10:00:00Z");
+  const sf = { flight_delay_protection: true };
+  it("Superflex confirmada ou em uso, antes da saída ou até 120 min depois, uma vez", () => {
+    expect(canCustomerExtendFlight(sf, "confirmed", "2026-12-12T12:00:00Z", 0, now)).toBe(true);
+    expect(canCustomerExtendFlight(sf, "checked_in", "2026-12-12T08:30:00Z", 0, now)).toBe(true); // 90 min depois
+    expect(canCustomerExtendFlight(sf, "checked_in", "2026-12-12T07:00:00Z", 0, now)).toBe(false); // 3h depois
+    expect(canCustomerExtendFlight(sf, "confirmed", "2026-12-12T12:00:00Z", 1, now)).toBe(false);
+    expect(canCustomerExtendFlight(sf, "completed", "2026-12-12T12:00:00Z", 0, now)).toBe(false);
+    expect(canCustomerExtendFlight({ flight_delay_protection: false }, "confirmed", "2026-12-12T12:00:00Z", 0, now)).toBe(false);
   });
 });

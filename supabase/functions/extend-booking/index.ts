@@ -7,7 +7,9 @@
 //
 // POST /functions/v1/extend-booking
 // Authorization: Bearer <JWT>
-// { "booking_code": "MP-XXXX", "new_check_out_at": "2026-12-13T08:00:00Z", "reason"?: "voo atrasado" }
+// { "booking_code": "MP-XXXX", "new_check_out_at": "2026-12-13T08:00:00Z", "flight_number": "LA3456", "reason"?: "voo atrasado" }
+// Limites (23/09/2026, Q-025 a Q-027): até 24h depois da saída, uma vez por reserva, até 120 min
+// depois da saída prevista; a diária extra vira crédito ao parceiro, pago pela Movepark.
 // → { booking_id, old_check_out_at, new_check_out_at, added_days }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -104,6 +106,7 @@ Deno.serve(async (req: Request) => {
     p_new_check_out_at: input.newCheckOutAt,
     p_actor: actor,
     p_reason: input.reason,
+    p_flight_number: input.flightNumber,
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 400);
 

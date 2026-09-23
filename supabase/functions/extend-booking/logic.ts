@@ -6,6 +6,8 @@ export interface ExtendInput {
   bookingCode: string;
   newCheckOutAt: string;
   reason: string | null;
+  /** Obrigatório ao acionar (Q-026): é a prova do atraso e abre caminho para conferir depois. */
+  flightNumber: string;
 }
 
 /** Valida { booking_code, new_check_out_at, reason? }. new_check_out_at tem que ser ISO válido. */
@@ -19,6 +21,9 @@ export function parseExtendInput(body: unknown): { input: ExtendInput | null; er
   const ts = Date.parse(rawDate);
   if (Number.isNaN(ts)) return { input: null, error: "new_check_out_at inválido (use ISO 8601)." };
 
+  const flight = typeof b.flight_number === "string" ? b.flight_number.trim().toUpperCase() : "";
+  if (flight.length < 2 || flight.length > 16) return { input: null, error: "Informe o número do voo (ex.: LA3456)." };
+
   const reason = typeof b.reason === "string" && b.reason.trim() ? b.reason.trim() : null;
-  return { input: { bookingCode: code, newCheckOutAt: new Date(ts).toISOString(), reason } };
+  return { input: { bookingCode: code, newCheckOutAt: new Date(ts).toISOString(), reason, flightNumber: flight } };
 }

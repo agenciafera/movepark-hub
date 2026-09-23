@@ -58,3 +58,26 @@ export function canCustomerChangeVehicle(
     beforeCheckIn(checkInAt, now)
   );
 }
+
+/** Janela de acionamento da proteção de voo: até 120 min depois da saída prevista (Q-025). */
+export const FLIGHT_EXTENSION_AFTER_CHECKOUT_MINUTES = 120;
+/** Quanto a proteção estende, no máximo (Q-025). */
+export const FLIGHT_EXTENSION_MAX_HOURS = 24;
+
+/**
+ * "Meu voo atrasou" aparece para Superflex confirmada ou em uso, uma vez por reserva, até 120
+ * min depois da saída prevista. O servidor (RPC) confere tudo de novo.
+ */
+export function canCustomerExtendFlight(
+  benefits: FareBenefits | null | undefined,
+  status: string,
+  checkOutAt: string | Date,
+  extensionsUsed: number,
+  now: Date,
+): boolean {
+  if (benefits?.flight_delay_protection !== true) return false;
+  if (status !== "confirmed" && status !== "checked_in") return false;
+  if (extensionsUsed > 0) return false;
+  const limite = new Date(checkOutAt).getTime() + FLIGHT_EXTENSION_AFTER_CHECKOUT_MINUTES * 60_000;
+  return now.getTime() <= limite;
+}

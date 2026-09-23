@@ -91,7 +91,7 @@ export const CANCELAMENTO: ContentPage = {
             },
             {
               q: "Posso cancelar porque meu voo atrasou?",
-              a: "A Tarifa Superflex estende a estadia sozinha quando o voo atrasa, sem custo extra. Nas outras Tarifas, envie o comprovante de atraso pelo suporte que a gente avalia.",
+              a: "Com a Tarifa Superflex você estende a saída em até 24 horas com um clique na sua reserva, sem custo, informando o número do voo. Vale uma vez por reserva. Nas outras Tarifas, envie o comprovante de atraso pelo suporte que a gente avalia.",
             },
             {
               q: "E se o estacionamento não honrar a reserva?",

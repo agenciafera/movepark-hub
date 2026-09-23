@@ -22,6 +22,9 @@ type Props = {
   passengerFirstName: string | null;
   passengerLastName: string | null;
   passengerPhone: string | null;
+  /** Superflex pergunta o número do voo (opcional): é a prova da proteção contra atraso. */
+  fareTier?: string | null;
+  flightNumber?: string | null;
   onNext: () => void;
 };
 
@@ -33,6 +36,8 @@ export function Step1Identity({
   passengerLastName,
   passengerPhone,
   onNext,
+  fareTier = null,
+  flightNumber = null,
 }: Props) {
   const { session } = useAuth();
   const profileQ = useProfile(session?.userId);
@@ -55,6 +60,7 @@ export function Step1Identity({
 
   // Bloco passageiro (reserva pra outra pessoa) → só nome e telefone; ele não paga.
   const [forOther, setForOther] = React.useState(!!(passengerFirstName || passengerLastName));
+  const [flight, setFlight] = React.useState(flightNumber ?? "");
   const [otherFirstName, setOtherFirstName] = React.useState(passengerFirstName ?? "");
   const [otherLastName, setOtherLastName] = React.useState(passengerLastName ?? "");
   const [otherPhone, setOtherPhone] = React.useState<string | undefined>(
@@ -140,6 +146,7 @@ export function Step1Identity({
           passenger_first_name: passFirst,
           passenger_last_name: passLast,
           passenger_phone: passPhone,
+          ...(fareTier === "superflex" ? { flight_number: flight.trim() ? flight.trim().toUpperCase() : null } : {}),
         }),
       );
 
@@ -235,6 +242,24 @@ export function Step1Identity({
             Pra avisar sobre a sua reserva.
           </span>
         </div>
+
+        {fareTier === "superflex" && (
+          <div className="flex flex-col gap-1.5 border-t border-hairline pt-4">
+            <Label htmlFor="id-flight">Número do voo (opcional)</Label>
+            <Input
+              id="id-flight"
+              value={flight}
+              onChange={(e) => setFlight(e.target.value)}
+              placeholder="LA3456"
+              maxLength={16}
+              autoCapitalize="characters"
+            />
+            <span className="text-caption text-muted">
+              Com a Superflex, se o voo atrasar você estende a saída em até 24h sem custo. O número
+              agiliza na hora de acionar.
+            </span>
+          </div>
+        )}
 
         <label className="flex cursor-pointer items-center gap-3 border-t border-hairline pt-4">
           <input

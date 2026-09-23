@@ -35,6 +35,8 @@ function booking(status: MyBookingDetail["status"]): MyBookingDetail {
     fare_price_cents: 0,
     fare_cancel_until: null,
     fare_benefits: null,
+    flight_number: null,
+    fare_extensions: [],
     vehicle: null,
     items: [],
     payment: null,

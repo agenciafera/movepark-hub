@@ -145,6 +145,10 @@ export type MyBookingDetail = MyBookingListItem & {
   fare_price_cents: number;
   fare_cancel_until: string | null;
   fare_benefits: import("@/lib/fares").FareBenefits | null;
+  /** Número do voo informado no checkout da Superflex (opcional). */
+  flight_number: string | null;
+  /** Extensões por atraso de voo já usadas (a proteção vale uma vez). */
+  fare_extensions: { id: string }[];
   vehicle: { id: string; license_plate: string; model: string | null; color: string | null } | null;
   items: {
     id: string;
@@ -177,7 +181,8 @@ export function useBookingDetail(code: string | undefined) {
         .select(
           `id, code, status, check_in_at, check_out_at, expires_at, total_amount, created_at,
            passenger_count, has_pcd, checked_in_at,
-           fare_tier, fare_price_cents, fare_cancel_until, fare_benefits,
+           fare_tier, fare_price_cents, fare_cancel_until, fare_benefits, flight_number,
+           fare_extensions:booking_fare_extension(id),
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
              latitude, longitude, tolerance_minutes,
@@ -223,6 +228,8 @@ export function useBookingDetail(code: string | undefined) {
         fare_price_cents: Number(r.fare_price_cents ?? 0),
         fare_cancel_until: r.fare_cancel_until ?? null,
         fare_benefits: (r.fare_benefits ?? null) as import("@/lib/fares").FareBenefits | null,
+        flight_number: r.flight_number ?? null,
+        fare_extensions: (r.fare_extensions ?? []) as { id: string }[],
         location: {
           name: r.location.name,
           slug: r.location.slug,
@@ -463,6 +470,45 @@ export function useCancelMyBooking() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-bookings"] });
       qc.invalidateQueries({ queryKey: ["booking-detail"] });
+    },
+  });
+}
+
+/**
+ * Proteção contra atraso de voo (Superflex): estende a saída em até 24h, uma vez, com o número
+ * do voo. Edge `extend-booking`; a regra toda mora na RPC `extend_booking_flight_delay`.
+ */
+export function useExtendBookingFlightDelay() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingCode: string; newCheckOutAt: string; flightNumber: string; reason?: string | null }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Você precisa entrar.");
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extend-booking`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          booking_code: args.bookingCode,
+          new_check_out_at: args.newCheckOutAt,
+          flight_number: args.flightNumber,
+          reason: args.reason ?? null,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Não foi possível estender a reserva.");
+      }
+      return (await res.json()) as { booking_id: string; new_check_out_at: string; added_days: number };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
     },
   });
 }

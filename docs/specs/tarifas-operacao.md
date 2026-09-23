@@ -263,6 +263,21 @@ cliente percebe **quando já está com problema**, e a única que não tem absol
 Regra que vale para todas as linhas: **catálogo muda o futuro, nunca o passado.** A reserva decide
 por `fare_tier`, `fare_price_cents`, `fare_cancel_until` e `fare_benefits` gravados na compra.
 
+## 3b. Feito em 23/09/2026
+
+- **2.5, 2.6, 2.7 (proteção de voo):** botão "Meu voo atrasou" na reserva do cliente (Superflex,
+  confirmada ou em uso, até 120 min depois da saída, uma vez) e card "Proteção contra atraso de
+  voo" na tela da reserva do Manager e do Operator; a RPC exige o número do voo, limita a 24h e
+  credita o parceiro pela diária extra (`payout_debt_settlement.kind = 'flight_extension_credit'`,
+  valor pelo motor de preço na parte do parceiro). Número do voo opcional no checkout da Superflex.
+  A copy de /cancelamento deixou de dizer "estende sozinha".
+- **Cancelamento:** tarifa sem janela deixou de cair no fallback de 24h; a troca de data recalcula
+  a janela a partir da reserva, não do catálogo.
+- **Placa:** o servidor bloqueia depois do carimbo de check-in (§2.5 voltou a ser verdade).
+- **Matriz da ficha:** comparativo, tooltips, selo, barra de confiança e resumo SSG leem
+  `get_unit_fares` (1.4 e 1.5 feitos junto).
+- **E-mail de confirmação:** a reconciliação (webhook perdido) passou a enviar e-mail e WhatsApp.
+
 ## 4. O que precisa ser feito (plano de adequação)
 
 Cada item virou atividade no Backlog do ClickUp em 17/09/2026, na série **E2.8-i** a **E2.8-t**.

@@ -17,6 +17,7 @@ import { useChangeBookingVehicle } from "./customerApi";
 import { BookingMoneyCard } from "./BookingMoneyCard";
 import { GatewayTrail } from "./GatewayTrail";
 import { BookingCommissionCard } from "@/features/commission/BookingCommissionCard";
+import { FlightDelayDialog } from "./FlightDelayDialog";
 import { bookingCustomerName } from "./bookings.logic";
 import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { paymentBadge, paymentState, refundWindow } from "./payment.logic";
@@ -62,6 +63,7 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
   const changeVehicle = useChangeBookingVehicle();
   const [confirming, setConfirming] = React.useState(false);
   const [plate, setPlate] = React.useState("");
+  const [flightOpen, setFlightOpen] = React.useState(false);
   const reconcileFees = useReconcileBookingFees();
   const releaseDaysQ = usePayoutReleaseDays(bookingQ.data?.location?.company?.id);
   const releaseDays = releaseDaysQ.data ?? null;
@@ -283,6 +285,34 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
           </CardContent>
         </Card>
       )}
+
+      {/* Proteção de voo (Superflex): o staff aciona pelo cliente que ligou do aeroporto. */}
+      {(booking as unknown as { fare_benefits?: { flight_delay_protection?: boolean } | null }).fare_benefits?.flight_delay_protection === true &&
+        ["confirmed", "checked_in"].includes(booking.status) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Proteção contra atraso de voo</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <p className="text-body-sm text-muted">
+                Superflex: a saída pode ser estendida em até 24h, uma vez, sem custo para o cliente. A
+                diária extra é paga pela Movepark ao estacionamento.
+              </p>
+              <div>
+                <Button size="sm" variant="secondary" onClick={() => setFlightOpen(true)}>
+                  Estender por atraso de voo
+                </Button>
+              </div>
+              <FlightDelayDialog
+                bookingCode={booking.code}
+                currentCheckOut={booking.check_out_at}
+                flightNumber={(booking as unknown as { flight_number?: string | null }).flight_number ?? null}
+                open={flightOpen}
+                onOpenChange={setFlightOpen}
+              />
+            </CardContent>
+          </Card>
+        )}
 
       {canCancel && (
         <Card>

@@ -44,6 +44,10 @@ export type BookingForCheckout = {
   passenger_first_name: string | null;
   passenger_last_name: string | null;
   passenger_phone: string | null;
+  /** Tarifa escolhida na ficha; a Superflex pergunta o voo no checkout. */
+  fare_tier: string | null;
+  /** Número do voo (opcional, Superflex): prova da proteção contra atraso. */
+  flight_number: string | null;
   location: {
     id: string;
     slug: string;
@@ -98,7 +102,7 @@ export function useCheckoutBooking(code: string | undefined) {
           `id, code, status, total_amount, currency, price_breakdown, check_in_at, check_out_at,
            fare_cancel_until, expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
-           customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone,
+           customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone, fare_tier, flight_number,
            location:location!inner(id, slug, name, address, photos, checkout_mode,
              company:company!inner(slug, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
@@ -147,6 +151,8 @@ export function useCheckoutBooking(code: string | undefined) {
         passenger_first_name: row.passenger_first_name,
         passenger_last_name: row.passenger_last_name,
         passenger_phone: row.passenger_phone,
+        fare_tier: row.fare_tier ?? null,
+        flight_number: row.flight_number ?? null,
         location: {
           ...row.location,
           // `photos` é jsonb no banco: normaliza pra array antes de sair daqui,
@@ -242,6 +248,7 @@ export function useUpdateBookingCustomer() {
       passenger_first_name?: string | null;
       passenger_last_name?: string | null;
       passenger_phone?: string | null;
+      flight_number?: string | null;
     }) => {
       const { bookingId, ...rest } = args;
       const { error } = await supabase

@@ -618,6 +618,7 @@ export type Database = {
           fare_benefits: Json | null
           fare_cancel_until: string | null
           fare_price_cents: number
+          flight_number: string | null
           fare_tier: Database["public"]["Enums"]["fare_tier"]
           has_pcd: boolean
           id: string
@@ -671,6 +672,7 @@ export type Database = {
           fare_benefits?: Json | null
           fare_cancel_until?: string | null
           fare_price_cents?: number
+          flight_number?: string | null
           fare_tier?: Database["public"]["Enums"]["fare_tier"]
           has_pcd?: boolean
           id?: string
@@ -724,6 +726,7 @@ export type Database = {
           fare_benefits?: Json | null
           fare_cancel_until?: string | null
           fare_price_cents?: number
+          flight_number?: string | null
           fare_tier?: Database["public"]["Enums"]["fare_tier"]
           has_pcd?: boolean
           id?: string
@@ -922,7 +925,10 @@ export type Database = {
           added_days: number
           booking_id: string
           created_at: string
+          flight_number: string | null
           id: string
+          partner_credit_cents: number | null
+          settlement_id: string | null
           new_check_out_at: string
           old_check_out_at: string
           reason: string | null
@@ -932,7 +938,10 @@ export type Database = {
           added_days?: number
           booking_id: string
           created_at?: string
+          flight_number?: string | null
           id?: string
+          partner_credit_cents?: number | null
+          settlement_id?: string | null
           new_check_out_at: string
           old_check_out_at: string
           reason?: string | null
@@ -942,7 +951,10 @@ export type Database = {
           added_days?: number
           booking_id?: string
           created_at?: string
+          flight_number?: string | null
           id?: string
+          partner_credit_cents?: number | null
+          settlement_id?: string | null
           new_check_out_at?: string
           old_check_out_at?: string
           reason?: string | null
@@ -6661,6 +6673,7 @@ export type Database = {
         Args: {
           p_actor?: string
           p_booking_id: string
+          p_flight_number?: string
           p_new_check_out_at: string
           p_reason?: string
         }

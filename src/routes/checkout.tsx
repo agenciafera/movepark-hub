@@ -189,6 +189,8 @@ export default function CheckoutPage() {
                   passengerFirstName={booking.passenger_first_name}
                   passengerLastName={booking.passenger_last_name}
                   passengerPhone={booking.passenger_phone}
+                  fareTier={booking.fare_tier}
+                  flightNumber={booking.flight_number}
                   onNext={() => setStep(2)}
                 />
               ) : step === 2 ? (
