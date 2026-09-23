@@ -279,6 +279,24 @@ parâmetros do corpo saem nesta ordem.
 
 Sem o segredo, o evento sai por e-mail e o `notification_log` registra o canal usado.
 
+**Criados em 23/09/2026** na WABA `449333654922434` (número `456610384191644`, +55 11 99475-2952),
+categoria UTILITY, idioma pt_BR, pela Graph API com o token de usuário de sistema que já era
+segredo da Edge. Os segredos acima já apontam para eles; enquanto a Meta não aprova, o envio
+falha e o aviso cai para e-mail (o `notification_log` mostra o canal).
+
+| Template | Corpo |
+|---|---|
+| `movepark_reserva_confirmada` | Oi, {{1}}. Sua reserva {{2}} está confirmada. O voucher já está na sua conta na Movepark. Boa viagem! |
+| `movepark_lembrete_entrada` | Oi, {{1}}. Sua entrada está chegando: reserva {{2}}, em {{3}}, a partir de {{4}}. Leve o voucher no celular e chegue com alguns minutos de folga. |
+| `movepark_lembrete_retirada` | Oi, {{1}}. Sua reserva {{2}}, em {{3}}, termina em {{4}}. O carro vai estar pronto para retirada. Se precisar de mais tempo, veja as opções na sua conta na Movepark. |
+| `movepark_reserva_cancelada` | Oi, {{1}}. Sua reserva {{2}} foi cancelada. Se houver reembolso, ele volta pelo mesmo meio de pagamento. Qualquer dúvida, é só responder aqui. |
+| `movepark_reserva_alterada` | Oi, {{1}}. Sua reserva {{2}} foi atualizada. O que vale agora: {{3}}. O voucher na sua conta já está com os dados novos. |
+| `movepark_saida_estendida` | Oi, {{1}}. A saída da reserva {{2}} foi estendida para {{3}}. Não precisa fazer mais nada: o estacionamento já sabe. |
+
+Mudar o texto de um template é criar outro (a Meta reaprova) e trocar o segredo; o envio não
+tem como saber o corpo, só o nome. O segredo `WHATSAPP_OFFICIAL_API_VERSION` subiu de `v13.0`
+(descontinuada) para `v21.0` no mesmo dia.
+
 ## 3b. Feito em 23/09/2026
 
 - **2.5, 2.6, 2.7 (proteção de voo):** botão "Meu voo atrasou" na reserva do cliente (Superflex,
