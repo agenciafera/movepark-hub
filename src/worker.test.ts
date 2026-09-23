@@ -725,6 +725,8 @@ describe("404 real de página", () => {
     ["/operator/pricing"],
     ["/onboarding"],
     ["/voucher/validate"],
+    // Segredo do link de acesso: sem esta linha o dono via o 404.html antes de o app assumir.
+    ["/acesso/P5auRNiPkAHL07fnaWsoFZZ6dEGwPs9m"],
   ])("rota de app sem HTML próprio continua 200: %s", async (caminho) => {
     const res = await worker.fetch(req(caminho), envCom404());
     expect(res.status).toBe(200);
@@ -850,6 +852,15 @@ describe("conversa compartilhada, que deixou de existir", () => {
   it("nao e' mais rota de app", () => {
     expect(ehRotaDeApp(`/conversa/${TOKEN}`)).toBe(false);
     expect(ehRotaDeApp("/conversa")).toBe(false);
+  });
+});
+
+describe("link de acesso ao Recebimento", () => {
+  it("/acesso sem segredo, ou com segredo curto, continua 404", () => {
+    expect(ehRotaDeApp("/acesso")).toBe(false);
+    expect(ehRotaDeApp("/acesso/")).toBe(false);
+    expect(ehRotaDeApp("/acesso/curto")).toBe(false);
+    expect(ehRotaDeApp("/acesso/P5auRNiPkAHL07fnaWsoFZZ6dEGwPs9m/x")).toBe(false);
   });
 });
 

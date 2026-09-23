@@ -1118,6 +1118,10 @@ const ROTAS_DE_APP: RegExp[] = [
   /^\/operator(\/.*)?$/,
   /^\/onboarding$/,
   /^\/voucher(\/.*)?$/,
+  // Link de acesso ao Recebimento: só o cliente resolve o segredo. Sem isto o Workers Assets
+  // devolvia o 404.html antes de o app assumir, e o dono via "Essa página não existe" por um
+  // instante antes de cair logado (visto em 23/09/2026).
+  /^\/acesso\/[A-Za-z0-9]{16,}$/,
   /^\/blog(\/.*)?$/,
   // Uma pasta para o catálogo inteiro: índice, destino, ficha, preços e mais barato.
   // Continua em 200 mesmo com HTML pré-renderizado, porque o manifesto nasce no build e o
