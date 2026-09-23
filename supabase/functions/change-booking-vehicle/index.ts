@@ -10,7 +10,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
-import { parseChangeVehicleInput, plateChangeAllowed } from "./logic.ts";
+import { parseChangeVehicleInput, plateChangeAllowed, vehicleChangeOpen } from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 
 const corsHeaders = {
@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
   const { data: booking, error: bErr } = await admin
     .from("booking")
     .select(
-      "id, code, status, profile_id, vehicle_id, fare_benefits, location:location!inner(company_id)",
+      "id, code, status, profile_id, vehicle_id, fare_benefits, checked_in_at, location:location!inner(company_id)",
     )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
       403,
     );
   }
-  if (!["pending", "confirmed"].includes(booking.status)) {
+  if (!vehicleChangeOpen(booking.status, booking.checked_in_at)) {
     return jsonResponse({ error: "Esta reserva não permite troca de veículo." }, 400);
   }
 

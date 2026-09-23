@@ -10,31 +10,35 @@ const NOW = new Date("2026-06-10T00:00:00Z");
 const h = (n: number) => new Date(NOW.getTime() + n * 3600_000).toISOString();
 
 describe("cancellationStatus", () => {
-  it("grátis quando faltam mais de 24h", () => {
-    expect(cancellationStatus(h(48), NOW).free).toBe(true);
+  // 23/09/2026: a janela é sempre a gravada na reserva (fareCancelUntil). Sem ela, não há grátis.
+  const janela24h = (checkIn: string) => new Date(new Date(checkIn).getTime() - 24 * 3600_000).toISOString();
+
+  it("grátis quando faltam mais de 24h, com a janela de 24h da reserva", () => {
+    expect(cancellationStatus(h(48), NOW, janela24h(h(48))).free).toBe(true);
   });
 
   it("não-grátis quando faltam menos de 24h", () => {
-    expect(cancellationStatus(h(23), NOW).free).toBe(false);
+    expect(cancellationStatus(h(23), NOW, janela24h(h(23))).free).toBe(false);
   });
 
   it("fronteira: exatamente 24h ainda é grátis", () => {
-    expect(cancellationStatus(h(FREE_CANCEL_WINDOW_HOURS), NOW).free).toBe(true);
+    const checkIn = h(FREE_CANCEL_WINDOW_HOURS);
+    expect(cancellationStatus(checkIn, NOW, janela24h(checkIn)).free).toBe(true);
   });
 
-  it("deadline = check_in − 24h", () => {
-    const checkIn = h(48);
-    const { deadline } = cancellationStatus(checkIn, NOW);
-    expect(deadline.getTime()).toBe(new Date(checkIn).getTime() - 24 * 3600_000);
+  it("sem janela gravada (tarifa sem cancelamento grátis): nunca é grátis e o prazo é nulo", () => {
+    const r = cancellationStatus(h(48), NOW);
+    expect(r.free).toBe(false);
+    expect(r.deadline).toBeNull();
   });
 
-  it("Tarifa (E2.8): fareCancelUntil sobrepõe o padrão de 24h (Superflex grátis a 2h do check-in)", () => {
-    const checkIn = h(2); // 2h pro check-in → fora dos 24h padrão
+  it("Tarifa (E2.8): a Superflex é grátis a 2h do check-in porque a janela dela é de 1 min", () => {
+    const checkIn = h(2);
     const superflexUntil = h(2 - 1 / 60); // 1 min antes do check-in
-    expect(cancellationStatus(checkIn, NOW).free).toBe(false); // padrão
+    expect(cancellationStatus(checkIn, NOW, janela24h(checkIn)).free).toBe(false); // Básica/Flex
     expect(cancellationStatus(checkIn, NOW, superflexUntil).free).toBe(true); // Superflex
-    const passed = h(2 + 1); // prazo já passou
-    expect(cancellationStatus(checkIn, NOW, passed).deadline.getTime()).toBe(new Date(passed).getTime());
+    const passed = h(-1); // prazo já passou
+    expect(cancellationStatus(checkIn, NOW, passed).deadline?.getTime()).toBe(new Date(passed).getTime());
   });
 });
 
@@ -45,7 +49,7 @@ describe("customerSelfCancel", () => {
   });
 
   it("confirmed dentro da janela → pode, com estorno", () => {
-    const gate = customerSelfCancel("confirmed", h(48), NOW);
+    const gate = customerSelfCancel("confirmed", h(48), NOW, h(24));
     expect(gate).toEqual({ allowed: true, free: true });
   });
 
@@ -72,8 +76,11 @@ describe("customerSelfCancel", () => {
 
 describe("freeCancelDeadlineLabel", () => {
   it("rotula o prazo concreto", () => {
-    const label = freeCancelDeadlineLabel(h(48));
+    const label = freeCancelDeadlineLabel(h(48), h(24));
     expect(label.startsWith("Cancele grátis até ")).toBe(true);
     expect(label).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+  });
+  it("sem janela, diz que a tarifa não tem cancelamento grátis", () => {
+    expect(freeCancelDeadlineLabel(h(48), null)).toBe("Esta tarifa não tem cancelamento grátis");
   });
 });

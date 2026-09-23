@@ -1,7 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
   freeCancelDeadline,
-  FREE_CANCEL_WINDOW_HOURS,
   parseCancelInput,
   refundDecision,
   withinFreeWindow,
@@ -11,14 +10,19 @@ const NOW = new Date("2026-06-18T12:00:00Z");
 const inDays = (d: number) => new Date(NOW.getTime() + d * 86_400_000).toISOString();
 const inMinutes = (m: number) => new Date(NOW.getTime() + m * 60_000).toISOString();
 
-Deno.test("FREE_CANCEL_WINDOW_HOURS é 24 (trava a regra PRD-12)", () => {
-  assertEquals(FREE_CANCEL_WINDOW_HOURS, 24);
+Deno.test("withinFreeWindow: a janela é a gravada na reserva; fronteira exata é grátis", () => {
+  const janela24h = (checkIn: string) => new Date(new Date(checkIn).getTime() - 24 * 3_600_000).toISOString();
+  assertEquals(withinFreeWindow(inDays(2), NOW, janela24h(inDays(2))), true);
+  assertEquals(withinFreeWindow(inDays(0.5), NOW, janela24h(inDays(0.5))), false); // 12h
+  const em24h = new Date(NOW.getTime() + 24 * 3_600_000).toISOString();
+  assertEquals(withinFreeWindow(em24h, NOW, janela24h(em24h)), true);
 });
 
-Deno.test("withinFreeWindow: ≥24h grátis; <24h fora; fronteira exata é grátis", () => {
-  assertEquals(withinFreeWindow(inDays(2), NOW), true);
-  assertEquals(withinFreeWindow(inDays(0.5), NOW), false); // 12h
-  assertEquals(withinFreeWindow(new Date(NOW.getTime() + 24 * 3_600_000).toISOString(), NOW), true);
+Deno.test("23/09/2026: reserva SEM janela (tarifa sem cancelamento grátis) nunca está na janela", () => {
+  // Antes caía num fallback de 24h e reembolsava uma tarifa vendida como sem cancelamento.
+  assertEquals(freeCancelDeadline(inDays(5), null), null);
+  assertEquals(withinFreeWindow(inDays(5), NOW, null), false);
+  assertEquals(withinFreeWindow(inDays(5), NOW, undefined), false);
 });
 
 Deno.test("refundDecision: já cancelada → noop (idempotente)", () => {
@@ -41,12 +45,12 @@ Deno.test("refundDecision: pending → cancela sem estorno", () => {
 });
 
 Deno.test("refundDecision: cliente confirmado pago dentro de 24h → estorna", () => {
-  const d = refundDecision({ actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid", alreadyRefunded: false, checkInAt: inDays(2), now: NOW });
+  const d = refundDecision({ actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid", alreadyRefunded: false, checkInAt: inDays(2), fareCancelUntil: inDays(1), now: NOW });
   assertEquals(d, { action: "cancel_with_refund" });
 });
 
 Deno.test("refundDecision: cliente confirmado pago fora de 24h → BLOQUEADO (não cancela)", () => {
-  const d = refundDecision({ actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid", alreadyRefunded: false, checkInAt: inDays(0.5), now: NOW });
+  const d = refundDecision({ actor: "customer", bookingStatus: "confirmed", paymentStatus: "paid", alreadyRefunded: false, checkInAt: inDays(0.5), fareCancelUntil: inDays(-0.5), now: NOW });
   assertEquals(d, { action: "blocked", reason: "late_window" });
 });
 
@@ -67,14 +71,13 @@ Deno.test("refundDecision: confirmado mas pagamento não-pago → cancela sem es
 
 // ── Tarifa (E2.8): a janela vem do snapshot fare_cancel_until, não mais do fixo 24h ──
 
-Deno.test("freeCancelDeadline: usa o snapshot da Tarifa quando há; senão 24h antes do check-in", () => {
+Deno.test("freeCancelDeadline: é o prazo gravado na reserva; sem ele, não há prazo", () => {
   const checkIn = inDays(2);
   // Superflex: snapshot = 1 min antes do check-in
   const superflexUntil = inMinutes(2 * 24 * 60 - 1);
-  assertEquals(freeCancelDeadline(checkIn, superflexUntil).toISOString(), superflexUntil);
-  // sem snapshot → fallback 24h antes
-  const fallback = new Date(new Date(checkIn).getTime() - 24 * 3_600_000);
-  assertEquals(freeCancelDeadline(checkIn, null).toISOString(), fallback.toISOString());
+  assertEquals(freeCancelDeadline(checkIn, superflexUntil)?.toISOString(), superflexUntil);
+  // 23/09/2026: sem snapshot não cai mais em 24h (reembolsava tarifa vendida como sem cancelamento)
+  assertEquals(freeCancelDeadline(checkIn, null), null);
 });
 
 Deno.test("refundDecision: Superflex estorna a 2h do check-in (janela 1 min)", () => {

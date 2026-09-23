@@ -14,6 +14,15 @@ export function plateChangeAllowed(
   return isStaff || benefits?.plate_change === true;
 }
 
+/**
+ * A troca só cabe antes do carro entrar: pendente ou confirmada, e sem `checked_in_at`. O status
+ * `checked_in` já barrava; o carimbo entra porque a spec (tarifas-operacao §2.5) promete "antes do
+ * check-in" e o carimbo é a verdade do pátio, não o status.
+ */
+export function vehicleChangeOpen(status: string, checkedInAt: string | null | undefined): boolean {
+  return ["pending", "confirmed"].includes(status) && !checkedInAt;
+}
+
 export interface ChangeVehicleInput {
   bookingCode: string;
   vehicleId: string | null;

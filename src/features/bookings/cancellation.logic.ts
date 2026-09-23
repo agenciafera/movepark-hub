@@ -1,19 +1,20 @@
 import { formatDateTime } from "@/lib/format";
 
-/** Janela de cancelamento grátis (PRD-12, decisão PO jun/2026). */
+/** Janela padrão da Básica e da Flex, só para a copy da vitrine. A reserva decide pela janela gravada nela. */
 export const FREE_CANCEL_WINDOW_HOURS = 24;
 
 export type CancellationStatus = {
-  /** Dentro da janela grátis (≥ 24h antes do check-in)? */
+  /** Dentro da janela grátis gravada na reserva? */
   free: boolean;
-  /** Prazo do cancelamento grátis = check_in − 24h. */
-  deadline: Date;
+  /** Prazo do cancelamento grátis. Nulo = a tarifa não tem cancelamento grátis. */
+  deadline: Date | null;
   hoursUntilCheckIn: number;
 };
 
 /**
  * Avalia o cancelamento de uma reserva. O prazo grátis vem da Tarifa (E2.8): `fareCancelUntil`
- * snapshot da reserva (Superflex = 1 min antes); sem ele, cai no padrão de 24h (PRD-12).
+ * gravado na reserva (Superflex = 1 min antes). Sem ele, não há cancelamento grátis: o fallback de
+ * 24h saiu em 23/09/2026, porque reembolsava tarifa vendida como sem cancelamento.
  * `now` é injetado para testabilidade.
  */
 export function cancellationStatus(
@@ -23,11 +24,9 @@ export function cancellationStatus(
 ): CancellationStatus {
   const checkIn = new Date(checkInAt).getTime();
   const hoursUntilCheckIn = (checkIn - now.getTime()) / (1000 * 60 * 60);
-  const deadline = fareCancelUntil
-    ? new Date(fareCancelUntil)
-    : new Date(checkIn - FREE_CANCEL_WINDOW_HOURS * 60 * 60 * 1000);
+  const deadline = fareCancelUntil ? new Date(fareCancelUntil) : null;
   return {
-    free: now.getTime() <= deadline.getTime(),
+    free: deadline != null && now.getTime() <= deadline.getTime(),
     deadline,
     hoursUntilCheckIn,
   };
@@ -123,5 +122,6 @@ export function freeCancelDeadlineLabel(
   formatar: (d: Date) => string = formatDateTime,
 ): string {
   const { deadline } = cancellationStatus(checkInAt, new Date(0), fareCancelUntil);
+  if (!deadline) return "Esta tarifa não tem cancelamento grátis";
   return `Cancele grátis até ${formatar(deadline)}`;
 }

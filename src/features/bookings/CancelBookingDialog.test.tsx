@@ -16,6 +16,8 @@ function booking(checkInAt: string): MyBookingDetail {
     code: "MP-A8K7P2",
     status: "confirmed",
     check_in_at: checkInAt,
+    // Toda reserva real nasce com a janela gravada (Básica/Flex: 24h antes do check-in).
+    fare_cancel_until: new Date(new Date(checkInAt).getTime() - 24 * 3600_000).toISOString(),
     total_amount: 159.5,
     parking_type: { name: "Vaga coberta", code: "covered" },
     location: { name: "Guarulhos", company: { name: "Aerovalet" } },

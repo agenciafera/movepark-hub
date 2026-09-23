@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseChangeVehicleInput, plateChangeAllowed } from "./logic.ts";
+import { parseChangeVehicleInput, plateChangeAllowed, vehicleChangeOpen } from "./logic.ts";
 
 // Gate por tier (espelha o seed `fare`): Básica não tem plate_change; Flex/Superflex têm; staff override.
 const BENEFITS = {
@@ -42,4 +42,12 @@ Deno.test("parseChangeVehicleInput: por placa (normaliza maiúscula/sem espaço)
     vehicleId: null,
     licensePlate: "BRA2E19",
   });
+});
+
+Deno.test("vehicleChangeOpen: antes do check-in sim; depois do carro entrar, não", () => {
+  assertEquals(vehicleChangeOpen("pending", null), true);
+  assertEquals(vehicleChangeOpen("confirmed", null), true);
+  assertEquals(vehicleChangeOpen("confirmed", "2026-09-23T10:00:00Z"), false);
+  assertEquals(vehicleChangeOpen("checked_in", null), false);
+  assertEquals(vehicleChangeOpen("completed", null), false);
 });

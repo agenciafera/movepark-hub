@@ -7,8 +7,6 @@
  * É o fallback para reservas sem Tarifa snapshot (anteriores à E2.8). Com Tarifa, a verdade é o
  * `fare_cancel_until` gravado na reserva (Básica/Flex = 24h; Superflex = 1 min antes).
  */
-export const FREE_CANCEL_WINDOW_HOURS = 24;
-
 export type Actor = "customer" | "staff";
 
 export type CancelDecision =
@@ -32,17 +30,22 @@ export interface RefundDecisionArgs {
 }
 
 /**
- * Prazo efetivo de cancelamento grátis: o `fare_cancel_until` da Tarifa quando existe (Superflex
- * estende até 1 min antes); senão o fallback padrão de 24h antes do check-in (PRD-12).
+ * Prazo de cancelamento grátis: o `fare_cancel_until` gravado na reserva. `null` é "sem
+ * cancelamento grátis" (tarifa configurada assim em `admin_set_fare`), e devolve `null`.
+ *
+ * Até 23/09/2026 o nulo caía num fallback de 24h: uma tarifa vendida como "sem cancelamento"
+ * reembolsava mesmo assim. Toda reserva viva tem a janela gravada desde a compra (E2.8), então
+ * o fallback só servia para esconder esse caso. `checkInAt` fica na assinatura por compatibilidade
+ * dos chamadores; não entra mais na conta.
  */
-export function freeCancelDeadline(checkInAt: string, fareCancelUntil?: string | null): Date {
-  if (fareCancelUntil) return new Date(fareCancelUntil);
-  return new Date(new Date(checkInAt).getTime() - FREE_CANCEL_WINDOW_HOURS * 3_600_000);
+export function freeCancelDeadline(_checkInAt: string, fareCancelUntil?: string | null): Date | null {
+  return fareCancelUntil ? new Date(fareCancelUntil) : null;
 }
 
 /** true se ainda está dentro da janela de reembolso grátis do cliente (agora ≤ prazo da Tarifa). */
 export function withinFreeWindow(checkInAt: string, now: Date, fareCancelUntil?: string | null): boolean {
-  return now.getTime() <= freeCancelDeadline(checkInAt, fareCancelUntil).getTime();
+  const deadline = freeCancelDeadline(checkInAt, fareCancelUntil);
+  return deadline != null && now.getTime() <= deadline.getTime();
 }
 
 /**
