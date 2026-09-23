@@ -281,8 +281,10 @@ Sem o segredo, o evento sai por e-mail e o `notification_log` registra o canal u
 
 **Criados em 23/09/2026** na WABA `449333654922434` (número `456610384191644`, +55 11 99475-2952),
 categoria UTILITY, idioma pt_BR, pela Graph API com o token de usuário de sistema que já era
-segredo da Edge. Os segredos acima já apontam para eles; enquanto a Meta não aprova, o envio
-falha e o aviso cai para e-mail (o `notification_log` mostra o canal).
+segredo da Edge. **Os seis foram aprovados no mesmo dia** (em cerca de 25 minutos) e os
+segredos acima já apontam para eles; um envio de teste da confirmação e do lembrete de entrada
+chegou ao cliente de teste. Se um template for pausado ou reprovado depois, o envio falha e o
+aviso cai para e-mail (o `notification_log` mostra o canal).
 
 | Template | Corpo |
 |---|---|

@@ -173,8 +173,8 @@ no banco vivo em transação revertida (`bash $SP/tap.sh <teste> <migration>`), 
 ## Estado em 23/09/2026 (fim do dia)
 
 Feito e publicado: A1 a A7, B1 a B8. Os 6 templates do WhatsApp foram criados na Meta pela
-Graph API (UTILITY, pt_BR, nomes em tarifas-operacao.md §3a) e os segredos já apontam para eles;
-enquanto a aprovação não sai, os avisos caem para e-mail e o `notification_log` registra o canal.
+Graph API (UTILITY, pt_BR, nomes em tarifas-operacao.md §3a), aprovados no mesmo dia, com os
+segredos apontando para eles e envio de teste feito. Se um template cair, o aviso vai por e-mail.
 Pendente: bloco C (piloto BePark, depende do parceiro).
 
 ## Ordem de execução
