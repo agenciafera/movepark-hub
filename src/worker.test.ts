@@ -413,6 +413,8 @@ describe("noindex por rota nas áreas privadas", () => {
     "/descadastro",
     // Retorno de autenticação.
     "/auth",
+    // Segredo do link de acesso no caminho.
+    "/acesso",
     // Ferramentas internas, públicas por descuido de roteamento.
     "/motor-preview",
     "/design-system",

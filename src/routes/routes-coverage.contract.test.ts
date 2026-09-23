@@ -49,7 +49,12 @@ const COBERTAS_POR_PLAYWRIGHT: Record<string, string> = {
  * (o padrão) ou Playwright (o mapa acima, com o motivo escrito). Uma rota nova
  * entra aqui só com data e motivo, e sai no commit que escreve o cenário.
  */
-const SEM_COBERTURA: string[] = [];
+const SEM_COBERTURA: string[] = [
+  // 23/09/2026: resgate do link de acesso ao Recebimento. O cenário exige um segredo vivo gerado
+  // pela Edge com JWT de hub_admin, que a fixture do Windup não tem; entra no Playwright junto
+  // com o roteiro do piloto de venda pelo Hub.
+  "/acesso/:token",
+];
 
 /** Uma URL cobre uma rota quando os segmentos casam, com `:param` como coringa. */
 function casa(rota: string, url: string): boolean {

@@ -34,6 +34,8 @@ const PRIVADOS = [
   "/docs",
   "/descadastro",
   "/auth",
+  // Segredo do link de acesso ao Recebimento no caminho.
+  "/acesso",
   "/finance",
   "/api-keys",
   "/parking-types",

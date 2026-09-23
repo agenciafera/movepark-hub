@@ -1227,6 +1227,70 @@ export type Database = {
           },
         ]
       }
+      company_access_link: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          last_used_at: string | null
+          profile_id: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+          use_count: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          last_used_at?: string | null
+          profile_id: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+          use_count?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          last_used_at?: string | null
+          profile_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+          use_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_access_link_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_access_link_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_access_link_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company: {
         Row: {
           contract_accepted_at: string | null
@@ -6541,6 +6605,12 @@ export type Database = {
         Args: { p_hash: string; p_prefix: string }
         Returns: Json
       }
+      company_access_link_done: { Args: { p_company_id: string }; Returns: boolean }
+      company_access_link_redeem: {
+        Args: { p_hash: string; p_prefix: string }
+        Returns: Json
+      }
+      company_access_link_revoke: { Args: { p_id: string }; Returns: undefined }
       claim_spot_guarantee: { Args: { p_booking_code: string }; Returns: Json }
       commission_channel_report: { Args: { p_from: string; p_to: string }; Returns: Json }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }

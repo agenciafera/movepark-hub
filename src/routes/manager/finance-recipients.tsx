@@ -27,6 +27,7 @@ import { formatBRL, formatDateTime } from "@/lib/format";
 import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
 import { PayoutKycDialog } from "@/features/payouts/PayoutKycDialog";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
+import { AccessLinkDialog } from "@/features/payouts/AccessLinkDialog";
 import {
   type RecipientOverviewRow,
   buildRecipientOverview,
@@ -46,6 +47,7 @@ export default function ManagerFinanceRecipients() {
   const [syncingId, setSyncingId] = React.useState<string | null>(null);
   const [kyc, setKyc] = React.useState<{ id: string; name: string } | null>(null);
   const [payoutId, setPayoutId] = React.useState<string | null>(null);
+  const [accessFor, setAccessFor] = React.useState<{ id: string; name: string } | null>(null);
 
   const rows = React.useMemo(() => buildRecipientOverview(data ?? []), [data]);
   const summary = React.useMemo(() => summarizeRecipients(rows), [rows]);
@@ -305,12 +307,21 @@ export default function ManagerFinanceRecipients() {
                       <div className="flex flex-wrap justify-end gap-2">
                         {!row.hasKyc ? (
                           // Sem KYC não dá pra criar recebedor (a Edge exige company_payout_account).
-                          <Button
-                            size="sm"
-                            onClick={() => setKyc({ id: row.companyId, name: row.companyName })}
-                          >
-                            Preencher KYC
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => setKyc({ id: row.companyId, name: row.companyName })}
+                            >
+                              Preencher KYC
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setAccessFor({ id: row.companyId, name: row.companyName })}
+                            >
+                              Link de acesso
+                            </Button>
+                          </>
                         ) : (
                           <>
                             <Button
@@ -366,6 +377,14 @@ export default function ManagerFinanceRecipients() {
           companyName={kyc.name}
           open={!!kyc}
           onOpenChange={(o) => !o && setKyc(null)}
+        />
+      )}
+      {accessFor && (
+        <AccessLinkDialog
+          companyId={accessFor.id}
+          companyName={accessFor.name}
+          open={!!accessFor}
+          onOpenChange={(o) => !o && setAccessFor(null)}
         />
       )}
       {payoutId && (

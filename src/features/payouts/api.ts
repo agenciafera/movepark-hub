@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { CompanyPayoutAccount, PayoutRecipient, PayoutWithdrawal } from "@/types/domain";
+import type { CompanyAccessLink, CompanyPayoutAccount, PayoutRecipient, PayoutWithdrawal } from "@/types/domain";
 import type { toPayoutAccountPayload } from "./kyc";
 
 /** Payload de upsert da conta de repasse (saída de `toPayoutAccountPayload`). */
@@ -11,6 +11,7 @@ const REFRESH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-r
 const WITHDRAW_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recipient-withdraw`;
 const RECONCILE_WITHDRAWALS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reconcile-payout-transfers`;
 const RETRY_REFUND_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/retry-refund`;
+const ACCESS_LINK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-company-access-link`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -913,3 +914,81 @@ export function useSetCompanyPayoutReleaseDays() {
   });
 }
 
+// ── Link de acesso ao Recebimento (23/09/2026) ──────────────────────────────
+// Spec: docs/specs/link-de-acesso-recebimento.md. O segredo só existe na resposta da Edge que o
+// cria; a tabela guarda o hash, então a lista serve para ver estado e revogar, nunca para reler a URL.
+
+export const accessLinkKeys = {
+  all: ["company-access-link"] as const,
+  list: (companyId: string) => [...accessLinkKeys.all, companyId] as const,
+};
+
+/** Links da empresa, do mais novo para o mais velho (hub_admin, via RLS). */
+export function useCompanyAccessLinks(companyId: string | undefined) {
+  return useQuery({
+    queryKey: accessLinkKeys.list(companyId ?? ""),
+    enabled: !!companyId,
+    queryFn: async (): Promise<CompanyAccessLink[]> => {
+      const { data, error } = await supabase
+        .from("company_access_link")
+        .select("*")
+        .eq("company_id", companyId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** E-mail de contato gravado na unidade, para pré-preencher o convite. */
+export function useCompanyContactEmail(companyId: string | undefined) {
+  return useQuery({
+    queryKey: [...accessLinkKeys.all, "contact", companyId ?? ""] as const,
+    enabled: !!companyId,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from("location")
+        .select("email")
+        .eq("company_id", companyId!)
+        .is("deleted_at", null)
+        .not("email", "is", null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.email ?? null;
+    },
+  });
+}
+
+/** Gera o link (Edge, hub_admin). Revoga o anterior da empresa e devolve a URL uma única vez. */
+export function useCreateCompanyAccessLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; email: string }): Promise<{ id: string; url: string; email: string }> => {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(ACCESS_LINK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${token}` },
+        body: JSON.stringify(args),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string; id?: string; url?: string; email?: string };
+      if (!res.ok) throw new Error(json.error ?? `Falha ao gerar o link (${res.status})`);
+      return { id: json.id!, url: json.url!, email: json.email! };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: accessLinkKeys.all }),
+  });
+}
+
+/** Revoga um link (RPC, hub_admin). O dono passa a precisar de outro, ou do login por código. */
+export function useRevokeCompanyAccessLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("company_access_link_revoke", { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: accessLinkKeys.all }),
+  });
+}

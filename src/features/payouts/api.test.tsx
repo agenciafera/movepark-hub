@@ -16,6 +16,8 @@ import {
   useReconcileWithdrawals,
   useRetryManualRefund,
   useSetCompanyPayoutReleaseDays,
+  useCreateCompanyAccessLink,
+  useRevokeCompanyAccessLink,
 } from "./api";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -356,5 +358,43 @@ describe("useSetCompanyPayoutReleaseDays", () => {
     expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_days: 7 });
     await result.current.mutateAsync({ company_id: "c1", days: null });
     expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_days: null });
+  });
+});
+
+// ── Link de acesso ao Recebimento (23/09/2026) ──────────────────────────────
+
+describe("useCreateCompanyAccessLink", () => {
+  it("manda empresa e e-mail à Edge com o JWT e devolve a URL", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValueOnce({
+      data: { session: { access_token: "jwt-admin" } },
+      error: null,
+    } as never);
+    const espiao = edge("create-company-access-link", {
+      json: { id: "l1", url: "https://movepark.co/acesso/segredo", email: "dono@bepark.com.br" },
+    });
+    const { result } = renderMutation(() => useCreateCompanyAccessLink());
+    const r = await result.current.mutateAsync({ company_id: "c1", email: "dono@bepark.com.br" });
+    expect(r.url).toBe("https://movepark.co/acesso/segredo");
+    expect(espiao.ultimoBody).toEqual({ company_id: "c1", email: "dono@bepark.com.br" });
+    expect(espiao.chamadas[0].headers.get("authorization")).toBe("Bearer jwt-admin");
+  });
+
+  it("propaga a recusa da Edge (empresa já terminou)", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValueOnce({
+      data: { session: { access_token: "jwt-admin" } },
+      error: null,
+    } as never);
+    falha("edge", "create-company-access-link", 409, "Esta empresa já enviou os dados de recebimento e aceitou o contrato.");
+    const { result } = renderMutation(() => useCreateCompanyAccessLink());
+    await expect(result.current.mutateAsync({ company_id: "c1", email: "a@b.co" })).rejects.toThrow(/já enviou/);
+  });
+});
+
+describe("useRevokeCompanyAccessLink", () => {
+  it("chama a RPC com o id do link", async () => {
+    const espiao = rpc("company_access_link_revoke", { status: 204 });
+    const { result } = renderMutation(() => useRevokeCompanyAccessLink());
+    await result.current.mutateAsync("l1");
+    expect(espiao.ultimoBody).toEqual({ p_id: "l1" });
   });
 });

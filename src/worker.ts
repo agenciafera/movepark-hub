@@ -105,6 +105,8 @@ export const ROTAS_PRIVADAS = [
   "/descadastro",
   // Retorno de autenticação. Nada aqui é conteúdo.
   "/auth",
+  // Link de acesso ao Recebimento: carrega o segredo no caminho, indexar publicaria o acesso.
+  "/acesso",
   // Ferramentas internas: catálogo visual e simulador de preço. Públicas por descuido de
   // roteamento, nunca por decisão.
   "/motor-preview",

@@ -446,6 +446,10 @@ verify_jwt = false
 [functions.redeem-checkout-handoff]
 verify_jwt = false
 
+# Link de acesso ao Recebimento (23/09/2026): a autorização é a posse do segredo.
+[functions.redeem-company-access-link]
+verify_jwt = false
+
 [functions.reconcile-refunds]
 verify_jwt = false
 

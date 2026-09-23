@@ -42,6 +42,7 @@ import DocsPage from "@/routes/docs";
 import BookingsListPage from "@/routes/bookings-list";
 import BookingDetailPage from "@/routes/bookings-detail";
 import AuthCallbackPage from "@/routes/auth/callback";
+import AcessoPage from "@/routes/acesso";
 import LoginPage from "@/routes/login";
 import DesignSystemPage from "@/routes/design-system";
 import MotorPreviewPage from "@/routes/motor-preview";
@@ -1030,6 +1031,8 @@ export const routes: RouteRecord[] = [
       // Auth universal e passwordless (clientes + backoffice)
       { path: "/login", element: <LoginPage /> },
       { path: "/auth/callback", element: <AuthCallbackPage /> },
+      // Link de acesso ao Recebimento: entra logado como dono da empresa (segredo no caminho)
+      { path: "/acesso/:token", element: <AcessoPage /> },
       // Rotas legadas → /login (preservam ?next=)
       { path: "/entrar", element: <RedirectToLogin /> },
       { path: "/signup", element: <RedirectToLogin /> },
