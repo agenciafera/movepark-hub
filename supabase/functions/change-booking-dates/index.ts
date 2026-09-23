@@ -8,6 +8,9 @@
 // { "booking_code": "MP-XXXX", "check_in_at": "...ISO...", "check_out_at": "...ISO..." }
 // → { booking_id, days, total_amount }
 
+import { notifyBooking } from "../_shared/notify.ts";
+import { tplBookingDatesChanged } from "../_shared/email.ts";
+import { siteUrl } from "../_shared/site.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { dateChangeAllowed, parseChangeDatesInput } from "./logic.ts";
 
@@ -119,5 +122,33 @@ Deno.serve(async (req: Request) => {
       if (logErr) console.error("[change-booking-dates] log_booking_modification:", logErr.message);
     });
 
+  // Aviso ao cliente (fase 2 da tarifas-operacao): WhatsApp com o benefício, senão e-mail.
+  const nd = await noticeData(admin, booking.id);
+  if (nd) {
+    const quando = `${fmtBR(nd.check_in_at)} a ${fmtBR(nd.check_out_at)}`;
+    await notifyBooking(admin, {
+      bookingId: booking.id,
+      event: "dates_changed",
+      whatsappParams: (c) => [c.name ?? "cliente", nd.code, quando],
+      email: (c) => tplBookingDatesChanged(nd, c.name, `${siteUrl()}/bookings/${nd.code}`),
+    });
+  }
+
   return jsonResponse(data, 200);
 });
+/** Dados da reserva para os avisos (unidade, datas, veículo). */
+// deno-lint-ignore no-explicit-any
+async function noticeData(admin: any, bookingId: string) {
+  const { data: r } = await admin
+    .from("booking")
+    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!r) return null;
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+}
+
+function fmtBR(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+

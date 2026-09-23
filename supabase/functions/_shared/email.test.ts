@@ -1,6 +1,25 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
-import { htmlToBase64, siteUrl, tplApprovalInvite, tplBookingConfirmation, tplLeadAlert, tplLeadReceived, tplRejection, tplReviewRequest, tplWithdrawalRequested, tplWithdrawalPaid, tplWithdrawalFailed, tplPartnerDebtCreated, tplBookingCancelled } from "./email.ts";
+import {
+  htmlToBase64,
+  siteUrl,
+  tplApprovalInvite,
+  tplBookingConfirmation,
+  tplLeadAlert,
+  tplLeadReceived,
+  tplRejection,
+  tplReviewRequest,
+  tplWithdrawalRequested,
+  tplWithdrawalPaid,
+  tplWithdrawalFailed,
+  tplPartnerDebtCreated,
+  tplBookingCancelled,
+  tplBookingReminderCheckin,
+  tplBookingReminderCheckout,
+  tplBookingDatesChanged,
+  tplBookingVehicleChanged,
+  tplBookingExtended,
+} from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
 
@@ -197,4 +216,17 @@ Deno.test("e-mail de cancelamento: diz o que acontece com o dinheiro por meio e 
   const none = tplBookingCancelled(b, null, { refund: "none", amount: null, method: null, reason: null }, url);
   assertStringIncludes(none.html, "Não houve cobrança");
   for (const m of [pix, card, manual, none]) assert(!m.html.includes("—") && !m.html.includes("–") && !m.html.includes("\n"), "sem travessão nem quebra");
+});
+
+// 23/09/2026: os avisos da reserva (fase 2 da tarifas-operacao), sem travessão e com o código.
+Deno.test("avisos da reserva: assunto com o código, corpo com a unidade, sem travessão", () => {
+  const b = { code: "MP-ABC123", location_name: "BePark Confins", location_address: "Av. X, 1", check_in_at: "2026-12-10T12:00:00Z", check_out_at: "2026-12-12T15:30:00Z", vehicle: { license_plate: "ABC1D23", model: "Onix" } };
+  for (const tpl of [tplBookingReminderCheckin, tplBookingReminderCheckout, tplBookingDatesChanged, tplBookingVehicleChanged, tplBookingExtended]) {
+    const m = tpl(b, "Ana Maria", "https://movepark.co/bookings/MP-ABC123");
+    assertEquals(m.subject.includes("MP-ABC123") || m.subject.includes("BePark Confins"), true, tpl.name);
+    assertEquals(m.html.includes("BePark Confins"), true, tpl.name);
+    assertEquals(m.html.includes("Ana"), true, tpl.name);
+    assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false, tpl.name);
+  }
+  assertEquals(tplBookingVehicleChanged(b, null, "u").html.includes("ABC1D23"), true);
 });

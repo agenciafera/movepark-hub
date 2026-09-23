@@ -13,7 +13,9 @@
 // → { booking_id, old_check_out_at, new_check_out_at, added_days }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
+import { notifyBooking } from "../_shared/notify.ts";
+import { tplBookingExtended } from "../_shared/email.ts";
+import { siteUrl } from "../_shared/site.ts";
 import { parseExtendInput } from "./logic.ts";
 
 const corsHeaders = {
@@ -110,39 +112,29 @@ Deno.serve(async (req: Request) => {
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 400);
 
-  // Notifica por WhatsApp (Superflex tem notifications_sms) — best-effort, não bloqueia a resposta.
-  if (booking.fare_benefits?.notifications_sms) {
-    let phone: string | null = booking.customer_phone ?? null;
-    let name: string | null = booking.customer_name ?? null;
-    if (!phone && booking.profile_id) {
-      // ADR-006: nome do profiles; telefone (credencial) do auth.users — nunca do profiles.
-      const { data: p } = await admin
-        .from("profiles")
-        .select("first_name")
-        .eq("id", booking.profile_id)
-        .maybeSingle();
-      name = name ?? p?.first_name ?? null;
-      const { data: u } = await admin.auth.admin.getUserById(booking.profile_id);
-      const raw = u?.user?.phone ?? null;
-      phone = raw ? (raw.startsWith("+") ? raw : `+${raw}`) : null;
-    }
-    if (phone) {
-      const template = Deno.env.get("WHATSAPP_BOOKING_EXTENDED_TEMPLATE") ?? "";
-      const newOut = new Date(input.newCheckOutAt).toLocaleString("pt-BR", {
-        timeZone: "America/Sao_Paulo",
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      // Não segura a resposta: dispara em paralelo.
-      sendWhatsAppTemplate({
-        to: phone,
-        template,
-        bodyParams: [name ?? "cliente", booking.code, newOut],
-      }).catch((e) => console.error("[extend-booking] notificação falhou:", e));
-    }
+  // Aviso da nova saída (WhatsApp com o benefício, senão e-mail). Best-effort.
+  const nd = await noticeData(admin, booking.id);
+  if (nd) {
+    const newOut = new Date(nd.check_out_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    await notifyBooking(admin, {
+      bookingId: booking.id,
+      event: "extended",
+      whatsappParams: (c) => [c.name ?? "cliente", nd.code, newOut],
+      email: (c) => tplBookingExtended(nd, c.name, `${siteUrl()}/bookings/${nd.code}`),
+    });
   }
 
   return jsonResponse(result, 200);
 });
+
+/** Dados da reserva para os avisos (unidade, datas, veículo). */
+// deno-lint-ignore no-explicit-any
+async function noticeData(admin: any, bookingId: string) {
+  const { data: r } = await admin
+    .from("booking")
+    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!r) return null;
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+}

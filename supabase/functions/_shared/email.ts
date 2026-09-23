@@ -616,6 +616,106 @@ export function tplBookingConfirmation(
   };
 }
 
+/** Dados mínimos que os avisos de reserva precisam (subconjunto do voucher). */
+export interface BookingNoticeData {
+  code: string;
+  location_name: string;
+  location_address?: string | null;
+  check_in_at: string;
+  check_out_at: string;
+  vehicle?: { license_plate: string; model: string | null } | null;
+}
+
+function primeiroNome(name: string | null): string {
+  return String(name ?? "").trim().split(/\s+/)[0];
+}
+
+/** Lembrete de entrada (24h antes): onde, quando, com que carro, e o voucher. */
+export function tplBookingReminderCheckin(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+  const fn = primeiroNome(customerName);
+  return {
+    subject: `Amanhã é o dia: reserva ${b.code} no ${b.location_name}`,
+    html: shell(
+      "Sua vaga está esperando",
+      `
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}sua entrada no <strong style="color:${BRAND.navy};">${escapeHtml(b.location_name)}</strong> é em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_in_at))}</strong>.</p>
+      ${b.location_address ? checkItem(`Endereço: ${escapeHtml(b.location_address)}.`) : ""}
+      ${b.vehicle ? checkItem(`Veículo na reserva: <strong style="color:${BRAND.navy};">${escapeHtml(b.vehicle.license_plate)}</strong>. Mudou de carro? Troque na sua reserva antes de chegar.`) : ""}
+      ${checkItem(`Na chegada, mostre o voucher. Ele está na sua reserva.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Entrada em ${formatBRDateTime(b.check_in_at)} no ${b.location_name}` },
+    ),
+  };
+}
+
+/** Lembrete de retirada (2h antes da saída): a hora combinada e o que fazer se atrasar. */
+export function tplBookingReminderCheckout(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+  const fn = primeiroNome(customerName);
+  return {
+    subject: `Sua saída do ${b.location_name} é às ${formatBRDateTime(b.check_out_at).slice(-5)}`,
+    html: shell(
+      "Hora de buscar o carro",
+      `
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}a saída combinada da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> no <strong style="color:${BRAND.navy};">${escapeHtml(b.location_name)}</strong> é em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_out_at))}</strong>.</p>
+      ${checkItem(`Vai atrasar? Fale com o estacionamento pelo telefone que está na sua reserva.`)}
+      ${checkItem(`Tarifa Superflex com voo atrasado: estenda a saída em até 24h pela reserva, sem custo.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Saída em ${formatBRDateTime(b.check_out_at)}` },
+    ),
+  };
+}
+
+/** Datas alteradas: o novo período, e que o voucher já mudou junto. */
+export function tplBookingDatesChanged(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+  const fn = primeiroNome(customerName);
+  return {
+    subject: `Reserva ${b.code}: novas datas confirmadas`,
+    html: shell(
+      "Datas atualizadas",
+      `
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}a reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> agora vale de <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_in_at))}</strong> a <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_out_at))}</strong>.</p>
+      ${checkItem(`O voucher já está com as datas novas. Baixe de novo antes de ir.`)}
+      ${checkItem(`O estacionamento ${escapeHtml(b.location_name)} recebe a atualização por aqui.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Novas datas da reserva ${b.code}` },
+    ),
+  };
+}
+
+/** Veículo trocado: a placa que vale no portão. */
+export function tplBookingVehicleChanged(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+  const fn = primeiroNome(customerName);
+  const v = b.vehicle ? (b.vehicle.model ? `${b.vehicle.license_plate} · ${b.vehicle.model}` : b.vehicle.license_plate) : "sem veículo";
+  return {
+    subject: `Reserva ${b.code}: veículo atualizado`,
+    html: shell(
+      "Veículo atualizado",
+      `
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}a reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> agora está no veículo <strong style="color:${BRAND.navy};">${escapeHtml(v)}</strong>.</p>
+      ${checkItem(`É essa placa que vale no portão do ${escapeHtml(b.location_name)}. O voucher já mudou junto.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Veículo da reserva ${b.code}: ${v}` },
+    ),
+  };
+}
+
+/** Saída estendida pela proteção de voo (Superflex): a nova hora e que não custou nada. */
+export function tplBookingExtended(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+  const fn = primeiroNome(customerName);
+  return {
+    subject: `Reserva ${b.code}: saída estendida até ${formatBRDateTime(b.check_out_at)}`,
+    html: shell(
+      "Saída estendida, sem custo",
+      `
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}pela proteção contra atraso de voo da Superflex, a saída da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> passou para <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_out_at))}</strong>.</p>
+      ${checkItem(`Nada a pagar: a diária extra é por conta da Movepark.`)}
+      ${checkItem(`O estacionamento ${escapeHtml(b.location_name)} já sabe da nova saída.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Saída da reserva ${b.code} estendida` },
+    ),
+  };
+}
+
 export type CancellationRefund = "refunded" | "pending" | "manual" | "none";
 
 /**

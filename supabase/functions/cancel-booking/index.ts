@@ -25,6 +25,7 @@ import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { sweepDebtEmails } from "../_shared/debt-email.ts";
 import { cancellationRefund, sendBookingCancellationEmail } from "../_shared/booking-cancellation.ts";
+import { notifyBooking } from "../_shared/notify.ts";
 import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
@@ -284,6 +285,12 @@ Deno.serve(async (req: Request) => {
     amount: refunded || refundManual ? Number(payment?.amount ?? 0) || null : null,
     method: payment?.method === "card" ? "card" : payment?.method === "pix" ? "pix" : null,
     reason: input.reason ?? null,
+  });
+  // WhatsApp do cancelamento para quem tem o benefício (o e-mail acima é o canal de todos).
+  await notifyBooking(admin, {
+    bookingId: booking.id,
+    event: "cancelled",
+    whatsappParams: (c) => [c.name ?? "cliente", booking.code],
   });
 
   // Histórico de alteração (best-effort: não bloqueia a resposta se o log falhar).

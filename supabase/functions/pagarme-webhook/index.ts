@@ -43,6 +43,25 @@ import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { chargebackDebtCents } from "../_shared/payments/commission.ts";
 import { normalizeBrand } from "../_shared/payments/card-brand.ts";
+import { notifyBooking } from "../_shared/notify.ts";
+import { tplBookingDatesChanged } from "../_shared/email.ts";
+
+
+/** Dados da reserva para os avisos (unidade, datas, veículo). */
+// deno-lint-ignore no-explicit-any
+async function noticeData(admin: any, bookingId: string) {
+  const { data: r } = await admin
+    .from("booking")
+    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!r) return null;
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+}
+
+function fmtBR(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
 
 /** Em produção o webhook exige Basic auth; em staging (chave `sk_test_`) é opcional. */
 function isProduction(): boolean {
@@ -450,6 +469,19 @@ Deno.serve(async (req: Request) => {
       p_acquire: false,
     });
     if (dcErr) console.error("[pagarme-webhook] apply_paid_date_change falhou:", dcErr.message);
+    else {
+      // Aviso das novas datas (fase 2 da tarifas-operacao). Best-effort.
+      const nd = await noticeData(admin, payment.booking_id);
+      if (nd) {
+        const quando = `${fmtBR(nd.check_in_at)} a ${fmtBR(nd.check_out_at)}`;
+        await notifyBooking(admin, {
+          bookingId: payment.booking_id,
+          event: "dates_changed",
+          whatsappParams: (c) => [c.name ?? "cliente", nd.code, quando],
+          email: (c) => tplBookingDatesChanged(nd, c.name, `${siteUrl()}/bookings/${nd.code}`),
+        });
+      }
+    }
     await markProcessed(admin, ev.eventId);
     return json({ ok: true, status: paymentStatus, date_change: true });
   }

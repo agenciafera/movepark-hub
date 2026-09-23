@@ -8,6 +8,8 @@
 // { "booking_code": "MP-XXXX", "vehicle_id": "uuid" }
 // → { ok: true, vehicle_id }
 
+import { notifyBooking } from "../_shared/notify.ts";
+import { tplBookingVehicleChanged } from "../_shared/email.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { parseChangeVehicleInput, plateChangeAllowed, vehicleChangeOpen } from "./logic.ts";
@@ -173,5 +175,28 @@ Deno.serve(async (req: Request) => {
     else await task;
   }
 
+  // Aviso da placa nova (fase 2 da tarifas-operacao). Best-effort.
+  const nd = await noticeData(admin, booking.id);
+  if (nd) {
+    await notifyBooking(admin, {
+      bookingId: booking.id,
+      event: "vehicle_changed",
+      whatsappParams: (c) => [c.name ?? "cliente", nd.code, nd.vehicle?.license_plate ?? ""],
+      email: (c) => tplBookingVehicleChanged(nd, c.name, `${siteUrl()}/bookings/${nd.code}`),
+    });
+  }
+
   return jsonResponse({ ok: true, vehicle_id: targetVehicleId });
 });
+/** Dados da reserva para os avisos (unidade, datas, veículo). */
+// deno-lint-ignore no-explicit-any
+async function noticeData(admin: any, bookingId: string) {
+  const { data: r } = await admin
+    .from("booking")
+    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!r) return null;
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+}
+

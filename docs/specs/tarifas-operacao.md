@@ -263,6 +263,22 @@ cliente percebe **quando já está com problema**, e a única que não tem absol
 Regra que vale para todas as linhas: **catálogo muda o futuro, nunca o passado.** A reserva decide
 por `fare_tier`, `fare_price_cents`, `fare_cancel_until` e `fare_benefits` gravados na compra.
 
+## 3a. Templates do WhatsApp a aprovar na Meta (1.1)
+
+Um segredo por evento na Edge (`supabase secrets set`), com o nome do template aprovado. Os
+parâmetros do corpo saem nesta ordem.
+
+| Segredo | Evento | Parâmetros do corpo |
+|---|---|---|
+| `WHATSAPP_BOOKING_CONFIRMED_TEMPLATE` | reserva confirmada | nome, código |
+| `WHATSAPP_BOOKING_REMINDER_TEMPLATE` | lembrete de entrada (24h) | nome, código, unidade, data e hora da entrada |
+| `WHATSAPP_BOOKING_CHECKOUT_TEMPLATE` | lembrete de retirada (2h) | nome, código, unidade, data e hora da saída |
+| `WHATSAPP_BOOKING_CANCELLED_TEMPLATE` | cancelamento | nome, código |
+| `WHATSAPP_BOOKING_CHANGED_TEMPLATE` | datas ou veículo alterados | nome, código, novo período ou nova placa |
+| `WHATSAPP_BOOKING_EXTENDED_TEMPLATE` | saída estendida (voo) | nome, código, nova saída |
+
+Sem o segredo, o evento sai por e-mail e o `notification_log` registra o canal usado.
+
 ## 3b. Feito em 23/09/2026
 
 - **2.5, 2.6, 2.7 (proteção de voo):** botão "Meu voo atrasou" na reserva do cliente (Superflex,
@@ -280,6 +296,13 @@ por `fare_tier`, `fare_price_cents`, `fare_cancel_until` e `fare_benefits` grava
 - **Suporte prioritário (fase 3, Q-028):** prioridade derivada na `mia-inbox` pelo telefone
   (`booking_priority_for_phones`), fila ordenada e selo "Superflex · SLA 15 min" em Conversas, que
   fica vermelho com o tempo de espera quando o SLA estoura.
+- **Avisos (2.1 a 2.4):** trilho único em `_shared/notify.ts` com `notification_log`
+  (idempotência por reserva, evento e canal): WhatsApp para Flex e Superflex quando o template
+  existe; senão, e em falha, e-mail. Cron `booking-reminders` (entrada em 24h, retirada em 2h).
+  Avisos de cancelamento, troca de data (pendente e paga), troca de veículo e extensão. E-mails
+  transacionais novos: lembrete de entrada, lembrete de retirada, datas alteradas, veículo
+  alterado, saída estendida. Falta só a aprovação dos templates na Meta (1.1), que é da Movepark;
+  até lá, o benefício é entregue por e-mail.
 - **Vaga garantida (1.3 e o registro):** WhatsApp central preenchido da fonte única; o acionamento
   fica em `guarantee_claim` e a Movepark fecha com desfecho e valor (ver spot-guarantee.md).
 

@@ -399,6 +399,9 @@ verify_jwt = false
 [functions.pagarme-webhook]
 verify_jwt = false
 
+[functions.booking-reminders]
+verify_jwt = false
+
 [functions.refresh-recipients]
 verify_jwt = false
 
