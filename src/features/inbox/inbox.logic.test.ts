@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { ConversaDaLista } from "./api";
-import { contarNaoLidas, conversaEmTexto, juntarPaginas, filtrar, naoLida, quando, paraExibicao, previa, rotuloDoTelefone, textoDaFala } from "./inbox.logic";
+import {
+  contarNaoLidas,
+  conversaEmTexto,
+  juntarPaginas,
+  filtrar,
+  naoLida,
+  quando,
+  paraExibicao,
+  previa,
+  rotuloDoTelefone,
+  textoDaFala,
+  ordenarPorPrioridade,
+  slaEstourado,
+  minutosEsperando,
+} from "./inbox.logic";
 
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
@@ -253,5 +267,34 @@ describe("conversaEmTexto", () => {
 
   it("conversa vazia vira texto vazio, e não uma linha solta", () => {
     expect(conversaEmTexto([], "5541988149449")).toBe("");
+  });
+});
+
+// 23/09/2026: suporte prioritário da Superflex (Q-028)
+describe("prioridade na fila", () => {
+  const base = (o: Partial<ConversaDaLista>): ConversaDaLista => ({
+    id: "x", telefone: "5541", origem: "whatsapp", titulo: null, ultima_em: "2026-09-23T12:00:00Z",
+    ultimo_papel: "cliente", ultimo_texto: "oi", total: 1, lida_ate: null, assumida_por: null, assumida_em: null, ...o,
+  });
+  const sf = { tier: "superflex", reserva: "MP-1", sla_minutos: 15 };
+
+  it("Superflex esperando resposta vai para o topo, a mais antiga primeiro; depois os outros por chegada", () => {
+    const cs = [
+      base({ id: "comum-nova", ultima_em: "2026-09-23T12:30:00Z" }),
+      base({ id: "sf-2", prioridade: sf, ultima_em: "2026-09-23T12:10:00Z" }),
+      base({ id: "sf-1", prioridade: sf, ultima_em: "2026-09-23T12:00:00Z" }),
+      base({ id: "sf-respondida", prioridade: sf, ultimo_papel: "agente", ultima_em: "2026-09-23T12:40:00Z" }),
+      base({ id: "comum-velha", ultima_em: "2026-09-23T11:00:00Z" }),
+    ];
+    expect(ordenarPorPrioridade(cs).map((c) => c.id)).toEqual(["sf-1", "sf-2", "sf-respondida", "comum-nova", "comum-velha"]);
+  });
+
+  it("SLA estoura depois dos minutos combinados, só enquanto o cliente espera", () => {
+    const agora = new Date("2026-09-23T12:20:00Z");
+    expect(minutosEsperando(base({}), agora)).toBe(20);
+    expect(slaEstourado(base({ prioridade: sf }), agora)).toBe(true);
+    expect(slaEstourado(base({ prioridade: sf, ultima_em: "2026-09-23T12:10:00Z" }), agora)).toBe(false);
+    expect(slaEstourado(base({ prioridade: sf, ultimo_papel: "agente" }), agora)).toBe(false);
+    expect(slaEstourado(base({}), agora)).toBe(false);
   });
 });

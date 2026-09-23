@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { assertEquals } from "jsr:@std/assert";
-import { acaoValida, corpoParaOBeastBots, handler } from "./index.ts";
+import { acaoValida, corpoParaOBeastBots, handler, anexarPrioridade } from "./index.ts";
 
 const URL_ = "http://localhost/mia-inbox";
 
@@ -124,4 +124,18 @@ Deno.test("o nome de quem responde vem do perfil, nao do corpo", () => {
 
 Deno.test("so' responder carrega o nome", () => {
   assertEquals("assumidaPorNome" in corpoParaOBeastBots("marcar", "uid", "Kallef", { threadId: "t" }), false);
+});
+
+Deno.test("anexarPrioridade: casa pelo telefone em dígitos e deixa nulo quem não tem reserva prioritária", () => {
+  const lista = { conversas: [{ id: "a", telefone: "+55 41 98814-9449" }, { id: "b", telefone: "5511999999999" }], proximoCursor: null };
+  const out = anexarPrioridade(lista, { "5541988149449": { tier: "superflex", reserva: "MP-1", sla_minutos: 15 } }) as {
+    conversas: { id: string; prioridade: unknown }[];
+  };
+  assertEquals(out.conversas[0].prioridade, { tier: "superflex", reserva: "MP-1", sla_minutos: 15 });
+  assertEquals(out.conversas[1].prioridade, null);
+});
+
+Deno.test("anexarPrioridade: resposta sem lista passa intacta", () => {
+  assertEquals(anexarPrioridade({ error: "x" }, {}), { error: "x" });
+  assertEquals(anexarPrioridade(null, {}), null);
 });

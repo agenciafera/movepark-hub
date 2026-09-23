@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { supabase } from "@/lib/supabase";
-import { edge, falha, renderMutation } from "@/test/msw/supabase";
+import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import {
   useChangeBookingDates,
   useChangeBookingVehicle,
   useExtendBookingFlightDelay,
+  useClaimGuarantee,
   useChangePaidBookingDates,
   useVoucherPdf,
 } from "./customerApi";
@@ -155,5 +156,15 @@ describe("useExtendBookingFlightDelay", () => {
     falha("edge", "extend-booking", 400, "A proteção contra atraso de voo já foi usada nesta reserva.");
     const { result } = renderMutation(() => useExtendBookingFlightDelay());
     await expect(result.current.mutateAsync({ bookingCode: "MP7K2X", newCheckOutAt: "2026-12-13T08:00:00Z", flightNumber: "LA3456" })).rejects.toThrow(/já foi usada/);
+  });
+});
+
+describe("useClaimGuarantee", () => {
+  it("registra o acionamento pela RPC com o código da reserva", async () => {
+    const espiao = rpc("claim_spot_guarantee", { json: { id: "g1", opened_at: "2026-09-23T12:00:00Z" } });
+    const { result } = renderMutation(() => useClaimGuarantee());
+    const r = await result.current.mutateAsync("MP7K2X");
+    expect(espiao.ultimoBody).toEqual({ p_booking_code: "MP7K2X" });
+    expect(r.id).toBe("g1");
   });
 });

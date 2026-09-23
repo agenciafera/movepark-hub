@@ -41,6 +41,22 @@ Onde aparece:
 Vitest `whatsapp.test.ts` (normalização/seleção de canal + claim message) e `components.test.tsx`
 (badge + seção). Sem pgTAP/edge.
 
+## Como ficou em 23/09/2026
+
+- **O acionamento é registrado.** O botão "Acionar garantia" na reserva do cliente chama
+  `claim_spot_guarantee(code)` (confirmada ou em uso, de 2h antes do check-in em diante, um
+  acionamento aberto por reserva) e só então abre o WhatsApp da **Movepark** (`@/lib/suporte`),
+  não mais o do estacionamento que falhou. A reserva mostra "Acionada em ..., a Movepark está
+  cuidando".
+- **A Movepark fecha.** Manager › Reservas ganha o card "Garantia de vaga acionada" (só com
+  acionamento aberto), com o desfecho (realocado, devolvido, sem procedência), o valor coberto e
+  a nota. Tabela `guarantee_claim`, RPC `admin_resolve_guarantee_claim`.
+- **O que "cobrimos a diferença" significa na prática:** processo manual da Movepark com registro.
+  Realocação e pagamento da diferença acontecem por fora (PIX ao cliente, ou pagamento direto ao
+  parceiro vizinho), e o valor entra no acionamento para a conta fechar.
+- Os componentes `GuaranteeBadge`/`GuaranteeSection` citados abaixo não existem mais; a promessa
+  vive em `ListingTrustBar`, na coluna "Garantia Movepark" da ficha e na reserva do cliente.
+
 ## Fora de escopo (fases futuras)
 - Acionamento **automático** (realocação/reembolso programáticos) — depende de suporte/gateway.
 - Garantia **opt-in por unidade** (flag/política por parceiro) — viraria migration.

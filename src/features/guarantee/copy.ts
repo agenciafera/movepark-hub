@@ -10,13 +10,19 @@ export const GUARANTEE_PROMISE = "Vaga garantida ou realocamos e cobrimos a dife
 export const GUARANTEE_POLICY: string[] = [
   "Reservou pela Movepark? A vaga é sua. Como a disponibilidade é controlada em tempo real, não vendemos mais vagas do que cabem.",
   "Se por algum imprevisto faltar vaga na chegada, a gente resolve: realocamos você em um parceiro próximo e cobrimos a diferença de preço, ou devolvemos 100% do valor + um crédito pelo transtorno.",
-  "É só acionar pelo WhatsApp da unidade (ou pelo suporte Movepark) com o código da sua reserva.",
+  "É só acionar pela sua reserva: o pedido fica registrado e abre o WhatsApp da Movepark com o código.",
 ];
 
-/** Contato central de suporte. Preencher o WhatsApp quando o negócio definir o número. */
+import { EMAIL_SUPORTE, WHATSAPP_SUPORTE_DIGITOS } from "@/lib/suporte";
+
+/**
+ * Contato central de suporte, da fonte única (`@/lib/suporte`). Até 23/09/2026 o WhatsApp aqui
+ * estava vazio e a garantia caía no WhatsApp do estacionamento que falhou: a Movepark nunca
+ * ficava sabendo do acionamento.
+ */
 export const MOVEPARK_SUPPORT: { whatsapp: string; email: string } = {
-  whatsapp: "",
-  email: "contato@movepark.co",
+  whatsapp: WHATSAPP_SUPORTE_DIGITOS,
+  email: EMAIL_SUPORTE,
 };
 
 /** Mensagem pré-preenchida do acionamento (WhatsApp/e-mail). */

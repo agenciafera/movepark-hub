@@ -15,6 +15,7 @@ import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { periodLabel } from "@/features/manager-filters/managerFilters.logic";
 import { BookingTable } from "@/features/bookings/BookingTable";
+import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
 import { useBookings, type BookingFilters } from "@/features/bookings/api";
 import type { BookingStatus } from "@/types/domain";
 
@@ -94,6 +95,9 @@ export default function ManagerBookings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Cliente chegou e não tinha vaga (garantia). Some sem acionamento aberto. */}
+      <GuaranteeClaimsCard />
 
       <BookingTable bookings={data} isLoading={isLoading} onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)} />
     </div>

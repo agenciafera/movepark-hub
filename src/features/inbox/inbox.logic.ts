@@ -231,3 +231,34 @@ function padraoBR(d: Date): string {
   const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   return `${data} ${hora}`;
 }
+
+/**
+ * Suporte prioritário (Superflex, Q-028): quem tem prioridade e ainda espera resposta sobe para o
+ * topo; entre iguais, a mais antiga primeiro. O resto segue a ordem de chegada da caixa.
+ */
+export function ordenarPorPrioridade(cs: ConversaDaLista[]): ConversaDaLista[] {
+  const peso = (c: ConversaDaLista) => (c.prioridade && aguardandoResposta(c) ? 0 : c.prioridade ? 1 : 2);
+  return [...cs].sort((a, b) => {
+    const d = peso(a) - peso(b);
+    if (d !== 0) return d;
+    if (peso(a) === 0) return (a.ultima_em ?? "").localeCompare(b.ultima_em ?? "");
+    return (b.ultima_em ?? "").localeCompare(a.ultima_em ?? "");
+  });
+}
+
+/** A última fala é do cliente: alguém precisa responder. */
+export function aguardandoResposta(c: ConversaDaLista): boolean {
+  return c.ultimo_papel === "cliente";
+}
+
+/** Minutos desde a última fala do cliente, ou null quando a bola está com ele. */
+export function minutosEsperando(c: ConversaDaLista, agora = new Date()): number | null {
+  if (!aguardandoResposta(c) || !c.ultima_em) return null;
+  return Math.max(0, Math.floor((agora.getTime() - new Date(c.ultima_em).getTime()) / 60_000));
+}
+
+/** O SLA da prioridade estourou: cliente Superflex esperando há mais que o combinado. */
+export function slaEstourado(c: ConversaDaLista, agora = new Date()): boolean {
+  const m = minutosEsperando(c, agora);
+  return !!c.prioridade && m != null && m > c.prioridade.sla_minutos;
+}

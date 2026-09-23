@@ -48,6 +48,9 @@ import {
   conversaEmTexto,
   textoDaFala,
   type FiltroDaCaixa,
+  ordenarPorPrioridade,
+  slaEstourado,
+  minutosEsperando,
 } from "@/features/inbox/inbox.logic";
 
 /** Salva o PNG quando o navegador não sabe copiar imagem. */
@@ -141,7 +144,8 @@ export default function ManagerConversas() {
   );
   const telefoneDaConversa = conversa.data?.telefone || linhaAberta?.telefone || "";
 
-  const visiveis = React.useMemo(() => filtrar(carregadas, filtro, ""), [carregadas, filtro]);
+  // Suporte prioritário (Superflex): quem espera resposta e tem prioridade sobe para o topo.
+  const visiveis = React.useMemo(() => ordenarPorPrioridade(filtrar(carregadas, filtro, "")), [carregadas, filtro]);
   const totalNaoLidas = React.useMemo(() => carregadas.filter(naoLida).length, [carregadas]);
 
   /**
@@ -283,6 +287,15 @@ export default function ManagerConversas() {
                         </span>
                         {c.assumida_por ? (
                           <span className="text-mp-indigo">Assumida pela equipe</span>
+                        ) : null}
+                        {c.prioridade ? (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-caption font-semibold ${slaEstourado(c) ? "bg-badge-cancelled-bg text-badge-cancelled-fg" : "bg-badge-active-bg text-badge-active-fg"}`}
+                            title={`Reserva ${c.prioridade.reserva}: resposta em até ${c.prioridade.sla_minutos} min`}
+                          >
+                            Superflex · SLA {c.prioridade.sla_minutos} min
+                            {slaEstourado(c) ? ` · esperando há ${minutosEsperando(c)} min` : ""}
+                          </span>
                         ) : null}
                       </span>
                     </button>

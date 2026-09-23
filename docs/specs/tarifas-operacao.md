@@ -277,6 +277,11 @@ por `fare_tier`, `fare_price_cents`, `fare_cancel_until` e `fare_benefits` grava
 - **Matriz da ficha:** comparativo, tooltips, selo, barra de confiança e resumo SSG leem
   `get_unit_fares` (1.4 e 1.5 feitos junto).
 - **E-mail de confirmação:** a reconciliação (webhook perdido) passou a enviar e-mail e WhatsApp.
+- **Suporte prioritário (fase 3, Q-028):** prioridade derivada na `mia-inbox` pelo telefone
+  (`booking_priority_for_phones`), fila ordenada e selo "Superflex · SLA 15 min" em Conversas, que
+  fica vermelho com o tempo de espera quando o SLA estoura.
+- **Vaga garantida (1.3 e o registro):** WhatsApp central preenchido da fonte única; o acionamento
+  fica em `guarantee_claim` e a Movepark fecha com desfecho e valor (ver spot-guarantee.md).
 
 ## 4. O que precisa ser feito (plano de adequação)
 

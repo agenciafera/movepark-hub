@@ -2268,6 +2268,59 @@ export type Database = {
         }
         Relationships: []
       }
+      guarantee_claim: {
+        Row: {
+          booking_id: string
+          channel: string
+          covered_cents: number
+          created_at: string
+          id: string
+          note: string | null
+          opened_at: string
+          opened_by: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          channel?: string
+          covered_cents?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          channel?: string
+          covered_cents?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guarantee_claim_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_featured_offer: {
         Row: {
           created_at: string
@@ -6086,6 +6139,10 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: Json
       }
+      admin_resolve_guarantee_claim: {
+        Args: { p_covered_cents?: number; p_id: string; p_note?: string; p_status: string }
+        Returns: Json
+      }
       admin_search: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
@@ -6457,6 +6514,7 @@ export type Database = {
         Returns: Json
       }
       booking_gateway_trail: { Args: { p_booking_id: string }; Returns: Json }
+      booking_priority_for_phones: { Args: { p_phones: string[] }; Returns: Json }
       cancel_booking_with_release: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["booking_status"]
@@ -6480,6 +6538,7 @@ export type Database = {
         Args: { p_hash: string; p_prefix: string }
         Returns: Json
       }
+      claim_spot_guarantee: { Args: { p_booking_code: string }; Returns: Json }
       commission_channel_report: { Args: { p_from: string; p_to: string }; Returns: Json }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
       company_is_silent: { Args: { p_company_id: string }; Returns: boolean }

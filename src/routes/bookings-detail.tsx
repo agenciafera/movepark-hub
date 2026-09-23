@@ -1,4 +1,5 @@
 import * as React from "react";
+import { toast } from "sonner";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, Envelope, Phone, ShieldCheck, Tray } from "@phosphor-icons/react";
 import { BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
@@ -25,13 +26,13 @@ import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
 import { ChangeDatesDialog } from "@/features/bookings/ChangeDatesDialog";
 import { ChangeDatesPaidDialog } from "@/features/bookings/ChangeDatesPaidDialog";
 import { FlightDelayDialog } from "@/features/bookings/FlightDelayDialog";
-import { useBookingDetail } from "@/features/bookings/customerApi";
+import { useBookingDetail, useClaimGuarantee } from "@/features/bookings/customerApi";
 import { useAuth } from "@/auth/context";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
 import { useMyReview } from "@/features/reviews/api";
 import { ReviewForm } from "@/features/reviews/ReviewForm";
 import { RatingStars } from "@/features/reviews/RatingStars";
-import { formatBRL, formatDate } from "@/lib/format";
+import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { FARE_BENEFIT_LABELS, FARE_TIER_LABEL, fareReais } from "@/lib/fares";
 import {
   detailHeadline,
@@ -52,6 +53,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
   const [vehicleOpen, setVehicleOpen] = React.useState(false);
   const [datesOpen, setDatesOpen] = React.useState(false);
   const [flightOpen, setFlightOpen] = React.useState(false);
+  const claimGuarantee = useClaimGuarantee();
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
@@ -111,6 +113,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
   // A lista vive em voucher.logic e espelha a da Edge: incluir `completed` é o que faz a reserva
   // concluída poder baixar o comprovante (86ajmy4d2).
   const canSeeVoucher = canDownloadVoucher(booking.status);
+  const claimAberto = (booking.guarantee_claims ?? []).find((g) => g.status === "open") ?? null;
   // Auto-cancelamento do cliente é gateado pela janela da Tarifa (E2.8). Fora da janela, confirmado
   // e pago, o cliente é bloqueado (só staff cancela). Ver docs/specs/booking-modifications.md.
   const selfCancel = customerSelfCancel(
@@ -398,14 +401,31 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
                     outro local.
                   </p>
                 </div>
-                <a
-                  href={guarantee.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-11 shrink-0 items-center rounded-md bg-surface-soft px-4 text-caption-sm font-semibold text-ink no-underline transition-colors hover:bg-mp-pale"
-                >
-                  {guarantee.label}
-                </a>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    disabled={claimGuarantee.isPending}
+                    onClick={async () => {
+                      // Registra na Movepark antes de abrir o WhatsApp: é o que faz alguém aqui
+                      // saber que o cliente ficou sem vaga, mesmo que a conversa não vá adiante.
+                      try {
+                        await claimGuarantee.mutateAsync(booking.code);
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Não foi possível registrar o acionamento.");
+                        return;
+                      }
+                      window.open(guarantee.href, "_blank", "noopener,noreferrer");
+                    }}
+                    className="flex h-11 items-center rounded-md bg-surface-soft px-4 text-caption-sm font-semibold text-ink transition-colors hover:bg-mp-pale disabled:opacity-60"
+                  >
+                    {claimGuarantee.isPending ? "Registrando…" : guarantee.label}
+                  </button>
+                  {claimAberto && (
+                    <span className="text-caption text-muted">
+                      Acionada em {formatDateTime(claimAberto.opened_at)}. A Movepark está cuidando.
+                    </span>
+                  )}
+                </div>
               </section>
             )}
 

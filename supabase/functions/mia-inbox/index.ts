@@ -57,6 +57,26 @@ const ACOES = [
 ] as const;
 export type AcaoDaCaixa = (typeof ACOES)[number];
 
+/** O que o Hub sabe do telefone: reserva ativa com suporte prioritário (Superflex, Q-028). */
+export type PrioridadeDaConversa = { tier: string; reserva: string; sla_minutos: number };
+
+/**
+ * Anexa a prioridade a cada conversa da lista, pelo telefone (dígitos). A prioridade é derivada
+ * da reserva ativa, nunca gravada na conversa: quando a reserva termina, o selo some sozinho.
+ */
+export function anexarPrioridade(
+  lista: unknown,
+  mapa: Record<string, PrioridadeDaConversa> | null | undefined,
+): unknown {
+  if (!lista || typeof lista !== "object" || !Array.isArray((lista as { conversas?: unknown }).conversas)) return lista;
+  const conversas = (lista as { conversas: Record<string, unknown>[] }).conversas.map((c) => {
+    const digits = typeof c.telefone === "string" ? c.telefone.replace(/\D/g, "") : "";
+    const p = digits && mapa ? mapa[digits] ?? null : null;
+    return { ...c, prioridade: p };
+  });
+  return { ...(lista as object), conversas };
+}
+
 export function acaoValida(v: unknown): v is AcaoDaCaixa {
   return typeof v === "string" && (ACOES as readonly string[]).includes(v);
 }
@@ -200,6 +220,23 @@ export async function handler(req: Request): Promise<Response> {
   if (!resposta.ok) {
     // O corpo do upstream pode carregar detalhe interno; devolvemos status e um recorte.
     return json({ error: `A caixa de entrada respondeu ${resposta.status}.`, detalhe: texto.slice(0, 300) }, 502);
+  }
+
+  // Suporte prioritário (23/09/2026): a lista volta com a prioridade de cada telefone. Falha no
+  // Hub não derruba a caixa: a lista sai sem selo.
+  if (corpo.acao === "listar") {
+    try {
+      const lista = JSON.parse(texto) as { conversas?: { telefone?: string }[] };
+      const telefones = (lista.conversas ?? []).map((c) => c.telefone).filter((t): t is string => typeof t === "string" && !!t);
+      let mapa: Record<string, PrioridadeDaConversa> | null = null;
+      if (telefones.length > 0) {
+        const { data } = await admin.rpc("booking_priority_for_phones", { p_phones: telefones });
+        mapa = (data ?? null) as Record<string, PrioridadeDaConversa> | null;
+      }
+      return json(anexarPrioridade(lista, mapa), 200);
+    } catch (e) {
+      console.error("[mia-inbox] prioridade não anexada:", e);
+    }
   }
 
   return new Response(texto, {

@@ -33,19 +33,15 @@ describe("guaranteeClaimMessage", () => {
 });
 
 describe("guaranteeChannel", () => {
-  it("usa o WhatsApp da unidade quando há telefone", () => {
+  it("vai sempre para o WhatsApp da Movepark, mesmo com telefone da unidade (23/09/2026)", () => {
     const ch = guaranteeChannel({ unitPhone: "(11) 98888-7777", code: "MP-X", unitName: "GRU" });
-    expect(ch.channel).toBe("unit");
-    expect(ch.href).toContain("https://wa.me/5511988887777");
+    expect(ch.channel).toBe("support");
+    expect(ch.href).toContain(`https://wa.me/${MOVEPARK_SUPPORT.whatsapp}`);
+    expect(ch.href).not.toContain("5511988887777");
     expect(ch.href).toContain("MP-X");
   });
 
-  it("cai no suporte central (e-mail) quando não há telefone nem WhatsApp central", () => {
-    // MOVEPARK_SUPPORT.whatsapp vazio por padrão → mailto
-    expect(MOVEPARK_SUPPORT.whatsapp).toBe("");
-    const ch = guaranteeChannel({ unitPhone: null, code: "MP-Y", unitName: "GRU" });
-    expect(ch.channel).toBe("support");
-    expect(ch.href.startsWith(`mailto:${MOVEPARK_SUPPORT.email}`)).toBe(true);
-    expect(ch.href).toContain("MP-Y");
+  it("o WhatsApp central vem da fonte única e não está vazio", () => {
+    expect(MOVEPARK_SUPPORT.whatsapp).toBe("5511994752952");
   });
 });

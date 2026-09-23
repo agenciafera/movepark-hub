@@ -37,6 +37,7 @@ function booking(status: MyBookingDetail["status"]): MyBookingDetail {
     fare_benefits: null,
     flight_number: null,
     fare_extensions: [],
+    guarantee_claims: [],
     vehicle: null,
     items: [],
     payment: null,

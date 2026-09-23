@@ -149,6 +149,8 @@ export type MyBookingDetail = MyBookingListItem & {
   flight_number: string | null;
   /** Extensões por atraso de voo já usadas (a proteção vale uma vez). */
   fare_extensions: { id: string }[];
+  /** Acionamentos da garantia de vaga desta reserva. */
+  guarantee_claims: { id: string; status: string; opened_at: string }[];
   vehicle: { id: string; license_plate: string; model: string | null; color: string | null } | null;
   items: {
     id: string;
@@ -183,6 +185,7 @@ export function useBookingDetail(code: string | undefined) {
            passenger_count, has_pcd, checked_in_at,
            fare_tier, fare_price_cents, fare_cancel_until, fare_benefits, flight_number,
            fare_extensions:booking_fare_extension(id),
+           guarantee_claims:guarantee_claim(id, status, opened_at),
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
              latitude, longitude, tolerance_minutes,
@@ -230,6 +233,7 @@ export function useBookingDetail(code: string | undefined) {
         fare_benefits: (r.fare_benefits ?? null) as import("@/lib/fares").FareBenefits | null,
         flight_number: r.flight_number ?? null,
         fare_extensions: (r.fare_extensions ?? []) as { id: string }[],
+        guarantee_claims: (r.guarantee_claims ?? []) as { id: string; status: string; opened_at: string }[],
         location: {
           name: r.location.name,
           slug: r.location.slug,
@@ -510,5 +514,18 @@ export function useExtendBookingFlightDelay() {
       qc.invalidateQueries({ queryKey: ["my-bookings"] });
       qc.invalidateQueries({ queryKey: ["bookings"] });
     },
+  });
+}
+
+/** Aciona a garantia de vaga (registra na Movepark) antes de abrir o WhatsApp. RPC `claim_spot_guarantee`. */
+export function useClaimGuarantee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingCode: string) => {
+      const { data, error } = await supabase.rpc("claim_spot_guarantee", { p_booking_code: bookingCode });
+      if (error) throw error;
+      return data as { id: string; opened_at: string };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-bookings"] }),
   });
 }

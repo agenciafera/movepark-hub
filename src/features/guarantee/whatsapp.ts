@@ -27,8 +27,9 @@ export type GuaranteeChannel = {
 };
 
 /**
- * Resolve o canal de acionamento da garantia: WhatsApp da unidade quando houver
- * telefone; senão WhatsApp central da Movepark (se configurado) ou e-mail de suporte.
+ * Resolve o canal de acionamento da garantia: o WhatsApp da MOVEPARK (23/09/2026). É a Movepark
+ * que realoca e cobre a diferença, então é ela que precisa saber. O telefone da unidade continua
+ * na tela, na seção "Falar com a unidade", para o resto.
  */
 export function guaranteeChannel(args: {
   unitPhone?: string | null;
@@ -36,9 +37,6 @@ export function guaranteeChannel(args: {
   unitName?: string | null;
 }): GuaranteeChannel {
   const message = guaranteeClaimMessage({ code: args.code, unitName: args.unitName });
-
-  const unit = whatsappHref(args.unitPhone, message);
-  if (unit) return { href: unit, label: "Acionar garantia pela unidade", channel: "unit" };
 
   const central = whatsappHref(MOVEPARK_SUPPORT.whatsapp, message);
   if (central) return { href: central, label: "Acionar garantia com a Movepark", channel: "support" };
