@@ -693,7 +693,7 @@ não se sustenta a 2,6 km, nem "pertinho do terminal" a 4,5 km.
 CI. Para cada FAQ de escopo `destination`, procura o nome de cada unidade parceira daquele
 destino e compara a distância afirmada ao redor do nome com a medida.
 
-Três decisões que o fizeram parar de dar falso positivo, todas travadas em
+Quatro decisões que o fizeram parar de dar falso positivo, todas travadas em
 `src/distancia-faq.contract.test.ts`:
 
 1. **Só o primeiro número depois do nome.** Em "a Aeropark a 2,7 km e a Aerovalet a 4,5 km",
@@ -703,6 +703,12 @@ Três decisões que o fizeram parar de dar falso positivo, todas travadas em
    Aerovalet". Só olhar para a frente pegava o número da unidade seguinte da lista.
 3. **Afirmação de teto é teto.** "os dois a menos de 900 m" não diz que a unidade está a 900 m;
    a comparação vira "cabe embaixo do teto?".
+4. **Lista de nomes é lista de distâncias.** "Nationpark e Abbapark ficam fora do aeroporto,
+   a 1,4 km e a 2,6 km do terminal" é uma enumeração paralela: quando a contagem de nomes bate
+   com a de distâncias ligadas por "e"/",", o par sai pela ordem. A regra 1, sozinha, atribuía
+   1,4 km à Abbapark (que mede 2.567 m) e reprovou essa frase correta no CI em 18/09/2026.
+   Contagem que não bate volta para a regra 1, porque "os dois a menos de 900 m" é teto
+   compartilhado, não par.
 
 Tolerância de 10% com piso de 100 m, de propósito: o texto arredonda ("1,4 km" para 1.441 m) e
 o alvo é erro de ordem de grandeza, não a segunda casa. Ausência de número nunca falha, porque

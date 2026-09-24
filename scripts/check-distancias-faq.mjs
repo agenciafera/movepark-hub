@@ -17,6 +17,11 @@
  * parceira daquele destino no texto e, na JANELA logo depois do nome, procura um
  * token de distância. Achou, compara com o medido.
  *
+ * Quando os nomes vêm em lista ("Nationpark e Abbapark ... a 1,4 km e a 2,6 km"), as
+ * distâncias também vêm em lista e na mesma ordem, então o par sai pela posição. Ler
+ * só o primeiro token dava a distância do primeiro nome a todos os outros, e isso
+ * reprovou uma frase correta em 18/09/2026.
+ *
  * A tolerância é generosa de propósito (10%, com piso de 100 m): o texto arredonda
  * ("1,4 km" para 1.441 m) e o objetivo aqui é pegar erro de ordem de grandeza, não
  * discutir a segunda casa decimal. Ausência de número nunca falha: prosa sem
@@ -57,6 +62,105 @@ export function paraMetros(valor, unidade) {
 
 const TOKEN = /(\d+(?:[.,]\d+)?)\s?(km|m)\b/g;
 
+/** Liga dois itens de uma enumeração: "A e B", "A, B", "A, e B". */
+const CONECTOR_NOMES = /^(?:\s*,\s*(?:e\s+)?|\s+e\s+)$/i;
+/** Liga dois valores da mesma enumeração: " e a ", ", ", " e de ". */
+const CONECTOR_VALORES = /^(?:\s*,\s*(?:e\s+)?|\s+e\s+)(?:(?:a|à|de|d[ao]s?)\s+)?$/i;
+/** Palavra que transforma a afirmação em teto, não em medida. */
+const TETO = /(menos de|at[ée]|no m[aá]ximo|abaixo de)\s*$/i;
+/** Cifrão colado no número: é preço, não distância. */
+const PRECO = /R\$\s*$/;
+
+/** O nome conhecido que começa logo depois de `pos`, ligado só por conector. */
+function nomeSeguinteLigado(texto, pos, nomes) {
+  const alvo = texto.toLowerCase();
+  let melhor = null;
+  for (const n of nomes) {
+    if (!n) continue;
+    const de = alvo.indexOf(n.toLowerCase(), pos);
+    if (de === -1 || de < pos) continue;
+    if (!CONECTOR_NOMES.test(texto.slice(pos, de))) continue;
+    const fim = de + n.length;
+    if (melhor == null || de < melhor.de || (de === melhor.de && fim > melhor.fim)) {
+      melhor = { de, fim };
+    }
+  }
+  return melhor;
+}
+
+/** O nome conhecido que termina logo antes de `pos`, ligado só por conector. */
+function nomeAnteriorLigado(texto, pos, nomes) {
+  const alvo = texto.toLowerCase();
+  let melhor = null;
+  for (const n of nomes) {
+    if (!n) continue;
+    const de = alvo.lastIndexOf(n.toLowerCase(), pos);
+    if (de === -1 || de >= pos) continue;
+    const fim = de + n.length;
+    if (fim > pos || !CONECTOR_NOMES.test(texto.slice(fim, pos))) continue;
+    if (melhor == null || de < melhor.de) melhor = { de, fim };
+  }
+  return melhor;
+}
+
+/**
+ * A enumeração de unidades em que este nome está: "Nationpark e Abbapark".
+ *
+ * Devolve a posição do nome na lista, o tamanho dela e onde ela termina. Lista de um
+ * nome só (o caso comum) volta com `tamanho: 1` e não muda nada.
+ */
+export function grupoDeNomes(texto, de, nome, nomes) {
+  let inicio = de;
+  let posicao = 0;
+  for (;;) {
+    const anterior = nomeAnteriorLigado(texto, inicio, nomes);
+    if (!anterior || anterior.de >= inicio) break;
+    inicio = anterior.de;
+    posicao += 1;
+  }
+  let fim = de + nome.length;
+  let tamanho = posicao + 1;
+  for (;;) {
+    const seguinte = nomeSeguinteLigado(texto, fim, nomes);
+    if (!seguinte) break;
+    fim = seguinte.fim;
+    tamanho += 1;
+  }
+  return { posicao, tamanho, fim };
+}
+
+/**
+ * A sequência de distâncias logo depois de `desde`, enquanto um valor estiver ligado
+ * ao anterior só por conector ("a 1,4 km e a 2,6 km").
+ *
+ * Qualquer outra prosa no meio encerra a sequência. É isso que impede o pareamento de
+ * inventar par: só é lista de distâncias o que foi escrito como lista.
+ */
+export function corridaDeDistancias(texto, desde) {
+  const regiao = texto.slice(desde, desde + JANELA + 240);
+  const brutos = [];
+  for (const m of regiao.matchAll(TOKEN)) {
+    const metros = paraMetros(m[1], m[2]);
+    if (metros == null) continue;
+    brutos.push({
+      metros,
+      de: m.index,
+      fim: m.index + m[0].length,
+      trecho: `${m[1]} ${m[2]}`,
+      antes: regiao.slice(Math.max(0, m.index - 14), m.index),
+    });
+  }
+  const primeiro = brutos.findIndex((t) => !PRECO.test(t.antes));
+  if (primeiro === -1 || brutos[primeiro].de > JANELA) return [];
+  const corrida = [brutos[primeiro]];
+  for (let i = primeiro + 1; i < brutos.length; i += 1) {
+    if (PRECO.test(brutos[i].antes)) break;
+    if (!CONECTOR_VALORES.test(regiao.slice(brutos[i - 1].fim, brutos[i].de))) break;
+    corrida.push(brutos[i]);
+  }
+  return corrida;
+}
+
 /**
  * As distâncias afirmadas sobre uma unidade dentro de um texto.
  *
@@ -65,12 +169,23 @@ const TOKEN = /(\d+(?:[.,]\d+)?)\s?(km|m)\b/g;
  * janela quase sempre é de outra unidade ("a Aerovalet a 738 m e a Plenty Park a
  * 863 m"). Pegar todos transformava cada lista de duas unidades em falso positivo.
  *
+ * A exceção é a ENUMERAÇÃO PARALELA, em que os nomes vêm em lista e as distâncias
+ * vêm depois, na mesma ordem: "Nationpark e Abbapark ficam fora do aeroporto, a
+ * 1,4 km e a 2,6 km do terminal". Ali o primeiro token não fala da segunda unidade,
+ * e ler só ele reprovava uma frase correta (foi o que travou o CI em 18/09/2026).
+ * Quando a contagem de nomes bate com a de distâncias, o par sai pela ordem; quando
+ * não bate, o guarda volta para a leitura de sempre em vez de adivinhar. Por isso
+ * "os dois a menos de 900 m" continua sendo teto compartilhado, não par.
+ *
+ * `nomesConhecidos` são as outras unidades do mesmo destino, que é como o script
+ * sabe onde a lista de nomes começa e termina sem chutar por letra maiúscula.
+ *
  * Ignora o token logo depois de "R$", que é preço, não distância.
  *
  * `limite` marca a frase que declara um TETO ("os dois a menos de 900 m"). Ela não
  * afirma a distância da unidade, então a comparação vira "cabe embaixo do teto?".
  */
-export function distanciasAfirmadas(texto, nomeUnidade) {
+export function distanciasAfirmadas(texto, nomeUnidade, nomesConhecidos = []) {
   const achados = [];
   const alvo = texto.toLowerCase();
   const nome = nomeUnidade.toLowerCase();
@@ -89,17 +204,23 @@ export function distanciasAfirmadas(texto, nomeUnidade) {
         continue;
       }
     }
+    const grupo = grupoDeNomes(texto, de, nome, nomesConhecidos);
+    if (grupo.tamanho > 1) {
+      const corrida = corridaDeDistancias(texto, grupo.fim);
+      if (corrida.length === grupo.tamanho) {
+        const par = corrida[grupo.posicao];
+        achados.push({ metros: par.metros, trecho: par.trecho, limite: TETO.test(par.antes) });
+        de = alvo.indexOf(nome, de + 1);
+        continue;
+      }
+    }
     const janela = texto.slice(de + nome.length, de + nome.length + JANELA);
     for (const m of janela.matchAll(TOKEN)) {
       const antes = janela.slice(Math.max(0, m.index - 14), m.index);
-      if (/R\$\s*$/.test(antes)) continue;
+      if (PRECO.test(antes)) continue;
       const metros = paraMetros(m[1], m[2]);
       if (metros == null) continue;
-      achados.push({
-        metros,
-        trecho: `${m[1]} ${m[2]}`,
-        limite: /(menos de|at[ée]|no m[aá]ximo|abaixo de)\s*$/i.test(antes),
-      });
+      achados.push({ metros, trecho: `${m[1]} ${m[2]}`, limite: TETO.test(antes) });
       break; // só o primeiro token da janela fala desta unidade
     }
     de = alvo.indexOf(nome, de + 1);
@@ -175,8 +296,9 @@ for (const f of faqs) {
   const medido = slug ? medidoPorDestino.get(slug) : null;
   if (!medido) continue;
   const texto = `${f.answer ?? ""}\n${f.body_md ?? ""}`;
+  const nomes = [...medido.keys()];
   for (const [nome, metros] of medido) {
-    for (const achado of distanciasAfirmadas(texto, nome)) {
+    for (const achado of distanciasAfirmadas(texto, nome, nomes)) {
       if (divergente(achado.metros, metros, achado.limite)) {
         problemas.push(
           `  ${slug} · "${f.question}"\n` +
