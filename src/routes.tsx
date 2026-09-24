@@ -68,6 +68,7 @@ import PrivacidadePage from "@/routes/privacidade";
 import ContatoPage from "@/routes/contato";
 import AjudaPage from "@/routes/ajuda";
 import CancelamentoPage from "@/routes/cancelamento";
+import SegurancaPage from "@/routes/seguranca";
 import ComoFuncionaPage from "@/routes/como-funciona";
 import DescontosPublicoPage from "@/routes/descontos";
 import MetodologiaPage, { type MetodologiaData } from "@/routes/metodologia";
@@ -884,6 +885,12 @@ export const routes: RouteRecord[] = [
           { path: "/contato", element: <ContatoPage /> },
           { path: "/ajuda", element: <AjudaPage /> },
           { path: "/cancelamento", element: <CancelamentoPage /> },
+          {
+            // Segurança e seguro: objeção nº 1 depois do preço, e o tema em que os dois
+            // concorrentes tinham página própria e a Movepark não (auditoria de 24/09/2026).
+            path: "/estacionamento-de-aeroporto-e-seguro",
+            element: <SegurancaPage />,
+          },
           // Descadastro de marketing pelo link do e-mail. Público e sem login de propósito.
           { path: "/descadastro", element: <DescadastroPage /> },
           { path: "/como-funciona", element: <ComoFuncionaPage /> },

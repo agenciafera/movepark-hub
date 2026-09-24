@@ -252,6 +252,182 @@ export const METODOLOGIA: ContentPage = {
   related: ["como-funciona", "faq"],
 };
 
+/**
+ * Segurança e seguro do carro no estacionamento de aeroporto.
+ *
+ * Existe porque é a objeção número um depois do preço, e porque a auditoria de
+ * 24/09/2026 mostrou que os dois concorrentes têm página própria para o tema
+ * (`/estacionamento-de-aeroporto-e-seguro` num, `/seguranca` no outro) enquanto a
+ * Movepark só respondia dentro de uma FAQ de destino.
+ *
+ * O ângulo é o que nenhum dos dois usa: **a base legal**. A Súmula 130 do STJ e o
+ * CDC dizem quem responde pelo carro, e isso vale para qualquer pátio, com ou sem
+ * seguro contratado. É fato verificável, cita fonte pública e responde a pergunta
+ * de verdade ("e se acontecer alguma coisa?"), em vez de listar câmera e portaria.
+ *
+ * A seção "o que a Movepark não verifica" é deliberada. Página de confiança que só
+ * afirma vantagem não sustenta citação; o que sustenta é declarar o limite.
+ */
+export const SEGURANCA: ContentPage = {
+  slug: "estacionamento-de-aeroporto-e-seguro",
+  label: "Segurança e seguro",
+  title: "Estacionamento de aeroporto é seguro? Quem responde pelo seu carro",
+  intro:
+    "Deixar o carro dias parado levanta sempre a mesma dúvida: se acontecer alguma coisa, quem paga? A resposta curta é que o estacionamento responde, por lei, mesmo sem seguro contratado. O que muda de um pátio para outro é a estrutura que reduz o risco de acontecer, e o que você consegue provar depois.",
+  updated: "2026-09-24",
+  sections: [
+    {
+      id: "quem-responde",
+      title: "Quem responde se o carro for furtado ou danificado",
+      blocks: [
+        {
+          type: "p",
+          text: "O estacionamento responde. A Súmula 130 do Superior Tribunal de Justiça diz que a empresa responde, perante o cliente, pela reparação de dano ou furto de veículo ocorridos em seu estacionamento. Não é preciso que o pátio tenha seguro contratado, nem que você prove culpa de alguém.",
+        },
+        {
+          type: "p",
+          text: "A relação é de depósito: você entrega o carro, o pátio assume o dever de guardá-lo e devolvê-lo no estado em que recebeu. Como a contratação é de consumo, vale também o Código de Defesa do Consumidor, e a responsabilidade do fornecedor independe de culpa.",
+        },
+        {
+          type: "note",
+          label: "Aviso que não vale",
+          text: "Placa dizendo \"não nos responsabilizamos por objetos deixados no veículo\" não transfere responsabilidade sobre o carro. Sobre objetos soltos dentro dele a discussão é outra, e por isso a recomendação prática continua sendo não deixar nada à vista.",
+        },
+      ],
+    },
+    {
+      id: "seguro-do-patio",
+      title: "Seguro do pátio e seguro do seu carro: são coisas diferentes",
+      blocks: [
+        {
+          type: "p",
+          text: "Parte dos estacionamentos contrata uma apólice própria, às vezes chamada de seguro garagista. Ela existe para cobrir o pátio quando ele tem que indenizar você, e não substitui o seu seguro nem muda quem responde.",
+        },
+        {
+          type: "list",
+          items: [
+            "Seguro garagista do pátio: protege o estacionamento do prejuízo de indenizar. Você não aciona diretamente.",
+            "Seu seguro de automóvel: costuma cobrir furto e colisão onde quer que o carro esteja, inclusive em pátio de terceiro. Confira se a sua apólice tem carência ou restrição para veículo em guarda.",
+            "Cobertura declarada pelo estacionamento: quando o pátio publica um valor de cobertura por veículo, esse número é dele, não nosso. Vale confirmar por escrito antes de deixar o carro.",
+          ],
+        },
+        {
+          type: "p",
+          text: "Na prática, o seguro do pátio interessa mais para saber se ele tem lastro para pagar do que para definir se ele deve pagar. A obrigação existe de qualquer forma.",
+        },
+      ],
+    },
+    {
+      id: "o-que-conferir",
+      title: "O que conferir antes de deixar o carro",
+      blocks: [
+        {
+          type: "steps",
+          items: [
+            {
+              n: "1",
+              title: "Peça o comprovante de entrada",
+              text: "Ticket, voucher ou registro digital com placa, data e hora. É a prova de que o carro estava sob guarda do pátio, e é o documento que sustenta qualquer reclamação depois.",
+            },
+            {
+              n: "2",
+              title: "Fotografe o carro na chegada",
+              text: "Quatro laterais, painel com o hodômetro e qualquer avaria que já exista. Leva um minuto e resolve a discussão sobre o que é anterior e o que é novo.",
+            },
+            {
+              n: "3",
+              title: "Veja como é o acesso",
+              text: "Pátio fechado, com portaria e controle de entrada, é diferente de terreno aberto. Câmera só ajuda se cobrir a vaga, e não apenas o portão.",
+            },
+            {
+              n: "4",
+              title: "Não deixe nada à vista",
+              text: "Documento, eletrônico e bagagem saem do carro. Sobre objetos deixados no veículo a responsabilidade do pátio é mais discutível que sobre o veículo em si.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "o-que-verificamos",
+      title: "O que a Movepark verifica, e o que não verifica",
+      blocks: [
+        {
+          type: "p",
+          text: "Esta parte importa mais que a lista de comodidades, porque é o limite do que você pode concluir do que está publicado aqui.",
+        },
+        {
+          type: "table",
+          rows: [
+            {
+              k: "Verificamos",
+              v: "Que o parceiro existe como empresa, com CNPJ, e que o endereço e a distância batem com a coordenada que medimos no banco.",
+            },
+            {
+              k: "Verificamos",
+              v: "As comodidades declaradas por cada unidade, que aparecem item a item na página dela.",
+            },
+            {
+              k: "Não verificamos",
+              v: "Apólice de seguro do pátio. O valor de cobertura que um estacionamento anuncia é declaração dele, e a Movepark não audita contrato de terceiro.",
+            },
+            {
+              k: "Não verificamos",
+              v: "Lote apenas mapeado, sem contrato conosco. Dele publicamos endereço, distância medida e preço pesquisado no canal do próprio estacionamento, e nada mais.",
+            },
+          ],
+        },
+        {
+          type: "note",
+          label: "Por que dizemos isso",
+          text: "Porque afirmar que todo pátio listado é seguro seria uma promessa que não temos como sustentar, e promessa que não se sustenta é o que derruba a confiança na primeira vez que dá errado.",
+        },
+      ],
+    },
+    {
+      id: "por-aeroporto",
+      title: "Segurança em cada aeroporto",
+      blocks: [
+        {
+          type: "p",
+          text: "O que cada praça oferece varia, e a resposta específica fica na página do aeroporto, com as unidades daquela região.",
+        },
+        {
+          type: "faq",
+          items: [
+            {
+              q: "Os estacionamentos de Guarulhos são seguros? Têm monitoramento?",
+              a: "Os parceiros Movepark em Guarulhos operam com pátio fechado, monitoramento por câmeras 24 horas e controle de acesso, e a página de cada unidade lista os itens um a um.",
+              slug: "os-estacionamentos-de-guarulhos-sao-seguros-tem-monitoramento",
+            },
+            {
+              q: "Os estacionamentos de Viracopos são seguros? Têm monitoramento?",
+              a: "Os parceiros Movepark em Viracopos operam com pátio fechado, monitoramento por câmeras 24 horas e controle de acesso na portaria, e os dois têm rastreio da van em tempo real.",
+              slug: "os-estacionamentos-de-viracopos-sao-seguros-tem-monitoramento",
+            },
+            {
+              q: "Os estacionamentos de Congonhas são seguros? Têm monitoramento?",
+              a: "Os parceiros Movepark em Congonhas operam com pátio coberto e fechado, monitoramento por câmeras 24 horas e controle de acesso, a menos de 900 m do terminal.",
+              slug: "os-estacionamentos-de-congonhas-sao-seguros-tem-monitoramento",
+            },
+            {
+              q: "Os estacionamentos perto do Aeroporto de Confins são seguros?",
+              a: "O parceiro Movepark BePark opera com pátio coberto e fechado, câmeras 24 horas, controle de acesso e rastreio da van em tempo real.",
+              slug: "os-estacionamentos-perto-do-aeroporto-de-confins-sao-seguros-tem-monitoramento",
+            },
+            {
+              q: "Os estacionamentos perto do Aeroporto Afonso Pena são seguros?",
+              a: "Os parceiros Movepark em Curitiba listam os itens de segurança na própria página: monitoramento por câmeras, controle de acesso e equipe no local.",
+              slug: "os-estacionamentos-perto-do-aeroporto-afonso-pena-sao-seguros-tem-monitoramento",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  related: ["metodologia", "como-funciona", "cancelamento"],
+};
+
 /** Cards de "Veja também", curados por página. */
 export const RELACIONADOS: Record<string, { to: string; title: string; description: string }> = {
   termos: {
@@ -263,6 +439,11 @@ export const RELACIONADOS: Record<string, { to: string; title: string; descripti
     to: "/privacidade",
     title: "Política de Privacidade",
     description: "Como tratamos os seus dados",
+  },
+  "estacionamento-de-aeroporto-e-seguro": {
+    to: "/estacionamento-de-aeroporto-e-seguro",
+    title: "Estacionamento de aeroporto é seguro?",
+    description: "Quem responde pelo seu carro, e o que conferir antes",
   },
   cancelamento: {
     to: "/cancelamento",

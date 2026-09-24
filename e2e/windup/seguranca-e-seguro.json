@@ -1,0 +1,14 @@
+{
+  "scenario_id": "seguranca-e-seguro",
+  "start_url": "/estacionamento-de-aeroporto-e-seguro",
+  "task": "Verifique que a pagina abre com um titulo que contem Estacionamento de aeroporto e seguro, e que existem uma secao com o texto Quem responde e uma secao com o texto O que conferir antes de deixar o carro.",
+  "tags": [
+    "smoke",
+    "leitura"
+  ],
+  "hints": [
+    "A pagina responde quem paga se o carro for furtado ou danificado no patio, com a base legal, e o que conferir na chegada.",
+    "O titulo e o <h1>; as secoes sao <h2> dentro do <main>.",
+    "Afirme por trecho do texto, nunca pelo titulo inteiro: o titulo e longo e a assercao quebraria em qualquer ajuste de copy."
+  ]
+}
