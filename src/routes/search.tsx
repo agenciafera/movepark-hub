@@ -124,6 +124,10 @@ export default function SearchResultsPage() {
       <Helmet>
         <title>{searchTitle}</title>
         <meta name="description" content={searchDesc} />
+        {/* Resultado parametrizado (dest/from/to/vaga/src): sem isso, cada combinação vira URL
+            indexável e o Google trata como cópia sem canônica escolhida. Quem deve rankear é
+            /destinos/<slug> e /p/<empresa>/<unidade>/<tipo>, não a tela de busca. */}
+        <meta name="robots" content="noindex, follow" />
       </Helmet>
 
       {/* A barra de busca vive no header (ConsumerTopbar), sticky e persistente no scroll. */}

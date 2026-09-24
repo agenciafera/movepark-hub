@@ -89,11 +89,20 @@ depende de o Google recrastrear a página para ler o cabeçalho novo, o que leva
 isso **não** se acrescenta `Disallow` no `robots.txt`: bloquear ali impediria a leitura do
 `noindex` e prenderia a URL como "indexada, porém bloqueada".
 
-**Ainda em aberto:** o resultado parametrizado de `/search` continua sem `noindex` próprio e
-**já está indexado** (`/search?dest=GRU` devolveu "Enviada e indexada" em 01/09/2026). Cada
-combinação de `dest`, `from`, `to` e `src` é uma URL distinta, ou seja, espaço sem fim
-consumindo orçamento de rastreio. Decidir se a busca sem parâmetro fica e a parametrizada sai,
-ou se a família inteira sai.
+**Resolvido em 24/09/2026:** o resultado parametrizado de `/search` estava indexado
+(`/search?dest=GRU` devolveu "Enviada e indexada" em 01/09/2026) e sem `noindex` próprio, com
+cada combinação de `dest`, `from`, `to`, `vaga` e `src` virando URL distinta, espaço sem fim
+consumindo orçamento de rastreio. Levantamento de Search Console em 20/09/2026 achou 460 dessas
+URLs presas em "cópia sem canônica selecionada pelo usuário", crescendo todo dia porque as datas
+padrão do formulário rolam com o relógio (`resolveSearchDates`).
+
+A decisão foi a família inteira sair, não só a parametrizada: mesmo `/search?dest=GRU` sem data
+compete pela mesma intenção que `/destinos/<slug>`, que é quem carrega o FAQ em camadas
+(ADR-002), o JSON-LD e o conteúdo editorial. Deixar a busca indexada criaria a mesma
+canibalização que este documento existe para evitar, agora entre duas rotas do próprio Hub em
+vez de Hub contra WordPress. O `<Helmet>` de [`search.tsx`](../../src/routes/search.tsx) ganhou
+`<meta name="robots" content="noindex, follow" />` incondicional; o `follow` preserva o rastreio
+dos links de card para listing e destino.
 
 ## Operação
 
@@ -191,7 +200,7 @@ O `noindex` sai sozinho (a allowlist do worker já apontava para o apex), mas o 
 - [x] **Hostname do sitemap.** Resolvido em 18/08/2026. O `hostname` do plugin sai do host canônico, com `VITE_PUBLIC_SITE_URL` sobrescrevendo em build de preview.
 - [x] **`Sitemap:` do [`robots.txt`](../../public/robots.txt).** Resolvido em 18/08/2026.
 - [x] **404 real.** Resolvido em 13/08/2026. URL inexistente responde 404 com corpo, em vez de 200 com o HTML da home. A regra vive no worker, com fail-open, e as rotas de app que não têm HTML próprio (`/checkout/:code`, `/operator/*`, `/manager/*`) continuam em 200 por padrão declarado. Ver [`borda-cloudflare.md`](./borda-cloudflare.md).
-- [x] **Rotas privadas com `noindex` próprio.** Resolvido em 18/08/2026. `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding` e `/voucher` respondem `noindex, follow` por regra de caminho no worker, independente de host, então continuam fora do índice depois da migração. Ver [Áreas privadas](#áreas-privadas-noindex-independente-de-host). Ampliado em 18/08/2026, depois de conferir rota a rota em produção: entraram `/descadastro` (carrega o destinatário em `?t=<token>`, então indexar publica o token, não só uma página magra), `/auth` e as duas ferramentas internas `/motor-preview` e `/design-system`. As quatro estavam no opt-out do sitemap, que só deixa de anunciar e **não** emite `noindex`; enquanto o host inteiro respondia `noindex` a diferença não aparecia. Segue aberto, por ser decisão de produto e não descuido: `/docs` (documentação pública da API, com canonical próprio) e o `/search` parametrizado.
+- [x] **Rotas privadas com `noindex` próprio.** Resolvido em 18/08/2026. `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding` e `/voucher` respondem `noindex, follow` por regra de caminho no worker, independente de host, então continuam fora do índice depois da migração. Ver [Áreas privadas](#áreas-privadas-noindex-independente-de-host). Ampliado em 18/08/2026, depois de conferir rota a rota em produção: entraram `/descadastro` (carrega o destinatário em `?t=<token>`, então indexar publica o token, não só uma página magra), `/auth` e as duas ferramentas internas `/motor-preview` e `/design-system`. As quatro estavam no opt-out do sitemap, que só deixa de anunciar e **não** emite `noindex`; enquanto o host inteiro respondia `noindex` a diferença não aparecia. Segue aberto, por ser decisão de produto e não descuido: `/docs` (documentação pública da API, com canonical próprio). O `/search` parametrizado saiu do índice em 24/09/2026 (ver acima).
 - [x] **Exclusões do sitemap.** Resolvido em 13/08/2026. A lista de exclusão do [`vite.config.ts`](../../vite.config.ts) passou a derivar de [`src/lib/sitemapRoutes.ts`](../../src/lib/sitemapRoutes.ts): opt-out declarado com motivo, mais os prefixos de área logada. Medido no `dist/` depois da mudança: 149 URLs, zero de `/manager`, `/operator`, `/account`, `/checkout`, `/bookings`, `/onboarding`, `/docs`, `/search` ou `/design-system`. Guarda extra desde 14/08/2026: [`scripts/canonicalize-sitemap.mjs`](../../scripts/canonicalize-sitemap.mjs) remove no pós-build qualquer bloco `<url>` de área privada que escape, e loga quantos caíram.
 - [x] **Arquivos de rascunho em `public/`.** `public/images/arco-iris.html` foi apagado em 13/08/2026. Varrer `public/` atrás de HTML solto continua valendo.
 - [x] **Allowlist de redirect do Supabase Auth com o apex.** Resolvido em 23/09/2026. A lista (`uri_allow_list` da config do Auth) só tinha `localhost:5173` e `hub.movepark.co/**`, então qualquer `redirect_to` para `movepark.co` era recusado e o link caía no `site_url`, que segue `http://localhost:5173`. O OTP não sofria (não usa link), mas o **login com Google no apex sim**: `signInWithGoogle` manda `redirect_to` para `<origem>/auth/callback`, e com a origem em `movepark.co` o Auth devolvia o usuário ao `localhost:5173` depois do consentimento, provavelmente desde a migração de 18/08. Medido com `generate_link`: destino fora da lista cai no `site_url`, destino no apex passa. Entraram `https://movepark.co` e `https://movepark.co/**`, via Management API (`PATCH /v1/projects/<ref>/config/auth`). No mesmo dia o `site_url` passou de `http://localhost:5173` para `https://movepark.co`: é ele que monta o `{{ .ConfirmationURL }}` dos templates de e-mail do Auth e recebe quem chega sem `redirect_to` válido. O `localhost:5173` segue na allowlist, então o ambiente local continua funcionando desde que o app passe o seu `redirect_to`, que é o que `signInWithGoogle` já faz com `window.location.origin`.
