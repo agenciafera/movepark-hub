@@ -136,7 +136,12 @@ export function useSetBookingCommission() {
     mutationFn: async (input: { bookingId: string; ruleId: string | null; reason: string }) => {
       const { data, error } = await supabase.rpc("admin_set_booking_commission", {
         p_booking_id: input.bookingId,
-        p_rule_id: input.ruleId,
+        // O gerador de tipos declara `p_rule_id: string`, mas a RPC recebe `uuid` e
+        // trata nulo explicitamente (`p_rule_id is null` devolve a reserva ao padrão
+        // do Hub). Parâmetro de função no Postgres sempre aceita NULL, e o gerador
+        // não tem como expressar isso; o cast fica aqui, com o motivo, em vez de o
+        // app perder a capacidade que a função oferece.
+        p_rule_id: input.ruleId as string,
         p_reason: input.reason,
       });
       if (error) throw error;
