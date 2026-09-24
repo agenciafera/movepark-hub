@@ -1059,7 +1059,7 @@ describe("ficha de estacionamento inexistente", () => {
   function stubBanco(
     unidades: string[],
     mapeados: string[] = [],
-    opts?: { forcaErro?: boolean },
+    opts?: { forcaErro?: boolean; destinos?: string[] },
   ) {
     const spy = vi.fn(async (input: unknown) => {
       const alvo = new URL(input instanceof Request ? input.url : String(input));
@@ -1067,6 +1067,11 @@ describe("ficha de estacionamento inexistente", () => {
       if (opts?.forcaErro) return new Response("boom", { status: 500 });
 
       const lote = (alvo.searchParams.get("public_slug") ?? "").replace("eq.", "");
+      // O DESTINO e' consultado sozinho, pelo proprio `public_slug`, sem join de unidade.
+      if (alvo.pathname.endsWith("/destination")) {
+        const publicados = opts?.destinos ?? [];
+        return linhasRpc(publicados.includes(lote) ? [{ public_slug: lote }] : []);
+      }
       const destino = (alvo.searchParams.get("destination.public_slug") ?? "").replace("eq.", "");
       const lista = alvo.pathname.endsWith("/prospect_location") ? mapeados : unidades;
       return linhasRpc(lista.includes(`${destino}/${lote}`) ? [{ public_slug: lote }] : []);
@@ -1120,14 +1125,16 @@ describe("ficha de estacionamento inexistente", () => {
   it.each([["/estacionamentos/aeroporto-guarulhos/precos"], ["/estacionamentos/aeroporto-guarulhos/mais-barato"]])(
     "página do destino com dois segmentos continua 200: %s",
     async (caminho) => {
-      stubBanco([]);
+      // Elas não entram no manifesto quando o aeroporto não tem unidade precificada, então
+      // quem responde é o veredicto do DESTINO.
+      stubBanco([], [], { destinos: ["aeroporto-guarulhos"] });
       const res = await worker.fetch(req(caminho), envFicha());
       expect(res.status).toBe(200);
     },
   );
 
-  it("destino fora do manifesto continua 200, que é a regra do catálogo", async () => {
-    stubBanco([]);
+  it("destino publicado depois do build abre na hora, fora do manifesto", async () => {
+    stubBanco([], [], { destinos: ["destino-novo"] });
     const res = await worker.fetch(req("/estacionamentos/destino-novo"), envFicha());
     expect(res.status).toBe(200);
   });
@@ -1163,6 +1170,179 @@ describe("ficha de estacionamento inexistente", () => {
   it("o 404 da ficha também pede para não ser guardado em cache", async () => {
     stubBanco([]);
     const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos/lisboa-park"), envFicha());
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+  });
+});
+
+/**
+ * Destino de estacionamento que não existe: 404 na borda (docs/specs/borda-cloudflare.md).
+ *
+ * O outro lado do buraco da ficha, e o maior dos dois: a pasta `/estacionamentos/*` inteira
+ * é rota de app, então `/estacionamentos/destino-que-nao-existe-xyz` respondia 200 com a
+ * casca da home. Medido em produção em 18/09/2026, com o `<title>` genérico "Movepark |
+ * Estacionamentos em aeroportos e destinos" e nenhum conteúdo de aeroporto. É soft 404, e
+ * numa pasta que o WordPress usava, ou seja, a que o crawler varre com URL velha na mão.
+ *
+ * Fica no fim do arquivo pelo mesmo motivo dos blocos acima: manifesto e veredictos vivem
+ * no escopo do módulo.
+ */
+describe("destino de estacionamento inexistente", () => {
+  const MANIFESTO = [
+    "/",
+    "/estacionamentos",
+    "/estacionamentos/aeroporto-guarulhos",
+    "/estacionamentos/aeroporto-guarulhos/precos",
+    "/404",
+  ];
+  const CORPO_404 = "<!DOCTYPE html><html><body>Essa página não existe</body></html>";
+
+  function envDestino() {
+    const files: Record<string, { body: string; type: string }> = {
+      "/paths-manifest.json": { body: JSON.stringify(MANIFESTO), type: "application/json" },
+      "/404": { body: CORPO_404, type: "text/html" },
+    };
+    const assets = {
+      fetch: vi.fn(async (request: Request) => {
+        const { pathname } = new URL(request.url);
+        const hit = files[pathname];
+        if (hit) return new Response(hit.body, { status: 200, headers: { "Content-Type": hit.type } });
+        return new Response(HTML, { status: 200, headers: { "Content-Type": "text/html" } });
+      }),
+    };
+    return { ASSETS: assets, ...SUPA };
+  }
+
+  /** Roteia o mapa de 301 (vazio) e a consulta do destino, que é só pelo `public_slug`. */
+  function stubDestinos(publicados: string[], opts?: { forcaErro?: boolean }) {
+    const spy = vi.fn(async (input: unknown) => {
+      const alvo = new URL(input instanceof Request ? input.url : String(input));
+      if (alvo.pathname.includes("/rpc/url_legacy_map")) return linhasRpc([]);
+      if (opts?.forcaErro) return new Response("boom", { status: 500 });
+      const slug = (alvo.searchParams.get("public_slug") ?? "").replace("eq.", "");
+      return linhasRpc(publicados.includes(slug) ? [{ public_slug: slug }] : []);
+    });
+    vi.stubGlobal("fetch", spy);
+    return spy;
+  }
+
+  const consultasDeDestino = (spy: ReturnType<typeof stubDestinos>) =>
+    spy.mock.calls.filter((c) =>
+      new URL(c[0] instanceof Request ? c[0].url : String(c[0])).pathname.endsWith("/destination"),
+    );
+
+  beforeEach(() => __resetCachesDoWorker());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("slug que não existe no banco responde 404 com corpo, não 200 com a home", async () => {
+    stubDestinos([]);
+    const res = await worker.fetch(req("/estacionamentos/destino-que-nao-existe-xyz"), envDestino());
+    expect(res.status).toBe(404);
+    expect(await res.text()).toContain("Essa página não existe");
+  });
+
+  it("destino pré-renderizado continua 200 sem perguntar ao banco", async () => {
+    const spy = stubDestinos([]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-guarulhos"), envDestino());
+    expect(res.status).toBe(200);
+    expect(consultasDeDestino(spy)).toHaveLength(0);
+  });
+
+  it("destino publicado depois do build abre na hora", async () => {
+    stubDestinos(["aeroporto-navegantes"]);
+    const res = await worker.fetch(req("/estacionamentos/aeroporto-navegantes"), envDestino());
+    expect(res.status).toBe(200);
+  });
+
+  it("o índice do catálogo nunca entra na regra", async () => {
+    const spy = stubDestinos([]);
+    const res = await worker.fetch(req("/estacionamentos"), envDestino());
+    expect(res.status).toBe(200);
+    expect(consultasDeDestino(spy)).toHaveLength(0);
+  });
+
+  // Três segmentos: o segundo não é lote nenhum, é página do destino. Elas só entram no
+  // manifesto quando o aeroporto tem unidade precificada, então o veredicto é do DESTINO.
+  it.each([["precos"], ["mais-barato"]])(
+    "/%s sob destino que não existe também responde 404",
+    async (pagina) => {
+      stubDestinos([]);
+      const res = await worker.fetch(req(`/estacionamentos/destino-inventado/${pagina}`), envDestino());
+      expect(res.status).toBe(404);
+    },
+  );
+
+  it.each([["precos"], ["mais-barato"]])(
+    "/%s sob destino que existe continua 200, mesmo fora do manifesto",
+    async (pagina) => {
+      stubDestinos(["aeroporto-navegantes"]);
+      const res = await worker.fetch(req(`/estacionamentos/aeroporto-navegantes/${pagina}`), envDestino());
+      expect(res.status).toBe(200);
+    },
+  );
+
+  it("slug com caractere fora do padrão é 404 sem consultar o banco", async () => {
+    const spy = stubDestinos([]);
+    const res = await worker.fetch(req("/estacionamentos/destino'ou1=1"), envDestino());
+    expect(res.status).toBe(404);
+    expect(consultasDeDestino(spy)).toHaveLength(0);
+  });
+
+  // Estas URLs têm clique e backlink: o 301 do `saltoDeEndereco` responde antes, e a regra
+  // nova não pode roubar nenhuma delas para o 404.
+  it("alias de aeroporto do WordPress continua saindo em 301", async () => {
+    stubDestinos([]);
+    for (const [de, para] of [
+      ["/estacionamentos/campinas", "/estacionamentos/aeroporto-viracopos"],
+      ["/estacionamentos/aeroporto-afonso-pena", "/estacionamentos/aeroporto-curitiba"],
+      ["/estacionamentos/rio-de-janeiro", "/estacionamentos"],
+    ]) {
+      const res = await worker.fetch(req(de), envDestino());
+      expect(res.status).toBe(301);
+      expect(res.headers.get("Location")).toBe(para);
+    }
+  });
+
+  // O mapa do WordPress compara com a caixa da URL, e esta regra compara em minúsculas: sem
+  // a checagem do apelido, `/Estacionamentos/Campinas` escapava do 301 e caía no 404.
+  it("alias do WordPress em caixa alta não vira 404", async () => {
+    stubDestinos([]);
+    const res = await worker.fetch(req("/Estacionamentos/Campinas"), envDestino());
+    expect(res.status).toBe(200);
+  });
+
+  // FAIL-OPEN: banco fora do ar não pode enterrar aeroporto que existe.
+  it("Supabase fora do ar volta a responder 200", async () => {
+    stubDestinos([], { forcaErro: true });
+    const res = await worker.fetch(req("/estacionamentos/destino-que-nao-existe-xyz"), envDestino());
+    expect(res.status).toBe(200);
+  });
+
+  it("sem as envs do Supabase a regra se desliga, em vez de chutar 404", async () => {
+    const { ASSETS } = envDestino();
+    const res = await worker.fetch(req("/estacionamentos/destino-que-nao-existe-xyz"), { ASSETS });
+    expect(res.status).toBe(200);
+  });
+
+  it("o veredicto fica em cache: o mesmo destino não é consultado duas vezes", async () => {
+    const spy = stubDestinos([]);
+    const env = envDestino();
+    await worker.fetch(req("/estacionamentos/destino-que-nao-existe-xyz"), env);
+    await worker.fetch(req("/estacionamentos/destino-que-nao-existe-xyz"), env);
+    expect(consultasDeDestino(spy)).toHaveLength(1);
+  });
+
+  it("agente pedindo markdown em destino inexistente recebe 404, não o llms.txt", async () => {
+    stubDestinos([]);
+    const res = await worker.fetch(
+      req("/estacionamentos/destino-que-nao-existe-xyz", { Accept: "text/markdown" }),
+      envDestino(),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("o 404 do destino também pede para não ser guardado em cache", async () => {
+    stubDestinos([]);
+    const res = await worker.fetch(req("/estacionamentos/destino-que-nao-existe-xyz"), envDestino());
     expect(res.headers.get("Cache-Control")).toBe("no-store");
   });
 });

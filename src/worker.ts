@@ -1014,6 +1014,60 @@ async function fichaPublicada(env: Env, destino: string, lote: string): Promise<
 }
 
 /**
+ * Segunda opinião para o DESTINO que o manifesto não conhece.
+ *
+ * Mesmo desenho do `fichaPublicada`, e pelo mesmo buraco: a lista de rotas de app mantém
+ * `/estacionamentos/*` inteiro em 200, então `/estacionamentos/<slug-inventado>` respondia
+ * 200 com a casca genérica da home. Medido em produção em 18/09/2026, com o `<title>`
+ * "Movepark | Estacionamentos em aeroportos e destinos" e nenhum conteúdo do aeroporto: é
+ * soft 404, e numa pasta que o WordPress usava, ou seja, justo a que o crawler varre com
+ * URL velha na mão.
+ *
+ * O corte é o MESMO do `fetchAllDestinationPaths` (o que o build pré-renderiza): destino
+ * publicado, com `public_slug`. Repetir o corte é de propósito: borda mais frouxa que o
+ * build devolveria 200 em página que o SSG não gera.
+ *
+ * Cobre também as duas páginas do destino (`precos`, `mais-barato`), que têm três segmentos
+ * e por isso escapavam da checagem da ficha. Elas não entram no manifesto quando o destino
+ * não tem unidade precificada, então o veredicto aqui é só sobre o DESTINO: existindo o
+ * aeroporto, a página abre e o cliente resolve o resto.
+ *
+ * Fail-open em qualquer erro, como no resto da borda: banco fora do ar não pode enterrar
+ * aeroporto que existe.
+ */
+const veredictoDestino = new Map<string, boolean>();
+
+async function destinoPublicado(env: Env, destino: string): Promise<boolean> {
+  if (!SLUG_VALIDO.test(destino)) return false;
+
+  const cacheado = veredictoDestino.get(destino);
+  if (cacheado !== undefined) return cacheado;
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return true;
+
+  const consulta = new URL("/rest/v1/destination", env.SUPABASE_URL);
+  consulta.searchParams.set("select", "public_slug");
+  consulta.searchParams.set("public_slug", `eq.${destino}`);
+  consulta.searchParams.set("is_published", "is.true");
+  consulta.searchParams.set("limit", "1");
+
+  try {
+    const res = await fetch(consulta, {
+      headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+    });
+    // Supabase fora do ar não é resposta: melhor servir a casca do que enterrar uma URL que
+    // talvez exista. Este caso não entra em cache.
+    if (!res.ok) return true;
+
+    const existe = ((await res.json()) as unknown[]).length > 0;
+    if (veredictoDestino.size >= VEREDICTO_MAX) veredictoDestino.clear();
+    veredictoDestino.set(destino, existe);
+    return existe;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * O mapa de 301 da virada de URL, carregado UMA vez por isolate.
  *
  * Ele responde por todas as URLs antigas do próprio Hub: `/p/<empresa>/<unidade>/<tipo>`
@@ -1204,6 +1258,7 @@ export function __resetCachesDoWorker(): void {
   blogSlugsCache = undefined;
   veredictoSlug.clear();
   veredictoFicha.clear();
+  veredictoDestino.clear();
   mapaLegado = undefined;
   mapaLegadoEm = 0;
 }
@@ -1281,6 +1336,31 @@ async function serve(request: Request, env: Env): Promise<Response> {
   if (ficha && !PAGINAS_DO_DESTINO.has(ficha[2])) {
     const conhecidos = await caminhosConhecidos(env, url);
     if (conhecidos && !conhecidos.has(caminho) && !(await fichaPublicada(env, ficha[1], ficha[2]))) {
+      return pagina404(env, url);
+    }
+  }
+
+  /*
+    O DESTINO é o outro lado do mesmo buraco, e o maior dos dois: `/estacionamentos/<slug>`
+    inventado respondia 200 com a casca da home, `<title>` genérico e nada do aeroporto.
+    Medido em produção em 18/09/2026, e numa pasta que o WordPress usava, ou seja, a que o
+    crawler varre com URL velha na mão.
+
+    As duas páginas do destino (`precos`, `mais-barato`) entram aqui, e não na regra da
+    ficha: são três segmentos e o segundo não é lote nenhum. O veredicto é só sobre o
+    destino, porque elas só são pré-renderizadas quando o aeroporto tem unidade precificada.
+
+    A pergunta ao banco só acontece fora do manifesto, e depois de todos os 301: alias do
+    WordPress já saiu de cena no `saltoDeEndereco`, então nada do mapa chega aqui. Ele é
+    consultado mesmo assim porque a comparação lá é sensível à caixa e a daqui não, e URL
+    com backlink não pode virar 404 por causa de uma maiúscula.
+  */
+  const destino = caminho.match(/^\/estacionamentos\/([^/]+)(?:\/([^/]+))?$/);
+  const apelidoDoWp =
+    destino !== null && WP_AEROPORTO_REDIRECTS[`/estacionamentos/${destino[1]}`] !== undefined;
+  if (destino && !apelidoDoWp && (!destino[2] || PAGINAS_DO_DESTINO.has(destino[2]))) {
+    const conhecidos = await caminhosConhecidos(env, url);
+    if (conhecidos && !conhecidos.has(caminho) && !(await destinoPublicado(env, destino[1]))) {
       return pagina404(env, url);
     }
   }

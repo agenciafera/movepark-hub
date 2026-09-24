@@ -118,6 +118,7 @@ Consequência prática: **nada precisa ser mexido no painel do Cloudflare.** A b
 | Padrões de rota de app que continuam em 200 | `ROTAS_DE_APP` em [`src/worker.ts`](../../src/worker.ts) |
 | Checagem e resposta de 404 | `caminhosConhecidos` e `pagina404`, antes da negociação de markdown |
 | Ficha de estacionamento que não existe | `fichaPublicada` em [`src/worker.ts`](../../src/worker.ts), com segunda opinião no banco |
+| Destino de estacionamento que não existe | `destinoPublicado` em [`src/worker.ts`](../../src/worker.ts), com segunda opinião no banco |
 | Página servida | [`src/routes/not-found.tsx`](../../src/routes/not-found.tsx), rota `/404` e catch-all, ambos dentro do `ConsumerAppShell` |
 | Cenários de navegador | `e2e/windup/pagina-404.json`, `rota-inexistente.json` e `rota-inexistente-jornada.json` |
 
@@ -156,6 +157,37 @@ Duas coisas que a implementação precisa manter:
 
 O fail-open vale aqui também: Supabase fora do ar responde 200, porque enterrar ficha que
 existe é pior do que servir a casca.
+
+### O destino é a outra exceção, pelo mesmo motivo (18/09/2026)
+
+A checagem de 11/09 fechou o par destino/lote e deixou aberto o segmento de cima. Medido em
+produção em 18/09/2026: `/estacionamentos/destino-que-nao-existe-xyz` respondia **200** com a
+casca genérica da home, `<title>` "Movepark | Estacionamentos em aeroportos e destinos" e nada
+do aeroporto. É o mesmo soft 404 da ficha, num segmento a menos, e numa pasta que o WordPress
+usava, ou seja, justo a que o crawler varre com URL velha na mão.
+
+`destinoPublicado` repete o desenho do `fichaPublicada`, com uma consulta só:
+
+1. o manifesto responde primeiro, e o destino pré-renderizado nunca consulta o banco;
+2. fora do manifesto, pergunta à `destination` pelo `public_slug`, com `is_published = true`,
+   que é o mesmo corte do `fetchAllDestinationPaths` do build;
+3. quem o banco não conhece vira 404, com `no-store`. Veredicto em cache, teto de 500, igual
+   ao da ficha, porque o caso barulhento é bot varrendo slug inventado.
+
+Três coisas que a implementação precisa manter:
+
+- **`/estacionamentos/<destino>/precos` e `/mais-barato` entram nesta regra, não na da ficha.**
+  São três segmentos e o do meio é o destino, então o veredicto é sobre o aeroporto. O
+  julgamento tem que parar aí: elas só são pré-renderizadas quando o destino tem unidade
+  precificada, e exigir a página no manifesto derrubaria destino publicado sem parceiro.
+- **`/estacionamentos`, o índice, fica fora.** Ele é caminho do manifesto e não tem slug para
+  perguntar.
+- **Alias de aeroporto do WordPress não pode ser julgado aqui.** As chaves de
+  `WP_AEROPORTO_REDIRECTS` (`/estacionamentos/campinas`, `/estacionamentos/aeroporto-afonso-pena`)
+  não existem na `destination`: sem a checagem do apelido, cada uma delas viraria 404. O 301
+  do `saltoDeEndereco` responde antes e já cobriria o caso, mas ele compara com a caixa da URL
+  e esta regra compara em minúsculas, então `/Estacionamentos/Campinas` escapava do mapa e
+  caía na regra nova. São URLs com backlink: nenhuma delas pode virar 404 por uma maiúscula.
 
 ### Armadilhas que a implementação precisa respeitar
 
@@ -227,6 +259,8 @@ toque a borda:
 ```bash
 curl -sS -o /dev/null -w "%{http_code}\n" https://movepark.co/pagina-que-nao-existe-xyz  # esperado: 404
 curl -sS -o /dev/null -w "%{http_code}\n" https://movepark.co/checkout/QUALQUERCOISA      # esperado: 200
+curl -sS -o /dev/null -w "%{http_code}\n" https://movepark.co/estacionamentos/destino-que-nao-existe-xyz  # esperado: 404
+curl -sS -o /dev/null -w "%{http_code}\n" https://movepark.co/estacionamentos/aeroporto-guarulhos         # esperado: 200
 ```
 
 A varredura completa por família de caminho está no script
