@@ -23,6 +23,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
+import { agruparGuiasPorDestino, rebaixarHeadings } from "./llms-indice.mjs";
 import { buildPriceIndexJson } from "./price-index-json.mjs";
 
 // Host canônico: mesma fonte do front e do sitemap. Este script escreve o corpus que as IAs
@@ -843,7 +844,10 @@ function tabelaTopMarkdown(dest, limit = 5) {
     const out = [`### ${f.question}`, ""];
     if (f.slug) out.push(`URL: ${urlPergunta(f)}`, "");
     out.push(f.answer, "");
-    if (f.body_md) out.push(f.body_md, "");
+    // A pergunta é `###` aqui, então o corpo (escrito para a página, onde abre em `##`)
+    // desce dois níveis. Sem isso o arquivo tinha 263 `###` para 212 perguntas e o corpo
+    // de uma resposta abria seção no mesmo nível de "## FAQ: perguntas gerais".
+    if (f.body_md) out.push(rebaixarHeadings(f.body_md, 2), "");
     return out;
   };
 
@@ -1456,6 +1460,50 @@ for (const d of destinations) {
     conteudo = conteudo.replace(/## Menor diária por aeroporto[\s\S]*?(?=^## )/m, "");
     conteudo = conteudo.replace(/## Aeroportos e operadoras[\s\S]*?(?=^## )/m, "");
     conteudo = conteudo.replace(/^## Como funciona$/m, `${bloco}\n## Como funciona`);
+
+    // --- Blog: os guias enumerados, por aeroporto --------------------------
+    //
+    // A seção era um ponteiro: prometia "todos os posts publicados" e entregava o link da
+    // paginação. Quem lê só o llms.txt (32 KB contra 311 KB do llms-full.txt, e é o que o
+    // crawler de IA costuma abrir) não descobria que existem 87 guias. Agora cada um sai
+    // aqui, com a mesma frase que a SERP mostra, agrupado pela praça que ele responde.
+    const linhaPost = (p) => {
+      const resumo = resumoCurto(p.meta_description ?? p.ai_summary ?? p.excerpt ?? "", 200);
+      return [`- ${p.title}: ${SITE_URL}/blog/${p.slug}/`, ...(resumo ? [`  ${resumo}`] : [])];
+    };
+    const gruposBlog = agruparGuiasPorDestino(posts, destinations).map(({ titulo, posts: itens }) =>
+      [
+        `### ${titulo}: ${itens.length} ${itens.length === 1 ? "guia" : "guias"}`,
+        "",
+        ...itens.flatMap(linhaPost),
+        "",
+      ].join("\n"),
+    );
+
+    const enumerados = gruposBlog.reduce((n, g) => n + (g.match(/^- /gm) ?? []).length, 0);
+    if (enumerados !== posts.length) {
+      console.error(
+        `geo-artifacts: o llms.txt enumerou ${enumerados} de ${posts.length} posts publicados. ` +
+          "O arquivo que a IA lê como índice do corpus não pode sair com post faltando.",
+      );
+      process.exit(1);
+    }
+
+    const secaoBlog = /^## Blog$[\s\S]*?(?=^## )/m;
+    if (!secaoBlog.test(conteudo)) {
+      console.error(
+        "geo-artifacts: não achei a seção `## Blog` no llms.txt para pendurar a lista de guias. " +
+          "Se a seção mudou de nome, atualize a âncora aqui em vez de publicar o índice sem os posts.",
+      );
+      process.exit(1);
+    }
+    conteudo = conteudo.replace(secaoBlog, (trecho) => {
+      // Tira a safra anterior para o arquivo não acumular duas gerações quando o gerador
+      // roda duas vezes sobre o mesmo dist.
+      const manual = trecho.replace(/\nTodos os guias publicados, por aeroporto:[\s\S]*$/, "\n");
+      return `${manual.trimEnd()}\n\nTodos os guias publicados, por aeroporto:\n\n${gruposBlog.join("\n")}\n`;
+    });
+
     fs.writeFileSync(alvo, conteudo);
   }
 }
@@ -1463,5 +1511,5 @@ for (const d of destinations) {
 console.log(
   `geo-artifacts: ${paginas} páginas de FAQ, ${destinosComPreco.length} de preços, ` +
     `${unidadesMd} de unidade e ${lotesMd} de lote mapeado em Markdown, ` +
-    `faq.md, precos.md, llms-full.txt, blog/feed.xml e llms.txt (data + bloco por aeroporto) atualizados`,
+    `faq.md, precos.md, llms-full.txt, blog/feed.xml e llms.txt (data, bloco por aeroporto e ${posts.length} guias) atualizados`,
 );

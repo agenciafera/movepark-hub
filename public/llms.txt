@@ -74,7 +74,7 @@ Guias de estacionamento de aeroporto: preço da diária, distância até o termi
 - [Índice do blog](https://movepark.co/blog/): todos os posts publicados, cada um com a frase que resume o que ele responde. Confira a tabela atualizada
 - Cada post responde em Markdown puro no mesmo endereço, com `Accept: text/markdown`. Exemplo: `curl -H "Accept: text/markdown" https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-de-viracopos/`
 - O cabeçalho do Markdown traz a data de publicação, a URL canônica e o link do destino correspondente
-- O índice com a descrição de cada post está inline em https://movepark.co/llms-full.txt
+- A lista completa está logo abaixo, por aeroporto, com a frase que resume cada guia. O texto integral de cada um responde no endereço dele
 
 ## Estacionamento mapeado, sem reserva online
 
