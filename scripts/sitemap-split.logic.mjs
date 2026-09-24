@@ -74,6 +74,29 @@ export function lastmodDeUrlNova(updatedAt, nascimento = VIRADA_URL_ESTACIONAMEN
   return maisRecenteDentre(nascimento, updatedAt);
 }
 
+/**
+ * `lastmod` de uma página COMPOSTA, como a de destino.
+ *
+ * `destination.updated_at` descreve a linha do destino, e a linha quase nunca muda: o
+ * máximo dela em 24/09/2026 era 14/08, enquanto a FAQ que renderiza na mesma página
+ * tinha 22/09 e os posts 24/09. O sitemap declarava 28/08 para páginas que haviam
+ * mudado de verdade dias antes, e `lastmod` é sinal de prioridade de recrastreio: a
+ * data velha despriorizava justamente o que acabou de mudar. O concorrente declarava
+ * 24/09 no mesmo dia.
+ *
+ * Entram aqui as fontes cuja mudança é EDITORIAL e aparece na tela: a linha do destino,
+ * a FAQ de escopo `destination`, os lotes mapeados e os posts do aeroporto.
+ *
+ * **`pricing_rule` fica de fora de propósito.** O `updated_at` dela mede o cron de
+ * espelhamento, que roda de 3 em 3 horas, então incluí-la faria toda página alegar
+ * "mudou hoje" todo dia. Um `lastmod` que é sempre hoje não é sinal, é ruído, e o
+ * buscador aprende a ignorar. Preço de parceiro que muda de verdade aparece pela
+ * `location`/`prospect_location`, que são tocadas por gente.
+ */
+export function lastmodComposto(nascimento, ...datas) {
+  return maisRecenteDentre(nascimento, ...datas);
+}
+
 /** Data mais recente entre os blocos `<url>` de uma seção. */
 function maisRecente(blocos) {
   return maisRecenteDentre(

@@ -48,3 +48,8 @@ export function lastmodDeUrlNova(
   updatedAt: string | null | undefined,
   nascimento?: string,
 ): string | undefined;
+
+export declare function lastmodComposto(
+  nascimento: string | null | undefined,
+  ...datas: (string | null | undefined)[]
+): string | undefined;

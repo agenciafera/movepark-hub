@@ -8,6 +8,7 @@ import {
   VIRADA_URL_ESTACIONAMENTOS,
   dividirSitemap,
   lastmodDeUrlNova,
+  lastmodComposto,
   maisRecenteDentre,
 } from "../../scripts/sitemap-split.logic.mjs";
 
@@ -215,5 +216,41 @@ describe("lastmodDeUrlNova", () => {
     expect(lastmodDeUrlNova("2026-01-01T00:00:00.000Z", "2026-06-01T00:00:00.000Z")).toBe(
       "2026-06-01T00:00:00.000Z",
     );
+  });
+});
+
+describe("lastmodComposto: a data da página, não a da linha", () => {
+  /**
+   * Medido em 24/09/2026: o sitemap declarava 28/08 para as 27 páginas de destino,
+   * porque o `lastmod` seguia `destination.updated_at` (máximo 14/08) somado ao piso
+   * da virada de URL. A FAQ que renderiza na mesma página estava em 22/09 e os posts
+   * em 24/09. `lastmod` é sinal de prioridade de recrastreio, então a data velha
+   * despriorizava exatamente o que tinha acabado de mudar; o concorrente declarava
+   * 24/09 no mesmo dia.
+   */
+  it("usa a fonte mais recente que de fato renderiza na página", () => {
+    expect(
+      lastmodComposto(
+        "2026-08-28T00:00:00.000Z", // piso: virada de URL
+        "2026-08-14T00:00:00.000Z", // destination.updated_at
+        "2026-09-22T00:00:00.000Z", // FAQ do aeroporto
+        "2026-09-10T00:00:00.000Z", // lote mapeado
+        "2026-09-24T00:00:00.000Z", // post da praça
+      ),
+    ).toBe("2026-09-24T00:00:00.000Z");
+  });
+
+  it("mantém o piso da virada de URL quando tudo é mais antigo", () => {
+    // A invariante de `lastmodDeUrlNova` continua: nenhuma URL alega data anterior
+    // à própria existência.
+    expect(
+      lastmodComposto("2026-08-28T00:00:00.000Z", "2026-05-28T00:00:00.000Z", undefined, null),
+    ).toBe("2026-08-28T00:00:00.000Z");
+  });
+
+  it("ignora fonte ausente sem quebrar", () => {
+    expect(
+      lastmodComposto("2026-08-28T00:00:00.000Z", undefined, null, "2026-09-01T00:00:00.000Z"),
+    ).toBe("2026-09-01T00:00:00.000Z");
   });
 });

@@ -14,7 +14,12 @@ import {
 } from "./src/lib/sitemapRoutes";
 // Mesma função que o split usa para o lastmod do índice. Uma só, para as duas pontas não
 // divergirem sobre o que é "a data mais recente".
-import { lastmodDeUrlNova, maisRecenteDentre } from "./scripts/sitemap-split.logic.mjs";
+import {
+  VIRADA_URL_ESTACIONAMENTOS,
+  lastmodComposto,
+  lastmodDeUrlNova,
+  maisRecenteDentre,
+} from "./scripts/sitemap-split.logic.mjs";
 // Mesma paginação do getStaticPaths da listagem (src/routes.tsx): sem ela, o sitemap podia
 // contar página diferente do que o SSG de fato gera. Módulo puro, sem import próprio, então
 // entra na mesma exceção do site-host.mjs e do sitemapRoutes.ts.
@@ -79,6 +84,23 @@ async function getDynamicRoutes(
 }
 
 // Páginas de destino (SEO) — /destinos/<slug> de cada destino publicado.
+/**
+ * As rotas de destino, com `lastmod` COMPOSTO.
+ *
+ * A página de destino não é a linha `destination`: ela é a linha mais a FAQ do
+ * aeroporto, mais os lotes mapeados, mais os posts da praça. `destination.updated_at`
+ * mede só a primeira, e a primeira quase nunca muda (o máximo dela em 24/09/2026 era
+ * 14/08, enquanto a FAQ da mesma página estava em 22/09 e os posts em 24/09).
+ *
+ * O efeito medido: o sitemap declarava 28/08 para 27 páginas que haviam mudado dias
+ * antes. `lastmod` é sinal de prioridade de recrastreio, então a data velha
+ * despriorizava exatamente o que acabou de mudar. No mesmo dia, o comparador
+ * concorrente declarava 24/09.
+ *
+ * `pricing_rule` NÃO entra: o `updated_at` dela mede o cron de espelhamento, que roda
+ * de 3 em 3 horas, e incluí-la faria toda página alegar "mudou hoje" todo dia. Um
+ * `lastmod` que é sempre hoje deixa de ser sinal.
+ */
 async function getDestinationRoutes(
   sb: SupabaseClient | null,
 ): Promise<(RotaComData & { id: string; slug: string })[]> {
@@ -89,11 +111,49 @@ async function getDestinationRoutes(
     .select("id, slug, public_slug, updated_at")
     .eq("is_published", true)
     .not("public_slug", "is", null);
+  const destinos = (data ?? []) as { id: string; slug: string; public_slug: string; updated_at: string }[];
+  if (destinos.length === 0) return [];
 
-  // deno-lint-ignore no-explicit-any
-  return (data ?? []).map((d: any) => ({
+  // Uma leitura por fonte, e não uma por destino: são 27 destinos, e 81 consultas no
+  // build esbarram no statement timeout do papel anon.
+  const ids = destinos.map((d) => d.id);
+  const maisRecentePorDestino = async (
+    tabela: "faq" | "prospect_location" | "blog_post",
+    // deno-lint-ignore no-explicit-any
+    filtro?: (q: any) => any,
+  ) => {
+    const base = sb.from(tabela).select("destination_id, updated_at").in("destination_id", ids);
+    const { data: linhas } = await (filtro ? filtro(base) : base);
+    const mapa = new Map<string, string>();
+    // deno-lint-ignore no-explicit-any
+    for (const l of (linhas ?? []) as any[]) {
+      const atual = mapa.get(l.destination_id);
+      if (!atual || l.updated_at > atual) mapa.set(l.destination_id, l.updated_at);
+    }
+    return mapa;
+  };
+
+  const [faqs, lotes, posts] = await Promise.all([
+    maisRecentePorDestino("faq", (q) =>
+      q.eq("scope", "destination").eq("is_published", true).is("deleted_at", null),
+    ).catch(() => new Map<string, string>()),
+    maisRecentePorDestino("prospect_location", (q) => q.eq("is_published", true)).catch(
+      () => new Map<string, string>(),
+    ),
+    maisRecentePorDestino("blog_post", (q) =>
+      q.eq("is_published", true).is("deleted_at", null),
+    ).catch(() => new Map<string, string>()),
+  ]);
+
+  return destinos.map((d) => ({
     route: `/estacionamentos/${d.public_slug}`,
-    lastmod: lastmodDeUrlNova(d.updated_at),
+    lastmod: lastmodComposto(
+      VIRADA_URL_ESTACIONAMENTOS,
+      d.updated_at,
+      faqs.get(d.id),
+      lotes.get(d.id),
+      posts.get(d.id),
+    ),
     id: d.id,
     slug: d.slug,
   }));

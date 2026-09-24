@@ -452,11 +452,7 @@ export function blogPostingSchema(p: {
   author: p.authorName
     ? { "@type": "Person", name: p.authorName }
     : { "@type": "Organization", name: "Movepark" },
-    publisher: {
-      "@type": "Organization",
-      name: "Movepark",
-      url: SITE_URL,
-    },
+    publisher: editorEntidade(),
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
   };
@@ -491,11 +487,43 @@ function brandSchema() {
  * (`sameAs`, de src/lib/redes.ts), contato de suporte, o slogan da garantia e a
  * identidade legal (razão social e CNPJ, conferidos no registro público).
  */
+/**
+ * A Movepark como EDITORA, para quem publica conteúdo (post, vídeo).
+ *
+ * Nó mínimo, mas com o mesmo `@id` da `organizationSchema()`. As duas coisas juntas
+ * importam:
+ *
+ * - **`@id` igual** faz o crawler entender que a organização do post, a do vídeo e a
+ *   da home são UMA entidade. Repetir o bloco sem `@id`, como era até 24/09/2026,
+ *   declarava em cada página uma organização nova que por acaso tinha o mesmo nome, e
+ *   autoridade não acumula assim.
+ * - **nó descrito, e não só referência**, porque só a home e o /sobre emitem a
+ *   `organizationSchema()` completa. Um `{"@id": ...}` solto numa página que não
+ *   define o nó é referência pendurada, que é pior que a cópia: aponta para nada.
+ */
+function editorEntidade() {
+  return {
+    "@type": "Organization",
+    "@id": ORG_ID,
+    name: "Movepark",
+    url: SITE_URL,
+  };
+}
+
+export const ORG_ID = `${SITE_URL}/#organization`;
+export const SITE_ID = `${SITE_URL}/#website`;
+
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    // `@id` é o que transforma blocos repetidos em UMA entidade. Sem ele, a
+    // Organization da home, a do post e a do destino são três coisas que por acaso
+    // têm o mesmo nome, e nenhum sinal de autoridade se acumula. Com ele, qualquer
+    // página pode referenciar `{"@id": ORG_ID}` em vez de repetir o bloco inteiro.
+    "@id": ORG_ID,
     name: "Movepark",
+    alternateName: ["Movepark Brasil", "Movepark Estacionamentos"],
     legalName: "Movepark Tecnologia Ltda",
     taxID: "68.183.164/0001-35",
     url: SITE_URL,
@@ -512,6 +540,19 @@ export function organizationSchema() {
     },
     sameAs: REDES.map((r) => r.url),
     brand: brandSchema(),
+    // Escopo geográfico declarado. Responde "essa empresa atende onde?" sem o
+    // crawler precisar inferir do conteúdo.
+    areaServed: { "@type": "Country", name: "Brasil" },
+    // Expertise temática declarada. É sinal de E-E-A-T de entidade: diz sobre o que
+    // esta organização tem o que falar, e casa com os temas em que as páginas de
+    // fato respondem com dado próprio.
+    knowsAbout: [
+      "Estacionamento de aeroporto",
+      "Traslado até o terminal",
+      "Preço de estacionamento em aeroporto brasileiro",
+      "Reserva antecipada de vaga",
+      "Estacionamento de longa permanência",
+    ],
   };
 }
 
@@ -524,9 +565,15 @@ export function webSiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": SITE_ID,
     name: "Movepark",
     url: SITE_URL,
     inLanguage: "pt-BR",
+    // Referência pura aqui é segura: `webSiteSchema()` só sai na home, e a home emite
+    // a `organizationSchema()` completa no bloco vizinho, então o nó existe na mesma
+    // página. Nas demais (post, vídeo) quem assina é `editorEntidade()`, que descreve
+    // o nó em vez de só apontar para ele.
+    publisher: { "@id": ORG_ID },
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -948,11 +995,7 @@ export function youTubeVideoSchema(v: {
     duration: v.duration,
     embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
     inLanguage: "pt-BR",
-    publisher: {
-      "@type": "Organization",
-      name: "Movepark",
-      url: SITE_URL,
-    },
+    publisher: editorEntidade(),
     mainEntityOfPage: { "@type": "WebPage", "@id": v.pageUrl },
   };
 }
