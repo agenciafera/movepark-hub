@@ -62,6 +62,11 @@ import {
   slugDoIdioma,
 } from "@/features/destinations/i18nApi";
 import {
+  fetchFaqTraduzidaPorSlug,
+  fetchTraducoesDeFaq,
+  idiomasDaFaq,
+} from "@/features/faqs/i18nApi";
+import {
   LOCALES_TRADUZIDOS,
   LOCALE_PADRAO,
   SEGMENTO,
@@ -774,9 +779,32 @@ async function faqIndexLoader() {
  * real. Compacto porque o loader é serializado no HTML de cada uma das ~40
  * páginas; mandar o índice inteiro multiplicaria o peso à toa.
  */
-async function faqPerguntaLoader({ params }: LoaderFunctionArgs) {
-  const data = await fetchFaqBySlug(params.slug!).catch(() => null);
+async function faqPerguntaLoader({ params, request }: LoaderFunctionArgs) {
+  // Mesmo contrato do destino: o idioma vem do CAMINHO, e em idioma traduzido o slug
+  // da URL é o daquele idioma, então a resolução passa pela tabela de tradução antes
+  // de chegar na pergunta original.
+  const { locale } = localeDoCaminho(new URL(request.url, SITE_URL_INTERNO).pathname);
+
+  let slugPt = params.slug!;
+  let traducao = null as Awaited<ReturnType<typeof fetchFaqTraduzidaPorSlug>>;
+  if (locale !== LOCALE_PADRAO) {
+    traducao = await fetchFaqTraduzidaPorSlug(params.slug!, locale).catch(() => null);
+    if (!traducao) return null;
+    const { data: original } = await supabase
+      .from("faq")
+      .select("slug")
+      .eq("id", traducao.faq_id)
+      .maybeSingle();
+    if (!original?.slug) return null;
+    slugPt = original.slug as string;
+  }
+
+  const data = await fetchFaqBySlug(slugPt).catch(() => null);
   if (!data) return null;
+
+  const idiomas = await fetchTraducoesDeFaq()
+    .then((t) => idiomasDaFaq(t, data.faq.id))
+    .catch(() => []);
 
   const index = await fetchPriceIndex().catch(() => null);
   let precos: FaqPrecoContexto = null;
@@ -815,10 +843,40 @@ async function faqPerguntaLoader({ params }: LoaderFunctionArgs) {
     }
   }
 
-  return { ...data, precos };
+  // O rótulo do aeroporto no idioma da página. `aeroportoEmProsa` monta a frase em
+  // português por construção ("Aeroporto de <curto>"), então em idioma traduzido ela
+  // produziria "Aeroporto de Guarulhos Airport". Quem sabe o nome certo é o
+  // `seo_label` do `destination_i18n`, que já foi escrito naquele idioma.
+  let destinoLabel: string | null = null;
+  let destinoSlug: string | null = null;
+  if (locale !== LOCALE_PADRAO && data.faq.destination?.id) {
+    const t = (await fetchDestinosTraduzidos().catch(() => [])).find(
+      (x) => x.destination_id === data.faq.destination?.id && x.locale === locale,
+    );
+    destinoLabel = t?.seo_label?.trim() || null;
+    // Só vale o slug de uma tradução PUBLICADA: sem ela a página de destino naquele
+    // idioma não existe, e o link levaria a 404. Foi o defeito que já subiu em
+    // produção uma vez, com o cluster de hreflang montado no slug português.
+    destinoSlug = t?.slug?.trim() || null;
+  }
+
+  return { ...data, precos, locale, traducao, idiomas, destinoLabel, destinoSlug };
 }
 
 /** Uma URL por pergunta publicada com slug (global e destination). */
+/**
+ * Uma URL por pergunta TRADUZIDA, em cada idioma publicado.
+ *
+ * Nasce vazio, igual ao do destino: sem linha publicada em `faq_i18n` com slug
+ * próprio, o build não gera rota de idioma nenhuma.
+ */
+async function fetchLocalizedFaqPaths(): Promise<string[]> {
+  const traducoes = await fetchTraducoesDeFaq().catch(() => []);
+  return traducoes.map((t) =>
+    caminhoLocalizado({ familia: "faq", slug: t.slug, locale: t.locale }),
+  );
+}
+
 async function fetchAllFaqPaths(): Promise<string[]> {
   const { data } = await supabase
     .from("faq")
@@ -1007,6 +1065,13 @@ export const routes: RouteRecord[] = [
             loader: faqPerguntaLoader,
             getStaticPaths: fetchAllFaqPaths,
           },
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            path: `/${locale}/${SEGMENTO.faq[locale]}/:slug`,
+            element: <FaqPerguntaPage />,
+            loader: faqPerguntaLoader,
+            getStaticPaths: async () =>
+              (await fetchLocalizedFaqPaths()).filter((p) => p.startsWith(`/${locale}/`)),
+          })),
           { path: "/sobre", element: <SobrePage /> },
           { path: "/termos", element: <TermosPage /> },
           { path: "/privacidade", element: <PrivacidadePage /> },

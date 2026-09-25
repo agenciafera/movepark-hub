@@ -78,4 +78,37 @@ describe("dicionário da casca", () => {
       }
     }
   });
+  /**
+   * O defeito que mais se repetiu nesta superfície: uma chave nova entra no dicionário
+   * `en`/`es` com o texto português copiado. O typecheck aprova (o tipo só exige que a
+   * chave exista) e a página sai meio traduzida.
+   *
+   * A checagem é por IGUALDADE com o português, não por vocabulário. A primeira versão
+   * deste teste procurava marcas do idioma ("ção", "você") e deixou passar
+   * `faqAtualizado: "Atualizado em"` no dicionário inglês, que não tem marca nenhuma.
+   * Copiar é o que a pessoa faz de fato, então é copiar que o teste tem que ver.
+   *
+   * Hoje nenhuma chave colide de propósito. Se um dia uma colidir (um rótulo que é o
+   * mesmo nos três idiomas), ela entra numa allowlist nomeada aqui, com o motivo, em
+   * vez de o teste ser afrouxado.
+   */
+  it("nenhuma chave de en/es é cópia crua do português", () => {
+    const valor = (locale: Locale, k: keyof Textos): string => {
+      const v = textos(locale)[k];
+      const s =
+        typeof v === "function"
+          ? (v as (x: never) => unknown)({ semParceiro: false } as never)
+          : v;
+      return typeof s === "string" ? s : JSON.stringify(s);
+    };
+    for (const locale of ["en", "es"] as const) {
+      for (const k of CHAVES) {
+        const pt = valor("pt-BR", k);
+        // Função cujo retorno depende só do argumento pode coincidir sem ser cópia;
+        // string vazia (`traducaoParcial` no pt) não é sinal de nada.
+        if (!pt) continue;
+        expect(valor(locale, k), `${locale}.${String(k)} repete o português`).not.toBe(pt);
+      }
+    }
+  });
 });

@@ -46,10 +46,12 @@ export type ContentPage = {
  * aparecia como 9. Por isso a data só de dia é ancorada ao meio-dia local, longe
  * de qualquer virada de fuso.
  */
-export function formatUpdated(iso: string): string {
+export function formatUpdated(iso: string, locale = "pt-BR"): string {
   const soData = /^\d{4}-\d{2}-\d{2}$/.test(iso);
   const d = new Date(soData ? `${iso}T12:00:00` : iso);
-  return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+  // O locale é do Intl, não do nosso enum: "11 de setembro de 2026" em português e
+  // "September 11, 2026" em inglês saem da mesma chamada, inclusive a ordem dos campos.
+  return d.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
 }
 
 /**

@@ -72,6 +72,9 @@ _originals/
 # Playwright E2E
 .auth/
 .env.e2e
+# Cópia local do .env para rodar o dev sem tocar no .env rastreado: o `.env`
+# É versionado, e um symlink sobre ele já apagou o arquivo do repo uma vez.
+.envtmp
 playwright-report/
 test-results/
 

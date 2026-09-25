@@ -26,6 +26,41 @@ export type Textos = {
   trasladoHeading: (destino: string) => string;
   ondeFicaHeading: (destino: string) => string;
   faqHeading: (destino: string) => string;
+  // Página de uma pergunta (/faq/<slug> e equivalentes traduzidos).
+  faqTrilha: string;
+  faqVerTodas: string;
+  faqNaoEncontrada: string;
+  faqNaoEncontradaTexto: string;
+  faqComoEscolher: (aeroporto: string) => string;
+  faqComoEscolherTexto: (aeroporto: string) => string;
+  paginaDaPergunta: string;
+  faqAtualizado: string;
+  intlLocale: string;
+  faqReservarEm: (destino: string) => string;
+  faqBuscar: string;
+  faqCompararPrecos: string;
+  faqRespostaRapida: string;
+  faqPrecoHeading: (aeroporto: string) => string;
+  faqChecklist: (a: { semParceiro: boolean }) => string[];
+  faqIntro: (destino: string | null) => string;
+  faqPrecoLead: (a: { aeroporto: string; menor: string | null }) => string;
+  faqPrecoFonte: string;
+  faqPeriodo: string;
+  faqTotalAPartirDe: string;
+  faqPorDia: string;
+  faqPorDiaUnidade: string;
+  faqNoComparativo: (a: { unidades: number; parceiros: number }) => string;
+  faqEstacionamentoCom: string;
+  faqRedeTexto: (a: { unidades: number; destinos: number; menor: string | null }) => string;
+  faqIndicePrecos: string;
+  faqComoReservar: string;
+  faqComoReservarTexto: string;
+  faqOQueConferir: string;
+  faqVerEstacionamentos: (destino: string) => string;
+  faqCompararEm: (destino: string) => string;
+  faqCompararOutros: string;
+  faqRelacionadas: string;
+  faqTodasPerguntas: string;
   leiaTambem: (destino: string) => string;
   outrosDestinos: string;
   perguntasGerais: string;
@@ -121,6 +156,60 @@ const PT: Textos = {
   trasladoHeading: (d) => `Traslado até o ${d}`,
   ondeFicaHeading: (d) => `Onde fica o ${d}`,
   faqHeading: (d) => `Perguntas frequentes: estacionamento ${d}`,
+  faqTrilha: "Perguntas frequentes",
+  faqVerTodas: "Ver todas as perguntas",
+  faqNaoEncontrada: "Pergunta não encontrada",
+  faqNaoEncontradaTexto: "Essa pergunta não existe ou saiu do ar.",
+  faqComoEscolher: (a) => `Como escolher o estacionamento no ${a}?`,
+  faqComoEscolherTexto: (a) =>
+    `Neste aeroporto a reserva é fechada direto com o estacionamento. A página do ${a} mapeia os da região, com endereço, telefone e avaliação do Google: cote dois ou três, compare o total do período e confirme o traslado antes de pagar.`,
+  paginaDaPergunta: "Página desta pergunta",
+  faqAtualizado: "Atualizado em",
+  intlLocale: "pt-BR",
+  faqReservarEm: (d) => `Reservar vaga em ${d}`,
+  faqBuscar: "Buscar estacionamento",
+  faqCompararPrecos: "Comparar preços",
+  faqRespostaRapida: "Resposta rápida",
+  faqPrecoHeading: (a) => `Quanto custa estacionar por período no ${a}?`,
+  faqChecklist: (a) => (a.semParceiro ? [
+    "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
+    "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
+    "Distância até o terminal: os estacionamentos mapeados estão na página do aeroporto.",
+    "Cancelamento e tolerância de horário: confirme a política na cotação, antes de pagar.",
+  ] : [
+    "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
+    "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
+    "Distância e tempo até o embarque: estão na página de cada estacionamento.",
+    "Cancelamento e tolerância de horário: a política aparece antes de fechar a reserva.",
+  ]),
+  faqIntro: (d) =>
+    d
+      ? `O que saber antes de escolher um estacionamento perto do ${d}.`
+      : "O que saber antes de escolher um estacionamento de aeroporto.",
+  faqPrecoLead: (a) =>
+    a.menor
+      ? `A diária nos estacionamentos parceiros perto do ${a.aeroporto} começa em ${a.menor}, e o valor por dia cai conforme a estadia.`
+      : `O valor por dia cai conforme a estadia nos estacionamentos parceiros perto do ${a.aeroporto}.`,
+  faqPrecoFonte: "Os preços saem do motor de reservas, os mesmos do checkout.",
+  faqPeriodo: "Período",
+  faqTotalAPartirDe: "Total a partir de",
+  faqPorDia: "Por dia",
+  faqPorDiaUnidade: "/dia",
+  faqNoComparativo: (a) =>
+    `${a.unidades} ${a.unidades === 1 ? "estacionamento" : "estacionamentos"} de ${a.parceiros} ${a.parceiros === 1 ? "parceiro" : "parceiros"} no comparativo.`,
+  faqEstacionamentoCom: "Estacionamento de aeroporto com a Movepark",
+  faqRedeTexto: (a) =>
+    `São ${a.unidades} estacionamentos comparados em ${a.destinos} destinos${a.menor ? `, com diária a partir de ${a.menor}` : ""}. O preço mostrado é o preço final da reserva, sem taxa na chegada.`,
+  faqIndicePrecos: "Ver o índice de preços",
+  faqComoReservar: "Como reservar com a Movepark?",
+  faqComoReservarTexto:
+    "Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos estacionamentos credenciados e reserva online, com o valor fechado antes de pagar. Na maioria das unidades o traslado até o terminal está incluído.",
+  faqOQueConferir: "O que conferir antes de reservar?",
+  faqVerEstacionamentos: (d) => `Ver estacionamentos em ${d}`,
+  faqCompararEm: (d) => `Comparar preços em ${d}`,
+  faqCompararOutros: "Comparar preços em outros aeroportos",
+  faqRelacionadas: "Perguntas relacionadas",
+  faqTodasPerguntas: "Todas as perguntas frequentes",
   leiaTambem: (d) => `Leia também sobre ${d}`,
   outrosDestinos: "Estacionamento em outros destinos",
   perguntasGerais: "Perguntas gerais sobre reservar pela Movepark",
@@ -214,6 +303,60 @@ const EN: Textos = {
   trasladoHeading: (d) => `Shuttle to ${d}`,
   ondeFicaHeading: (d) => `Where ${d} is`,
   faqHeading: (d) => `Frequently asked questions: ${d} parking`,
+  faqTrilha: "FAQ",
+  faqVerTodas: "See all questions",
+  faqNaoEncontrada: "Question not found",
+  faqNaoEncontradaTexto: "This question does not exist or is no longer published.",
+  faqComoEscolher: (a) => `How to choose a parking lot at ${a}?`,
+  faqComoEscolherTexto: (a) =>
+    `At this airport the booking is made directly with the parking lot. The ${a} page maps the ones nearby, with address, phone and Google rating: get two or three quotes, compare the total for your dates and confirm the shuttle before you pay.`,
+  paginaDaPergunta: "Read the full answer",
+  faqAtualizado: "Updated on",
+  intlLocale: "en-US",
+  faqReservarEm: (d) => `Book a spot at ${d}`,
+  faqBuscar: "Find parking",
+  faqCompararPrecos: "Compare prices",
+  faqRespostaRapida: "Quick answer",
+  faqPrecoHeading: (a) => `How much does parking at ${a} cost by length of stay?`,
+  faqChecklist: (a) => (a.semParceiro ? [
+    "Covered or uncovered spot: covered shields the car from sun and rain, uncovered usually has the lowest daily rate.",
+    "Shuttle to the terminal: check whether it is included and how often it runs.",
+    "Distance to the terminal: the mapped parking lots are listed on the airport page.",
+    "Cancellation and grace period: confirm the policy in the quote, before you pay.",
+  ] : [
+    "Covered or uncovered spot: covered shields the car from sun and rain, uncovered usually has the lowest daily rate.",
+    "Shuttle to the terminal: check whether it is included and how often it runs.",
+    "Distance and time to the gate: both are on each parking lot page.",
+    "Cancellation and grace period: the policy is shown before you confirm the booking.",
+  ]),
+  faqIntro: (d) =>
+    d
+      ? `What to know before choosing a parking lot near ${d}.`
+      : "What to know before choosing airport parking.",
+  faqPrecoLead: (a) =>
+    a.menor
+      ? `The daily rate at partner parking lots near ${a.aeroporto} starts at ${a.menor}, and the per-day price drops the longer you stay.`
+      : `The per-day price drops the longer you stay at partner parking lots near ${a.aeroporto}.`,
+  faqPrecoFonte: "Prices come from the booking engine, the same ones shown at checkout.",
+  faqPeriodo: "Length of stay",
+  faqTotalAPartirDe: "Total from",
+  faqPorDia: "Per day",
+  faqPorDiaUnidade: "/day",
+  faqNoComparativo: (a) =>
+    `${a.unidades} parking ${a.unidades === 1 ? "lot" : "lots"} from ${a.parceiros} ${a.parceiros === 1 ? "partner" : "partners"} in the comparison.`,
+  faqEstacionamentoCom: "Airport parking with Movepark",
+  faqRedeTexto: (a) =>
+    `${a.unidades} parking lots compared across ${a.destinos} destinations${a.menor ? `, with daily rates from ${a.menor}` : ""}. The price shown is the final booking price, with nothing extra to pay on arrival.`,
+  faqIndicePrecos: "See the price index",
+  faqComoReservar: "How to book with Movepark?",
+  faqComoReservarTexto:
+    "You search by airport, compare price, spot type and ratings across accredited parking lots, and book online with the final amount shown before you pay. Most lots include the shuttle to the terminal.",
+  faqOQueConferir: "What to check before booking?",
+  faqVerEstacionamentos: (d) => `See parking at ${d}`,
+  faqCompararEm: (d) => `Compare prices at ${d}`,
+  faqCompararOutros: "Compare prices at other airports",
+  faqRelacionadas: "Related questions",
+  faqTodasPerguntas: "All frequently asked questions",
   leiaTambem: (d) => `More about ${d}`,
   outrosDestinos: "Parking at other airports",
   perguntasGerais: "General questions about booking with Movepark",
@@ -310,6 +453,60 @@ const ES: Textos = {
   trasladoHeading: (d) => `Traslado a ${d}`,
   ondeFicaHeading: (d) => `Dónde queda ${d}`,
   faqHeading: (d) => `Preguntas frecuentes: estacionamiento ${d}`,
+  faqTrilha: "Preguntas frecuentes",
+  faqVerTodas: "Ver todas las preguntas",
+  faqNaoEncontrada: "Pregunta no encontrada",
+  faqNaoEncontradaTexto: "Esta pregunta no existe o dejó de estar publicada.",
+  faqComoEscolher: (a) => `¿Cómo elegir el estacionamiento en el ${a}?`,
+  faqComoEscolherTexto: (a) =>
+    `En este aeropuerto la reserva se cierra directamente con el estacionamiento. La página del ${a} mapea los de la zona, con dirección, teléfono y calificación de Google: pedí dos o tres cotizaciones, compará el total del período y confirmá el traslado antes de pagar.`,
+  paginaDaPergunta: "Ver la respuesta completa",
+  faqAtualizado: "Actualizado el",
+  intlLocale: "es-ES",
+  faqReservarEm: (d) => `Reservar plaza en ${d}`,
+  faqBuscar: "Buscar estacionamiento",
+  faqCompararPrecos: "Comparar precios",
+  faqRespostaRapida: "Respuesta rápida",
+  faqPrecoHeading: (a) => `¿Cuánto cuesta estacionar por período en el ${a}?`,
+  faqChecklist: (a) => (a.semParceiro ? [
+    "Plaza cubierta o descubierta: la cubierta protege del sol y la lluvia, la descubierta suele tener la tarifa diaria más baja.",
+    "Traslado a la terminal: confirmá si está incluido y cada cuánto sale.",
+    "Distancia a la terminal: los estacionamientos mapeados están en la página del aeropuerto.",
+    "Cancelación y tolerancia de horario: confirmá la política en la cotización, antes de pagar.",
+  ] : [
+    "Plaza cubierta o descubierta: la cubierta protege del sol y la lluvia, la descubierta suele tener la tarifa diaria más baja.",
+    "Traslado a la terminal: confirmá si está incluido y cada cuánto sale.",
+    "Distancia y tiempo hasta el embarque: están en la página de cada estacionamiento.",
+    "Cancelación y tolerancia de horario: la política aparece antes de cerrar la reserva.",
+  ]),
+  faqIntro: (d) =>
+    d
+      ? `Lo que conviene saber antes de elegir un estacionamiento cerca del ${d}.`
+      : "Lo que conviene saber antes de elegir un estacionamiento de aeropuerto.",
+  faqPrecoLead: (a) =>
+    a.menor
+      ? `La tarifa diaria en los estacionamientos asociados cerca del ${a.aeroporto} empieza en ${a.menor}, y el precio por día baja cuanto más larga es la estadía.`
+      : `El precio por día baja cuanto más larga es la estadía en los estacionamientos asociados cerca del ${a.aeroporto}.`,
+  faqPrecoFonte: "Los precios salen del motor de reservas, los mismos del checkout.",
+  faqPeriodo: "Duración",
+  faqTotalAPartirDe: "Total desde",
+  faqPorDia: "Por día",
+  faqPorDiaUnidade: "/día",
+  faqNoComparativo: (a) =>
+    `${a.unidades} ${a.unidades === 1 ? "estacionamiento" : "estacionamientos"} de ${a.parceiros} ${a.parceiros === 1 ? "socio" : "socios"} en la comparación.`,
+  faqEstacionamentoCom: "Estacionamiento de aeropuerto con Movepark",
+  faqRedeTexto: (a) =>
+    `Son ${a.unidades} estacionamientos comparados en ${a.destinos} destinos${a.menor ? `, con tarifa diaria desde ${a.menor}` : ""}. El precio que ves es el precio final de la reserva, sin cargos al llegar.`,
+  faqIndicePrecos: "Ver el índice de precios",
+  faqComoReservar: "¿Cómo reservar con Movepark?",
+  faqComoReservarTexto:
+    "Buscás por aeropuerto, comparás precio, tipo de plaza y calificación de los estacionamientos acreditados y reservás en línea, con el importe cerrado antes de pagar. La mayoría incluye el traslado a la terminal.",
+  faqOQueConferir: "¿Qué mirar antes de reservar?",
+  faqVerEstacionamentos: (d) => `Ver estacionamientos en ${d}`,
+  faqCompararEm: (d) => `Comparar precios en ${d}`,
+  faqCompararOutros: "Comparar precios en otros aeropuertos",
+  faqRelacionadas: "Preguntas relacionadas",
+  faqTodasPerguntas: "Todas las preguntas frecuentes",
   leiaTambem: (d) => `Más sobre ${d}`,
   outrosDestinos: "Estacionamiento en otros aeropuertos",
   perguntasGerais: "Preguntas generales sobre reservar con Movepark",

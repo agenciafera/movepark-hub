@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CaretRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -11,39 +11,35 @@ import {
   introDaPergunta,
   keywordDoTitulo,
   shortSemCodigo,
+  type FaqDestinoRef,
   type FaqPrecoContexto,
 } from "@/features/faqs/faqPagina.logic";
 import type { FaqPageData } from "@/features/faqs/api";
-import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
+import {
+  LANG_HTML,
+  LOCALE_PADRAO,
+  caminhoLocalizado,
+  clusterHreflang,
+  localeDoCaminho,
+  type Locale,
+} from "@/lib/i18n";
+import type { IdiomaDaFaq } from "@/features/faqs/i18nApi";
+import { textos } from "@/lib/i18nTextos";
 
 /** O que o loader entrega: a pergunta, as relacionadas e o contexto de preço. */
-export type FaqPerguntaData = (FaqPageData & { precos: FaqPrecoContexto }) | null;
-
-/** O que conferir antes de reservar, onde a reserva fecha pela Movepark. */
-const CHECKLIST = [
-  "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
-  "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
-  "Distância e tempo até o embarque: estão na página de cada estacionamento.",
-  "Cancelamento e tolerância de horário: a política aparece antes de fechar a reserva.",
-];
-
-/**
- * Variante pra aeroporto sem parceiro precificado: a reserva fecha direto com o
- * estacionamento, então o checklist não pode apontar pra página de oferta da
- * Movepark (coerência da página, e ADR-009: sem promessa de transação).
- */
-const CHECKLIST_SEM_PARCEIRO = [
-  "Vaga coberta ou descoberta: a coberta protege de sol e chuva, a descoberta costuma ter a menor diária.",
-  "Traslado até o terminal: confirme se está incluído e de quanto em quanto tempo sai.",
-  "Distância até o terminal: os estacionamentos mapeados estão na página do aeroporto.",
-  "Cancelamento e tolerância de horário: confirme a política na cotação, antes de pagar.",
-];
+export type FaqPerguntaData =
+  | (FaqPageData & {
+      precos: FaqPrecoContexto;
+      destinoLabel?: string | null;
+      destinoSlug?: string | null;
+    })
+  | null;
 
 /**
  * Página de uma pergunta do FAQ (/faq/<slug>), no formato answer-first: a
@@ -56,16 +52,20 @@ const CHECKLIST_SEM_PARCEIRO = [
  */
 export default function FaqPerguntaPage() {
   const data = useLoaderData() as FaqPerguntaData;
+  // O estado vazio roda ANTES de existir `data`, então o idioma não pode vir do loader.
+  // Vem do caminho, que é a mesma fonte que o loader usa, e por isso não diverge dele.
+  const { pathname } = useLocation();
 
   if (!data) {
+    const TVazio = textos(localeDoCaminho(pathname).locale);
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-16">
         <EmptyState
-          title="Pergunta não encontrada"
-          description="Essa pergunta não existe ou saiu do ar."
+          title={TVazio.faqNaoEncontrada}
+          description={TVazio.faqNaoEncontradaTexto}
           action={
             <Link to="/faq" className="text-mp-primary underline">
-              Ver todas as perguntas
+              {TVazio.faqVerTodas}
             </Link>
           }
         />
@@ -74,21 +74,61 @@ export default function FaqPerguntaPage() {
   }
 
   const { faq, related, precos } = data;
+  /*
+   * Em idioma traduzido a pergunta, a resposta e o corpo vêm da tradução; o resto da
+   * página (destino, preços, relacionadas) continua saindo do registro original,
+   * porque é dado, não texto.
+   */
+  const locale: Locale = (data as { locale?: Locale }).locale ?? LOCALE_PADRAO;
+  const traducao = (data as { traducao?: { question: string; answer: string; body_md: string | null; slug: string } | null }).traducao ?? null;
+  const idiomas = ((data as { idiomas?: IdiomaDaFaq[] }).idiomas ?? []);
+  const T = textos(locale);
+  const pergunta = traducao?.question ?? faq.question;
+  const resposta = traducao?.answer ?? faq.answer;
+  const corpo = traducao ? traducao.body_md : faq.body_md;
+
   const destino = faq.destination;
-  const destinoCurto = destino ? shortSemCodigo(destino.short_name, destino.name) : null;
-  const canonical = `${SITE_URL}/faq/${faq.slug}`;
+  // Rótulo do aeroporto no idioma da página: em português sai dos helpers, e em
+  // idioma traduzido do `seo_label` que o loader trouxe. `aeroportoEmProsa` monta
+  // "Aeroporto de <curto>", que em inglês viraria "Aeroporto de Guarulhos Airport".
+  const destinoLabel = data?.destinoLabel ?? null;
+  const destinoCurto = destinoLabel
+    ? shortSemCodigo(destinoLabel, destinoLabel)
+    : destino
+      ? shortSemCodigo(destino.short_name, destino.name)
+      : null;
+  const aeroportoLabel = (d: FaqDestinoRef) => destinoLabel ?? aeroportoEmProsa(d);
+  // O link do destino acompanha o idioma quando a página traduzida existe. Quando não
+  // existe, aponta para a portuguesa: página em outro idioma é melhor que link morto.
+  const linkDestino = (d: FaqDestinoRef) =>
+    data?.destinoSlug && locale !== LOCALE_PADRAO
+      ? caminhoLocalizado({ familia: "destino", slug: data.destinoSlug, locale })
+      : caminhoDestino(d.public_slug ?? d.slug);
+  const canonical =
+    locale === LOCALE_PADRAO
+      ? `${SITE_URL}/faq/${faq.slug}`
+      : `${SITE_URL}${caminhoLocalizado({ familia: "faq", slug: traducao!.slug, locale })}`;
+  // Cluster com o slug de CADA idioma. É a regra que virou lei depois do hreflang que
+  // foi a produção apontando para 404: a URL de um idioma só se monta com o slug dele.
+  const hreflangs = clusterHreflang([
+    { locale: LOCALE_PADRAO, caminho: `${SITE_URL}/faq/${faq.slug}` },
+    ...idiomas.map((i) => ({
+      locale: i.locale,
+      caminho: `${SITE_URL}${caminhoLocalizado({ familia: "faq", slug: i.slug, locale: i.locale })}`,
+    })),
+  ]);
   const keyword = keywordDoTitulo(destino);
   // A pergunta é o que a pessoa digitou: ela fica inteira, e o que sai quando a frase
   // estoura é o sufixo, primeiro a marca e depois a palavra-chave do destino.
   const title = pickTitle(
-    `${faq.question} · ${keyword} | Movepark`,
-    `${faq.question} · ${keyword}`,
-    `${faq.question} | Movepark`,
-    faq.question,
+    `${pergunta} · ${keyword} | Movepark`,
+    `${pergunta} · ${keyword}`,
+    `${pergunta} | Movepark`,
+    pergunta,
   );
   // O corte fino fica com `buildMetaDescription`, que sabe quanto espaço sobra depois do
   // preço e do CTA. Aqui só tiramos a marcação e as frases que não caberiam de jeito nenhum.
-  const resumoResposta = metaDescriptionFrom(faq.answer, 120);
+  const resumoResposta = metaDescriptionFrom(resposta, 120);
   const contexto = destino ? (destino.short_name ?? destino.name) : (faq.category?.label ?? "Geral");
 
   const precoDestino = precos?.kind === "destino" ? precos.destino : null;
@@ -115,29 +155,37 @@ export default function FaqPerguntaPage() {
   // demais, quem sustenta a página é o corpo específico da pergunta (body_md);
   // bloco genérico depois da resposta rápida quebra o contexto e dilui SEO/GEO.
   const paginaDePreco = faq.category?.slug === "pagamentos";
-  const intro = introDaPergunta(
-    destino,
-    !paginaDePreco ? "detalhes" : semParceiro ? "comparativo" : "precos",
-  );
+  // Em português a intro segue vindo de `introDaPergunta`, que VARIA por categoria
+  // (detalhes, comparativo ou preços) e é decisão editorial. O dicionário serve aos
+  // idiomas traduzidos, onde ainda não existe essa variação. Achatar as três numa só
+  // apagaria a distinção sem ninguém notar, que foi o erro cometido com os
+  // cabeçalhos do destino e pego pelo teste de contrato.
+  const intro =
+    locale === LOCALE_PADRAO
+      ? introDaPergunta(destino, !paginaDePreco ? "detalhes" : semParceiro ? "comparativo" : "precos")
+      : T.faqIntro(destinoCurto);
 
   // Um único FAQPage por página (ADR-002), com a resposta idêntica à visível na
   // "Resposta rápida". O dateModified diz quando a resposta foi revisada.
   const schema = {
-    ...faqSchema([{ question: faq.question, answer: faq.answer }]),
+    ...faqSchema([{ question: pergunta, answer: resposta }]),
     dateModified: faq.updated_at,
   };
   const breadcrumb = breadcrumbSchema([
     { name: "Início", url: SITE_URL },
     { name: "Perguntas frequentes", url: `${SITE_URL}/faq` },
-    { name: faq.question, url: canonical },
+    { name: pergunta, url: canonical },
   ]);
 
   return (
     <>
-      <Helmet>
+      <Helmet htmlAttributes={{ lang: LANG_HTML[locale] }}>
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
+        {hreflangs.map((h) => (
+          <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
+        ))}
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
@@ -153,7 +201,7 @@ export default function FaqPerguntaPage() {
           <ol className="flex flex-wrap items-center gap-1.5 text-body-sm text-muted">
             <li>
               <Link to="/" className="hover:text-ink">
-                Início
+                {T.trilhaInicio}
               </Link>
             </li>
             <li aria-hidden className="text-muted-steel">
@@ -161,7 +209,7 @@ export default function FaqPerguntaPage() {
             </li>
             <li>
               <Link to="/faq" className="hover:text-ink">
-                Perguntas frequentes
+                {T.faqTrilha}
               </Link>
             </li>
             <li aria-hidden className="text-muted-steel">
@@ -174,29 +222,31 @@ export default function FaqPerguntaPage() {
         </nav>
 
         <header>
-          <h1 className="text-balance text-display-xl text-ink">{faq.question}</h1>
+          <h1 className="text-balance text-display-xl text-ink">{pergunta}</h1>
           {/* Primeiro parágrafo da página: é aqui que a palavra-chave de tráfego
               de aeroporto aparece em texto corrido. */}
           <p className="mt-3 text-pretty text-body-md text-muted">{intro}</p>
           <p className="mt-2 text-caption-sm text-muted">
-            Atualizado em{" "}
-            <time dateTime={faq.updated_at}>{formatUpdated(faq.updated_at)}</time>
+            {T.faqAtualizado}{" "}
+            <time dateTime={faq.updated_at}>
+              {formatUpdated(faq.updated_at, T.intlLocale)}
+            </time>
           </p>
         </header>
 
         {/* Resposta rápida: o parágrafo que responde sozinho, antes de qualquer
             aprofundamento. É o trecho que buscador e IA extraem. */}
         <section className="mt-6 rounded-lg bg-mp-pale p-5 tablet:p-6">
-          <h2 className="text-title-md text-ink">Resposta rápida</h2>
+          <h2 className="text-title-md text-ink">{T.faqRespostaRapida}</h2>
           <p className="mt-2 whitespace-pre-wrap text-body-md leading-[1.65] text-body">
-            {faq.answer}
+            {resposta}
           </p>
         </section>
 
         {/* Corpo expandido (opcional): markdown editado no Manager. */}
-        {faq.body_md && (
+        {corpo && (
           <section className="mt-8">
-            <PostBody markdown={faq.body_md} />
+            <PostBody markdown={corpo} />
           </section>
         )}
 
@@ -207,44 +257,46 @@ export default function FaqPerguntaPage() {
         {paginaDePreco && destino && precoDestino && precoDestino.byDuration.length > 0 && (
           <section className="mt-8">
             <h2 className="text-display-sm text-ink">
-              Quanto custa estacionar por período no {aeroportoEmProsa(destino)}?
+              {T.faqPrecoHeading(aeroportoLabel(destino))}
             </h2>
             <p className="mt-2 text-body-md text-body">
-              {diaria1
-                ? `A diária nos estacionamentos parceiros perto do ${aeroportoEmProsa(destino)} começa em ${formatBRL(diaria1.from)}, e o valor por dia cai conforme a estadia.`
-                : `O valor por dia cai conforme a estadia nos estacionamentos parceiros perto do ${aeroportoEmProsa(destino)}.`}{" "}
-              Os preços saem do motor de reservas, os mesmos do checkout.
+              {T.faqPrecoLead({
+                aeroporto: aeroportoLabel(destino),
+                menor: diaria1 ? formatBRL(diaria1.from) : null,
+              })}{" "}
+              {T.faqPrecoFonte}
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[420px] text-left text-body-sm">
                 <thead>
                   <tr className="border-b border-hairline text-muted">
-                    <th className="py-2 pr-4 font-medium">Período</th>
-                    <th className="py-2 pr-4 font-medium">Total a partir de</th>
-                    <th className="py-2 font-medium">Por dia</th>
+                    <th className="py-2 pr-4 font-medium">{T.faqPeriodo}</th>
+                    <th className="py-2 pr-4 font-medium">{T.faqTotalAPartirDe}</th>
+                    <th className="py-2 font-medium">{T.faqPorDia}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {precoDestino.byDuration.map((d) => (
                     <tr key={d.days} className="border-b border-hairline-soft">
-                      <td className="py-2 pr-4 text-ink">{durationLabel(d.days)}</td>
+                      <td className="py-2 pr-4 text-ink">{T.duracao(d.days)}</td>
                       <td className="py-2 pr-4 text-ink">{formatBRL(d.from)}</td>
-                      <td className="py-2 text-body">{formatBRL(d.fromPerDay)}/dia</td>
+                      <td className="py-2 text-body">{formatBRL(d.fromPerDay)}
+                        {T.faqPorDiaUnidade}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="mt-3 text-body-sm text-muted">
-              {precoDestino.unitCount}{" "}
-              {precoDestino.unitCount === 1 ? "estacionamento" : "estacionamentos"} de{" "}
-              {precoDestino.partnerCount}{" "}
-              {precoDestino.partnerCount === 1 ? "parceiro" : "parceiros"} no comparativo.{" "}
+              {T.faqNoComparativo({
+                unidades: precoDestino.unitCount,
+                parceiros: precoDestino.partnerCount,
+              })}{" "}
               <Link
                 to={caminhoPrecos(precoDestino.public_slug ?? precoDestino.slug)}
                 className="font-medium text-mp-indigo underline-offset-2 hover:underline"
               >
-                Ver a tabela completa de preços
+                {T.tabelaCompleta}
               </Link>
             </p>
           </section>
@@ -254,20 +306,19 @@ export default function FaqPerguntaPage() {
         {paginaDePreco && !destino && precoRede && (
           <section className="mt-8">
             <h2 className="text-display-sm text-ink">
-              Estacionamento de aeroporto com a Movepark
+              {T.faqEstacionamentoCom}
             </h2>
             <p className="mt-2 text-body-md text-body">
-              São {precoRede.unitCount} estacionamentos comparados em{" "}
-              {precoRede.destinationCount} destinos
-              {precoRede.minDailyFrom != null
-                ? `, com diária a partir de ${formatBRL(precoRede.minDailyFrom)}`
-                : ""}
-              . O preço mostrado é o preço final da reserva, sem taxa na chegada.{" "}
+              {T.faqRedeTexto({
+                unidades: precoRede.unitCount,
+                destinos: precoRede.destinationCount,
+                menor: precoRede.minDailyFrom != null ? formatBRL(precoRede.minDailyFrom) : null,
+              })}{" "}
               <Link
                 to="/precos"
                 className="font-medium text-mp-indigo underline-offset-2 hover:underline"
               >
-                Ver o índice de preços
+                {T.faqIndicePrecos}
               </Link>
             </p>
           </section>
@@ -281,22 +332,17 @@ export default function FaqPerguntaPage() {
           (destino && semParceiro ? (
           <section className="mt-8">
             <h2 className="text-display-sm text-ink">
-              Como escolher o estacionamento no {aeroportoEmProsa(destino)}?
+              {T.faqComoEscolher(aeroportoLabel(destino))}
             </h2>
             <p className="mt-2 text-body-md text-body">
-              Neste aeroporto a reserva é fechada direto com o estacionamento. A página do{" "}
-              {aeroportoEmProsa(destino)} mapeia os da região, com endereço, telefone e
-              avaliação do Google: cote dois ou três, compare o total do período e confirme o
-              traslado antes de pagar.
+              {T.faqComoEscolherTexto(aeroportoLabel(destino))}
             </p>
           </section>
         ) : (
           <section className="mt-8">
-            <h2 className="text-display-sm text-ink">Como reservar com a Movepark?</h2>
+            <h2 className="text-display-sm text-ink">{T.faqComoReservar}</h2>
             <p className="mt-2 text-body-md text-body">
-              Você busca pelo aeroporto, compara preço, tipo de vaga e avaliação dos
-              estacionamentos credenciados e reserva online, com o valor fechado antes de pagar.
-              Na maioria das unidades o traslado até o terminal está incluído.
+              {T.faqComoReservarTexto}
             </p>
           </section>
         ))}
@@ -305,9 +351,9 @@ export default function FaqPerguntaPage() {
             preço é o assunto da página. */}
         {paginaDePreco && (
           <section className="mt-8">
-            <h2 className="text-display-sm text-ink">O que conferir antes de reservar?</h2>
+            <h2 className="text-display-sm text-ink">{T.faqOQueConferir}</h2>
             <ul className="mt-3 space-y-2">
-              {(semParceiro ? CHECKLIST_SEM_PARCEIRO : CHECKLIST).map((item) => (
+              {T.faqChecklist({ semParceiro }).map((item) => (
                 <li key={item} className="flex items-start gap-2 text-body-md text-body">
                   <CaretRight className="mt-1 h-4 w-4 shrink-0 text-mp-primary" aria-hidden />
                   {item}
@@ -324,24 +370,24 @@ export default function FaqPerguntaPage() {
             semParceiro ? (
               <>
                 <Button asChild>
-                  <Link to={caminhoDestino(destino.public_slug ?? destino.slug)}>
-                    Ver estacionamentos em {destinoCurto}
+                  <Link to={linkDestino(destino)}>
+                    {T.faqVerEstacionamentos(destinoCurto ?? destino.name)}
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/precos">Comparar preços em outros aeroportos</Link>
+                  <Link to="/precos">{T.faqCompararOutros}</Link>
                 </Button>
               </>
             ) : (
               <>
                 <Button asChild>
-                  <Link to={caminhoDestino(destino.public_slug ?? destino.slug)}>
-                    Reservar vaga em {destinoCurto}
+                  <Link to={linkDestino(destino)}>
+                    {T.faqReservarEm(destinoCurto ?? destino.name)}
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
                   <Link to={caminhoPrecos(destino.public_slug ?? destino.slug)}>
-                    Comparar preços em {destinoCurto}
+                    {T.faqCompararEm(destinoCurto ?? destino.name)}
                   </Link>
                 </Button>
               </>
@@ -349,18 +395,22 @@ export default function FaqPerguntaPage() {
           ) : (
             <>
               <Button asChild>
-                <Link to="/search">Buscar estacionamento</Link>
+                <Link to="/search">{T.faqBuscar}</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link to="/precos">Comparar preços</Link>
+                <Link to="/precos">{T.faqCompararPrecos}</Link>
               </Button>
             </>
           )}
         </div>
 
-        {related.length > 0 && (
+        {/* Em idioma traduzido a lista de relacionadas some: `pickRelatedFaqs` trabalha
+            sobre o índice em português, e mostrar título em português numa página em
+            inglês é o mesmo defeito que o portão existe para impedir. Volta quando a
+            relação for calculada sobre o índice traduzido. */}
+        {locale === LOCALE_PADRAO && related.length > 0 && (
           <section className="mt-10 border-t border-hairline pt-8">
-            <h2 className="text-display-sm text-ink">Perguntas relacionadas</h2>
+            <h2 className="text-display-sm text-ink">{T.faqRelacionadas}</h2>
             <ul className="mt-4 space-y-3">
               {related.map((r) => (
                 <li key={r.id}>
@@ -385,7 +435,7 @@ export default function FaqPerguntaPage() {
             to="/faq"
             className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
           >
-            Todas as perguntas frequentes
+            {T.faqTodasPerguntas}
           </Link>
         </div>
       </article>
