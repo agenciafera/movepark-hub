@@ -310,8 +310,10 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
       )}
 
       {/* Proteção de voo (Superflex): o staff aciona pelo cliente que ligou do aeroporto. */}
-      {(booking as unknown as { fare_benefits?: { flight_delay_protection?: boolean } | null }).fare_benefits?.flight_delay_protection === true &&
-        ["confirmed", "checked_in"].includes(booking.status) && (
+      {/* O card fica depois de concluída: os três números (crédito, excedente, cobrado) contam a história. */}
+      {(ext ||
+        ((booking as unknown as { fare_benefits?: { flight_delay_protection?: boolean } | null }).fare_benefits?.flight_delay_protection === true &&
+          ["confirmed", "checked_in"].includes(booking.status))) && (
           <Card>
             <CardHeader>
               <CardTitle>Proteção de voo</CardTitle>
@@ -329,7 +331,7 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
                 </dl>
               )}
               <div>
-                {!ext && (
+                {!ext && ["confirmed", "checked_in"].includes(booking.status) && (
                   <Button size="sm" variant="secondary" onClick={() => setFlightOpen(true)}>
                     Acionar proteção de voo
                   </Button>
