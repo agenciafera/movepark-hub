@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/shared/PageHeader";
 import { FareEditor } from "@/features/fares/FareEditor";
+import { FlightProtectionReport } from "@/features/fares/FlightProtectionReport";
 
 /** Editor global de tarifas (Básica/Flex/Superflex). Só Super Admin (rota hub_admin). */
 export default function ManagerTarifas() {
@@ -10,6 +11,7 @@ export default function ManagerTarifas() {
         description="Preço, janela de cancelamento e benefícios de cada tarifa. Vale para toda a plataforma, em todos os estacionamentos. Só a equipe Movepark edita."
       />
       <FareEditor />
+      <FlightProtectionReport />
     </div>
   );
 }

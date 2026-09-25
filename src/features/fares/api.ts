@@ -162,3 +162,15 @@ export function useCreateFareUpgrade() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["booking-detail"] }),
   });
 }
+
+/** Proteção de voo por mês e empresa (view `flight_protection_monthly`; hub_admin vê tudo). */
+export function useFlightProtectionMonthly() {
+  return useQuery({
+    queryKey: [...faresKeys.all, "flight-protection-monthly"] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("flight_protection_monthly").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
