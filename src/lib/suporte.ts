@@ -22,3 +22,6 @@ export const WHATSAPP_SUPORTE = {
 };
 
 export const EMAIL_SUPORTE = "contato@movepark.co";
+
+/** Horário em que uma pessoa da Movepark responde. Fora dele o pedido fica registrado e entra na fila. */
+export const HORARIO_SUPORTE = "de segunda a sexta, das 9h às 18h";

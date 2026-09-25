@@ -68,6 +68,16 @@ devolve**, nunca sozinho.
 Em dúvida (erro ao ler a metadata), o agente responde: cliente sem resposta nenhuma é
 pior que resposta automática numa conversa que alguém atendia.
 
+## Chamado aberto pela reserva (25/09/2026)
+
+O cliente abre um chamado de dentro da reserva no site (ver
+[chamado-de-atendimento.md](./chamado-de-atendimento.md)). A Edge `open-support-ticket` chama o
+`/inbox` com a ação `abrir-chamado`: a conversa do telefone nasce (ou é reaproveitada, pelos
+dois nomes da `SQL_QUEM_ASSUMIU`) com `inbox_assumida_por = 'chamado'`, `inbox_chamado` (o
+código) e `inbox_chamado_em`. A fala do cliente e a confirmação enviada entram na thread. A
+lista traz `chamado`, a tela mostra o selo e sobe a conversa para o topo enquanto o cliente
+espera. **Devolver** limpa `inbox_chamado` junto com a marca de assumida.
+
 ## Busca e paginação são do servidor
 
 A lista vem de 30 em 30, cortada pelo **horário** da última conversa da página. `offset`

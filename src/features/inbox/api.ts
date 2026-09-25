@@ -34,6 +34,9 @@ export type ConversaDaLista = {
   assumida_em: string | null;
   /** Superflex com reserva ativa (suporte prioritário, Q-028). Derivado pelo servidor. */
   prioridade?: { tier: string; reserva: string; sla_minutos: number } | null;
+  /** Código do chamado aberto pelo cliente na reserva (CH-XXXXXX), até a equipe devolver ao agente. */
+  chamado?: string | null;
+  chamado_em?: string | null;
 };
 
 /** A ficha de um anexo. Os bytes vêm depois, por `useAnexo`. */

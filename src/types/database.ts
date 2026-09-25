@@ -5818,6 +5818,85 @@ export type Database = {
         }
         Relationships: []
       }
+      support_ticket: {
+        Row: {
+          booking_id: string
+          closed_at: string | null
+          closed_by: string | null
+          code: string
+          created_at: string
+          email: string | null
+          id: string
+          kind: string
+          message: string
+          notified_at: string | null
+          phone: string | null
+          profile_id: string
+          status: string
+          thread_id: string | null
+          updated_at: string
+          whatsapp_sent: boolean
+        }
+        Insert: {
+          booking_id: string
+          closed_at?: string | null
+          closed_by?: string | null
+          code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          kind: string
+          message: string
+          notified_at?: string | null
+          phone?: string | null
+          profile_id: string
+          status?: string
+          thread_id?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean
+        }
+        Update: {
+          booking_id?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          notified_at?: string | null
+          phone?: string | null
+          profile_id?: string
+          status?: string
+          thread_id?: string | null
+          updated_at?: string
+          whatsapp_sent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       terms_acceptance: {
         Row: {
           accepted_at: string
@@ -6826,6 +6905,9 @@ export type Database = {
         Returns: Json
       }
       company_access_link_revoke: { Args: { p_id: string }; Returns: undefined }
+      admin_close_support_ticket: { Args: { p_id: string }; Returns: undefined }
+      open_support_ticket_count: { Args: Record<PropertyKey, never>; Returns: number }
+      support_ticket_code: { Args: Record<PropertyKey, never>; Returns: string }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
       company_is_silent: { Args: { p_company_id: string }; Returns: boolean }
       company_list_members: {

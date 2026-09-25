@@ -24,7 +24,7 @@ A **Tarifa** é a flexibilidade da **própria reserva**, vendida no checkout no 
 |---|---|---|---|
 | **Básica** | Grátis (no preço da vaga) | até **24h** antes | vaga garantida, confirmação por e-mail, cancelamento grátis |
 | **Flex** ⭐ | **R$ 12,90** | até **24h** antes | + troca de placa/veículo, alteração de data/horário, avisos por WhatsApp |
-| **Superflex** | **R$ 24,90** | até **1 min** antes (estorno total) | + proteção contra atraso de voo (auto-extensão), suporte prioritário |
+| **Superflex** | **R$ 24,90** | até **1 min** antes (estorno total) | + proteção contra atraso de voo (até 24h, uma vez). Suporte prioritário saiu do catálogo em 25/09/2026 (ver chamado-de-atendimento.md) |
 
 Flex é marcada como **"Mais popular"** (efeito isca; Superflex ancora). Preços são hipótese inicial
 para A/B — por isso vivem em catálogo (tabela `fare`), não em código.

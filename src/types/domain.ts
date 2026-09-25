@@ -34,6 +34,8 @@ export type PayoutRecipient = Tables<"payout_recipient">;
 export type CompanyPayoutAccount = Tables<"company_payout_account">;
 /** Link de acesso ao Recebimento gerado pelo Manager (o segredo nunca vem ao front, só o hash). */
 export type CompanyAccessLink = Tables<"company_access_link">;
+/** Chamado de atendimento aberto pelo cliente na reserva (reclamação, dúvida ou outro). */
+export type SupportTicket = Tables<"support_ticket">;
 /** Saque real (transferência recebedor → banco do parceiro), E0.3.3. */
 export type PayoutWithdrawal = Tables<"payout_withdrawal">;
 /** Regra de comissão por origem da venda (E0.3.12). */

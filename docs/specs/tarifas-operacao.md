@@ -233,7 +233,16 @@ o aviso por WhatsApp.
 
 Somando: o benefício existe como encanamento e não existe como produto.
 
-### 2.8 Suporte prioritário (Superflex) ❌
+### 2.8 Suporte prioritário (Superflex): fora do catálogo desde 25/09/2026
+
+Decisão do Kallef: sem demanda fora do horário comercial, o benefício sai da Superflex por ora
+(`fare.benefits.priority_support = false` em todo o catálogo, migration `20261125100000`). No lugar,
+o atendimento humano ganhou porta única e horário declarado: o **chamado de atendimento** na
+reserva (ver [chamado-de-atendimento.md](./chamado-de-atendimento.md)), respondido de segunda a
+sexta, das 9h às 18h. Reserva já vendida com o benefício congelado continua com o selo em Conversas.
+O texto abaixo é o histórico de como estava antes.
+
+#### Como estava (histórico)
 
 **O que existe no código:** o rótulo em `src/lib/fares.ts`, a coluna no comparativo, a flag no seed
 e o teste que confere a flag. Nada mais. `grep -rn "priority_support"` devolve cinco arquivos, todos

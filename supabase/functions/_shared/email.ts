@@ -387,6 +387,47 @@ export function tplApprovalInvite(contactName: string, actionLink: string): { su
   };
 }
 
+/**
+ * Chamado de atendimento aberto pelo cliente na reserva (25/09/2026). Vai para a caixa da equipe
+ * (`app_setting.support_inbox`) com replyTo no cliente, para responder direto quando o WhatsApp
+ * não saiu. Ver docs/specs/chamado-de-atendimento.md.
+ */
+export function tplSupportTicketTeam(t: {
+  ticketCode: string; kindLabel: string; message: string; bookingCode: string;
+  customerName: string; phone: string | null; email: string | null; unitName: string; whatsappSent: boolean;
+}): { subject: string; html: string } {
+  const canal = t.whatsappSent
+    ? "Conversa aberta no WhatsApp (Manager › Conversas), já marcada como chamado: o agente está mudo."
+    : "Sem WhatsApp: o cliente recebeu a confirmação por e-mail. Responda a este e-mail para falar com ele.";
+  return {
+    subject: `Chamado ${t.ticketCode}: ${t.kindLabel} na reserva ${t.bookingCode}`,
+    html: shell(`Chamado ${t.ticketCode}`, `
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${row("Motivo", t.kindLabel)}
+        ${row("Reserva", t.bookingCode)}
+        ${row("Unidade", t.unitName || "não informada")}
+        ${row("Cliente", t.customerName || "não informado")}
+        ${row("Telefone", t.phone ?? "não informado")}
+        ${row("E-mail", t.email ?? "não informado")}
+      </table>
+      <p style="margin-top:16px;white-space:pre-wrap;background:${BRAND.surface};padding:12px;border-radius:8px">${escapeHtml(t.message)}</p>
+      <p style="color:${BRAND.muted};font-size:13px">${escapeHtml(canal)}</p>
+      <p style="margin-top:16px">${button(`${siteUrl()}/manager/bookings/${t.bookingCode}`, "Abrir a reserva")} ${button(`${siteUrl()}/manager/conversas`, "Abrir Conversas")}</p>`),
+  };
+}
+
+/** Confirmação ao cliente quando o WhatsApp não saiu (sem telefone ou envio falhou). */
+export function tplSupportTicketCustomer(firstName: string, bookingCode: string, ticketCode: string, bookingUrl: string): { subject: string; html: string } {
+  return {
+    subject: `Recebemos seu chamado ${ticketCode}`,
+    html: shell("Recebemos seu chamado", `
+      <p>Oi, ${escapeHtml(firstName)}.</p>
+      <p>Seu pedido de atendimento sobre a reserva <strong>${escapeHtml(bookingCode)}</strong> foi registrado com o código <strong>${escapeHtml(ticketCode)}</strong>.</p>
+      <p>Uma pessoa da Movepark responde em horário comercial, de segunda a sexta, das 9h às 18h. Se quiser acrescentar algo, é só responder a este e-mail.</p>
+      <p>${button(bookingUrl, "Ver minha reserva")}</p>`),
+  };
+}
+
 export function tplTeamInvite(
   companyName: string,
   roleLabel: string,

@@ -237,7 +237,13 @@ function padraoBR(d: Date): string {
  * topo; entre iguais, a mais antiga primeiro. O resto segue a ordem de chegada da caixa.
  */
 export function ordenarPorPrioridade(cs: ConversaDaLista[]): ConversaDaLista[] {
-  const peso = (c: ConversaDaLista) => (c.prioridade && aguardandoResposta(c) ? 0 : c.prioridade ? 1 : 2);
+  // Chamado aberto pelo cliente na reserva (25/09/2026) vem antes de tudo: é pedido explícito
+  // de falar com uma pessoa, e o agente está mudo nessa conversa.
+  const peso = (c: ConversaDaLista) =>
+    c.chamado && aguardandoResposta(c) ? 0
+    : c.prioridade && aguardandoResposta(c) ? 0
+    : c.chamado || c.prioridade ? 1
+    : 2;
   return [...cs].sort((a, b) => {
     const d = peso(a) - peso(b);
     if (d !== 0) return d;

@@ -544,3 +544,10 @@ Em **Financeiro › Recebedores**, empresa sem KYC tem o botão **Link de acesso
 `movepark.co/acesso/<segredo>` que faz o dono entrar logado e cair no cadastro de recebimento.
 A URL fica guardada e pode ser copiada de novo, vale até a empresa terminar ou até ser revogada,
 e o diálogo mostra quantas vezes foi aberta. Ver [link-de-acesso-recebimento.md](./link-de-acesso-recebimento.md).
+
+### Chamados do cliente (25/09/2026)
+
+Na reserva do Manager, o card **Chamados do cliente** lista os chamados abertos pela reserva no
+site (motivo, mensagem, estado) com **Encerrar chamado** (hub_admin). Em **Conversas**, a conversa
+do chamado sobe ao topo com o selo `Chamado CH-XXXXXX` e o agente fica mudo até alguém devolver.
+Ver [chamado-de-atendimento.md](./chamado-de-atendimento.md).

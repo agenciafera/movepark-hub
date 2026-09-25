@@ -17,6 +17,7 @@ import { useChangeBookingVehicle } from "./customerApi";
 import { BookingMoneyCard } from "./BookingMoneyCard";
 import { GatewayTrail } from "./GatewayTrail";
 import { BookingCommissionCard } from "@/features/commission/BookingCommissionCard";
+import { SupportTicketsCard } from "@/features/support/SupportTicketsCard";
 import { FlightDelayDialog } from "./FlightDelayDialog";
 import { bookingCustomerName } from "./bookings.logic";
 import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
@@ -245,6 +246,9 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
         audience={audience}
         canFix={effectiveRole === "hub_admin"}
       />
+
+      {/* Chamados do cliente (25/09/2026): só a Movepark atende; o estacionamento não vê. */}
+      {audience === "manager" && <SupportTicketsCard bookingId={booking.id} canClose={effectiveRole === "hub_admin"} />}
 
       {(operacoes.length > 0 || (audience === "operator" && ["pending", "confirmed", "checked_in"].includes(booking.status))) && (
         <Card>

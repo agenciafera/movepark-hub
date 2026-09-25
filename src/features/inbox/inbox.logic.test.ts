@@ -289,6 +289,15 @@ describe("prioridade na fila", () => {
     expect(ordenarPorPrioridade(cs).map((c) => c.id)).toEqual(["sf-1", "sf-2", "sf-respondida", "comum-nova", "comum-velha"]);
   });
 
+  it("chamado aberto pelo cliente sobe junto com a prioridade, e antes das comuns", () => {
+    const cs = [
+      base({ id: "comum-nova", ultima_em: "2026-09-23T12:05:00Z" }),
+      base({ id: "chamado-respondido", chamado: "CH-AAAAAA", ultimo_papel: "agente", ultima_em: "2026-09-23T12:04:00Z" }),
+      base({ id: "chamado-esperando", chamado: "CH-BBBBBB", ultima_em: "2026-09-23T11:00:00Z" }),
+    ];
+    expect(ordenarPorPrioridade(cs).map((c) => c.id)).toEqual(["chamado-esperando", "chamado-respondido", "comum-nova"]);
+  });
+
   it("SLA estoura depois dos minutos combinados, só enquanto o cliente espera", () => {
     const agora = new Date("2026-09-23T12:20:00Z");
     expect(minutosEsperando(base({}), agora)).toBe(20);

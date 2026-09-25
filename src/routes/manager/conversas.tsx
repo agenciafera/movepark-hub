@@ -285,7 +285,14 @@ export default function ManagerConversas() {
                         <span className="text-muted">
                           {c.origem === "webchat" ? "Webchat" : "WhatsApp"}
                         </span>
-                        {c.assumida_por ? (
+                        {c.chamado ? (
+                          <span
+                            className="rounded-full bg-badge-pending-bg px-2 py-0.5 text-caption font-semibold text-badge-pending-fg"
+                            title="Aberto pelo cliente na reserva: uma pessoa responde, o agente está mudo"
+                          >
+                            Chamado {c.chamado}
+                          </span>
+                        ) : c.assumida_por ? (
                           <span className="text-mp-indigo">Assumida pela equipe</span>
                         ) : null}
                         {c.prioridade ? (

@@ -27,6 +27,10 @@ import { ChangeDatesDialog } from "@/features/bookings/ChangeDatesDialog";
 import { ChangeDatesPaidDialog } from "@/features/bookings/ChangeDatesPaidDialog";
 import { FlightDelayDialog } from "@/features/bookings/FlightDelayDialog";
 import { useBookingDetail, useClaimGuarantee } from "@/features/bookings/customerApi";
+import { SupportTicketDialog } from "@/features/support/SupportTicketDialog";
+import { useBookingSupportTickets } from "@/features/support/api";
+import { kindLabel, ticketStatusLine } from "@/features/support/supportTicket.logic";
+import { HORARIO_SUPORTE } from "@/lib/suporte";
 import { useAuth } from "@/auth/context";
 import { guaranteeChannel } from "@/features/guarantee/whatsapp";
 import { useMyReview } from "@/features/reviews/api";
@@ -55,6 +59,8 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
   const [flightOpen, setFlightOpen] = React.useState(false);
   const claimGuarantee = useClaimGuarantee();
   const [reviewOpen, setReviewOpen] = React.useState(false);
+  const [ticketOpen, setTicketOpen] = React.useState(false);
+  const tickets = useBookingSupportTickets(booking?.id);
   const myReview = useMyReview(booking?.status === "completed" ? booking?.id : undefined);
 
   // Deep link de 1 clique do e-mail de coleta (?rating=N) → abre o form com a nota.
@@ -428,6 +434,29 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
                 </div>
               </section>
             )}
+
+            <section className="rounded-lg bg-canvas p-6 desktop:p-7">
+              <h2 className="text-title-md text-ink">Falar com a Movepark</h2>
+              <p className="mt-2 text-body-sm text-pretty text-muted">
+                Reclamação, dúvida ou outro assunto desta reserva: abra um chamado e uma pessoa da
+                equipe responde {HORARIO_SUPORTE}.
+              </p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => setTicketOpen(true)}>
+                Abrir chamado
+              </Button>
+              {(tickets.data ?? []).length > 0 && (
+                <ul className="mt-4 flex flex-col gap-2">
+                  {(tickets.data ?? []).map((t) => (
+                    <li key={t.id} className="rounded-md bg-surface-soft p-3 text-body-sm">
+                      <span className="font-semibold text-ink">{kindLabel(t.kind)}</span>
+                      <span className="text-muted"> · {t.code}</span>
+                      <p className="mt-1 text-caption text-muted">{ticketStatusLine(t, formatDateTime)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <SupportTicketDialog bookingCode={booking.code} open={ticketOpen} onOpenChange={setTicketOpen} />
+            </section>
 
             {(booking.location_detail.phone || booking.location_detail.email) && (
               <section className="rounded-lg bg-canvas p-6 desktop:p-7">

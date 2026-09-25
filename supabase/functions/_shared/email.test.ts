@@ -19,6 +19,8 @@ import {
   tplBookingDatesChanged,
   tplBookingVehicleChanged,
   tplBookingExtended,
+  tplSupportTicketTeam,
+  tplSupportTicketCustomer,
 } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
@@ -229,4 +231,32 @@ Deno.test("avisos da reserva: assunto com o código, corpo com a unidade, sem tr
     assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false, tpl.name);
   }
   assertEquals(tplBookingVehicleChanged(b, null, "u").html.includes("ABC1D23"), true);
+});
+
+Deno.test("tplSupportTicketTeam: motivo, reserva, mensagem escapada e os dois botões", () => {
+  const m = tplSupportTicketTeam({
+    ticketCode: "CH-K7M2PX", kindLabel: "Reclamação", message: "Portão <fechado> & escuro", bookingCode: "MP-1A2B3C",
+    customerName: "Ana Souza", phone: "5541988149449", email: "ana@ex.com", unitName: "Agência Fera", whatsappSent: true,
+  });
+  assertEquals(m.subject, "Chamado CH-K7M2PX: Reclamação na reserva MP-1A2B3C");
+  assertStringIncludes(m.html, "Portão &lt;fechado&gt; &amp; escuro");
+  assertStringIncludes(m.html, "/manager/bookings/MP-1A2B3C");
+  assertStringIncludes(m.html, "/manager/conversas");
+  assertStringIncludes(m.html, "o agente está mudo");
+  assert(!/[\u2013\u2014]/.test(m.html));
+});
+
+Deno.test("tplSupportTicketTeam: sem WhatsApp, pede resposta por e-mail", () => {
+  const m = tplSupportTicketTeam({
+    ticketCode: "CH-K7M2PX", kindLabel: "Dúvida", message: "Posso chegar mais cedo?", bookingCode: "MP-1A2B3C",
+    customerName: "", phone: null, email: "ana@ex.com", unitName: "", whatsappSent: false,
+  });
+  assertStringIncludes(m.html, "Responda a este e-mail");
+});
+
+Deno.test("tplSupportTicketCustomer: código, reserva e horário comercial", () => {
+  const m = tplSupportTicketCustomer("Ana", "MP-1A2B3C", "CH-K7M2PX", "https://movepark.co/bookings/MP-1A2B3C");
+  assertStringIncludes(m.subject, "CH-K7M2PX");
+  assertStringIncludes(m.html, "segunda a sexta, das 9h às 18h");
+  assertStringIncludes(m.html, "https://movepark.co/bookings/MP-1A2B3C");
 });

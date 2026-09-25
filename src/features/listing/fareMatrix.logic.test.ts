@@ -14,18 +14,18 @@ describe("buildFareMatrix", () => {
       "Alteração de data/horário",
       "Avisos por WhatsApp",
       "Proteção contra atraso de voo",
-      "Suporte prioritário",
     ]);
     expect(rows[0].included).toEqual([true, true, true]);
     expect(rows[1].included).toEqual([false, false, true]);
     expect(rows.find((r) => r.label === "Troca de placa/veículo")?.included).toEqual([false, true, true]);
-    expect(rows.find((r) => r.label === "Suporte prioritário")?.included).toEqual([false, false, true]);
+    // Suporte prioritário saiu do catálogo em 25/09/2026: linha que ninguém tem não aparece.
+    expect(rows.find((r) => r.label === "Suporte prioritário")).toBeUndefined();
   });
 
-  it("segue o catálogo: janela da Flex vira 48h e o suporte prioritário some", () => {
+  it("segue o catálogo: janela da Flex vira 48h e o suporte prioritário volta se alguma tarifa tiver", () => {
     const cat: FareOption[] = DEFAULT_CATALOG.map((f) =>
       f.tier === "flex" ? { ...f, cancel_window_minutes: 2880 }
-      : f.tier === "superflex" ? { ...f, benefits: { ...f.benefits, priority_support: false } }
+      : f.tier === "superflex" ? { ...f, benefits: { ...f.benefits, priority_support: true } }
       : f,
     );
     const { rows } = buildFareMatrix(cat);
@@ -37,7 +37,7 @@ describe("buildFareMatrix", () => {
     // janela maior é pior para o cliente: quem cancela até 24h também cumpre "até 2 dias"
     expect(rows[0].included).toEqual([true, true, true]);
     expect(rows[1].included).toEqual([true, false, true]);
-    expect(rows.find((r) => r.label === "Suporte prioritário")).toBeUndefined();
+    expect(rows.find((r) => r.label === "Suporte prioritário")?.included).toEqual([false, false, true]);
   });
 
   it("tarifa desligada no catálogo some da matriz; sem catálogo, cai no padrão", () => {
@@ -66,7 +66,7 @@ describe("farePresentation", () => {
       cancellationLine: "Cancelamento grátis até 24h antes · troca de placa liberada",
     });
     expect(farePresentation(superflex, flex)).toEqual({
-      tooltip: ["Tudo da Flex", "Cancele grátis até 1 min antes", "Proteção contra atraso de voo", "Suporte prioritário"],
+      tooltip: ["Tudo da Flex", "Cancele grátis até 1 min antes", "Proteção contra atraso de voo"],
       badgeText: "Cancelamento grátis até 1 min antes",
       cancellationLine: "Cancelamento grátis até 1 min antes · troca de placa liberada",
     });

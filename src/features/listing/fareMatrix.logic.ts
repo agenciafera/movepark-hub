@@ -22,7 +22,7 @@ export const DEFAULT_CATALOG: FareOption[] = [
   { tier: "flex", label: "Flex", price_cents: 1290, is_popular: true, sort_order: 1, cancel_window_minutes: 1440,
     benefits: { guaranteed_spot: true, email_confirmation: true, free_cancellation: true, notifications_sms: true, plate_change: true, date_change: true } },
   { tier: "superflex", label: "Superflex", price_cents: 2490, is_popular: false, sort_order: 2, cancel_window_minutes: 1,
-    benefits: { guaranteed_spot: true, email_confirmation: true, free_cancellation: true, notifications_sms: true, plate_change: true, date_change: true, flight_delay_protection: true, priority_support: true } },
+    benefits: { guaranteed_spot: true, email_confirmation: true, free_cancellation: true, notifications_sms: true, plate_change: true, date_change: true, flight_delay_protection: true, priority_support: false } },
 ];
 
 /** Benefícios que aparecem como linha da matriz. Cancelamento é janela (linha própria); vaga garantida vale em qualquer tarifa e fica fora do grid. */
