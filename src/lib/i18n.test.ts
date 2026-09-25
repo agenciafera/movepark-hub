@@ -105,3 +105,30 @@ describe("invariantes do conjunto", () => {
     expect(ehLocaleTraduzido("en")).toBe(true);
   });
 });
+
+describe("contrato de barra final", () => {
+  /**
+   * O blog herdou do WordPress o endereço COM barra, e o worker preserva essa barra
+   * só para `/blog/`. Em idioma traduzido a borda redireciona 307 para a forma sem
+   * barra, então a canônica traduzida não pode tê-la: apontaria para uma URL que
+   * redireciona. Medido em produção em 25/09/2026.
+   */
+  it("blog em português mantém a barra; traduzido, não", () => {
+    expect(caminhoLocalizado({ familia: "blog", slug: "x", locale: "pt-BR" })).toBe("/blog/x/");
+    expect(caminhoLocalizado({ familia: "blog", slug: "x", locale: "en" })).toBe("/en/blog/x");
+    expect(caminhoLocalizado({ familia: "blog", slug: "x", locale: "es" })).toBe("/es/blog/x");
+  });
+
+  it("as outras famílias não ganham barra em idioma nenhum", () => {
+    expect(caminhoLocalizado({ familia: "faq", slug: "x", locale: "pt-BR" })).toBe("/faq/x");
+    expect(caminhoLocalizado({ familia: "destino", slug: "x", locale: "pt-BR" })).toBe(
+      "/estacionamentos/x",
+    );
+  });
+
+  it("com sufixo a barra não entra, senão viraria `/precos/`", () => {
+    expect(
+      caminhoLocalizado({ familia: "blog", slug: "x", locale: "pt-BR", sufixo: "/precos" }),
+    ).toBe("/blog/x/precos");
+  });
+});

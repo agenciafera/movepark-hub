@@ -28,6 +28,20 @@ export type Textos = {
   faqHeading: (destino: string) => string;
   // Página de uma pergunta (/faq/<slug> e equivalentes traduzidos).
   faqTrilha: string;
+  postLeiaTambem: string;
+  postNestaPagina: string;
+  postVerResumo: string;
+  postCtaTitulo: (destino: string) => string;
+  postCtaTexto: string;
+  postCtaBotao: string;
+  postVoltar: string;
+  postLeitura: (minutos: number) => string;
+  // Página de um post do blog.
+  postNaoEncontrado: string;
+  postNaoEncontradoTexto: string;
+  postVerTodos: string;
+  postUltimos: string;
+  feedTitulo: string;
   ogImageAlt: string;
   faqVerTodas: string;
   faqNaoEncontrada: string;
@@ -158,6 +172,19 @@ const PT: Textos = {
   ondeFicaHeading: (d) => `Onde fica o ${d}`,
   faqHeading: (d) => `Perguntas frequentes: estacionamento ${d}`,
   faqTrilha: "Perguntas frequentes",
+  postLeiaTambem: "Leia também",
+  postNestaPagina: "Nesta página",
+  postVerResumo: "Ver resumo",
+  postCtaTitulo: (d) => `Vai viajar por ${d}?`,
+  postCtaTexto: "Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.",
+  postCtaBotao: "Ver estacionamentos",
+  postVoltar: "Voltar para o blog",
+  postLeitura: (m) => `${m} min de leitura`,
+  postNaoEncontrado: "Post não encontrado.",
+  postNaoEncontradoTexto: "Ele pode ter saído do ar.",
+  postVerTodos: "Ver todos os posts",
+  postUltimos: "Últimos posts",
+  feedTitulo: "Blog da Movepark",
   ogImageAlt: "Movepark, estacionamento em aeroportos",
   faqVerTodas: "Ver todas as perguntas",
   faqNaoEncontrada: "Pergunta não encontrada",
@@ -306,6 +333,19 @@ const EN: Textos = {
   ondeFicaHeading: (d) => `Where ${d} is`,
   faqHeading: (d) => `Frequently asked questions: ${d} parking`,
   faqTrilha: "FAQ",
+  postLeiaTambem: "Read next",
+  postNestaPagina: "On this page",
+  postVerResumo: "See summary",
+  postCtaTitulo: (d) => `Flying out of ${d}?`,
+  postCtaTexto: "Compare partner parking lots and lock in your spot before you leave home.",
+  postCtaBotao: "See parking",
+  postVoltar: "Back to the blog",
+  postLeitura: (m) => `${m} min read`,
+  postNaoEncontrado: "Post not found.",
+  postNaoEncontradoTexto: "It may have been taken down.",
+  postVerTodos: "See all posts",
+  postUltimos: "Latest posts",
+  feedTitulo: "Movepark blog",
   ogImageAlt: "Movepark, airport parking",
   faqVerTodas: "See all questions",
   faqNaoEncontrada: "Question not found",
@@ -457,6 +497,19 @@ const ES: Textos = {
   ondeFicaHeading: (d) => `Dónde queda ${d}`,
   faqHeading: (d) => `Preguntas frecuentes: estacionamiento ${d}`,
   faqTrilha: "Preguntas frecuentes",
+  postLeiaTambem: "Seguí leyendo",
+  postNestaPagina: "En esta página",
+  postVerResumo: "Ver resumen",
+  postCtaTitulo: (d) => `¿Vas a viajar por ${d}?`,
+  postCtaTexto: "Compará los estacionamientos asociados y asegurá tu plaza antes de salir de casa.",
+  postCtaBotao: "Ver estacionamientos",
+  postVoltar: "Volver al blog",
+  postLeitura: (m) => `${m} min de lectura`,
+  postNaoEncontrado: "Publicación no encontrada.",
+  postNaoEncontradoTexto: "Puede que haya salido del aire.",
+  postVerTodos: "Ver todas las publicaciones",
+  postUltimos: "Últimas publicaciones",
+  feedTitulo: "Blog de Movepark",
   ogImageAlt: "Movepark, estacionamiento en aeropuertos",
   faqVerTodas: "Ver todas las preguntas",
   faqNaoEncontrada: "Pregunta no encontrada",

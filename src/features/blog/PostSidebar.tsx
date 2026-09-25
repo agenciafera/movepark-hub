@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useLocale, useTextos } from "@/lib/LocaleContext";
+import { LOCALE_PADRAO, caminhoLocalizado } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { CoverImage } from "./CoverImage";
 import { formatDate } from "@/lib/format";
@@ -6,6 +8,10 @@ import type { BlogPost, Destination } from "@/types/domain";
 import { caminhoDestino } from "@/lib/urls";
 
 type Props = {
+  /** Rótulo do destino no idioma da página, quando existe tradução publicada. */
+  destinoLabel?: string | null;
+  /** Slug do destino naquele idioma, quando a página traduzida dele existe. */
+  destinoSlug?: string | null;
   destination: Pick<Destination, "name" | "slug" | "public_slug" | "is_published"> | null;
   relacionados: BlogPost[];
 };
@@ -21,7 +27,9 @@ type Props = {
  * relacionado (Navegantes, que ainda não é destino no Hub) deixaria 300px de
  * branco ao lado do texto, e aí a página fica pior que sem lateral nenhuma.
  */
-export function PostSidebar({ destination, relacionados }: Props) {
+export function PostSidebar({ destination, relacionados, destinoLabel, destinoSlug }: Props) {
+  const T = useTextos();
+  const locale = useLocale();
   /*
     `self-start` antes do `sticky`: por padrão o item da grade estica até a
     altura da linha, e um elemento do tamanho da própria linha nunca tem por
@@ -41,9 +49,9 @@ export function PostSidebar({ destination, relacionados }: Props) {
   return (
     <aside className="mt-12 flex flex-col gap-8 transition-[top] duration-300 ease-out motion-reduce:transition-none print:hidden desktop:mt-0 desktop:self-start desktop-tall:sticky desktop-tall:top-[calc(var(--topbar-offset,5rem)+1rem)]">
       {relacionados.length > 0 && (
-        <nav aria-label="Leia também">
+        <nav aria-label={T.postLeiaTambem}>
           <p className="text-[11px] font-bold uppercase tracking-[0.4px] text-mp-indigo">
-            Leia também
+            {T.postLeiaTambem}
           </p>
           <ul className="mt-4 flex flex-col gap-4">
             {relacionados.map((p) => (
@@ -92,12 +100,23 @@ export function PostSidebar({ destination, relacionados }: Props) {
       */}
       {destination?.is_published && (
         <div className="rounded-md bg-mp-primary p-5">
-          <h2 className="text-display-sm text-white">Vai viajar por {destination.name}?</h2>
+          <h2 className="text-display-sm text-white">
+            {T.postCtaTitulo(destinoLabel ?? destination.name)}
+          </h2>
           <p className="mt-2 text-body-sm leading-relaxed text-white/85">
-            Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.
+            {T.postCtaTexto}
           </p>
           <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to={caminhoDestino(destination.public_slug ?? destination.slug)}>Ver estacionamentos</Link>
+            <Link
+              to={
+                // O botão acompanha o idioma quando a página traduzida do destino
+                // existe. Sem ela, vai para a portuguesa: página em outro idioma é
+                // melhor que link morto.
+                destinoSlug && locale !== LOCALE_PADRAO
+                  ? caminhoLocalizado({ familia: "destino", slug: destinoSlug, locale })
+                  : caminhoDestino(destination.public_slug ?? destination.slug)
+              }
+            >{T.postCtaBotao}</Link>
           </Button>
         </div>
       )}

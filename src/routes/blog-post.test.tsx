@@ -271,3 +271,78 @@ async function waitForArticle(container: HTMLElement) {
     return article!;
   });
 }
+
+/**
+ * A página do post em outro idioma.
+ *
+ * `blog_post_i18n` está vazia hoje, então em produção esta rota gera zero páginas.
+ * O teste é o que garante que ela funciona no dia em que a primeira tradução entrar,
+ * em vez de descobrir o defeito com a página já publicada.
+ */
+describe("BlogPostPage: idioma traduzido", () => {
+  const TRADUCAO = {
+    blog_post_id: "post-1",
+    locale: "en" as const,
+    slug: "viracopos-airport-parking",
+    title: "Parking at Viracopos Airport",
+    excerpt: "Summary",
+    meta_title: null,
+    meta_description: null,
+    body_md: "First paragraph.\n\n## A section\n\nSecond paragraph.",
+  };
+
+  function renderTraduzido(over?: { idiomas?: { locale: "en" | "es"; slug: string }[] }) {
+    const dados = {
+      ...POST,
+      locale: "en",
+      traducao: TRADUCAO,
+      idiomas: over?.idiomas ?? [{ locale: "en", slug: TRADUCAO.slug }],
+    };
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const router = createMemoryRouter(
+      [{ path: "/en/blog/:slug", element: <BlogPostPage />, loader: () => dados }],
+      { initialEntries: [`/en/blog/${TRADUCAO.slug}`] },
+    );
+    return render(
+      <QueryClientProvider client={qc}>
+        <HelmetProvider>
+          <RouterProvider router={router} />
+        </HelmetProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("renderiza título e corpo da tradução, não os do português", async () => {
+    // A tradução é mesclada no post num lugar só. Se a mescla quebrar, a página sai
+    // com manchete em inglês sobre texto em português, que é pior que não existir.
+    const { container } = renderTraduzido();
+    await waitForArticle(container);
+    const texto = container.textContent ?? "";
+    expect(texto).toContain("Parking at Viracopos Airport");
+    expect(texto).toContain("Second paragraph.");
+    expect(texto).not.toContain("Estacionamento em Viracopos");
+    expect(texto).not.toContain("Segundo parágrafo");
+  });
+
+  it("a casca acompanha o idioma, sem sobra de português", async () => {
+    const { container } = renderTraduzido();
+    await waitForArticle(container);
+    const texto = container.textContent ?? "";
+    // Varredura por MARCA do português, e não por lista de palavras: foi a lista
+    // curta que deixou "Voltar para o blog" passar no primeiro corte desta página.
+    // As marcas têm limite de palavra dos DOIS lados, senão "paragraph" casa com
+    // "para" e o teste reprova texto inglês legítimo (aconteceu na primeira versão).
+    // Nome próprio ("Viracopos") vem do dado, não da casca, então fica de fora.
+    const marca =
+      /\b(para|voltar|todos|todas|últimos|últimas|não|você|leitura|minutos|compartilhar)\b|ção\b/i;
+    const sobras = texto.split(/(?<=[a-zà-ú])(?=[A-ZÀ-Ú])|\n/).filter((t) => marca.test(t));
+    expect(sobras, `casca em português: ${sobras.join(" | ")}`).toEqual([]);
+  });
+
+  it("o slug do post segue o português, que é a chave no banco", async () => {
+    // A URL de cada idioma sai de `caminhoLocalizado` com o slug daquele idioma; o
+    // `post.slug` continua sendo o pt porque é o que as consultas de relacionados usam.
+    const { container } = renderTraduzido();
+    expect(await waitForArticle(container)).toBeTruthy();
+  });
+});

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTextos } from "@/lib/LocaleContext";
 import { CaretDown } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { sectionsFrom } from "./markdown.logic";
@@ -22,6 +23,7 @@ type Props = {
  * da tela, que é justamente o que o cabeçalho em duas colunas foi arrumar.
  */
 export function PostSummary({ resumo, bodyMd }: Props) {
+  const T = useTextos();
   const [aberto, setAberto] = React.useState(false);
   const secoes = React.useMemo(() => (resumo ? [] : sectionsFrom(bodyMd)), [resumo, bodyMd]);
   const id = React.useId();
@@ -39,7 +41,7 @@ export function PostSummary({ resumo, bodyMd }: Props) {
           aria-controls={id}
           className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
         >
-          <span className="text-title-md text-ink">{resumo ? "Ver resumo" : "Nesta página"}</span>
+          <span className="text-title-md text-ink">{resumo ? T.postVerResumo : T.postNestaPagina}</span>
           <CaretDown
             className={cn(
               "h-5 w-5 shrink-0 text-muted transition-transform duration-200 motion-reduce:transition-none",

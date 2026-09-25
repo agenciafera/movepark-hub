@@ -39,6 +39,26 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { optimizedImageUrl } from "@/lib/storage";
 import type { BlogPostWithDestination } from "@/types/domain";
+import type { IdiomaDoPost, PostTraducao } from "@/features/blog/i18nApi";
+import { textos } from "@/lib/i18nTextos";
+import { formatUpdated } from "@/features/content/types";
+import {
+  LANG_HTML,
+  LOCALE_PADRAO,
+  caminhoLocalizado,
+  clusterHreflang,
+  type Locale,
+} from "@/lib/i18n";
+
+/** O que o loader entrega: o post mais o contexto de idioma. */
+export type BlogPostCarregado = BlogPostWithDestination & {
+  locale: Locale;
+  traducao: PostTraducao | null;
+  idiomas: IdiomaDoPost[];
+  /** Rótulo e slug do destino no idioma da página, quando a tradução dele existe. */
+  destinoLabel?: string | null;
+  destinoSlug?: string | null;
+};
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -68,16 +88,66 @@ const MIN_PERGUNTAS_NO_FAQ = 2;
 
 export default function BlogPostPage() {
   const params = useParams();
-  const loaded = useLoaderData() as BlogPostWithDestination | null;
+  const loaded = useLoaderData() as BlogPostCarregado | null;
   const query = useBlogPost(loaded ? undefined : params.slug);
-  const post = loaded ?? query.data ?? null;
+  const base = loaded ?? query.data ?? null;
 
-  const related = useRelatedPosts(post?.destination_id, post?.slug);
-  const relacionados = related.data ?? [];
+  const locale = loaded?.locale ?? LOCALE_PADRAO;
+  const T = textos(locale);
+  const traducao = loaded?.traducao ?? null;
+  const idiomas = loaded?.idiomas ?? [];
+
+  /*
+    A tradução é MESCLADA no post, num lugar só, em vez de trocada em cada uso.
+
+    O corpo do post aparece em oito pontos daqui para baixo (schema, sumário, leitura
+    em voz alta, progresso de scroll, sidebar, FAQPage...). Trocar oito chamadas é
+    oito chances de esquecer uma e a página sair metade em inglês, metade em
+    português. Mesclando aqui, tudo que já lê `post.body_md` passa a ler o traduzido
+    sem saber que idioma existe.
+
+    O `slug` NÃO é mesclado: ele continua sendo o português, que é a chave do post no
+    banco e o que as consultas de relacionados usam. A URL de cada idioma se monta em
+    `caminhoLocalizado`, com o slug daquele idioma.
+  */
+  const post = React.useMemo(
+    () =>
+      base && traducao
+        ? {
+            ...base,
+            title: traducao.title,
+            excerpt: traducao.excerpt,
+            body_md: traducao.body_md,
+            meta_title: traducao.meta_title,
+            meta_description: traducao.meta_description,
+          }
+        : base,
+    [base, traducao],
+  );
+
+  const related = useRelatedPosts(base?.destination_id, base?.slug);
+  /*
+    Em idioma traduzido as listas de post somem, e é decisão, não esquecimento.
+
+    `useRelatedPosts` e `useLatestPosts` trabalham sobre o acervo em português. Num
+    post em inglês elas produziriam um bloco de cards com título e resumo em
+    português, levando a `/blog/<slug-pt>/`: o leitor clica esperando inglês e cai em
+    outro idioma. É o mesmo defeito que o portão do `hreflang` existe para impedir,
+    só que dentro da página.
+
+    Elas voltam no dia em que houver acervo traduzido para relacionar, filtrando por
+    `blog_post_i18n` do mesmo idioma.
+  */
+  const soPt = locale === LOCALE_PADRAO;
+  const relacionados = soPt ? (related.data ?? []) : [];
   /* Sem destino e sem relacionado a lateral seria 300px de branco ao lado do
      texto, que é pior que não ter lateral. */
   const temSidebar = Boolean(post?.destination) || relacionados.length > 0;
-  const ultimos = useLatestPosts(post?.slug).data ?? [];
+  // O hook roda sempre (regra dos hooks); quem some em idioma traduzido é o
+  // resultado. Passar `undefined` como argumento também desligaria a consulta, mas
+  // deixa o filtro em dois lugares: aqui a regra mora numa linha só.
+  const latest = useLatestPosts(base?.slug);
+  const ultimos = soPt ? (latest.data ?? []) : [];
   /*
     Carimbo de frescor: a data da tabela de preço que o post exibe, vinda do motor.
 
@@ -138,11 +208,11 @@ export default function BlogPostPage() {
     return (
       <div className={cn(CONTAINER, FAIXA)}>
         <EmptyState
-          title="Post não encontrado."
-          description="Ele pode ter saído do ar."
+          title={T.postNaoEncontrado}
+          description={T.postNaoEncontradoTexto}
           action={
             <Button asChild>
-              <Link to="/blog/">Ver todos os posts</Link>
+              <Link to="/blog/">{T.postVerTodos}</Link>
             </Button>
           }
         />
@@ -150,7 +220,34 @@ export default function BlogPostPage() {
     );
   }
 
-  const canonical = `${SITE_URL}/blog/${post.slug}/`;
+  // A canônica do post em português mantém a barra final (herança do WordPress, e o
+  // worker preserva). Em idioma traduzido não há barra: a borda redireciona 307 para a
+  // forma sem ela, e canônica que aponta para redirect é defeito autoinfligido.
+  const canonical = `${SITE_URL}${
+    locale === LOCALE_PADRAO
+      ? caminhoLocalizado({ familia: "blog", slug: post.slug, locale })
+      : caminhoLocalizado({ familia: "blog", slug: traducao!.slug, locale })
+  }`;
+  // Cluster com o slug de CADA idioma, nunca com o português repetido. Foi a falta
+  // disso que mandou um hreflang para 404 em produção em 25/09/2026.
+  const hreflangs = clusterHreflang([
+    {
+      locale: LOCALE_PADRAO,
+      caminho: `${SITE_URL}${caminhoLocalizado({
+        familia: "blog",
+        slug: post.slug,
+        locale: LOCALE_PADRAO,
+      })}`,
+    },
+    ...idiomas.map((i) => ({
+      locale: i.locale,
+      caminho: `${SITE_URL}${caminhoLocalizado({
+        familia: "blog",
+        slug: i.slug,
+        locale: i.locale,
+      })}`,
+    })),
+  ]);
   const title = post.meta_title ?? post.title;
   const description = metaDescription(post.meta_description, post.excerpt, post.body_md);
   const minutes = readingMinutes(post.body_md);
@@ -160,14 +257,17 @@ export default function BlogPostPage() {
 
   return (
     <>
-      <Helmet>
+      <Helmet htmlAttributes={{ lang: LANG_HTML[locale] }}>
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
+        {hreflangs.map((h) => (
+          <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
+        ))}
         <link
           rel="alternate"
           type="application/rss+xml"
-          title="Blog da Movepark"
+          title={T.feedTitulo}
           href={`${SITE_URL}/blog/feed.xml`}
         />
         <meta property="og:type" content="article" />
@@ -257,8 +357,8 @@ export default function BlogPostPage() {
               <div className="min-w-0">
                 <PageHeader
                   variant="content"
-                  back={{ to: "/blog/", label: "Voltar para o blog" }}
-                  eyebrow={post.destination?.name ?? undefined}
+                  back={{ to: "/blog/", label: T.postVoltar }}
+                  eyebrow={loaded?.destinoLabel ?? post.destination?.name ?? undefined}
                   title={post.title}
                   description={leadFrom(post.excerpt, post.body_md) ?? undefined}
                 >
@@ -271,7 +371,14 @@ export default function BlogPostPage() {
                         {" · "}
                       </>
                     )}
-                    {formatDate(post.published_at)} · {minutes} min de leitura
+                    {/* Em português a data segue numérica (dd/MM/yyyy), que é o formato
+                        da casa. Em idioma traduzido ela vira por extenso pelo Intl: em
+                        inglês "04/06/2026" seria lido como 6 de abril por uns e 4 de junho
+                        por outros, e a data do post não pode ser ambígua. */}
+                    {locale === LOCALE_PADRAO
+                      ? formatDate(post.published_at)
+                      : formatUpdated(post.published_at, T.intlLocale)}{" "}
+                    · {T.postLeitura(minutes)}
                     {post.category && (
                       <>
                         {" · "}
@@ -347,7 +454,12 @@ export default function BlogPostPage() {
             )}
           </div>
 
-          {temSidebar && <PostSidebar destination={post.destination} relacionados={relacionados} />}
+          {temSidebar && <PostSidebar
+              destination={post.destination}
+              relacionados={relacionados}
+              destinoLabel={loaded?.destinoLabel ?? null}
+              destinoSlug={loaded?.destinoSlug ?? null}
+            />}
         </div>
 
         {/*
@@ -360,7 +472,7 @@ export default function BlogPostPage() {
         {ultimos.length > 0 && (
           <div className="border-t border-hairline bg-surface-soft print:hidden">
             <div className={cn(CONTAINER, FAIXA)}>
-              <h2 className="text-display-sm text-ink">Últimos posts</h2>
+              <h2 className="text-display-sm text-ink">{T.postUltimos}</h2>
               <div className="mt-6 grid gap-6 tablet:grid-cols-2 desktop:grid-cols-3">
                 {ultimos.map((p) => (
                   <PostCard key={p.id} post={p} />
@@ -368,7 +480,7 @@ export default function BlogPostPage() {
               </div>
               <div className="mt-8 flex justify-center">
                 <Button asChild variant="outline">
-                  <Link to="/blog/">Ver todos os posts</Link>
+                  <Link to="/blog/">{T.postVerTodos}</Link>
                 </Button>
               </div>
             </div>

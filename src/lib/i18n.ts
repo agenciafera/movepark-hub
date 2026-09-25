@@ -60,6 +60,20 @@ export function ehLocaleTraduzido(v: string): v is LocaleTraduzido {
  * `slug` é o do idioma quando existe, e o original quando não. Idioma sem prefixo só
  * para o padrão: `/en/` e `/es/` sempre prefixam, inclusive na home.
  */
+/**
+ * Famílias cuja URL em PORTUGUÊS termina com barra.
+ *
+ * Só o blog, e é herança da migração do WordPress: `/blog/<slug>/` é o endereço que
+ * o Google já conhece, e o worker preserva essa barra de propósito
+ * (`normalizaBarraFinal` abre exceção para `/blog/`).
+ *
+ * A barra NÃO se estende aos idiomas traduzidos. `/en/blog/x/` não casa com a exceção
+ * do worker, então a borda redireciona 307 para a forma sem barra: declarar um
+ * `canonical` com barra ali apontaria a canônica para uma URL que redireciona, que é
+ * defeito de SEO autoinfligido. URL nova não tem legado para honrar.
+ */
+const BARRA_FINAL_EM_PT: ReadonlySet<keyof typeof SEGMENTO> = new Set(["blog"]);
+
 export function caminhoLocalizado(args: {
   familia: keyof typeof SEGMENTO;
   slug: string;
@@ -68,8 +82,10 @@ export function caminhoLocalizado(args: {
   sufixo?: string;
 }): string {
   const seg = SEGMENTO[args.familia][args.locale];
-  const prefixo = args.locale === LOCALE_PADRAO ? "" : `/${args.locale}`;
-  return `${prefixo}/${seg}/${args.slug}${args.sufixo ?? ""}`;
+  const ehPadrao = args.locale === LOCALE_PADRAO;
+  const prefixo = ehPadrao ? "" : `/${args.locale}`;
+  const barra = ehPadrao && !args.sufixo && BARRA_FINAL_EM_PT.has(args.familia) ? "/" : "";
+  return `${prefixo}/${seg}/${args.slug}${args.sufixo ?? ""}${barra}`;
 }
 
 export type Alternativa = { locale: Locale; caminho: string };

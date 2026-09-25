@@ -67,6 +67,11 @@ import {
   idiomasDaFaq,
 } from "@/features/faqs/i18nApi";
 import {
+  fetchPostTraduzidoPorSlug,
+  fetchTraducoesDePost,
+  idiomasDoPost,
+} from "@/features/blog/i18nApi";
+import {
   LOCALES_TRADUZIDOS,
   LOCALE_PADRAO,
   SEGMENTO,
@@ -555,17 +560,40 @@ function flattenTags(rows: any[]): any[] {
   }));
 }
 
-async function blogPostLoader({ params }: LoaderFunctionArgs) {
+async function blogPostLoader({ params, request }: LoaderFunctionArgs) {
+  // Mesmo contrato do destino e da FAQ: o idioma vem do CAMINHO, e em idioma
+  // traduzido o slug da URL é o do idioma, não o português. Resolver o post pelo
+  // slug português aqui devolveria 404 em toda página traduzida.
+  const { locale } = localeDoCaminho(new URL(request.url, SITE_URL_INTERNO).pathname);
+
+  let slugPt = params.slug!;
+  let traducao = null as Awaited<ReturnType<typeof fetchPostTraduzidoPorSlug>>;
+  if (locale !== LOCALE_PADRAO) {
+    traducao = await fetchPostTraduzidoPorSlug(params.slug!, locale).catch(() => null);
+    if (!traducao) return null;
+    const { data: original } = await supabase
+      .from("blog_post")
+      .select("slug")
+      .eq("id", traducao.blog_post_id)
+      .maybeSingle();
+    if (!original?.slug) return null;
+    slugPt = original.slug as string;
+  }
+
   const { data } = await supabase
     .from("blog_post")
     .select(BLOG_SELECT)
-    .eq("slug", params.slug!)
+    .eq("slug", slugPt)
     .eq("is_published", true)
     .is("deleted_at", null)
     .maybeSingle();
   if (!data) return null;
 
   const post = flattenTags([data])[0];
+
+  const idiomas = await fetchTraducoesDePost()
+    .then((t) => idiomasDoPost(t, post.id as string))
+    .catch(() => []);
   /*
     Carimbo de frescor do preço, buscado aqui para sair no HTML pré-renderizado: crawler de
     IA não executa JS, e uma data que só aparece no cliente não data nada. Uma linha por
@@ -579,7 +607,47 @@ async function blogPostLoader({ params }: LoaderFunctionArgs) {
       .maybeSingle();
     post.price_updated_at = frescor?.price_updated_at ?? null;
   }
-  return post;
+
+  // Em idioma traduzido a página lê título, resumo e corpo de `traducao`. Mandar o
+  // português junto seria peso morto no HTML, e o corpo de um post é a maior string
+  // da página: foi o que tirei da FAQ depois de ver 7,5 KB de português invisível.
+  const carga =
+    locale === LOCALE_PADRAO ? post : { ...post, body_md: "", excerpt: null, ai_summary: null };
+
+  // Rótulo e slug do destino no idioma da página, para o CTA da lateral não dizer
+  // "Flying out of Aeroporto Internacional de São Paulo/Guarulhos?" e o botão não
+  // mandar para a página portuguesa quando existe a traduzida.
+  let destinoLabel: string | null = null;
+  let destinoSlugTraduzido: string | null = null;
+  if (locale !== LOCALE_PADRAO && post.destination?.id) {
+    const t = (await fetchDestinosTraduzidos().catch(() => [])).find(
+      (x) => x.destination_id === post.destination?.id && x.locale === locale,
+    );
+    destinoLabel = t?.seo_label?.trim() || null;
+    destinoSlugTraduzido = t?.slug?.trim() || null;
+  }
+
+  return {
+    ...carga,
+    locale,
+    traducao,
+    idiomas,
+    destinoLabel,
+    destinoSlug: destinoSlugTraduzido,
+  };
+}
+
+/**
+ * Uma URL por post TRADUZIDO, em cada idioma publicado.
+ *
+ * Nasce vazio, igual ao do destino e ao da FAQ: sem linha completa em
+ * `blog_post_i18n` (slug, título e corpo), o build não gera rota de idioma nenhuma.
+ */
+async function fetchLocalizedBlogPaths(): Promise<string[]> {
+  const traducoes = await fetchTraducoesDePost().catch(() => []);
+  return traducoes.map((t) =>
+    caminhoLocalizado({ familia: "blog", slug: t.slug, locale: t.locale }),
+  );
 }
 
 /**
@@ -1178,6 +1246,13 @@ export const routes: RouteRecord[] = [
             loader: blogPostLoader,
             getStaticPaths: fetchAllBlogPaths,
           },
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            path: `/${locale}/${SEGMENTO.blog[locale]}/:slug`,
+            element: <BlogPostPage />,
+            loader: blogPostLoader,
+            getStaticPaths: async () =>
+              (await fetchLocalizedBlogPaths()).filter((p) => p.startsWith(`/${locale}/`)),
+          })),
           { path: "/precos", element: <PrecosPage />, loader: precosLoader },
           {
             path: "/calculadora-estacionamento-aeroporto",
