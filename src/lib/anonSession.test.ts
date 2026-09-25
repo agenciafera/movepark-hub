@@ -24,10 +24,13 @@ describe("getAnonSessionId", () => {
   it("devolve null quando o storage recusa a escrita", () => {
     // Modo privado com cota estourada. Gerar id novo a cada clique inflaria a contagem de
     // sessões distintas do funil, então é melhor não medir.
-    vi.spyOn(sessionStorage, "setItem").mockImplementation(() => {
+    // Restaurado aqui, e não só no afterEach: no Vitest 4 o restoreAllMocks não devolvia
+    // o setItem do happy-dom, e o teste seguinte via o storage recusando tudo.
+    const spy = vi.spyOn(sessionStorage, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");
     });
     expect(getAnonSessionId()).toBeNull();
+    spy.mockRestore();
   });
 
   it("o id não deriva de nada do usuário", () => {

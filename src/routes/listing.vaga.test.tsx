@@ -118,20 +118,22 @@ async function selecionada(): Promise<string | null> {
   );
 }
 
+// 5 s no waitFor: a primeira renderização da ficha carrega o módulo inteiro e, no Vitest 4,
+// passou a estourar o 1 s padrão na primeira vez.
 describe("oferta em evidência na ficha (?vaga=)", () => {
   it("abre na vaga que a URL pede, não na pré-renderizada", async () => {
     montaPagina("uncovered");
-    await waitFor(async () => expect(await selecionada()).toBe("Vaga Descoberta"));
+    await waitFor(async () => expect(await selecionada()).toBe("Vaga Descoberta"), { timeout: 5000 });
     expect(await screen.findByText("150 vagas")).toBeInTheDocument();
   });
 
   it("abre no valet quando a URL pede valet", async () => {
     montaPagina("valet");
-    await waitFor(async () => expect(await selecionada()).toBe("Valet"));
+    await waitFor(async () => expect(await selecionada()).toBe("Valet"), { timeout: 5000 });
   });
 
   it("usa a ficha do build quando a URL pede o tipo pré-renderizado", async () => {
     montaPagina("covered");
-    await waitFor(async () => expect(await selecionada()).toBe("Vaga Coberta"));
+    await waitFor(async () => expect(await selecionada()).toBe("Vaga Coberta"), { timeout: 5000 });
   });
 });

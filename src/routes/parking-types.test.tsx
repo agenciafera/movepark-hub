@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
@@ -159,18 +159,22 @@ describe("ParkingTypesPage · sincronização manual do espelho de preço WL", (
     expect(screen.getByText("divergente")).toBeInTheDocument();
   });
 
+  // O happy-dom não tem `confirm`, e o Vitest 4 recusa espiar o que não existe: a função entra
+  // como stub global e sai no fim de cada caso.
+  afterEach(() => vi.unstubAllGlobals());
+
   it("pede confirmação e dispara a mutation com o id da vaga ao confirmar", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal("confirm", vi.fn().mockReturnValue(true));
     const { triggerMutateAsync } = setup({ lpt: makeLpt(), checkoutMode: "external" });
 
     await userEvent.click(screen.getByRole("button", { name: /Sincronizar agora/ }));
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalled();
     expect(triggerMutateAsync).toHaveBeenCalledWith("lpt-1");
   });
 
   it("não dispara nada se cancelar a confirmação", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+    vi.stubGlobal("confirm", vi.fn().mockReturnValue(false));
     const { triggerMutateAsync } = setup({ lpt: makeLpt(), checkoutMode: "external" });
 
     await userEvent.click(screen.getByRole("button", { name: /Sincronizar agora/ }));
