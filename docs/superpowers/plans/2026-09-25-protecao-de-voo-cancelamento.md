@@ -587,6 +587,7 @@ git add -A && git commit -m "feat(voo): Operator ve o acionamento e registra a s
 - [ ] **Step 1:** Trocar o rótulo e rodar `bunx vitest run src/features/listing src/routes` para ver o que quebra; ajustar as expectativas para o rótulo novo.
 - [ ] **Step 2:** Passar toda copy nova pela skill `revisar-texto`.
 - [ ] **Step 3:** Atualizar os docs listados. Sem travessão.
+- [ ] **Step 3b:** Aviso "sem e-mail de contato" na ficha da unidade do Manager (`src/routes/manager/location-edit.tsx` ou o formulário da unidade em `src/features/locations/`): quando `location.email` estiver vazio, um parágrafo em `text-warning` dizendo que a unidade só recebe avisos operacionais (proteção de voo) pelo painel do Operator. Teste de componente: renderiza com e sem e-mail.
 - [ ] **Step 4:** `bun run test && bun run typecheck && bun run lint`; commit `docs(voo): protecao de voo cobre cancelamento; copy e questionamentos Q-031 a Q-034`; push.
 
 ---
