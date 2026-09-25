@@ -514,6 +514,8 @@ export function useExtendBookingFlightDelay() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-bookings"] });
       qc.invalidateQueries({ queryKey: ["bookings"] });
+      // A reserva aberta precisa mostrar o resumo da proteção sem recarregar.
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
     },
   });
 }
