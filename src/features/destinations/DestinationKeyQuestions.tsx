@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 
 import { PostBody } from "@/features/blog/PostBody";
+import { useLocale } from "@/lib/LocaleContext";
+import { LOCALE_PADRAO } from "@/lib/i18n";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 
 import { sectionBody } from "./keyQuestions.logic";
@@ -30,6 +32,18 @@ export function DestinationKeyQuestions({
   /** Frase curta acima do bloco. Some quando não há nada a dizer. */
   intro?: string | null;
 }) {
+  const locale = useLocale();
+  /*
+   * A página própria da pergunta (`/faq/<slug>`) só existe em português: a rota
+   * localizada de FAQ ainda não foi construída. Emitir o link no idioma traduzido
+   * apontaria para 404, que é exatamente o defeito que acabou de ser corrigido no
+   * cluster de hreflang, e pela mesma razão: link que promete página e entrega nada
+   * custa mais que a ausência do link.
+   *
+   * Some quando a rota existir; até lá, a resposta inteira está aqui mesmo.
+   */
+  const temPaginaPropria = locale === LOCALE_PADRAO;
+
   if (items.length === 0) return null;
 
   return (
@@ -48,7 +62,7 @@ export function DestinationKeyQuestions({
                 <PostBody markdown={corpo} minHeadingLevel={3} />
               </div>
             )}
-            {f.slug && (
+            {temPaginaPropria && f.slug && (
               <Link
                 to={`/faq/${f.slug}`}
                 className="mt-3 inline-block text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"

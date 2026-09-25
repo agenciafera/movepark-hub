@@ -456,17 +456,12 @@ export default function DestinoPage() {
   // Corte por escopo (ADR-002): a do aeroporto vira seção com H2 e prosa aberta, a de
   // plataforma continua no accordion. As duas listas são disjuntas de propósito, senão a
   // mesma pergunta sairia duas vezes na página e duas vezes no FAQPage.
-  // Post ainda não traduzido não entra em página de idioma traduzido: título em
-  // português numa lista inglesa é o mesmo problema da FAQ, e `blog_post_i18n` é o
-  // portão. Enquanto ele estiver vazio, a seção some nos idiomas traduzidos.
-  const postsDoDestino = locale === LOCALE_PADRAO ? (loaded?.posts ?? []).slice(0, 6) : [];
-  // FAQ em idioma traduzido só mostra o que ESTÁ traduzido. Catorze perguntas em
-  // português dentro de uma página em inglês é exatamente o que o portão de tradução
-  // existe para evitar: a página passa a parecer descuidada justo onde ela deveria
-  // provar cuidado. Enquanto `faq_i18n` não tiver linha, a seção some.
-  const perguntasDoDestino =
-    locale === LOCALE_PADRAO ? keyQuestions(faqData) : [];
-  const perguntasGerais = locale === LOCALE_PADRAO ? accordionQuestions(faqData) : [];
+  // Mesma regra dos FAQs: o loader já descartou post sem tradução no idioma da URL.
+  const postsDoDestino = (loaded?.posts ?? []).slice(0, 6);
+  // O gate por idioma saiu daqui: o loader já entrega a lista NO IDIOMA da URL, com
+  // quem não tem tradução publicada descartado. A página só separa por escopo.
+  const perguntasDoDestino = keyQuestions(faqData);
+  const perguntasGerais = accordionQuestions(faqData);
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);

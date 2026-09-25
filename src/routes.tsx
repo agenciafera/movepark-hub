@@ -54,7 +54,10 @@ import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
 import {
+  aplicaTraducao,
   fetchDestinosTraduzidos,
+  fetchFaqsTraduzidos,
+  fetchPostsTraduzidos,
   idiomasDoDestino,
   slugDoIdioma,
 } from "@/features/destinations/i18nApi";
@@ -340,7 +343,7 @@ async function fetchAllFichaPaths(): Promise<string[]> {
 async function fetchPostsDoDestino(destinationId: string) {
   const { data } = await supabase
     .from("blog_post")
-    .select("slug, title, excerpt, published_at, cover_image_url")
+    .select("id, slug, title, excerpt, published_at, cover_image_url")
     .eq("destination_id", destinationId)
     .eq("is_published", true)
     .is("deleted_at", null)
@@ -425,19 +428,61 @@ async function destinoLoader({ params, request }: LoaderFunctionArgs) {
     // hreflang apontando para página que não existe.
     fetchDestinosTraduzidos().catch(() => []),
   ]);
+  // FAQ e post no idioma da URL. Quem não tem tradução publicada é DESCARTADO, e não
+  // completado com o português: pergunta em português no meio de uma lista em inglês
+  // faz a página parecer descuidada justo onde ela deveria provar cuidado.
+  const faqsDoDestino = faqs ?? [];
+  const postsDoDestino = posts ?? [];
+  const [faqsNoIdioma, postsNoIdioma] =
+    locale === LOCALE_PADRAO
+      ? [faqsDoDestino, postsDoDestino]
+      : await Promise.all([
+          fetchFaqsTraduzidos(
+            faqsDoDestino.filter((f) => f.scope === "destination").map((f) => f.id),
+            locale,
+          )
+            .then((t) =>
+              aplicaTraducao(
+                faqsDoDestino.filter((f) => f.scope === "destination"),
+                t,
+                (f, tr) => ({
+                  ...f,
+                  question: tr.question ?? f.question,
+                  answer: tr.answer ?? f.answer,
+                  body_md: tr.body_md ?? null,
+                  slug: tr.slug ?? null,
+                }),
+              ),
+            )
+            .catch(() => []),
+          fetchPostsTraduzidos(
+            postsDoDestino.map((p) => p.id),
+            locale,
+          )
+            .then((t) =>
+              aplicaTraducao(postsDoDestino, t, (p, tr) => ({
+                ...p,
+                title: tr.title ?? p.title,
+                excerpt: tr.excerpt ?? p.excerpt,
+                slug: tr.slug ?? p.slug,
+              })),
+            )
+            .catch(() => []),
+        ]);
+
   return {
     destination: data,
     prospects,
     units,
-    faqs,
     priceDestination:
       index?.destinations.find(
         (d: { public_slug: string | null }) => d.public_slug === publicSlug,
       ) ?? null,
     related: irmaos,
     points: points.map((p) => ({ id: p.id, name: p.name })),
-    posts,
     idiomas: idiomasDoDestino(traducoes, data.id as string, publicSlug),
+    faqs: faqsNoIdioma,
+    posts: postsNoIdioma,
     locale,
     traducao:
       locale === LOCALE_PADRAO
