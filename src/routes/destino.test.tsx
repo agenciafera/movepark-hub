@@ -1106,3 +1106,56 @@ describe("DestinoPage · quanto custa e distância", () => {
     });
   });
 });
+
+describe("cluster de hreflang", () => {
+  beforeEach(() => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: undefined, isLoading: false } as never);
+    vi.mocked(useSearchResults).mockReturnValue({ data: undefined, isLoading: true } as never);
+  });
+
+  /**
+   * O bug que foi a produção em 25/09/2026: o cluster montava o caminho de TODOS os
+   * idiomas com o slug português, então apontava para
+   * `/en/airport-parking/aeroporto-guarulhos`, que é 404, enquanto a página real era
+   * `/en/airport-parking/guarulhos-airport`. Um cluster que promete tradução e
+   * entrega página inexistente faz o buscador desconfiar do grupo inteiro, inclusive
+   * do original, que é justamente o que o portão existe para impedir.
+   */
+  it("cada alternativa usa o slug do PRÓPRIO idioma", async () => {
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospects: [],
+      units: [],
+      idiomas: [
+        { locale: "en", slug: "guarulhos-airport" },
+        { locale: "es", slug: "aeropuerto-guarulhos" },
+      ],
+    });
+
+    render();
+
+    await waitFor(() => {
+      const links = [...document.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [
+        l.getAttribute("hreflang"),
+        l.getAttribute("href"),
+      ]);
+      expect(links).toEqual([
+        ["pt-BR", "https://movepark.co/estacionamentos/aeroporto-guarulhos"],
+        ["en", "https://movepark.co/en/airport-parking/guarulhos-airport"],
+        ["es", "https://movepark.co/es/estacionamiento-aeropuerto/aeropuerto-guarulhos"],
+        ["x-default", "https://movepark.co/estacionamentos/aeroporto-guarulhos"],
+      ]);
+    });
+  });
+
+  it("destino sem tradução não emite cluster nenhum", async () => {
+    // hreflang de um item só é ruído, e alguns validadores tratam como erro.
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [], idiomas: [] });
+
+    render();
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('link[rel="alternate"][hreflang]')).toHaveLength(0);
+    });
+  });
+});

@@ -8,12 +8,11 @@ import {
   caminhoLocalizado,
   clusterHreflang,
   type Locale,
-  type LocaleTraduzido,
 } from "@/lib/i18n";
 import { headings } from "@/lib/i18nHeadings";
 import { LocaleProvider } from "@/lib/LocaleContext";
 import { textos } from "@/lib/i18nTextos";
-import type { DestinoTraduzido } from "@/features/destinations/i18nApi";
+import type { DestinoTraduzido, IdiomaDoDestino } from "@/features/destinations/i18nApi";
 import { MapPin } from "@phosphor-icons/react";
 import type {
   Destination,
@@ -155,8 +154,14 @@ type DestinoLoaderData = {
   points?: Pick<DestinationPoint, "id" | "name">[];
   /** Posts publicados do destino, para o "leia também" sair no HTML do build. */
   posts?: { slug: string; title: string; excerpt: string | null }[];
-  /** Idiomas em que este destino já tem tradução publicada. Alimenta o hreflang. */
-  idiomas?: LocaleTraduzido[];
+  /**
+   * Idiomas em que este destino já tem tradução publicada, COM o slug de cada um.
+   *
+   * O slug viaja junto porque o `hreflang` precisa da URL final. A primeira versão
+   * carregava só o idioma e a página montava o caminho com o slug português para
+   * todos, e o cluster foi ao ar apontando para URL inexistente.
+   */
+  idiomas?: IdiomaDoDestino[];
   /** Idioma desta URL. Vem do caminho, nunca de cabeçalho: a URL é o contrato. */
   locale?: Locale;
   /** A tradução desta página, quando a URL é de idioma traduzido. */
@@ -263,8 +268,8 @@ export default function DestinoPage() {
   const hreflangs = clusterHreflang([
     { locale: LOCALE_PADRAO, caminho: canonical },
     ...idiomas.map((l) => ({
-      locale: l,
-      caminho: `${SITE_URL}${caminhoLocalizado({ familia: "destino", slug: destinoSlug, locale: l })}`,
+      locale: l.locale,
+      caminho: `${SITE_URL}${caminhoLocalizado({ familia: "destino", slug: l.slug, locale: l.locale })}`,
     })),
   ]);
   // Imagem otimizada (resize/transform do Supabase). O og:image é 1.91:1 (1200×630,

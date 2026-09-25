@@ -41,12 +41,30 @@ export function slugDoIdioma(t: DestinoTraduzido | undefined, slugOriginal: stri
  * a consulta já é filtrada pela RLS. Tradução em rascunho não vira `hreflang`, que é
  * a invariante que impede o cluster inteiro de ficar suspeito.
  */
+export type IdiomaDoDestino = { locale: LocaleTraduzido; slug: string };
+
+/**
+ * Os idiomas em que um destino existe, COM o slug de cada um.
+ *
+ * O slug viaja junto porque o `hreflang` precisa da URL final, e a URL de cada idioma
+ * usa o slug daquele idioma. A primeira versão devolvia só a lista de idiomas, e a
+ * página montava o caminho com o slug português para todos: o cluster foi para
+ * produção apontando `/en/airport-parking/aeroporto-guarulhos`, que é 404, quando a
+ * página real é `/en/airport-parking/guarulhos-airport`.
+ *
+ * Ou seja, o cluster prometia tradução e entregava página inexistente, que é
+ * exatamente o defeito que o portão existe para impedir. O tipo agora obriga o slug.
+ */
 export function idiomasDoDestino(
   traducoes: DestinoTraduzido[],
   destinationId: string,
-): LocaleTraduzido[] {
-  const doDestino = new Set(
-    traducoes.filter((t) => t.destination_id === destinationId).map((t) => t.locale),
+  slugOriginal: string,
+): IdiomaDoDestino[] {
+  const porLocale = new Map(
+    traducoes.filter((t) => t.destination_id === destinationId).map((t) => [t.locale, t]),
   );
-  return LOCALES_TRADUZIDOS.filter((l) => doDestino.has(l));
+  return LOCALES_TRADUZIDOS.filter((l) => porLocale.has(l)).map((l) => ({
+    locale: l,
+    slug: slugDoIdioma(porLocale.get(l), slugOriginal),
+  }));
 }

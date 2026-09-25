@@ -437,7 +437,7 @@ async function destinoLoader({ params, request }: LoaderFunctionArgs) {
     related: irmaos,
     points: points.map((p) => ({ id: p.id, name: p.name })),
     posts,
-    idiomas: idiomasDoDestino(traducoes, data.id as string),
+    idiomas: idiomasDoDestino(traducoes, data.id as string, publicSlug),
     locale,
     traducao:
       locale === LOCALE_PADRAO
