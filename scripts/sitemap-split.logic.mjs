@@ -120,6 +120,11 @@ const DICAS_POR_SECAO = {
   blog: { changefreq: "monthly", priority: "0.7" },
   estacionamentos: { changefreq: "monthly", priority: "0.6" },
   paginas: { changefreq: "monthly", priority: "0.6" },
+  // As páginas em inglês e espanhol ficam numa seção só, e não distribuídas entre
+  // `faq`/`destinos`/`blog`, porque a pergunta que se faz de uma estreia multilíngue é
+  // "o Google está indexando isso?". Com seção própria, o Search Console responde num
+  // número; diluídas, dez URLs sumiriam no meio de noventa posts.
+  idiomas: { changefreq: "monthly", priority: "0.7" },
 };
 
 /** A home é a exceção da seção `paginas`: raiz do site, prioridade máxima. */

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SeletorDeIdioma } from "@/components/shared/SeletorDeIdioma";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "./Brand";
 import { useTextos } from "@/lib/LocaleContext";
@@ -119,7 +120,7 @@ export function ConsumerFooter() {
               © {new Date().getFullYear()} Movepark Tecnologia Ltda · CNPJ 68.183.164/0001-35
             </span>
           </div>
-          <div className="text-caption-sm text-muted">🌎 PT-BR (R$)</div>
+          <SeletorDeIdioma />
         </div>
       </div>
     </footer>

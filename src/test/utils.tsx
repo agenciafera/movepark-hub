@@ -3,7 +3,7 @@ import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 import { render } from "@testing-library/react";
-import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router-dom";
+import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import type { LoaderFunction } from "react-router-dom";
 import { AuthContext } from "@/auth/context";
 import type { AuthContextValue } from "@/auth/context";
@@ -75,17 +75,25 @@ export function renderWithProviders(
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const future = { v7_startTransition: true, v7_relativeSplatPath: true } as const;
 
-  const tree = opts?.path ? (
+  /*
+    SEMPRE data router, com ou sem `path`.
+
+    Antes, teste sem `path` caía num `<MemoryRouter>` simples, que não é o que a produção
+    usa (o vite-react-ssg monta `createBrowserRouter`). A diferença ficou invisível até o
+    rodapé passar a ler a rota por `useMatches`, que só existe em data router: três
+    arquivos de teste sem relação com a mudança quebraram de uma vez, com uma mensagem
+    sobre roteador que não explicava nada sobre o que tinha mudado.
+
+    Testar numa árvore que a aplicação não tem só adia a descoberta. O `path` continua
+    servindo para quem precisa de `useParams()`; sem ele, a rota casa tudo.
+  */
+  const tree = (
     <RouterProvider
-      router={createMemoryRouter([{ path: opts.path, element: ui, loader: opts.loader }], {
+      router={createMemoryRouter([{ path: opts?.path ?? "*", element: ui, loader: opts?.loader }], {
         initialEntries: [opts?.route ?? "/"],
         future,
       })}
     />
-  ) : (
-    <MemoryRouter initialEntries={[opts?.route ?? "/"]} future={future}>
-      {ui}
-    </MemoryRouter>
   );
 
   // O HelmetProvider vem do `vite-react-ssg` na app real, não do nosso código, então

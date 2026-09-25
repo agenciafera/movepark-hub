@@ -254,3 +254,50 @@ describe("lastmodComposto: a data da página, não a da linha", () => {
     ).toBe("2026-09-01T00:00:00.000Z");
   });
 });
+
+describe("seção de idiomas", () => {
+  /**
+   * As URLs traduzidas ganharam seção própria (`sitemap-idiomas.xml`) em vez de entrar
+   * em `faq`/`destinos`/`blog`. Sem seção declarada elas cairiam em `paginas` e o split
+   * as reportaria como órfãs, que é o sintoma de rota nova esquecida, não de decisão.
+   */
+  const PATHS_I18N = [
+    "/",
+    "/faq/como-cancelar",
+    "/en/faq/how-to-cancel",
+    "/es/preguntas-frecuentes/como-cancelar",
+    "/en/airport-parking/guarulhos-airport",
+  ];
+  const MAPA_I18N = {
+    faq: ["/faq/como-cancelar"],
+    idiomas: [
+      "/en/faq/how-to-cancel",
+      "/es/preguntas-frecuentes/como-cancelar",
+      "/en/airport-parking/guarulhos-airport",
+    ],
+    paginas: ["/"],
+  };
+
+  const porNomeDe = (paths: string[], mapa: Record<string, string[]>) => {
+    const { arquivos, orfas } = dividirSitemap(sitemapCom(paths), mapa);
+    return { porNome: Object.fromEntries(arquivos.map((a) => [a.nome, a.conteudo])), orfas };
+  };
+
+  it("as traduzidas saem em sitemap-idiomas.xml, e nenhuma vira órfã", () => {
+    const { porNome, orfas } = porNomeDe(PATHS_I18N, MAPA_I18N);
+    expect(orfas).toEqual([]);
+    const idiomas = porNome["sitemap-idiomas.xml"];
+    expect(idiomas).toBeTruthy();
+    for (const p of MAPA_I18N.idiomas) {
+      expect(idiomas).toContain(`<loc>https://movepark.co${p}</loc>`);
+    }
+    // A portuguesa não migra junto: ela continua sendo da seção dela.
+    expect(idiomas).not.toContain("/faq/como-cancelar</loc>");
+    expect(porNome["sitemap-faq.xml"]).toContain("/faq/como-cancelar</loc>");
+  });
+
+  it("recebe as dicas da própria seção, não as de `paginas`", () => {
+    const { porNome } = porNomeDe(PATHS_I18N, MAPA_I18N);
+    expect(porNome["sitemap-idiomas.xml"]).toContain("<priority>0.7</priority>");
+  });
+});

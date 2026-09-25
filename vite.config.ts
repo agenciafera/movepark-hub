@@ -12,6 +12,9 @@ import {
   SITEMAP_PRIVATE_PREFIXES,
   SITEMAP_STATIC_ROUTES,
 } from "./src/lib/sitemapRoutes";
+// `src/lib/i18n.ts` não importa nada, então pode entrar aqui sem o alias `@` que o
+// esbuild do vite.config ainda não conhece (mesma restrição do sitemapRoutes).
+import { SEGMENTO } from "./src/lib/i18n";
 // Mesma função que o split usa para o lastmod do índice. Uma só, para as duas pontas não
 // divergirem sobre o que é "a data mais recente".
 import {
@@ -217,6 +220,51 @@ async function getFaqRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
 }
 
 /**
+ * URLs traduzidas (`/en/...`, `/es/...`) para o sitemap.
+ *
+ * Sem elas o Google só chega às páginas de idioma pelo `hreflang` das portuguesas, que é
+ * descoberta indireta e lenta. O sitemap é o caminho direto, e é barato: as três tabelas
+ * `*_i18n` já existem e a RLS pública só devolve linha publicada.
+ *
+ * O filtro repete o das APIs de leitura de propósito, porque aqui o custo do erro é
+ * maior: anunciar no sitemap uma URL que o build não gerou é prometer página e entregar
+ * 404 direto ao Google, sem nem um clique de humano no meio.
+ *
+ * `blog_post_i18n` está vazia hoje, então o blog contribui com zero linhas. É o
+ * comportamento certo: a URL nasce no sitemap no mesmo build em que a página passa a
+ * existir.
+ */
+async function getRotasTraduzidas(sb: SupabaseClient | null): Promise<RotaComData[]> {
+  if (!sb) return [];
+
+  const caminho = (familia: keyof typeof SEGMENTO, locale: string, slug: string) =>
+    `/${locale}/${SEGMENTO[familia][locale as keyof (typeof SEGMENTO)["blog"]]}/${slug}`;
+
+  const [destinos, faqs, posts] = await Promise.all([
+    sb.from("destination_i18n").select("locale, slug, updated_at").not("slug", "is", null),
+    sb.from("faq_i18n").select("locale, slug, updated_at").not("slug", "is", null),
+    sb
+      .from("blog_post_i18n")
+      .select("locale, slug, updated_at")
+      .not("slug", "is", null)
+      .not("title", "is", null)
+      .not("body_md", "is", null),
+  ]);
+
+  const rotas: RotaComData[] = [];
+  // deno-lint-ignore no-explicit-any
+  for (const d of (destinos.data ?? []) as any[])
+    rotas.push({ route: caminho("destino", d.locale, d.slug), lastmod: d.updated_at });
+  // deno-lint-ignore no-explicit-any
+  for (const f of (faqs.data ?? []) as any[])
+    rotas.push({ route: caminho("faq", f.locale, f.slug), lastmod: f.updated_at });
+  // deno-lint-ignore no-explicit-any
+  for (const p of (posts.data ?? []) as any[])
+    rotas.push({ route: caminho("blog", p.locale, p.slug), lastmod: p.updated_at });
+  return rotas;
+}
+
+/**
  * Páginas "mais barato" (/estacionamento-mais-barato/<slug>): entra no sitemap o
  * mesmo conjunto que o getStaticPaths gera, ou seja, destino com ao menos um
  * preço de carro na matriz do motor (RPC destination_price_index). /precos cobre
@@ -406,6 +454,7 @@ export default defineConfig(async ({ mode }) => {
     faqRoutes,
     precosRoutes,
     maisBaratoRoutes,
+    rotasTraduzidas,
   ] = await Promise.all([
       getDynamicRoutes(sb),
       getDestinationRoutes(sb),
@@ -415,6 +464,7 @@ export default defineConfig(async ({ mode }) => {
       getFaqRoutes(sb),
       getPrecosRoutes(sb),
       getMaisBaratoRoutes(sb),
+      getRotasTraduzidas(sb),
     ]);
   // Índice de destinos + uma URL por destino publicado, além das listagens /p/...
   // e dos posts do blog (com barra final, contrato herdado do WordPress).
@@ -471,6 +521,7 @@ export default defineConfig(async ({ mode }) => {
     ...faqRoutes,
     ...precosComData,
     ...maisBaratoComData,
+    ...rotasTraduzidas,
   ];
 
   // As estáticas entram por lista porque o plugin roda antes do pré-render e não teria como
@@ -515,6 +566,7 @@ export default defineConfig(async ({ mode }) => {
     destinos: ["/estacionamentos", ...so(destinationRoutes)],
     estacionamentos: so(prospectRoutes),
     faq: ["/faq", ...so(faqRoutes)],
+    idiomas: so(rotasTraduzidas),
     "mais-barato": so(maisBaratoComData),
     paginas: SITEMAP_STATIC_ROUTES.filter((r) => r !== "/faq"),
     precos: ["/precos", ...so(precosComData)],
