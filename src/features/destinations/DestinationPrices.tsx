@@ -1,7 +1,8 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 
-import { useTextos } from "@/lib/LocaleContext";
+import { useLocale, useTextos } from "@/lib/LocaleContext";
+import { nomeDaVaga } from "@/lib/i18nVaga";
 
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { formatBRL, formatDate } from "@/lib/format";
@@ -54,6 +55,7 @@ export function DestinationPriceTable({
   heading,
 }: Props) {
   const T = useTextos();
+  const locale = useLocale();
   const matrix = prices?.matrix ?? null;
   const summary = prices?.summary ?? null;
   const longStay = prices?.longStay ?? null;
@@ -81,8 +83,8 @@ export function DestinationPriceTable({
         <h2 className="text-balance text-display-2xl text-ink">{heading}</h2>
         <p className="text-pretty text-body-md text-body">
           {soPesquisa
-            ? "Escolha a duração da estadia e compare o total. Nenhum destes lotes reserva pela Movepark: os valores foram pesquisados por nós, com a data ao lado de cada linha."
-            : "Escolha a duração da estadia e compare o total nas vagas com reserva online."}
+            ? T.escolhaDuracao(true)
+            : T.escolhaDuracao(false)}
         </p>
       </div>
 
@@ -110,7 +112,7 @@ export function DestinationPriceTable({
                   duracao: T.duracao(s.days),
                   valor: formatBRL(s.from),
                   onde: s.unitLabel,
-                  vaga: s.parkingTypeName,
+                  vaga: nomeDaVaga(locale, s.parkingTypeCode, s.parkingTypeName),
                   porDia: s.days > 1 ? formatBRL(s.fromPerDay) : undefined,
                 })}
               </li>
@@ -175,8 +177,8 @@ export function DestinationPriceTable({
         <table className="block w-full border-collapse tablet:table">
           <caption className="sr-only">
             {soPesquisa
-              ? "Preço por duração nos estacionamentos da região, pesquisado por nós, total do período"
-              : "Preço por duração nos estacionamentos com reserva online e, abaixo, nos lotes sem reserva, com preço pesquisado por nós"}
+              ? T.legendaTabela(true)
+              : T.legendaTabela(false)}
           </caption>
           <thead className="hidden tablet:table-header-group">
             <tr className="border-b border-hairline">
@@ -240,7 +242,7 @@ export function DestinationPriceTable({
                       )}
                     </span>
                     <span className="mt-0.5 block text-caption-sm text-muted">
-                      {row.unit.parking_type_name}
+                      {nomeDaVaga(locale, row.unit.parking_type_code, row.unit.parking_type_name)}
                     </span>
                   </th>
 
@@ -420,7 +422,7 @@ export function DestinationPriceTable({
             `checkout_mode = external` quem cobra é o parceiro, e prometer o checkout
             da Movepark ali seria promessa de transação sem capacidade (ADR-009). */}
         <p className="max-w-[64ch] text-pretty text-caption-sm text-muted">
-          {temBalcao && <>Preço riscado: balcão do estacionamento, sem reserva. </>}
+          {temBalcao && <>{T.precoBalcao} </>}
           {temMinStay && (
             <>
               {T.notaEntradaMinima}{" "}
@@ -428,8 +430,7 @@ export function DestinationPriceTable({
           )}
           {pesquisados.length > 0 && (
             <>
-              Onde diz "sem reserva online", o preço foi PESQUISADO por nós na data da linha,
-              direto com o estacionamento. Não é oferta da Movepark e pode ter mudado.{" "}
+              {T.avisoPesquisado}{" "}
             </>
           )}
           {generatedAt && (

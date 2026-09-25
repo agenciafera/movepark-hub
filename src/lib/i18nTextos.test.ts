@@ -18,8 +18,19 @@ describe("dicionário da casca", () => {
       // `traducaoParcial` é vazio no português de propósito: o aviso só existe quando
       // há o que avisar, e no idioma fonte nunca há.
       if (k === "traducaoParcial" && locale === "pt-BR") continue;
-      if (typeof v === "string") expect(v.length, `${locale}.${k}`).toBeGreaterThan(0);
-      else expect(typeof v, `${locale}.${k}`).toBe("function");
+      if (typeof v === "string") {
+        expect(v.length, `${locale}.${k}`).toBeGreaterThan(0);
+      } else if (Array.isArray(v)) {
+        // `trasladoPassos` é a única lista: cada passo precisa de título e texto nos
+        // três idiomas, senão o bloco sai com um degrau vazio.
+        expect(v.length, `${locale}.${k}`).toBeGreaterThan(0);
+        for (const passo of v as { t: string; d: string }[]) {
+          expect(passo.t.length, `${locale}.${k}.t`).toBeGreaterThan(0);
+          expect(passo.d.length, `${locale}.${k}.d`).toBeGreaterThan(0);
+        }
+      } else {
+        expect(typeof v, `${locale}.${k}`).toBe("function");
+      }
     }
   });
 
@@ -57,7 +68,12 @@ describe("dicionário da casca", () => {
       const t = textos(locale as Locale);
       for (const k of CHAVES) {
         const v = t[k];
-        const s = typeof v === "function" ? (v as (x: never) => string)(7 as never) : v;
+        const s =
+          typeof v === "function"
+            ? (v as (x: never) => string)(7 as never)
+            : Array.isArray(v)
+              ? JSON.stringify(v)
+              : v;
         expect(String(s), `${locale}.${k}`).not.toMatch(/[—–]/);
       }
     }

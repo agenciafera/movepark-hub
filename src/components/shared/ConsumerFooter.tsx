@@ -79,7 +79,7 @@ export function ConsumerFooter() {
               {T.duvidasRodape}
             </p>
             <p className="mt-1 text-body-sm text-white">
-              Preços, traslado, cancelamento e check-in: as respostas estão na central.
+              {T.rodapeCta}
             </p>
           </div>
           {/* Só borda. Branco cheio, o botão virava a coisa mais clara da faixa e

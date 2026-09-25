@@ -105,10 +105,6 @@ function defaultWindow() {
 /** Container da página. Uma largura só, a de app (1280), como manda a skill. */
 const CALHA = "mx-auto w-full max-w-[1280px] px-4 desktop:px-8";
 
-function plural(n: number, singular: string, plural_: string): string {
-  return `${n} ${n === 1 ? singular : plural_}`;
-}
-
 /** Uma linha da ficha do destino, ao lado do texto de abertura. */
 function Ficha({ itens }: { itens: { rotulo: string; valor: React.ReactNode }[] }) {
   if (itens.length === 0) return null;
@@ -338,7 +334,14 @@ export default function DestinoPage() {
     units: priceDest?.units ?? [],
     prospects: prospectRows,
     destinationSlug: destinoSlug,
-    anchorLabel: proximityAnchorLabel(destination),
+    // Em idioma traduzido o sufixo vem do dicionário; em português, do `seo.ts`,
+    // que distingue aeroporto de rodoviária.
+    anchorLabel:
+      locale === LOCALE_PADRAO
+        ? proximityAnchorLabel(destination)
+        : proximityAnchorLabel(destination)
+          ? T.doTerminal
+          : null,
     addressByLocation,
   });
 
@@ -497,34 +500,37 @@ export default function DestinoPage() {
   const destaque =
     temParceiro && fromPrice != null
       ? {
-          rotulo: "A partir de",
+          rotulo: T.aPartirDeRotulo,
           valor: formatBRL(fromPrice),
-          sufixo: "/ diária",
-          cta: { label: "Ver vagas", href: "#parceiros" },
+          sufixo: T.sufixoDiaria,
+          cta: { label: T.verVagas, href: "#parceiros" },
         }
       : prospectItems.length > 0
         ? {
-            rotulo: "Mapeados na região",
+            rotulo: T.mapeadosRotulo,
             valor: String(prospectItems.length),
-            cta: { label: "Ver a lista", href: "#mapeados" },
+            cta: { label: T.verALista, href: "#mapeados" },
           }
         : null;
 
   const ficha = [
     points.length > 0
       ? {
-          rotulo: points.length === 1 ? "Terminal" : "Terminais",
+          rotulo: T.terminal(points.length),
           valor: pointsSummary(points.map((p) => p.name)),
         }
       : null,
-    temParceiro ? { rotulo: "Com reserva online", valor: String(parceiros) } : null,
+    temParceiro ? { rotulo: T.comReservaOnlineRotulo, valor: String(parceiros) } : null,
     prospectItems.length > 0
-      ? { rotulo: "Mapeados na região", valor: String(prospectItems.length) }
+      ? { rotulo: T.mapeadosRotulo, valor: String(prospectItems.length) }
       : null,
     maisPerto
-      ? { rotulo: parceiroMaisPerto ? "Parceiro mais perto" : "Mais perto", valor: maisPerto }
+      ? {
+          rotulo: parceiroMaisPerto ? T.parceiroMaisPertoRotulo : T.maisPertoRotulo,
+          valor: maisPerto,
+        }
       : null,
-    fromPrice != null ? { rotulo: "Diária a partir de", valor: formatBRL(fromPrice) } : null,
+    fromPrice != null ? { rotulo: T.diariaAPartirDeRotulo, valor: formatBRL(fromPrice) } : null,
   ].filter((i): i is { rotulo: string; valor: string } => i != null);
 
   return (
@@ -587,8 +593,8 @@ export default function DestinoPage() {
       <article className="flex flex-col">
         <DestinationHero
           trilha={[
-            { label: "Início", to: "/" },
-            { label: "Estacionamentos", to: "/estacionamentos" },
+            { label: T.trilhaInicio, to: "/" },
+            { label: T.trilhaEstacionamentos, to: "/estacionamentos" },
             { label: nomeCurto },
           ]}
           eyebrow={`${destination.city}${destination.state ? ` · ${destination.state}` : ""}`}
@@ -627,13 +633,7 @@ export default function DestinoPage() {
                   sairia anunciando "0 vagas". */}
               {results.length > 0 && (
                 <p className="text-body-md text-body">
-                  {plural(results.length, "vaga", "vagas")} em{" "}
-                  {plural(
-                    locaisDaVitrine.size,
-                    "estacionamento parceiro",
-                    "estacionamentos parceiros",
-                  )}
-                  .
+                  {T.vagasEmParceiros(results.length, locaisDaVitrine.size)}
                 </p>
               )}
             </div>
@@ -730,7 +730,7 @@ export default function DestinoPage() {
             <DestinationProximity
               rows={proximity}
               heading={H.distancia}
-              lead="Medimos a distância a partir das coordenadas de cada endereço. Nenhum número desta lista é declarado pelo estacionamento, e nos lotes sem reserva online a reserva é feita direto com eles."
+              lead={T.distanciaIntroLonga}
             />
           </section>
         )}
@@ -747,7 +747,7 @@ export default function DestinoPage() {
             >
               <div className="flex flex-col gap-4">
                 <span className="text-badge uppercase tracking-[0.4px] text-mp-indigo">
-                  O traslado
+                  {T.trasladoEyebrow}
                 </span>
                 <h2 className="text-balance text-display-2xl text-ink">
                   {H.traslado}
@@ -755,24 +755,10 @@ export default function DestinoPage() {
                 {/* Quem oferece, e não "os parceiros oferecem": traslado é comodidade de
                     cada unidade, e a página do destino fala de todas elas. */}
                 <p className="max-w-[56ch] text-pretty text-body-md text-body">
-                  Quem oferece traslado leva e traz você entre o estacionamento e o terminal. O
-                  tempo e a frequência ficam na página de cada estacionamento.
+                  {T.trasladoIntro}
                 </p>
                 <ol className="mt-2 flex flex-col gap-5">
-                  {[
-                    {
-                      t: "Chegue e apresente o voucher",
-                      d: "Na portaria, o QR Code da reserva identifica você e a vaga.",
-                    },
-                    {
-                      t: "A van leva você ao terminal",
-                      d: "O trajeto do estacionamento até o terminal é feito pela van da unidade.",
-                    },
-                    {
-                      t: "Na volta, é só avisar",
-                      d: "Mande uma mensagem quando desembarcar e a van passa no ponto de encontro.",
-                    },
-                  ].map((p, i) => (
+                  {T.trasladoPassos.map((p, i) => (
                     <li key={p.t} className="flex gap-4">
                       <span
                         aria-hidden

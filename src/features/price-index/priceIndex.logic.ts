@@ -328,6 +328,8 @@ export type DurationSummary = {
   /** Quem pratica o menor preço (marca + tipo de vaga). */
   unitLabel: string;
   parkingTypeName: string;
+  /** O código do tipo de vaga. É por ele que a tradução casa, nunca pelo nome. */
+  parkingTypeCode: string;
 };
 
 export type DestinationSummary = {
@@ -358,6 +360,7 @@ export function destinationSummary(dest: PriceDestination, days: number[]): Dest
         fromPerDay: melhor.total / d,
         unitLabel: unitLabel(melhor.u, units),
         parkingTypeName: melhor.u.parking_type_name,
+        parkingTypeCode: melhor.u.parking_type_code,
       });
     }
   }

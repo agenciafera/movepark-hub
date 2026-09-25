@@ -74,6 +74,16 @@ export type Textos = {
   verTodosDestinos: string;
   duvidasRodape: string;
   verPerguntasFrequentes: string;
+  rodapeCta: string;
+  escolhaDuracao: (soPesquisa: boolean) => string;
+  trilhaInicio: string;
+  trilhaEstacionamentos: string;
+  /** Rótulo embaixo do preço do card: diz a duração exata em que a diária vale. */
+  rotuloDaDiaria: (dias: number) => string;
+  vagasEmParceiros: (vagas: number, locais: number) => string;
+  legendaTabela: (soPesquisa: boolean) => string;
+  avisoPesquisado: string;
+  distanciaIntroLonga: string;
 
   /** Estatísticas do hero e nota de rodapé da tabela. */
   comReservaOnline: (n: number) => string;
@@ -81,6 +91,23 @@ export type Textos = {
   maisPerto: (dist: string) => string;
   semReservaPorAqui: string;
   notaEntradaMinima: string;
+
+  /** Hero: rótulos da ficha e do destaque. */
+  aPartirDeRotulo: string;
+  sufixoDiaria: string;
+  verVagas: string;
+  verALista: string;
+  terminal: (n: number) => string;
+  comReservaOnlineRotulo: string;
+  mapeadosRotulo: string;
+  parceiroMaisPertoRotulo: string;
+  maisPertoRotulo: string;
+  diariaAPartirDeRotulo: string;
+
+  /** Bloco de traslado. */
+  trasladoEyebrow: string;
+  trasladoIntro: string;
+  trasladoPassos: { t: string; d: string }[];
 
   /** Aviso de tradução parcial. */
   traducaoParcial: string;
@@ -134,12 +161,48 @@ const PT: Textos = {
   verTodosDestinos: "Ver todos os destinos",
   duvidasRodape: "Dúvidas sobre estacionamento de aeroporto?",
   verPerguntasFrequentes: "Ver perguntas frequentes",
+  rotuloDaDiaria: (d) => (d > 1 ? `por diária na estadia de ${d} dias` : "por diária"),
+  escolhaDuracao: (p) =>
+    p
+      ? "Escolha a duração da estadia e compare o total. Nenhum destes lotes reserva pela Movepark: os valores foram pesquisados por nós, com a data ao lado de cada linha."
+      : "Escolha a duração da estadia e compare o total nas vagas com reserva online.",
+  trilhaInicio: "Início",
+  trilhaEstacionamentos: "Estacionamentos",
+  rodapeCta: "Preços, traslado, cancelamento e check-in: as respostas estão na central.",
+  vagasEmParceiros: (v, l) =>
+    `${v} ${v === 1 ? "vaga" : "vagas"} em ${l} ${l === 1 ? "estacionamento parceiro" : "estacionamentos parceiros"}.`,
+  legendaTabela: (p) =>
+    p
+      ? "Preço por duração nos estacionamentos da região, pesquisado por nós, total do período"
+      : "Preço por duração nos estacionamentos com reserva online e, abaixo, nos lotes sem reserva, com preço pesquisado por nós",
+  avisoPesquisado:
+    'Onde diz "sem reserva online", o preço foi PESQUISADO por nós na data da linha, direto com o estacionamento. Não é oferta da Movepark e pode ter mudado.',
+  distanciaIntroLonga:
+    "Medimos a distância a partir das coordenadas de cada endereço. Nenhum número desta lista é declarado pelo estacionamento, e nos lotes sem reserva online a reserva é feita direto com eles.",
   comReservaOnline: (n) => `${n} estacionamento${n === 1 ? "" : "s"} com reserva online`,
   mapeadosNaRegiao: (n) => `${n} estacionamento${n === 1 ? "" : "s"} mapeado${n === 1 ? "" : "s"} na região`,
   maisPerto: (d) => `o parceiro mais perto fica a ${d}`,
   semReservaPorAqui: "ainda sem reserva online por aqui",
   notaEntradaMinima:
     "Onde aparece a entrada mínima, o parceiro só aceita estadias a partir daquele número de diárias.",
+  aPartirDeRotulo: "A partir de",
+  sufixoDiaria: "/ diária",
+  verVagas: "Ver vagas",
+  verALista: "Ver a lista",
+  terminal: (n) => (n === 1 ? "Terminal" : "Terminais"),
+  comReservaOnlineRotulo: "Com reserva online",
+  mapeadosRotulo: "Mapeados na região",
+  parceiroMaisPertoRotulo: "Parceiro mais perto",
+  maisPertoRotulo: "Mais perto",
+  diariaAPartirDeRotulo: "Diária a partir de",
+  trasladoEyebrow: "O traslado",
+  trasladoIntro:
+    "Quem oferece traslado leva e traz você entre o estacionamento e o terminal. O tempo e a frequência ficam na página de cada estacionamento.",
+  trasladoPassos: [
+    { t: "Chegue e apresente o voucher", d: "Na portaria, o QR Code da reserva identifica você e a vaga." },
+    { t: "A van leva você ao terminal", d: "O trajeto do estacionamento até o terminal é feito pela van da unidade." },
+    { t: "Na volta, é só avisar", d: "Mande uma mensagem quando desembarcar e a van passa no ponto de encontro." },
+  ],
   traducaoParcial: "",
 };
 
@@ -191,12 +254,48 @@ const EN: Textos = {
   verTodosDestinos: "See all airports",
   duvidasRodape: "Questions about airport parking?",
   verPerguntasFrequentes: "See frequently asked questions",
+  rotuloDaDiaria: (d) => (d > 1 ? `per day on a ${d}-day stay` : "per day"),
+  escolhaDuracao: (p) =>
+    p
+      ? "Pick the length of stay and compare the total. None of these lots book through Movepark: we researched the figures, and each row carries its date."
+      : "Pick the length of stay and compare the total across the spots with online booking.",
+  trilhaInicio: "Home",
+  trilhaEstacionamentos: "Airport parking",
+  rodapeCta: "Prices, shuttle, cancellation and check-in: the answers are in the help centre.",
+  vagasEmParceiros: (v, l) =>
+    `${v} ${v === 1 ? "spot" : "spots"} across ${l} partner ${l === 1 ? "lot" : "lots"}.`,
+  legendaTabela: (p) =>
+    p
+      ? "Price by length of stay across the lots in the area, researched by us, total for the period"
+      : "Price by length of stay for the lots with online booking and, below, for the ones without, with the price we researched",
+  avisoPesquisado:
+    'Where it says "no online booking", the price was RESEARCHED by us on the date shown, straight from the lot. It is not a Movepark offer and may have changed.',
+  distanciaIntroLonga:
+    "We measure distance from each address's coordinates. No number on this list is self-reported by the lot, and for the ones without online booking you book directly with them.",
   comReservaOnline: (n) => `${n} lot${n === 1 ? "" : "s"} with online booking`,
   mapeadosNaRegiao: (n) => `${n} lot${n === 1 ? "" : "s"} mapped in the area`,
-  maisPerto: (d) => `the closest partner is ${d} away`,
+  maisPerto: (d) => `the closest partner is ${d}`,
   semReservaPorAqui: "no online booking here yet",
   notaEntradaMinima:
     "Where a minimum stay is shown, the lot only takes bookings from that number of days up.",
+  aPartirDeRotulo: "From",
+  sufixoDiaria: "/ day",
+  verVagas: "See spots",
+  verALista: "See the list",
+  terminal: (n) => (n === 1 ? "Terminal" : "Terminals"),
+  comReservaOnlineRotulo: "With online booking",
+  mapeadosRotulo: "Mapped in the area",
+  parceiroMaisPertoRotulo: "Closest partner",
+  maisPertoRotulo: "Closest",
+  diariaAPartirDeRotulo: "Daily rate from",
+  trasladoEyebrow: "The shuttle",
+  trasladoIntro:
+    "Lots that run a shuttle take you to the terminal and bring you back. Timing and frequency are on each lot's page.",
+  trasladoPassos: [
+    { t: "Arrive and show your voucher", d: "At the gate, the booking QR code identifies you and your spot." },
+    { t: "The van takes you to the terminal", d: "The lot's own van covers the trip from the car park to the terminal." },
+    { t: "On the way back, just message", d: "Send a message when you land and the van meets you at the pick-up point." },
+  ],
   // Só aparece quando parte do conteúdo ainda não foi traduzida. Dizer isso é melhor
   // que servir português no meio do inglês sem avisar.
   traducaoParcial:
@@ -251,12 +350,48 @@ const ES: Textos = {
   verTodosDestinos: "Ver todos los aeropuertos",
   duvidasRodape: "¿Dudas sobre estacionamiento de aeropuerto?",
   verPerguntasFrequentes: "Ver preguntas frecuentes",
+  rotuloDaDiaria: (d) => (d > 1 ? `por día en una estadía de ${d} días` : "por día"),
+  escolhaDuracao: (p) =>
+    p
+      ? "Elige la duración de la estadía y compara el total. Ninguno de estos predios reserva por Movepark: investigamos los valores, y cada fila lleva su fecha."
+      : "Elige la duración de la estadía y compara el total en las plazas con reserva en línea.",
+  trilhaInicio: "Inicio",
+  trilhaEstacionamentos: "Estacionamiento de aeropuerto",
+  rodapeCta: "Precios, traslado, cancelación y check-in: las respuestas están en el centro de ayuda.",
+  vagasEmParceiros: (v, l) =>
+    `${v} ${v === 1 ? "plaza" : "plazas"} en ${l} ${l === 1 ? "estacionamiento socio" : "estacionamientos socios"}.`,
+  legendaTabela: (p) =>
+    p
+      ? "Precio por duración en los estacionamientos de la zona, investigado por nosotros, total del período"
+      : "Precio por duración en los estacionamientos con reserva en línea y, abajo, en los que no la tienen, con el precio que investigamos",
+  avisoPesquisado:
+    'Donde dice "sin reserva en línea", el precio lo INVESTIGAMOS nosotros en la fecha de la fila, directo con el estacionamiento. No es una oferta de Movepark y puede haber cambiado.',
+  distanciaIntroLonga:
+    "Medimos la distancia a partir de las coordenadas de cada dirección. Ningún número de esta lista lo declara el estacionamiento, y en los predios sin reserva en línea la reserva se hace directo con ellos.",
   comReservaOnline: (n) => `${n} estacionamiento${n === 1 ? "" : "s"} con reserva en línea`,
   mapeadosNaRegiao: (n) => `${n} estacionamiento${n === 1 ? "" : "s"} mapeado${n === 1 ? "" : "s"} en la zona`,
-  maisPerto: (d) => `el socio más cercano queda a ${d}`,
+  maisPerto: (d) => `el socio más cercano está a ${d}`,
   semReservaPorAqui: "todavía sin reserva en línea por aquí",
   notaEntradaMinima:
     "Donde aparece la estadía mínima, el estacionamiento solo acepta reservas a partir de esa cantidad de días.",
+  aPartirDeRotulo: "Desde",
+  sufixoDiaria: "/ día",
+  verVagas: "Ver plazas",
+  verALista: "Ver la lista",
+  terminal: (n) => (n === 1 ? "Terminal" : "Terminales"),
+  comReservaOnlineRotulo: "Con reserva en línea",
+  mapeadosRotulo: "Mapeados en la zona",
+  parceiroMaisPertoRotulo: "Socio más cercano",
+  maisPertoRotulo: "Más cercano",
+  diariaAPartirDeRotulo: "Tarifa diaria desde",
+  trasladoEyebrow: "El traslado",
+  trasladoIntro:
+    "Los estacionamientos con traslado te llevan y te traen entre el predio y la terminal. El tiempo y la frecuencia están en la página de cada uno.",
+  trasladoPassos: [
+    { t: "Llega y muestra el voucher", d: "En la portería, el código QR de la reserva te identifica a ti y a la plaza." },
+    { t: "La van te lleva a la terminal", d: "El trayecto del estacionamiento a la terminal lo hace la van del predio." },
+    { t: "A la vuelta, solo avisa", d: "Manda un mensaje al aterrizar y la van pasa por el punto de encuentro." },
+  ],
   traducaoParcial:
     "Algunas respuestas de esta página todavía están solo en portugués. Los precios y las distancias son los mismos en todos los idiomas.",
 };

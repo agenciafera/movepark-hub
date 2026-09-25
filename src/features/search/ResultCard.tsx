@@ -2,12 +2,14 @@ import { MapPin, Tag } from "@phosphor-icons/react";
 import { formatDistance } from "@/lib/format";
 import { tituloDaUnidade } from "@/lib/parkingName";
 import { stretchParamsToMinStay } from "./dates";
-import { rotuloDaDiaria } from "./menorDiaria";
+
 import { isTypeDescriptorAmenity } from "./amenities.logic";
 import { Go2ParkCardCredit, Go2ParkLivePill } from "@/features/go2park/Go2ParkLive";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";
 import type { SearchResultItem } from "./useSearchResults";
 import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
+import { useLocale, useTextos } from "@/lib/LocaleContext";
+import { nomeDaVaga } from "@/lib/i18nVaga";
 
 /**
  * Card de resultado da busca. Representa UM `location_parking_type`, não uma unidade: uma unidade
@@ -79,6 +81,8 @@ export function ResultCard({
   source,
   badges = [],
 }: Props) {
+  const locale = useLocale();
+  const T = useTextos();
   // O link precisa entregar o que o card prometeu: na vitrine o preço é o de uma estadia mais
   // longa que a janela, então ela vai esticada, senão o cliente clica num preço e cai numa
   // página que mostra outro.
@@ -167,9 +171,9 @@ export function ResultCard({
       href={url}
       soldOut={soldOut}
       coverImage={item.location.cover_image}
-      coverAlt={`${item.parking_type.name} em ${item.location.name}`}
+      coverAlt={`${nomeDaVaga(locale, item.parking_type.code, item.parking_type.name)} - ${item.location.name}`}
       title={tituloDaUnidade(item.location.public_name, item.operator.name, item.location.name)}
-      parkingTypeName={item.parking_type.name}
+      parkingTypeName={nomeDaVaga(locale, item.parking_type.code, item.parking_type.name)}
       parkingTypeCode={item.parking_type.code}
       typeTestId="result-card-type"
       metaTestId="result-card-subline"
@@ -203,7 +207,7 @@ export function ResultCard({
                 item.price.old_price != null
                   ? Number((item.price.old_price / item.price.days).toFixed(2))
                   : null,
-              unit: rotuloDaDiaria(item.price.days),
+              unit: T.rotuloDaDiaria(item.price.days),
             }
           : {
               total: item.price.total,
