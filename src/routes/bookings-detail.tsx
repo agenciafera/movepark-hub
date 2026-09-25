@@ -25,7 +25,8 @@ import { FareUpgradeDialog } from "@/features/fares/FareUpgradeDialog";
 import { ChangeVehicleDialog } from "@/features/bookings/ChangeVehicleDialog";
 import { ChangeDatesDialog } from "@/features/bookings/ChangeDatesDialog";
 import { ChangeDatesPaidDialog } from "@/features/bookings/ChangeDatesPaidDialog";
-import { FlightDelayDialog } from "@/features/bookings/FlightDelayDialog";
+import { FlightProtectionDialog } from "@/features/bookings/FlightProtectionDialog";
+import { protectionSummary } from "@/features/bookings/flightProtection.logic";
 import { useBookingDetail, useClaimGuarantee } from "@/features/bookings/customerApi";
 import { SupportTicketDialog } from "@/features/support/SupportTicketDialog";
 import { useBookingSupportTickets } from "@/features/support/api";
@@ -331,6 +332,12 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
                 </p>
               )}
 
+              {booking.fare_extensions?.[0] && (
+                <p className="mt-4 rounded-md bg-surface-soft p-3 text-body-sm text-body" data-testid="flight-protection-summary">
+                  {protectionSummary(booking.fare_extensions[0], formatDateTime)}
+                </p>
+              )}
+
               {temAcao && (
                 <div className="mt-5 flex flex-wrap gap-2.5 border-t border-hairline pt-5">
                   {(canChangeDates || canChangePaidDates) && (
@@ -340,7 +347,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
                     <FareAction onClick={() => setVehicleOpen(true)}>Trocar veículo</FareAction>
                   )}
                   {canExtendFlight && (
-                    <FareAction onClick={() => setFlightOpen(true)}>Meu voo atrasou</FareAction>
+                    <FareAction onClick={() => setFlightOpen(true)}>Meu voo atrasou ou foi cancelado</FareAction>
                   )}
                   {selfCancel.allowed && (
                     <button
@@ -530,7 +537,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
         onOpenChange={setUpgradeOpen}
       />
 
-      <FlightDelayDialog
+      <FlightProtectionDialog
         bookingCode={booking.code}
         currentCheckOut={booking.check_out_at}
         flightNumber={booking.flight_number ?? null}

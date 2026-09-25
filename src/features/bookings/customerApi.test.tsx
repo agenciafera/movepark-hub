@@ -149,7 +149,15 @@ describe("useExtendBookingFlightDelay", () => {
     const espiao = edge("extend-booking", { json: { booking_id: "b1", new_check_out_at: "2026-12-13T08:00:00Z", added_days: 1 } });
     const { result } = renderMutation(() => useExtendBookingFlightDelay());
     await result.current.mutateAsync({ bookingCode: "MP7K2X", newCheckOutAt: "2026-12-13T08:00:00Z", flightNumber: "LA3456" });
-    expect(espiao.ultimoBody).toEqual({ booking_code: "MP7K2X", new_check_out_at: "2026-12-13T08:00:00Z", flight_number: "LA3456", reason: null });
+    expect(espiao.ultimoBody).toEqual({ booking_code: "MP7K2X", new_check_out_at: "2026-12-13T08:00:00Z", flight_number: "LA3456", kind: "delay", reason: null });
+  });
+  it("cancelamento vai com kind e a resposta traz o excedente", async () => {
+    comSessao("token-de-teste");
+    const espiao = edge("extend-booking", { json: { booking_id: "b1", new_check_out_at: "2026-12-14T08:00:00Z", requested_check_out_at: "2026-12-15T09:00:00Z", added_days: 1, overage_cents: 5400, overage_daily_cents: 2700, kind: "cancellation" } });
+    const { result } = renderMutation(() => useExtendBookingFlightDelay());
+    const r = await result.current.mutateAsync({ bookingCode: "MP7K2X", newCheckOutAt: "2026-12-15T09:00:00Z", flightNumber: "LA3456", kind: "cancellation" });
+    expect((espiao.ultimoBody as { kind: string }).kind).toBe("cancellation");
+    expect(r.overage_cents).toBe(5400);
   });
   it("a recusa da RPC (já usada, fora do limite) chega com a mensagem", async () => {
     comSessao("token-de-teste");

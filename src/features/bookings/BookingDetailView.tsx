@@ -18,7 +18,7 @@ import { BookingMoneyCard } from "./BookingMoneyCard";
 import { GatewayTrail } from "./GatewayTrail";
 import { BookingCommissionCard } from "@/features/commission/BookingCommissionCard";
 import { SupportTicketsCard } from "@/features/support/SupportTicketsCard";
-import { FlightDelayDialog } from "./FlightDelayDialog";
+import { FlightProtectionDialog } from "./FlightProtectionDialog";
 import { bookingCustomerName } from "./bookings.logic";
 import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { paymentBadge, paymentState, refundWindow } from "./payment.logic";
@@ -307,7 +307,7 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
                   Estender por atraso de voo
                 </Button>
               </div>
-              <FlightDelayDialog
+              <FlightProtectionDialog
                 bookingCode={booking.code}
                 currentCheckOut={booking.check_out_at}
                 flightNumber={(booking as unknown as { flight_number?: string | null }).flight_number ?? null}
