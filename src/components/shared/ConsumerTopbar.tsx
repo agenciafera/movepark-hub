@@ -35,6 +35,7 @@ import { contasDoConsumidorLigadas } from "@/lib/features";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
 import { caminhoDestino } from "@/lib/urls";
+import { useTextos } from "@/lib/LocaleContext";
 
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
@@ -61,6 +62,7 @@ function DestinoItem({ d }: { d: Destination }) {
 
 /** Menu "Destinos" com submenu de aeroportos/destinos publicados. */
 function DestinosMenu() {
+  const T = useTextos();
   const { data: destinations } = useDestinations();
   const popular = (destinations ?? []).filter((d) => d.is_popular);
   const others = (destinations ?? []).filter((d) => !d.is_popular);
@@ -75,11 +77,11 @@ function DestinosMenu() {
       <DropdownMenuContent align="start" className="max-h-[70vh] min-w-[260px] overflow-y-auto">
         <DropdownMenuItem asChild>
           <Link to="/estacionamentos" className="font-medium text-mp-primary">
-            Ver todos os destinos
+            {T.verTodosDestinos}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {popular.length > 0 && <DropdownMenuLabel>Mais buscados</DropdownMenuLabel>}
+        {popular.length > 0 && <DropdownMenuLabel>{T.maisBuscados}</DropdownMenuLabel>}
         {popular.map((d) => (
           <DestinoItem key={d.id} d={d} />
         ))}
@@ -104,6 +106,7 @@ function DestinosMenu() {
  * - Direita: logado → avatar dropdown; anônimo → botão "Entrar"
  */
 export function ConsumerTopbar() {
+  const T = useTextos();
   const { session, effectiveRole, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -170,7 +173,7 @@ export function ConsumerTopbar() {
         <div className="relative flex h-16 items-center justify-end">
           {/* Centrada de verdade: em `justify-between` com o menu de um lado só,
               a marca ficava deslocada pela largura do botão. */}
-          <Link to="/" className="absolute left-1/2 -translate-x-1/2" aria-label="Ir para a home">
+          <Link to="/" className="absolute left-1/2 -translate-x-1/2" aria-label={T.irParaHome}>
             <Wordmark height={22} />
           </Link>
           <ConsumerMobileMenu />
@@ -195,7 +198,7 @@ export function ConsumerTopbar() {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              aria-label="Buscar vaga"
+              aria-label={T.buscarVaga}
               className="flex h-14 w-full items-center justify-between gap-3 rounded-full border border-hairline bg-surface-soft py-1.5 pl-5 pr-1.5 text-left text-body-md text-muted"
             >
               {/* O rótulo curto é o mesmo do título do modal que este botão abre.
@@ -261,7 +264,7 @@ export function ConsumerTopbar() {
                   /* Só no desktop: no celular o avatar é o gatilho da aba lateral,
                      e o dropdown aqui daria dois menus colados no mesmo canto. */
                   className="flex items-center gap-2 rounded-full border border-hairline px-2 py-1 hover:shadow-tier"
-                  aria-label="Menu da conta"
+                  aria-label={T.menuDaConta}
                 >
                   <Avatar className="h-7 w-7">
                     <AvatarFallback>{initials}</AvatarFallback>

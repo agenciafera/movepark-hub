@@ -11,6 +11,8 @@ import {
   type LocaleTraduzido,
 } from "@/lib/i18n";
 import { headings } from "@/lib/i18nHeadings";
+import { LocaleProvider } from "@/lib/LocaleContext";
+import { textos } from "@/lib/i18nTextos";
 import type { DestinoTraduzido } from "@/features/destinations/i18nApi";
 import { MapPin } from "@phosphor-icons/react";
 import type {
@@ -248,6 +250,7 @@ export default function DestinoPage() {
   const traducao = loaded?.traducao ?? null;
   // Em português os cabeçalhos vêm de `@/lib/seo`, onde cada variação é decisão medida
   // no Search Console; o dicionário serve aos idiomas traduzidos.
+  const T = textos(locale);
   const H = headings(locale, destination, traducao?.seo_label ?? undefined);
 
   const title = traducao?.meta_title?.trim() || destination.meta_title || destinationTitle(destination);
@@ -445,7 +448,10 @@ export default function DestinoPage() {
   // Corte por escopo (ADR-002): a do aeroporto vira seção com H2 e prosa aberta, a de
   // plataforma continua no accordion. As duas listas são disjuntas de propósito, senão a
   // mesma pergunta sairia duas vezes na página e duas vezes no FAQPage.
-  const postsDoDestino = (loaded?.posts ?? []).slice(0, 6);
+  // Post ainda não traduzido não entra em página de idioma traduzido: título em
+  // português numa lista inglesa é o mesmo problema da FAQ, e `blog_post_i18n` é o
+  // portão. Enquanto ele estiver vazio, a seção some nos idiomas traduzidos.
+  const postsDoDestino = locale === LOCALE_PADRAO ? (loaded?.posts ?? []).slice(0, 6) : [];
   // FAQ em idioma traduzido só mostra o que ESTÁ traduzido. Catorze perguntas em
   // português dentro de uma página em inglês é exatamente o que o portão de tradução
   // existe para evitar: a página passa a parecer descuidada justo onde ela deveria
@@ -479,29 +485,13 @@ export default function DestinoPage() {
 
   const highlights = temParceiro
     ? [
-        plural(
-          parceiros,
-          "estacionamento com reserva online",
-          "estacionamentos com reserva online",
-        ),
-        parceiroMaisPerto ? `o parceiro mais perto fica a ${parceiroMaisPerto}` : null,
-        prospectItems.length > 0
-          ? plural(
-              prospectItems.length,
-              "estacionamento mapeado na região",
-              "estacionamentos mapeados na região",
-            )
-          : null,
+        T.comReservaOnline(parceiros),
+        parceiroMaisPerto ? T.maisPerto(parceiroMaisPerto) : null,
+        prospectItems.length > 0 ? T.mapeadosNaRegiao(prospectItems.length) : null,
       ].filter((h): h is string => h != null)
     : [
-        prospectItems.length > 0
-          ? plural(
-              prospectItems.length,
-              "estacionamento mapeado na região",
-              "estacionamentos mapeados na região",
-            )
-          : null,
-        "ainda sem reserva online por aqui",
+        prospectItems.length > 0 ? T.mapeadosNaRegiao(prospectItems.length) : null,
+        T.semReservaPorAqui,
       ].filter((h): h is string => h != null);
 
   const destaque =
@@ -538,7 +528,7 @@ export default function DestinoPage() {
   ].filter((i): i is { rotulo: string; valor: string } => i != null);
 
   return (
-    <>
+    <LocaleProvider locale={locale}>
       <Helmet htmlAttributes={{ lang: LANG_HTML[locale] }}>
         <title>{title}</title>
         <meta name="description" content={description} />
@@ -655,7 +645,7 @@ export default function DestinoPage() {
               to={`/search?dest=${destination.code}`}
               className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
             >
-              Ver todos e escolher datas →
+              {T.verTodosEDatas}
             </Link>
           </div>
 
@@ -687,7 +677,7 @@ export default function DestinoPage() {
                       href="#mapeados"
                       className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
                     >
-                      Ver a lista da região →
+                      {T.verListaDaRegiao}
                     </a>
                   ) : undefined
                 }
@@ -861,7 +851,7 @@ export default function DestinoPage() {
                 to="/faq"
                 className="mt-6 inline-block text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
               >
-                Ver todas as perguntas na central →
+                {T.verTodasPerguntas}
               </Link>
             </div>
           </section>
@@ -898,7 +888,7 @@ export default function DestinoPage() {
                 to="/blog/"
                 className="mt-6 inline-block text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
               >
-                Ver todos os artigos →
+                {T.verTodosArtigos}
               </Link>
             </div>
           </section>
@@ -929,6 +919,6 @@ export default function DestinoPage() {
           </section>
         )}
       </article>
-    </>
+    </LocaleProvider>
   );
 }

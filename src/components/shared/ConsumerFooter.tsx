@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "./Brand";
+import { useTextos } from "@/lib/LocaleContext";
 
 type FooterLink = { to: string; label: string; external?: boolean };
 type FooterGroup = { title: string; links: FooterLink[] };
@@ -61,6 +62,7 @@ const groups: FooterGroup[] = [
 const linkClass = "text-body-sm text-muted no-underline hover:text-ink";
 
 export function ConsumerFooter() {
+  const T = useTextos();
   // Sem borda no topo: a faixa colorida da chamada já separa o rodapé do
   // conteúdo, e a hairline aparecia como um risco claro sobre ela.
   return (
@@ -74,7 +76,7 @@ export function ConsumerFooter() {
                 linha de apoio logo abaixo e a faixa lia como dois parágrafos, sem
                 um começo. É um convite, e convite precisa de uma primeira voz. */}
             <p className="text-balance text-display-md text-white">
-              Dúvidas sobre estacionamento de aeroporto?
+              {T.duvidasRodape}
             </p>
             <p className="mt-1 text-body-sm text-white">
               Preços, traslado, cancelamento e check-in: as respostas estão na central.
@@ -83,7 +85,7 @@ export function ConsumerFooter() {
           {/* Só borda. Branco cheio, o botão virava a coisa mais clara da faixa e
               puxava o olho antes da pergunta que ele responde. */}
           <Button asChild variant="outlineInverse" className="w-full shrink-0 tablet:w-auto">
-            <Link to="/faq">Ver perguntas frequentes</Link>
+            <Link to="/faq">{T.verPerguntasFrequentes}</Link>
           </Button>
         </div>
       </div>

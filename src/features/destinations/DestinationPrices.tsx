@@ -1,11 +1,12 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 
+import { useTextos } from "@/lib/LocaleContext";
+
 import { RatingBadge } from "@/features/reviews/RatingStars";
 import { formatBRL, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  durationLabel,
   listingPath,
   sortRowsByPeriod,
 } from "@/features/price-index/priceIndex.logic";
@@ -52,6 +53,7 @@ export function DestinationPriceTable({
   destinationSlug,
   heading,
 }: Props) {
+  const T = useTextos();
   const matrix = prices?.matrix ?? null;
   const summary = prices?.summary ?? null;
   const longStay = prices?.longStay ?? null;
@@ -89,7 +91,7 @@ export function DestinationPriceTable({
       {respostaPesquisa && (
         <div className="mt-6 rounded-lg bg-canvas p-5 tablet:p-6">
           <p className="text-body-md text-body">
-            <strong className="font-semibold text-ink">Diária mais barata:</strong>{" "}
+            <strong className="font-semibold text-ink">{T.diariaMaisBarata}</strong>{" "}
             {formatBRL(respostaPesquisa.total)} no {respostaPesquisa.label}, preço pesquisado em{" "}
             <time dateTime={respostaPesquisa.researchedAt}>
               {formatDate(respostaPesquisa.researchedAt)}
@@ -104,17 +106,26 @@ export function DestinationPriceTable({
           <ul className="space-y-2">
             {summary.byDuration.map((s) => (
               <li key={s.days} className="text-body-md text-body">
-                <strong className="font-semibold text-ink">{durationLabel(s.days)}:</strong> a
-                partir de {formatBRL(s.from)} no {s.unitLabel} ({s.parkingTypeName}
-                {s.days > 1 && <>, {formatBRL(s.fromPerDay)} por diária</>})
+                {T.aPartirDe({
+                  duracao: T.duracao(s.days),
+                  valor: formatBRL(s.from),
+                  onde: s.unitLabel,
+                  vaga: s.parkingTypeName,
+                  porDia: s.days > 1 ? formatBRL(s.fromPerDay) : undefined,
+                })}
               </li>
             ))}
           </ul>
           {longStay && (
             <p className="mt-3 text-body-md text-body">
-              No {longStay.unitLabel}, a diária cai de {formatBRL(longStay.perDayFrom)} para{" "}
-              {formatBRL(longStay.perDayTo)} ({longStay.dropPct}% menos) quando a estadia vai de{" "}
-              {longStay.fromDays} para {longStay.toDays} diárias.
+              {T.quedaPorPermanencia({
+                onde: longStay.unitLabel,
+                de: formatBRL(longStay.perDayFrom),
+                para: formatBRL(longStay.perDayTo),
+                pct: longStay.dropPct,
+                deDias: longStay.fromDays,
+                paraDias: longStay.toDays,
+              })}
             </p>
           )}
         </div>
@@ -123,7 +134,7 @@ export function DestinationPriceTable({
       <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div className="flex flex-col gap-1.5">
           <span id={grupoId} className="text-caption font-semibold text-ink">
-            Mostrar preço de
+            {T.mostrarPrecoDe}
           </span>
           <div role="group" aria-labelledby={grupoId} className="flex flex-wrap gap-2">
             {dias.map((d) => {
@@ -141,14 +152,14 @@ export function DestinationPriceTable({
                       : "border-hairline bg-canvas text-body hover:border-mp-navy",
                   )}
                 >
-                  {durationLabel(d)}
+                  {T.duracao(d)}
                 </button>
               );
             })}
           </div>
         </div>
         <span className="text-caption-sm text-muted">
-          {soPesquisa ? "Total do período, preço pesquisado" : "Total do período, com reserva online"}
+          {T.totalDoPeriodo(soPesquisa)}
         </span>
       </div>
 
@@ -173,7 +184,7 @@ export function DestinationPriceTable({
                 scope="col"
                 className="px-5 py-3 text-left text-caption-sm font-medium text-muted"
               >
-                Estacionamento
+                {T.colunaEstacionamento}
               </th>
               {dias.map((d) => (
                 <React.Fragment key={d}>
@@ -184,7 +195,7 @@ export function DestinationPriceTable({
                       d !== periodo && "hidden",
                     )}
                   >
-                    Total {durationLabel(d)}
+                    {T.totalDuracao(d)}
                   </th>
                   <th
                     scope="col"
@@ -193,7 +204,7 @@ export function DestinationPriceTable({
                       d !== periodo && "hidden",
                     )}
                   >
-                    Por diária
+                    {T.porDiariaColuna}
                   </th>
                 </React.Fragment>
               ))}
@@ -224,7 +235,7 @@ export function DestinationPriceTable({
                       </Link>
                       {melhor && (
                         <span className="rounded-full bg-mp-teal px-2 py-0.5 text-badge uppercase tracking-[0.4px] text-mp-navy">
-                          Melhor preço
+                          {T.melhorPreco}
                         </span>
                       )}
                     </span>
@@ -245,7 +256,7 @@ export function DestinationPriceTable({
                           )}
                         >
                           <span className="block text-caption-sm text-muted tablet:hidden">
-                            Total {durationLabel(cell.days)}
+                            {T.totalDuracao(cell.days)}
                           </span>
                           {cell.total != null ? (
                             <>
@@ -261,8 +272,8 @@ export function DestinationPriceTable({
                           ) : (
                             <span className="block text-caption-sm text-muted">
                               {cell.minStayDays != null
-                                ? `entrada a partir de ${cell.minStayDays} diárias`
-                                : "ver na página"}
+                                ? T.entradaMinima(cell.minStayDays)
+                                : T.verNaPagina}
                             </span>
                           )}
                         </td>
@@ -274,13 +285,13 @@ export function DestinationPriceTable({
                           )}
                         >
                           <span className="block text-caption-sm text-muted tablet:hidden">
-                            Por diária
+                            {T.porDiariaColuna}
                           </span>
                           {cell.total != null ? (
                             <>
                               <span className="block text-title-md tabular-nums text-ink">
                                 {formatBRL(cell.perDay ?? cell.total)}
-                                {cell.days > 1 && <span className="sr-only"> por diária</span>}
+                                {cell.days > 1 && <span className="sr-only"> {T.porDiaria}</span>}
                               </span>
                               {cell.economyPct != null && (
                                 <span className="block text-caption-sm font-medium text-success">
@@ -310,7 +321,7 @@ export function DestinationPriceTable({
                   colSpan={1 + dias.length * 2}
                   className="border-t border-hairline px-5 pb-2 pt-5 text-left text-caption-sm font-medium text-muted"
                 >
-                  Sem reserva online, preço pesquisado por nós
+                  {T.semReservaPesquisado}
                 </th>
               </tr>
               {pesquisados.map((row) => {
@@ -338,7 +349,7 @@ export function DestinationPriceTable({
                           <span className="text-title-md text-ink">{row.label}</span>
                         )}
                         <span className="rounded-full border border-hairline px-2 py-0.5 text-badge uppercase tracking-[0.4px] text-muted">
-                          Sem reserva online
+                          {T.semReservaOnline}
                         </span>
                       </span>
                       <span className="mt-0.5 block text-caption-sm text-muted">
@@ -360,7 +371,7 @@ export function DestinationPriceTable({
                             )}
                           >
                             <span className="block text-caption-sm text-muted tablet:hidden">
-                              Total {durationLabel(d)}
+                              {T.totalDuracao(d)}
                             </span>
                             {valor != null ? (
                               <span className="block text-display-sm tabular-nums text-ink">
@@ -368,7 +379,7 @@ export function DestinationPriceTable({
                               </span>
                             ) : (
                               <span className="block text-caption-sm text-muted">
-                                não pesquisado
+                                {T.naoPesquisado}
                               </span>
                             )}
                           </td>
@@ -380,12 +391,12 @@ export function DestinationPriceTable({
                             )}
                           >
                             <span className="block text-caption-sm text-muted tablet:hidden">
-                              Por diária
+                              {T.porDiariaColuna}
                             </span>
                             {valor != null && (
                               <span className="block text-title-md tabular-nums text-ink">
                                 {formatBRL(valor / d)}
-                                {d > 1 && <span className="sr-only"> por diária</span>}
+                                {d > 1 && <span className="sr-only"> {T.porDiaria}</span>}
                               </span>
                             )}
                           </td>
@@ -412,8 +423,7 @@ export function DestinationPriceTable({
           {temBalcao && <>Preço riscado: balcão do estacionamento, sem reserva. </>}
           {temMinStay && (
             <>
-              Onde aparece a entrada mínima, o parceiro só aceita estadias a partir daquele número
-              de diárias.{" "}
+              {T.notaEntradaMinima}{" "}
             </>
           )}
           {pesquisados.length > 0 && (
@@ -447,14 +457,14 @@ export function DestinationPriceTable({
               to={caminhoPrecos(destinationSlug)}
               className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
             >
-              Ver a tabela completa de preços
+              {T.tabelaCompleta}
             </Link>
           )}
           <Link
             to="/metodologia"
             className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
           >
-            Como a Movepark apura preço e distância
+            {T.comoApuramos}
           </Link>
         </div>
       </div>
@@ -498,14 +508,14 @@ export function DestinationProximity({
   heading: string;
   lead?: string;
 }) {
+  const T = useTextos();
   if (rows.length === 0) return null;
   return (
     <>
       <div className="flex max-w-[68ch] flex-col gap-2">
         <h2 className="text-balance text-display-2xl text-ink">{heading}</h2>
         <p className="text-pretty text-body-md text-body">
-          {lead ??
-            "Medimos a distância a partir das coordenadas de cada endereço. Nenhum número desta lista é declarado pelo estacionamento."}
+          {lead ?? T.distanciaIntro}
         </p>
       </div>
 
