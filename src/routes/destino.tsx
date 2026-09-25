@@ -2,6 +2,16 @@ import * as React from "react";
 import { Link, useLoaderData, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { OgImage } from "@/lib/ogImage";
+import {
+  LANG_HTML,
+  LOCALE_PADRAO,
+  caminhoLocalizado,
+  clusterHreflang,
+  type Locale,
+  type LocaleTraduzido,
+} from "@/lib/i18n";
+import { headings } from "@/lib/i18nHeadings";
+import type { DestinoTraduzido } from "@/features/destinations/i18nApi";
 import { MapPin } from "@phosphor-icons/react";
 import type {
   Destination,
@@ -29,16 +39,9 @@ import {
   faqSchema,
 } from "@/lib/jsonld";
 import {
-  destinationHeading,
-  destinationListHeading,
   destinationTitle,
-  faqHeading,
-  locationHeading,
-  priceHeading,
   proximityAnchorLabel,
-  proximityHeading,
   seoLabelPrimary,
-  shuttleHeading,
 } from "@/lib/seo";
 import { getLocationCapabilities } from "@/features/listing/capabilities";
 import type { PriceDestination } from "@/features/price-index/priceIndex.logic";
@@ -154,6 +157,12 @@ type DestinoLoaderData = {
   points?: Pick<DestinationPoint, "id" | "name">[];
   /** Posts publicados do destino, para o "leia também" sair no HTML do build. */
   posts?: { slug: string; title: string; excerpt: string | null }[];
+  /** Idiomas em que este destino já tem tradução publicada. Alimenta o hreflang. */
+  idiomas?: LocaleTraduzido[];
+  /** Idioma desta URL. Vem do caminho, nunca de cabeçalho: a URL é o contrato. */
+  locale?: Locale;
+  /** A tradução desta página, quando a URL é de idioma traduzido. */
+  traducao?: DestinoTraduzido | null;
   /** Momento em que o build consultou o motor. */
   generatedAt?: string;
 } | null;
@@ -233,10 +242,32 @@ export default function DestinoPage() {
     );
   }
 
-  const title = destination.meta_title ?? destinationTitle(destination);
+  // Idioma desta URL e o texto da casca nele. `traducao` só existe em URL de idioma
+  // traduzido, e só quando a linha está publicada (a RLS é o portão).
+  const locale: Locale = loaded?.locale ?? LOCALE_PADRAO;
+  const traducao = loaded?.traducao ?? null;
+  // Em português os cabeçalhos vêm de `@/lib/seo`, onde cada variação é decisão medida
+  // no Search Console; o dicionário serve aos idiomas traduzidos.
+  const H = headings(locale, destination, traducao?.seo_label ?? undefined);
+
+  const title = traducao?.meta_title?.trim() || destination.meta_title || destinationTitle(destination);
   // O caminho público, nunca o slug interno: /destinos/<slug> agora responde 301 de volta
   // pra cá, e canonical apontando pra URL que redireciona é loop que derruba a indexação.
   const canonical = `${SITE_URL}${caminhoDestino(destinoSlug)}`;
+
+  // Cluster de hreflang. Só entra idioma cuja tradução está publicada (a RLS filtra
+  // na origem), e a lista sempre inclui a própria página mais o `x-default` no
+  // português. Destino sem tradução não emite cluster nenhum: hreflang de um item só
+  // é ruído, e apontar para tradução inexistente faz o buscador desconfiar do grupo
+  // inteiro, inclusive do original.
+  const idiomas = loaded?.idiomas ?? [];
+  const hreflangs = clusterHreflang([
+    { locale: LOCALE_PADRAO, caminho: canonical },
+    ...idiomas.map((l) => ({
+      locale: l,
+      caminho: `${SITE_URL}${caminhoLocalizado({ familia: "destino", slug: destinoSlug, locale: l })}`,
+    })),
+  ]);
   // Imagem otimizada (resize/transform do Supabase). O og:image é 1.91:1 (1200×630,
   // padrão de card social); pro JSON-LD damos também a versão quadrada (1:1), porque o
   // Google aceita múltiplas proporções e prefere ter 16:9/4:3/1:1. Tudo gerado on-the-fly
@@ -372,7 +403,9 @@ export default function DestinoPage() {
   // aqui só entram os insumos. O CTA depende da capacidade: onde nenhuma unidade fecha a
   // reserva no Hub, ele convida a comparar em vez de prometer um checkout que roda fora.
   const hubCheckout = (prices?.matrix.rows ?? []).some((r) => r.unit.checkout_mode === "hub");
-  const description = destinationMetaDescription({
+  const description =
+    traducao?.meta_description?.trim() ||
+    destinationMetaDescription({
     label: seoLabelPrimary(destination),
     city: destination.city,
     authored: destination.meta_description,
@@ -413,8 +446,13 @@ export default function DestinoPage() {
   // plataforma continua no accordion. As duas listas são disjuntas de propósito, senão a
   // mesma pergunta sairia duas vezes na página e duas vezes no FAQPage.
   const postsDoDestino = (loaded?.posts ?? []).slice(0, 6);
-  const perguntasDoDestino = keyQuestions(faqData);
-  const perguntasGerais = accordionQuestions(faqData);
+  // FAQ em idioma traduzido só mostra o que ESTÁ traduzido. Catorze perguntas em
+  // português dentro de uma página em inglês é exatamente o que o portão de tradução
+  // existe para evitar: a página passa a parecer descuidada justo onde ela deveria
+  // provar cuidado. Enquanto `faq_i18n` não tiver linha, a seção some.
+  const perguntasDoDestino =
+    locale === LOCALE_PADRAO ? keyQuestions(faqData) : [];
+  const perguntasGerais = locale === LOCALE_PADRAO ? accordionQuestions(faqData) : [];
   // O JSON-LD pede número; o banco entrega `numeric`, que chega como string.
   const lat = Number(destination.latitude);
   const lng = Number(destination.longitude);
@@ -501,10 +539,13 @@ export default function DestinoPage() {
 
   return (
     <>
-      <Helmet>
+      <Helmet htmlAttributes={{ lang: LANG_HTML[locale] }}>
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonical} />
+        {hreflangs.map((h) => (
+          <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
+        ))}
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
@@ -561,7 +602,7 @@ export default function DestinoPage() {
             { label: nomeCurto },
           ]}
           eyebrow={`${destination.city}${destination.state ? ` · ${destination.state}` : ""}`}
-          heading={destinationHeading(destination)}
+          heading={H.h1}
           highlights={highlights}
           heroUrl={heroUrl}
           alt={destination.name}
@@ -571,8 +612,8 @@ export default function DestinoPage() {
         {/* Abertura: o texto do destino ao lado da ficha de números. */}
         <section className={`${CALHA} flex flex-col gap-10 py-12 desktop:flex-row desktop:py-16`}>
           <div className="flex min-w-0 flex-1 flex-col gap-4">
-            {destination.intro ? (
-              destination.intro.split(/\n{2,}/).map((p, i) => (
+            {(traducao?.intro || destination.intro) ? (
+              (traducao?.intro || destination.intro)!.split(/\n{2,}/).map((p, i) => (
                 <p key={i} className="max-w-[68ch] text-pretty text-body-md text-body">
                   {p}
                 </p>
@@ -589,7 +630,7 @@ export default function DestinoPage() {
           <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
             <div className="flex flex-col gap-2">
               <h2 className="text-balance text-display-2xl text-ink">
-                {destinationListHeading(destination)}
+                {H.lista}
               </h2>
               {/* Conta o que está na tela logo abaixo, então o gatilho é a vitrine e não
                   `temParceiro`: com a semente do build vazia e a matriz cheia, a frase
@@ -685,7 +726,7 @@ export default function DestinoPage() {
                 generatedAt={generatedAt}
                 pesquisados={pesquisados}
                 destinationSlug={destinoSlug}
-                heading={priceHeading(destination)}
+                heading={H.preco}
               />
             </div>
           </section>
@@ -698,7 +739,7 @@ export default function DestinoPage() {
           <section id="mapeados" className={`${CALHA} scroll-mt-24 py-16 desktop:py-20`}>
             <DestinationProximity
               rows={proximity}
-              heading={proximityHeading(destination)}
+              heading={H.distancia}
               lead="Medimos a distância a partir das coordenadas de cada endereço. Nenhum número desta lista é declarado pelo estacionamento, e nos lotes sem reserva online a reserva é feita direto com eles."
             />
           </section>
@@ -719,7 +760,7 @@ export default function DestinoPage() {
                   O traslado
                 </span>
                 <h2 className="text-balance text-display-2xl text-ink">
-                  {shuttleHeading(destination)}
+                  {H.traslado}
                 </h2>
                 {/* Quem oferece, e não "os parceiros oferecem": traslado é comodidade de
                     cada unidade, e a página do destino fala de todas elas. */}
@@ -779,7 +820,7 @@ export default function DestinoPage() {
         {/* Mapa */}
         <section className={`${CALHA} py-16 desktop:py-20`}>
           <h2 className="mb-6 text-balance text-display-2xl text-ink">
-            {locationHeading(destination)}
+            {H.ondeFica}
           </h2>
           <GoogleMapEmbed
             title={`Mapa de ${destination.name}`}
@@ -804,12 +845,12 @@ export default function DestinoPage() {
           <section className="bg-surface-soft py-16 desktop:py-24">
             <div className={CALHA}>
               <h2 className="mb-6 text-balance text-display-2xl text-ink">
-                {faqHeading(destination)}
+                {H.faq}
               </h2>
               <DestinationKeyQuestions items={perguntasDoDestino} />
               {perguntasGerais.length > 0 && (
                 <h2 className="mb-6 mt-14 text-balance text-display-md text-ink">
-                  Perguntas gerais sobre reservar pela Movepark
+                  {H.perguntasGerais}
                 </h2>
               )}
               <FaqList
@@ -836,7 +877,7 @@ export default function DestinoPage() {
           <section className="bg-canvas py-16 desktop:py-24">
             <div className={CALHA}>
               <h2 className="mb-6 text-balance text-display-2xl text-ink">
-                Leia também sobre {nomeCurto}
+                {H.leiaTambem}
               </h2>
               <ul className="grid grid-cols-1 gap-x-8 gap-y-6 tablet:grid-cols-2">
                 {postsDoDestino.map((p) => (
@@ -867,7 +908,7 @@ export default function DestinoPage() {
         {related.length > 0 && (
           <section className={`${CALHA} py-16 desktop:py-20`}>
             <h2 className="mb-6 text-balance text-display-sm text-ink">
-              Estacionamento em outros destinos
+              {H.outrosDestinos}
             </h2>
             <ul className="grid grid-cols-2 gap-3 tablet:grid-cols-3 desktop:grid-cols-6">
               {related.map((d) => (

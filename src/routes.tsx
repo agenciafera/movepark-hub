@@ -53,6 +53,24 @@ import SeloPage from "@/routes/selo";
 import OnboardingPage from "@/routes/onboarding";
 import VoucherValidatePage from "@/routes/voucher-validate";
 import DestinoPage from "@/routes/destino";
+import {
+  fetchDestinosTraduzidos,
+  idiomasDoDestino,
+  slugDoIdioma,
+} from "@/features/destinations/i18nApi";
+import {
+  LOCALES_TRADUZIDOS,
+  LOCALE_PADRAO,
+  SEGMENTO,
+  caminhoLocalizado,
+  localeDoCaminho,
+} from "@/lib/i18n";
+
+/** Base só para o `new URL` do loader resolver caminho relativo. Não vai para a tela. */
+const SITE_URL_INTERNO = "http://local";
+
+/** Segmento de caminho do destino por idioma, para montar a rota. */
+const SEGMENTO_DESTINO = SEGMENTO.destino;
 import PrecosPage, { type PrecosIndexData } from "@/routes/precos";
 import PrecosDestinoPage, { type PrecosDestinoData } from "@/routes/precos-destino";
 import CalculadoraPage, { type CalculadoraData } from "@/routes/calculadora";
@@ -349,11 +367,37 @@ async function fetchPostsDoDestino(destinationId: string) {
  *   um hook de cliente, e por isso não existia no HTML pré-renderizado. Eram 26 links
  *   internos por página que nenhum crawler via.
  */
-async function destinoLoader({ params }: LoaderFunctionArgs) {
+async function destinoLoader({ params, request }: LoaderFunctionArgs) {
+  // O idioma vem do CAMINHO, e não de cabeçalho nem de cookie: a URL é o contrato, e
+  // a mesma URL tem que devolver a mesma página para qualquer visitante, inclusive
+  // para o crawler, que não manda `Accept-Language`.
+  const { locale } = localeDoCaminho(new URL(request.url, SITE_URL_INTERNO).pathname);
+
+  // Em idioma traduzido o slug da URL é o daquele idioma, e pode não existir em
+  // `destination.public_slug`. A resolução passa pela tabela de tradução, e só acha
+  // o que a RLS deixa ver, ou seja, tradução publicada.
+  let publicSlug = params.destino!;
+  if (locale !== LOCALE_PADRAO) {
+    const { data: t } = await supabase
+      .from("destination_i18n")
+      .select("destination_id")
+      .eq("locale", locale)
+      .eq("slug", params.destino!)
+      .maybeSingle();
+    if (!t) return null;
+    const { data: d } = await supabase
+      .from("destination")
+      .select("public_slug")
+      .eq("id", t.destination_id)
+      .maybeSingle();
+    if (!d?.public_slug) return null;
+    publicSlug = d.public_slug;
+  }
+
   const { data } = await supabase
     .from("destination")
     .select("*")
-    .eq("public_slug", params.destino!)
+    .eq("public_slug", publicSlug)
     .eq("is_published", true)
     .maybeSingle();
   if (!data) return null;
@@ -361,7 +405,7 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
   // existe, sem unidade vendável a lista volta a depender da busca no cliente, sem FAQ o
   // hook do cliente cobre e sem preço a tabela some. Em paralelo porque nenhuma depende
   // da outra.
-  const [prospects, units, faqs, index, irmaos, points, posts] = await Promise.all([
+  const [prospects, units, faqs, index, irmaos, points, posts, traducoes] = await Promise.all([
     fetchDestinationProspects(data.slug as string).catch(() => []),
     fetchDestinationUnits(data).catch(() => []),
     fetchFaqCombined({ destinationId: data.id as string }).catch(() => null),
@@ -376,6 +420,10 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     })().catch(() => []),
     fetchDestinationPoints(data.id as string).catch(() => []),
     fetchPostsDoDestino(data.id as string).catch(() => []),
+    // Idiomas em que ESTE destino já tem tradução publicada. Alimenta o cluster de
+    // hreflang; a RLS garante que rascunho não chega aqui, então rascunho não vira
+    // hreflang apontando para página que não existe.
+    fetchDestinosTraduzidos().catch(() => []),
   ]);
   return {
     destination: data,
@@ -384,13 +432,48 @@ async function destinoLoader({ params }: LoaderFunctionArgs) {
     faqs,
     priceDestination:
       index?.destinations.find(
-        (d: { public_slug: string | null }) => d.public_slug === params.destino,
+        (d: { public_slug: string | null }) => d.public_slug === publicSlug,
       ) ?? null,
     related: irmaos,
     points: points.map((p) => ({ id: p.id, name: p.name })),
     posts,
+    idiomas: idiomasDoDestino(traducoes, data.id as string),
+    locale,
+    traducao:
+      locale === LOCALE_PADRAO
+        ? null
+        : (traducoes.find((t) => t.destination_id === data.id && t.locale === locale) ?? null),
     generatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Uma URL por destino TRADUZIDO, em cada idioma publicado.
+ *
+ * Nasce vazio e cresce sozinho: enquanto não houver linha publicada em
+ * `destination_i18n`, o build não gera nenhuma rota de idioma. É o portão do projeto
+ * de multilíngue visto da ponta do SSG, e é o que permite a fundação ir para a `main`
+ * sem publicar página meio traduzida.
+ */
+async function fetchLocalizedDestinationPaths(): Promise<string[]> {
+  const [traducoes, { data }] = await Promise.all([
+    fetchDestinosTraduzidos().catch(() => []),
+    supabase
+      .from("destination")
+      .select("id, public_slug")
+      .eq("is_published", true)
+      .not("public_slug", "is", null),
+  ]);
+  const porId = new Map((data ?? []).map((d) => [d.id as string, d.public_slug as string]));
+  return traducoes
+    .filter((t) => porId.has(t.destination_id))
+    .map((t) =>
+      caminhoLocalizado({
+        familia: "destino",
+        slug: slugDoIdioma(t, porId.get(t.destination_id)!),
+        locale: t.locale,
+      }),
+    );
 }
 
 async function fetchAllDestinationPaths(): Promise<string[]> {
@@ -993,6 +1076,16 @@ export const routes: RouteRecord[] = [
             loader: destinoLoader,
             getStaticPaths: fetchAllDestinationPaths,
           },
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            // A mesma página, no caminho daquele idioma. O segmento é traduzido
+            // (`/en/airport-parking/`), e não só prefixado, porque a palavra do
+            // caminho é a que se busca naquele idioma.
+            path: `/${locale}/${SEGMENTO_DESTINO[locale]}/:destino`,
+            element: <DestinoPage />,
+            loader: destinoLoader,
+            getStaticPaths: async () =>
+              (await fetchLocalizedDestinationPaths()).filter((p) => p.startsWith(`/${locale}/`)),
+          })),
           {
             path: "/estacionamentos/:destino/precos",
             element: <PrecosDestinoPage />,
