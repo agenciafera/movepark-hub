@@ -90,8 +90,8 @@ export const CANCELAMENTO: ContentPage = {
               a: "Para reservas fechadas na Movepark, o reembolso vai para o mesmo método usado no pagamento: no PIX, o valor volta para a chave usada; no cartão de crédito, aparece como estorno na fatura em até 2 ciclos de faturamento.",
             },
             {
-              q: "Posso cancelar porque meu voo atrasou?",
-              a: "Com a Tarifa Superflex você estende a saída em até 24 horas com um clique na sua reserva, sem custo, informando o número do voo. Vale uma vez por reserva. Nas outras Tarifas, envie o comprovante de atraso pelo suporte que a gente avalia.",
+              q: "Meu voo atrasou ou foi cancelado. E agora?",
+              a: "Com a Tarifa Superflex, você aciona a proteção de voo na sua reserva, informa o número do voo e a nova saída. As primeiras 24 horas a mais são por nossa conta, uma vez por reserva. Se o carro precisar ficar além disso, o estacionamento cobra a diária dele na retirada, e você vê o valor por dia antes de confirmar. Nas outras Tarifas, fale com a gente pelo chamado da reserva.",
             },
             {
               q: "E se o estacionamento não honrar a reserva?",

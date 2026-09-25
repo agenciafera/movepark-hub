@@ -679,3 +679,12 @@ Migration `20260902000000_admin_search.sql`.
 - [ ] Integração de acesso (cancela/portão): escopo futuro ou MVP?
 - [ ] Operador pode editar uma reserva já confirmada?
 - [ ] App mobile para operadores ou apenas web responsivo?
+
+### Proteção de voo: aviso e check-out com saída real (25/09/2026)
+
+Reserva Superflex com a proteção de voo acionada mostra o selo "Proteção de voo" na lista e um
+aviso destacado na tela: motivo, voo, até quando sai sem custo e o preço por dia depois disso. O
+botão **Check-out** dessa reserva abre um passo a mais: a hora real de retirada e o que foi
+cobrado no balcão pelo que passou da saída coberta (ou "não cobrado", com motivo). A Movepark paga
+as 24h cobertas; o excedente é do estacionamento e não passa pelo Hub. Ver
+[tarifas-operacao.md](./tarifas-operacao.md) §2.7.

@@ -12,7 +12,7 @@ describe("FareComparisonDialog", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Superflex")).toBeInTheDocument();
     expect(within(dialog).getAllByText("Cancelamento grátis até 24h antes")).toHaveLength(3);
-    expect(within(dialog).getAllByText("Proteção contra atraso de voo")).toHaveLength(3);
+    expect(within(dialog).getAllByText("Proteção de voo: atraso ou cancelamento")).toHaveLength(3);
     // Suporte prioritário saiu do catálogo em 25/09/2026.
     expect(within(dialog).queryByText("Suporte prioritário")).not.toBeInTheDocument();
     expect(within(dialog).getByText("Vaga garantida em qualquer tarifa.")).toBeInTheDocument();

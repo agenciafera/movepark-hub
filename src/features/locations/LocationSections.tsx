@@ -195,6 +195,12 @@ export function LocationSections({
             value={f.email}
             onChange={(e) => f.setEmail(e.target.value)}
           />
+          {!f.email.trim() && (
+            <p className="mt-1.5 text-caption text-warning" data-testid="location-email-warning">
+              Sem e-mail, a unidade só recebe os avisos operacionais (como a proteção de voo) pelo
+              painel do Operator.
+            </p>
+          )}
         </Field>
       </Section>
 

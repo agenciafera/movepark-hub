@@ -52,7 +52,7 @@ export const FARE_BENEFIT_LABELS: { key: FareBenefitKey; label: string }[] = [
   { key: "plate_change", label: "Troca de placa/veículo" },
   { key: "date_change", label: "Alteração de data/horário" },
   { key: "notifications_sms", label: "Avisos por WhatsApp" },
-  { key: "flight_delay_protection", label: "Proteção contra atraso de voo" },
+  { key: "flight_delay_protection", label: "Proteção de voo: atraso ou cancelamento" },
   { key: "priority_support", label: "Suporte prioritário" },
 ];
 

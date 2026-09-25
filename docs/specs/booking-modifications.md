@@ -39,7 +39,7 @@ divergir, o teste correspondente falha):
 | **Cancelar (com estorno)** | janela `cancel_window_minutes` → `fare_cancel_until` | até **24h** antes | até **24h** antes | até **1 min** antes |
 | **Trocar datas** | benefício `date_change` (+ reserva `pending`) | ❌ | ✅ | ✅ |
 | **Trocar veículo/placa** | benefício `plate_change` (+ `pending`/`confirmed`) | ❌ | ✅ | ✅ |
-| Proteção contra atraso de voo | benefício `flight_delay_protection` | ❌ | ❌ | ✅ |
+| Proteção de voo (atraso ou cancelamento) | benefício `flight_delay_protection` | ❌ | ❌ | ✅ |
 | Suporte prioritário | benefício `priority_support` | ❌ | ❌ | ✅ |
 
 Regras comuns a toda ação do cliente: sempre **antes do check-in**; **staff/parceiro fazem override**

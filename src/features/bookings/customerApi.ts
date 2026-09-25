@@ -479,7 +479,7 @@ export function useCancelMyBooking() {
 }
 
 /**
- * Proteção contra atraso de voo (Superflex): estende a saída em até 24h, uma vez, com o número
+ * Proteção de voo, atraso ou cancelamento (Superflex): cobre até 24h de saída a mais, uma vez, com o número
  * do voo. Edge `extend-booking`; a regra toda mora na RPC `extend_booking_flight_delay`.
  */
 export function useExtendBookingFlightDelay() {

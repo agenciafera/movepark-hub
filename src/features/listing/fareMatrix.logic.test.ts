@@ -13,7 +13,7 @@ describe("buildFareMatrix", () => {
       "Troca de placa/veículo",
       "Alteração de data/horário",
       "Avisos por WhatsApp",
-      "Proteção contra atraso de voo",
+      "Proteção de voo: atraso ou cancelamento",
     ]);
     expect(rows[0].included).toEqual([true, true, true]);
     expect(rows[1].included).toEqual([false, false, true]);
@@ -66,7 +66,7 @@ describe("farePresentation", () => {
       cancellationLine: "Cancelamento grátis até 24h antes · troca de placa liberada",
     });
     expect(farePresentation(superflex, flex)).toEqual({
-      tooltip: ["Tudo da Flex", "Cancele grátis até 1 min antes", "Proteção contra atraso de voo"],
+      tooltip: ["Tudo da Flex", "Cancele grátis até 1 min antes", "Proteção de voo: atraso ou cancelamento"],
       badgeText: "Cancelamento grátis até 1 min antes",
       cancellationLine: "Cancelamento grátis até 1 min antes · troca de placa liberada",
     });

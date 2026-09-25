@@ -35,7 +35,7 @@ Catálogo conferido no banco em 17/09/2026 (tabela `public.fare`, fonte única g
 | Avisos por WhatsApp (`notifications_sms`) | ❌ | ✅ | ✅ | 🟡 |
 | Troca de placa/veículo (`plate_change`) | ❌ | ✅ | ✅ | ✅ |
 | Alteração de data/horário (`date_change`) | ❌ | ✅ | ✅ | ✅ |
-| Proteção contra atraso de voo (`flight_delay_protection`) | ❌ | ❌ | ✅ | 🟡 |
+| Proteção de voo, atraso ou cancelamento (`flight_delay_protection`) | ❌ | ❌ | ✅ | ✅ |
 | Suporte prioritário (`priority_support`) | ❌ | ❌ | ✅ | ❌ |
 
 Duas leituras incômodas saem do quadro:
@@ -124,7 +124,8 @@ gate é o snapshot `booking.fare_benefits.notifications_sms`, conferido em dois 
 | Evento | Onde dispara | Template (env) |
 |---|---|---|
 | Reserva confirmada | `pagarme-webhook` | `WHATSAPP_BOOKING_CONFIRMED_TEMPLATE` |
-| Reserva estendida por atraso de voo | Edge `extend-booking` | `WHATSAPP_BOOKING_EXTENDED_TEMPLATE` |
+| Reserva estendida pela proteção de voo (dentro das 24h) | Edge `extend-booking` | `WHATSAPP_BOOKING_EXTENDED_TEMPLATE` |
+| Reserva estendida com excedente no balcão | Edge `extend-booking` | `WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE` (`movepark_saida_estendida_excedente`, aprovado em 25/09/2026: nome, código, saída coberta, preço por dia) |
 
 O telefone vem do snapshot do pedido (`booking.customer_phone`), que é **obrigatório** no passo 1 do
 checkout (`validateStep1Identity`), então não há reserva Flex sem número para entregar. O número
@@ -204,7 +205,26 @@ porque atraso pequeno já está coberto de graça, para qualquer tarifa.
   fica com as datas antigas.
 - A copy do comparativo não diz que a alteração re-precifica.
 
-### 2.7 Proteção contra atraso de voo (Superflex) 🟡
+### 2.7 Proteção de voo: atraso ou cancelamento (Superflex) ✅
+
+**Desde 25/09/2026** (desenho em `docs/superpowers/specs/2026-09-25-protecao-de-voo-cancelamento-design.md`):
+
+- O cliente aciona na reserva por **atraso ou cancelamento** do voo, com o número do voo e a nova
+  saída prevista, sem teto. A RPC cobre até **24h** (capacidade segurada, crédito ao parceiro pago
+  pela Movepark) e grava o resto como **excedente**, com a diária da unidade congelada no
+  acionamento. O cliente vê "até dd/mm hh:mm por nossa conta; depois, R$ X por dia, pago no
+  estacionamento".
+- O **estacionamento** vê o selo e o aviso no Operator e recebe **e-mail** no contato da unidade.
+  No **check-out**, registra a hora real de retirada e o que cobrou no balcão pelo excedente (ou
+  "não cobrado", com motivo). O excedente é dele: não passa pelo gateway, não tem comissão.
+- O Manager vê os três números na reserva (crédito, excedente previsto, cobrado) e um relatório
+  mensal em Tarifas.
+- Não cobre cancelar a reserva antes de sair de casa (a janela de cancelamento não muda) nem
+  confere o cancelamento numa API de voos.
+
+O histórico abaixo descreve como a proteção estava antes.
+
+#### Como estava (histórico)
 
 **O que o cliente entende:** meu voo atrasou, eu não pago diária extra.
 
@@ -397,6 +417,10 @@ Precisam de resposta antes da implementação correspondente. Sugestão em cada 
 | Q-028 | Qual o SLA do suporte prioritário? | 15 min em horário estendido. Prometer 24/7 sem plantão é criar a próxima promessa vazia |
 | Q-029 | A troca de placa e de data tem limite? | Sem limite por enquanto, mas com contador em `booking_modification` para revisitar com dado |
 | Q-030 | Cancelamento Superflex a 1 min: compensa o parceiro? | Não neste momento. Medir a frequência desde a primeira reserva e revisitar |
+| Q-031 | A proteção de voo cobre cancelamento? Que situações? | Sim (25/09/2026): voo de ida cancelado e remarcado com o carro já estacionado, e voo de volta cancelado ou perdido. Não cobre cancelar a reserva antes de sair de casa |
+| Q-032 | Para quem vale? | Só Superflex: é a outra metade da proteção de voo que ela já vende |
+| Q-033 | Quanto a Movepark cobre, e o que passa disso? | As mesmas 24h da proteção de atraso, uma vez. O que passar é do parceiro, cobrado no balcão pela tabela dele, 100% dele; o Hub calcula, mostra aos dois lados e registra o cobrado |
+| Q-034 | Como o estacionamento sabe, e como o tempo real entra? | Selo e aviso no Operator mais e-mail no contato da unidade; o Operator registra a hora real de retirada no check-out |
 
 ## 6. O que isso exige de teste
 

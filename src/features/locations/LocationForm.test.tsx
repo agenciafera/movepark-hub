@@ -119,3 +119,24 @@ describe("LocationForm — foto obrigatória (operador)", () => {
     });
   });
 });
+
+describe("LocationForm: aviso de unidade sem e-mail (proteção de voo, 25/09/2026)", () => {
+  it("sem e-mail avisa que os avisos operacionais ficam só no painel", () => {
+    renderWithProviders(
+      <LocationForm open companyId="company-1" location={location} onOpenChange={() => {}} editableScope="full" />,
+    );
+    expect(screen.getByTestId("location-email-warning")).toHaveTextContent(/proteção de voo/);
+  });
+  it("com e-mail o aviso some", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={{ ...location, email: "portaria@lote.com.br" } as unknown as Location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    expect(screen.queryByTestId("location-email-warning")).not.toBeInTheDocument();
+  });
+});
