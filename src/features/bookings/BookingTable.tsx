@@ -80,10 +80,21 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
               <TableCell>
                 <div className="flex flex-col items-start gap-1">
                   <StatusBadge status={b.status} />
+                  {b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at && (
+                    <Badge
+                      tone="pending"
+                      className="ml-2"
+                      title="Proteção de voo acionada: confira até quando sai sem custo"
+                    >
+                      Proteção de voo
+                    </Badge>
+                  )}
                   {(() => {
                     const d = paymentBadge(b.payments, b.status);
                     // Só o que exige olhar: devolução pendente e estorno em processamento.
-                    return d && d.label !== "Pago" && d.label !== "Devolvido" ? <Badge tone={d.tone}>{d.label}</Badge> : null;
+                    return d && d.label !== "Pago" && d.label !== "Devolvido" ? (
+                      <Badge tone={d.tone}>{d.label}</Badge>
+                    ) : null;
                   })()}
                 </div>
               </TableCell>

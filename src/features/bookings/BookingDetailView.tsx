@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
 import type { BookingStatus } from "@/types/domain";
 import { useBookingByCode, useCancelBookingStaff, useReconcileBookingFees, useUpdateBookingStatus } from "./api";
+import { FlightCheckoutDialog } from "./FlightCheckoutDialog";
+import { awaitingRealCheckout, flightNotice, type OperatorExtension } from "./flightCheckout.logic";
 import { usePayoutReleaseDays } from "@/features/payouts/api";
 import { useChangeBookingVehicle } from "./customerApi";
 import { BookingMoneyCard } from "./BookingMoneyCard";
@@ -65,6 +67,7 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
   const [confirming, setConfirming] = React.useState(false);
   const [plate, setPlate] = React.useState("");
   const [flightOpen, setFlightOpen] = React.useState(false);
+  const [flightCheckoutOpen, setFlightCheckoutOpen] = React.useState(false);
   const reconcileFees = useReconcileBookingFees();
   const releaseDaysQ = usePayoutReleaseDays(bookingQ.data?.location?.company?.id);
   const releaseDays = releaseDaysQ.data ?? null;
@@ -109,6 +112,8 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
   }
 
   const pay = paymentState(booking.payments);
+  const ext = (booking.fare_extensions?.[0] ?? null) as OperatorExtension | null;
+  const aguardaSaidaReal = awaitingRealCheckout(ext);
   const dinheiro = paymentBadge(booking.payments, booking.status);
   const janela = pay.canRefund ? refundWindow(booking.payments) : null;
   const podeCancelarStatus = booking.status === "pending" || booking.status === "confirmed";
@@ -247,6 +252,16 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
         canFix={effectiveRole === "hub_admin"}
       />
 
+      {/* Proteção de voo acionada (25/09/2026): a portaria precisa saber até quando sai sem custo. */}
+      {ext && aguardaSaidaReal && (
+        <div className="rounded-md border border-warning/40 bg-badge-pending-bg p-4 text-body-sm text-ink" data-testid="flight-notice">
+          {flightNotice(ext, formatDateTime)}
+        </div>
+      )}
+      {ext && (
+        <FlightCheckoutDialog bookingId={booking.id} extension={ext} open={flightCheckoutOpen} onOpenChange={setFlightCheckoutOpen} />
+      )}
+
       {/* Chamados do cliente (25/09/2026): só a Movepark atende; o estacionamento não vê. */}
       {audience === "manager" && <SupportTicketsCard bookingId={booking.id} canClose={effectiveRole === "hub_admin"} />}
 
@@ -269,7 +284,11 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
                   </Button>
                 )}
                 {operacoes.includes("completed") && (
-                  <Button size="sm" disabled={busy} onClick={() => transition("completed", "Check-out registrado")}>
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => (aguardaSaidaReal ? setFlightCheckoutOpen(true) : transition("completed", "Check-out registrado"))}
+                  >
                     Check-out
                   </Button>
                 )}
@@ -295,17 +314,26 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
         ["confirmed", "checked_in"].includes(booking.status) && (
           <Card>
             <CardHeader>
-              <CardTitle>Proteção contra atraso de voo</CardTitle>
+              <CardTitle>Proteção de voo</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <p className="text-body-sm text-muted">
-                Superflex: a saída pode ser estendida em até 24h, uma vez, sem custo para o cliente. A
-                diária extra é paga pela Movepark ao estacionamento.
+                Superflex: atraso ou cancelamento do voo, a saída é estendida em até 24h, uma vez, por conta
+                da Movepark. O que passar disso o estacionamento cobra no balcão.
               </p>
+              {ext && (
+                <dl className="grid grid-cols-3 gap-3" data-testid="flight-money">
+                  <div><dt className="text-caption text-muted">Crédito ao parceiro (24h)</dt><dd className="text-body-sm text-ink">{formatBRL((ext.partner_credit_cents ?? 0) / 100)}</dd></div>
+                  <div><dt className="text-caption text-muted">Excedente previsto</dt><dd className="text-body-sm text-ink">{formatBRL(ext.overage_cents / 100)}</dd></div>
+                  <div><dt className="text-caption text-muted">Cobrado no balcão</dt><dd className="text-body-sm text-ink">{ext.overage_charged_cents == null ? "ainda não registrado" : formatBRL(ext.overage_charged_cents / 100)}</dd></div>
+                </dl>
+              )}
               <div>
-                <Button size="sm" variant="secondary" onClick={() => setFlightOpen(true)}>
-                  Estender por atraso de voo
-                </Button>
+                {!ext && (
+                  <Button size="sm" variant="secondary" onClick={() => setFlightOpen(true)}>
+                    Acionar proteção de voo
+                  </Button>
+                )}
               </div>
               <FlightProtectionDialog
                 bookingCode={booking.code}

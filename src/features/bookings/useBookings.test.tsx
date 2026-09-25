@@ -4,9 +4,9 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { useBookings, useReconcileBookingFees } from "./api";
+import { useBookings, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
 import { supabase } from "@/lib/supabase";
-import { edge, falha, renderMutation } from "@/test/msw/supabase";
+import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import { vi } from "vitest";
 
 const SUPABASE_URL = "http://localhost:54321";
@@ -108,5 +108,20 @@ describe("useReconcileBookingFees", () => {
     falha("edge", "reconcile-gateway-fees", 401, "unauthorized");
     const { result } = renderMutation(() => useReconcileBookingFees());
     await expect(result.current.mutateAsync("bk-1")).rejects.toThrow(/unauthorized/);
+  });
+});
+
+describe("useRecordFlightCheckout", () => {
+  it("manda reserva, saída real, cobrado e motivo à RPC", async () => {
+    const espiao = rpc("operator_record_flight_checkout", { json: { overage_cents: 2700, overage_charged_cents: 2700, actual_check_out_at: "2026-12-14T13:00:00Z" } });
+    const { result } = renderMutation(() => useRecordFlightCheckout());
+    const r = await result.current.mutateAsync({ bookingId: "b1", actualCheckOutAt: "2026-12-14T13:00:00Z", chargedCents: 2700, note: null });
+    expect(espiao.ultimoBody).toEqual({ p_booking_id: "b1", p_actual_check_out_at: "2026-12-14T13:00:00Z", p_overage_charged_cents: 2700 });
+    expect(r.overage_cents).toBe(2700);
+  });
+  it("propaga a recusa da RPC", async () => {
+    falha("rpc", "operator_record_flight_checkout", 400, "A saída real desta reserva já foi registrada.");
+    const { result } = renderMutation(() => useRecordFlightCheckout());
+    await expect(result.current.mutateAsync({ bookingId: "b1", actualCheckOutAt: "2026-12-14T13:00:00Z", chargedCents: 0, note: "x" })).rejects.toThrow(/já foi registrada/);
   });
 });

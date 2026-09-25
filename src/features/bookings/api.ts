@@ -29,7 +29,7 @@ export const bookingsKeys = {
 };
 
 const baseSelect =
-  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at, paid_at, method)";
+  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at, paid_at, method), fare_extensions:booking_fare_extension(id, kind, flight_number, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents, overage_note, partner_credit_cents)";
 
 async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
   // Reserva cancelada carrega `deleted_at` (que também é o "cancelada em" na UI). A lista
@@ -133,6 +133,27 @@ export function useUpdateBookingStatus() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: bookingsKeys.all });
     },
+  });
+}
+
+/**
+ * Check-out de reserva com proteção de voo acionada (25/09/2026): registra a saída real e o que o
+ * balcão cobrou pelo excedente. A RPC confere o escopo, calcula o excedente e conclui a reserva.
+ */
+export function useRecordFlightCheckout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { bookingId: string; actualCheckOutAt: string; chargedCents: number; note: string | null }) => {
+      const { data, error } = await supabase.rpc("operator_record_flight_checkout", {
+        p_booking_id: args.bookingId,
+        p_actual_check_out_at: args.actualCheckOutAt,
+        p_overage_charged_cents: args.chargedCents,
+        p_note: args.note ?? undefined,
+      });
+      if (error) throw error;
+      return data as { overage_cents: number; overage_charged_cents: number; actual_check_out_at: string };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all }),
   });
 }
 
