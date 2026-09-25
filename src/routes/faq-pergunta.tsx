@@ -193,7 +193,7 @@ export default function FaqPerguntaPage() {
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
       </Helmet>
-      <OgImage area="conteudo" />
+      <OgImage area="conteudo" alt={T.ogImageAlt} />
 
       <article className="mx-auto w-full max-w-3xl px-4 py-8 tablet:py-12">
         {/* Breadcrumb visível (espelha o BreadcrumbList do JSON-LD) */}

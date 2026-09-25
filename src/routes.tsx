@@ -860,7 +860,21 @@ async function faqPerguntaLoader({ params, request }: LoaderFunctionArgs) {
     destinoSlug = t?.slug?.trim() || null;
   }
 
-  return { ...data, precos, locale, traducao, idiomas, destinoLabel, destinoSlug };
+  // Em idioma traduzido a página lê pergunta, resposta e corpo de `traducao`, e a lista
+  // de relacionadas nem renderiza. Mandar o português junto no payload de hidratação é
+  // peso morto que o leitor não vê e o crawler vê: eram 7,5 KB por página.
+  // Sai o que a página comprovadamente não lê em idioma traduzido: `related` (o bloco
+  // é gateado em `locale === LOCALE_PADRAO`) e `body_md` (a linha do `corpo` não cruza
+  // idioma). `faq.answer` FICA, mesmo sendo a maior string: ela é a rede do `??` em
+  // `traducao?.answer ?? faq.answer`. Hoje a CHECK `faq_i18n_publicavel` garante que
+  // toda tradução publicada tem resposta, mas não quero a página em branco caso essa
+  // constraint saia um dia. Isso já tira a maior parte dos 7,5 KB.
+  const payload =
+    locale === LOCALE_PADRAO
+      ? data
+      : { ...data, related: [], faq: { ...data.faq, body_md: null } };
+
+  return { ...payload, precos, locale, traducao, idiomas, destinoLabel, destinoSlug };
 }
 
 /** Uma URL por pergunta publicada com slug (global e destination). */

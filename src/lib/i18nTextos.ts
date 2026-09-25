@@ -28,6 +28,7 @@ export type Textos = {
   faqHeading: (destino: string) => string;
   // Página de uma pergunta (/faq/<slug> e equivalentes traduzidos).
   faqTrilha: string;
+  ogImageAlt: string;
   faqVerTodas: string;
   faqNaoEncontrada: string;
   faqNaoEncontradaTexto: string;
@@ -157,6 +158,7 @@ const PT: Textos = {
   ondeFicaHeading: (d) => `Onde fica o ${d}`,
   faqHeading: (d) => `Perguntas frequentes: estacionamento ${d}`,
   faqTrilha: "Perguntas frequentes",
+  ogImageAlt: "Movepark, estacionamento em aeroportos",
   faqVerTodas: "Ver todas as perguntas",
   faqNaoEncontrada: "Pergunta não encontrada",
   faqNaoEncontradaTexto: "Essa pergunta não existe ou saiu do ar.",
@@ -304,6 +306,7 @@ const EN: Textos = {
   ondeFicaHeading: (d) => `Where ${d} is`,
   faqHeading: (d) => `Frequently asked questions: ${d} parking`,
   faqTrilha: "FAQ",
+  ogImageAlt: "Movepark, airport parking",
   faqVerTodas: "See all questions",
   faqNaoEncontrada: "Question not found",
   faqNaoEncontradaTexto: "This question does not exist or is no longer published.",
@@ -454,6 +457,7 @@ const ES: Textos = {
   ondeFicaHeading: (d) => `Dónde queda ${d}`,
   faqHeading: (d) => `Preguntas frecuentes: estacionamiento ${d}`,
   faqTrilha: "Preguntas frecuentes",
+  ogImageAlt: "Movepark, estacionamiento en aeropuertos",
   faqVerTodas: "Ver todas las preguntas",
   faqNaoEncontrada: "Pregunta no encontrada",
   faqNaoEncontradaTexto: "Esta pregunta no existe o dejó de estar publicada.",
