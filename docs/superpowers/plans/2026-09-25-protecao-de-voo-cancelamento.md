@@ -10,6 +10,8 @@
 
 Spec: `docs/superpowers/specs/2026-09-25-protecao-de-voo-cancelamento-design.md`.
 
+**Estado em 25/09/2026:** as oito tarefas foram executadas e publicadas (commits `d6c72316` a `ae65408c`). Prova ao vivo na reserva de teste MP-DC8C9E: acionamento por cancelamento, WhatsApp com o template do excedente, selo e aviso no Operator, check-out com saída real e R$ 27,00 cobrados, três números no Manager e relatório mensal. Não conferido: a chegada do e-mail da unidade (a Fera não tem e-mail; foi usado um temporário sem abrir a caixa).
+
 ## Global Constraints
 
 - Trabalho direto na `main`; commit e push por tarefa. Migrations com `HHMMSS` único (`ls supabase/migrations/ | sed 's/_.*//' | sort | uniq -d` vazio).
@@ -35,7 +37,7 @@ Spec: `docs/superpowers/specs/2026-09-25-protecao-de-voo-cancelamento-design.md`
 - Produces: `operator_record_flight_checkout(p_booking_id uuid, p_actual_check_out_at timestamptz, p_overage_charged_cents int, p_note text)` → jsonb `{overage_cents, overage_charged_cents, actual_check_out_at}`; exige `member_has_scope(company, 'bookings:checkin')` ou hub_admin; conclui a reserva (`status = completed`, `checked_out_at = p_actual_check_out_at`).
 - Produces: view `flight_protection_monthly (month date, company_id, claims int, delay int, cancellation int, partner_credit_cents bigint, overage_cents bigint, overage_charged_cents bigint)`, lida por hub_admin.
 
-- [ ] **Step 1: Escrever o teste pgTAP que falha**
+- [x] **Step 1: Escrever o teste pgTAP que falha**
 
 Copie o fixture de `supabase/tests/flight_extension.test.sql` (linhas 7 a 36: usuário, unidade da Agência Fera listada na transação, reserva Superflex com saída daqui a 1 hora) e acrescente um Operator da empresa:
 
@@ -108,12 +110,12 @@ select * from finish();
 rollback;
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `bash $SP/tap.sh supabase/tests/flight_protection.test.sql`
 Expected: erros de `column "kind" does not exist` / função com 6 argumentos inexistente.
 
-- [ ] **Step 3: Escrever a migration**
+- [x] **Step 3: Escrever a migration**
 
 ```sql
 -- Proteção de voo: atraso ou cancelamento (25/09/2026).
@@ -288,14 +290,14 @@ grant select on public.flight_protection_monthly to authenticated;
 
 Nota: `booking_fare_extension` já tem RLS? Confira com `select relrowsecurity from pg_class where relname='booking_fare_extension'`. Se não tiver policy de leitura para o dono e para a empresa, acrescente: dono (`booking.profile_id = auth.uid()`), operador (`member_has_scope(company, 'bookings:read')`), hub_admin tudo. O cliente e o Operator leem a extensão pelo PostgREST na Task 4 e 5.
 
-- [ ] **Step 4: Rodar o teste até passar**
+- [x] **Step 4: Rodar o teste até passar**
 
 Run: `bash $SP/tap.sh supabase/tests/flight_protection.test.sql supabase/migrations/20261125120000_protecao_de_voo_cancelamento.sql`
 Expected: `ok 1` a `ok 14`. Se o valor da diária da Fera (2700) divergir, meça com `select public.simulate_price('agencia-fera', <slug>, <code>, 2)` e `..., 3)` e ajuste os números do teste, nunca a regra.
 
 Rode também o teste antigo, que usa a assinatura de 5 argumentos: `bash $SP/tap.sh supabase/tests/flight_extension.test.sql supabase/migrations/20261125120000_protecao_de_voo_cancelamento.sql`. Ajuste as mensagens esperadas ("Proteção de voo disponível só na Tarifa Superflex.", "A proteção de voo já foi usada nesta reserva.") e o caso "mais de 24h é alteração de data", que deixa de ser recusa: vira `lives_ok` com `new_check_out_at` = prevista + 24h.
 
-- [ ] **Step 5: Aplicar, tipar e commitar**
+- [x] **Step 5: Aplicar, tipar e commitar**
 
 ```bash
 supabase db query --linked -f supabase/migrations/20261125120000_protecao_de_voo_cancelamento.sql
@@ -323,7 +325,7 @@ git push origin main
 - Consumes: RPC da Task 1 (`p_kind`, retorno com `overage_*`).
 - Produces: `parseExtendInput` devolve também `kind: "delay" | "cancellation"`; `pickExtendedEvent(overageCents) → "extended" | "extended_overage"`; `overageSentence(coveredIso, dailyCents) → string`; `tplBookingExtended(b, name, url, overage?: { coveredAt: string; dailyCents: number })`; `tplFlightProtectionUnit(args)`; evento `extended_overage` em `NotifyEvent` mapeado para `WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE`.
 
-- [ ] **Step 1: Testes que falham (`logic.test.ts`)**
+- [x] **Step 1: Testes que falham (`logic.test.ts`)**
 
 ```ts
 Deno.test("parseExtendInput: motivo cancelamento entra, motivo inventado cai em delay", () => {
@@ -340,9 +342,9 @@ Deno.test("overageSentence: diz até quando é por nossa conta e o preço por di
 });
 ```
 
-- [ ] **Step 2: Rodar e ver falhar** (`deno test --no-check --allow-env --allow-net --allow-read extend-booking/logic.test.ts`).
+- [x] **Step 2: Rodar e ver falhar** (`deno test --no-check --allow-env --allow-net --allow-read extend-booking/logic.test.ts`).
 
-- [ ] **Step 3: Implementar em `logic.ts`**
+- [x] **Step 3: Implementar em `logic.ts`**
 
 ```ts
 export type ExtendKind = "delay" | "cancellation";
@@ -365,13 +367,13 @@ export function overageSentence(coveredIso: string, dailyCents: number): string 
 }
 ```
 
-- [ ] **Step 4: `index.ts`**: passar `p_kind: input.kind` à RPC; ler `result.overage_cents`, `result.overage_daily_cents`, `result.new_check_out_at`; chamar `notifyBooking` com `event: pickExtendedEvent(overage)`, `whatsappParams` = `[nome, código, saídaCoberta]` sem excedente e `[nome, código, saídaCoberta, fmtBRL(daily)]` com; `email: (c) => tplBookingExtended(nd, c.name, url, overage > 0 ? { coveredAt: result.new_check_out_at, dailyCents: daily } : undefined)`. Depois, e-mail da unidade: buscar `location.email, name` da reserva; se houver e-mail e `getEmailConfig(admin).from`, `sendEmail({ from, to: location.email, subject, html })` com `tplFlightProtectionUnit({ bookingCode, kind, flightNumber, coveredAt, dailyCents, overageCents, operatorUrl: `${siteUrl()}/operator/bookings/${code}` })`. Best-effort, com `console.error` em falha.
+- [x] **Step 4: `index.ts`**: passar `p_kind: input.kind` à RPC; ler `result.overage_cents`, `result.overage_daily_cents`, `result.new_check_out_at`; chamar `notifyBooking` com `event: pickExtendedEvent(overage)`, `whatsappParams` = `[nome, código, saídaCoberta]` sem excedente e `[nome, código, saídaCoberta, fmtBRL(daily)]` com; `email: (c) => tplBookingExtended(nd, c.name, url, overage > 0 ? { coveredAt: result.new_check_out_at, dailyCents: daily } : undefined)`. Depois, e-mail da unidade: buscar `location.email, name` da reserva; se houver e-mail e `getEmailConfig(admin).from`, `sendEmail({ from, to: location.email, subject, html })` com `tplFlightProtectionUnit({ bookingCode, kind, flightNumber, coveredAt, dailyCents, overageCents, operatorUrl: `${siteUrl()}/operator/bookings/${code}` })`. Best-effort, com `console.error` em falha.
 
-- [ ] **Step 5: `_shared/email.ts`**: `tplBookingExtended` ganha o quarto parâmetro opcional e, quando presente, troca o `checkItem("Nada a pagar…")` por `checkItem(overageSentence)` e o título por "Saída estendida: 24h por nossa conta". Nova `tplFlightProtectionUnit` (assunto `Proteção de voo acionada na reserva ${code}`; tabela com motivo, voo, sai sem custo até, preço por dia no balcão, excedente previsto; botão "Abrir no Operator"). Em `email.test.ts`, dois testes: o bloco do excedente aparece só quando pedido; o e-mail da unidade traz voo, hora coberta e preço.
+- [x] **Step 5: `_shared/email.ts`**: `tplBookingExtended` ganha o quarto parâmetro opcional e, quando presente, troca o `checkItem("Nada a pagar…")` por `checkItem(overageSentence)` e o título por "Saída estendida: 24h por nossa conta". Nova `tplFlightProtectionUnit` (assunto `Proteção de voo acionada na reserva ${code}`; tabela com motivo, voo, sai sem custo até, preço por dia no balcão, excedente previsto; botão "Abrir no Operator"). Em `email.test.ts`, dois testes: o bloco do excedente aparece só quando pedido; o e-mail da unidade traz voo, hora coberta e preço.
 
-- [ ] **Step 6: `_shared/notify.ts`**: `NotifyEvent` ganha `"extended_overage"`; `WHATSAPP_TEMPLATE_ENV.extended_overage = "WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE"`.
+- [x] **Step 6: `_shared/notify.ts`**: `NotifyEvent` ganha `"extended_overage"`; `WHATSAPP_TEMPLATE_ENV.extended_overage = "WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE"`.
 
-- [ ] **Step 7: Rodar todos os testes Deno, deploy e commit**
+- [x] **Step 7: Rodar todos os testes Deno, deploy e commit**
 
 ```bash
 cd supabase/functions && deno test --no-check --allow-env --allow-net --allow-read && cd ../..
@@ -386,12 +388,12 @@ git add supabase/functions && git commit -m "feat(voo): extend-booking com motiv
 **Files:**
 - Nenhum no repo. Usa a Edge temporária guardada em `$SP/whatsapp-templates-admin/index.ts` (fora do git; se o scratchpad sumiu, recrie do histórico do commit `1f4795b6`, seção "Como vou criar").
 
-- [ ] **Step 1:** Acrescente em `TEMPLATES` o corpo, categoria UTILITY, pt_BR, 4 parâmetros:
+- [x] **Step 1:** Acrescente em `TEMPLATES` o corpo, categoria UTILITY, pt_BR, 4 parâmetros:
   `Oi, {{1}}. A saída da reserva {{2}} foi estendida até {{3}} por nossa conta. Depois disso, o estacionamento cobra {{4}} por dia na retirada. O estacionamento já sabe.` com exemplo `["Ana", "MP-1A2B3C", "28/09 às 23:40", "R$ 27,00"]`.
-- [ ] **Step 2:** `supabase secrets set TEMPLATE_ADMIN_KEY=<hex de openssl rand -hex 24>`; copie a pasta para `supabase/functions/whatsapp-templates-admin`, `supabase functions deploy whatsapp-templates-admin --no-verify-jwt`, chame `{"action":"create","waba":"449333654922434","names":["movepark_saida_estendida_excedente"]}`; apague a pasta do repo (o guard de cobertura de Edges reprova pasta sem teste).
-- [ ] **Step 3:** Faça `list` a cada minuto até `APPROVED` (levou até 25 min nos anteriores).
-- [ ] **Step 4:** `supabase secrets set WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE=movepark_saida_estendida_excedente`; `supabase functions delete whatsapp-templates-admin --yes`; `supabase secrets unset TEMPLATE_ADMIN_KEY`.
-- [ ] **Step 5:** Registre em `docs/specs/tarifas-operacao.md` §3a a linha do template novo.
+- [x] **Step 2:** `supabase secrets set TEMPLATE_ADMIN_KEY=<hex de openssl rand -hex 24>`; copie a pasta para `supabase/functions/whatsapp-templates-admin`, `supabase functions deploy whatsapp-templates-admin --no-verify-jwt`, chame `{"action":"create","waba":"449333654922434","names":["movepark_saida_estendida_excedente"]}`; apague a pasta do repo (o guard de cobertura de Edges reprova pasta sem teste).
+- [x] **Step 3:** Faça `list` a cada minuto até `APPROVED` (levou até 25 min nos anteriores).
+- [x] **Step 4:** `supabase secrets set WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE=movepark_saida_estendida_excedente`; `supabase functions delete whatsapp-templates-admin --yes`; `supabase secrets unset TEMPLATE_ADMIN_KEY`.
+- [x] **Step 5:** Registre em `docs/specs/tarifas-operacao.md` §3a a linha do template novo.
 
 ---
 
@@ -406,7 +408,7 @@ git add supabase/functions && git commit -m "feat(voo): extend-booking com motiv
 **Interfaces:**
 - Produces: `coveredCheckOut(currentIso, requestedIso, maxHours = 24) → string` (ISO); `overageDays(coveredIso, laterIso) → number` (ceil, mínimo 0); `overageForecastCents(coveredIso, requestedIso, dailyCents) → number`; `protectionSummary(ext, fmt) → string` (frase de estado para a reserva).
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -439,9 +441,9 @@ describe("protectionSummary", () => {
 });
 ```
 
-- [ ] **Step 2: Rodar e ver falhar** (`bunx vitest run src/features/bookings/flightProtection.logic.test.ts`).
+- [x] **Step 2: Rodar e ver falhar** (`bunx vitest run src/features/bookings/flightProtection.logic.test.ts`).
 
-- [ ] **Step 3: Implementar `flightProtection.logic.ts`**
+- [x] **Step 3: Implementar `flightProtection.logic.ts`**
 
 ```ts
 import { formatBRL } from "@/lib/format";
@@ -478,11 +480,11 @@ export function protectionSummary(e: ExtensionLike, fmt: (iso: string) => string
 ```
 Confira a assinatura de `formatBRL` em `src/lib/format.ts` (recebe reais). Se `formatBRL(27)` devolver "R$ 27,00" com espaço não separável, ajuste a expectativa do teste para o mesmo caractere.
 
-- [ ] **Step 4: Diálogo** `FlightProtectionDialog.tsx`: título "Meu voo atrasou ou foi cancelado"; `Select` de motivo (`delay` padrão, `cancellation`); `datetime-local` "Nova saída prevista" sem `max`; número do voo obrigatório; abaixo do campo, a frase viva: `Até ${formatDateTime(coveredCheckOut(currentCheckOut, novaSaida))} é por nossa conta.` e, se `overageDays > 0`, `Depois disso, o estacionamento cobra a diária dele na retirada.` (o preço exato vem na confirmação, porque o snapshot é do servidor). No `save`, mande `kind` e mostre o toast com `r.new_check_out_at` e, se `r.overage_cents > 0`, `formatBRL(r.overage_daily_cents / 100)` por dia. Hook: `useExtendBookingFlightDelay` recebe `kind` e manda `kind` no body; o retorno tipa `overage_cents`, `overage_daily_cents`, `requested_check_out_at`. Acrescente em `customerApi.test.tsx` um caso: o body leva `kind: "cancellation"`.
+- [x] **Step 4: Diálogo** `FlightProtectionDialog.tsx`: título "Meu voo atrasou ou foi cancelado"; `Select` de motivo (`delay` padrão, `cancellation`); `datetime-local` "Nova saída prevista" sem `max`; número do voo obrigatório; abaixo do campo, a frase viva: `Até ${formatDateTime(coveredCheckOut(currentCheckOut, novaSaida))} é por nossa conta.` e, se `overageDays > 0`, `Depois disso, o estacionamento cobra a diária dele na retirada.` (o preço exato vem na confirmação, porque o snapshot é do servidor). No `save`, mande `kind` e mostre o toast com `r.new_check_out_at` e, se `r.overage_cents > 0`, `formatBRL(r.overage_daily_cents / 100)` por dia. Hook: `useExtendBookingFlightDelay` recebe `kind` e manda `kind` no body; o retorno tipa `overage_cents`, `overage_daily_cents`, `requested_check_out_at`. Acrescente em `customerApi.test.tsx` um caso: o body leva `kind: "cancellation"`.
 
-- [ ] **Step 5: Reserva** (`bookings-detail.tsx`): rótulo do botão "Meu voo atrasou ou foi cancelado"; quando `booking.fare_extensions[0]` existir, mostre `protectionSummary(ext, formatDateTime)` num parágrafo dentro do card da tarifa. `MyBookingDetail.fare_extensions` passa a selecionar os campos listados acima.
+- [x] **Step 5: Reserva** (`bookings-detail.tsx`): rótulo do botão "Meu voo atrasou ou foi cancelado"; quando `booking.fare_extensions[0]` existir, mostre `protectionSummary(ext, formatDateTime)` num parágrafo dentro do card da tarifa. `MyBookingDetail.fare_extensions` passa a selecionar os campos listados acima.
 
-- [ ] **Step 6: Testes, revisar copy (`revisar-texto`), commit**
+- [x] **Step 6: Testes, revisar copy (`revisar-texto`), commit**
 
 ```bash
 bunx vitest run src/features/bookings src/routes/bookings-detail.test.tsx src/features/mutations.contract.test.ts && bun run typecheck && bun run lint
@@ -503,7 +505,7 @@ git add -A && git commit -m "feat(voo): cliente aciona por atraso ou cancelament
 - Consumes: RPC `operator_record_flight_checkout` (Task 1); `overageDays` (Task 4).
 - Produces: `useRecordFlightCheckout()` mutation `{ bookingId, actualCheckOutAt, chargedCents, note }`; `flightNotice(ext, fmt) → string` (texto do aviso ao Operator); `checkoutPlan(ext, actualIso) → { days, forecastCents }`.
 
-- [ ] **Step 1: Testes que falham (`flightCheckout.logic.test.ts`)**
+- [x] **Step 1: Testes que falham (`flightCheckout.logic.test.ts`)**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -523,9 +525,9 @@ describe("checkoutPlan", () => {
 });
 ```
 
-- [ ] **Step 2: Rodar e ver falhar.**
+- [x] **Step 2: Rodar e ver falhar.**
 
-- [ ] **Step 3: Implementar `flightCheckout.logic.ts`**
+- [x] **Step 3: Implementar `flightCheckout.logic.ts`**
 
 ```ts
 import { formatBRL } from "@/lib/format";
@@ -542,15 +544,15 @@ export function checkoutPlan(e: ExtensionLike, actualIso: string): { days: numbe
 }
 ```
 
-- [ ] **Step 4: Hook e select** em `api.ts`: `baseSelect` ganha `, fare_extensions:booking_fare_extension(id, kind, flight_number, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents, overage_note)`; `useRecordFlightCheckout` chama `supabase.rpc("operator_record_flight_checkout", { p_booking_id, p_actual_check_out_at, p_overage_charged_cents, p_note })`, `if (error) throw error`, invalida `bookingsKeys.all`. Teste de contrato: a RPC recebe os quatro campos. `BookingWithRelations` em `domain.ts` ganha `fare_extensions?: OperatorExtension[]`.
+- [x] **Step 4: Hook e select** em `api.ts`: `baseSelect` ganha `, fare_extensions:booking_fare_extension(id, kind, flight_number, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents, overage_note)`; `useRecordFlightCheckout` chama `supabase.rpc("operator_record_flight_checkout", { p_booking_id, p_actual_check_out_at, p_overage_charged_cents, p_note })`, `if (error) throw error`, invalida `bookingsKeys.all`. Teste de contrato: a RPC recebe os quatro campos. `BookingWithRelations` em `domain.ts` ganha `fare_extensions?: OperatorExtension[]`.
 
-- [ ] **Step 5: Diálogo** `FlightCheckoutDialog.tsx` (props `bookingId, extension, open, onOpenChange`): `datetime-local` "Hora real de retirada" (padrão agora); abaixo, `checkoutPlan` vivo: "0 dias além da saída coberta: nada a cobrar" ou "N dia(s) além: previsto R$ X"; campo "Cobrado no balcão (R$)" pré-preenchido com o previsto; checkbox "Não cobrado" que zera o campo e exige um motivo curto (`Input`); botão "Registrar check-out" → `useRecordFlightCheckout`; toast "Check-out registrado".
+- [x] **Step 5: Diálogo** `FlightCheckoutDialog.tsx` (props `bookingId, extension, open, onOpenChange`): `datetime-local` "Hora real de retirada" (padrão agora); abaixo, `checkoutPlan` vivo: "0 dias além da saída coberta: nada a cobrar" ou "N dia(s) além: previsto R$ X"; campo "Cobrado no balcão (R$)" pré-preenchido com o previsto; checkbox "Não cobrado" que zera o campo e exige um motivo curto (`Input`); botão "Registrar check-out" → `useRecordFlightCheckout`; toast "Check-out registrado".
 
-- [ ] **Step 6: `BookingDetailView.tsx`**: `const ext = booking.fare_extensions?.[0]`; se `ext` e `audience === "operator"`, o botão "Check-out" abre o `FlightCheckoutDialog` em vez de `transition("completed")`; acima do card "Operação", um aviso (`div` com `bg-badge-pending-bg`) com `flightNotice(ext, formatDateTime)` enquanto `!ext.actual_check_out_at`. No card "Proteção contra atraso de voo" (Manager e Operator), renomeie para "Proteção de voo" e mostre três linhas quando `ext`: crédito ao parceiro (`ext.partner_credit_cents`, buscar no select), excedente previsto (`ext.overage_cents`), excedente cobrado (`ext.overage_charged_cents ?? "ainda não registrado"`).
+- [x] **Step 6: `BookingDetailView.tsx`**: `const ext = booking.fare_extensions?.[0]`; se `ext` e `audience === "operator"`, o botão "Check-out" abre o `FlightCheckoutDialog` em vez de `transition("completed")`; acima do card "Operação", um aviso (`div` com `bg-badge-pending-bg`) com `flightNotice(ext, formatDateTime)` enquanto `!ext.actual_check_out_at`. No card "Proteção contra atraso de voo" (Manager e Operator), renomeie para "Proteção de voo" e mostre três linhas quando `ext`: crédito ao parceiro (`ext.partner_credit_cents`, buscar no select), excedente previsto (`ext.overage_cents`), excedente cobrado (`ext.overage_charged_cents ?? "ainda não registrado"`).
 
-- [ ] **Step 7: Lista do Operator** (`src/routes/operator/bookings.tsx`): na coluna de status, quando `b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at`, um `Badge tone="pending"` "Proteção de voo".
+- [x] **Step 7: Lista do Operator** (`src/routes/operator/bookings.tsx`): na coluna de status, quando `b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at`, um `Badge tone="pending"` "Proteção de voo".
 
-- [ ] **Step 8: Testes, copy, commit**
+- [x] **Step 8: Testes, copy, commit**
 
 ```bash
 bunx vitest run src/features/bookings src/routes/operator src/features/mutations.contract.test.ts && bun run typecheck && bun run lint
@@ -569,11 +571,11 @@ git add -A && git commit -m "feat(voo): Operator ve o acionamento e registra a s
 - Consumes: view `flight_protection_monthly` (Task 1).
 - Produces: `summarizeFlightMonths(rows) → { month, claims, delay, cancellation, creditCents, overageCents, chargedCents }[]` somando empresas por mês, ordenado do mais novo.
 
-- [ ] **Step 1: Teste que falha**: duas empresas no mesmo mês somam; meses ordenados desc.
-- [ ] **Step 2: Implementar** `summarizeFlightMonths` (reduce por `month`).
-- [ ] **Step 3: Hook** `useFlightProtectionMonthly()`: `supabase.from("flight_protection_monthly").select("*")`, `if (error) throw error`.
-- [ ] **Step 4: Tela**: card "Proteção de voo por mês" em `tarifas.tsx` com tabela (mês, acionamentos, atraso, cancelamento, crédito pago ao parceiro, excedente previsto, excedente cobrado no balcão) e `EmptyState` quando vazio.
-- [ ] **Step 5:** `bunx vitest run src/features/fares src/routes/manager && bun run typecheck`; commit `feat(voo): relatorio mensal da protecao de voo no Manager`; push.
+- [x] **Step 1: Teste que falha**: duas empresas no mesmo mês somam; meses ordenados desc.
+- [x] **Step 2: Implementar** `summarizeFlightMonths` (reduce por `month`).
+- [x] **Step 3: Hook** `useFlightProtectionMonthly()`: `supabase.from("flight_protection_monthly").select("*")`, `if (error) throw error`.
+- [x] **Step 4: Tela**: card "Proteção de voo por mês" em `tarifas.tsx` com tabela (mês, acionamentos, atraso, cancelamento, crédito pago ao parceiro, excedente previsto, excedente cobrado no balcão) e `EmptyState` quando vazio.
+- [x] **Step 5:** `bunx vitest run src/features/fares src/routes/manager && bun run typecheck`; commit `feat(voo): relatorio mensal da protecao de voo no Manager`; push.
 
 ---
 
@@ -584,18 +586,18 @@ git add -A && git commit -m "feat(voo): Operator ve o acionamento e registra a s
 - Modify: `docs/specs/tarifas-operacao.md` (§2.7 vira "Proteção de voo: atraso ou cancelamento", tabela de benefícios, Q-031 a Q-034 na tabela de questionamentos: cobertura, só Superflex, 24h + excedente no balcão, aviso painel + e-mail), `docs/specs/fares.md`, `docs/specs/README.md` (índice da migration), `docs/specs/operator-panel.md` (check-out com saída real)
 - Modify: `src/features/listing/*.test.tsx` que fixam "Proteção contra atraso de voo"
 
-- [ ] **Step 1:** Trocar o rótulo e rodar `bunx vitest run src/features/listing src/routes` para ver o que quebra; ajustar as expectativas para o rótulo novo.
-- [ ] **Step 2:** Passar toda copy nova pela skill `revisar-texto`.
-- [ ] **Step 3:** Atualizar os docs listados. Sem travessão.
-- [ ] **Step 3b:** Aviso "sem e-mail de contato" na ficha da unidade do Manager (`src/routes/manager/location-edit.tsx` ou o formulário da unidade em `src/features/locations/`): quando `location.email` estiver vazio, um parágrafo em `text-warning` dizendo que a unidade só recebe avisos operacionais (proteção de voo) pelo painel do Operator. Teste de componente: renderiza com e sem e-mail.
-- [ ] **Step 4:** `bun run test && bun run typecheck && bun run lint`; commit `docs(voo): protecao de voo cobre cancelamento; copy e questionamentos Q-031 a Q-034`; push.
+- [x] **Step 1:** Trocar o rótulo e rodar `bunx vitest run src/features/listing src/routes` para ver o que quebra; ajustar as expectativas para o rótulo novo.
+- [x] **Step 2:** Passar toda copy nova pela skill `revisar-texto`.
+- [x] **Step 3:** Atualizar os docs listados. Sem travessão.
+- [x] **Step 3b:** Aviso "sem e-mail de contato" na ficha da unidade do Manager (`src/routes/manager/location-edit.tsx` ou o formulário da unidade em `src/features/locations/`): quando `location.email` estiver vazio, um parágrafo em `text-warning` dizendo que a unidade só recebe avisos operacionais (proteção de voo) pelo painel do Operator. Teste de componente: renderiza com e sem e-mail.
+- [x] **Step 4:** `bun run test && bun run typecheck && bun run lint`; commit `docs(voo): protecao de voo cobre cancelamento; copy e questionamentos Q-031 a Q-034`; push.
 
 ---
 
 ### Task 8: Prova ao vivo
 
-- [ ] **Step 1:** Criar reserva Superflex de teste para `peu+teste1@fera.ag` na Agência Fera (SQL, `create_booking_atomic(..., 'superflex')`), ajustar `status = 'checked_in'` e `check_out_at = now() + 1h`.
-- [ ] **Step 2:** Entrar como o cliente no Chrome de automação (magic link por `generate_link` + `verify` com `token_hash`), abrir a reserva, acionar "Meu voo atrasou ou foi cancelado" com cancelamento, voo LA3456 e saída a +49h. Conferir: `booking_fare_extension` (kind, coberta, pedida, snapshot), WhatsApp com o template do excedente, e-mail da unidade (a Fera tem e-mail? senão medir com uma unidade que tenha).
-- [ ] **Step 3:** Entrar como `peu+agenciafera@fera.ag`, ver o aviso na lista e na reserva, registrar o check-out com saída real +30h e "cobrado R$ 27,00". Conferir `overage_charged_cents`, `status = completed`, `checked_out_at`.
-- [ ] **Step 4:** Entrar como hub_admin, ver os três números no card e o relatório mensal.
-- [ ] **Step 5:** Limpar: cancelar a reserva de teste pelo Manager (ou deixar concluída) e registrar em memória o que foi validado.
+- [x] **Step 1:** Criar reserva Superflex de teste para `peu+teste1@fera.ag` na Agência Fera (SQL, `create_booking_atomic(..., 'superflex')`), ajustar `status = 'checked_in'` e `check_out_at = now() + 1h`.
+- [x] **Step 2:** Entrar como o cliente no Chrome de automação (magic link por `generate_link` + `verify` com `token_hash`), abrir a reserva, acionar "Meu voo atrasou ou foi cancelado" com cancelamento, voo LA3456 e saída a +49h. Conferir: `booking_fare_extension` (kind, coberta, pedida, snapshot), WhatsApp com o template do excedente, e-mail da unidade (a Fera tem e-mail? senão medir com uma unidade que tenha).
+- [x] **Step 3:** Entrar como `peu+agenciafera@fera.ag`, ver o aviso na lista e na reserva, registrar o check-out com saída real +30h e "cobrado R$ 27,00". Conferir `overage_charged_cents`, `status = completed`, `checked_out_at`.
+- [x] **Step 4:** Entrar como hub_admin, ver os três números no card e o relatório mensal.
+- [x] **Step 5:** Limpar: cancelar a reserva de teste pelo Manager (ou deixar concluída) e registrar em memória o que foi validado.
