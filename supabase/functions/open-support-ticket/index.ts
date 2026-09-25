@@ -67,7 +67,13 @@ Deno.serve(async (req: Request) => {
 
   const phone = toWhatsAppNumber(user.phone || booking.customer_phone || null);
   const email = (user.email || booking.customer_email || "").trim() || null;
-  const firstName = firstNameOf(booking.customer_name);
+  // Nome: o do snapshot da reserva; sem ele (reserva criada fora do checkout), o do perfil.
+  let customerName = (booking.customer_name ?? "").trim();
+  if (!customerName) {
+    const { data: prof } = await admin.from("profiles").select("full_name, first_name").eq("id", user.id).maybeSingle();
+    customerName = (prof?.full_name || prof?.first_name || "").trim();
+  }
+  const firstName = firstNameOf(customerName);
   const unitName = (booking.location as { name?: string } | null)?.name ?? "";
 
   const { data: ticket, error: insErr } = await admin
@@ -97,7 +103,7 @@ Deno.serve(async (req: Request) => {
             texto: `${KIND_LABEL[kind]}: ${message}`,
             chamado: ticket.code,
             reserva: booking.code,
-            nome: booking.customer_name ?? "",
+            nome: customerName,
             confirmacao: confirmation,
           }),
         });
@@ -131,7 +137,7 @@ Deno.serve(async (req: Request) => {
         kindLabel: KIND_LABEL[kind],
         message,
         bookingCode: booking.code,
-        customerName: booking.customer_name ?? "",
+        customerName,
         phone,
         email,
         unitName,
