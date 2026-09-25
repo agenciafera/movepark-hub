@@ -21,6 +21,7 @@ import {
   tplBookingExtended,
   tplSupportTicketTeam,
   tplSupportTicketCustomer,
+  tplFlightProtectionUnit,
 } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
@@ -259,4 +260,25 @@ Deno.test("tplSupportTicketCustomer: código, reserva e horário comercial", () 
   assertStringIncludes(m.subject, "CH-K7M2PX");
   assertStringIncludes(m.html, "segunda a sexta, das 9h às 18h");
   assertStringIncludes(m.html, "https://movepark.co/bookings/MP-1A2B3C");
+});
+
+const noticeVoo = { code: "MP-1A2B3C", location_name: "Agência Fera", location_address: null, check_in_at: "2026-12-13T08:00:00Z", check_out_at: "2026-12-14T08:00:00Z", vehicle: null } as never;
+
+Deno.test("tplBookingExtended: o bloco do excedente só aparece quando pedido", () => {
+  const sem = tplBookingExtended(noticeVoo, "Ana", "https://movepark.co/bookings/MP-1A2B3C");
+  assertStringIncludes(sem.html, "Nada a pagar");
+  const com = tplBookingExtended(noticeVoo, "Ana", "https://movepark.co/bookings/MP-1A2B3C", { coveredAt: "2026-12-14T08:00:00Z", dailyCents: 2700 });
+  assertStringIncludes(com.html, "R$ 27,00 por dia, pago no estacionamento");
+  assert(!com.html.includes("Nada a pagar"));
+  assert(!/[\u2013\u2014]/.test(com.html));
+});
+
+Deno.test("tplFlightProtectionUnit: voo, hora coberta, preço por dia e link do Operator", () => {
+  const m = tplFlightProtectionUnit({ bookingCode: "MP-1A2B3C", kind: "cancellation", flightNumber: "LA3456", coveredAt: "2026-12-14T08:00:00Z", dailyCents: 2700, overageCents: 5400, vehicle: "ABC1D23", operatorUrl: "https://movepark.co/operator/bookings/MP-1A2B3C" });
+  assertStringIncludes(m.subject, "MP-1A2B3C");
+  assertStringIncludes(m.html, "voo cancelado");
+  assertStringIncludes(m.html, "LA3456");
+  assertStringIncludes(m.html, "R$ 27,00 por dia");
+  assertStringIncludes(m.html, "R$ 54,00");
+  assertStringIncludes(m.html, "/operator/bookings/MP-1A2B3C");
 });

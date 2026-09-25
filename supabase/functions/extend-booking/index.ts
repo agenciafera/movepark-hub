@@ -8,15 +8,19 @@
 // POST /functions/v1/extend-booking
 // Authorization: Bearer <JWT>
 // { "booking_code": "MP-XXXX", "new_check_out_at": "2026-12-13T08:00:00Z", "flight_number": "LA3456", "reason"?: "voo atrasado" }
-// Limites (23/09/2026, Q-025 a Q-027): até 24h depois da saída, uma vez por reserva, até 120 min
-// depois da saída prevista; a diária extra vira crédito ao parceiro, pago pela Movepark.
-// → { booking_id, old_check_out_at, new_check_out_at, added_days }
+// Limites (23/09/2026, Q-025 a Q-027): 24h cobertas pela Movepark, uma vez por reserva, até 120 min
+// depois da saída prevista; a diária coberta vira crédito ao parceiro. Desde 25/09/2026 cobre também
+// o CANCELAMENTO (`kind`): a saída pedida não tem teto, a RPC cobre 24h e o resto vira excedente,
+// cobrado no balcão pelo parceiro. O aviso ao cliente muda de template com excedente, e a unidade
+// recebe e-mail (spec 2026-09-25-protecao-de-voo-cancelamento-design.md).
+// { "booking_code", "new_check_out_at" (saída pedida), "flight_number", "kind"?: "delay"|"cancellation", "reason"? }
+// → { booking_id, old_check_out_at, new_check_out_at (coberta), requested_check_out_at, added_days, overage_cents, overage_daily_cents }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { notifyBooking } from "../_shared/notify.ts";
-import { tplBookingExtended } from "../_shared/email.ts";
+import { getEmailConfig, sendEmail, tplBookingExtended, tplFlightProtectionUnit } from "../_shared/email.ts";
 import { siteUrl } from "../_shared/site.ts";
-import { parseExtendInput } from "./logic.ts";
+import { fmtBRDateTime, fmtBRL, parseExtendInput, pickExtendedEvent } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,19 +113,43 @@ Deno.serve(async (req: Request) => {
     p_actor: actor,
     p_reason: input.reason,
     p_flight_number: input.flightNumber,
+    p_kind: input.kind,
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 400);
+  const out = (result ?? {}) as { new_check_out_at?: string; overage_cents?: number; overage_daily_cents?: number };
+  const overageCents = Number(out.overage_cents ?? 0);
+  const dailyCents = Number(out.overage_daily_cents ?? 0);
+  const coveredAt = out.new_check_out_at ?? "";
 
   // Aviso da nova saída (WhatsApp com o benefício, senão e-mail). Best-effort.
   const nd = await noticeData(admin, booking.id);
   if (nd) {
-    const newOut = new Date(nd.check_out_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    const newOut = fmtBRDateTime(nd.check_out_at);
+    const overage = overageCents > 0 ? { coveredAt, dailyCents } : undefined;
     await notifyBooking(admin, {
       bookingId: booking.id,
-      event: "extended",
-      whatsappParams: (c) => [c.name ?? "cliente", nd.code, newOut],
-      email: (c) => tplBookingExtended(nd, c.name, `${siteUrl()}/bookings/${nd.code}`),
+      event: pickExtendedEvent(overageCents),
+      whatsappParams: (c) => overage
+        ? [c.name ?? "cliente", nd.code, newOut, fmtBRL(dailyCents)]
+        : [c.name ?? "cliente", nd.code, newOut],
+      email: (c) => tplBookingExtended(nd, c.name, `${siteUrl()}/bookings/${nd.code}`, overage),
     });
+    // A unidade precisa saber no dia (25/09/2026): e-mail no contato dela, além do painel.
+    if (nd.location_email) {
+      try {
+        const { from } = await getEmailConfig(admin);
+        if (from) {
+          const mail = tplFlightProtectionUnit({
+            bookingCode: nd.code, kind: input.kind, flightNumber: input.flightNumber, coveredAt, dailyCents, overageCents,
+            vehicle: nd.vehicle?.license_plate ?? null, operatorUrl: `${siteUrl()}/operator/bookings/${nd.code}`,
+          });
+          const r = await sendEmail({ from, to: nd.location_email, subject: mail.subject, html: mail.html });
+          if (!r.ok) console.error("[extend-booking] e-mail da unidade falhou:", r.error);
+        }
+      } catch (e) {
+        console.error("[extend-booking] e-mail da unidade falhou:", e);
+      }
+    }
   }
 
   return jsonResponse(result, 200);
@@ -132,9 +160,9 @@ Deno.serve(async (req: Request) => {
 async function noticeData(admin: any, bookingId: string) {
   const { data: r } = await admin
     .from("booking")
-    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+    .select("code, check_in_at, check_out_at, location:location!inner(name, address, email), vehicle:vehicle(license_plate, model)")
     .eq("id", bookingId)
     .maybeSingle();
   if (!r) return null;
-  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, location_email: (r.location?.email as string | null) ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
 }

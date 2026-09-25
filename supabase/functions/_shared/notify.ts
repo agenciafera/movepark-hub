@@ -15,7 +15,8 @@ export type NotifyEvent =
   | "cancelled"
   | "dates_changed"
   | "vehicle_changed"
-  | "extended";
+  | "extended"
+  | "extended_overage";
 
 /** Nome do segredo com o template da Meta para cada evento. */
 export const WHATSAPP_TEMPLATE_ENV: Record<NotifyEvent, string> = {
@@ -26,6 +27,7 @@ export const WHATSAPP_TEMPLATE_ENV: Record<NotifyEvent, string> = {
   dates_changed: "WHATSAPP_BOOKING_CHANGED_TEMPLATE",
   vehicle_changed: "WHATSAPP_BOOKING_CHANGED_TEMPLATE",
   extended: "WHATSAPP_BOOKING_EXTENDED_TEMPLATE",
+  extended_overage: "WHATSAPP_BOOKING_EXTENDED_OVERAGE_TEMPLATE",
 };
 
 export type ChannelPlan = { whatsapp: boolean; emailFallback: boolean };

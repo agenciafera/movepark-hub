@@ -741,19 +741,54 @@ export function tplBookingVehicleChanged(b: BookingNoticeData, customerName: str
 }
 
 /** Saída estendida pela proteção de voo (Superflex): a nova hora e que não custou nada. */
-export function tplBookingExtended(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+export function tplBookingExtended(
+  b: BookingNoticeData,
+  customerName: string | null,
+  bookingUrl: string,
+  overage?: { coveredAt: string; dailyCents: number },
+): { subject: string; html: string } {
   const fn = primeiroNome(customerName);
+  const brl = (c: number) => `R$ ${(c / 100).toFixed(2).replace(".", ",")}`;
   return {
     subject: `Reserva ${b.code}: saída estendida até ${formatBRDateTime(b.check_out_at)}`,
     html: shell(
-      "Saída estendida, sem custo",
+      overage ? "Saída estendida: 24h por nossa conta" : "Saída estendida, sem custo",
       `
-      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}pela proteção contra atraso de voo da Superflex, a saída da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> passou para <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_out_at))}</strong>.</p>
-      ${checkItem(`Nada a pagar: a diária extra é por conta da Movepark.`)}
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}pela proteção de voo da Superflex, a saída da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> passou para <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_out_at))}</strong>.</p>
+      ${overage
+        ? checkItem(`Até ${escapeHtml(formatBRDateTime(overage.coveredAt))} é por nossa conta. Depois disso, ${brl(overage.dailyCents)} por dia, pago no estacionamento na retirada.`)
+        : checkItem(`Nada a pagar: a diária extra é por conta da Movepark.`)}
       ${checkItem(`O estacionamento ${escapeHtml(b.location_name)} já sabe da nova saída.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
       { preheader: `Saída da reserva ${b.code} estendida` },
     ),
+  };
+}
+
+/**
+ * Aviso à unidade quando o cliente aciona a proteção de voo (25/09/2026). A portaria precisa saber
+ * no dia, senão trata o carro como pernoite não pago. Vai para `location.email`.
+ */
+export function tplFlightProtectionUnit(t: {
+  bookingCode: string; kind: "delay" | "cancellation"; flightNumber: string; coveredAt: string;
+  dailyCents: number; overageCents: number; vehicle: string | null; operatorUrl: string;
+}): { subject: string; html: string } {
+  const brl = (c: number) => `R$ ${(c / 100).toFixed(2).replace(".", ",")}`;
+  const motivo = t.kind === "cancellation" ? "voo cancelado" : "voo atrasado";
+  return {
+    subject: `Proteção de voo acionada na reserva ${t.bookingCode}: sai até ${formatBRDateTime(t.coveredAt)} sem custo`,
+    html: shell(`Proteção de voo na reserva ${t.bookingCode}`, `
+      <p style="margin:0 0 16px;">O cliente acionou a proteção de voo da Superflex (${escapeHtml(motivo)}). A Movepark paga a diária até a hora coberta. O que passar disso é cobrado no balcão, pela sua tabela, e fica com você.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${row("Reserva", t.bookingCode)}
+        ${row("Veículo", t.vehicle ?? "não informado")}
+        ${row("Voo", t.flightNumber)}
+        ${row("Sai sem custo até", formatBRDateTime(t.coveredAt))}
+        ${row("Depois disso", `${brl(t.dailyCents)} por dia, a cobrar no balcão`)}
+        ${row("Excedente previsto", t.overageCents > 0 ? brl(t.overageCents) : "nenhum (sai dentro das 24h)")}
+      </table>
+      <p style="margin-top:16px;color:${BRAND.muted};font-size:13px">No check-out, registre no painel a hora real de retirada e o valor cobrado.</p>
+      <p style="margin-top:16px">${button(t.operatorUrl, "Abrir a reserva no Operator")}</p>`),
   };
 }
 
