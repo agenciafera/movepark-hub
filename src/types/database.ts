@@ -974,6 +974,15 @@ export type Database = {
           partner_credit_cents: number | null
           reason: string | null
           settlement_id: string | null
+          kind: string
+          requested_check_out_at: string | null
+          overage_daily_cents: number
+          overage_cents: number
+          actual_check_out_at: string | null
+          overage_charged_cents: number | null
+          overage_note: string | null
+          overage_recorded_by: string | null
+          overage_recorded_at: string | null
         }
         Insert: {
           actor?: string
@@ -987,6 +996,15 @@ export type Database = {
           partner_credit_cents?: number | null
           reason?: string | null
           settlement_id?: string | null
+          kind?: string
+          requested_check_out_at?: string | null
+          overage_daily_cents?: number
+          overage_cents?: number
+          actual_check_out_at?: string | null
+          overage_charged_cents?: number | null
+          overage_note?: string | null
+          overage_recorded_by?: string | null
+          overage_recorded_at?: string | null
         }
         Update: {
           actor?: string
@@ -1000,6 +1018,15 @@ export type Database = {
           partner_credit_cents?: number | null
           reason?: string | null
           settlement_id?: string | null
+          kind?: string
+          requested_check_out_at?: string | null
+          overage_daily_cents?: number
+          overage_cents?: number
+          actual_check_out_at?: string | null
+          overage_charged_cents?: number | null
+          overage_note?: string | null
+          overage_recorded_by?: string | null
+          overage_recorded_at?: string | null
         }
         Relationships: [
           {
@@ -6326,6 +6353,19 @@ export type Database = {
       }
     }
     Views: {
+      flight_protection_monthly: {
+        Row: {
+          month: string | null
+          company_id: string | null
+          claims: number | null
+          delay: number | null
+          cancellation: number | null
+          partner_credit_cents: number | null
+          overage_cents: number | null
+          overage_charged_cents: number | null
+        }
+        Relationships: []
+      }
       location_point_proximity: {
         Row: {
           destination_id: string | null
@@ -6906,6 +6946,11 @@ export type Database = {
       }
       company_access_link_revoke: { Args: { p_id: string }; Returns: undefined }
       admin_close_support_ticket: { Args: { p_id: string }; Returns: undefined }
+      operator_record_flight_checkout: {
+        Args: { p_booking_id: string; p_actual_check_out_at: string; p_overage_charged_cents?: number; p_note?: string }
+        Returns: Json
+      }
+      flight_overage_days: { Args: { p_covered: string; p_actual: string }; Returns: number }
       open_support_ticket_count: { Args: Record<PropertyKey, never>; Returns: number }
       support_ticket_code: { Args: Record<PropertyKey, never>; Returns: string }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
@@ -7102,8 +7147,7 @@ export type Database = {
           p_booking_id: string
           p_flight_number?: string
           p_new_check_out_at: string
-          p_reason?: string
-        }
+          p_reason?: string; p_kind?: string }
         Returns: Json
       }
       external_checkout_url: {

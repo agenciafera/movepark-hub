@@ -2,7 +2,7 @@
 -- Spec: docs/specs/tarifas-operacao.md (2.5 a 2.7; Q-025 a Q-027). Transação com rollback.
 
 begin;
-select plan(12);
+select plan(11);
 
 do $$
 declare cust uuid := gen_random_uuid(); v_lpt uuid; r jsonb;
@@ -40,10 +40,8 @@ select is((select count(*)::int from public.payout_debt_settlement where company
 
 select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '5 hours', 'customer', null, null)$f$, current_setting('test.bk')),
   'P0001', 'Informe o número do voo para acionar a proteção.', 'sem número do voo não aciona');
-select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '30 hours', 'customer', null, 'LA3456')$f$, current_setting('test.bk')),
-  'P0001', 'A proteção estende a saída em até 24 horas. Para mais tempo, altere a data da reserva.', 'mais de 24h depois da saída é alteração de data, não proteção');
-select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '5 hours', 'customer', null, 'LA3456')$f$, current_setting('test.bk_basica')),
-  'P0001', 'Proteção contra atraso de voo disponível só na Tarifa Superflex.', 'Básica não tem proteção');
+select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '30 hours', 'customer', null, 'LA3456')$f$, current_setting('test.bk_basica')),
+  'P0001', 'Proteção de voo disponível só na Tarifa Superflex.', 'Básica não tem proteção (a saída pedida além de 24h deixou de ser recusa em 25/09/2026)');
 
 -- dentro do limite: estende, grava o voo e credita o parceiro pela diária extra
 select lives_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '20 hours', 'customer', 'voo atrasou', 'la3456')$f$, current_setting('test.bk')),
@@ -58,7 +56,7 @@ select is((select amount_cents || '|' || kind from public.payout_debt_settlement
   '2160|flight_extension_credit', 'o crédito vira acerto a favor do parceiro, pago pela Movepark');
 
 select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '22 hours', 'customer', null, 'LA3456')$f$, current_setting('test.bk')),
-  'P0001', 'A proteção contra atraso de voo já foi usada nesta reserva.', 'uma vez por reserva');
+  'P0001', 'A proteção de voo já foi usada nesta reserva.', 'uma vez por reserva');
 
 -- a janela de acionamento fecha 120 min depois da saída prevista
 update public.booking set check_in_at = now() - interval '1 day', check_out_at = now() - interval '3 hours' where id = current_setting('test.bk_basica')::uuid;
