@@ -116,8 +116,8 @@ select is((select count(*) from public.payout_auto_due(date '2026-10-10') d wher
 select throws_ok(format('insert into public.payout_auto_cycle(company_id, cycle_month, scheduled_for) values (%L::uuid, date ''2026-10-01'', date ''2026-10-10'')', current_setting('test.cid')), '23505', null, 'um ciclo por empresa e mês');
 
 -- razão: a taxa por conta da Movepark não desconta do parceiro; a do parceiro desconta
--- liberado 8000 (b1) − saques (1000 + (500 + 367)) = 6133, no teto do gateway 20000
-select is((public.payout_withdrawable(current_setting('test.cid')::uuid)->>'available_cents')::bigint, 6133::bigint, 'saque automático desconta só o valor; manual desconta valor e taxa');
+-- liberado 7900 (b1: 8000 menos a taxa de 100 que o parceiro paga) − saques (1000 + (500 + 367)) = 6033, no teto do gateway 20000
+select is((public.payout_withdrawable(current_setting('test.cid')::uuid)->>'available_cents')::bigint, 6033::bigint, 'saque automático desconta só o valor; manual desconta valor e taxa');
 
 -- crédito da taxa
 select is(public.payout_fee_credit_cents(current_setting('test.cid')::uuid), 367::bigint, 'crédito = taxa dos saques automáticos vivos');
@@ -130,8 +130,8 @@ set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.op'), 'role', 'authenticated')::text, true);
 select is((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'day')::int, 10, 'Dono lê a previsão: dia');
 -- próxima data é o dia 10 do mês seguinte ao ciclo já fechado (2026-10) OU o próximo dia 10 real; a venda b2 libera em 3 dias, antes de qualquer dia 10 futuro:
--- liberado até lá = 8000 + 8000 − saques 1867 = 14133, teto gateway 20000 + 3000
-select is((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'forecast_cents')::bigint, 14133::bigint, 'previsão inclui a venda que libera até a data');
+-- liberado até lá = 7900 + 7900 − saques 1867 = 13933, teto gateway 20000 + 3000
+select is((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'forecast_cents')::bigint, 13933::bigint, 'previsão inclui a venda que libera até a data');
 select is((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'below_min')::boolean, false, 'acima do mínimo');
 select throws_ok(format('select public.payout_auto_forecast(%L::uuid)', current_setting('test.cid2')), '42501', null, 'Dono de outra empresa não lê');
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);

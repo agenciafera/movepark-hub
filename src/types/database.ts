@@ -1314,6 +1314,8 @@ export type Database = {
           monthly_revenue_goal_cents: number | null
           name: string
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
+          payout_auto_day: number | null
+          payout_auto_enabled: boolean | null
           payout_release_days: number | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
@@ -1341,6 +1343,8 @@ export type Database = {
           monthly_revenue_goal_cents?: number | null
           name: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
+          payout_auto_day?: number | null
+          payout_auto_enabled?: boolean | null
           payout_release_days?: number | null
           slug: string
           status?: Database["public"]["Enums"]["entity_status"]
@@ -1368,6 +1372,8 @@ export type Database = {
           monthly_revenue_goal_cents?: number | null
           name?: string
           onboarding_status?: Database["public"]["Enums"]["onboarding_status"]
+          payout_auto_day?: number | null
+          payout_auto_enabled?: boolean | null
           payout_release_days?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["entity_status"]
@@ -4324,6 +4330,8 @@ export type Database = {
           debt_email_sent_at: string | null
           debt_recovered_cents: number
           debt_reservation_id: string | null
+          fee_credit_returned_cents: number
+          fee_credit_reservation_id: string | null
           expires_at: string | null
           fare_target_tier: Database["public"]["Enums"]["fare_tier"] | null
           gateway_fee_cents: number | null
@@ -4362,6 +4370,8 @@ export type Database = {
           debt_email_sent_at?: string | null
           debt_recovered_cents?: number
           debt_reservation_id?: string | null
+          fee_credit_returned_cents?: number
+          fee_credit_reservation_id?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           gateway_fee_cents?: number | null
@@ -4400,6 +4410,8 @@ export type Database = {
           debt_email_sent_at?: string | null
           debt_recovered_cents?: number
           debt_reservation_id?: string | null
+          fee_credit_returned_cents?: number
+          fee_credit_reservation_id?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
           gateway_fee_cents?: number | null
@@ -4620,6 +4632,111 @@ export type Database = {
           },
           {
             foreignKeyName: "payout_debt_reservation_consumed_by_payment_id_fkey"
+            columns: ["consumed_by_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_auto_cycle: {
+        Row: {
+          amount_cents: number | null
+          available_cents: number | null
+          company_id: string
+          created_at: string
+          cycle_month: string
+          id: string
+          outcome: string
+          ran_at: string
+          reason: string | null
+          scheduled_for: string
+          updated_at: string
+          withdrawal_id: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          available_cents?: number | null
+          company_id: string
+          created_at?: string
+          cycle_month: string
+          id?: string
+          outcome?: string
+          ran_at?: string
+          reason?: string | null
+          scheduled_for: string
+          updated_at?: string
+          withdrawal_id?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          available_cents?: number | null
+          company_id?: string
+          created_at?: string
+          cycle_month?: string
+          id?: string
+          outcome?: string
+          ran_at?: string
+          reason?: string | null
+          scheduled_for?: string
+          updated_at?: string
+          withdrawal_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_auto_cycle_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_auto_cycle_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "payout_withdrawal"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_fee_credit_reservation: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          consumed_by_payment_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          provider: string
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          consumed_by_payment_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          provider?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          consumed_by_payment_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_fee_credit_reservation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_fee_credit_reservation_consumed_by_payment_id_fkey"
             columns: ["consumed_by_payment_id"]
             isOneToOne: false
             referencedRelation: "payment"
@@ -4988,6 +5105,9 @@ export type Database = {
           raw: Json | null
           requested_at: string | null
           requested_email_sent_at: string | null
+          cycle_id: string | null
+          fee_borne_by: string
+          origin: string
           settled_email_sent_at: string | null
           status: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at: string | null
@@ -5010,6 +5130,9 @@ export type Database = {
           raw?: Json | null
           requested_at?: string | null
           requested_email_sent_at?: string | null
+          cycle_id?: string | null
+          fee_borne_by?: string
+          origin?: string
           settled_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at?: string | null
@@ -5032,6 +5155,9 @@ export type Database = {
           raw?: Json | null
           requested_at?: string | null
           requested_email_sent_at?: string | null
+          cycle_id?: string | null
+          fee_borne_by?: string
+          origin?: string
           settled_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at?: string | null
@@ -6981,6 +7107,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      company_set_payout_schedule: {
+        Args: { p_company_id: string; p_day: number | null; p_enabled: boolean | null }
+        Returns: undefined
+      }
       company_set_payout_release_days: {
         Args: { p_company_id: string; p_days: number }
         Returns: undefined
@@ -8139,6 +8269,15 @@ export type Database = {
         Returns: Json
       }
       payout_debt_overview: { Args: { p_provider?: string }; Returns: Json }
+      payout_auto_day: { Args: { p_company_id: string }; Returns: number }
+      payout_auto_due: {
+        Args: { p_today: string }
+        Returns: { company_id: string; scheduled_for: string }[]
+      }
+      payout_auto_enabled: { Args: { p_company_id: string }; Returns: boolean }
+      payout_auto_expected_key: { Args: Record<PropertyKey, never>; Returns: string }
+      payout_auto_forecast: { Args: { p_company_id: string }; Returns: Json }
+      payout_auto_min_cents: { Args: Record<PropertyKey, never>; Returns: number }
       payout_debt_reserve: {
         Args: {
           p_company_id: string
@@ -8169,6 +8308,18 @@ export type Database = {
       payout_refund_manual_mark_paid: {
         Args: { p_id: string; p_note?: string }
         Returns: undefined
+      }
+      payout_fee_credit_cents: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: number
+      }
+      payout_fee_credit_reserve: {
+        Args: { p_company_id: string; p_max_cents: number; p_provider?: string }
+        Returns: { amount_cents: number; reservation_id: string }[]
+      }
+      payout_next_auto_at: {
+        Args: { p_company_id: string; p_from?: string }
+        Returns: string
       }
       payout_release_days: { Args: { p_company_id: string }; Returns: number }
       payout_statement: {
@@ -8280,6 +8431,8 @@ export type Database = {
           monthly_revenue_goal_cents: number | null
           name: string
           onboarding_status: Database["public"]["Enums"]["onboarding_status"]
+          payout_auto_day: number | null
+          payout_auto_enabled: boolean | null
           payout_release_days: number | null
           slug: string
           status: Database["public"]["Enums"]["entity_status"]
