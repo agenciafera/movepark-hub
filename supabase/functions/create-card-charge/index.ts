@@ -20,7 +20,7 @@ import {
   isGatewaySplitEnabled,
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
-import { debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
+import { appliedFeeCreditCents, debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
@@ -234,6 +234,8 @@ Deno.serve(async (req: Request) => {
   // simultâneas: conta como abatido até esta cobrança existir (ou vencer em 15 min).
   let debtRecoveryCents = 0;
   let debtReservationId: string | null = null;
+  let feeCreditCents = 0;
+  let feeCreditReservationId: string | null = null;
   let gatewaySplit = split;
   if (splitEnabled) {
     const { data: reserva, error: reservaErr } = await admin.rpc("payout_debt_reserve", {
@@ -254,8 +256,21 @@ Deno.serve(async (req: Request) => {
       debtRecoveryCents = Number(r?.amount_cents ?? 0) || 0;
       debtReservationId = r?.reservation_id ?? null;
     }
+    // 4c. Crédito da taxa do repasse automático (E0.3.13): a Movepark devolve nesta venda o que
+    // ficou devendo ao parceiro, até a perna dela depois do abatimento. Reserva com lock, como a dívida.
+    const { data: credito, error: creditoErr } = await admin.rpc("payout_fee_credit_reserve", {
+      p_company_id: location.company_id,
+      p_max_cents: appliedFeeCreditCents(split, debtRecoveryCents, Number.MAX_SAFE_INTEGER),
+    });
+    if (creditoErr) {
+      console.error("[%s] payout_fee_credit_reserve falhou:", EDGE_NAME, creditoErr.message);
+    } else {
+      const c = (Array.isArray(credito) ? credito[0] : credito) as { reservation_id: string | null; amount_cents: number | string | null } | null;
+      feeCreditCents = Number(c?.amount_cents ?? 0) || 0;
+      feeCreditReservationId = c?.reservation_id ?? null;
+    }
     try {
-      gatewaySplit = splitForGateway(split, debtRecoveryCents, moveparkRecipientId) as typeof split;
+      gatewaySplit = splitForGateway(split, debtRecoveryCents, moveparkRecipientId, feeCreditCents) as typeof split;
     } catch (e) {
       return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
     }
@@ -338,6 +353,8 @@ Deno.serve(async (req: Request) => {
       split_sent_to_gateway: splitEnabled,
       debt_recovered_cents: debtRecoveryCents,
       debt_reservation_id: debtReservationId,
+    fee_credit_returned_cents: feeCreditCents,
+    fee_credit_reservation_id: feeCreditReservationId,
     });
     // Recusa do emissor e erro nosso no pedido chegam pelo mesmo status; o gateway_response separa.
     const detalhe = chargeFailureDetail(result.raw);
@@ -387,6 +404,8 @@ Deno.serve(async (req: Request) => {
     split_sent_to_gateway: splitEnabled,
     debt_recovered_cents: debtRecoveryCents,
     debt_reservation_id: debtReservationId,
+    fee_credit_returned_cents: feeCreditCents,
+    fee_credit_reservation_id: feeCreditReservationId,
   });
   if (payErr) return jsonResponse({ error: payErr.message }, 500);
   // Rastro do gateway (E0.3.9). O cartão nunca entra aqui: só ids, valor, parcelas e split.
@@ -410,6 +429,12 @@ Deno.serve(async (req: Request) => {
       .from("payout_debt_reservation")
       .update({ consumed_by_payment_id: paymentId })
       .eq("id", debtReservationId);
+  }
+  if (feeCreditReservationId) {
+    await admin
+      .from("payout_fee_credit_reservation")
+      .update({ consumed_by_payment_id: paymentId })
+      .eq("id", feeCreditReservationId);
   }
 
   // 9b. Renova o hold enquanto pending (E0.3.1-a). Cartão aprovado inline vira confirmed (a RPC zera

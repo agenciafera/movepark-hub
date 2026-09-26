@@ -1,5 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
 import {
+  appliedFeeCreditCents,
   debtFloorCents,
   buildSplit,
   effectiveSplitEnabled,
@@ -463,4 +464,35 @@ Deno.test("comissão reduzida da regra muda as pernas: 5% em R$ 200", () => {
   });
   assertEquals(rules.find((r) => r.role === "partner")!.amount, 19000);
   assertEquals(rules.find((r) => r.role === "movepark")!.amount, 1000);
+});
+
+Deno.test("splitForGateway: crédito da taxa sai da Movepark e vai ao parceiro, total intacto", () => {
+  const rules = buildSplit({ chargedCents: 10000, baseCents: 10000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p" });
+  const out = splitForGateway(rules, 0, "re_mp", 367)!;
+  assertEquals(out.map((r) => [r.role, r.amount]), [["partner", 8367], ["movepark", 1633]]);
+  assertEquals(out.reduce((a, r) => a + r.amount, 0), 10000);
+});
+
+Deno.test("splitForGateway: o crédito respeita o piso de R$ 1,00 da perna da Movepark", () => {
+  const rules = buildSplit({ chargedCents: 1000, baseCents: 1000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p" });
+  // Movepark tem 200; cede no máximo 100
+  const out = splitForGateway(rules, 0, "re_mp", 367)!;
+  assertEquals(out.map((r) => [r.role, r.amount]), [["partner", 900], ["movepark", 100]]);
+});
+
+Deno.test("splitForGateway: dívida abate antes, crédito devolve depois", () => {
+  const rules = buildSplit({ chargedCents: 10000, baseCents: 10000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p" });
+  const out = splitForGateway(rules, 3000, "re_mp", 367)!;
+  assertEquals(out.map((r) => [r.role, r.amount]), [["partner", 5367], ["movepark", 4633]]);
+});
+
+Deno.test("splitForGateway: sem perna da Movepark não há de onde devolver", () => {
+  const rules = buildSplit({ chargedCents: 10000, baseCents: 10000, takeRateBps: 0, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p" });
+  assertEquals(splitForGateway(rules, 0, "re_mp", 367), rules);
+});
+
+Deno.test("appliedFeeCreditCents: quanto do crédito coube nesta venda", () => {
+  const rules = buildSplit({ chargedCents: 1000, baseCents: 1000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p" });
+  assertEquals(appliedFeeCreditCents(rules, 0, 367), 100);
+  assertEquals(appliedFeeCreditCents(rules, 0, 50), 50);
 });

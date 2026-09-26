@@ -199,7 +199,7 @@ export function partnerRule(rules: SplitRule[]): SplitRule | undefined {
  *
  * Nunca abate mais do que a perna do parceiro, e nunca mexe no total.
  */
-export function splitForGateway(
+function splitAfterDebt(
   rules: SplitRule[],
   debtRecoveryCents: number,
   moveparkRecipientId: string | null,
@@ -244,6 +244,55 @@ export function splitForGateway(
   if (soma !== total) {
     throw new Error(`Split dinâmico não fecha: soma ${soma} != total ${total}.`);
   }
+  return out;
+}
+
+/** A perna da Movepark nunca fica abaixo disto ao devolver crédito (regra zerada o gateway recusa). */
+export const MOVEPARK_LEG_FLOOR_CENTS = 100;
+
+/**
+ * Quanto do crédito da taxa (repasse automático, E0.3.13) cabe nesta venda: até a perna da Movepark
+ * DEPOIS do abatimento de dívida, respeitando o piso. O resto espera a próxima venda.
+ */
+export function appliedFeeCreditCents(rules: SplitRule[], debtRecoveryCents: number, feeCreditCents: number): number {
+  const credit = Math.max(0, Math.floor(feeCreditCents || 0));
+  if (credit === 0) return 0;
+  let after: SplitRule[] | undefined;
+  try {
+    after = splitAfterDebt(rules, debtRecoveryCents, null);
+  } catch {
+    // Sem perna da Movepark no razão e sem id do master não há de onde devolver.
+    return 0;
+  }
+  if (!after) return 0;
+  const partner = partnerRule(after);
+  const movepark = after.find((r) => r !== partner);
+  if (!movepark) return 0;
+  return Math.max(0, Math.min(credit, movepark.amount - MOVEPARK_LEG_FLOOR_CENTS));
+}
+
+/**
+ * O que VAI ao gateway: perna do parceiro menos abatimento de dívida (E0.3.5), MAIS o crédito da
+ * taxa do repasse automático que a Movepark devolve (E0.3.13). Total intacto.
+ */
+export function splitForGateway(
+  rules: SplitRule[],
+  debtRecoveryCents: number,
+  moveparkRecipientId: string | null,
+  feeCreditCents = 0,
+): SplitRule[] | undefined {
+  const base = splitAfterDebt(rules, debtRecoveryCents, moveparkRecipientId);
+  const applied = appliedFeeCreditCents(rules, debtRecoveryCents, feeCreditCents);
+  if (!base || applied === 0) return base;
+  const partner = partnerRule(base);
+  const movepark = base.find((r) => r !== partner);
+  if (!partner || !movepark) return base;
+  const out = base.map((r) =>
+    r === partner ? { ...r, amount: r.amount + applied } : { ...r, amount: r.amount - applied },
+  );
+  const total = rules.reduce((a, r) => a + r.amount, 0);
+  const soma = out.reduce((a, r) => a + r.amount, 0);
+  if (soma !== total) throw new Error(`Split com crédito não fecha: soma ${soma} != total ${total}.`);
   return out;
 }
 
