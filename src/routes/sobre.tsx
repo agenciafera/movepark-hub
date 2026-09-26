@@ -132,7 +132,7 @@ export default function SobrePage() {
         <img
           src={HERO_IMAGE}
           alt="Viajante com a mala caminhando até o carro no estacionamento do aeroporto ao anoitecer"
-          fetchPriority="high"
+          {...{ fetchpriority: "high" }}
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-[70%_center]"
         />

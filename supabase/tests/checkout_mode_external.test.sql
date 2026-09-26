@@ -25,8 +25,10 @@ begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at) values
     (v_admin,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','e014-admin@ex.com',now(),now()),
     (v_gerente,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','e014-gerente@ex.com',now(),now());
+  -- `do update`, não `do nothing`: o gatilho de auth.users já cria o perfil como customer, e
+  -- "do nothing" deixava o admin do fixture sem o papel (o pré-voo respondia "apenas hub_admin").
   insert into public.profiles(id, role) values
-    (v_admin,'hub_admin'), (v_gerente,'company_operator') on conflict (id) do nothing;
+    (v_admin,'hub_admin'), (v_gerente,'company_operator') on conflict (id) do update set role = excluded.role;
 
   insert into public.company(name, slug, wl_domain, wl_tenant_key, wl_sync_enabled)
     values ('E014 Parceiro','e014-parceiro','e014-app.movepark.co','e014', false)
@@ -188,12 +190,20 @@ select is(
 update public.location_parking_type set wl_product_slug = 'vaga-coberta'
   where id = current_setting('test.lpt')::uuid;
 
+-- Voltar para o Hub passa pelo pré-voo do Hub (23/09/2026): contrato, recebedor, split, preço e capacidade.
+update public.company set onboarding_status = 'active', contract_accepted_at = now(), gateway_split_enabled = true
+  where id = current_setting('test.company')::uuid;
+insert into public.payout_recipient(company_id, provider, external_recipient_id, status)
+  values (current_setting('test.company')::uuid, 'pagarme', 're_e014_teste', 'active');
+insert into public.pricing_rule(location_parking_type_id, strategy) values (current_setting('test.lpt')::uuid, 'uniform_by_duration');
 update public.location set checkout_mode = 'hub' where id = current_setting('test.loc')::uuid;
 select is(
   (select public.external_checkout_url(lpt) from public.location_parking_type lpt
     where lpt.id = current_setting('test.lpt')::uuid),
   null, 'unidade que fecha no Hub não tem URL de saída'
 );
+-- O recebedor do pré-voo sai de cena (soft delete): o bloco de silêncio abaixo cria o dele.
+update public.payout_recipient set deleted_at = now() where external_recipient_id = 're_e014_teste';
 
 -- ── guardas de silêncio ────────────────────────────────────────────────────
 update public.company set hub_relationship = 'silent' where id = current_setting('test.silent')::uuid;

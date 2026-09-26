@@ -39,7 +39,7 @@ select is(pg_temp.b('superflex', 'flight_delay_protection'), true, 'Superflex co
 -- ── Suporte prioritário (só Superflex) ────────────────────────────────────────
 select is(pg_temp.b('basica', 'priority_support'), false, 'Básica sem suporte prioritário');
 select is(pg_temp.b('flex', 'priority_support'), false, 'Flex sem suporte prioritário');
-select is(pg_temp.b('superflex', 'priority_support'), true, 'Superflex com suporte prioritário');
+select is(pg_temp.b('superflex', 'priority_support'), false, 'Superflex sem suporte prioritário (fora do catálogo desde 25/09/2026)');
 
 select * from finish();
 rollback;

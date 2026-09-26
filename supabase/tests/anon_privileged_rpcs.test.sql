@@ -72,7 +72,7 @@ select ok(not has_function_privilege('anon', 'public.apply_fare_upgrade(uuid, fa
   'anon NÃO executa apply_fare_upgrade');
 select ok(not has_function_privilege('anon', 'public.change_booking_dates(uuid, timestamptz, timestamptz)', 'execute'),
   'anon NÃO executa change_booking_dates');
-select ok(not has_function_privilege('anon', 'public.extend_booking_flight_delay(uuid, timestamptz, text, text)', 'execute'),
+select ok(not has_function_privilege('anon', 'public.extend_booking_flight_delay(uuid, timestamptz, text, text, text, text)', 'execute'),
   'anon NÃO executa extend_booking_flight_delay');
 select ok(not has_function_privilege('anon', 'public.release_booking_capacity(uuid)', 'execute'),
   'anon NÃO executa release_booking_capacity');

@@ -209,7 +209,7 @@ export function Hero() {
         src="/images/hero-image.webp"
         alt=""
         aria-hidden="true"
-        fetchPriority="high"
+        {...{ fetchpriority: "high" }}
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover object-[75%_center] desktop:object-center"
       />

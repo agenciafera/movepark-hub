@@ -65,6 +65,21 @@ select is((select count(*)::int from public.wl_delivery where event_id = current
   'cancelamento continua liberando');
 
 -- ── unidade externa não reserva pelo Hub ───────────────────────────────────
+-- O banco do CI nasce do seed, sem parceiro externo: a unidade externa é criada aqui.
+do $$
+declare v_co uuid; v_loc uuid; v_pt uuid; v_cpt uuid;
+begin
+  insert into public.company(name, slug, wl_public_domain, wl_domain, wl_tenant_key, wl_sync_enabled)
+    values ('Gates Parceiro Externo','gates-parceiro-externo','https://gates.movepark.co/','gates-app.movepark.co','gates', false)
+    returning id into v_co;
+  insert into public.location(company_id, name, slug, checkout_mode)
+    values (v_co, 'Gates Externa','gates-externa','external') returning id into v_loc;
+  insert into public.parking_type(code, name) values ('gates_coberta','Gates Coberta') returning id into v_pt;
+  insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity)
+    values (v_co, v_pt, 40, 10) returning id into v_cpt;
+  insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active, wl_category_slug, wl_product_slug)
+    values (v_loc, v_cpt, 10, true, 'gates', 'vaga-coberta');
+end $$;
 select cmp_ok((select count(*)::int from public.location where checkout_mode = 'external' and deleted_at is null), '>', 0,
   'existe unidade externa no banco (senão o teste seguinte seria vazio)');
 select throws_ok(

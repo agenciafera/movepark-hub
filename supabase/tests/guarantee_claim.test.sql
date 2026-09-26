@@ -25,6 +25,8 @@ begin
   r := public.create_booking_atomic(cust, v_lpt, now() + interval '5 days', now() + interval '7 days', null, false, null, null, null, null, 'superflex');
   update public.booking set status = 'confirmed', check_in_at = now() + interval '1 hour', check_out_at = now() + interval '2 days',
          customer_phone = '+55 (41) 98814-9449' where id = (r ->> 'booking_id')::uuid;
+  -- Suporte prioritário saiu do catálogo em 25/09/2026; reserva antiga com o benefício congelado continua valendo.
+  update public.booking set fare_benefits = coalesce(fare_benefits, '{}'::jsonb) || '{"priority_support": true}'::jsonb where id = (r ->> 'booking_id')::uuid;
   perform set_config('test.bk', r ->> 'booking_id', false);
   perform set_config('test.code', r ->> 'code', false);
   perform set_config('test.cust', cust::text, false);

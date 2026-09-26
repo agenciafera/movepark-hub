@@ -512,7 +512,7 @@ export default function SejaParceiroPage() {
         <img
           src={HERO_IMAGE}
           alt="Dono de estacionamento e cliente se cumprimentando no pátio, ao fim da tarde"
-          fetchPriority="high"
+          {...{ fetchpriority: "high" }}
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
         />

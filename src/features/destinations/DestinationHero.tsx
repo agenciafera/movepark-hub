@@ -67,7 +67,7 @@ export function DestinationHero({
             alt={alt}
             className="absolute inset-0 h-full w-full object-cover"
             loading="eager"
-            fetchPriority="high"
+            {...{ fetchpriority: "high" }}
             decoding="async"
           />
           {/* Escurece o topo (para a trilha) e o rodapé (para o h1 e o cartão),

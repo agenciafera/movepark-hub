@@ -27,6 +27,18 @@ begin
   perform set_config('test.bk', r ->> 'booking_id', false);
   perform set_config('test.cid', v_cid::text, false);
   perform set_config('test.oper', oper::text, false);
+  -- O esperado sai do motor da mesma unidade (no CI o seed decide o preço). Diária = preço(3) - preço(2).
+  declare v_cs text; v_ls text; v_code text; v_take int; v_daily int;
+  begin
+    select c.slug, l.slug, pt.code, c.take_rate_bps into v_cs, v_ls, v_code, v_take
+      from public.location_parking_type lpt
+      join public.location l on l.id = lpt.location_id join public.company c on c.id = l.company_id
+      join public.company_parking_type cpt on cpt.id = lpt.company_parking_type_id join public.parking_type pt on pt.id = cpt.parking_type_id
+     where lpt.id = v_lpt;
+    v_daily := round(((public.simulate_price(v_cs, v_ls, v_code, 3) ->> 'price')::numeric - (public.simulate_price(v_cs, v_ls, v_code, 2) ->> 'price')::numeric) * 100)::int;
+    perform set_config('test.daily', coalesce(v_daily, 0)::text, false);
+    perform set_config('test.credit', round(coalesce(v_daily, 0) * (10000 - coalesce(v_take, 0)) / 10000.0)::int::text, false);
+  end;
 end $$;
 
 -- ── cancelamento com saída pedida além das 24h ───────────────────────────────
@@ -41,10 +53,10 @@ select ok((select requested_check_out_at from public.booking_fare_extension wher
   'a saída pedida fica gravada inteira');
 select is((select check_out_at from public.booking where id = current_setting('test.bk')::uuid), (select new_check_out_at from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid),
   'a reserva estende só até a coberta');
--- Agência Fera: diária a 27,00 no motor (2 diárias = 54, 3 = 81); o snapshot é a diária cheia
-select is((select overage_daily_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 2700, 'o preço da diária excedente fica congelado');
-select is((select overage_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 2700, 'excedente previsto: 24h além da coberta = 1 dia');
-select is((select partner_credit_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 2160, 'o crédito das 24h continua o de sempre (80% de 27,00)');
+-- O snapshot é a diária cheia do motor (calculada no fixture); o excedente pedido é 1 dia além da coberta.
+select is((select overage_daily_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), current_setting('test.daily')::int, 'o preço da diária excedente fica congelado');
+select is((select overage_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), current_setting('test.daily')::int, 'excedente previsto: 24h além da coberta = 1 dia');
+select is((select partner_credit_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), current_setting('test.credit')::int, 'o crédito das 24h continua o de sempre (parte do parceiro)');
 
 -- ── saída real pelo Operator ─────────────────────────────────────────────────
 -- A saída real não pode ficar no futuro: move a reserva 60h para trás (coberta = agora - 35h).
@@ -54,10 +66,10 @@ update public.booking_fare_extension set old_check_out_at = old_check_out_at - i
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.oper'), 'role', 'authenticated')::text, true);
 select is((select count(*)::int from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 1, 'o operador da empresa enxerga a extensão');
-select lives_ok(format($f$select public.operator_record_flight_checkout(%L::uuid, now() - interval '30 hours', 2700, null)$f$, current_setting('test.bk')),
+select lives_ok(format($f$select public.operator_record_flight_checkout(%L::uuid, now() - interval '30 hours', %s, null)$f$, current_setting('test.bk'), current_setting('test.daily')),
   'o operador registra a saída real e o valor cobrado');
 select is((select status::text || '|' || (checked_out_at is not null)::text from public.booking where id = current_setting('test.bk')::uuid), 'completed|true', 'a reserva é concluída com a hora real');
-select is((select overage_cents || '|' || overage_charged_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), '2700|2700',
+select is((select overage_cents || '|' || overage_charged_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), current_setting('test.daily') || '|' || current_setting('test.daily'),
   'saída real 5h depois da coberta (-35h): 1 dia de excedente, cobrado');
 select throws_ok(format($f$select public.operator_record_flight_checkout(%L::uuid, now(), 0, null)$f$, current_setting('test.bk')), 'P0001', null, 'não registra duas vezes');
 reset role;

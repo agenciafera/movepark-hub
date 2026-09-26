@@ -21,6 +21,19 @@ begin
    order by c.name, lpt.capacity desc limit 1;
   update public.location set is_listed = true where id = (select location_id from public.location_parking_type where id = v_lpt);
   perform set_config('test.lpt', v_lpt::text, false);
+  -- O esperado sai do motor da MESMA unidade: no banco vivo é a Agência Fera (27,00/dia), no CI é
+  -- quem o seed tiver. Diária = preço(3 dias) - preço(2 dias); crédito = parte do parceiro.
+  declare v_cs text; v_ls text; v_code text; v_take int; v_daily int;
+  begin
+    select c.slug, l.slug, pt.code, c.take_rate_bps into v_cs, v_ls, v_code, v_take
+      from public.location_parking_type lpt
+      join public.location l on l.id = lpt.location_id join public.company c on c.id = l.company_id
+      join public.company_parking_type cpt on cpt.id = lpt.company_parking_type_id join public.parking_type pt on pt.id = cpt.parking_type_id
+     where lpt.id = v_lpt;
+    v_daily := round(((public.simulate_price(v_cs, v_ls, v_code, 3) ->> 'price')::numeric - (public.simulate_price(v_cs, v_ls, v_code, 2) ->> 'price')::numeric) * 100)::int;
+    perform set_config('test.daily', coalesce(v_daily, 0)::text, false);
+    perform set_config('test.credit', round(coalesce(v_daily, 0) * (10000 - coalesce(v_take, 0)) / 10000.0)::int::text, false);
+  end;
   perform set_config('test.cid', (select c.id::text from public.location_parking_type lpt join public.location l on l.id = lpt.location_id join public.company c on c.id = l.company_id where lpt.id = v_lpt), false);
 
   -- Superflex, 2 diárias, confirmada; a saída é daqui a 1 hora (dentro da janela de acionamento).
@@ -36,7 +49,7 @@ begin
 end $$;
 
 select is((select fare_tier::text from public.booking where id = current_setting('test.bk')::uuid), 'superflex', 'fixture: Superflex confirmada');
-select is((select count(*)::int from public.payout_debt_settlement where company_id = current_setting('test.cid')::uuid and kind = 'flight_extension_credit'), 0, 'fixture: sem crédito ainda');
+select is((select count(*)::int from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 0, 'fixture: sem extensão ainda');
 
 select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '5 hours', 'customer', null, null)$f$, current_setting('test.bk')),
   'P0001', 'Informe o número do voo para acionar a proteção.', 'sem número do voo não aciona');
@@ -49,11 +62,12 @@ select lives_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, no
 select is((select flight_number from public.booking where id = current_setting('test.bk')::uuid), 'LA3456', 'o número do voo fica na reserva, normalizado');
 select is((select added_days || '|' || flight_number from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), '1|LA3456',
   'a extensão registra 1 diária e o voo');
--- Agência Fera: 2 diárias = 54, 3 diárias = 81 na coberta (motor); parte do parceiro a 80% = 21,60
-select is((select partner_credit_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 2160,
+-- O crédito é a parte do parceiro na diária extra, pelo motor (calculado no fixture, não cravado).
+select is((select partner_credit_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), current_setting('test.credit')::int,
   'o crédito ao parceiro é a parte dele na diária extra, pelo motor de preço');
-select is((select amount_cents || '|' || kind from public.payout_debt_settlement where id = (select settlement_id from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid)),
-  '2160|flight_extension_credit', 'o crédito vira acerto a favor do parceiro, pago pela Movepark');
+select is((select coalesce(amount_cents::text, '0') || '|' || coalesce(kind, 'flight_extension_credit') from public.payout_debt_settlement where id = (select settlement_id from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid)),
+  case when current_setting('test.credit')::int > 0 then current_setting('test.credit') || '|flight_extension_credit' else null end,
+  'o crédito vira acerto a favor do parceiro, pago pela Movepark (sem preço no motor, não há acerto)');
 
 select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '22 hours', 'customer', null, 'LA3456')$f$, current_setting('test.bk')),
   'P0001', 'A proteção de voo já foi usada nesta reserva.', 'uma vez por reserva');
