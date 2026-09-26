@@ -26,6 +26,10 @@ export interface WithdrawalEmailRow {
   requested_email_sent_at: string | null;
   settled_email_sent_at: string | null;
   raw?: unknown;
+  /** manual | automatic (E0.3.13). */
+  origin?: string | null;
+  /** partner | movepark: quem paga a taxa do saque. */
+  fee_borne_by?: string | null;
 }
 
 export type WithdrawalEmailKind = "requested" | "settled";
