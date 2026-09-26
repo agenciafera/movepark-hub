@@ -131,8 +131,28 @@ aparece com a origem e "taxa por conta da Movepark", e a devolução aparece na 
 
 ## Rollout e prova
 
-Migration, tipos, deploy de `recipient-withdraw`, `payout-auto-run`, `create-pix-charge` e
-`create-card-charge`, chave no Vault, cron. Prova real antes do dia 10: o dia da Agência Fera vira
-o de hoje, a Edge roda à mão, o saque sai sem taxa no razão, o crédito de R$ 3,67 aparece, uma
-compra de teste devolve o crédito no split, e o dia volta a herdar. Primeiro ciclo geral em
-10/10/2026.
+Tudo no ar em 26/09/2026: migration `20261127090000` aplicada, tipos, Edges `recipient-withdraw`,
+`payout-auto-run`, `create-pix-charge`, `create-card-charge` e `reconcile-payout-transfers`
+publicadas, chave `payout_auto_key` no Vault e cron `payout-auto-run` ativo (`0 12 * * *`).
+
+**O que foi medido ao vivo (26/09/2026):**
+
+- `dry_run` para 10/10: só a Agência Fera é devida (as outras cinco empresas com recebedor estão
+  com `gateway_missing_at`, e `payout_auto_due` as exclui de propósito).
+- Dia da Agência Fera posto como o de hoje e a Edge rodada à mão: ciclo `2026-09` gravado como
+  `below_min` (disponível R$ 0,00, mínimo R$ 50,00), rastro `payout-auto-run` no `payment_gateway_event`,
+  segunda rodada no mesmo dia devolveu `due: 0` (unique por mês segurou). Dia da empresa voltou a
+  herdar o global.
+- Manager › Conta da Agência Fera em produção: card "Próximo repasse automático" com
+  "Dia 10 de out", a frase do mínimo e "Em 26/09/2026 não saiu: R$ 0,00 disponíveis, abaixo do
+  mínimo. Acumula."; botão "Repassar agora" abre o diálogo com "Saque manual: a Pagar.me cobra
+  R$ 3,67 do seu saldo. O repasse automático do dia 10 não tem taxa para você."
+
+**O que ainda não foi provado com dinheiro real:** o saque automático em si e a devolução do crédito
+no split. A Agência Fera tem disponível zero (os saques forçados de 17/09 somam R$ 128,49 contra
+R$ 14,22 liberados), e nenhuma outra empresa tem recebedor no gateway. O caminho é o mesmo
+`performWithdrawal` do saque manual, provado em produção em 17/09, e o crédito está coberto por
+teste Deno (`split.test.ts`) e pgTAP (`payout_auto.test.sql`). A primeira prova real vem no ciclo
+de 10/10/2026, ou antes se uma compra de teste na Agência Fera levar o disponível acima de R$ 50:
+conferir com `select * from public.payout_auto_cycle where cycle_month = date '2026-10-01';` e, na
+venda seguinte, `payment.fee_credit_returned_cents = 367`.
