@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "selo",
+    "start_url": "/selo",
+    "start_sig": "sig:0ce1495b7eff4bd8",
+    "scenario_sig": "0ae9ca60efa98733"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "selo",
+    "start_url": "http://localhost:5273/selo",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Main page heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Selo de parceiro Movepark"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "pre",
+          "description": "Code block containing the seal HTML snippet"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "pre",
+            "text": "Selo Movepark"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "footer",
+          "description": "Page footer"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "footer",
+            "text": "Seja parceiro"
+          },
+          "selector": "footer"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a pagina exibe o texto Selo de parceiro Movepark, que existe um bloco de codigo contendo o texto Selo Movepark, e que o rodape exibe o texto Seja parceiro.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T17:32:02.384Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-26T17:32:02.901Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

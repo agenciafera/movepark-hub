@@ -20,6 +20,14 @@
   },
   "network": [
     {
+      "url": "**/rest/v1/destination_point?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/destination_i18n?*",
+      "json": []
+    },
+    {
       "url": "**/rest/v1/destination?*",
       "status": 500,
       "json": {

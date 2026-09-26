@@ -3,8 +3,8 @@
   "key": {
     "scenario_id": "manager-users-render",
     "start_url": "/manager/users",
-    "start_sig": "sig:f229d562bc655a9f",
-    "scenario_sig": "978344214b9cf361"
+    "start_sig": "sig:dc63c588ba8193ee",
+    "scenario_sig": "407e1bce9bb15e4f"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,12 +15,12 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Page heading"
+          "selector": "main h1",
+          "description": "Heading Usuários"
         },
         "expect": {
           "text_contains": {
-            "selector": "h1",
+            "selector": "main h1",
             "text": "Usuários"
           }
         },
@@ -31,12 +31,12 @@
         "type": "wait_for",
         "target": {
           "selector": "main p",
-          "description": "Subtitle paragraph"
+          "description": "Subtitle paragraph about roles and companies"
         },
         "expect": {
           "text_contains": {
             "selector": "main p",
-            "text": "Gerencie papéis e vínculos com empresas"
+            "text": "Papéis, vínculos com empresas e quem testa rascunho no site"
           }
         },
         "timeout_ms": 5000
@@ -45,31 +45,31 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "main table",
-          "description": "Users table"
+          "selector": "main h3",
+          "description": "Empty state heading Nenhum usuário"
         },
         "expect": {
           "text_contains": {
-            "selector": "main table",
-            "text": "Papel"
+            "selector": "main h3",
+            "text": "Nenhum usuário"
           },
-          "selector": "main table"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Passo 1: verifique que a pagina exibe o texto \"Usuários\". Passo 2: verifique que a pagina exibe o texto \"Gerencie papéis e vínculos com empresas\". Passo 3: verifique que a pagina exibe o texto \"Papel\".",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Usuários\". Passo 2: verifique que a pagina exibe o texto \"Papéis, vínculos com empresas e quem testa rascunho no site\". Passo 3: verifique que a pagina exibe o texto \"Nenhum usuário\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-01T16:31:46.109Z"
+      "at": "2026-09-26T18:30:14.954Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-01T16:31:48.149Z",
+    "created_at": "2026-09-26T18:30:16.142Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

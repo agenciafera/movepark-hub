@@ -3,8 +3,8 @@
   "key": {
     "scenario_id": "estacionamento-mapeado",
     "start_url": "/estacionamentos/aeroporto-qa/talentos-qa",
-    "start_sig": "sig:d81fd038a56350e0",
-    "scenario_sig": "e989748b5fe50e6f"
+    "start_sig": "sig:9d7dd055a6830f48",
+    "scenario_sig": "3ed2d6f9d9ed8dbe"
   },
   "plan": {
     "plan_version": "0.1",
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Heading Talentos QA"
+          "description": "Título Talentos QA — aguarda loader da página antes de verificar"
         },
         "expect": {
           "text_contains": {
@@ -24,14 +24,14 @@
             "text": "Talentos QA"
           }
         },
-        "timeout_ms": 5000
+        "timeout_ms": 10000
       },
       {
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "main",
-          "description": "Main content area"
+          "selector": "main p",
+          "description": "Primeiro parágrafo do artigo do estacionamento"
         },
         "expect": {
           "text_contains": {
@@ -45,8 +45,8 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "main",
-          "description": "Main content area with price info"
+          "selector": "main article",
+          "description": "Artigo com informações do estacionamento"
         },
         "expect": {
           "text_contains": {
@@ -61,7 +61,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main h2",
-          "description": "Administrator section heading"
+          "description": "Heading É o administrador deste estacionamento?"
         },
         "expect": {
           "text_contains": {
@@ -75,12 +75,12 @@
         "id": "a5",
         "type": "wait_for",
         "target": {
-          "selector": "main",
-          "description": "Main content area without R$ pricing"
+          "selector": "main article",
+          "description": "Artigo principal — ausência de preço em R$ no lote mapeado"
         },
         "expect": {
-          "not_visible": "main :has-text('R$')",
-          "selector": "main"
+          "not_visible": "main article p:has-text('R$')",
+          "selector": "main article"
         },
         "timeout_ms": 5000
       }
@@ -88,15 +88,15 @@
     "task": "Passo 1: verifique que a pagina exibe o texto \"Talentos QA\". Passo 2: verifique que a pagina exibe o texto \"Sem reserva online\". Passo 3: verifique que a pagina exibe o texto \"Preco: nao informado\". Passo 4: verifique que a pagina exibe o texto \"E o administrador deste estacionamento\". Passo 5: verifique que a pagina NAO exibe o texto \"R$\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-11T22:11:02.271Z"
+      "at": "2026-09-26T18:24:43.511Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-11T22:11:04.246Z",
+    "created_at": "2026-09-26T18:24:44.895Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

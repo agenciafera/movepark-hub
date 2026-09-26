@@ -1,0 +1,61 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "calculadora",
+    "start_url": "/calculadora-estacionamento-aeroporto",
+    "start_sig": "sig:a0992af507a8ab45",
+    "scenario_sig": "3482486b764d7859"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "calculadora",
+    "start_url": "http://localhost:5273/calculadora-estacionamento-aeroporto",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main select",
+          "description": "Destino select field in the calculator form"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "nav[aria-label='Trilha de navegação'] li:last-child",
+            "text": "Calculadora"
+          },
+          "selector": "main select"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "table tr td:last-child a",
+          "description": "Reservar link in the last column of the results ranking table"
+        },
+        "expect": {
+          "selector": "input[type='number']",
+          "count": {
+            "selector": "table tr td:last-child a",
+            "min": 1
+          }
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a pagina exibe o titulo Calculadora de estacionamento de aeroporto, um formulario com o campo Destino e o campo Diarias, e um ranking de resultados com pelo menos um botao Reservar.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T16:32:18.159Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-26T16:32:19.947Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

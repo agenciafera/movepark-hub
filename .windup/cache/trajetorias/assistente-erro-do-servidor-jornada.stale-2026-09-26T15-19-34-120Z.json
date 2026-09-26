@@ -107,7 +107,7 @@
       "at": "2026-08-04T17:47:06.373Z"
     }
   },
-  "status": "active",
+  "status": "stale",
   "stats": {
     "created_at": "2026-08-04T17:47:08.362Z",
     "last_replayed_at": null,

@@ -4,7 +4,7 @@
     "scenario_id": "institucional-navega-rodape-jornada",
     "start_url": "/",
     "start_sig": "sig:eb1cb13a1fa9ce8c",
-    "scenario_sig": "a72aabd59dc80c22"
+    "scenario_sig": "5b377efc82b454d6"
   },
   "plan": {
     "plan_version": "0.1",
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "h1",
-          "description": "heading 'Estacione em qualquer aeroporto do Brasil'"
+          "description": "Main heading on home page"
         },
         "expect": {
           "text_contains": {
@@ -31,7 +31,7 @@
         "type": "click",
         "target": {
           "selector": "footer a[href='/sobre']",
-          "description": "Sobre nós link in footer"
+          "description": "Sobre nós link in the footer under Movepark section"
         },
         "expect": {
           "url": "**/sobre"
@@ -43,12 +43,12 @@
         "type": "wait_for",
         "target": {
           "selector": "main",
-          "description": "main content of Sobre nós page"
+          "description": "Main content area on Sobre nós page"
         },
         "expect": {
           "text_contains": {
             "selector": "main",
-            "text": "Vaga garantida"
+            "text": "Reserva fácil. Viagem tranquila."
           }
         },
         "timeout_ms": 10000
@@ -58,7 +58,7 @@
         "type": "click",
         "target": {
           "selector": "footer a[href='/termos']",
-          "description": "Termos de uso link in footer"
+          "description": "Termos de uso link in the footer under Movepark section"
         },
         "expect": {
           "url": "**/termos"
@@ -70,7 +70,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main",
-          "description": "main content of Termos de Uso page"
+          "description": "Main content area on Termos de uso page"
         },
         "expect": {
           "text_contains": {
@@ -85,7 +85,7 @@
         "type": "click",
         "target": {
           "selector": "footer a[href='/privacidade']",
-          "description": "Política de privacidade link in footer"
+          "description": "Política de privacidade link in the footer under Movepark section"
         },
         "expect": {
           "url": "**/privacidade"
@@ -97,7 +97,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main",
-          "description": "main content of Política de Privacidade page"
+          "description": "Main content area on Política de privacidade page"
         },
         "expect": {
           "text_contains": {
@@ -112,7 +112,7 @@
         "type": "click",
         "target": {
           "selector": "footer a[href='/seja-parceiro']",
-          "description": "Seja parceiro link in footer"
+          "description": "Seja parceiro link in the footer under Para donos de estacionamento section"
         },
         "expect": {
           "url": "**/seja-parceiro"
@@ -124,7 +124,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main",
-          "description": "main content of Seja Parceiro page"
+          "description": "Main content area on Seja parceiro page"
         },
         "expect": {
           "text_contains": {
@@ -136,18 +136,18 @@
         "timeout_ms": 10000
       }
     ],
-    "task": "Passo 1: verifique que a pagina exibe o texto \"Estacione em qualquer aeroporto do Brasil\". Passo 2: clique no link \"Sobre nós\" do rodape. Passo 3: verifique que a pagina exibe o texto \"Vaga garantida\". Passo 4: clique no link \"Termos de uso\" do rodape. Passo 5: verifique que a pagina exibe o texto \"Termos de Uso\". Passo 6: clique no link \"Política de privacidade\" do rodape. Passo 7: verifique que a pagina exibe o texto \"Política de Privacidade\". Passo 8: clique no link \"Seja parceiro\" do rodape. Passo 9: verifique que a pagina exibe o texto \"Encha suas vagas com reservas online\".",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Estacione em qualquer aeroporto do Brasil\". Passo 2: clique no link \"Sobre nós\" do rodape. Passo 3: verifique que a pagina exibe o texto \"Reserva fácil. Viagem tranquila.\". Passo 4: clique no link \"Termos de uso\" do rodape. Passo 5: verifique que a pagina exibe o texto \"Termos de Uso\". Passo 6: clique no link \"Política de privacidade\" do rodape. Passo 7: verifique que a pagina exibe o texto \"Política de Privacidade\". Passo 8: clique no link \"Seja parceiro\" do rodape. Passo 9: verifique que a pagina exibe o texto \"Encha suas vagas com reservas online\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T13:30:44.644Z"
+      "at": "2026-09-26T17:59:11.241Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T13:30:47.279Z",
+    "created_at": "2026-09-26T17:59:17.236Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

@@ -3,8 +3,8 @@
   "key": {
     "scenario_id": "home-vitrine",
     "start_url": "/",
-    "start_sig": "sig:9762b1205e6e924b",
-    "scenario_sig": "1e34503e5144cc6a"
+    "start_sig": "sig:c969f052cf00cbe2",
+    "scenario_sig": "096b2125f35f717e"
   },
   "plan": {
     "plan_version": "0.1",
@@ -15,8 +15,14 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h2:has-text(\"Estacionamentos Populares\")",
-          "description": "Heading nível 2 'Estacionamentos Populares'"
+          "selector": "main h2",
+          "description": "Heading 'Estacionamentos em destaque' in main content"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Estacionamentos em destaque"
+          }
         },
         "timeout_ms": 5000
       },
@@ -24,8 +30,14 @@
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "h2:has-text(\"O que você tem em toda reserva\")",
-          "description": "Heading nível 2 'O que você tem em toda reserva'"
+          "selector": "main h2",
+          "description": "Heading 'O que você tem em toda reserva' in main content"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "O que você tem em toda reserva"
+          }
         },
         "timeout_ms": 5000
       },
@@ -33,31 +45,31 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "h3:has-text(\"Cancelamento grátis\")",
-          "description": "Heading nível 3 'Cancelamento grátis'"
+          "selector": "main h3",
+          "description": "Heading 'Sem taxa da Movepark' in main content"
         },
         "expect": {
           "text_contains": {
-            "selector": "h3:has-text(\"Cancelamento grátis\")",
-            "text": "Cancelamento grátis"
+            "selector": "main",
+            "text": "Sem taxa da Movepark"
           },
-          "selector": "h3:has-text(\"Cancelamento grátis\")"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Passo 1: verifique que a pagina exibe o texto \"Estacionamentos Populares\". Passo 2: verifique que a pagina exibe o texto \"O que você tem em toda reserva\". Passo 3: verifique que a pagina exibe o texto \"Cancelamento grátis\".",
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Estacionamentos em destaque\". Passo 2: verifique que a pagina exibe o texto \"O que você tem em toda reserva\". Passo 3: verifique que a pagina exibe o texto \"Sem taxa da Movepark\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-01T16:39:48.376Z"
+      "at": "2026-09-26T18:25:36.593Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-01T16:39:49.113Z",
+    "created_at": "2026-09-26T18:25:37.418Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

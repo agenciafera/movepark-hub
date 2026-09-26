@@ -1,7 +1,7 @@
 {
   "scenario_id": "manager-users",
   "start_url": "/manager/users",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Usuários\", depois a descricao \"Gerencie papéis e vínculos com empresas.\", depois o texto \"Papel\".",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Usuários\", depois a descricao \"Papéis, vínculos com empresas e quem testa rascunho no site.\", depois o texto \"Nenhum usuário\".",
   "tags": [
     "smoke",
     "leitura",

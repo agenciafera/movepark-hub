@@ -2,21 +2,21 @@
   "cache_version": "0.2",
   "key": {
     "scenario_id": "destinos-catalogo",
-    "start_url": "/destinos",
-    "start_sig": "sig:2644ef779c146a8c",
-    "scenario_sig": "9e47980addb3bedc"
+    "start_url": "/estacionamentos",
+    "start_sig": "sig:c969f052cf00cbe2",
+    "scenario_sig": "5db723b978516fa1"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "destinos-catalogo",
-    "start_url": "http://localhost:5180/destinos",
+    "start_url": "http://localhost:5273/estacionamentos",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
           "selector": "header",
-          "description": "cabeçalho do site"
+          "description": "cabeçalho da página"
         },
         "expect": {
           "text_contains": {
@@ -31,12 +31,12 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "título principal da página de destinos"
+          "description": "título principal da página"
         },
         "expect": {
           "text_contains": {
             "selector": "main h1",
-            "text": "Destinos atendidos pela Movepark"
+            "text": "Estacionamento nos aeroportos atendidos pela Movepark"
           }
         },
         "timeout_ms": 5000
@@ -46,11 +46,11 @@
         "type": "wait_for",
         "target": {
           "selector": "main h2",
-          "description": "seção Mais buscados na página"
+          "description": "subtítulo Mais buscados"
         },
         "expect": {
           "text_contains": {
-            "selector": "main",
+            "selector": "main h2",
             "text": "Mais buscados"
           }
         },
@@ -61,7 +61,7 @@
         "type": "wait_for",
         "target": {
           "selector": "footer",
-          "description": "rodapé do site"
+          "description": "rodapé da página"
         },
         "expect": {
           "text_contains": {
@@ -73,18 +73,18 @@
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Destinos atendidos pela Movepark' e o texto 'Mais buscados, e que o rodape exibe o texto Seja parceiro.",
+    "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto \"Estacionamento nos aeroportos atendidos pela Movepark\" e o texto \"Mais buscados\", e que o rodape exibe o texto Seja parceiro.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-07-31T20:02:07.698Z"
+      "at": "2026-09-26T16:40:53.558Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-07-31T20:02:09.433Z",
+    "created_at": "2026-09-26T16:40:54.350Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

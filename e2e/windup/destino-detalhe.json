@@ -10,9 +10,24 @@
   "hints": [
     "Sao passos numerados: cada um vira uma acao propria do plano.",
     "Use text_contains com selector body em cada checagem.",
-    "A rota tem parametro e os dados vem do stub."
+    "A rota tem parametro e os dados vem do stub.",
+    "A pagina carrega por loader: espere o titulo do destino aparecer antes de verificar (o FAQ vem de um stub vazio)."
   ],
   "network": [
+    {
+      "url": "**/functions/v1/get-faq*",
+      "json": {
+        "items": []
+      }
+    },
+    {
+      "url": "**/rest/v1/destination_point?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/destination_i18n?*",
+      "json": []
+    },
     {
       "url": "**/rest/v1/destination?*",
       "json": [
@@ -28,7 +43,8 @@
           "latitude": -22.9,
           "longitude": -47.1,
           "intro": "Estacionamento perto do Aeroporto QA.",
-          "created_at": "2026-08-01T12:00:00Z"
+          "created_at": "2026-08-01T12:00:00Z",
+          "public_slug": "aeroporto-qa"
         }
       ]
     },

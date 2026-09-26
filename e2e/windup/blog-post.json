@@ -12,7 +12,8 @@
     "Passo 2 prova que o corpo em markdown virou paragrafo renderizado.",
     "O PRIMEIRO paragrafo do artigo e a linha de autor e data. O corpo do post comeca depois do subtitulo 'Como escolher', e e la que o texto do passo 2 esta.",
     "Passo 3 prova o bloco que leva do post para os estacionamentos do destino.",
-    "A URL termina com barra de proposito: e a canonica herdada do WordPress."
+    "A URL termina com barra de proposito: e a canonica herdada do WordPress.",
+    "O bloco \"Vai viajar por\" fica na barra lateral, fora do article: use text_contains com selector body."
   ],
   "network": [
     {
@@ -40,7 +41,9 @@
             "id": "d-1",
             "name": "Aeroporto QA",
             "short_name": "QA",
-            "slug": "aeroporto-qa"
+            "slug": "aeroporto-qa",
+            "public_slug": "aeroporto-qa",
+            "is_published": true
           },
           "category": {
             "id": "c-1",

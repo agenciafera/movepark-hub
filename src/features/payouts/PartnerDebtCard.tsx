@@ -21,7 +21,7 @@ const brl = (cents: number) => formatBRL(cents / 100);
 export function PartnerDebtCard({ companyId }: { companyId: string }) {
   const { data, isLoading } = usePayoutDebtLines(companyId);
   if (isLoading) return <Skeleton className="h-32 w-full" />;
-  if (!data) return null;
+  if (!data || !Array.isArray(data.origins)) return null;
 
   const temHistorico = data.origins.length > 0 || data.recoveries.length > 0 || data.settlements.length > 0;
   if (data.debt_cents === 0 && !temHistorico) return null;

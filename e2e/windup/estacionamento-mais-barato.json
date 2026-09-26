@@ -9,6 +9,7 @@
   "hints": [
     "A pagina responde qual o estacionamento mais barato perto do aeroporto, com vencedor por duracao.",
     "O titulo e o <h1>; a tabela de menor preco vem depois da resposta direta.",
-    "Os dois botoes de acao levam para o destino e para a pagina de precos."
+    "Os dois botoes de acao levam para o destino e para a pagina de precos.",
+    "Ha dois links para a pagina de precos; o que interessa e o de texto \"Comparar precos em Viracopos\". Use text_contains no body em vez de selector por href."
   ]
 }

@@ -9,6 +9,7 @@
   "hints": [
     "A pagina e a URL propria de uma pergunta do FAQ, no formato resposta primeiro.",
     "O titulo e o <h1>; a resposta rapida vem logo abaixo dele, num bloco destacado.",
-    "O link Todas as perguntas frequentes leva de volta para /faq."
+    "O link Todas as perguntas frequentes leva de volta para /faq.",
+    "O link \"Todas as perguntas frequentes\" fica fora do article (rodape da pergunta): use text_contains com selector body, nao article > a."
   ]
 }

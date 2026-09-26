@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "uber-ou-estacionamento",
+    "start_url": "/uber-ou-estacionamento-aeroporto",
+    "start_sig": "sig:c969f052cf00cbe2",
+    "scenario_sig": "73474da9b79ef0b3"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "uber-ou-estacionamento",
+    "start_url": "http://localhost:5273/uber-ou-estacionamento-aeroporto",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "input[name='modo']",
+          "description": "radio button de modo na calculadora (confirma que o redirect ocorreu)"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "O que você quer calcular?"
+          }
+        },
+        "timeout_ms": 10000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "input[name='modo'][value='app']:checked",
+          "description": "radio button app pré-selecionado (modo comparação com app)"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Tarifa dinâmica do app"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "input[name='modo'][value='app']:checked",
+          "description": "radio button app confirmado para verificação final"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Carro ou app?"
+          },
+          "selector": "input[name='modo'][value='app']:checked"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "A pagina /uber-ou-estacionamento-aeroporto redireciona para a calculadora no modo de comparacao com app. Passo 1: verifique que a pagina exibe o texto \"O que você quer calcular?\". Passo 2: verifique que a pagina exibe o texto \"Tarifa dinâmica do app\". Passo 3: verifique que a pagina exibe o texto \"Carro ou app?\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T18:42:15.962Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-26T18:42:17.340Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

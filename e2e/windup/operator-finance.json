@@ -14,6 +14,15 @@
   },
   "network": [
     {
+      "url": "**/rpc/payout_debt_lines*",
+      "json": {
+        "debt_cents": 0,
+        "origins": [],
+        "recoveries": [],
+        "settlements": []
+      }
+    },
+    {
       "url": "**/auth/v1/user*",
       "json": {
         "id": "00000000-0000-4000-8000-000000000001",

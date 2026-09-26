@@ -46,17 +46,20 @@ export function GatewayTrail({ bookingId }: { bookingId: string }) {
   const { data, isLoading, isError } = useBookingGatewayTrail(bookingId);
   if (isLoading) return <Skeleton className="h-16 w-full" />;
   if (isError || !data) return null;
-  if (data.payments.length === 0 && data.events.length === 0) {
+  // Resposta fora do formato (RPC antiga, stub de teste) não derruba a tela da reserva.
+  const payments = Array.isArray(data.payments) ? data.payments : [];
+  const events = Array.isArray(data.events) ? data.events : [];
+  if (payments.length === 0 && events.length === 0) {
     return <p className="text-body-sm text-muted">Nenhuma chamada ao gateway nesta reserva.</p>;
   }
   return (
     <div className="space-y-3" data-testid="gateway-trail">
-      {data.payments.map((p) => (
+      {payments.map((p) => (
         <PaymentCard key={p.id} p={p} />
       ))}
-      {data.events.length > 0 && (
+      {events.length > 0 && (
         <ol className="space-y-1">
-          {data.events.map((e) => (
+          {events.map((e) => (
             <EventRow key={e.id} e={e} />
           ))}
         </ol>

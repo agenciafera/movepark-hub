@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "faq-pergunta",
+    "start_url": "/faq/como-cancelo-uma-reserva",
+    "start_sig": "sig:c969f052cf00cbe2",
+    "scenario_sig": "e817355c4eab6615"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "faq-pergunta",
+    "start_url": "http://localhost:5273/faq/como-cancelo-uma-reserva",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Main page title heading level 1"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Como cancelo uma reserva?"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h2",
+          "description": "Resposta rápida section heading level 2"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h2",
+            "text": "Resposta rápida"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "a[href='/faq']",
+          "description": "Link back to all frequently asked questions"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "body",
+            "text": "Todas as perguntas frequentes"
+          },
+          "selector": "a[href='/faq']"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a pagina exibe o titulo Como cancelo uma reserva?, uma secao com o texto Resposta rapida e um link com o texto Todas as perguntas frequentes.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T17:55:29.760Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-26T17:55:30.712Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

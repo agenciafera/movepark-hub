@@ -3,8 +3,8 @@
   "key": {
     "scenario_id": "manager-users",
     "start_url": "/manager/users",
-    "start_sig": "sig:f229d562bc655a9f",
-    "scenario_sig": "be77102951092fca"
+    "start_sig": "sig:dc63c588ba8193ee",
+    "scenario_sig": "98a8dd6211815cdd"
   },
   "plan": {
     "plan_version": "0.1",
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Page heading 'Usuários'"
+          "description": "Page title heading Usuários"
         },
         "expect": {
           "text_contains": {
@@ -31,12 +31,12 @@
         "type": "wait_for",
         "target": {
           "selector": "main p",
-          "description": "Description paragraph below the heading"
+          "description": "Page description paragraph about roles and companies"
         },
         "expect": {
           "text_contains": {
             "selector": "main p",
-            "text": "Gerencie papéis e vínculos com empresas."
+            "text": "Papéis, vínculos com empresas e quem testa rascunho no site."
           }
         },
         "timeout_ms": 5000
@@ -45,31 +45,31 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "main table thead tr",
-          "description": "Table header row containing the 'Papel' column"
+          "selector": "main h3",
+          "description": "Empty state heading Nenhum usuário"
         },
         "expect": {
           "text_contains": {
-            "selector": "main table thead tr",
-            "text": "Papel"
+            "selector": "main h3",
+            "text": "Nenhum usuário"
           },
-          "selector": "main table thead tr"
+          "selector": "main h3"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Usuários\", depois a descricao \"Gerencie papéis e vínculos com empresas.\", depois o texto \"Papel\".",
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Usuários\", depois a descricao \"Papéis, vínculos com empresas e quem testa rascunho no site.\", depois o texto \"Nenhum usuário\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-01T16:06:02.632Z"
+      "at": "2026-09-26T18:29:53.680Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-01T16:06:04.611Z",
+    "created_at": "2026-09-26T18:29:54.868Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

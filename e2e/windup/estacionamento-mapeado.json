@@ -11,9 +11,24 @@
     "Sao passos numerados: cada um vira uma acao propria do plano.",
     "Use text_contains com selector body em cada checagem.",
     "O passo 5 e uma ausencia: a pagina do lote mapeado nao tem preco nem caminho de reserva (E0.17-e). Use a checagem de texto ausente.",
-    "A rota tem dois parametros e os dados vem do stub: o destino do rest/v1/destination e o lote do rpc/destination_prospect_cards."
+    "A rota tem dois parametros e os dados vem do stub: o destino do rest/v1/destination e o lote do rpc/destination_prospect_cards.",
+    "A pagina carrega por loader: espere o titulo do destino aparecer antes de verificar (o FAQ vem de um stub vazio)."
   ],
   "network": [
+    {
+      "url": "**/functions/v1/get-faq*",
+      "json": {
+        "items": []
+      }
+    },
+    {
+      "url": "**/rest/v1/destination_point?*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/destination_i18n?*",
+      "json": []
+    },
     {
       "url": "**/rest/v1/destination?*",
       "json": [
@@ -29,7 +44,8 @@
           "is_published": true,
           "latitude": -22.9,
           "longitude": -47.1,
-          "created_at": "2026-08-01T12:00:00Z"
+          "created_at": "2026-08-01T12:00:00Z",
+          "public_slug": "aeroporto-qa"
         }
       ]
     },
@@ -47,7 +63,8 @@
           "amenities": [],
           "description": null,
           "distance_km": 1.2,
-          "reference_name": null
+          "reference_name": null,
+          "public_slug": "talentos-qa"
         }
       ]
     },

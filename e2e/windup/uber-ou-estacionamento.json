@@ -1,14 +1,14 @@
 {
   "scenario_id": "uber-ou-estacionamento",
   "start_url": "/uber-ou-estacionamento-aeroporto",
-  "task": "Verifique que a URL redireciona para a calculadora ja no modo de comparacao com app: a pergunta O que voce quer calcular? aparece com a opcao Estacionar ou ir de app? selecionada, e a secao De app ou de carro? mostra dois cartoes de comparacao.",
+  "task": "A pagina /uber-ou-estacionamento-aeroporto redireciona para a calculadora no modo de comparacao com app. Passo 1: verifique que a pagina exibe o texto \"O que você quer calcular?\". Passo 2: verifique que a pagina exibe o texto \"Tarifa dinâmica do app\". Passo 3: verifique que a pagina exibe o texto \"Carro ou app?\".",
   "tags": [
     "smoke",
     "leitura"
   ],
   "hints": [
-    "A URL antiga redireciona para /calculadora-estacionamento-aeroporto?modo=app, que pre-seleciona o modo de comparacao.",
-    "No modo app, a lateral ganha os campos de distancia, tarifa dinamica, corrida manual e combustivel; o ranking de precos fica no outro modo.",
-    "A secao De app ou de carro? mostra De app, ida e volta contra De carro, estacionando, com o cartao vencedor destacado."
+    "No modo app, a lateral ganha os campos de distancia, tarifa dinamica do app, corrida manual e combustivel; o ranking de precos fica no outro modo.",
+    "O texto \"Carro ou app?\" aparece mais de uma vez (opcao do seletor e eyebrow do resultado): use text_contains com selector body.",
+    "Nao verifique a URL (o checador de url ignora a query string): confira so por texto, com text_contains no body em cada passo."
   ]
 }

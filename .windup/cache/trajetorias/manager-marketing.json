@@ -3,38 +3,50 @@
   "key": {
     "scenario_id": "manager-marketing",
     "start_url": "/manager/marketing",
-    "start_sig": "sig:04506123c4a2295d",
-    "scenario_sig": "d8918bf041f48691"
+    "start_sig": "sig:ed8fa64d6b2fb31a",
+    "scenario_sig": "0eb0c965aef50910"
   },
   "plan": {
     "plan_version": "0.1",
     "scenario_id": "manager-marketing",
-    "start_url": "http://localhost:5399/manager/marketing",
+    "start_url": "http://localhost:5273/manager/marketing",
     "actions": [
       {
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Wait for page heading to load"
+          "selector": "main h1",
+          "description": "Marketing page main heading"
         },
-        "timeout_ms": 5000
+        "timeout_ms": 10000
       },
       {
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "h1",
-          "description": "Verify Marketing heading"
+          "selector": "main h1",
+          "description": "Marketing heading text"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Marketing"
+          }
         },
         "timeout_ms": 5000
       },
       {
         "id": "a3",
-        "type": "wait_for",
+        "type": "click",
         "target": {
-          "selector": "[id='radix-:r8:-trigger-perfis']",
-          "description": "Verify Perfis de cliente tab"
+          "selector": "[id=\"radix-:r8:-trigger-perfis\"]",
+          "description": "Perfis de cliente tab button"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[id=\"radix-:r8:-trigger-perfis\"]",
+            "text": "Perfis de cliente"
+          }
         },
         "timeout_ms": 5000
       },
@@ -42,39 +54,31 @@
         "id": "a4",
         "type": "wait_for",
         "target": {
-          "selector": "table",
-          "description": "Verify Campeao text in table"
+          "selector": "[role=\"tabpanel\"]",
+          "description": "Active tab panel content showing customer profile metrics"
         },
-        "timeout_ms": 5000
-      },
-      {
-        "id": "a5",
-        "type": "wait_for",
-        "target": {
-          "selector": "body",
-          "description": "Final verification of all elements"
-        },
-        "timeout_ms": 5000,
         "expect": {
           "text_contains": {
-            "selector": "body",
-            "text": "Perfis de cliente"
-          }
-        }
+            "selector": "[role=\"tabpanel\"]",
+            "text": "Ticket médio"
+          },
+          "selector": "[role=\"tabpanel\"]"
+        },
+        "timeout_ms": 10000
       }
     ],
-    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Marketing\". Passo 3: verifique que a pagina exibe o texto \"Perfis de cliente\". Passo 4: verifique que a pagina exibe o texto \"Campeao\".",
+    "task": "Passo 1: aguarde a pagina carregar. Passo 2: verifique que a pagina exibe o texto \"Marketing\". Passo 3: verifique que a pagina exibe o texto \"Perfis de cliente\". Passo 4: verifique que a pagina exibe o texto \"Ticket médio\".",
     "generated_by": {
-      "model": "google/gemini-3.1-flash-lite",
-      "at": "2026-08-16T19:36:44.667Z"
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T18:28:03.581Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-16T19:36:47.545Z",
+    "created_at": "2026-09-26T18:28:04.850Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

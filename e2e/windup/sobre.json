@@ -1,7 +1,7 @@
 {
   "scenario_id": "sobre",
   "start_url": "/sobre",
-  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Vaga garantida, e que o rodape exibe o texto Seja parceiro.",
+  "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Reserva fácil. Viagem tranquila., e que o rodape exibe o texto Seja parceiro.",
   "tags": [
     "smoke",
     "leitura"

@@ -1,0 +1,90 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "precos",
+    "start_url": "/precos",
+    "start_sig": "sig:0f670e678968c594",
+    "scenario_sig": "87e2395ca3c9aeff"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "precos",
+    "start_url": "http://localhost:5273/precos",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "nav[aria-label='Trilha de navegação']",
+          "description": "breadcrumb navigation showing Índice de preços as the current page"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "nav[aria-label='Trilha de navegação']",
+            "text": "Índice de preços"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content with price column toggle buttons"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Diária avulsa"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "main content with 15 diárias column toggle"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "15 diárias"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "a[href='/estacionamentos/aeroporto-guarulhos/aeropark']",
+          "description": "Reservar link for Aeropark at Guarulhos airport"
+        },
+        "expect": {
+          "count": {
+            "selector": "a[href='/estacionamentos/aeroporto-guarulhos/aeropark']",
+            "min": 1
+          },
+          "selector": "a[href='/estacionamentos/aeroporto-guarulhos/aeropark']"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique que a pagina exibe o titulo Indice de precos de estacionamento, uma tabela por aeroporto com as colunas Diaria avulsa, 7 dias e 15 dias, e pelo menos um link Reservar.",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T17:29:22.189Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-26T17:29:23.809Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

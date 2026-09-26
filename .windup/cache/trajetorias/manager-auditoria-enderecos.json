@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-auditoria-enderecos",
+    "start_url": "/manager/auditoria-enderecos",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "69f8f3fd09e6a7c6"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-auditoria-enderecos",
+    "start_url": "http://localhost:5273/manager/auditoria-enderecos",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Page main heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "Auditoria de endereços"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "button:has-text('Verificar no Google')",
+          "description": "Verificar no Google button"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "button:has-text('Verificar no Google')",
+            "text": "Verificar no Google"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Nenhuma pendência"
+          },
+          "selector": "main h3"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Auditoria de endereços\", depois o botao \"Verificar no Google\", depois o texto \"Nenhuma pendência\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-09-26T16:57:31.002Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-09-26T16:57:32.185Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

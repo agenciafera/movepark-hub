@@ -485,7 +485,7 @@ async function destinoLoader({ params, request }: LoaderFunctionArgs) {
     prospects,
     units,
     priceDestination:
-      index?.destinations.find(
+      index?.destinations?.find(
         (d: { public_slug: string | null }) => d.public_slug === publicSlug,
       ) ?? null,
     related: irmaos,
