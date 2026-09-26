@@ -1,11 +1,14 @@
 # Publicação automática do site
 
 **Status:** implementado em 19/08/2026, migration `20261030140000_deploy_automatico_no_save.sql`.
-**Nunca publicou nada.** O Deploy Hook não chegou a ser criado, o segredo do Vault não existe e o
-mecanismo ficou inerte desde 19/08/2026. Em 18/09 eram **809 pedidos na fila, nenhum despachado**.
-O diagnóstico está em "O silêncio de 13 dias"; a checagem que passou a reclamar está em "O alarme",
-e o motivo de ela também ter ficado em silêncio por 17 dias está em "O alarme que ninguém ouviu";
-o passo que falta está em "Ativação".
+**Publicando desde 26/09/2026.** O Deploy Hook `site-rebuild-supabase` (branch `main`) foi criado
+no painel do Workers e a URL entrou no Vault como `cloudflare_deploy_hook_url`; no minuto seguinte
+o cron despachou os **952 pedidos** que esperavam desde 19/08 num único build (`ultimo_build`
+22:44 UTC), e `site_rebuild_health()` passou a responder `ok: true`. Entre 19/08 e 26/09 o
+mecanismo ficou inerte: o diagnóstico está em "O silêncio de 13 dias", a checagem que passou a
+reclamar está em "O alarme", e o motivo de ela também ter ficado em silêncio por 17 dias está em
+"O alarme que ninguém ouviu". "Ativação" descreve o passo de dashboard, para o dia em que a URL
+precisar ser rotacionada.
 
 ## O problema
 
@@ -198,7 +201,11 @@ a issue fecha sozinha, como antes.
 
 Enquanto o segredo não existir, a fila enche e nada é publicado: o cron responde
 `sem_deploy_hook` e não carimba nada. No dia em que o segredo entrar, o minuto seguinte publica
-tudo o que se acumulou. Nada se perde.
+tudo o que se acumulou. Nada se perde. Foi exatamente o que aconteceu em 26/09/2026: segredo
+criado às 22:43 UTC, cron das 22:44 despachou os 952 pedidos acumulados e o painel do Workers
+mostrou o build "site-rebuild-supabase - hook de implantação" em andamento. Os passos abaixo
+valem para rotacionar a URL (apagar o hook no painel e criar outro), não mais para a primeira
+ativação.
 
 1. No Cloudflare, em **Workers & Pages › movepark-hub › Settings › Builds › Deploy Hooks**, crie um
    hook na branch `main`. Ele é uma URL secreta: quem tiver a URL dispara build.
