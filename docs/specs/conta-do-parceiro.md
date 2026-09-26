@@ -16,10 +16,13 @@ a própria), sem versão "suavizada".
 1. **Da venda para o saldo do recebedor**, na Pagar.me, no momento do pagamento: PIX libera na
    hora; cartão entra como "a liberar" e vira disponível em D+30 por parcela (antecipação é
    opcional e custa taxa). O Hub não segura nada até o check-in.
-2. **Do saldo para a conta bancária**, só por saque manual (botão "Repassar para o banco" na
-   conta). A transferência automática da Pagar.me fica desligada em todo recebedor e não tem
-   mais UI que a religue: o que a Movepark configura por empresa é o prazo de liberação
-   (Recebedores › Prazo de saque).
+2. **Do saldo para a conta bancária**, por **repasse automático mensal** (dia 10 por padrão,
+   configurável por empresa, sem taxa para o parceiro; ver
+   [repasse-automatico-mensal.md](./repasse-automatico-mensal.md), 26/09/2026) ou por saque manual
+   (botão "Repassar agora" na conta, taxa do parceiro). A transferência automática nativa da
+   Pagar.me continua desligada em todo recebedor: quem saca no dia X é o nosso cron, com o mesmo
+   saque do botão. O que a Movepark configura por empresa fica em Recebedores › Repasse (prazo de
+   liberação, dia e liga/desliga).
 
 A data de liberação de cada venda vem do recebível do gateway (`payment_date`), apurada junto
 com a taxa pelo `reconcile-gateway-fees` e guardada em `payment.partner_release_at`.

@@ -182,6 +182,10 @@ const FAQ = [
     a: "O cliente paga com antecedência (PIX ou cartão). A Movepark garante o valor e faz o repasse organizado pra sua conta, sem inadimplência e sem cobrança manual.",
   },
   {
+    q: "Quando eu recebo?",
+    a: "Todo dia 10 a Movepark repassa para a sua conta o que já está liberado, sem taxa nenhuma para você. Precisa antes? Tem saque manual no painel a qualquer hora; nesse a Pagar.me cobra R$ 3,67 por saque.",
+  },
+  {
     q: "Preciso ter exclusividade com a Movepark?",
     a: "Não. Você continua vendendo pelos seus canais normalmente. A Movepark é mais um canal de reservas trabalhando a seu favor.",
   },

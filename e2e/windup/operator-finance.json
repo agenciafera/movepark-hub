@@ -1,7 +1,7 @@
 {
   "scenario_id": "operator-finance",
   "start_url": "/operator/finance",
-  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Repasses\", depois o texto \"Sua jornada na Movepark\", depois o texto \"Proximo passo\".",
+  "task": "Verifique, em quatro checagens separadas, que a pagina exibe o titulo \"Repasses\", depois o texto \"Proximo repasse automatico\", depois o texto \"Sua jornada na Movepark\", depois o texto \"Proximo passo\".",
   "tags": [
     "smoke",
     "leitura",
@@ -114,6 +114,22 @@
       "json": []
     },
     {
+      "url": "**/rpc/payout_auto_forecast*",
+      "json": {
+        "company_id": "00000000-0000-4000-8000-0000000000c1",
+        "enabled": true,
+        "day": 10,
+        "source": "global",
+        "next_at": "2026-10-10",
+        "forecast_cents": 14133,
+        "min_cents": 5000,
+        "below_min": false,
+        "recipient_status": "active",
+        "recipient_missing": false,
+        "last_cycle": null
+      }
+    },
+    {
       "url": "**/rpc/**",
       "json": []
     }
@@ -121,6 +137,7 @@
   "hints": [
     "Tres verificacoes independentes na mesma tela.",
     "A empresa do stub nao tem unidade publicada, entao abaixo do titulo a tela mostra o gate de onboarding do parceiro em vez do conteudo da area.",
-    "As duas ultimas checagens caem nesse gate e provam que ele renderiza."
+    "As duas ultimas checagens caem nesse gate e provam que ele renderiza.",
+    "O card \"Proximo repasse automatico\" fica no cabecalho da conta, acima da tabela: use text_contains com selector body."
   ]
 }
