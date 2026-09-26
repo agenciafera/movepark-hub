@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { MapPin } from "@phosphor-icons/react";
 import { useDestinations, type Destination } from "@/features/search/api";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, itemListSchema, webPageSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino } from "@/lib/urls";
@@ -62,6 +62,11 @@ export default function DestinosPage() {
               { name: "Estacionamentos", url: canonical },
             ]),
           )}
+        </script>
+        {/* Âncora de entidade da página: `@id` próprio e `isPartOf` do site. Sai sempre,
+            e não junto da lista: a página existe no grafo mesmo sem item para listar. */}
+        <script type="application/ld+json">
+          {JSON.stringify(webPageSchema({ url: canonical, name: TITLE }))}
         </script>
         {listItems.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(itemListSchema(listItems))}</script>

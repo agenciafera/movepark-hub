@@ -17,6 +17,7 @@ import {
   datasetSchema,
   breadcrumbSchema,
   itemListSchema,
+  webPageSchema,
   priceTableOffersSchema,
   type PriceTableItem,
 } from "@/lib/jsonld";
@@ -465,6 +466,13 @@ export default function PrecosPage() {
           cta: "comparar",
         });
 
+  // Âncora de entidade da página: `@id` próprio e `isPartOf` do site. `dateModified` sai
+  // da data real do índice de preço; sem ela o campo não entra, em vez de carimbar o build.
+  const pagina = webPageSchema({
+    url: canonical,
+    name: tituloSeo,
+    dateModified: generatedAt,
+  });
   const breadcrumb = breadcrumbSchema([
     { name: "Início", url: SITE_URL },
     { name: "Índice de preços", url: canonical },
@@ -502,6 +510,7 @@ export default function PrecosPage() {
         <meta property="og:title" content={tituloSeo} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
+        <script type="application/ld+json">{JSON.stringify(pagina)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(lista)}</script>
         {produtos && (

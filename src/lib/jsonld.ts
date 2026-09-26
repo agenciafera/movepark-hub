@@ -1,4 +1,5 @@
 import { getLocationCapabilities } from "@/features/listing/capabilities";
+import { LANG_HTML, LOCALE_PADRAO, type Locale } from "@/lib/i18n";
 import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
 import { SITE_URL } from "@/lib/site";
@@ -672,15 +673,29 @@ export function webSiteSchema() {
  * página de preço do destino não declarava data nenhuma. A data que entra é a da tabela do
  * parceiro, a mesma que o cabeçalho mostra: schema mais novo que o visível é frescor inventado.
  */
-export function webPageSchema(args: { url: string; name: string; dateModified: string }) {
+export function webPageSchema(args: {
+  url: string;
+  name: string;
+  /** Data REAL de modificação. Ausente quando a página não tem uma; nunca inventada. */
+  dateModified?: string | null;
+  /** Idioma da página. Default pt-BR, o idioma fonte. */
+  locale?: Locale;
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
     "@id": args.url,
+    // `isPartOf` liga a página ao nó do site. É o que faz cada URL ser parte de UMA
+    // entidade em vez de uma página solta que por acaso mora no mesmo domínio, e era o
+    // que faltava nas páginas de índice (`/estacionamentos`, `/precos`, `/faq`), medidas
+    // sem `@id` nenhum em 26/09/2026.
+    isPartOf: { "@id": SITE_ID },
     url: args.url,
     name: args.name,
-    inLanguage: "pt-BR",
-    dateModified: args.dateModified,
+    inLanguage: LANG_HTML[args.locale ?? LOCALE_PADRAO],
+    // Sem data conhecida o campo sai fora. Carimbar a data do build diria "mudou hoje"
+    // todo dia, e frescor que mente é pior que frescor ausente.
+    dateModified: args.dateModified ?? undefined,
   };
 }
 

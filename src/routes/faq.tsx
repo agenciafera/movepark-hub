@@ -8,7 +8,7 @@ import { ContentPageView } from "@/features/content/ContentPageView";
 import { RELACIONADOS } from "@/features/content/pages";
 import { readingMinutes } from "@/features/content/types";
 import { faqJsonLd } from "@/features/content/jsonld";
-import { itemListSchema } from "@/lib/jsonld";
+import { itemListSchema, webPageSchema } from "@/lib/jsonld";
 import type { FaqIndexItem } from "@/features/faqs/api";
 import { buildFaqSections, filterFaqs } from "@/features/faqs/faqIndex.logic";
 import { OgImage } from "@/lib/ogImage";
@@ -112,6 +112,11 @@ export default function FaqPage() {
           <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
         ))}
         {schema && <script type="application/ld+json">{JSON.stringify(schema)}</script>}
+        {/* Âncora de entidade da página: `@id` próprio e `isPartOf` do site. Sai sempre,
+            e não junto da lista: a página existe no grafo mesmo sem item para listar. */}
+        <script type="application/ld+json">
+          {JSON.stringify(webPageSchema({ url: canonical, name: T.faqIndexMetaTitle, locale }))}
+        </script>
         {paginas.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(itemListSchema(paginas))}</script>
         )}
