@@ -835,8 +835,28 @@ async function fetchAllMaisBaratoPaths(): Promise<string[]> {
  * FAQ do hub /faq: global + destination, no build (SSG). O acervo inteiro sai no
  * HTML com o FAQPage; a busca da página filtra em memória sobre este dado.
  */
-async function faqIndexLoader() {
-  return fetchFaqIndex().catch(() => []);
+async function faqIndexLoader({ request }: LoaderFunctionArgs) {
+  const { locale } = localeDoCaminho(new URL(request.url, SITE_URL_INTERNO).pathname);
+  const todas = await fetchFaqIndex().catch(() => []);
+  if (locale === LOCALE_PADRAO) return { locale, itens: todas };
+
+  /*
+    Em idioma traduzido o índice lista SÓ o que está traduzido.
+
+    Manter a pergunta em português na lista inglesa entregaria um índice bilíngue em que
+    cada item leva a uma página em português. É o mesmo defeito do portão do `hreflang`,
+    aqui multiplicado por item. Índice curto é honesto; índice misturado não.
+
+    O slug também troca: em idioma traduzido o link é `/en/faq/<slug-en>`, e montar a URL
+    com o slug português foi exatamente o que foi a produção quebrado em 25/09/2026.
+  */
+  const traducoes = await fetchTraducoesDeFaq().catch(() => []);
+  const porId = new Map(traducoes.filter((t) => t.locale === locale).map((t) => [t.faq_id, t]));
+  const itens = todas.flatMap((f) => {
+    const t = porId.get(f.id);
+    return t ? [{ ...f, question: t.question, answer: t.answer, slug: t.slug }] : [];
+  });
+  return { locale, itens };
 }
 
 /**
@@ -1141,6 +1161,11 @@ export const routes: RouteRecord[] = [
           { path: "/", element: <HomePage /> },
           { path: "/search", element: <SearchResultsPage /> },
           { path: "/faq", element: <FaqPage />, loader: faqIndexLoader },
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            path: `/${locale}/${SEGMENTO.faq[locale]}`,
+            element: <FaqPage />,
+            loader: faqIndexLoader,
+          })),
           {
             path: "/faq/:slug",
             element: <FaqPerguntaPage />,

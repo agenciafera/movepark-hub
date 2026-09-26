@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { LOCALE_PADRAO, type Locale } from "@/lib/i18n";
 import { render, screen } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
@@ -28,11 +29,18 @@ const PERGUNTAS: FaqIndexItem[] = [
   faq({ id: "f3", question: "Posso remarcar?", answer: "Pode.", category: RESERVAS }),
 ];
 
-/** A página lê o acervo do loader (SSG); o teste monta o data router igual à produção. */
-function setup(data: FaqIndexItem[] = PERGUNTAS) {
+/**
+ * A página lê o acervo do loader (SSG); o teste monta o data router igual à produção.
+ *
+ * O loader passou a devolver `{ locale, itens }` em vez do array cru, porque o índice
+ * existe nos três idiomas e o idioma vem do caminho. O array continua sendo o que o
+ * teste escreve, e o envelope é montado aqui.
+ */
+function setup(data: FaqIndexItem[] = PERGUNTAS, locale: Locale = LOCALE_PADRAO) {
+  const rota = locale === LOCALE_PADRAO ? "/faq" : `/${locale}/faq`;
   const router = createMemoryRouter(
-    [{ path: "/faq", element: <FaqPage />, loader: () => data }],
-    { initialEntries: ["/faq"] },
+    [{ path: rota, element: <FaqPage />, loader: () => ({ locale, itens: data }) }],
+    { initialEntries: [rota] },
   );
   return render(
     <HelmetProvider>

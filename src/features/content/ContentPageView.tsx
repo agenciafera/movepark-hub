@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTextos } from "@/lib/LocaleContext";
 import { Link } from "react-router-dom";
 import {
   CalendarBlank,
@@ -58,6 +59,7 @@ export function ContentPageView({
   bodyTop,
   primaryCta,
 }: Props) {
+  const T = useTextos();
   const ids = React.useMemo(() => sections.map((s) => s.id), [sections]);
   const ativa = useActiveSection(ids);
   const [menuAberto, setMenuAberto] = React.useState(false);
@@ -93,12 +95,12 @@ export function ContentPageView({
             )}
             <span className="inline-flex items-center gap-1.5">
               <Clock className="h-4 w-4 shrink-0" aria-hidden />
-              {readMinutes} min de leitura
+              {T.conteudoLeitura(readMinutes)}
             </span>
             {sections.length > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <ListNumbers className="h-4 w-4 shrink-0" aria-hidden />
-                {sections.length} {sections.length === 1 ? "seção" : "seções"}
+                {T.conteudoSecoes(sections.length)}
               </span>
             )}
           </div>
@@ -251,16 +253,16 @@ export function ContentPageView({
 
             {/* Saída pra quem não achou o que procurava. */}
             <section className="mt-8 rounded-lg border border-hairline bg-canvas p-6 shadow-tier print:hidden">
-              <h2 className="text-title-md text-ink">Ficou alguma dúvida?</h2>
+              <h2 className="text-title-md text-ink">{T.conteudoDuvida}</h2>
               <p className="mt-2 text-body-sm leading-relaxed text-muted">
-                Se não encontrou o que precisava aqui, fala com a gente.
+                {T.conteudoDuvidaTexto}
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button asChild>
-                  <Link to="/contato">Fale conosco</Link>
+                  <Link to="/contato">{T.conteudoFaleConosco}</Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/ajuda">Central de Ajuda</Link>
+                  <Link to="/ajuda">{T.conteudoCentralAjuda}</Link>
                 </Button>
               </div>
             </section>
@@ -268,7 +270,7 @@ export function ContentPageView({
             {related.length > 0 && (
               <section className="mt-8 border-t border-hairline pt-6 print:hidden">
                 <p className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted">
-                  Veja também
+                  {T.conteudoVejaTambem}
                 </p>
                 <ul className="mt-4 grid grid-cols-1 gap-3 tablet:grid-cols-2">
                   {related.map((r) => (

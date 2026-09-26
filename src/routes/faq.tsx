@@ -13,6 +13,14 @@ import type { FaqIndexItem } from "@/features/faqs/api";
 import { buildFaqSections, filterFaqs } from "@/features/faqs/faqIndex.logic";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
+import {
+  LANG_HTML,
+  LOCALE_PADRAO,
+  caminhoLocalizado,
+  clusterHreflang,
+  type Locale,
+} from "@/lib/i18n";
+import { textos } from "@/lib/i18nTextos";
 
 /**
  * FAQ com uma seção por categoria (globais) e uma por destino.
@@ -24,8 +32,16 @@ import { SITE_URL } from "@/lib/site";
  * O `?cat=` continua valendo: a Central de Ajuda linka `/faq?cat=pagamentos` e o
  * Manager documenta essa URL. Ele rola até a seção em vez de filtrar.
  */
+/** O que o loader entrega: o acervo já no idioma da página, mais o idioma. */
+export type FaqIndexData = { locale: Locale; itens: FaqIndexItem[] } | null;
+
 export default function FaqPage() {
-  const todas = (useLoaderData() as FaqIndexItem[] | null) ?? [];
+  const data = useLoaderData() as FaqIndexData;
+  const locale = data?.locale ?? LOCALE_PADRAO;
+  const T = textos(locale);
+  // Em idioma traduzido o loader já descartou o que não tem tradução, então esta lista
+  // nunca mistura idioma. O slug de cada item também já é o do idioma.
+  const todas = data?.itens ?? [];
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
   const [queryDraft, setQueryDraft] = React.useState(query);
@@ -61,42 +77,61 @@ export default function FaqPage() {
     document.getElementById(cat)?.scrollIntoView({ block: "start" });
   }, [cat, prontas]);
 
+  // O índice existe nos três idiomas, então o cluster é fixo: não depende de tradução
+  // por item, e sim da rota, que o build gera para cada idioma.
+  const caminhoDoIndice = (l: Locale) => caminhoLocalizado({ familia: "faq", slug: "", locale: l })
+    .replace(/\/$/, "");
+  const canonical = `${SITE_URL}${caminhoDoIndice(locale)}`;
+  const hreflangs = clusterHreflang(
+    (["pt-BR", "en", "es"] as Locale[]).map((l) => ({
+      locale: l,
+      caminho: `${SITE_URL}${caminhoDoIndice(l)}`,
+    })),
+  );
+
   const schema = faqJsonLd(sections);
   // Índice das páginas por pergunta (ItemList): é o mapa que buscador e agente
   // usam pra descobrir as URLs /faq/<slug>.
-  const paginas = todas
-    .filter((f) => f.slug)
-    .map((f) => ({ name: f.question, url: `${SITE_URL}/faq/${f.slug}` }));
+  const paginas = todas.filter((f) => f.slug).map((f) => ({
+    name: f.question,
+    // A URL de cada item é a DAQUELE idioma: o loader já trocou o slug, e montar com o
+    // português aqui devolveria a lista inglesa apontando para páginas em português.
+    url: `${SITE_URL}${caminhoLocalizado({ familia: "faq", slug: f.slug as string, locale })}`,
+  }));
 
   return (
     <>
-      <Helmet>
-        <title>Perguntas frequentes: estacionamento de aeroporto | Movepark</title>
-        <meta
-          name="description"
-          content="Perguntas frequentes de estacionamento de aeroporto: reserva, pagamento, check-in, cancelamento e o menor preço por diária. Compare e reserve pela Movepark."
-        />
-        <meta property="og:title" content="Perguntas frequentes: estacionamento de aeroporto | Movepark" />
-        <meta
-          property="og:description"
-          content="Tire suas dúvidas sobre reservas, pagamentos, check-in e mais."
-        />
-        <meta property="og:url" content={`${SITE_URL}/faq`} />
-        <link rel="canonical" href={`${SITE_URL}/faq`} />
+      <Helmet htmlAttributes={{ lang: LANG_HTML[locale] }}>
+        <title>{T.faqIndexMetaTitle}</title>
+        <meta name="description" content={T.faqIndexMetaDescription} />
+        <meta property="og:title" content={T.faqIndexMetaTitle} />
+        <meta property="og:description" content={T.faqIndexOgDescription} />
+        <meta property="og:url" content={canonical} />
+        <link rel="canonical" href={canonical} />
+        {hreflangs.map((h) => (
+          <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
+        ))}
         {schema && <script type="application/ld+json">{JSON.stringify(schema)}</script>}
         {paginas.length > 0 && (
           <script type="application/ld+json">{JSON.stringify(itemListSchema(paginas))}</script>
         )}
       </Helmet>
-      <OgImage area="conteudo" />
+      <OgImage area="conteudo" alt={T.ogImageAlt} />
 
       <ContentPageView
-        label="Perguntas frequentes"
-        title="Perguntas frequentes"
-        intro="Reservas, pagamentos e check-in, com as respostas que o suporte mais repete."
+        label={T.faqIndexTitulo}
+        title={T.faqIndexTitulo}
+        intro={T.faqIndexIntro}
         readMinutes={readingMinutes(sections)}
         sections={sections}
-        related={[RELACIONADOS["como-funciona"], RELACIONADOS.cancelamento]}
+        // As páginas relacionadas existem só em português. Em idioma traduzido o bloco
+        // some, pela mesma razão das listas de post do blog: card que promete leitura e
+        // entrega outro idioma é pior que a ausência do card.
+        related={
+          locale === LOCALE_PADRAO
+            ? [RELACIONADOS["como-funciona"], RELACIONADOS.cancelamento]
+            : []
+        }
         bodyTop={
           <>
             <div className="relative mb-6 max-w-xl print:hidden">
@@ -105,8 +140,8 @@ export default function FaqPage() {
                 aria-hidden
               />
               <Input
-                placeholder="Buscar pergunta…"
-                aria-label="Buscar pergunta"
+                placeholder={T.faqIndexBuscar}
+                aria-label={T.faqIndexBuscarLabel}
                 value={queryDraft}
                 onChange={(e) => setQueryDraft(e.target.value)}
                 className="pl-9"
@@ -115,11 +150,9 @@ export default function FaqPage() {
 
             {sections.length === 0 && (
               <EmptyState
-                title="Nenhuma pergunta encontrada"
+                title={T.faqIndexNadaEncontrado}
                 description={
-                  query
-                    ? `Nada bateu com "${query}". Tente outra palavra ou fale com o suporte.`
-                    : "As perguntas ainda não foram publicadas."
+                  query ? T.faqIndexNadaBateu(query) : T.faqIndexNadaPublicado
                 }
               />
             )}

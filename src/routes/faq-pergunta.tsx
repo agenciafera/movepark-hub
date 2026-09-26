@@ -25,12 +25,24 @@ import {
   LANG_HTML,
   LOCALE_PADRAO,
   caminhoLocalizado,
+  SEGMENTO,
   clusterHreflang,
   localeDoCaminho,
   type Locale,
 } from "@/lib/i18n";
 import type { IdiomaDaFaq } from "@/features/faqs/i18nApi";
 import { textos } from "@/lib/i18nTextos";
+
+/**
+ * O índice de FAQ no idioma dado (`/faq`, `/en/faq`, `/es/preguntas-frecuentes`).
+ *
+ * Fica no módulo porque o estado vazio da página roda antes do `locale` do loader e
+ * também precisa apontar para o índice certo.
+ */
+function caminhoDoIndiceFaq(locale: Locale): string {
+  const prefixo = locale === LOCALE_PADRAO ? "" : `/${locale}`;
+  return `${prefixo}/${SEGMENTO.faq[locale]}`;
+}
 
 /** O que o loader entrega: a pergunta, as relacionadas e o contexto de preço. */
 export type FaqPerguntaData =
@@ -64,7 +76,7 @@ export default function FaqPerguntaPage() {
           title={TVazio.faqNaoEncontrada}
           description={TVazio.faqNaoEncontradaTexto}
           action={
-            <Link to="/faq" className="text-mp-primary underline">
+            <Link to={caminhoDoIndiceFaq(localeDoCaminho(pathname).locale)} className="text-mp-primary underline">
               {TVazio.faqVerTodas}
             </Link>
           }
@@ -100,6 +112,9 @@ export default function FaqPerguntaPage() {
   const aeroportoLabel = (d: FaqDestinoRef) => destinoLabel ?? aeroportoEmProsa(d);
   // O link do destino acompanha o idioma quando a página traduzida existe. Quando não
   // existe, aponta para a portuguesa: página em outro idioma é melhor que link morto.
+  // O índice de FAQ existe nos três idiomas desde que a rota localizada entrou, então
+  // os links para ele acompanham o idioma da página em vez de voltar ao português.
+  const linkIndice = caminhoDoIndiceFaq(locale);
   const linkDestino = (d: FaqDestinoRef) =>
     data?.destinoSlug && locale !== LOCALE_PADRAO
       ? caminhoLocalizado({ familia: "destino", slug: data.destinoSlug, locale })
@@ -208,7 +223,7 @@ export default function FaqPerguntaPage() {
               ›
             </li>
             <li>
-              <Link to="/faq" className="hover:text-ink">
+              <Link to={linkIndice} className="hover:text-ink">
                 {T.faqTrilha}
               </Link>
             </li>
@@ -432,7 +447,7 @@ export default function FaqPerguntaPage() {
 
         <div className="mt-8">
           <Link
-            to="/faq"
+            to={linkIndice}
             className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
           >
             {T.faqTodasPerguntas}

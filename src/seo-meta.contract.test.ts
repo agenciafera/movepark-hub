@@ -72,6 +72,37 @@ function constantesDeDescription(fonte: string): string[] {
   return achados;
 }
 
+/**
+ * Descriptions que a rota puxa do dicionário de idiomas (`T.<chave>`).
+ *
+ * Existe porque mover a description para o dicionário, para poder traduzi-la, fazia ela
+ * escapar da varredura: o texto deixava de ser literal no arquivo da rota e a página caía
+ * no balde "montada em runtime", que só exige o construtor de `@/lib/seo`. O resultado
+ * seria perder tamanho, palavra-chave e CTA em silêncio, e perder de novo em cada página
+ * traduzida depois dela.
+ *
+ * O valor conferido é o do **português**, que é o idioma fonte: é ele que disputa a SERP
+ * brasileira, e é dele que as traduções derivam.
+ */
+function descriptionsDoDicionario(fonte: string): string[] {
+  const chaves = [...fonte.matchAll(/name="description"\s+content=\{T\.([A-Za-z0-9_]+)\}/g)].map(
+    (m) => m[1],
+  );
+  if (chaves.length === 0) return [];
+  const dic = fs.readFileSync("src/lib/i18nTextos.ts", "utf8");
+  // O bloco do português é o primeiro dicionário concreto do arquivo.
+  const inicioPt = dic.indexOf("const PT: Textos = {");
+  const pt = dic.slice(inicioPt, dic.indexOf("const EN: Textos = {"));
+  const achados: string[] = [];
+  for (const chave of chaves) {
+    const m = pt.match(
+      new RegExp(`^  ${chave}:\\s*((?:\\s*"(?:[^"\\\\]|\\\\.)*"\\s*\\+?)+),`, "m"),
+    );
+    if (m) achados.push([...m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((x) => x[1]).join(""));
+  }
+  return achados;
+}
+
 function lerRotas(): Meta[] {
   return fs
     .readdirSync(DIR)
@@ -87,7 +118,9 @@ function lerRotas(): Meta[] {
         arquivo,
         fonte,
         titles: [...fonte.matchAll(/<title>([^<{][^<]*)<\/title>/g)].map((m) => m[1].trim()),
-        descriptions: temMeta ? [...inline, ...constantesDeDescription(fonte)] : [],
+        descriptions: temMeta
+          ? [...inline, ...constantesDeDescription(fonte), ...descriptionsDoDicionario(fonte)]
+          : [],
       };
     });
 }

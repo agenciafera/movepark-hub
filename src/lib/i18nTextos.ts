@@ -28,6 +28,24 @@ export type Textos = {
   faqHeading: (destino: string) => string;
   // Página de uma pergunta (/faq/<slug> e equivalentes traduzidos).
   faqTrilha: string;
+  faqIndexBuscarLabel: string;
+  conteudoLeitura: (minutos: number) => string;
+  conteudoSecoes: (n: number) => string;
+  conteudoDuvida: string;
+  conteudoDuvidaTexto: string;
+  conteudoFaleConosco: string;
+  conteudoCentralAjuda: string;
+  conteudoVejaTambem: string;
+  // Índice de perguntas (/faq e equivalentes traduzidos).
+  faqIndexTitulo: string;
+  faqIndexMetaTitle: string;
+  faqIndexMetaDescription: string;
+  faqIndexOgDescription: string;
+  faqIndexIntro: string;
+  faqIndexBuscar: string;
+  faqIndexNadaEncontrado: string;
+  faqIndexNadaBateu: (termo: string) => string;
+  faqIndexNadaPublicado: string;
   postLeiaTambem: string;
   postNestaPagina: string;
   postVerResumo: string;
@@ -172,6 +190,24 @@ const PT: Textos = {
   ondeFicaHeading: (d) => `Onde fica o ${d}`,
   faqHeading: (d) => `Perguntas frequentes: estacionamento ${d}`,
   faqTrilha: "Perguntas frequentes",
+  faqIndexBuscarLabel: "Buscar pergunta",
+  conteudoLeitura: (m) => `${m} min de leitura`,
+  conteudoSecoes: (n) => `${n} ${n === 1 ? "seção" : "seções"}`,
+  conteudoDuvida: "Ficou alguma dúvida?",
+  conteudoDuvidaTexto: "Se não encontrou o que precisava aqui, fala com a gente.",
+  conteudoFaleConosco: "Fale conosco",
+  conteudoCentralAjuda: "Central de Ajuda",
+  conteudoVejaTambem: "Veja também",
+  faqIndexTitulo: "Perguntas frequentes",
+  faqIndexMetaTitle: "Perguntas frequentes: estacionamento de aeroporto | Movepark",
+  faqIndexMetaDescription:
+    "Perguntas frequentes de estacionamento de aeroporto: reserva, pagamento, check-in, cancelamento e o menor preço por diária. Compare e reserve pela Movepark.",
+  faqIndexOgDescription: "Tire suas dúvidas sobre reservas, pagamentos, check-in e mais.",
+  faqIndexIntro: "Reservas, pagamentos e check-in, com as respostas que o suporte mais repete.",
+  faqIndexBuscar: "Buscar pergunta…",
+  faqIndexNadaEncontrado: "Nenhuma pergunta encontrada",
+  faqIndexNadaBateu: (t) => `Nada bateu com "${t}". Tente outra palavra ou fale com o suporte.`,
+  faqIndexNadaPublicado: "As perguntas ainda não foram publicadas.",
   postLeiaTambem: "Leia também",
   postNestaPagina: "Nesta página",
   postVerResumo: "Ver resumo",
@@ -333,6 +369,24 @@ const EN: Textos = {
   ondeFicaHeading: (d) => `Where ${d} is`,
   faqHeading: (d) => `Frequently asked questions: ${d} parking`,
   faqTrilha: "FAQ",
+  faqIndexBuscarLabel: "Search questions",
+  conteudoLeitura: (m) => `${m} min read`,
+  conteudoSecoes: (n) => `${n} ${n === 1 ? "section" : "sections"}`,
+  conteudoDuvida: "Still have a question?",
+  conteudoDuvidaTexto: "If you did not find what you needed here, talk to us.",
+  conteudoFaleConosco: "Contact us",
+  conteudoCentralAjuda: "Help Center",
+  conteudoVejaTambem: "See also",
+  faqIndexTitulo: "Frequently asked questions",
+  faqIndexMetaTitle: "Airport parking FAQ | Movepark",
+  faqIndexMetaDescription:
+    "Frequently asked questions about airport parking: booking, payment, check-in, cancellation and the lowest daily rate. Compare and book with Movepark.",
+  faqIndexOgDescription: "Answers about booking, payment, check-in and more.",
+  faqIndexIntro: "Booking, payment and check-in, with the answers support repeats the most.",
+  faqIndexBuscar: "Search questions…",
+  faqIndexNadaEncontrado: "No questions found",
+  faqIndexNadaBateu: (t) => `Nothing matched "${t}". Try another word or talk to support.`,
+  faqIndexNadaPublicado: "No questions published in English yet.",
   postLeiaTambem: "Read next",
   postNestaPagina: "On this page",
   postVerResumo: "See summary",
@@ -497,6 +551,24 @@ const ES: Textos = {
   ondeFicaHeading: (d) => `Dónde queda ${d}`,
   faqHeading: (d) => `Preguntas frecuentes: estacionamiento ${d}`,
   faqTrilha: "Preguntas frecuentes",
+  faqIndexBuscarLabel: "Buscar pregunta",
+  conteudoLeitura: (m) => `${m} min de lectura`,
+  conteudoSecoes: (n) => `${n} ${n === 1 ? "sección" : "secciones"}`,
+  conteudoDuvida: "¿Te quedó alguna duda?",
+  conteudoDuvidaTexto: "Si no encontraste lo que necesitabas acá, hablá con nosotros.",
+  conteudoFaleConosco: "Contactanos",
+  conteudoCentralAjuda: "Centro de Ayuda",
+  conteudoVejaTambem: "Ver también",
+  faqIndexTitulo: "Preguntas frecuentes",
+  faqIndexMetaTitle: "Preguntas frecuentes: estacionamiento de aeropuerto | Movepark",
+  faqIndexMetaDescription:
+    "Preguntas frecuentes sobre estacionamiento de aeropuerto: reserva, pago, check-in, cancelación y la tarifa diaria más baja. Compará y reservá con Movepark.",
+  faqIndexOgDescription: "Respuestas sobre reservas, pagos, check-in y más.",
+  faqIndexIntro: "Reservas, pagos y check-in, con las respuestas que soporte más repite.",
+  faqIndexBuscar: "Buscar pregunta…",
+  faqIndexNadaEncontrado: "No se encontró ninguna pregunta",
+  faqIndexNadaBateu: (t) => `Nada coincidió con "${t}". Probá otra palabra o hablá con soporte.`,
+  faqIndexNadaPublicado: "Todavía no hay preguntas publicadas en español.",
   postLeiaTambem: "Seguí leyendo",
   postNestaPagina: "En esta página",
   postVerResumo: "Ver resumen",

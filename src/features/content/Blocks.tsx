@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useLocale, useTextos } from "@/lib/LocaleContext";
+import { caminhoLocalizado } from "@/lib/i18n";
 import { Link } from "react-router-dom";
 import { CaretDown, Info } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,8 @@ export function BlockView({ block }: { block: Block }) {
  * vez de deixar de existir na árvore.
  */
 function FaqBlock({ items }: { items: { q: string; a: string; slug?: string }[] }) {
+  const locale = useLocale();
+  const T = useTextos();
   const [aberto, setAberto] = React.useState<number | null>(null);
   const base = React.useId();
 
@@ -133,10 +137,13 @@ function FaqBlock({ items }: { items: { q: string; a: string; slug?: string }[] 
               {item.a}
               {item.slug && (
                 <Link
-                  to={`/faq/${item.slug}`}
+                  // O idioma vem do contexto da casca: em `/en/faq` o link tem que ser
+                  // `/en/faq/<slug-en>`. Cravado em `/faq/` ele apontava para uma URL
+                  // que não existe naquele idioma, ou seja, 404 em toda a lista.
+                  to={caminhoLocalizado({ familia: "faq", slug: item.slug, locale })}
                   className="mt-2 block text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline print:hidden"
                 >
-                  Página desta pergunta
+                  {T.paginaDaPergunta}
                 </Link>
               )}
             </div>

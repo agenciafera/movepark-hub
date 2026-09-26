@@ -252,6 +252,11 @@ async function getRotasTraduzidas(sb: SupabaseClient | null): Promise<RotaComDat
   ]);
 
   const rotas: RotaComData[] = [];
+  // As CAPAS de cada idioma. Elas não vêm de tabela: a rota existe porque o build a
+  // gera, e sem elas o índice traduzido só seria descoberto pelo link interno.
+  for (const locale of ["en", "es"]) {
+    rotas.push({ route: `/${locale}/${SEGMENTO.faq[locale as "en" | "es"]}` });
+  }
   // deno-lint-ignore no-explicit-any
   for (const d of (destinos.data ?? []) as any[])
     rotas.push({ route: caminho("destino", d.locale, d.slug), lastmod: d.updated_at });
