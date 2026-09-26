@@ -57,6 +57,15 @@
         "4178"
       ],
       "port": 4178
+    },
+    {
+      "name": "windup-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "VITE_GOOGLE_MAPS_API_KEY= VITE_CONSUMER_ACCOUNTS=on PORT=5273 bun run dev"
+      ],
+      "port": 5273
     }
   ]
 }
