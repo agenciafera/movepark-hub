@@ -80,3 +80,51 @@ describe("alternativasDeIdioma", () => {
     ).toEqual([]);
   });
 });
+
+describe("alternativasDeIdioma: destino e índice", () => {
+  /**
+   * O slug em português mora num lugar por superfície. A primeira versão lia só
+   * `faq.slug` e `slug`, então nas 44 páginas de destino, que são as que mais recebem
+   * gente, o seletor não aparecia: ele caía no rótulo sem oferecer troca.
+   */
+  it("lê o slug do destino em `destination.public_slug`", () => {
+    const dados = {
+      destination: { public_slug: "aeroporto-confins", slug: "aeroporto-de-confins" },
+      idiomas: [
+        { locale: "en" as const, slug: "confins-airport" },
+        { locale: "es" as const, slug: "aeropuerto-confins" },
+      ],
+    };
+    expect(
+      alternativasDeIdioma({ pathname: "/en/airport-parking/confins-airport", dados }),
+    ).toEqual([
+      { locale: "pt-BR", caminho: "/estacionamentos/aeroporto-confins" },
+      { locale: "en", caminho: "/en/airport-parking/confins-airport" },
+      { locale: "es", caminho: "/es/estacionamiento-aeropuerto/aeropuerto-confins" },
+    ]);
+  });
+
+  it("prefere o `public_slug` ao slug interno, que é o que a URL usa", () => {
+    const dados = {
+      destination: { public_slug: "aeroporto-confins", slug: "aeroporto-de-confins" },
+      idiomas: [{ locale: "en" as const, slug: "confins-airport" }],
+    };
+    const pt = alternativasDeIdioma({ pathname: "/en/airport-parking/confins-airport", dados })[0];
+    expect(pt.caminho).toBe("/estacionamentos/aeroporto-confins");
+  });
+
+  it("o índice de FAQ oferece os três idiomas, sem depender de item traduzido", () => {
+    // Índice não tem slug: a rota existe em cada idioma porque o build a gera.
+    expect(alternativasDeIdioma({ pathname: "/en/faq", dados: null })).toEqual([
+      { locale: "pt-BR", caminho: "/faq" },
+      { locale: "en", caminho: "/en/faq" },
+      { locale: "es", caminho: "/es/preguntas-frecuentes" },
+    ]);
+  });
+
+  it("índice sem rota traduzida não oferece troca", () => {
+    // `/estacionamentos` e `/blog/` existem só em português; oferecer levaria a 404.
+    expect(alternativasDeIdioma({ pathname: "/estacionamentos", dados: null })).toEqual([]);
+    expect(alternativasDeIdioma({ pathname: "/blog/", dados: null })).toEqual([]);
+  });
+});

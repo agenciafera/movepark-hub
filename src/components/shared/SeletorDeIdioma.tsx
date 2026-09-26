@@ -1,6 +1,7 @@
 import { useLocation, useMatches } from "react-router-dom";
 
 import {
+  LOCALES,
   LOCALE_PADRAO,
   SEGMENTO,
   caminhoLocalizado,
@@ -16,13 +17,30 @@ const NOME_DO_IDIOMA: Record<Locale, string> = {
   es: "Español (R$)",
 };
 
-/** O que os loaders de destino, FAQ e post publicam sobre os idiomas da página. */
+/**
+ * O que os loaders publicam sobre os idiomas da página.
+ *
+ * O slug em português mora num lugar diferente em cada superfície, e é por isso que os
+ * três aparecem aqui: `faq.slug` na pergunta, `slug` no post do blog e
+ * `destination.public_slug` no destino. A primeira versão só lia os dois primeiros, então
+ * nas 44 páginas de destino, que são as que mais recebem gente, o seletor não aparecia.
+ */
 type DadosComIdiomas = {
   idiomas?: { locale: LocaleTraduzido; slug: string }[];
   traducao?: { slug: string } | null;
   slug?: string;
   faq?: { slug: string };
+  destination?: { public_slug?: string | null; slug?: string | null } | null;
 };
+
+/**
+ * Famílias cujo ÍNDICE existe nos três idiomas.
+ *
+ * Índice não tem slug, então não entra pelo caminho de item. Hoje só a FAQ tem rota
+ * localizada de índice (`/en/faq`, `/es/preguntas-frecuentes`); `/estacionamentos` e
+ * `/blog/` existem só em português, e oferecer troca de idioma neles levaria a 404.
+ */
+const INDICE_TRADUZIDO: ReadonlySet<keyof typeof SEGMENTO> = new Set(["faq"]);
 
 /**
  * A família da URL atual (`destino`, `faq` ou `blog`), pelo segmento do caminho.
@@ -56,10 +74,28 @@ export function alternativasDeIdioma(args: {
   dados: DadosComIdiomas | null;
 }): { locale: Locale; caminho: string }[] {
   const familia = familiaDoCaminho(args.pathname);
-  const idiomas = args.dados?.idiomas ?? [];
-  if (!familia || idiomas.length === 0) return [];
+  if (!familia) return [];
 
-  const slugPt = args.dados?.faq?.slug ?? args.dados?.slug;
+  // Índice (sem slug depois da família): o cluster é fixo, porque a rota existe em cada
+  // idioma independentemente de haver item traduzido para listar.
+  const { resto } = localeDoCaminho(args.pathname);
+  const semSlug = resto.split("/").filter(Boolean).length <= 1;
+  if (semSlug) {
+    if (!INDICE_TRADUZIDO.has(familia)) return [];
+    return LOCALES.map((l) => ({
+      locale: l,
+      caminho: caminhoLocalizado({ familia, slug: "", locale: l }).replace(/\/$/, ""),
+    }));
+  }
+
+  const idiomas = args.dados?.idiomas ?? [];
+  if (idiomas.length === 0) return [];
+
+  const slugPt =
+    args.dados?.faq?.slug ??
+    args.dados?.destination?.public_slug ??
+    args.dados?.destination?.slug ??
+    args.dados?.slug;
   if (!slugPt) return [];
 
   return [
