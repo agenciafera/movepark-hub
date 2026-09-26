@@ -351,7 +351,7 @@ export default function ManagerFinanceRecipients() {
                                 variant="secondary"
                                 onClick={() => setPayoutId(row.companyId)}
                               >
-                                Prazo de saque
+                                Repasse
                               </Button>
                             )}
                             {row.hasRecipient && (

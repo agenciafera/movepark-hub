@@ -16,6 +16,8 @@ import {
   useReconcileWithdrawals,
   useRetryManualRefund,
   useSetCompanyPayoutReleaseDays,
+  useSetCompanyPayoutSchedule,
+  usePayoutAutoForecast,
   useCreateCompanyAccessLink,
   useRevokeCompanyAccessLink,
 } from "./api";
@@ -358,6 +360,28 @@ describe("useSetCompanyPayoutReleaseDays", () => {
     expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_days: 7 });
     await result.current.mutateAsync({ company_id: "c1", days: null });
     expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_days: null });
+  });
+});
+
+// ── Repasse automático mensal (E0.3.13) ─────────────────────────────────────
+
+describe("useSetCompanyPayoutSchedule", () => {
+  it("grava dia e liga/desliga da empresa pela RPC; null volta a herdar o global", async () => {
+    const chamada = rpc("company_set_payout_schedule", { json: null });
+    const { result } = renderMutation(() => useSetCompanyPayoutSchedule());
+    await result.current.mutateAsync({ company_id: "c1", day: 5, enabled: true });
+    expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_day: 5, p_enabled: true });
+    await result.current.mutateAsync({ company_id: "c1", day: null, enabled: null });
+    expect(chamada.ultimoBody).toEqual({ p_company_id: "c1", p_day: null, p_enabled: null });
+  });
+});
+
+describe("usePayoutAutoForecast", () => {
+  it("lê a previsão do repasse pela RPC", async () => {
+    rpc("payout_auto_forecast", { json: { company_id: "c1", enabled: true, day: 10, source: "global", next_at: "2026-10-10", forecast_cents: 100, min_cents: 5000, below_min: true, recipient_status: "active", recipient_missing: false, last_cycle: null } });
+    const { result } = renderQuery(() => usePayoutAutoForecast("c1"));
+    await waitFor(() => expect(result.current.data?.next_at).toBe("2026-10-10"));
+    expect(result.current.data?.below_min).toBe(true);
   });
 });
 

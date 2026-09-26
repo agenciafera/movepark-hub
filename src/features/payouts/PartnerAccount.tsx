@@ -27,11 +27,13 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
-import { usePartnerAccountStatement, usePayoutWithdrawable, useWithdraw } from "./api";
+import { usePartnerAccountStatement, usePayoutAutoForecast, usePayoutWithdrawable, useWithdraw } from "./api";
 import { MOVEMENT_LABEL, channelBadge, maxWithdrawReason, negativeRecipientAlert, partnerFeeCaption, releaseLabel, summarizeMovements, transferCycleLabel, type AccountMovement } from "./account.logic";
 import { recentMonths } from "./months.logic";
 import { useAutoRefreshBalances } from "./useAutoRefreshBalances";
 import { WithdrawalsCard } from "./WithdrawalsCard";
+import { PayoutScheduleCard } from "./PayoutScheduleCard";
+import { manualWithdrawCaption } from "./schedule.logic";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
@@ -76,6 +78,8 @@ export function PartnerAccount({
   const refresh = useAutoRefreshBalances(showGateway);
   const withdraw = useWithdraw();
   const withdrawable = usePayoutWithdrawable(companyId);
+  // Dia do repasse automático (E0.3.13): a copy do saque manual diz que o do dia X é grátis.
+  const forecast = usePayoutAutoForecast(companyId);
   const [withdrawOpen, setWithdrawOpen] = React.useState(false);
   const [amount, setAmount] = React.useState<number | null>(null);
 
@@ -161,7 +165,7 @@ export function PartnerAccount({
 
       {/* Cabeçalho (E0.3.8): o disponível para saque é o NOSSO número (vendas liberadas pelo prazo,
           menos dívida e saques, limitado ao saldo real). O gateway aparece como referência. */}
-      <div className={showGateway ? "grid gap-4 tablet:grid-cols-4" : "grid gap-4 tablet:grid-cols-3"}>
+      <div className={showGateway ? "grid gap-4 tablet:grid-cols-5" : "grid gap-4 tablet:grid-cols-4"}>
         <Card>
           <CardContent className="p-5">
             <div className="text-caption text-muted">Disponível para saque</div>
@@ -183,6 +187,8 @@ export function PartnerAccount({
             )}
           </CardContent>
         </Card>
+        {/* Quando o próximo repasse automático cai e quanto (E0.3.13): sem taxa para o parceiro. */}
+        <PayoutScheduleCard companyId={companyId} partnerView={!showGateway} />
         <Card>
           <CardContent className="p-5">
             <div className="text-caption text-muted">Retido pelo prazo</div>
@@ -249,7 +255,7 @@ export function PartnerAccount({
             if (!bloqueado) {
               return (
                 <Button size="sm" onClick={() => setWithdrawOpen(true)}>
-                  Repassar para o banco
+                  Repassar agora
                 </Button>
               );
             }
@@ -259,7 +265,7 @@ export function PartnerAccount({
                   <TooltipTrigger asChild>
                     <span tabIndex={0} className="inline-flex" data-testid="repassar-bloqueado">
                       <Button size="sm" disabled>
-                        Repassar para o banco
+                        Repassar agora
                       </Button>
                     </span>
                   </TooltipTrigger>
@@ -308,7 +314,7 @@ export function PartnerAccount({
       <Dialog open={withdrawOpen} onOpenChange={(o) => !o && setWithdrawOpen(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Repassar para o banco</DialogTitle>
+            <DialogTitle>Repassar agora</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             {/* O custo do saque fica explícito antes de confirmar. A taxa NÃO é descontada do
@@ -329,8 +335,8 @@ export function PartnerAccount({
                 <span className="text-muted">Taxa por saque</span>
                 <span className="text-ink" data-testid="saque-taxa">{brl(feeCents)}</span>
               </div>
-              <p className="mt-1 text-caption text-muted">
-                A taxa é descontada do valor sacado, uma vez por saque. Quem saca toda hora paga mais;
+              <p className="mt-1 text-caption text-muted" data-testid="saque-aviso-taxa">
+                {manualWithdrawCaption(feeCents, forecast.data?.day ?? 10, brl)} Quem saca toda hora paga mais;
                 juntar em um saque paga uma taxa só.
                 {canRefund && w && ` O parceiro só saca até ${brl(w.available_cents)} (liberado em ${w.release_days} dias); a Movepark pode ir até o saldo do recebedor.`}
               </p>

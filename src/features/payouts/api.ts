@@ -872,6 +872,8 @@ export type PayoutWithdrawable = {
   withdrawal_fee_cents: number;
   /** O maior valor que dá para pedir: disponível menos a taxa. */
   max_withdraw_cents: number;
+  /** Taxas de repasse automático que a Movepark ainda deve ao parceiro (E0.3.13). */
+  fee_credit_cents?: number;
 };
 
 /**
@@ -891,6 +893,69 @@ export function usePayoutWithdrawable(companyId: string | undefined) {
       if (error) throw new Error(error.message);
       if (!data) throw new Error("Sem saldo calculado.");
       return data;
+    },
+  });
+}
+
+// ── Repasse automático mensal (E0.3.13) ─────────────────────────────────────
+// Spec: docs/specs/repasse-automatico-mensal.md. O dia e o valor previsto vêm do banco
+// (`payout_auto_forecast`); a configuração por empresa passa pela RPC de hub_admin.
+
+export type PayoutAutoForecast = {
+  company_id: string;
+  enabled: boolean;
+  day: number;
+  source: "company" | "global";
+  /** Próxima data do repasse (YYYY-MM-DD, dia de Brasília). */
+  next_at: string;
+  /** O que estará liberado até lá, menos dívida e saques, no teto do gateway. */
+  forecast_cents: number;
+  min_cents: number;
+  below_min: boolean;
+  recipient_status: string | null;
+  recipient_missing: boolean;
+  last_cycle: {
+    cycle_month: string;
+    outcome: string;
+    amount_cents: number | null;
+    available_cents: number | null;
+    ran_at: string;
+    reason: string | null;
+  } | null;
+};
+
+export function usePayoutAutoForecast(companyId: string | undefined) {
+  return useQuery({
+    queryKey: [...accountKeys.all, "auto-forecast", companyId ?? "none"] as const,
+    enabled: !!companyId,
+    queryFn: async (): Promise<PayoutAutoForecast> => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "payout_auto_forecast",
+        a: { p_company_id: string },
+      ) => PromiseLike<{ data: PayoutAutoForecast | null; error: { message: string } | null }>;
+      const { data, error } = await rpc("payout_auto_forecast", { p_company_id: companyId! });
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Sem previsão de repasse.");
+      return data;
+    },
+  });
+}
+
+/** Dia e liga/desliga do repasse automático de UMA empresa. `null` volta a herdar o global. */
+export function useSetCompanyPayoutSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { company_id: string; day: number | null; enabled: boolean | null }) => {
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
+        fn: "company_set_payout_schedule",
+        a: { p_company_id: string; p_day: number | null; p_enabled: boolean | null },
+      ) => PromiseLike<{ error: { message: string } | null }>;
+      const { error } = await rpc("company_set_payout_schedule", { p_company_id: args.company_id, p_day: args.day, p_enabled: args.enabled });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: accountKeys.all });
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
     },
   });
 }

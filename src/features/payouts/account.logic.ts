@@ -8,7 +8,8 @@ export type MovementKind =
   | "transfer_in"
   | "withdrawal"
   | "custody_sale"
-  | "custody_refund";
+  | "custody_refund"
+  | "fee_credit";
 
 export interface AccountMovement {
   kind: MovementKind;
@@ -62,6 +63,7 @@ export const MOVEMENT_LABEL: Record<MovementKind, string> = {
   withdrawal: "Saque para o banco",
   custody_sale: "Venda (em custódia)",
   custody_refund: "Venda em custódia cancelada",
+  fee_credit: "Taxa devolvida pela Movepark",
 };
 
 /** Como o dinheiro sai do recebedor para a conta bancária, em uma frase. */

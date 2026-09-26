@@ -34,6 +34,12 @@ function monta(props: { canWithdraw: boolean; canRefund: boolean; showGateway?: 
     error: null,
   } as never);
   rpc("partner_account_statement", { json: extrato });
+  rpc("payout_auto_forecast", {
+    json: {
+      company_id: "c1", enabled: true, day: 10, source: "global", next_at: "2026-10-10", forecast_cents: 14133, min_cents: 5000,
+      below_min: false, recipient_status: "active", recipient_missing: false, last_cycle: null,
+    },
+  });
   rpc("payout_withdrawable", {
     json: {
       company_id: "c1", release_days: 30, released_cents: 5000, retained_cents: 1422, debt_cents: 2880,
@@ -63,7 +69,7 @@ describe("PartnerAccount", () => {
     const efeitos = screen.getAllByTestId("mov-no-saldo").map((e) => e.textContent?.replace(/\u00a0/g, " "));
     expect(efeitos).toEqual(["+R$ 14,22", "-", "−R$ 53,67"]);
     expect(screen.getByText("liberado")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Repassar para o banco" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Repassar agora" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Estornar" })).not.toBeInTheDocument();
   });
 
@@ -72,7 +78,7 @@ describe("PartnerAccount", () => {
     const estornar = await screen.findByRole("link", { name: "Estornar" });
     expect(estornar).toHaveAttribute("href", "/manager/bookings?q=MP-4DA019");
 
-    await userEvent.click(screen.getByRole("button", { name: "Repassar para o banco" }));
+    await userEvent.click(screen.getByRole("button", { name: "Repassar agora" }));
     // A taxa aparece antes de confirmar, mas NÃO é descontada do disponível (é cobrada no saque).
     expect(screen.getByTestId("saque-taxa")).toHaveTextContent("3,67");
     expect(screen.getByTestId("saque-disponivel")).toHaveTextContent("21,20");
@@ -86,7 +92,7 @@ describe("PartnerAccount", () => {
 
   it("Sacar o máximo pede o disponível inteiro e avisa que cai o valor menos a taxa", async () => {
     const { saque } = monta({ canWithdraw: true, canRefund: false });
-    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Repassar agora" }));
     await userEvent.click(screen.getByRole("button", { name: "Sacar o máximo" }));
     expect(screen.getByTestId("saque-resumo")).toHaveTextContent("cai na conta: R$ 17,53");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));
@@ -110,7 +116,7 @@ describe("PartnerAccount", () => {
     });
     edge("refresh-recipients", { json: { ok: true } });
     renderWithProviders(<PartnerAccount companyId="c1" canWithdraw canRefund={false} showGateway={false} />);
-    expect(await screen.findByRole("button", { name: "Repassar para o banco" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Repassar agora" })).toBeDisabled();
     // Radix abre o tooltip no foco do gatilho (o span ao redor do botão desabilitado).
     await act(async () => screen.getByTestId("repassar-bloqueado").focus());
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
@@ -120,7 +126,7 @@ describe("PartnerAccount", () => {
 
   it("Movepark vê os dois saldos, saca até o da Pagar.me e é avisada quando passa do nosso", async () => {
     const { saque } = monta({ canWithdraw: true, canRefund: true });
-    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Repassar agora" }));
     expect(screen.getByTestId("saque-disponivel")).toHaveTextContent("R$ 21,20");
     expect(screen.getByTestId("saque-gateway")).toHaveTextContent("R$ 128,49");
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
@@ -133,7 +139,7 @@ describe("PartnerAccount", () => {
 
   it("Movepark não passa do saldo na Pagar.me; dentro do nosso disponível não manda force", async () => {
     const { saque } = monta({ canWithdraw: true, canRefund: true });
-    await userEvent.click(await screen.findByRole("button", { name: "Repassar para o banco" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Repassar agora" }));
     await userEvent.type(screen.getByLabelText("Valor a sacar"), "20000");
     expect(screen.getByTestId("saque-resumo")).toHaveTextContent("acima do saldo na Pagar.me");
     await userEvent.click(screen.getByRole("button", { name: "Confirmar saque" }));

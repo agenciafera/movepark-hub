@@ -93,7 +93,7 @@ export function RecipientPanel({
         )}
         {recipient && (
           <Button size="sm" variant="secondary" onClick={() => setPayoutOpen(true)}>
-            Prazo de saque
+            Repasse
           </Button>
         )}
       </div>

@@ -127,8 +127,8 @@ export default function OperatorFinance() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-caption text-muted">Saque</div>
-              <div className="text-body-sm text-body">sempre manual, pelo botão Repassar para o banco</div>
+              <div className="text-caption text-muted">Repasse</div>
+              <div className="text-body-sm text-body">automático todo mês, sem taxa; ou na hora pelo botão Repassar agora</div>
             </div>
           </CardContent>
         </Card>
