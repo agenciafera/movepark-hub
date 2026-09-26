@@ -488,16 +488,23 @@ export interface WithdrawalMail {
   failureReason?: string | null;
   /** Conta de destino, só os últimos dígitos. */
   accountTail?: string | null;
+  /** Repasse automático mensal (E0.3.13): sem taxa para o parceiro. */
+  automatic?: boolean;
 }
 
 /** Saque pedido: em processamento, com a previsão de queda (E0.3.10). */
 export function tplWithdrawalRequested(w: WithdrawalMail): { subject: string; html: string } {
   const previsao = w.expectedAt ? `A previsão da Pagar.me é cair até <strong>${brDate(w.expectedAt)}</strong>.` : "Assim que o banco confirmar, você recebe outro e-mail.";
+  const taxa = w.automatic
+    ? `Sem taxa para você: a taxa de saque de ${cents(w.feeCents)} é por conta da Movepark.`
+    : `A taxa de saque foi de ${cents(w.feeCents)}, descontada do valor pedido.`;
   return {
-    subject: `Saque de ${cents(w.amountCents)} a caminho da sua conta`,
-    html: shell("Seu saque está a caminho", `
-      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. O saque de <strong>${escapeHtml(w.companyName)}</strong> saiu do saldo e está em processamento no banco.</p>
-      <p style="margin:0 0 14px"><strong>${cents(w.amountCents)}</strong> vão cair na conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}. A taxa de saque foi de ${cents(w.feeCents)}, descontada do valor pedido.</p>
+    subject: w.automatic
+      ? `Seu repasse mensal de ${cents(w.amountCents)} está a caminho`
+      : `Saque de ${cents(w.amountCents)} a caminho da sua conta`,
+    html: shell(w.automatic ? "Seu repasse mensal está a caminho" : "Seu saque está a caminho", `
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. ${w.automatic ? "O repasse automático" : "O saque"} de <strong>${escapeHtml(w.companyName)}</strong> saiu do saldo e está em processamento no banco.</p>
+      <p style="margin:0 0 14px"><strong>${cents(w.amountCents)}</strong> vão cair na conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}. ${taxa}</p>
       <p style="margin:0 0 22px">${previsao}</p>
       <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver meus saques")}</p>
       <p style="margin:0;font-size:14px;color:${BRAND.muted}">Saque pedido até as 15h em dia útil cai no mesmo dia; depois disso, no próximo dia útil.</p>`),
@@ -507,10 +514,12 @@ export function tplWithdrawalRequested(w: WithdrawalMail): { subject: string; ht
 /** A Pagar.me enviou a TED (status transferred, com comprovante). O crédito é do banco de destino. */
 export function tplWithdrawalPaid(w: WithdrawalMail): { subject: string; html: string } {
   return {
-    subject: `Transferência de ${cents(w.amountCents)} enviada ao seu banco`,
+    subject: w.automatic
+      ? `Repasse mensal de ${cents(w.amountCents)} enviado ao seu banco`
+      : `Transferência de ${cents(w.amountCents)} enviada ao seu banco`,
     html: shell("Transferência enviada", `
       <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. A Pagar.me enviou a TED de <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> para a conta${w.accountTail ? ` final ${escapeHtml(w.accountTail)}` : ""}${w.paidAt ? ` em ${brDate(w.paidAt)}` : ""}. Em dia útil, o crédito costuma aparecer no seu banco em minutos.</p>
-      <p style="margin:0 0 22px">Taxa de saque: ${cents(w.feeCents)}. O extrato completo está no seu painel.</p>
+      <p style="margin:0 0 22px">${w.automatic ? "Taxa de saque por conta da Movepark." : `Taxa de saque: ${cents(w.feeCents)}.`} O extrato completo está no seu painel.</p>
       <p style="margin:0;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver o extrato")}</p>`),
   };
 }
@@ -520,7 +529,7 @@ export function tplWithdrawalFailed(w: WithdrawalMail): { subject: string; html:
   return {
     subject: `Seu saque de ${cents(w.amountCents)} não foi concluído`,
     html: shell("O saque não foi concluído", `
-      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. O saque de <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> não chegou à conta.</p>
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(w.contactName))}. ${w.automatic ? "O repasse automático" : "O saque"} de <strong>${cents(w.amountCents)}</strong> de <strong>${escapeHtml(w.companyName)}</strong> não chegou à conta.</p>
       <p style="margin:0 0 14px">${w.failureReason ? `Motivo informado pelo banco: <strong>${escapeHtml(w.failureReason)}</strong>.` : "O banco não informou o motivo."} O valor volta ao seu saldo e você pode pedir de novo pelo painel.</p>
       <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver meus saques")}</p>
       <p style="margin:0;font-size:14px;color:${BRAND.muted}">Se os dados bancários mudaram, atualize o cadastro antes de tentar de novo.</p>`),

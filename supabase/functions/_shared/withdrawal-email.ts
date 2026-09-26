@@ -112,6 +112,7 @@ export async function sendWithdrawalEmails(admin: any, row: WithdrawalEmailRow):
         paidAt: row.paid_at,
         failureReason: row.failure_reason,
         accountTail: accountTailFromRaw(row.raw),
+        automatic: row.origin === "automatic",
       };
       const mail = kind === "requested"
         ? tplWithdrawalRequested(dados)

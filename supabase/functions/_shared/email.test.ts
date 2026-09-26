@@ -282,3 +282,17 @@ Deno.test("tplFlightProtectionUnit: voo, hora coberta, preço por dia e link do 
   assertStringIncludes(m.html, "R$ 54,00");
   assertStringIncludes(m.html, "/operator/bookings/MP-1A2B3C");
 });
+
+Deno.test("saque automático: assunto de repasse mensal e taxa por conta da Movepark", () => {
+  const base = { contactName: "Kallef Souza", companyName: "Agência Fera", amountCents: 4633, feeCents: 367, expectedAt: "2026-10-10T18:00:00.000Z", accountTail: "5482-1", automatic: true };
+  const pedido = tplWithdrawalRequested(base);
+  assertStringIncludes(pedido.subject, "Seu repasse mensal de");
+  assertStringIncludes(pedido.html, "Sem taxa para você");
+  assertStringIncludes(pedido.html, "por conta da Movepark");
+  assertEquals(pedido.html.includes("—"), false);
+  const caiu = tplWithdrawalPaid({ ...base, paidAt: "2026-10-10T13:05:00.000Z" });
+  assertStringIncludes(caiu.subject, "Repasse mensal de");
+  assertStringIncludes(caiu.html, "por conta da Movepark");
+  const falhou = tplWithdrawalFailed({ ...base, failureReason: "conta inválida" });
+  assertStringIncludes(falhou.html, "O repasse automático");
+});
