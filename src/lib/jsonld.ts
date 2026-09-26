@@ -122,8 +122,34 @@ const DIA_SCHEMA: Record<string, string> = {
 };
 
 /** Horário curado vira OpeningHoursSpecification; default de catálogo não vira horário. */
-function horariosDaUnidade(bh: ListingDetail["location"]["business_hours"]) {
-  if (!bh) return undefined;
+/** 24 horas, todos os dias, na convenção que o Google aceita para funcionamento contínuo. */
+const VINTE_E_QUATRO_HORAS = [
+  {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: Object.values(DIA_SCHEMA),
+    opens: "00:00",
+    closes: "23:59",
+  },
+];
+
+/**
+ * `openingHoursSpecification` da unidade.
+ *
+ * A ordem de prioridade importa: `business_hours` vence sempre que existe, porque é o
+ * horário por dia que alguém digitou, e `is_24h` é só uma flag. A unidade de Nova Iguaçu
+ * é o caso que obriga essa ordem: ela tem `is_24h = false`, abre 07:00 às 20:00 e fecha
+ * domingo. Deixar a flag mandar ali publicaria ao Google um domingo aberto que não existe.
+ *
+ * Sem `business_hours`, a flag responde. Isso passou a valer em 26/09/2026, quando o dono
+ * confirmou que toda unidade de aeroporto listada opera 24 horas: antes disso a flag era
+ * `NOT NULL DEFAULT true` e emitir horário a partir dela seria afirmar uma escala que
+ * ninguém tinha verificado. A confirmação é o que a transformou em dado.
+ */
+function horariosDaUnidade(
+  bh: ListingDetail["location"]["business_hours"],
+  is24h?: boolean,
+) {
+  if (!bh) return is24h ? VINTE_E_QUATRO_HORAS : undefined;
   const specs = Object.entries(bh)
     .filter(([dia, faixa]) => DIA_SCHEMA[dia] && faixa != null)
     .map(([dia, faixa]) => ({
@@ -147,6 +173,10 @@ export function localBusinessSchema(
   return {
     "@context": "https://schema.org",
     "@type": ["LocalBusiness", "ParkingFacility"],
+    // Mesmo `@id` que a lista da página de destino usa para esta unidade: é o que
+    // consolida as duas menções numa entidade.
+    "@id": NO.lugar(urlDaFicha(listing)),
+    isPartOf: { "@id": SITE_ID },
     name: listing.location.public_name ?? `${listing.company.name} - ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
@@ -177,7 +207,10 @@ export function localBusinessSchema(
       dest && dest.type === "airport" && dest.code
         ? { "@type": "Airport", name: dest.name, iataCode: dest.code }
         : undefined,
-    openingHoursSpecification: horariosDaUnidade(listing.location.business_hours),
+    openingHoursSpecification: horariosDaUnidade(
+      listing.location.business_hours,
+      listing.location.is_24h,
+    ),
     // Espelho da tabela de diárias visível; sem preço na tela, sem faixa no schema.
     priceRange: showcase ? `${REAL(showcase.lowDaily)} - ${REAL(showcase.highDaily)} por diária` : undefined,
     // Meio de pagamento é promessa de transação: só onde a reserva fecha no Hub.
@@ -285,6 +318,8 @@ export function productOfferSchema(
   return {
     "@context": "https://schema.org",
     "@type": "Product",
+    // Mesmo `@id` que a lista da página de destino usa para a oferta desta unidade.
+    "@id": NO.oferta(url),
     name: listing.location.public_name ?? `${listing.company.name} - ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
@@ -336,6 +371,8 @@ export function destinationSchema(d: {
   return {
     "@context": "https://schema.org",
     "@type": isAirport ? ["Place", "Airport"] : "Place",
+    "@id": NO.destino(`${SITE_URL}${caminhoDestino(d.public_slug ?? d.slug)}`),
+    isPartOf: { "@id": SITE_ID },
     iataCode: isAirport ? iata : undefined,
     name: d.name,
     description: d.meta_description ?? undefined,
@@ -387,6 +424,10 @@ export function parkingFacilitySchema(p: {
   return {
     "@context": "https://schema.org",
     "@type": "ParkingFacility",
+    // Mesmo `@id` que a lista da página de destino usa para este lote: a menção lá e a
+    // ficha aqui são o mesmo lugar.
+    "@id": NO.lugar(absoluta(p.url)),
+    isPartOf: { "@id": SITE_ID },
     name: p.name,
     description: p.description ?? undefined,
     url: absoluta(p.url),
@@ -510,6 +551,28 @@ function editorEntidade() {
   };
 }
 
+/**
+ * Fragmento de `@id` por tipo de nó.
+ *
+ * O `@id` é o que faz a MESMA unidade, citada na lista da página de destino e descrita na
+ * página dela, ser uma entidade só para o crawler em vez de duas que por acaso têm o mesmo
+ * nome. Era a maior lacuna medida contra o concorrente em 26/09/2026: a Bandeira Park usa 35
+ * `@id` na home e a Movepark tinha zero nas páginas que rankeiam (só 3 na home).
+ *
+ * O fragmento é POR TIPO de propósito. Na lista do destino a unidade com preço sai como
+ * `Product` e na página dela como `LocalBusiness`: dar o mesmo `@id` aos dois declararia uma
+ * entidade com dois tipos incompatíveis, que é pior que não ter `@id` nenhum. Então o lugar é
+ * `#business`, a oferta é `#product`, e cada um consolida com o seu par.
+ */
+export const NO = {
+  /** O lugar: `LocalBusiness` / `ParkingFacility`. */
+  lugar: (url: string) => `${url}#business`,
+  /** A oferta: `Product` com `AggregateOffer`. */
+  oferta: (url: string) => `${url}#product`,
+  /** O destino: `Place` + `Airport`. */
+  destino: (url: string) => `${url}#place`,
+} as const;
+
 export const ORG_ID = `${SITE_URL}/#organization`;
 export const SITE_ID = `${SITE_URL}/#website`;
 
@@ -527,7 +590,18 @@ export function organizationSchema() {
     legalName: "Movepark Tecnologia Ltda",
     taxID: "68.183.164/0001-35",
     url: SITE_URL,
-    logo: `${SITE_URL}/brand/logo-movepark.svg`,
+    // `ImageObject` e não URL crua: o Google pede largura e altura no logo da
+    // Organization, e as duas aqui são as do próprio arquivo (526x78 no viewBox do SVG),
+    // não uma estimativa. Era o último tipo de nó que o concorrente tinha e nós não.
+    logo: {
+      "@type": "ImageObject",
+      "@id": `${SITE_URL}/#logo`,
+      url: `${SITE_URL}/brand/logo-movepark.svg`,
+      contentUrl: `${SITE_URL}/brand/logo-movepark.svg`,
+      width: 526,
+      height: 78,
+      caption: "Movepark",
+    },
     description:
       "Plataforma de reserva de estacionamentos em aeroportos e destinos do Brasil: busca, comparação de preços e reserva online com traslado até o terminal.",
     slogan: "Vaga garantida ou realocamos e cobrimos a diferença.",
@@ -788,6 +862,9 @@ export function destinationOffersSchema(args: {
       p.price
         ? {
             "@type": "Product" as const,
+            // O MESMO `@id` da oferta na página da unidade: é aqui que a menção na lista
+            // e a página descrita param de ser duas entidades homônimas.
+            "@id": NO.oferta(absoluta(p.url)),
             name: p.name,
             description: p.description ?? undefined,
             url: absoluta(p.url),
@@ -805,6 +882,7 @@ export function destinationOffersSchema(args: {
           }
         : {
             "@type": "ParkingFacility" as const,
+            "@id": NO.lugar(absoluta(p.url)),
             name: p.name,
             description: p.description ?? undefined,
             url: absoluta(p.url),
@@ -815,6 +893,7 @@ export function destinationOffersSchema(args: {
       .filter((m) => !porUrl.has(absoluta(m.url)))
       .map((m) => ({
         "@type": "ParkingFacility" as const,
+        "@id": NO.lugar(absoluta(m.url)),
         name: m.name,
         url: absoluta(m.url),
       })),

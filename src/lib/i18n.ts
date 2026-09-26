@@ -32,6 +32,17 @@ export type Locale = typeof LOCALE_PADRAO | LocaleTraduzido;
 export const LOCALES: readonly Locale[] = [LOCALE_PADRAO, ...LOCALES_TRADUZIDOS];
 
 /** Valor do atributo `lang` do `<html>`. */
+/**
+ * O idioma no formato que o Open Graph pede (`pt_BR`), com underscore, diferente do
+ * `LANG_HTML` (`pt-BR`) que vai no atributo `lang`. São dois formatos para a mesma coisa,
+ * e escrever o do OG à mão em cada página é como se erra um deles.
+ */
+export const OG_LOCALE: Record<Locale, string> = {
+  "pt-BR": "pt_BR",
+  en: "en_US",
+  es: "es_ES",
+};
+
 export const LANG_HTML: Record<Locale, string> = {
   "pt-BR": "pt-BR",
   en: "en",

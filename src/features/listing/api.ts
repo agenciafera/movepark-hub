@@ -67,6 +67,8 @@ export type ListingDetail = {
     tax_id: string | null;
     /** Horário curado por dia da semana (null = ninguém preencheu; não se emite horário de default). */
     business_hours: Record<string, { open: string; close: string } | null> | null;
+    /** Opera 24 horas. Quando `business_hours` é nulo, é daqui que o schema tira o horário. */
+    is_24h: boolean;
     directions_text: string | null;
     shuttle_frequency_minutes: number | null;
     shuttle_to_terminal_minutes: number | null;
@@ -134,7 +136,7 @@ export type ListingDetail = {
 const baseSelect = `
   id, capacity, is_active, external_checkout_url,
   location:location!inner(
-    id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours,
+    id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours, is_24h,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     has_pcd_config, has_passenger_quantity, review_avg, review_count, photos, is_draft,
@@ -266,6 +268,7 @@ export async function fetchListing(
       legal_name: m.location.legal_name ?? null,
       tax_id: m.location.tax_id ?? null,
       business_hours: m.location.business_hours ?? null,
+      is_24h: m.location.is_24h ?? true,
       notice: m.location.notice,
       has_notice: m.location.has_notice,
       directions_text: m.location.directions_text ?? null,

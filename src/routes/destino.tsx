@@ -6,6 +6,8 @@ import {
   LANG_HTML,
   LOCALE_PADRAO,
   caminhoLocalizado,
+  LOCALES,
+  OG_LOCALE,
   clusterHreflang,
   type Locale,
 } from "@/lib/i18n";
@@ -35,6 +37,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import {
   breadcrumbSchema,
+  webPageSchema,
   destinationOffersSchema,
   destinationSchema,
   faqSchema,
@@ -542,6 +545,19 @@ export default function DestinoPage() {
         {hreflangs.map((h) => (
           <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
         ))}
+        {/* O idioma da página e os outros em que ela existe. Sem `og:locale` o
+            compartilhamento e o agente que lê OG não sabem em que língua está o texto,
+            e o `alternate` é a mesma informação do `hreflang` na linguagem do OG. */}
+        <meta property="og:locale" content={OG_LOCALE[locale]} />
+        {hreflangs
+          .filter((h) => h.hreflang !== "x-default" && h.hreflang !== LANG_HTML[locale])
+          .map((h) => (
+            <meta
+              key={`ogl-${h.hreflang}`}
+              property="og:locale:alternate"
+              content={OG_LOCALE[(LOCALES.find((l) => LANG_HTML[l] === h.hreflang) ?? locale)]}
+            />
+          ))}
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
@@ -565,6 +581,20 @@ export default function DestinoPage() {
             }),
           )}
         </script>
+        {/* `WebPage` com a data REAL da tabela de preço desta página. É o sinal de
+            frescor que desempata duas fontes que dizem o mesmo número, e sem tabela no ar
+            o nó não sai: data inventada é pior que data ausente. */}
+        {prices?.lastUpdated && (
+          <script type="application/ld+json">
+            {JSON.stringify(
+              webPageSchema({
+                url: canonical,
+                name: title,
+                dateModified: prices.lastUpdated,
+              }),
+            )}
+          </script>
+        )}
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([

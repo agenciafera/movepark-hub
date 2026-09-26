@@ -17,6 +17,7 @@ import {
   organizationSchema,
   webApplicationSchema,
   webSiteSchema,
+  SITE_ID,
 } from "./jsonld";
 
 type Overrides = {
@@ -888,9 +889,16 @@ describe("perfil local da unidade no LocalBusiness", () => {
     });
   });
 
-  /** Horário só sai do dado curado; o default de catálogo (is_24h) não vira promessa. */
-  it("business_hours curado vira OpeningHoursSpecification; sem dado, sem horário", () => {
+  /**
+   * `business_hours` vence `is_24h` sempre que existe.
+   *
+   * A unidade de Nova Iguaçu é o caso real que obriga essa ordem: `is_24h = false`,
+   * 07:00 às 20:00 e fechada domingo. Se a flag mandasse ali, o schema afirmaria ao
+   * Google um domingo aberto que não existe.
+   */
+  it("business_hours curado vence a flag de 24h", () => {
     const listing = makeListing();
+    listing.location.is_24h = false;
     listing.location.business_hours = {
       mon: { open: "07:00", close: "20:00" },
       sun: null,
@@ -898,7 +906,29 @@ describe("perfil local da unidade no LocalBusiness", () => {
     expect(localBusinessSchema(listing).openingHoursSpecification).toEqual([
       { "@type": "OpeningHoursSpecification", dayOfWeek: "Monday", opens: "07:00", closes: "20:00" },
     ]);
-    expect(localBusinessSchema(makeListing()).openingHoursSpecification).toBeUndefined();
+  });
+
+  /**
+   * Sem `business_hours`, a flag responde. Passou a valer em 26/09/2026, quando o dono
+   * confirmou que toda unidade de aeroporto listada opera 24 horas. Antes disso a flag
+   * era `NOT NULL DEFAULT true` e emitir horário dela seria afirmar escala não verificada.
+   */
+  it("sem business_hours e com is_24h, emite 24 horas nos sete dias", () => {
+    const listing = makeListing();
+    listing.location.is_24h = true;
+    listing.location.business_hours = null;
+    const spec = localBusinessSchema(listing).openingHoursSpecification;
+    expect(spec).toHaveLength(1);
+    expect(spec?.[0]).toMatchObject({ opens: "00:00", closes: "23:59" });
+    expect(spec?.[0].dayOfWeek).toHaveLength(7);
+    expect(spec?.[0].dayOfWeek).toContain("Sunday");
+  });
+
+  it("sem business_hours e sem is_24h, nenhum horário é afirmado", () => {
+    const listing = makeListing();
+    listing.location.is_24h = false;
+    listing.location.business_hours = null;
+    expect(localBusinessSchema(listing).openingHoursSpecification).toBeUndefined();
   });
 
   it("a faixa de diárias visível vira priceRange", () => {
@@ -1120,5 +1150,85 @@ describe("priceTableOffersSchema", () => {
       "Aerovalet · Vaga Descoberta",
       "Aeropark · Vaga Descoberta",
     ]);
+  });
+});
+
+/**
+ * `@id`: a mesma unidade citada em duas páginas tem que ser UMA entidade.
+ *
+ * Medido em 26/09/2026: a Bandeira Park usava 35 `@id` e a Movepark tinha zero nas páginas
+ * que rankeiam. Sem `@id`, a unidade listada na página de destino e a descrita na página
+ * dela são duas coisas que por acaso têm o mesmo nome, e nenhuma autoridade acumula.
+ */
+describe("grafo de entidade: @id", () => {
+  const URL_FICHA = "https://movepark.co/estacionamentos/aeroporto-viracopos/garageinn";
+
+  it("a oferta na lista do destino e a da página da unidade têm o mesmo @id", () => {
+    const naLista = destinationOffersSchema({
+      partners: [
+        {
+          name: "Garageinn",
+          url: "/estacionamentos/aeroporto-viracopos/garageinn",
+          price: { lowPrice: 18.9, highPrice: 447, offerCount: 4, guaranteedSpot: false },
+        },
+      ],
+      mapped: [],
+    })[0] as Record<string, unknown>;
+
+    const listing = makeListing();
+    listing.location.public_slug = "garageinn";
+    listing.location.destination!.public_slug = "aeroporto-viracopos";
+    const naPagina = productOfferSchema(listing, [], {
+      showcase: {
+        lowDaily: 18.9,
+        highDaily: 30,
+        offerCount: 2,
+        porDuracao: [
+          { days: 1, total: 30 },
+          { days: 30, total: 567 },
+        ],
+      },
+    }) as Record<string, unknown>;
+
+    expect(naLista["@id"]).toBe(`${URL_FICHA}#product`);
+    expect(naPagina?.["@id"]).toBe(naLista["@id"]);
+  });
+
+  it("o lugar usa fragmento diferente da oferta, porque os tipos não são o mesmo", () => {
+    // Na lista a unidade com preço sai como `Product` e na página dela como
+    // `LocalBusiness`. Mesmo `@id` para tipos incompatíveis é pior que nenhum `@id`.
+    const listing = makeListing();
+    listing.location.public_slug = "garageinn";
+    listing.location.destination!.public_slug = "aeroporto-viracopos";
+    expect(localBusinessSchema(listing)["@id"]).toBe(`${URL_FICHA}#business`);
+    expect(localBusinessSchema(listing)["@id"]).not.toBe(`${URL_FICHA}#product`);
+  });
+
+  it("parceiro sem preço na lista consolida com o LocalBusiness da página dele", () => {
+    const naLista = destinationOffersSchema({
+      partners: [{ name: "Garageinn", url: "/estacionamentos/aeroporto-viracopos/garageinn", price: null }],
+      mapped: [],
+    })[0] as Record<string, unknown>;
+    const listing = makeListing();
+    listing.location.public_slug = "garageinn";
+    listing.location.destination!.public_slug = "aeroporto-viracopos";
+    expect(naLista["@id"]).toBe(localBusinessSchema(listing)["@id"]);
+  });
+
+  it("todo nó de página aponta para o site, e o destino se identifica", () => {
+    const d = destinationSchema({
+      slug: "aeroporto-de-viracopos",
+      public_slug: "aeroporto-viracopos",
+      code: "VCP",
+      name: "Aeroporto de Viracopos",
+      type: "airport",
+      city: "Campinas",
+      state: "SP",
+      country: "BR",
+      latitude: -23,
+      longitude: -47,
+    }) as Record<string, unknown>;
+    expect(d["@id"]).toBe("https://movepark.co/estacionamentos/aeroporto-viracopos#place");
+    expect(d.isPartOf).toEqual({ "@id": SITE_ID });
   });
 });
