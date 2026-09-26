@@ -429,6 +429,73 @@ export function BookingHoldSettings() {
 }
 
 /**
+ * Repasse automático mensal (E0.3.13): dia, mínimo e liga/desliga globais. Cada empresa pode ter o
+ * seu em Recebedores › Repasse. A taxa da Pagar.me nesse repasse é da Movepark; no saque manual é
+ * do parceiro. Spec: docs/specs/repasse-automatico-mensal.md.
+ */
+export function PayoutAutoSettings() {
+  const { data, isLoading } = useAppSettings();
+  const update = useUpdateAppSettings();
+  const [enabled, setEnabled] = React.useState(true);
+  const [day, setDay] = React.useState("10");
+  const [minReais, setMinReais] = React.useState("50");
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (data && !ready) {
+      setEnabled((data.payout_auto_enabled ?? "true") !== "false");
+      setDay(data.payout_auto_day ?? "10");
+      setMinReais(String(Number(data.payout_auto_min_cents ?? "5000") / 100).replace(".", ","));
+      setReady(true);
+    }
+  }, [data, ready]);
+
+  async function save() {
+    const d = Math.min(31, Math.max(1, Math.round(Number(day) || 10)));
+    const cents = Math.max(0, Math.round(Number(minReais.replace(",", ".")) * 100) || 0);
+    try {
+      await update.mutateAsync({ payout_auto_enabled: enabled ? "true" : "false", payout_auto_day: String(d), payout_auto_min_cents: String(cents) });
+      setDay(String(d));
+      toast.success("Repasse automático salvo");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Repasse automático mensal</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <p className="text-body-sm text-muted text-pretty">
+          Todo estacionamento recebe o disponível para saque no dia escolhido, sem custo: a taxa da Pagar.me fica por conta da Movepark. O saque manual continua existindo e a taxa dele é do parceiro.
+        </p>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="payout-auto-enabled">Ligado para todas as empresas</Label>
+          <Switch id="payout-auto-enabled" checked={enabled} onCheckedChange={setEnabled} />
+        </div>
+        <div className="grid gap-4 tablet:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="payout-auto-day">Dia do mês</Label>
+            <Input id="payout-auto-day" type="number" min={1} max={31} value={day} onChange={(e) => setDay(e.target.value)} />
+            <span className="text-caption text-muted">Dia 29, 30 ou 31 em mês mais curto roda no último dia.</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="payout-auto-min">Valor mínimo (R$)</Label>
+            <Input id="payout-auto-min" inputMode="decimal" value={minReais} onChange={(e) => setMinReais(e.target.value)} />
+            <span className="text-caption text-muted">Abaixo disso o valor acumula para o mês seguinte.</span>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={isLoading || update.isPending}>{update.isPending ? "Salvando…" : "Salvar"}</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
  * Saque dos parceiros (E0.3.8): o disponível para saque é nosso, e a venda só entra nele N dias
  * depois do pagamento. Este é o padrão global; cada empresa pode sobrescrever em Recebedores ›
  * Prazo de saque. A transferência automática da Pagar.me fica desligada: saque é manual.
@@ -532,6 +599,7 @@ export default function ManagerSettings() {
         <TabsContent value="payments" className="flex flex-col gap-6">
           <PaymentsSettings />
           <PayoutReleaseSettings />
+          <PayoutAutoSettings />
           <BookingHoldSettings />
           <InstallmentPolicySettings />
         </TabsContent>
