@@ -99,6 +99,35 @@ export function caminhoLocalizado(args: {
   return `${prefixo}/${seg}/${args.slug}${args.sufixo ?? ""}${barra}`;
 }
 
+/**
+ * A canônica da página, que é SEMPRE a dela mesma.
+ *
+ * Existe porque errar isso é silencioso e caro. Até 26/09/2026 a página de destino
+ * devolvia o caminho português em qualquer idioma, então cada página traduzida declarava
+ * ser duplicata da portuguesa. Num cluster de `hreflang` o Google exige
+ * autocanonicalização: canônica cruzada diz "não indexe esta, indexe aquela", e o efeito
+ * seria apagar as 44 páginas traduzidas do índice. O defeito ficou no ar desde a primeira
+ * delas porque na época se conferiu o `hreflang` e não o canonical.
+ *
+ * `slugTraduzido` ausente cai no português de propósito: sem slug não existe página
+ * naquele idioma, e apontar para uma URL inexistente é pior que apontar para a original.
+ */
+export function canonicalDoIdioma(args: {
+  familia: keyof typeof SEGMENTO;
+  locale: Locale;
+  /** A canônica em português, já montada (ela pode vir de `public_slug`, não do slug). */
+  canonicalPt: string;
+  slugTraduzido?: string | null;
+  origem: string;
+}): string {
+  if (args.locale === LOCALE_PADRAO || !args.slugTraduzido) return args.canonicalPt;
+  return `${args.origem}${caminhoLocalizado({
+    familia: args.familia,
+    slug: args.slugTraduzido,
+    locale: args.locale,
+  })}`;
+}
+
 export type Alternativa = { locale: Locale; caminho: string };
 
 /**

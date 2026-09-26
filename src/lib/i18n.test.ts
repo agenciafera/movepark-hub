@@ -4,6 +4,7 @@ import {
   LOCALES,
   LOCALE_PADRAO,
   caminhoLocalizado,
+  canonicalDoIdioma,
   clusterHreflang,
   ehLocaleTraduzido,
   localeDoCaminho,
@@ -130,5 +131,51 @@ describe("contrato de barra final", () => {
     expect(
       caminhoLocalizado({ familia: "blog", slug: "x", locale: "pt-BR", sufixo: "/precos" }),
     ).toBe("/blog/x/precos");
+  });
+});
+
+describe("canonicalDoIdioma", () => {
+  const O = "https://movepark.co";
+  const PT = `${O}/estacionamentos/aeroporto-confins`;
+
+  /**
+   * O defeito que estava no ar: a página em inglês declarava ser duplicata da portuguesa.
+   * Num cluster de hreflang isso apaga a traduzida do índice, porque canônica cruzada diz
+   * "não indexe esta, indexe aquela". Autocanonicalização não é preferência, é requisito.
+   */
+  it("cada idioma aponta para a própria URL, não para a portuguesa", () => {
+    expect(
+      canonicalDoIdioma({ familia: "destino", locale: "en", canonicalPt: PT, slugTraduzido: "confins-airport", origem: O }),
+    ).toBe(`${O}/en/airport-parking/confins-airport`);
+    expect(
+      canonicalDoIdioma({ familia: "destino", locale: "es", canonicalPt: PT, slugTraduzido: "aeropuerto-confins", origem: O }),
+    ).toBe(`${O}/es/estacionamiento-aeropuerto/aeropuerto-confins`);
+  });
+
+  it("o português devolve a canônica dele, que pode vir do public_slug", () => {
+    // A canônica em pt entra montada porque nasce do `public_slug`, e não do slug interno.
+    expect(
+      canonicalDoIdioma({ familia: "destino", locale: "pt-BR", canonicalPt: PT, slugTraduzido: "confins-airport", origem: O }),
+    ).toBe(PT);
+  });
+
+  it("sem slug traduzido cai no português, em vez de montar URL inexistente", () => {
+    for (const slug of [null, undefined, ""]) {
+      expect(
+        canonicalDoIdioma({ familia: "destino", locale: "en", canonicalPt: PT, slugTraduzido: slug, origem: O }),
+      ).toBe(PT);
+    }
+  });
+
+  it("vale para as três famílias, e o blog mantém a barra do português", () => {
+    expect(
+      canonicalDoIdioma({ familia: "faq", locale: "en", canonicalPt: `${O}/faq/x`, slugTraduzido: "x-en", origem: O }),
+    ).toBe(`${O}/en/faq/x-en`);
+    expect(
+      canonicalDoIdioma({ familia: "blog", locale: "en", canonicalPt: `${O}/blog/x/`, slugTraduzido: "x-en", origem: O }),
+    ).toBe(`${O}/en/blog/x-en`);
+    expect(
+      canonicalDoIdioma({ familia: "blog", locale: "pt-BR", canonicalPt: `${O}/blog/x/`, slugTraduzido: null, origem: O }),
+    ).toBe(`${O}/blog/x/`);
   });
 });

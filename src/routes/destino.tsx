@@ -6,6 +6,7 @@ import {
   LANG_HTML,
   LOCALE_PADRAO,
   caminhoLocalizado,
+  canonicalDoIdioma,
   LOCALES,
   OG_LOCALE,
   clusterHreflang,
@@ -258,9 +259,26 @@ export default function DestinoPage() {
   const H = headings(locale, destination, traducao?.seo_label ?? undefined);
 
   const title = traducao?.meta_title?.trim() || destination.meta_title || destinationTitle(destination);
-  // O caminho público, nunca o slug interno: /destinos/<slug> agora responde 301 de volta
-  // pra cá, e canonical apontando pra URL que redireciona é loop que derruba a indexação.
-  const canonical = `${SITE_URL}${caminhoDestino(destinoSlug)}`;
+  // O caminho público em português, nunca o slug interno: /destinos/<slug> responde 301
+  // de volta pra cá, e canonical apontando pra URL que redireciona é loop que derruba a
+  // indexação. Este é também o `x-default` e a âncora `pt-BR` do cluster.
+  const canonicalPt = `${SITE_URL}${caminhoDestino(destinoSlug)}`;
+  /*
+    A canônica é a DA PRÓPRIA PÁGINA, sempre.
+
+    Até 26/09/2026 esta linha devolvia o caminho português em qualquer idioma, então cada
+    página traduzida declarava ser duplicata da portuguesa. Num cluster de `hreflang` o
+    Google exige autocanonicalização: canônica cruzada diz "não indexe esta, indexe aquela",
+    e o efeito seria apagar as 44 páginas traduzidas do índice. O defeito estava no ar desde
+    a primeira delas, porque na época eu conferi o `hreflang` e não o canonical.
+  */
+  const canonical = canonicalDoIdioma({
+    familia: "destino",
+    locale,
+    canonicalPt,
+    slugTraduzido: traducao?.slug,
+    origem: SITE_URL,
+  });
 
   // Cluster de hreflang. Só entra idioma cuja tradução está publicada (a RLS filtra
   // na origem), e a lista sempre inclui a própria página mais o `x-default` no
@@ -269,7 +287,7 @@ export default function DestinoPage() {
   // inteiro, inclusive do original.
   const idiomas = loaded?.idiomas ?? [];
   const hreflangs = clusterHreflang([
-    { locale: LOCALE_PADRAO, caminho: canonical },
+    { locale: LOCALE_PADRAO, caminho: canonicalPt },
     ...idiomas.map((l) => ({
       locale: l.locale,
       caminho: `${SITE_URL}${caminhoLocalizado({ familia: "destino", slug: l.slug, locale: l.locale })}`,
