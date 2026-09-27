@@ -626,6 +626,8 @@ ninguém religa a transferência automática por engano. A Edge `update-recipien
 existindo para uso administrativo por API, sem tela. **Antecipação** segue desligada e exige
 **liberação prévia** da Pagar.me. `take_rate_bps` segue por empresa na `company`.
 
+**Atualização de 26/09/2026 (E0.3.13):** o diálogo virou **Repasse** e edita também `company.payout_auto_day` e `company.payout_auto_enabled`; o saque deixou de ser só manual: existe o **repasse automático mensal** (nosso cron, dia 10 por padrão, sem taxa para o parceiro), e o manual continua com a taxa dele. A transferência automática nativa da Pagar.me segue desligada. Ver [repasse-automatico-mensal.md](./repasse-automatico-mensal.md).
+
 **Default global vigente (jul/2026): transferência automática DESLIGADA**, Mensal/dia 1
 (`app_setting.payout_transfer_enabled = 'false'`). O recebedor do parceiro **nasce sem repasse
 automático**: o saldo fica na Pagar.me e sai por **saque** (`payout_withdrawal`, escopo

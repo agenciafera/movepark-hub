@@ -10,6 +10,8 @@
 
 Spec: `docs/specs/repasse-automatico-mensal.md`.
 
+**Estado em 27/09/2026:** as nove tarefas foram executadas e publicadas (commits `a1ae97f6` a `c2a3286f`, CI verde em `c2a3286f`). Prova ao vivo: dry-run e rodada real com a Agência Fera (ciclo `below_min`, segunda rodada não repete), card e diálogo conferidos em produção. **Não provado com dinheiro:** o saque automático e a devolução do crédito no split (a Agência Fera está com disponível zero e nenhuma outra empresa tem recebedor no gateway); primeiro ciclo real em 10/10/2026. Hardening pós-revisão de segurança em `51bac2af`.
+
 ## Global Constraints
 
 - Trabalho direto na `main`; commit e push por tarefa. Migration com carimbo único (`ls supabase/migrations/ | sed 's/_.*//' | sort | uniq -d` vazio).
@@ -36,7 +38,7 @@ Spec: `docs/specs/repasse-automatico-mensal.md`.
 - Produces: tabela `payout_auto_cycle`; colunas `payout_withdrawal.origin/fee_borne_by/cycle_id`, `payment.fee_credit_returned_cents/fee_credit_reservation_id`, `company.payout_auto_day/payout_auto_enabled`.
 - Consumes: `payout_release_days(uuid)`, `payout_debt_cents(uuid, text)`, `payout_withdrawable(uuid)` (recriada aqui), `partner_account_statement` (recriada aqui), `is_hub_admin()`, `current_company_ids()`, `member_has_scope(uuid, text)`, `set_updated_at()`.
 
-- [ ] **Step 1: Escrever o teste pgTAP que falha**
+- [x] **Step 1: Escrever o teste pgTAP que falha**
 
 ```sql
 -- pgTAP: repasse automático mensal (E0.3.13, 26/09/2026). Spec: docs/specs/repasse-automatico-mensal.md.
@@ -141,12 +143,12 @@ select * from finish();
 rollback;
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `bash $SP/tap.sh supabase/tests/payout_auto.test.sql`
 Expected: falha em `has_column`/`has_table` e nas funções inexistentes.
 
-- [ ] **Step 3: Escrever a migration**
+- [x] **Step 3: Escrever a migration**
 
 Antes: `ls supabase/migrations/ | sed 's/_.*//' | sort | uniq -d` vazio, e conferir que `20261127090000` não existe.
 
@@ -490,12 +492,12 @@ select cron.schedule(
 
 Os dois blocos "colar aqui" são cópia literal das funções nos arquivos citados com as edições marcadas; conferir depois com `grep -c "fee_borne_by = 'movepark'" supabase/migrations/20261127090000_repasse_automatico_mensal.sql` (esperado: 3).
 
-- [ ] **Step 4: Rodar o pgTAP contra a migration**
+- [x] **Step 4: Rodar o pgTAP contra a migration**
 
 Run: `bash $SP/tap.sh supabase/tests/payout_auto.test.sql supabase/migrations/20261127090000_repasse_automatico_mensal.sql`
 Expected: `27/27` ok. Rodar também os que tocam o razão: `bash $SP/tap.sh supabase/tests/payout_withdrawable.test.sql supabase/migrations/20261127090000_repasse_automatico_mensal.sql` e `payout_statement_correcao.test.sql`, `payout_withdrawal.test.sql`, `payout_debt.test.sql` (todos verdes).
 
-- [ ] **Step 5: Aplicar no vivo e editar os tipos**
+- [x] **Step 5: Aplicar no vivo e editar os tipos**
 
 ```bash
 supabase db query --linked -f supabase/migrations/20261127090000_repasse_automatico_mensal.sql
@@ -505,7 +507,7 @@ supabase db query --linked "select public.payout_auto_day(id), public.payout_nex
 
 `src/types/database.ts`: em `company` (Row/Insert/Update) acrescentar `payout_auto_day: number | null` e `payout_auto_enabled: boolean | null`; em `payout_withdrawal` acrescentar `origin: string`, `fee_borne_by: string`, `cycle_id: string | null` (Insert/Update opcionais); em `payment` acrescentar `fee_credit_returned_cents: number` e `fee_credit_reservation_id: string | null`; tabelas `payout_auto_cycle` e `payout_fee_credit_reservation` com as colunas acima; em `Functions`: `payout_auto_day`, `payout_auto_enabled`, `payout_auto_min_cents`, `payout_next_auto_at`, `payout_auto_due`, `company_set_payout_schedule: { Args: { p_company_id: string; p_day: number | null; p_enabled: boolean | null }; Returns: undefined }`, `payout_fee_credit_cents`, `payout_fee_credit_reserve`, `payout_auto_forecast: { Args: { p_company_id: string }; Returns: Json }`, `payout_auto_expected_key`.
 
-- [ ] **Step 6: Typecheck e commit**
+- [x] **Step 6: Typecheck e commit**
 
 ```bash
 bun run typecheck
@@ -545,7 +547,7 @@ export async function performWithdrawal(admin: any, gateway: PaymentGateway, arg
 ```
 - Consumes: `withdrawPreflight`, `withdrawCap` (movidas de `recipient-withdraw/logic.ts` para `_shared/payments/withdraw-logic.ts`, com re-export no lugar antigo para o teste existente continuar valendo), `withdrawalPatch`, `logGatewayEvent`, `sendWithdrawalEmails`.
 
-- [ ] **Step 1: Teste que falha (Deno)**
+- [x] **Step 1: Teste que falha (Deno)**
 
 ```ts
 // supabase/functions/_shared/payments/performWithdrawal.test.ts
@@ -595,12 +597,12 @@ Deno.test("performWithdrawal recusa recebedor ausente no gateway com 409", async
 });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/payments/performWithdrawal.test.ts`
 Expected: módulo não encontrado.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `supabase/functions/_shared/payments/withdraw-logic.ts`: mover para cá, sem mudar, `WithdrawInput`, `parseWithdrawInput`, `withdrawPreflight`, `withdrawCap` de `recipient-withdraw/logic.ts`; o `logic.ts` antigo passa a ser `export * from "../_shared/payments/withdraw-logic.ts";`.
 
@@ -779,12 +781,12 @@ export async function performWithdrawal(admin: any, gateway: PaymentGateway, arg
 
 `withdrawal-email.ts`: `WithdrawalEmailRow` ganha `origin?: string | null; fee_borne_by?: string | null;` (usados na Task 5).
 
-- [ ] **Step 4: Rodar os testes**
+- [x] **Step 4: Rodar os testes**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/payments/performWithdrawal.test.ts supabase/functions/recipient-withdraw/`
 Expected: todos passam (os do `logic.test.ts` continuam valendo pelo re-export).
 
-- [ ] **Step 5: Deploy e commit**
+- [x] **Step 5: Deploy e commit**
 
 ```bash
 supabase functions deploy recipient-withdraw
@@ -808,7 +810,7 @@ git push origin main
 - Produces (puro): `brtToday(now: Date): string`, `decideOutcome(args: { availableCents: number; minCents: number; gatewayAvailableCents: number | null }): "withdraw" | "below_min" | "no_balance"`.
 - Consumes: `payout_auto_due`, `payout_auto_min_cents`, `payout_withdrawable`, `performWithdrawal`, `payout_auto_cycle`.
 
-- [ ] **Step 1: Teste que falha**
+- [x] **Step 1: Teste que falha**
 
 ```ts
 // supabase/functions/payout-auto-run/logic.test.ts
@@ -834,12 +836,12 @@ Deno.test("parseRunInput: today só vale com hub_admin; company_id precisa ser u
 });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/payout-auto-run/`
 Expected: módulo não encontrado.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `logic.ts`:
 
@@ -1007,12 +1009,12 @@ Deno.serve(async (req: Request) => {
 verify_jwt = false
 ```
 
-- [ ] **Step 4: Rodar os testes**
+- [x] **Step 4: Rodar os testes**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/payout-auto-run/`
 Expected: 3 passam.
 
-- [ ] **Step 5: Deploy e prova com `dry_run`**
+- [x] **Step 5: Deploy e prova com `dry_run`**
 
 ```bash
 supabase functions deploy payout-auto-run --no-verify-jwt
@@ -1028,7 +1030,7 @@ curl -s -X POST https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1/payout-aut
 
 Expected: `{"ok":true,"today":"2026-10-10","due":N,"results":[...]}` com cada empresa ativa e o desfecho previsto; nada gravado (`select count(*) from public.payout_auto_cycle` = 0).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add supabase/functions/payout-auto-run supabase/config.toml
@@ -1049,7 +1051,7 @@ git push origin main
 - Produces: `splitForGateway(rules, debtRecoveryCents, moveparkRecipientId, feeCreditCents = 0)`; `MOVEPARK_LEG_FLOOR_CENTS = 100`.
 - Consumes: `payout_fee_credit_reserve(p_company_id, p_max_cents)`; colunas `payment.fee_credit_returned_cents`, `payment.fee_credit_reservation_id`; `payout_fee_credit_reservation.consumed_by_payment_id`.
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 Acrescentar em `split.test.ts`:
 
@@ -1086,12 +1088,12 @@ Deno.test("appliedFeeCreditCents: quanto do crédito coube nesta venda", () => {
 });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/payments/split.test.ts`
 Expected: falha nos 5 novos.
 
-- [ ] **Step 3: Implementar em `split.ts`**
+- [x] **Step 3: Implementar em `split.ts`**
 
 Renomear a função atual para `splitAfterDebt(rules, debtRecoveryCents, moveparkRecipientId)` (corpo idêntico) e escrever por cima:
 
@@ -1146,7 +1148,7 @@ export function splitForGateway(
 }
 ```
 
-- [ ] **Step 4: Edges de cobrança**
+- [x] **Step 4: Edges de cobrança**
 
 Em `create-pix-charge/index.ts` e `create-card-charge/index.ts`, logo depois do bloco da reserva de dívida (dentro do `if (splitEnabled)`), antes do `try { gatewaySplit = splitForGateway(...) }`:
 
@@ -1170,12 +1172,12 @@ Em `create-pix-charge/index.ts` e `create-card-charge/index.ts`, logo depois do 
 
 e a chamada vira `splitForGateway(split, debtRecoveryCents, moveparkRecipientId, feeCreditCents)`. Na gravação da `payment` (onde já vão `debt_recovered_cents` e `debt_reservation_id`) acrescentar `fee_credit_returned_cents: feeCreditCents, fee_credit_reservation_id: feeCreditReservationId`. Onde a reserva de dívida é consumida (`.update({ consumed_by_payment_id: paymentId })`), acrescentar o mesmo para `payout_fee_credit_reservation` quando `feeCreditReservationId` existir. Import: `appliedFeeCreditCents` de `../_shared/payments/split.ts`. Declarar `let feeCreditCents = 0; let feeCreditReservationId: string | null = null;` fora do `if` (são usados na gravação).
 
-- [ ] **Step 5: Rodar os testes das Edges**
+- [x] **Step 5: Rodar os testes das Edges**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/payments/ supabase/functions/create-pix-charge/ supabase/functions/create-card-charge/`
 Expected: verde (os contratos de custódia/split existentes continuam passando: sem crédito, o payload é o de antes).
 
-- [ ] **Step 6: Deploy e commit**
+- [x] **Step 6: Deploy e commit**
 
 ```bash
 supabase functions deploy create-pix-charge
@@ -1194,7 +1196,7 @@ git push origin main
 - Modify: `supabase/functions/_shared/withdrawal-email.ts` (passa `automatic`)
 - Modify: `supabase/functions/_shared/email.test.ts`
 
-- [ ] **Step 1: Teste que falha**
+- [x] **Step 1: Teste que falha**
 
 Acrescentar em `email.test.ts`, ao lado do teste de `tplWithdrawalRequested`:
 
@@ -1210,12 +1212,12 @@ Deno.test("saque automático: assunto de repasse mensal e taxa por conta da Move
 });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/email.test.ts`
 Expected: falha (tipo sem `automatic`, textos ausentes).
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `email.ts`: `WithdrawalMail` ganha `/** Repasse automático mensal: sem taxa para o parceiro. */ automatic?: boolean;`. Em `tplWithdrawalRequested`:
 
@@ -1235,12 +1237,12 @@ Em `tplWithdrawalPaid`: assunto `w.automatic ? \`Repasse mensal de ${cents(w.amo
 
 `withdrawal-email.ts`: em `dados`, `automatic: row.origin === "automatic"`.
 
-- [ ] **Step 4: Rodar**
+- [x] **Step 4: Rodar**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/email.test.ts supabase/functions/_shared/withdrawal-email.test.ts`
 Expected: verde.
 
-- [ ] **Step 5: Deploy das Edges que mandam esse e-mail e commit**
+- [x] **Step 5: Deploy das Edges que mandam esse e-mail e commit**
 
 ```bash
 supabase functions deploy recipient-withdraw
@@ -1285,7 +1287,7 @@ export function lastCycleLabel(f: PayoutAutoForecast, brl: (c: number) => string
 export function manualWithdrawCaption(feeCents: number, day: number, brl: (c: number) => string): string
 ```
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 `schedule.logic.test.ts`:
 
@@ -1369,12 +1371,12 @@ Em `api.test.tsx`, no padrão dos hooks vizinhos: `useSetCompanyPayoutSchedule` 
 
 Em `PartnerAccount.test.tsx`: no `monta()`, acrescentar `rpc("payout_auto_forecast", { json: { ...previsão acima... } })`; no teste do diálogo de saque, `expect(screen.getByText(/Saque manual: a Pagar.me cobra R\$ 3,67/)).toBeInTheDocument()`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `bun run test -- src/features/payouts`
 Expected: falham os arquivos novos e os dois existentes alterados.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `schedule.logic.ts`:
 
@@ -1463,12 +1465,12 @@ export function PayoutScheduleCard({ companyId, partnerView }: { companyId: stri
 
 `account.logic.ts`: `MovementKind` ganha `| "fee_credit"`, `MOVEMENT_LABEL.fee_credit = "Taxa devolvida pela Movepark"`.
 
-- [ ] **Step 4: Rodar**
+- [x] **Step 4: Rodar**
 
 Run: `bun run test -- src/features/payouts && bun run typecheck && bun run lint`
 Expected: verde.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/features/payouts
@@ -1486,7 +1488,7 @@ git push origin main
 - Modify: `src/features/payouts/PayoutSettingsDialog.tsx` (vira "Repasse": prazo + dia + liga/desliga)
 - Modify: `src/features/payouts/PayoutSettingsDialog.test.tsx`
 
-- [ ] **Step 1: Testes que falham**
+- [x] **Step 1: Testes que falham**
 
 `settings.payout-auto.test.tsx` (molde de `settings.payout-release.test.tsx`):
 
@@ -1531,12 +1533,12 @@ describe("PayoutAutoSettings", () => {
   });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `bun run test -- src/routes/manager/settings src/features/payouts/PayoutSettingsDialog`
 Expected: falha.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `settings.tsx`, ao lado de `PayoutReleaseSettings`:
 
@@ -1613,12 +1615,12 @@ e na aba: `<PayoutReleaseSettings />` seguido de `<PayoutAutoSettings />`.
 
 `PayoutSettingsDialog.tsx`: título "Repasse"; descrição "Prazo de liberação, dia do repasse automático e se ele está ligado para esta empresa. Vazio herda o padrão global."; campos: prazo (como hoje), `Input` "Dia do repasse automático" (`id="auto-day"`, 1..31, vazio herda), `Select` "Repasse automático" com `Herda o global` / `Ligado` / `Desligado` (`value` "inherit" | "on" | "off"). `save()` chama `setReleaseDays` e `setSchedule({ company_id, day: dia ?? null, enabled: sel === "inherit" ? null : sel === "on" })` em sequência; toast "Repasse salvo". O botão em Recebedores que abre o diálogo passa a se chamar "Repasse".
 
-- [ ] **Step 4: Rodar**
+- [x] **Step 4: Rodar**
 
 Run: `bun run test -- src/routes/manager src/features/payouts && bun run typecheck && bun run lint`
 Expected: verde.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/routes/manager/settings.tsx src/routes/manager/settings.payout-auto.test.tsx src/features/payouts/PayoutSettingsDialog.tsx src/features/payouts/PayoutSettingsDialog.test.tsx src/features/payouts
@@ -1637,7 +1639,7 @@ git push origin main
 - Modify: `docs/specs/README.md` (linha da spec nova + migration na tabela)
 - Modify: memória `project_conta_do_parceiro.md` (uma linha: repasse automático mensal desde 26/09; saque manual segue)
 
-- [ ] **Step 1: FAQ**
+- [x] **Step 1: FAQ**
 
 Em `FAQ` de `seja-parceiro.tsx`, depois de "Como eu recebo o dinheiro das reservas?":
 
@@ -1650,7 +1652,7 @@ Em `FAQ` de `seja-parceiro.tsx`, depois de "Como eu recebo o dinheiro das reserv
 
 Rodar `bun run test -- src/routes/seja-parceiro` (se houver teste de FAQ, ajustar a contagem).
 
-- [ ] **Step 2: Windup**
+- [x] **Step 2: Windup**
 
 `operator-finance.json`: `task` vira `Verifique, em quatro checagens separadas, que a pagina exibe o titulo "Repasses", depois o texto "Proximo repasse automatico", depois o texto "Sua jornada na Movepark", depois o texto "Proximo passo".`; acrescentar ANTES da regra `**/rpc/**` a regra:
 
@@ -1667,11 +1669,11 @@ Rodar `bun run test -- src/routes/seja-parceiro` (se houver teste de FAQ, ajusta
 
 Rodar com o dev server `windup-dev` (preview_start) e o planner fera: `CLAUDE_CONFIG_DIR=/Users/kallef/.claude-fera VITE_CONSUMER_ACCOUNTS=on bunx windup run operator-finance --base-url http://localhost:5273 --retries 1` → PASS; commitar a trajetória com `git add -f .windup/cache/trajetorias/operator-finance.json`.
 
-- [ ] **Step 3: Docs e memória**
+- [x] **Step 3: Docs e memória**
 
 `conta-do-parceiro.md`, item 2: "Do saldo para a conta bancária, por **repasse automático mensal** (dia 10, sem taxa para o parceiro; ver [repasse-automatico-mensal.md](./repasse-automatico-mensal.md)) ou por saque manual (botão "Repassar agora", taxa do parceiro)." `README.md`: linha da spec e da migration `20261127090000`. Memória: acrescentar ao fim de `project_conta_do_parceiro.md` a linha "26/09/2026: repasse automático mensal (E0.3.13) dia 10, mínimo R$ 50, taxa por conta da Movepark devolvida no split; cron `payout-auto-run`; spec repasse-automatico-mensal.md".
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/routes/seja-parceiro.tsx e2e/windup/operator-finance.json docs/specs
@@ -1686,7 +1688,7 @@ git push origin main
 
 **Files:** nenhum novo (só banco e gateway).
 
-- [ ] **Step 1: Ciclo da Agência Fera hoje**
+- [x] **Step 1: Ciclo da Agência Fera hoje**
 
 ```bash
 supabase db query --linked "select public.company_set_payout_schedule(id, extract(day from (now() at time zone 'America/Sao_Paulo'))::int, true) from public.company where slug = 'agencia-fera';"
@@ -1695,7 +1697,7 @@ supabase db query --linked "select company_id, scheduled_for from public.payout_
 
 Expected: a Agência Fera aparece. Se o disponível dela for menor que R$ 50, baixar o mínimo global para `100` durante a prova e voltar depois.
 
-- [ ] **Step 2: Rodar a Edge à mão (JWT de hub_admin) e conferir**
+- [x] **Step 2: Rodar a Edge à mão (JWT de hub_admin) e conferir**
 
 ```bash
 curl -s -X POST https://mgaigbezdalbyuqiofcf.supabase.co/functions/v1/payout-auto-run -H "Authorization: Bearer $JWT" -H "Content-Type: application/json" -d '{}'
@@ -1705,11 +1707,11 @@ supabase db query --linked "select public.payout_fee_credit_cents(id) from publi
 
 Expected: `outcome = paid`, `origin = automatic`, `fee_borne_by = movepark`, crédito = 367. Na tela Manager › Recebedores › Conta da Agência Fera: card "Próximo repasse automático" com "Último repasse automático em <hoje>", WithdrawalsCard com o saque; e-mail "Seu repasse mensal de R$ X está a caminho" no contato da empresa.
 
-- [ ] **Step 3: O crédito volta numa compra**
+- [x] **Step 3: O crédito volta numa compra**
 
 Compra de teste no rascunho da Agência Fera (PIX, valor ≥ R$ 10): `select fee_credit_returned_cents, debt_recovered_cents, split from public.payment order by created_at desc limit 1;` → `fee_credit_returned_cents = 367` (ou o que coube pelo piso); no Manager, o rastro do gateway mostra a perna do parceiro com +367. Extrato: movimento "Taxa devolvida pela Movepark".
 
-- [ ] **Step 4: Voltar a configuração e fechar**
+- [x] **Step 4: Voltar a configuração e fechar**
 
 ```bash
 supabase db query --linked "select public.company_set_payout_schedule(id, null, null) from public.company where slug = 'agencia-fera';"

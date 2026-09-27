@@ -528,6 +528,7 @@ Tabela de Reservas
   Na tela da reserva, o card "Canal da venda" mostra de onde veio a venda e a comissão que ela paga.
   Ver [comissao-por-origem.md](./comissao-por-origem.md).
 - **NFs** ficam como **placeholder** — dependem da camada fiscal (**E0.2**, em definição com a contabilidade).
+- **Repasse automático mensal (E0.3.13, 26/09/2026):** no topo da conta, o card "Próximo repasse automático" diz a data (dia 10 por padrão), o valor previsto e que não há taxa para o parceiro; abaixo do mínimo de R$ 50 explica que acumula; mostra o último ciclo. O botão "Repassar agora" (saque manual) avisa a taxa de R$ 3,67 da Pagar.me. Ver [repasse-automatico-mensal.md](./repasse-automatico-mensal.md).
 
 ## 8.x Preço e disponibilidade na extranet (E1.4)
 

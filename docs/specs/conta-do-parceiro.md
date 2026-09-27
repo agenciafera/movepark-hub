@@ -98,7 +98,7 @@ conciliação atualizam o status) e relê o saldo para a tela não mostrar o nú
 
 - **Manager › Recebedores**: botão **Conta** por linha. A página tem os quatro cartões
   (disponível, a liberar, vai para o banco, dívida), o mês de referência, "Atualizar saldos"
-  (leitura forçada no gateway), **Repassar para o banco** e, na linha da venda, **Estornar**.
+  (leitura forçada no gateway), **Repassar agora** (chamado "Repassar para o banco" até 26/09/2026) e, na linha da venda, **Estornar**.
 - **Operator › Financeiro**: o mesmo componente no topo, sem Estornar; Repassar só para o Dono.
   **Sem o saldo da Pagar.me** (17/09/2026): o parceiro não vê o saldo bruto do recebedor, o
   cartão "a liberar pelo gateway" nem o botão "Atualizar saldos", e a tela não força leitura no
@@ -115,7 +115,7 @@ e `useWithdraw`.
 
 ## Saque controlado pela Movepark (E0.3.8, 16/09/2026)
 
-Decidido pelo Kallef na sequência: **saque sempre manual** e **o disponível para saque é
+Decidido pelo Kallef na sequência (e revisto em 26/09/2026: o saque manual continua, e entrou o repasse automático mensal sem taxa, ver [repasse-automatico-mensal.md](./repasse-automatico-mensal.md)): **saque sempre manual** e **o disponível para saque é
 nosso, não o saldo bruto da Pagar.me**. O saldo da Pagar.me continua sendo o cofre (o dinheiro
 está no recebedor do parceiro, em nome dele) e o teto físico; o nosso razão decide quanto e
 quando pode sair. Migration `20261120010000`.
@@ -149,7 +149,7 @@ recusa (409) o que passa dele; `force` só para hub_admin.
 os dois números, "Disponível pela Movepark" (o nosso) e "Saldo no recebedor (Pagar.me)"; "Sacar
 o máximo" preenche o saldo do recebedor e o teto é ele. Quando o valor passa do nosso, o diálogo
 avisa em âmbar quanto ainda não liberou pelo prazo do parceiro e manda `force: true` sozinho; não
-há mais checkbox. O parceiro segue limitado ao nosso disponível, e o botão "Repassar para o banco"
+há mais checkbox. O parceiro segue limitado ao nosso disponível, e o botão "Repassar agora"
 desabilitado explica o motivo num tooltip (prazo, dívida, recebedor ou gateway zerado).
 
 A conta mostra "Disponível para saque" (nosso), "Retido pelo prazo" (com o prazo), "A liberar
