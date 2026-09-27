@@ -3,6 +3,7 @@ import {
   brlFromCents,
   brlShort,
   daysUntil,
+  walletExpiryNotice,
   tierProgress,
   cashbackPctLabel,
   firstNameOf,
@@ -15,6 +16,23 @@ describe("brlFromCents", () => {
     expect(brlFromCents(4200)).toBe("R$ 42,00");
     expect(brlFromCents(0)).toBe("R$ 0,00");
     expect(brlFromCents(159)).toBe("R$ 1,59");
+  });
+});
+
+describe("walletExpiryNotice", () => {
+  const now = Date.parse("2026-09-27T12:00:00Z");
+  it("crédito sem data não expira: nenhum aviso", () => {
+    expect(walletExpiryNotice({ expiring_cents: 2500, expiring_at: null }, now)).toBeNull();
+  });
+  it("valor zero não vira aviso, mesmo com data", () => {
+    expect(
+      walletExpiryNotice({ expiring_cents: 0, expiring_at: "2026-10-27T12:00:00Z" }, now),
+    ).toBeNull();
+  });
+  it("com valor e data, devolve o valor e os dias restantes", () => {
+    expect(
+      walletExpiryNotice({ expiring_cents: 2500, expiring_at: "2026-10-27T12:00:00Z" }, now),
+    ).toEqual({ cents: 2500, days: 30 });
   });
 });
 

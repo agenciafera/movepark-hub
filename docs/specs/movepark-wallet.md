@@ -10,6 +10,20 @@
 > débito não existe, a tela diz que o saldo fica na conta e que abater no checkout vem em breve, e a
 > indicação promete crédito na carteira depois da primeira reserva concluída, para os dois lados.
 
+> **27/09/2026, validade pausada até o débito existir:** enquanto ninguém consegue gastar o saldo,
+> ele não vence. A chave `app_setting.wallet_debit_enabled` (`'false'`, seed da migration
+> `20261127130000_carteira_sem_expiracao_ate_o_debito`) manda na conta de validade, que agora vive
+> em um lugar só: `wallet_credit_expires_at()` devolve nulo com a chave desligada e
+> `now() + wallet_expiry_days` com ela ligada. Os dois triggers de crédito
+> (`tg_booking_completed_cashback`, `tg_booking_completed_referral`) usam essa função (a indicação
+> tinha 90 dias cravados no corpo e passou a seguir a configuração). Os créditos vivos com data na
+> hora da migration (3 lançamentos, todos `cashback`) tiveram `expires_at` zerado; `get_my_wallet()`
+> já tratava nulo como "não expira" (saldo soma `expires_at is null or > now()`, "próximos a vencer"
+> exige data) e não mudou. Quando o débito entrar no checkout, virar a chave para `'true'` faz
+> crédito novo voltar a ganhar prazo; o que já existe não retroage. Front: `walletExpiryNotice`
+> (`growth.logic.ts`) só monta o aviso "expiram em N dias" quando há data, e a FAQ da indicação
+> deixou de prometer 90 dias. pgTAP `wallet_no_expiry.test.sql` cobre os dois estados da chave.
+
 > **Moeda:** a carteira guarda **real (BRL), 1 para 1**, em centavos. Não é moeda de pontos nem tem
 > conversão. Cashback e indicação creditam dinheiro de verdade; o débito (fase seguinte) abate a
 > cobrança na mesma proporção.
@@ -33,7 +47,9 @@ validado, testado e com o contrato de reversão escrito.
 | `wallet_ledger` | Ledger append-only. Saldo = soma dos lançamentos não expirados, em centavos de real. `amount_cents > 0` crédito, `< 0` débito. `kind in ('cashback','referral','debit','expire','adjust')`. Trancada por RLS (0 policies): acesso só por RPC/trigger `SECURITY DEFINER`. |
 | `membership` / `membership_tier` | Nível do cliente (Ignição 2% → Turbo 3% → Nitro 5% → Pódio invite-only). `cashback_bps` mora no catálogo, calibrável no Manager. |
 | `referral` / `referral_code` | Indicação (quem indicou quem) e código por perfil. |
-| `app_setting.wallet_expiry_days` | Validade do crédito em dias (default 90). |
+| `app_setting.wallet_expiry_days` | Validade do crédito em dias (default 90). Só vale com `wallet_debit_enabled = 'true'`. |
+| `app_setting.wallet_debit_enabled` | `'false'` até o débito no checkout existir: crédito novo nasce sem `expires_at` (27/09/2026). |
+| `wallet_credit_expires_at()` | A conta de validade, única: nulo com a chave desligada, `now() + wallet_expiry_days` com ela ligada. Interna (anon/authenticated não executam). |
 
 **Idempotência:** índice parcial `wallet_cashback_once (booking_id) where kind = 'cashback'`
 garante no máximo um cashback por reserva.
@@ -42,8 +58,8 @@ garante no máximo um cashback por reserva.
 
 | Gatilho | Trigger / RPC | Regra |
 |---|---|---|
-| Reserva vira `completed` | `tg_booking_completed_cashback` | Credita `round(total_amount * cashback_bps / 100)` centavos. Recomputa o nível antes de ler o bps (independe da ordem dos triggers). Não credita se total 0, bps 0 ou `profile_id` nulo. |
-| 1ª reserva concluída do indicado | `tg_booking_completed_referral` | Credita `reward_amount` (default R$25) nos dois lados e fecha a indicação como `rewarded`. |
+| Reserva vira `completed` | `tg_booking_completed_cashback` | Credita `round(total_amount * cashback_bps / 100)` centavos. Recomputa o nível antes de ler o bps (independe da ordem dos triggers). Não credita se total 0, bps 0 ou `profile_id` nulo. Validade por `wallet_credit_expires_at()`. |
+| 1ª reserva concluída do indicado | `tg_booking_completed_referral` | Credita `reward_amount` (default R$25) nos dois lados e fecha a indicação como `rewarded`. Validade por `wallet_credit_expires_at()`. |
 | Atribuição da indicação | `redeem_referral_code(code)` | Guardas: código existe, não é o próprio (`self`), cliente ainda sem reserva concluída (`not_new`), uma indicação por conta (`already`). |
 | Leitura | `get_my_wallet()` | Saldo (só créditos válidos), próximos a expirar (janela de 60 dias) e extrato (últimos 20). Filtra `expires_at is null or expires_at > now()`. |
 
@@ -87,6 +103,8 @@ implementado.
 
 ## Testes
 
+`supabase/tests/wallet_no_expiry.test.sql` (pgTAP, 17): a chave `wallet_debit_enabled` nos dois
+estados (crédito sem data e contando no saldo; crédito novo com ~90 dias quando ligada, sem retroagir).
 `supabase/tests/wallet.test.sql` (pgTAP): estrutura + RLS + hardening (anon barrado),
 cashback na conclusão (valor por bps + idempotência + guarda de valor 0), indicação (crédito dos dois
 lados + `rewarded` + guardas do redeem), saldo e exclusão de crédito expirado em `get_my_wallet`.

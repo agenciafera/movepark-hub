@@ -64,7 +64,7 @@ function faqDoPrograma(premio: string) {
     },
     {
       q: "O crédito expira?",
-      a: "O crédito vale por 90 dias a partir do momento em que entra na sua carteira.",
+      a: "Hoje, não. Enquanto abater no checkout não está no ar, o crédito fica na sua carteira sem prazo. Quando a validade voltar a valer, ela conta só para os créditos novos.",
     },
   ];
 }

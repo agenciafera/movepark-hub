@@ -7,7 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AccountCard } from "@/components/shared/AccountCard";
 import { useAuth } from "@/auth/context";
 import { useMembership, useWallet, useLastCompletedBooking, useReferrals } from "./api";
-import { brlFromCents, brlShort, daysUntil, tierProgress, cashbackPctLabel } from "./growth.logic";
+import {
+  brlFromCents,
+  brlShort,
+  tierProgress,
+  cashbackPctLabel,
+  walletExpiryNotice,
+} from "./growth.logic";
 
 /**
  * Movepark Clube: nível, carteira e a escada, em blocos (design "Minha Conta
@@ -148,13 +154,16 @@ export function MotorCrescimento() {
               <p className="text-display-2xl leading-none tabular-nums text-ink">
                 {brlFromCents(wallet.data.balance_cents)}
               </p>
-              {wallet.data.expiring_cents > 0 && wallet.data.expiring_at && (
-                <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mp-pale px-3 py-1.5 text-caption-sm text-mp-indigo">
-                  <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  {brlFromCents(wallet.data.expiring_cents)} expiram em{" "}
-                  {daysUntil(wallet.data.expiring_at)} dias
-                </span>
-              )}
+              {(() => {
+                // Crédito sem data não expira (validade pausada até o débito no checkout).
+                const aviso = walletExpiryNotice(wallet.data);
+                return aviso ? (
+                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mp-pale px-3 py-1.5 text-caption-sm text-mp-indigo">
+                    <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    {brlFromCents(aviso.cents)} expiram em {aviso.days} dias
+                  </span>
+                ) : null;
+              })()}
               {wallet.data.balance_cents === 0 && (
                 <img
                   src="/illustrations/il-clube-cashback.webp"

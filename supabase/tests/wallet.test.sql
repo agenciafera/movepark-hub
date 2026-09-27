@@ -67,7 +67,17 @@ begin
     (u_new,'customer','New','Bie')
   on conflict (id) do nothing;
 
-  select id into v_lpt from public.location_parking_type where capacity > 0 and is_active limit 1;
+  -- Unidade vendável pelo Hub (create_booking_atomic recusa unidade externa e tipo sem preço).
+  select lpt.id into v_lpt
+    from public.location_parking_type lpt
+    join public.location l on l.id = lpt.location_id
+    join public.company c on c.id = l.company_id
+    join public.pricing_rule pr on pr.location_parking_type_id = lpt.id
+   where l.checkout_mode = 'hub' and lpt.is_active and lpt.capacity > 0 and l.status = 'active'
+     and c.status = 'active' and c.onboarding_status = 'active' and pr.strategy = 'uniform_by_duration'
+   order by c.name, lpt.capacity desc limit 1;
+  update public.location set is_listed = true
+   where id = (select location_id from public.location_parking_type where id = v_lpt);
   update public.location_parking_type
      set capacity = 10, has_minimum_stay = false, has_minimum_date = false
    where id = v_lpt;
@@ -108,10 +118,12 @@ select is(
      where booking_id = current_setting('mc.b1')::uuid and kind = 'cashback'),
   200, 'cashback = 2% de R$100 (Ignição, 200 bps)'
 );
-select isnt(
+-- 27/09/2026: enquanto `wallet_debit_enabled` = false (não há débito no checkout), crédito novo
+-- nasce sem validade. O estado com a chave ligada está em wallet_no_expiry.test.sql.
+select ok(
   (select expires_at from public.wallet_ledger
-     where booking_id = current_setting('mc.b1')::uuid and kind = 'cashback'),
-  null, 'crédito de cashback tem validade (expires_at)'
+     where booking_id = current_setting('mc.b1')::uuid and kind = 'cashback') is null,
+  'crédito de cashback nasce sem validade enquanto o débito não existe'
 );
 select is(
   (select count(*)::int from public.wallet_ledger where booking_id = current_setting('mc.b0')::uuid),

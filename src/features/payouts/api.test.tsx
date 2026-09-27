@@ -4,6 +4,7 @@ import { toPayoutAccountPayload, type PayoutKycForm } from "./kyc";
 import { edge, falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
 import {
   useAcceptContract,
+  useContractPdf,
   useSavePayoutAccountAdmin,
   useSavePayoutAccountSelf,
   useSetCompanyGatewaySplit,
@@ -146,21 +147,60 @@ describe("useSavePayoutAccountSelf", () => {
 });
 
 describe("useAcceptContract", () => {
-  it("chama a RPC com a empresa, e a versão vai junto quando informada", async () => {
-    const espiao = rpc("operator_accept_contract", { json: null });
+  it("chama a RPC com a empresa e a versão vigente, e devolve a prova", async () => {
+    const prova = { version: "v1", sha256: "20aa30ee25bb", accepted_at: "2026-09-27T12:00:00Z" };
+    const espiao = rpc("operator_accept_contract", { json: prova });
 
     const { result } = renderMutation(() => useAcceptContract());
-    await result.current.mutateAsync({ company_id: "c1", version: "2026-08" });
+    const r = await result.current.mutateAsync({ company_id: "c1", version: "v1" });
 
-    expect(espiao.ultimoBody).toMatchObject({ p_company_id: "c1" });
-    expect(JSON.stringify(espiao.ultimoBody)).toContain("2026-08");
+    expect(espiao.ultimoBody).toEqual({ p_company_id: "c1", p_version: "v1" });
+    expect(r).toEqual(prova);
   });
 
-  it("propaga a recusa da RPC", async () => {
-    falha("rpc", "operator_accept_contract", 400, "contrato já aceito");
+  it("propaga a recusa da RPC (versão desatualizada, não-dono)", async () => {
+    falha("rpc", "operator_accept_contract", 400, "Versão do contrato desconhecida ou desatualizada");
 
     const { result } = renderMutation(() => useAcceptContract());
-    await expect(result.current.mutateAsync({ company_id: "c1" })).rejects.toThrow();
+    await expect(
+      result.current.mutateAsync({ company_id: "c1", version: "v0" }),
+    ).rejects.toThrow(/desatualizada/);
+  });
+});
+
+describe("useContractPdf", () => {
+  function comSessao(token: string | null) {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: token ? ({ access_token: token } as never) : null },
+      error: null,
+    } as never);
+  }
+
+  it("recusa sem sessão, antes de tocar a rede", async () => {
+    comSessao(null);
+    const espiao = edge("contract-pdf", { json: {} });
+    const { result } = renderMutation(() => useContractPdf());
+    await expect(result.current.mutateAsync({ company_id: "c1" })).rejects.toThrow(/Sessão/);
+    expect(espiao.chamadas).toHaveLength(0);
+  });
+
+  it("manda o JWT e a empresa, e devolve o arquivo como Blob", async () => {
+    comSessao("jwt-do-dono");
+    const espiao = edge("contract-pdf", { json: { fake: "pdf" } });
+    const { result } = renderMutation(() => useContractPdf());
+    const blob = await result.current.mutateAsync({ company_id: "c1" });
+
+    expect(espiao.ultimoBody).toEqual({ company_id: "c1" });
+    expect(espiao.chamadas[0].headers.get("authorization")).toBe("Bearer jwt-do-dono");
+    expect(blob).toBeInstanceOf(Blob);
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it("propaga a recusa da Edge (sem aceite, sem acesso)", async () => {
+    comSessao("jwt");
+    falha("edge", "contract-pdf", 409, "Contrato ainda não foi aceito");
+    const { result } = renderMutation(() => useContractPdf());
+    await expect(result.current.mutateAsync({ company_id: "c1" })).rejects.toThrow(/aceito/);
   });
 });
 

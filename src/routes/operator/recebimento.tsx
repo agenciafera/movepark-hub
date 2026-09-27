@@ -18,10 +18,18 @@ import {
   usePayoutAccount,
   useSavePayoutAccountSelf,
   useContractStatus,
+  useContractCurrent,
+  useContractPdf,
   useAcceptContract,
   useSyncRecipient,
 } from "@/features/payouts/api";
-import { CONTRACT_VERSION, CONTRACT_SUMMARY, downloadContract } from "@/features/payouts/contract";
+import {
+  CONTRACT_SUMMARY,
+  abbreviateHash,
+  contractPdfFilename,
+  downloadContract,
+  saveBlob,
+} from "@/features/payouts/contract";
 import { RevenueMotivator, RevenueMotivatorBanner } from "@/features/payouts/RevenueMotivator";
 import { OnboardingJourney } from "@/components/shared/OnboardingJourney";
 import { ConfettiBurst } from "@/components/shared/ConfettiBurst";
@@ -30,9 +38,10 @@ type Step = "dados" | "contrato" | "done";
 
 /**
  * Recebimento self-service do operador (E1.3): a "etapa 2" que a tela pós-publicação (unit-preview)
- * empurra. Coleta dados bancários + empresa (CNPJ) via PayoutKycForm e fecha com a assinatura do
- * contrato (simulada por ora). Quando a Movepark aprova o recebedor, a unidade entra na busca
- * (gate is_listed). Standalone, no estilo do preview travado.
+ * empurra. Coleta dados bancários + empresa (CNPJ) via PayoutKycForm e fecha com o aceite do
+ * contrato: o texto vem do banco (versão vigente), e o aceite grava versão, hash do texto, quem e
+ * IP (27/09/2026). Quando a Movepark aprova o recebedor, a unidade entra na busca (gate is_listed).
+ * Standalone, no estilo do preview travado.
  */
 /** Comemoração no aside ao completar o cadastro: emoji pulando + confete em loop. */
 function SetupDoneAside() {
@@ -63,6 +72,8 @@ export default function OperatorRecebimento() {
 
   const account = usePayoutAccount(companyId);
   const contract = useContractStatus(companyId);
+  const contractText = useContractCurrent(!!companyId);
+  const contractPdf = useContractPdf();
   const saveAccount = useSavePayoutAccountSelf();
   const acceptContract = useAcceptContract();
   const syncRecipient = useSyncRecipient();
@@ -96,9 +107,9 @@ export default function OperatorRecebimento() {
   }
 
   async function signContract() {
-    if (!companyId || !accept) return;
+    if (!companyId || !accept || !contractText.data) return;
     try {
-      await acceptContract.mutateAsync({ company_id: companyId, version: CONTRACT_VERSION });
+      await acceptContract.mutateAsync({ company_id: companyId, version: contractText.data.version });
       // Assinado → cria o recebedor na Pagar.me. Se o gateway pedir verificação, ele devolve o
       // link de KYC, que vira o próximo passo. Falha aqui não trava a conclusão (a Movepark recria).
       try {
@@ -111,6 +122,16 @@ export default function OperatorRecebimento() {
       setOverride("done");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível assinar.");
+    }
+  }
+
+  async function downloadPdf() {
+    if (!companyId) return;
+    try {
+      const blob = await contractPdf.mutateAsync({ company_id: companyId });
+      saveBlob(blob, contractPdfFilename(contract.data?.version ?? "contrato"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível gerar o PDF.");
     }
   }
 
@@ -191,31 +212,43 @@ export default function OperatorRecebimento() {
                   Último passo: leia e assine o contrato com a Movepark. É rápido.
                 </p>
               </div>
-              <div className="max-h-72 overflow-y-auto rounded-md border border-hairline bg-surface-soft p-4 text-body-sm text-ink">
+              <div className="max-h-96 overflow-y-auto rounded-md border border-hairline bg-surface-soft p-4 text-body-sm text-ink">
                 <p className="font-medium text-ink">
-                  Resumo do contrato de parceria (versão {CONTRACT_VERSION})
+                  Resumo do contrato de parceria
+                  {contractText.data ? ` (versão ${contractText.data.version})` : ""}
                 </p>
                 <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-muted">
                   {CONTRACT_SUMMARY.map((line) => (
                     <li key={line}>{line}</li>
                   ))}
                 </ul>
-                <p className="mt-3 text-caption-sm text-muted-steel">
-                  Este é um resumo. Baixe o contrato completo para ler e guardar.
-                </p>
+                <p className="mt-4 font-medium text-ink">Texto completo</p>
+                {contractText.isLoading ? (
+                  <p className="mt-2 text-muted">Carregando o contrato…</p>
+                ) : contractText.data ? (
+                  <pre className="mt-2 whitespace-pre-wrap font-sans text-body-sm text-ink">
+                    {contractText.data.body}
+                  </pre>
+                ) : (
+                  <p className="mt-2 text-danger">
+                    Não conseguimos carregar o contrato. Tente de novo em instantes.
+                  </p>
+                )}
               </div>
               <Button
                 variant="secondary"
                 size="sm"
                 className="w-fit"
+                disabled={!contractText.data}
                 onClick={() =>
-                  downloadContract({
+                  contractText.data &&
+                  downloadContract(contractText.data, {
                     companyName: account.data?.legal_name,
                     acceptedAt: contract.data?.acceptedAt,
                   })
                 }
               >
-                <Download className="h-4 w-4" /> Baixar contrato
+                <Download className="h-4 w-4" /> Baixar contrato (.txt)
               </Button>
               <label className="flex items-start gap-2.5 text-body-sm text-ink">
                 <Checkbox
@@ -228,7 +261,12 @@ export default function OperatorRecebimento() {
               <div className="flex items-center gap-2">
                 <Button
                   onClick={signContract}
-                  disabled={!accept || acceptContract.isPending || syncRecipient.isPending}
+                  disabled={
+                    !accept ||
+                    !contractText.data ||
+                    acceptContract.isPending ||
+                    syncRecipient.isPending
+                  }
                 >
                   {acceptContract.isPending || syncRecipient.isPending
                     ? "Assinando…"
@@ -252,6 +290,37 @@ export default function OperatorRecebimento() {
                   fez tudo certinho.
                 </p>
               </div>
+
+              {contract.data?.acceptedAt && (
+                <Card className="flex flex-col gap-3 p-5">
+                  <div className="flex items-center gap-2 text-ink">
+                    <FileText className="h-4 w-4 text-mp-indigo" />
+                    <p className="text-body-sm font-medium">Contrato aceito</p>
+                  </div>
+                  <dl className="grid gap-x-6 gap-y-1 text-body-sm tablet:grid-cols-[auto_1fr]">
+                    <dt className="text-muted">Versão</dt>
+                    <dd className="text-ink">{contract.data.version ?? "v1"}</dd>
+                    <dt className="text-muted">Aceito em</dt>
+                    <dd className="text-ink">
+                      {new Date(contract.data.acceptedAt).toLocaleString("pt-BR")}
+                    </dd>
+                    <dt className="text-muted">Hash do texto</dt>
+                    <dd className="font-mono text-ink" title={contract.data.sha256 ?? undefined}>
+                      {abbreviateHash(contract.data.sha256) ?? "sem hash (aceite anterior)"}
+                    </dd>
+                  </dl>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-fit"
+                    onClick={downloadPdf}
+                    disabled={contractPdf.isPending}
+                  >
+                    <Download className="h-4 w-4" />
+                    {contractPdf.isPending ? "Gerando PDF…" : "Baixar PDF do contrato aceito"}
+                  </Button>
+                </Card>
+              )}
 
               {recipient?.kycUrl ? (
                 <div className="flex flex-col gap-3 rounded-md border border-mp-primary/30 bg-mp-pale p-5 tablet:p-6">

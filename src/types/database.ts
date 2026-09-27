@@ -1303,6 +1303,9 @@ export type Database = {
       company: {
         Row: {
           contract_accepted_at: string | null
+          contract_accepted_by: string | null
+          contract_accepted_ip: unknown | null
+          contract_sha256: string | null
           contract_version: string | null
           created_at: string
           deleted_at: string | null
@@ -1332,6 +1335,9 @@ export type Database = {
         }
         Insert: {
           contract_accepted_at?: string | null
+          contract_accepted_by?: string | null
+          contract_accepted_ip?: unknown | null
+          contract_sha256?: string | null
           contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -1361,6 +1367,9 @@ export type Database = {
         }
         Update: {
           contract_accepted_at?: string | null
+          contract_accepted_by?: string | null
+          contract_accepted_ip?: unknown | null
+          contract_sha256?: string | null
           contract_version?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -1388,7 +1397,15 @@ export type Database = {
           wps_webhook_secret?: string | null
           wps_webhook_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "company_contract_accepted_by_fkey"
+            columns: ["contract_accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_access_link: {
         Row: {
@@ -4258,6 +4275,30 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_contract_version: {
+        Row: {
+          body: string
+          created_at: string
+          published_at: string | null
+          sha256: string
+          version: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          published_at?: string | null
+          sha256: string
+          version: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          published_at?: string | null
+          sha256?: string
+          version?: string
         }
         Relationships: []
       }
@@ -8097,8 +8138,8 @@ export type Database = {
         Returns: undefined
       }
       operator_accept_contract: {
-        Args: { p_company_id: string; p_version?: string }
-        Returns: undefined
+        Args: { p_company_id: string; p_version: string }
+        Returns: Json
       }
       operator_api_usage: {
         Args: { p_company_id: string; p_limit?: number; p_since?: string }
@@ -8269,6 +8310,7 @@ export type Database = {
         Returns: Json
       }
       payout_debt_overview: { Args: { p_provider?: string }; Returns: Json }
+      partner_contract_current: { Args: never; Returns: Json }
       payout_auto_day: { Args: { p_company_id: string }; Returns: number }
       payout_auto_due: {
         Args: { p_today: string }
@@ -8542,6 +8584,7 @@ export type Database = {
         }
         Returns: Json
       }
+      wallet_credit_expires_at: { Args: never; Returns: string }
       wl_agent_mapping: { Args: never; Returns: Json }
       wl_company_config: {
         Args: { p_company_id: string }

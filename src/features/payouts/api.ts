@@ -12,6 +12,7 @@ const WITHDRAW_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recipien
 const RECONCILE_WITHDRAWALS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reconcile-payout-transfers`;
 const RETRY_REFUND_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/retry-refund`;
 const ACCESS_LINK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-company-access-link`;
+const CONTRACT_PDF_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contract-pdf`;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /** Pendência de KYC/verificação normalizada (coluna `requirements` jsonb). */
@@ -107,39 +108,102 @@ export const contractKeys = {
   detail: (companyId: string) => [...contractKeys.all, companyId] as const,
 };
 
-/** Lê o status do contrato (assinado quando `contract_accepted_at` existe). */
+export type ContractStatus = {
+  acceptedAt: string | null;
+  version: string | null;
+  /** sha256 do texto aceito (prova). Nulo em aceite anterior a 27/09/2026 sem backfill. */
+  sha256: string | null;
+};
+
+/** Lê o status do contrato (assinado quando `contract_accepted_at` existe) e a prova gravada. */
 export function useContractStatus(companyId: string | undefined) {
   return useQuery({
     queryKey: contractKeys.detail(companyId ?? ""),
     enabled: !!companyId,
-    queryFn: async (): Promise<{ acceptedAt: string | null; version: string | null }> => {
+    queryFn: async (): Promise<ContractStatus> => {
       const { data, error } = await supabase
         .from("company")
-        .select("contract_accepted_at, contract_version")
+        .select("contract_accepted_at, contract_version, contract_sha256")
         .eq("id", companyId!)
         .maybeSingle();
       if (error) throw error;
       return {
         acceptedAt: data?.contract_accepted_at ?? null,
         version: data?.contract_version ?? null,
+        sha256: data?.contract_sha256 ?? null,
       };
     },
   });
 }
 
-/** Assinatura (simulada) do contrato com a Movepark. Só o dono (RPC gateia). E1.3. */
+export type ContractCurrent = {
+  version: string;
+  sha256: string;
+  body: string;
+  published_at: string | null;
+};
+
+/**
+ * Versão vigente do contrato (texto, versão e hash), lida do banco por `partner_contract_current()`.
+ * É o texto que a tela mostra e que o aceite referencia; o front não guarda cópia (27/09/2026).
+ */
+export function useContractCurrent(enabled = true) {
+  return useQuery({
+    queryKey: [...contractKeys.all, "current"] as const,
+    enabled,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<ContractCurrent> => {
+      const { data, error } = await supabase.rpc("partner_contract_current");
+      if (error) throw error;
+      if (!data) throw new Error("Não há versão publicada do contrato.");
+      return data as unknown as ContractCurrent;
+    },
+  });
+}
+
+/**
+ * Aceite do contrato com prova. Só o dono (RPC gateia, ADR-005). A versão é obrigatória e tem
+ * que ser a vigente: a RPC grava versão, sha256 do texto, `auth.uid()` e IP (27/09/2026).
+ */
 export function useAcceptContract() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { company_id: string; version?: string }) => {
-      const { error } = await supabase.rpc("operator_accept_contract", {
+    mutationFn: async (args: { company_id: string; version: string }) => {
+      const { data, error } = await supabase.rpc("operator_accept_contract", {
         p_company_id: args.company_id,
-        p_version: args.version ?? "v1",
+        p_version: args.version,
       });
       if (error) throw error;
+      return data as unknown as { version: string; sha256: string; accepted_at: string } | null;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: contractKeys.all }),
   });
+}
+
+/** Baixa o PDF do contrato aceito pela Edge `contract-pdf` (membro da empresa ou hub_admin). */
+async function fetchContractPdf(args: { company_id: string }): Promise<Blob> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("Sessão expirada. Entre novamente.");
+  const res = await fetch(CONTRACT_PDF_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: ANON,
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+  }
+  return await res.blob();
+}
+
+export function useContractPdf() {
+  return useMutation({ mutationFn: fetchContractPdf });
 }
 
 async function fetchRecipient(companyId: string): Promise<PayoutRecipient | null> {

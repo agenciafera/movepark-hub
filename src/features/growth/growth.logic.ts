@@ -21,6 +21,19 @@ export function daysUntil(iso: string, now: number = Date.now()): number {
   return Math.max(0, Math.ceil(diff / 86_400_000));
 }
 
+/**
+ * Aviso "R$ X expiram em N dias" do card de dinheiro de volta. Devolve nulo quando não há o que
+ * anunciar: crédito sem `expires_at` não expira (a validade fica pausada até o débito no checkout
+ * existir, ver docs/specs/movepark-wallet.md, nota de 27/09/2026), e valor zero não vira aviso.
+ */
+export function walletExpiryNotice(
+  wallet: { expiring_cents: number; expiring_at: string | null },
+  now: number = Date.now(),
+): { cents: number; days: number } | null {
+  if (!wallet.expiring_at || wallet.expiring_cents <= 0) return null;
+  return { cents: wallet.expiring_cents, days: daysUntil(wallet.expiring_at, now) };
+}
+
 /** Percentual (0–100) de progresso rumo ao próximo nível pelo nº de reservas na janela. */
 export function tierProgress(windowBookings: number, nextMinBookings: number | null): number {
   if (nextMinBookings == null) return 100; // já é o topo
