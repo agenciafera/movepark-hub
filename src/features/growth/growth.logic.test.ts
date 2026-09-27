@@ -74,11 +74,11 @@ describe("compartilhamento de indicação", () => {
     expect(referralMessage(link, 25)).toContain(link);
     // `brlFromCents` usa Intl, que separa "R$" do número com espaço não separável:
     // comparar com literal de espaço comum falha por um caractere invisível.
-    expect(referralMessage(link, 25)).toContain(`${brlFromCents(2500)} de desconto`);
+    expect(referralMessage(link, 25)).toContain(`${brlFromCents(2500)} de crédito`);
   });
   /** O valor é config: mudar o programa não pode exigir mexer no código. */
   it("o valor da mensagem acompanha o programa", () => {
-    expect(referralMessage(link, 40)).toContain(`${brlFromCents(4000)} de desconto`);
+    expect(referralMessage(link, 40)).toContain(`${brlFromCents(4000)} de crédito`);
     expect(referralMessage(link, 40)).not.toContain(brlFromCents(2500));
   });
   it("gera a URL do WhatsApp com a mensagem codificada", () => {

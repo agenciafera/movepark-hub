@@ -5,6 +5,11 @@
 > fase e dependem do fluxo de pagamento (ADR-004). Esta spec fixa o que existe e o **contrato de
 > reversão** que o trabalho de cancelamento/reembolso/alteração de data vai ter que respeitar.
 
+> **27/09/2026:** a copy do Clube (`MotorCrescimento.tsx`) e da indicação (`growth.logic.ts`,
+> `IndiqueGanhe.tsx`) deixou de prometer "usa direto no checkout" e "desconto na 1ª reserva": enquanto o
+> débito não existe, a tela diz que o saldo fica na conta e que abater no checkout vem em breve, e a
+> indicação promete crédito na carteira depois da primeira reserva concluída, para os dois lados.
+
 > **Moeda:** a carteira guarda **real (BRL), 1 para 1**, em centavos. Não é moeda de pontos nem tem
 > conversão. Cashback e indicação creditam dinheiro de verdade; o débito (fase seguinte) abate a
 > cobrança na mesma proporção.

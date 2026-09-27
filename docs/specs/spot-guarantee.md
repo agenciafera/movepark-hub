@@ -14,7 +14,12 @@ vagas do que cabem.
 
 Se na chegada faltar vaga, o cliente aciona a garantia e a Movepark resolve por um de dois caminhos:
 1. **Realocação** em um parceiro próximo, **cobrindo a diferença** de preço; ou
-2. **Reembolso integral (100%) + crédito** pelo transtorno.
+2. **Reembolso integral (100%)**.
+
+> **27/09/2026:** o "crédito pelo transtorno" saiu de toda a copy (`/como-funciona`, `guarantee/copy.ts`,
+> ficha da unidade): não existia lançamento em `wallet_ledger` por trás dele, e promessa sem mecanismo
+> não fica na tela. O que se promete é o que o `guarantee_claim` registra: realocação com a diferença
+> por nossa conta, ou 100% de volta.
 
 Acionamento: pelo **WhatsApp da unidade** (ou suporte central Movepark) com o **código da reserva**.
 

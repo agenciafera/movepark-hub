@@ -65,7 +65,7 @@ const STEPS = [
     n: 3,
     icon: Money,
     title: "Dinheiro na conta",
-    desc: "A Movepark garante o pagamento e faz o repasse organizado. Sem inadimplência, sem cobrança manual.",
+    desc: "A Movepark cobra do cliente, garante o recebimento das reservas pagas e faz o repasse organizado. Sem inadimplência, sem cobrança manual.",
   },
 ];
 
@@ -179,7 +179,7 @@ const FAQ = [
   },
   {
     q: "Como eu recebo o dinheiro das reservas?",
-    a: "O cliente paga com antecedência (PIX ou cartão). A Movepark garante o valor e faz o repasse organizado pra sua conta, sem inadimplência e sem cobrança manual.",
+    a: "O cliente paga com antecedência (PIX ou cartão). A Movepark cobra, garante o recebimento das reservas pagas e repassa pra sua conta, sem inadimplência e sem cobrança manual. Reserva cancelada no prazo da Tarifa é estornada ao cliente e sai do repasse.",
   },
   {
     q: "Quando eu recebo?",

@@ -38,8 +38,9 @@ Duas coisas importam aqui:
    entrega da feature, e num segundo passo (migration `20260912000000`) subiu para 60 em todas as
    unidades, alinhando o que se promete ao que se cobra. Um lote pode divergir do padrão pela UI.
 
-   A tolerância de **entrada** ("30 minutos antes" da mesma FAQ) não é modelada: este campo é só
-   de saída.
+   A tolerância de **entrada** não é modelada: este campo é só de saída. A FAQ global
+   `posso-chegar-antes-ou-sair-depois-do-horario` prometia "30 minutos antes" sem regra por trás e foi
+   corrigida no banco em 27/09/2026 (só a tolerância de saída de 60 minutos fica na resposta).
 
 A tolerância entra só onde se decide **diária cobrada**. Ficam de fora, de propósito, a
 `check_availability` (capacidade por data, não preço) e a `validate_coupon*` (elegibilidade por

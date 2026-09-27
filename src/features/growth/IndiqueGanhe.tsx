@@ -33,8 +33,8 @@ function passosDoPrograma(premio: string) {
     },
     {
       n: 2,
-      titulo: "Seu amigo reserva com desconto",
-      texto: `Ele ganha ${premio} de desconto na 1ª reserva dele com a Movepark.`,
+      titulo: "Seu amigo reserva e ganha crédito",
+      texto: `Ele ganha ${premio} de crédito na carteira depois da 1ª reserva concluída dele com a Movepark.`,
     },
     {
       n: 3,
@@ -60,7 +60,7 @@ function faqDoPrograma(premio: string) {
     },
     {
       q: "O que o meu amigo ganha?",
-      a: `${premio} de desconto na primeira reserva dele, um presente de boas-vindas com a sua indicação.`,
+      a: `${premio} de crédito na carteira dele depois da primeira reserva concluída, um presente de boas-vindas com a sua indicação.`,
     },
     {
       q: "O crédito expira?",

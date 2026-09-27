@@ -56,7 +56,7 @@ export const CANCELAMENTO: ContentPage = {
         },
         {
           type: "p",
-          text: "O valor total volta no mesmo método de pagamento, em até 10 dias úteis.",
+          text: "O valor total volta no mesmo método de pagamento: no PIX, em até 1 dia útil; no cartão, em até duas faturas, conforme o seu banco.",
         },
       ],
     },
@@ -87,7 +87,7 @@ export const CANCELAMENTO: ContentPage = {
             },
             {
               q: "O reembolso vai para onde?",
-              a: "Para reservas fechadas na Movepark, o reembolso vai para o mesmo método usado no pagamento: no PIX, o valor volta para a chave usada; no cartão de crédito, aparece como estorno na fatura em até 2 ciclos de faturamento.",
+              a: "Para reservas fechadas na Movepark, o reembolso vai para o mesmo método usado no pagamento: no PIX, o valor volta para a chave usada em até 1 dia útil; no cartão de crédito, aparece como estorno em até duas faturas, conforme o seu banco.",
             },
             {
               q: "Meu voo atrasou ou foi cancelado. E agora?",
@@ -202,7 +202,7 @@ export const METODOLOGIA: ContentPage = {
       blocks: [
         {
           type: "p",
-          text: "Estacionamento sem contrato com a Movepark não tem tarifa nesta casa. Ele aparece como ficha mapeada, com endereço, distância medida e o que dá para verificar, e sem preço nenhum.",
+          text: "Estacionamento sem contrato com a Movepark não tem preço de reserva nesta casa. Ele aparece como ficha mapeada, com endereço, distância medida e o que dá para verificar. Quando a Movepark pesquisou o preço dele, o valor aparece com a data da pesquisa ao lado, e não vira reserva.",
         },
         {
           type: "p",
@@ -211,7 +211,7 @@ export const METODOLOGIA: ContentPage = {
         {
           type: "list",
           items: [
-            "Ficha mapeada não tem preço, reserva, cancelamento nem vaga garantida.",
+            "Ficha mapeada não tem reserva, cancelamento nem vaga garantida. Quando mostra preço, é o pesquisado pela Movepark, com a data ao lado.",
             "Quando o estacionamento vira parceiro, a ficha some e a unidade passa a ter tarifa do motor, com as mesmas regras de qualquer outra.",
             "Comissão não muda a ordenação da busca e não esconde ficha mapeada de ninguém.",
           ],

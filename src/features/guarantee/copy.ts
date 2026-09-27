@@ -9,7 +9,7 @@ export const GUARANTEE_PROMISE = "Vaga garantida ou realocamos e cobrimos a dife
 /** Regra operacional exibida na seção "Sobre a garantia" (parágrafos). */
 export const GUARANTEE_POLICY: string[] = [
   "Reservou pela Movepark? A vaga é sua. Como a disponibilidade é controlada em tempo real, não vendemos mais vagas do que cabem.",
-  "Se por algum imprevisto faltar vaga na chegada, a gente resolve: realocamos você em um parceiro próximo e cobrimos a diferença de preço, ou devolvemos 100% do valor + um crédito pelo transtorno.",
+  "Se por algum imprevisto faltar vaga na chegada, a gente resolve: realocamos você em um parceiro próximo e a diferença de preço fica por nossa conta, ou devolvemos 100% do valor.",
   "É só acionar pela sua reserva: o pedido fica registrado e abre o WhatsApp da Movepark com o código.",
 ];
 

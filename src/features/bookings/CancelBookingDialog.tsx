@@ -87,7 +87,7 @@ export function CancelBookingDialog({
             {isBlocked
               ? "A janela de cancelamento da sua tarifa já encerrou. Para cancelar, fale com o suporte."
               : isFree
-                ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)} em até 10 dias úteis. ${freeCancelDeadlineLabel(booking.check_in_at, booking.fare_cancel_until)}.`
+                ? `Cancelamento grátis. Reembolso integral de ${formatBRL(booking.total_amount)}: no PIX em até 1 dia útil, no cartão em até duas faturas. ${freeCancelDeadlineLabel(booking.check_in_at, booking.fare_cancel_until)}.`
                 : "Esta reserva ainda não foi paga. Cancelar libera a vaga na hora."}
           </div>
         </div>

@@ -785,7 +785,7 @@ function ListingKnowSection({ listing }: { listing: ListingDetail }) {
           title: "Garantia Movepark",
           lines: [
             GUARANTEE_PROMISE,
-            "Se faltar vaga na chegada, realocamos e cobrimos a diferença, ou devolvemos 100% + crédito.",
+            "Se faltar vaga na chegada, realocamos e cobrimos a diferença, ou devolvemos 100% do valor.",
           ],
           extra: null,
         }

@@ -44,8 +44,8 @@ export function firstNameOf(fullName: string | null | undefined, fallback = "cli
  */
 export function referralMessage(link: string, rewardAmount: number): string {
   return (
-    `Ganhei um presente pra você no Movepark: ${brlFromCents(rewardAmount * 100)} de desconto ` +
-    `na sua 1ª reserva. É só usar meu link: ${link}`
+    `Ganhei um presente pra você na Movepark: ${brlFromCents(rewardAmount * 100)} de crédito ` +
+    `na carteira depois da sua 1ª reserva concluída, e eu ganho o mesmo. É só usar meu link: ${link}`
   );
 }
 

@@ -166,7 +166,8 @@ export function MotorCrescimento() {
           )}
           <p className="mt-5 text-body-sm leading-relaxed text-muted">
             Crédito em reais que cai na sua conta a cada reserva concluída. Sem pontos, sem
-            conversão: usa direto no checkout.
+            conversão. Hoje o saldo fica aqui, mostrando quanto você acumulou; abater no checkout
+            vem em breve.
           </p>
         </AccountCard>
       </div>

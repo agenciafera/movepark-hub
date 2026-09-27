@@ -12,6 +12,8 @@
  * delas nem ficam em aeroporto. `journey.contract.test.ts` guarda essa regra.
  */
 
+import { HORARIO_SUPORTE } from "@/lib/suporte";
+
 export type JourneyStep = {
   /** Numeração contínua através dos três momentos: quem lê vê um fluxo só. */
   n: number;
@@ -98,7 +100,7 @@ export const JOURNEY: JourneyMoment[] = [
 export const JOURNEY_STATS = [
   { value: "2 min", label: "Da busca ao voucher no seu e-mail" },
   { value: "24h", label: "Entrada e saída a qualquer hora, inclusive feriado" },
-  { value: "0%", label: "de taxa cobrada pela Movepark" },
+  { value: "0%", label: "de taxa da Movepark na Tarifa Básica" },
 ];
 
 /**
@@ -110,17 +112,17 @@ export const JOURNEY_GUARANTEES = [
   {
     icon: "seal" as const,
     title: "Vaga garantida",
-    text: "Se faltar vaga na chegada, realocamos você em um parceiro próximo e cobrimos a diferença. Sem alternativa, devolvemos 100% do valor mais um crédito pelo transtorno.",
+    text: "Se faltar vaga na chegada, realocamos você em um parceiro próximo e a diferença de preço fica por nossa conta. Sem alternativa, devolvemos 100% do valor.",
   },
   {
     icon: "lock" as const,
     title: "Preço fechado",
-    text: "O valor confirmado na reserva é o que você paga. Sem cobrança extra na saída e sem tabela de alta temporada depois que a reserva está de pé.",
+    text: "O valor confirmado na reserva é o que você paga pelo período reservado. Dentro dele, nada a mais na saída, e nenhuma tabela de alta temporada depois que a reserva está de pé.",
   },
   {
     icon: "headset" as const,
     title: "Suporte na viagem",
-    text: "Atraso, mudança de data ou imprevisto: nosso time acompanha e resolve junto com a unidade.",
+    text: `Atraso, mudança de data ou imprevisto: abra um chamado dentro da sua reserva. Nossa equipe responde ${HORARIO_SUPORTE} e resolve junto com a unidade.`,
   },
 ];
 
@@ -140,7 +142,11 @@ export const JOURNEY_COMPARISON = [
     other: "Fila no balcão e cadastro na hora",
   },
   { k: "Cancelamento", mp: "Grátis, conforme a Tarifa", other: "Não se aplica" },
-  { k: "Taxa da Movepark", mp: "Nenhuma", other: "Não se aplica" },
+  {
+    k: "Taxa da Movepark",
+    mp: "Nenhuma na Tarifa Básica. Flex e Superflex têm o valor da tarifa, mostrado antes de pagar",
+    other: "Não se aplica",
+  },
   { k: "Imprevisto", mp: "Suporte Movepark ajuda a resolver", other: "Direto com o estacionamento" },
 ];
 

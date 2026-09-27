@@ -245,8 +245,8 @@ Cancelar reserva MP-A8K7P2
 
 Política: Cancelamento grátis até 14/06 · 22:00 (24h antes).
 
-Você cancela agora: reembolso integral de R$ 153,55 no
-prazo de 5 a 10 dias úteis no cartão Visa •••• 4242.
+Você cancela agora: reembolso integral de R$ 153,55
+no cartão Visa •••• 4242, em até duas faturas (PIX: até 1 dia útil; copy alinhada em 27/09/2026).
 
 Tem certeza?
 

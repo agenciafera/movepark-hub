@@ -358,6 +358,27 @@ tem como saber o corpo, só o nome. O segredo `WHATSAPP_OFFICIAL_API_VERSION` su
 - **Vaga garantida (1.3 e o registro):** WhatsApp central preenchido da fonte única; o acionamento
   fica em `guarantee_claim` e a Movepark fecha com desfecho e valor (ver spot-guarantee.md).
 
+## 3c. Feito em 27/09/2026 (promessa vira fato na copy)
+
+Auditoria de promessas x código apontou copy prometendo o que não existe, e o Kallef aprovou
+trocar promessa por fato sem implementar nada novo:
+
+- **FAQ global no banco** (`o-pix-expira-em-quanto-tempo`, `posso-trocar-o-veiculo-depois-da-reserva`,
+  `como-faco-uma-reserva`, `posso-chegar-antes-ou-sair-depois-do-horario`, `como-cancelo-uma-reserva`):
+  PIX de 30 minutos com o tempo na tela, troca de veículo só Flex e Superflex, WhatsApp só Flex e
+  Superflex, tolerância só de saída (60 min), cancelamento no prazo da Tarifa (Superflex até 1 min).
+  A FAQ de destino "E se meu voo atrasar" (16 aeroportos) ganhou a frase da proteção de voo da
+  Superflex (24h por nossa conta, excedente no balcão).
+- **`/como-funciona`** (`journey.ts`): "Preço fechado" vale pelo período reservado; "Suporte na
+  viagem" cita o chamado na reserva e o horário de `@/lib/suporte`; "Vaga garantida" sem o crédito
+  pelo transtorno; "Taxa da Movepark: nenhuma" passou a "nenhuma na Tarifa Básica" (`TrustBand`
+  também).
+- **Reembolso**: `/cancelamento` e o diálogo de cancelamento dizem "PIX até 1 dia útil, cartão até
+  duas faturas", igual ao e-mail, no lugar de "10 dias úteis".
+- **Carteira e indicação**: ver movepark-wallet.md; **garantia de vaga**: ver spot-guarantee.md;
+  **/seja-parceiro**: "a Movepark cobra, garante o recebimento das reservas pagas e repassa", em vez
+  de "garante o pagamento".
+
 ## 4. O que precisa ser feito (plano de adequação)
 
 Cada item virou atividade no Backlog do ClickUp em 17/09/2026, na série **E2.8-i** a **E2.8-t**.

@@ -112,7 +112,7 @@ const items: Item[] = [
   {
     icon: Coins,
     title: "Sem taxa da Movepark",
-    text: "Você reserva e paga direto com o estacionamento parceiro.",
+    text: "Na Tarifa Básica você paga só a vaga. Flex e Superflex têm o valor da tarifa, mostrado antes de pagar. Nada escondido.",
     Illustration: NoFeeIllustration,
   },
   {

@@ -165,4 +165,6 @@ Migration `20261029110000_match_knowledge_filtra_antes_de_ranquear.sql`.
 
 **Verificado no chat do site:** a pergunta "se meu voo atrasar e eu chegar depois do horário, perco a
 vaga ou tem tolerância?" faz o modelo escolher `search_knowledge` sozinho (`used_tools` confirma) e
-responder ancorado na FAQ vetorizada ("30 minutos antes e 60 depois, sem cobrança").
+responder ancorado na FAQ vetorizada (na época, "30 minutos antes e 60 depois, sem cobrança"; em
+27/09/2026 a resposta passou a citar só a tolerância de saída de 60 minutos, que é a modelada, e o
+trigger `faq_knowledge_enqueue` reindexa o texto novo).
