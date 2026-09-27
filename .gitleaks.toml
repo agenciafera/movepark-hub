@@ -18,6 +18,14 @@ paths = [
   # árvore, mas o gitleaks varre o histórico — o allowlist por caminho cobre os commits
   # antigos onde o arquivo existia.
   '''docs/Movepark v3\.0\.postman_collection\.json$''',
+  # Cenários e cache de plano do Windup: sessão FALSA semeada no localStorage (JWT sem
+  # assinatura, "windup-nao-assinado"/".x", exp 2100). O gitleaks acusa 150 achados da
+  # regra jwt no commit que os criou (31/07/2026) e deixava o scan sem sinal.
+  '''^e2e/windup/.*\.json$''',
+  '''^\.windup/cache/trajetorias/.*\.json$''',
+  # .mcp.json: a chave do Gemini saiu do arquivo em eddcb73c (hoje é env var), mas o
+  # commit c71b5693 fica no histórico; a chave foi rotacionada.
+  '''^\.mcp\.json$''',
 ]
 regexes = [
   # JWT com claim "role":"anon" — chave pública do Supabase.

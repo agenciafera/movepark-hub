@@ -29,6 +29,12 @@ begin
     values (cpt, cid, pt, 40, 10);
   insert into public.location_parking_type(id, location_id, company_parking_type_id, capacity, is_active)
     values (lpt, loc, cpt, 10, true);
+  -- Listar no Hub exige o pré-voo (27/09/2026): contrato, split, recebedor no gateway e preço.
+  update public.company set contract_accepted_at = now(), gateway_split_enabled = true where id = cid;
+  insert into public.payout_recipient(company_id, provider, external_recipient_id, status)
+    values (cid, 'pagarme', 're_rascunho', 'active');
+  insert into public.pricing_rule(location_parking_type_id, strategy)
+    select id, 'uniform_by_duration' from public.location_parking_type where location_id = loc;
   perform public.wl_mirror_apply_pricing(
     lpt, '{"strategy":"uniform_by_duration","old_price_strategy":"none"}'::jsonb,
     '[{"from_day":1,"to_day":null,"unit_price":30,"is_old_price":false}]'::jsonb, 40, '[]'::jsonb, 1);

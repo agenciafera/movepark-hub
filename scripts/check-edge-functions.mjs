@@ -46,10 +46,9 @@ const PROJECT_REF = process.env.SUPABASE_PROJECT_REF ?? "mgaigbezdalbyuqiofcf";
  * escrito e onde ele mora: quem lê o alarme tem que conseguir julgar sozinho se ainda vale.
  * Só encolhe, e sair daqui é o deploy.
  */
-const PENDENTES_DECLARADAS = {
-  "google-place-refresh":
-    "depende da GOOGLE_PLACES_SERVER_KEY e da URL do deploy hook; ver docs/specs/avaliacoes-google.md",
-};
+// Vazio desde 27/09/2026: `google-place-refresh` está publicada (v29, 10/09) e saiu daqui;
+// o guard reprova pendente declarada que já existe no projeto.
+const PENDENTES_DECLARADAS = {};
 
 let falhou = false;
 const erro = (titulo, linhas, comoResolver) => {
