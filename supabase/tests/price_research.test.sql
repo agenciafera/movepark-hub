@@ -138,10 +138,13 @@ select results_eq(
   'aplicar substitui os quatro valores e a fonte: a linha passa a descrever UMA leitura'
 );
 
+-- A data é a do acesso em Brasília (`fetched_at at time zone 'America/Sao_Paulo'`), e o esperado
+-- tem que ser calculado no mesmo fuso: com `current_date` (UTC) o teste caía entre 21h e 0h de
+-- Brasília, quando o dia já virou em UTC (o job db caiu em 26/09 por isso).
 select is(
   (select researched_at from public.prospect_location
     where id = '22222222-2222-2222-2222-222222222222'),
-  current_date,
+  (now() at time zone 'America/Sao_Paulo')::date,
   'a data publicada é a do acesso à página, não a do dia em que alguém clicou'
 );
 
