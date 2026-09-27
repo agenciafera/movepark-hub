@@ -56,8 +56,10 @@ select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, n
 select throws_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '30 hours', 'customer', null, 'LA3456')$f$, current_setting('test.bk_basica')),
   'P0001', 'Proteção de voo disponível só na Tarifa Superflex.', 'Básica não tem proteção (a saída pedida além de 24h deixou de ser recusa em 25/09/2026)');
 
--- dentro do limite: estende, grava o voo e credita o parceiro pela diária extra
-select lives_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '20 hours', 'customer', 'voo atrasou', 'la3456')$f$, current_setting('test.bk')),
+-- dentro do limite: estende, grava o voo e credita o parceiro pela diária extra. Pede +25h (o teto,
+-- saída +1h mais 24h) e não +20h: a diária extra conta por DATA em UTC, e entre 23h e 4h UTC uma
+-- saída às 00:53 estendida até 19:53 do mesmo dia dava zero diárias (o job db caiu em 26/09 por isso).
+select lives_ok(format($f$select public.extend_booking_flight_delay(%L::uuid, now() + interval '25 hours', 'customer', 'voo atrasou', 'la3456')$f$, current_setting('test.bk')),
   'até 24h depois, com número do voo, estende');
 select is((select flight_number from public.booking where id = current_setting('test.bk')::uuid), 'LA3456', 'o número do voo fica na reserva, normalizado');
 select is((select added_days || '|' || flight_number from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), '1|LA3456',
