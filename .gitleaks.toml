@@ -32,6 +32,9 @@ paths = [
   '''^supabase/functions/mcp/resolver\.test\.ts$''',
   '''^supabase/functions/redeem-company-access-link/logic\.test\.ts$''',
   '''^src/routes/manager/api-interna\.tsx$''',
+  # Edge que lê app_setting pelo NOME da chave (`.eq("key", "go2park_leads_inbox")`); a regra
+  # generic-api-key acusa pela palavra "key" e o allowlist por regex não alcança o histórico.
+  '''^supabase/functions/submit-go2park-interest/index\.ts$''',
 ]
 regexes = [
   # Leitura de app_setting pelo nome da chave (`.eq("key", "go2park_leads_inbox")`): é o NOME de
