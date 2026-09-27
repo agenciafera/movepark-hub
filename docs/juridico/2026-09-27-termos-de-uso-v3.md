@@ -1,6 +1,6 @@
 # Termos de Uso da Movepark (minuta v3)
 
-> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v2 (publicada em 18/08/2026, slug `terms` em `legal_document`). Cada número abaixo veio do produto em 27/09/2026 (catálogo `fare`, `app_setting`, Edges e specs). Pontos marcados com [DECISÃO] dependem de escolha do Kallef; pontos com [ADVOGADO] dependem de validação jurídica. Quando publicar, o Manager (`/manager/legal`) cria a v3 e todo aceite novo passa a apontar para ela.
+> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v2 (publicada em 18/08/2026, slug `terms` em `legal_document`). Cada número abaixo veio do produto em 27/09/2026 (catálogo `fare`, `app_setting`, Edges e specs). As 22 decisões de produto foram confirmadas pelo Kallef em 27/09/2026 (`2026-09-27-decisoes-sugeridas.md`) e já estão incorporadas; pontos com [ADVOGADO] dependem de validação jurídica. Quando publicar, o Manager (`/manager/legal`) cria a v3 e todo aceite novo passa a apontar para ela.
 
 Vigência: a partir da publicação. Data e versão aparecem no topo de movepark.co/termos.
 
@@ -56,7 +56,7 @@ c) **Estacionamento mapeado.** Ficha de estacionamento sem contrato com a Movepa
 
 5.2. O QR Code do PIX vale por 30 minutos. Expirado, basta refazer o checkout.
 
-5.3. No cartão é possível parcelar em até 12 vezes. Até 3 vezes não há juros. Acima de 3 vezes incidem juros de 2,99% ao mês (sistema Price), pagos por você, e o checkout mostra o valor de cada parcela, o total a pagar e o custo efetivo total (CET) antes de você confirmar. [DECISÃO: a UI hoje mostra "com juros, total R$ X" e ainda não exibe taxa mensal nem CET; a cláusula assume que isso será implementado antes da publicação.] A parcela mínima é de R$ 5,00.
+5.3. No cartão é possível parcelar em até 12 vezes. Até 3 vezes não há juros. Acima de 3 vezes incidem juros de 2,99% ao mês (sistema Price), pagos por você, e o checkout mostra a taxa mensal, o valor de cada parcela, o total do acréscimo, o total a pagar e o custo efetivo total (CET) antes de você confirmar. A parcela mínima é de R$ 5,00.
 
 5.4. É obrigatório informar CPF ou CNPJ válido do pagador, exigido pelo meio de pagamento.
 
@@ -74,7 +74,7 @@ c) **Estacionamento mapeado.** Ficha de estacionamento sem contrato com a Movepa
 
 6.2. Os valores e prazos da tabela podem mudar para reservas futuras. A Tarifa, o preço e o prazo de cancelamento ficam gravados na sua reserva e não mudam depois da compra, salvo se você mesmo subir de Tarifa, quando passa a valer a nova.
 
-6.3. Troca de veículo e alteração de data (Flex e Superflex) são feitas na sua conta, até o horário do check-in. Alteração de data recalcula o preço pela tabela vigente do estacionamento e o prazo de cancelamento pela nova data. Alteração de data em reserva já paga pode exigir cancelar e refazer a reserva; nesse caso a Movepark avisa antes. [DECISÃO: hoje a alteração de reserva paga é recusada com orientação de cancelar e refazer, ver fares.md; confirmar se mantém.]
+6.3. Troca de veículo e alteração de data (Flex e Superflex) são feitas na sua conta, até o horário do check-in. Alteração de data recalcula o preço pela tabela vigente do estacionamento e o prazo de cancelamento pela nova data. Em reserva já paga, a Movepark mostra o novo valor antes de você confirmar: se ficar mais caro, você paga a diferença (por PIX ou cartão) e a alteração só vale depois desse pagamento; se ficar mais barato, a diferença volta pelo mesmo meio de pagamento, nos prazos do item 7.5. Cupom aplicado na reserva original não é reaplicado no recálculo.
 
 ## 7. Cancelamento e reembolso
 
@@ -86,7 +86,7 @@ c) **Estacionamento mapeado.** Ficha de estacionamento sem contrato com a Movepa
 
 7.4. **Direito de arrependimento (CDC art. 49).** A reserva é serviço contratado a distância para data certa. Você pode desistir em até 7 dias corridos da compra, com reembolso integral, desde que o pedido chegue antes do início do período reservado e dentro do prazo de cancelamento da sua Tarifa. Quando os 7 dias terminam depois do prazo da Tarifa, prevalece o prazo da Tarifa, porque a vaga foi retirada do mercado para você. [ADVOGADO: validar a compatibilização; alternativa mais conservadora é honrar os 7 dias sempre que a desistência chegar antes do check-in.]
 
-7.5. **Reembolso.** O valor volta pelo mesmo meio de pagamento. No PIX, costuma cair em minutos e no máximo em 1 dia útil após o cancelamento. No cartão, o estorno é enviado ao emissor em até 2 dias úteis e aparece na fatura em até duas faturas, conforme o prazo do seu banco. Cupom e saldo da carteira usados na reserva voltam conforme o item 9. [DECISÃO: a página /cancelamento e o diálogo de cancelamento dizem "até 10 dias úteis"; escolher um prazo único e alinhar os três lugares.]
+7.5. **Reembolso.** O valor volta pelo mesmo meio de pagamento. No PIX, costuma cair em minutos e no máximo em 1 dia útil após o cancelamento. No cartão, o estorno é enviado ao emissor em até 2 dias úteis e aparece na fatura em até duas faturas, conforme o prazo do seu banco. Esses são os mesmos prazos informados na Política de Cancelamento, na tela de cancelamento e no e-mail de confirmação do cancelamento. Cupom usado na reserva segue o item 9.1.
 
 7.6. **Se o estacionamento não honrar a reserva confirmada** (sem vaga na chegada), você tem direito ao reembolso integral, independente do prazo, além do que consta na garantia de vaga (item 10).
 
@@ -106,25 +106,23 @@ c) **Estacionamento mapeado.** Ficha de estacionamento sem contrato com a Movepa
 
 ## 9. Programas promocionais: cupom, carteira e indicação
 
-9.1. **Cupom.** Cada cupom tem regras próprias (validade, valor, limite de uso, primeira reserva), mostradas ao aplicar. Cupom não é cumulativo com outro cupom. Reserva cancelada não devolve o uso do cupom quando ele tinha limite de usos. [DECISÃO: hoje `times_used` não decrementa em cancelamento, ver coupon-rules.md; confirmar se essa é a regra desejada.]
+9.1. **Cupom.** Cada cupom tem regras próprias (validade, valor, limite de uso, primeira reserva), mostradas ao aplicar. Cupom não é cumulativo com outro cupom. Reserva cancelada não devolve o uso do cupom: um cupom com limite de usos conta como usado mesmo que a reserva seja cancelada depois.
 
-9.2. **Carteira Movepark.** Saldo em reais creditado por cashback (percentual por nível: 2%, 3% ou 5% do valor da reserva concluída) e por indicação. O saldo não é dinheiro: não pode ser sacado, transferido nem convertido, e serve apenas para abater reservas na Movepark. Cada crédito vale por 90 dias a partir da data em que foi creditado e expira sem aviso individual. A Movepark pode alterar percentuais e regras para créditos futuros, sem afetar saldo já creditado. [DECISÃO: o débito de saldo no checkout ainda não existe; enquanto não existir, a cláusula deve dizer que o uso do saldo "será liberado" ou o item 9.2 fica reservado.]
+9.2. **Carteira Movepark.** Saldo em reais creditado por cashback (percentual por nível: 2%, 3% ou 5% do valor da reserva concluída) e por indicação. O saldo não é dinheiro: não pode ser sacado, transferido nem convertido, e serve apenas para abater reservas na Movepark. O saldo acumula na sua conta e o abate no checkout será liberado; a Movepark avisa na plataforma quando ele estiver disponível. Quando o abate estiver disponível, cada crédito valerá por 90 dias a partir da data em que foi creditado. Enquanto o abate não estiver disponível, os créditos não expiram. A Movepark pode alterar percentuais e regras para créditos futuros, sem afetar saldo já creditado.
 
 9.3. **Indicação.** Quem indica e quem é indicado recebem R$ 25,00 cada um na carteira quando o indicado conclui a primeira reserva. Só vale uma indicação por conta, o código não pode ser o próprio, e a Movepark pode cancelar créditos obtidos com contas duplicadas ou fraude.
-
-9.4. Reserva paga com saldo da carteira e cancelada dentro do prazo tem o saldo devolvido com a validade original. [DECISÃO: contrato de reversão previsto em movepark-wallet.md; confirmar antes de publicar.]
 
 ## 10. Garantia de vaga
 
 10.1. Reserva confirmada na Movepark tem a vaga garantida. Se, mesmo assim, faltar vaga na chegada, a Movepark: (a) realoca você em estacionamento parceiro próximo e cobre a diferença de preço, se houver; ou, se não for possível, (b) devolve integralmente o valor pago.
 
-10.2. Para acionar, use o botão na sua reserva ou o atendimento (item 11) no momento da chegada, com o código da reserva. [DECISÃO: a copy atual promete também "um crédito pelo transtorno"; o crédito não existe no produto e foi retirado desta minuta. Ajustar `src/features/guarantee/copy.ts` junto com a publicação.]
+10.2. Para acionar, use o botão na sua reserva ou o atendimento (item 11) no momento da chegada, com o código da reserva. A garantia se limita à realocação com a diferença por conta da Movepark ou ao reembolso integral; não há crédito ou indenização adicional por ela.
 
 ## 11. Atendimento
 
 11.1. Canais: WhatsApp (11) 99475-2952 e e-mail contato@movepark.co. Na sua reserva há o botão "Abrir chamado", que registra o pedido com número de protocolo (CH-).
 
-11.2. Uma pessoa da Movepark responde de segunda a sexta, das 9h às 18h (horário de Brasília). Fora desse horário o chamado fica registrado e é atendido na ordem de chegada no próximo dia útil. [DECISÃO: definir prazo máximo de primeira resposta, por exemplo 1 dia útil, para constar aqui.]
+11.2. Uma pessoa da Movepark responde de segunda a sexta, das 9h às 18h (horário de Brasília). Fora desse horário o chamado fica registrado e é atendido na ordem de chegada no próximo dia útil. A primeira resposta de uma pessoa chega em até 1 dia útil a partir da abertura do chamado.
 
 11.3. Reserva feita no site do parceiro é atendida pelo próprio estacionamento; a Movepark pode ajudar a intermediar.
 

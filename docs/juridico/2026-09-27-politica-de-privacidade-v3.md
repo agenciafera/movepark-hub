@@ -1,6 +1,6 @@
 # Política de Privacidade da Movepark (minuta v3)
 
-> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v2 (18/08/2026, slug `privacy` em `legal_document`). Dados coletados e operadores listados a partir do schema e das Edge Functions em 27/09/2026. [DECISÃO] marca escolha do Kallef; [ADVOGADO] marca validação jurídica.
+> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v2 (18/08/2026, slug `privacy` em `legal_document`). Dados coletados e operadores listados a partir do schema e das Edge Functions em 27/09/2026. As decisões de produto foram confirmadas pelo Kallef em 27/09/2026 (`2026-09-27-decisoes-sugeridas.md`) e já estão incorporadas; [ADVOGADO] marca validação jurídica.
 
 Em conformidade com a Lei 13.709/2018 (LGPD) e com a Lei 12.965/2014 (Marco Civil da Internet).
 
@@ -8,7 +8,7 @@ Em conformidade com a Lei 13.709/2018 (LGPD) e com a Lei 12.965/2014 (Marco Civi
 
 1.1. Controladora: Movepark Tecnologia Ltda., CNPJ 68.183.164/0001-35, [ADVOGADO: endereço da sede], responsável pela plataforma movepark.co.
 
-1.2. Encarregada de proteção de dados (DPO): [DECISÃO: nome da pessoa ou "Encarregado de Dados da Movepark"], contato privacidade@movepark.co. [DECISÃO: a caixa privacidade@movepark.co precisa existir e ser lida; hoje o suporte usa contato@movepark.co.]
+1.2. Encarregado de proteção de dados (DPO): Encarregado de Dados da Movepark, contato privacidade@movepark.co. Esse endereço é atendido pela mesma equipe do atendimento geral.
 
 1.3. O estacionamento onde você reserva é controlador dos dados que recebe para executar a guarda do veículo (nome, placa, código da reserva, período). A Movepark e o estacionamento respondem cada um pelo tratamento que fazem. [ADVOGADO: confirmar o enquadramento como controladores independentes ou conjuntos, art. 42 LGPD.]
 
@@ -40,7 +40,7 @@ Não coletamos dados sensíveis (art. 5º, II) de propósito. Se você os inclui
 | Atender chamados e resolver disputas | execução de contrato (V) e exercício regular de direitos (VI) |
 | Emitir documento fiscal, cumprir obrigações contábeis e responder a autoridades | obrigação legal (II) |
 | Prevenir fraude, abuso e uso automatizado | legítimo interesse (IX) e proteção ao crédito (X) |
-| Medir uso da plataforma, corrigir erros e melhorar o produto (item 8) | legítimo interesse (IX) [DECISÃO: ou consentimento, ver item 8] |
+| Medir uso da plataforma, corrigir erros e melhorar o produto (item 8) | legítimo interesse (IX), com opt-out (item 8.2) [ADVOGADO: validar legítimo interesse com opt-out para medição, conforme o guia de cookies da ANPD] |
 | Cashback, indicação e níveis de cliente | execução de contrato (V) |
 | Enviar ofertas e novidades por e-mail ou WhatsApp | consentimento (I), revogável a qualquer momento |
 | Assistente virtual no WhatsApp e no site | execução de contrato (V) para dúvidas sobre reserva; legítimo interesse (IX) para dúvidas gerais |
@@ -76,8 +76,8 @@ Não vendemos dados pessoais. Não compartilhamos dados com anunciantes.
 | Cartões, endereços e veículos salvos | até você remover ou até a exclusão da conta, quando são apagados |
 | Registros de acesso (IP, data e hora) | 6 meses (Marco Civil, art. 15) |
 | Registro de aceite dos Termos (versão, data, IP) | pelo mesmo prazo da reserva a que se refere |
-| Conversas de atendimento e com o assistente | [DECISÃO: prazo; sugestão 2 anos] |
-| Gravações de sessão (Clarity) | conforme a retenção do Clarity [DECISÃO: confirmar o prazo configurado, padrão 30 dias] |
+| Conversas de atendimento e com o assistente | 2 anos a partir da última mensagem |
+| Gravações de sessão e mapas de calor (Clarity) | 30 dias |
 | Consentimento de marketing | até a revogação, mais o registro da revogação |
 | Dados de parceiro (lead, KYC, bancário) | enquanto durar a parceria e por 5 anos depois, por obrigação fiscal e antifraude |
 
@@ -98,10 +98,10 @@ Ao excluir a conta pela própria plataforma: seus dados de perfil, veículos, en
 | Tipo | Exemplos | Base |
 |---|---|---|
 | Necessários | sessão de login, proteção contra fraude, preferências de tela | execução de contrato; sem eles o site não funciona |
-| Medição de uso | Google Tag Manager (eventos de navegação e conversão) e Microsoft Clarity (gravação de sessão com campos digitados mascarados, mapas de calor) | [DECISÃO, escolher uma] (a) legítimo interesse, com opt-out neste documento e link no rodapé; (b) consentimento, com banner que só carrega GTM e Clarity após o "aceitar" |
-| Publicidade | nenhum | não usamos cookies de anunciante nem remarketing [DECISÃO: confirmar que o container GTM-KHBBZT9 não carrega tag de anúncio; se carregar, esta linha muda] |
+| Medição de uso | Google Tag Manager (eventos de navegação e conversão) e Microsoft Clarity (gravação de sessão com campos digitados mascarados, mapas de calor) | legítimo interesse (art. 7º, IX), com opt-out a qualquer momento (item 8.2) [ADVOGADO: validar legítimo interesse com opt-out efetivo para medição, sem banner de consentimento] |
+| Publicidade | nenhum | não usamos cookies de anunciante nem remarketing; o container de tags da Movepark não carrega tag de Google Ads, Meta Pixel ou similar |
 
-8.2. Opt-out: [DECISÃO: se a escolha for (a), incluir aqui o link "Não medir minha navegação" que grava a recusa no navegador e impede a carga de GTM e Clarity; se for (b), descrever o banner.] Você também pode bloquear cookies no navegador; funções que dependem de login podem parar de funcionar.
+8.2. **Opt-out.** O link "Não medir minha navegação", no rodapé de todas as páginas e nesta Política, grava a sua recusa no navegador e impede a carga do Google Tag Manager e do Clarity a partir dali. A recusa vale para aquele navegador e dispositivo; você pode desfazer pelo mesmo link. Você também pode bloquear cookies no navegador; funções que dependem de login podem parar de funcionar.
 
 8.3. Não usamos cookies de terceiros para publicidade e não fazemos rastreamento entre sites.
 
