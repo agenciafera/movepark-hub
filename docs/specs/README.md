@@ -308,6 +308,7 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20261127093000_fee_credit_reservation_rls.sql` | Policy de leitura (hub_admin) na `payout_fee_credit_reservation`, espelho da reserva de dívida: sem ela a tabela caía no inventário fail-closed do `rls_inventory.test.sql`, que é lista exata |
 | `20261127100000_payout_auto_helpers_service_only.sql` | Helpers do repasse automático (`payout_auto_day/enabled/min_cents`, `payout_next_auto_at`, `payout_fee_credit_cents`) só para `service_role`: eram definer sem checagem e qualquer logado lia a configuração e o crédito de outra empresa por RPC (achado da revisão de segurança de 26/09) |
 | `20261127110000_listar_no_hub_exige_pre_voo.sql` | **Listar no Hub exige o pré-voo:** trigger `location_listing_guard` (before update of `is_listed`, `checkout_mode`) recusa ligar `is_listed` em unidade hub reprovada em `_hub_readiness` quando quem escreve é pessoa (Manager/Operator); `location_hub_readiness` passa a delegar. Achado de 27/09: Nova Iguaçu listada sem contrato, recebedor nem split. pgTAP `location_listing_guard.test.sql` |
+| `20261127120000_listing_guard_privs.sql` | `location_listing_guard()` sem EXECUTE para anon/authenticated (nasceu definer com o grant padrão e reprovou os inventários do CI) |
 
 ## Pendências
 

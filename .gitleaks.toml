@@ -26,8 +26,17 @@ paths = [
   # .mcp.json: a chave do Gemini saiu do arquivo em eddcb73c (hoje é env var), mas o
   # commit c71b5693 fica no histórico; a chave foi rotacionada.
   '''^\.mcp\.json$''',
+  # Testes de Edge com token/JWT FALSO montado no próprio teste (resolver do MCP, parse do segredo
+  # do link de acesso) e a página de documentação da API interna, que mostra um curl de exemplo
+  # com header Authorization e placeholder.
+  '''^supabase/functions/mcp/resolver\.test\.ts$''',
+  '''^supabase/functions/redeem-company-access-link/logic\.test\.ts$''',
+  '''^src/routes/manager/api-interna\.tsx$''',
 ]
 regexes = [
+  # Leitura de app_setting pelo nome da chave (`.eq("key", "go2park_leads_inbox")`): é o NOME de
+  # uma configuração, não um segredo. A regra generic-api-key acusa pela palavra "key".
+  '''\.eq\("key", "[a-z0-9_]+"\)''',
   # JWT com claim "role":"anon" — chave pública do Supabase.
   '''eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*cm9sZSI6ImFub24[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+''',
 ]
