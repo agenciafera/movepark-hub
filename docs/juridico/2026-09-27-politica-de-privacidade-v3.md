@@ -1,6 +1,6 @@
 # Política de Privacidade da Movepark (minuta v3)
 
-> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v2 (18/08/2026, slug `privacy` em `legal_document`). Dados coletados e operadores listados a partir do schema e das Edge Functions em 27/09/2026. As decisões de produto foram confirmadas pelo Kallef em 27/09/2026 (`2026-09-27-decisoes-sugeridas.md`) e já estão incorporadas; [ADVOGADO] marca validação jurídica.
+> **PUBLICADO.** Política v3 publicada em 27/09/2026 (legal_document privacy, versão 3), por decisão do Kallef (nada lançado ao público ainda). Os pontos marcados [ADVOGADO] seguem como pauta para validação jurídica posterior; o texto publicado é o desta minuta sem as marcações, com a sede preenchida (Rua Tito, 479, 1º andar, Vila Romana, São Paulo, SP, CEP 05051-000).
 
 Em conformidade com a Lei 13.709/2018 (LGPD) e com a Lei 12.965/2014 (Marco Civil da Internet).
 

@@ -9,11 +9,13 @@
 
 /** Resumo em tópicos, mostrado na tela de assinatura acima do texto completo. */
 export const CONTRACT_SUMMARY: string[] = [
-  "A Movepark divulga seu estacionamento, recebe as reservas e o pagamento dos clientes.",
-  "Você recebe o valor das reservas, menos a comissão da Movepark, no repasse combinado.",
-  "Você define preço de balcão, capacidade e disponibilidade. O controle da vaga é seu.",
-  "Dá pra pausar ou encerrar a parceria quando quiser, respeitando as reservas já confirmadas.",
-  "Seus dados são tratados conforme a Política de Privacidade da Movepark.",
+  "A Movepark divulga suas unidades, recebe as reservas e o pagamento dos clientes.",
+  "Comissão de 20% por padrão, que pode variar pela origem da reserva; a regra aplicada fica visível em cada reserva.",
+  "O valor libera 30 dias depois do pagamento confirmado e cai na sua conta todo dia 10, sem taxa. Saque manual a qualquer hora, com a taxa da Pagar.me (R$ 3,67).",
+  "Reserva cancelada no prazo da Tarifa é estornada ao cliente por sua conta: sai do saldo ou abate nas vendas seguintes.",
+  "Você honra a reserva confirmada, a tolerância de 60 minutos e a proteção de voo (o excedente é cobrado na saída pela sua tabela).",
+  "Você responde pelo veículo enquanto ele estiver no seu estacionamento; dados do cliente só para executar a reserva.",
+  "Aceite eletrônico com versão, hash e data; qualquer parte pode encerrar com 30 dias de aviso, respeitando as reservas confirmadas.",
 ];
 
 /** O que uma versão do contrato carrega (o que `partner_contract_current()` devolve). */

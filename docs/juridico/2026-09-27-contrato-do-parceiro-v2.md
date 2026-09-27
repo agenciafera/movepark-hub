@@ -1,6 +1,6 @@
 # Contrato de parceria Movepark e estacionamento (minuta v2)
 
-> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v1 de `src/features/payouts/contract.ts` (texto de 7 cláusulas, aceite "simulado" via `operator_accept_contract`, aceito por 1 das 11 empresas). Números vindos do produto em 27/09/2026: `company.take_rate_bps` 2000, `payout_release_days` 30, `payout_auto_day` 10, `payout_auto_min_cents` 5000, `payout_withdrawal_fee_cents` 367, `location.tolerance_minutes` 60, regras de comissão por origem, estorno híbrido e chargeback. As decisões de produto foram confirmadas pelo Kallef em 27/09/2026 (`2026-09-27-decisoes-sugeridas.md`) e já estão incorporadas; [ADVOGADO] marca validação jurídica.
+> **PUBLICADO.** Contrato v2 publicado em 27/09/2026 (partner_contract_version v2); as empresas aceitam a nova versão pelo painel, por decisão do Kallef (nada lançado ao público ainda). Os pontos marcados [ADVOGADO] seguem como pauta para validação jurídica posterior; o texto publicado é o desta minuta sem as marcações, com a sede preenchida (Rua Tito, 479, 1º andar, Vila Romana, São Paulo, SP, CEP 05051-000).
 
 **CONTRATO DE INTERMEDIAÇÃO DE RESERVAS DE ESTACIONAMENTO**
 

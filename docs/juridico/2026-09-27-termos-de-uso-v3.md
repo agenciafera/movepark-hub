@@ -1,6 +1,6 @@
 # Termos de Uso da Movepark (minuta v3)
 
-> **RASCUNHO PARA REVISÃO JURÍDICA.** Não publicado. Substitui a v2 (publicada em 18/08/2026, slug `terms` em `legal_document`). Cada número abaixo veio do produto em 27/09/2026 (catálogo `fare`, `app_setting`, Edges e specs). As 22 decisões de produto foram confirmadas pelo Kallef em 27/09/2026 (`2026-09-27-decisoes-sugeridas.md`) e já estão incorporadas; pontos com [ADVOGADO] dependem de validação jurídica. Quando publicar, o Manager (`/manager/legal`) cria a v3 e todo aceite novo passa a apontar para ela.
+> **PUBLICADO.** Termos v3 publicados em 27/09/2026 (legal_document terms, versão 3), por decisão do Kallef (nada lançado ao público ainda). Os pontos marcados [ADVOGADO] seguem como pauta para validação jurídica posterior; o texto publicado é o desta minuta sem as marcações, com a sede preenchida (Rua Tito, 479, 1º andar, Vila Romana, São Paulo, SP, CEP 05051-000).
 
 Vigência: a partir da publicação. Data e versão aparecem no topo de movepark.co/termos.
 

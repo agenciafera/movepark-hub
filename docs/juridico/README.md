@@ -1,6 +1,6 @@
 # Minutas jurídicas (rascunho, 27/09/2026)
 
-Três minutas para revisão jurídica, escritas a partir da revisão de consistência produto-contrato feita em 27/09/2026. **Nada aqui está publicado.** Os Termos e a Política vigentes continuam sendo a v2 no banco (`legal_document`, 18/08/2026); o contrato vigente continua sendo a v1 em `src/features/payouts/contract.ts`.
+Três minutas escritas a partir da revisão de consistência produto-contrato de 27/09/2026. **Publicadas em 27/09/2026** por decisão do Kallef (o produto ainda não foi lançado ao público): Termos v3 e Privacidade v3 no banco (`legal_document`, versão 3, pela RPC `publish_legal_document`) e contrato v2 em `partner_contract_version`. A conversão de Markdown para o HTML do banco (tabelas viram listas, porque o sanitizador só aceita h2, h3, p, ul, ol, li, strong, em, a, br) foi feita por script; o texto é o das minutas sem as marcações. Os Termos e a Política vigentes continuam sendo a v2 no banco (`legal_document`, 18/08/2026); o contrato vigente continua sendo a v1 em `src/features/payouts/contract.ts`.
 
 As 22 decisões de produto foram confirmadas pelo Kallef em 27/09/2026 (`2026-09-27-decisoes-sugeridas.md`) e já estão incorporadas no texto, sem marcação. O que resta é: (1) a validação jurídica dos pontos marcados **[ADVOGADO]**; (2) as tarefas de produto listadas no fim, que precisam estar no ar antes da publicação, porque os textos já descrevem esse comportamento. Publicar: o Manager (`/manager/legal`) para Termos e Política; PR para o contrato.
 
