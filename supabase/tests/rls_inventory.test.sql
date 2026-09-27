@@ -49,9 +49,10 @@ select set_eq(
     'partner_lead',          -- lead entra por Edge, nunca direto do formulário
     'knowledge_chunk',       -- base do RAG
     'knowledge_source_queue',-- fila de ingestão da base
-    'otp_request_log'        -- freio de disparo de OTP; o identificador vai em SHA-256
+    'otp_request_log',       -- freio de disparo de OTP; o identificador vai em SHA-256
+    'partner_contract_version' -- texto e hash do contrato do parceiro; lido só por RPC (partner_contract_current)
   ],
-  'as tabelas fail-closed são exatamente estas oito'
+  'as tabelas fail-closed são exatamente estas nove'
 );
 
 -- ── nenhuma escrita passa com predicado trivial ──────────────────────────────
