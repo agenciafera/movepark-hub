@@ -22,9 +22,17 @@
     <!-- Google Tag Manager. Fica o mais alto possível no head, como o GTM pede. O
          container é GTM-KHBBZT9; o ID é público (vai no HTML), então não é env var.
          O script é async: não bloqueia o paint nem o script de tema abaixo.
-         A CSP em public/_headers precisa liberar googletagmanager.com. -->
+         A CSP em public/_headers precisa liberar googletagmanager.com.
+         Opt-out de medição: com `mp_no_measure` = "1" no localStorage (o link
+         "Não medir minha navegação" do rodapé grava; src/lib/measurement-optout.ts
+         é quem manda no nome da chave), o gtm.js não é injetado. O noscript abaixo
+         fica como está: sem JavaScript não há localStorage para ler, e é só nesse
+         caso que ele roda. -->
     <script>
       (function (w, d, s, l, i) {
+        try {
+          if (w.localStorage && w.localStorage.getItem("mp_no_measure") === "1") return;
+        } catch (e) {}
         w[l] = w[l] || [];
         w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
         var f = d.getElementsByTagName(s)[0],

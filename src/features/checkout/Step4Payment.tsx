@@ -20,8 +20,11 @@ import {
   useUpdateBookingCustomer,
 } from "./api";
 import { toSvgString } from "@/lib/qr";
-import { formatBRL } from "@/lib/format";
 import { computeInstallmentPlan } from "@/lib/installments";
+import {
+  describeInstallmentOption,
+  summarizeInstallmentOption,
+} from "@/features/checkout/installments.logic";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
@@ -171,9 +174,16 @@ export function Step4Payment({
   const policy = config.data?.installment_policy;
   const totalCents = Math.round(totalAmount * 100);
   const options = React.useMemo(
-    () => (policy ? computeInstallmentPlan(totalCents, policy) : []),
+    () =>
+      policy
+        ? computeInstallmentPlan(totalCents, policy).map((option) => ({
+            option,
+            label: describeInstallmentOption(option, policy),
+          }))
+        : [],
     [policy, totalCents],
   );
+  const chosen = options.find((o) => o.option.installments === installments) ?? options[0];
 
   async function initPix() {
     try {
@@ -484,7 +494,10 @@ export function Step4Payment({
                 </>
               )}
 
-              {/* Parcelas */}
+              {/* Parcelas. Cada opção com juros diz a taxa, o acréscimo em reais e o CET ao
+                  mês e ao ano (CDC art. 52), e o resumo abaixo repete a escolhida por extenso:
+                  o gatilho do seletor só mostra "Nx de R$ Y", e a informação obrigatória não
+                  pode depender de abrir a lista. */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="installments">Parcelas</Label>
                 <Select
@@ -495,16 +508,26 @@ export function Step4Payment({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {options.map((o) => (
-                      <SelectItem key={o.installments} value={String(o.installments)}>
-                        {o.installments}x de {formatBRL(o.installmentCents / 100)}
-                        {o.hasInterest
-                          ? ` (com juros, total ${formatBRL(o.totalCents / 100)})`
-                          : " sem juros"}
+                    {options.map(({ option, label }) => (
+                      <SelectItem
+                        key={option.installments}
+                        value={String(option.installments)}
+                        description={label.detalhe}
+                      >
+                        {label.titulo}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {policy && chosen && (
+                  <p
+                    data-testid="parcelas-resumo"
+                    aria-live="polite"
+                    className="text-pretty text-caption-sm text-muted"
+                  >
+                    {summarizeInstallmentOption(chosen.option, policy)}
+                  </p>
+                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={busy}>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { MedicaoOptOut } from "@/components/shared/MedicaoOptOut";
 import { SeletorDeIdioma } from "@/components/shared/SeletorDeIdioma";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "./Brand";
@@ -120,7 +121,13 @@ export function ConsumerFooter() {
               © {new Date().getFullYear()} Movepark Tecnologia Ltda · CNPJ 68.183.164/0001-35
             </span>
           </div>
-          <SeletorDeIdioma />
+          {/* O opt-out de medição fica na linha da marca, e não numa coluna: é
+              escolha do navegador, não página de navegação, e ao lado do idioma
+              porque os dois são preferências de quem lê. */}
+          <div className="flex flex-col items-start gap-3 tablet:flex-row tablet:items-center tablet:gap-6">
+            <MedicaoOptOut />
+            <SeletorDeIdioma />
+          </div>
         </div>
       </div>
     </footer>

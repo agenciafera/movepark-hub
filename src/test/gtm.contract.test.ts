@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { MEASUREMENT_OPTOUT_KEY } from "@/lib/measurement-optout";
 
 /**
  * O GTM mora no template `index.html`, fora da árvore React, então nenhum teste de
@@ -63,6 +64,36 @@ describe("Google Tag Manager no template", () => {
 
     expect(ocorrencias.length).toBeGreaterThanOrEqual(2);
     expect(new Set(ocorrencias)).toEqual(new Set([CONTAINER_ID]));
+  });
+});
+
+describe("opt-out de medição no template", () => {
+  /**
+   * O snippet roda antes do app, então não importa o módulo: lê a chave à mão, pelo
+   * mesmo nome. Este contrato segura que o nome no HTML é o que `measurement-optout.ts`
+   * exporta (o rodapé grava por ele) e que a checagem vem ANTES de injetar o gtm.js.
+   */
+  const head = indexHtml.slice(indexHtml.indexOf("<head>"), indexHtml.indexOf("</head>"));
+  const snippet = head.slice(head.indexOf("(function (w, d, s, l, i)"), head.indexOf("</script>"));
+
+  it("lê a chave mp_no_measure pelo nome que o módulo exporta", () => {
+    expect(MEASUREMENT_OPTOUT_KEY).toBe("mp_no_measure");
+    expect(snippet).toContain(`localStorage.getItem("${MEASUREMENT_OPTOUT_KEY}") === "1"`);
+  });
+
+  it("checa a chave antes de injetar o gtm.js, e dentro de try/catch", () => {
+    const checagem = snippet.indexOf(MEASUREMENT_OPTOUT_KEY);
+    expect(checagem).toBeGreaterThan(-1);
+    expect(checagem).toBeLessThan(snippet.indexOf("googletagmanager.com/gtm.js"));
+    // Com a chave, o snippet sai antes de criar a tag.
+    expect(snippet.slice(checagem, checagem + 40)).toContain('=== "1") return;');
+    expect(snippet.lastIndexOf("try {", checagem)).toBeGreaterThan(-1);
+    expect(snippet.indexOf("catch", checagem)).toBeGreaterThan(-1);
+  });
+
+  it("o noscript segue sem condição: sem JavaScript não há localStorage para ler", () => {
+    const body = indexHtml.slice(indexHtml.indexOf("<body>"));
+    expect(body).toContain(`https://www.googletagmanager.com/ns.html?id=${CONTAINER_ID}`);
   });
 });
 

@@ -1,4 +1,5 @@
 import Clarity from "@microsoft/clarity";
+import { isMeasurementOptedOut } from "./measurement-optout";
 import { DEFAULT_SITE_URL } from "./site-host.mjs";
 
 /**
@@ -34,12 +35,17 @@ export function shouldLoadClarity(hostname: string | undefined | null): boolean 
 /**
  * Injeta o Clarity. Devolve se carregou, para o teste enxergar a decisão.
  *
+ * Dois gates, na ordem: o host (só o canônico grava) e o opt-out de medição que o rodapé
+ * grava em `localStorage` (`mp_no_measure`). O segundo é o mesmo que o snippet do GTM lê
+ * no `index.html`: um pedido, os dois scripts ficam de fora.
+ *
  * Idempotente por dois motivos somados: o efeito que chama roda uma vez, e o próprio pacote
  * desiste quando já existe a tag `#clarity-script` no documento.
  */
 export function initClarity(): boolean {
   if (typeof window === "undefined" || typeof document === "undefined") return false;
   if (!shouldLoadClarity(window.location.hostname)) return false;
+  if (isMeasurementOptedOut()) return false;
 
   Clarity.init(CLARITY_PROJECT_ID);
   return true;

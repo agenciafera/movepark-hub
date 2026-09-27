@@ -92,3 +92,18 @@ describe("ConsumerFooter — a faixa da chamada", () => {
     expect(botao.className.split(" ")).not.toContain("bg-white");
   });
 });
+
+describe("ConsumerFooter: opt-out de medição", () => {
+  /**
+   * Base legal de legítimo interesse com opt-out: o pedido de não medir tem que estar a
+   * um clique em toda página do consumidor, e o rodapé é a única coisa que está em todas.
+   */
+  it("traz o link 'Não medir minha navegação' na linha da marca", () => {
+    renderWithProviders(<ConsumerFooter />);
+
+    const botao = screen.getByRole("button", { name: "Não medir minha navegação" });
+    expect(screen.getByRole("contentinfo")).toContainElement(botao);
+    // Fora das colunas de navegação: o menu do celular espelha só os `ul a`.
+    expect(botao.closest("ul")).toBeNull();
+  });
+});

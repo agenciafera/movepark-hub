@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
@@ -82,6 +82,16 @@ async function preencheCartao(validade: string) {
   fireEvent.change(screen.getByLabelText("Número"), { target: { value: "123" } });
   await screen.findByTestId("cep-endereco");
 }
+
+// Radix Select usa APIs de ponteiro/scroll ausentes no happy-dom.
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+  Element.prototype.hasPointerCapture = vi.fn();
+  Element.prototype.releasePointerCapture = vi.fn();
+});
+
+/** O `Intl` separa "R$" do valor com espaço duro; a comparação lê com espaço comum. */
+const norm = (s: string | null) => (s ?? "").replace(/\u00a0/g, " ");
 
 describe("Step4Payment", () => {
   beforeEach(() => {
@@ -249,6 +259,65 @@ describe("Step4Payment", () => {
         "pk_test_x",
         expect.objectContaining({ exp_month: 12, exp_year: 2030 }),
       ),
+    );
+  });
+});
+
+/**
+ * CDC art. 52: quem parcela com juros tem que ver a taxa, o acréscimo em reais e o CET
+ * antes de pagar. A política vem do servidor (`get-payment-config`), e o número na tela é o
+ * mesmo que a Edge `create-card-charge` cobra, porque os dois lados usam a mesma conta.
+ */
+describe("Step4Payment: parcelas com juros", () => {
+  const user = userEvent.setup();
+
+  beforeEach(() => {
+    policy.monthlyInterestPct = 2.99;
+  });
+
+  afterEach(() => {
+    policy.monthlyInterestPct = 0;
+  });
+
+  async function abrirCartao() {
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={1000}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Parcelas");
+  }
+
+  it("começa em 1x, com o resumo dizendo que não há juros", async () => {
+    await abrirCartao();
+
+    expect(norm(screen.getByTestId("parcelas-resumo").textContent)).toBe(
+      "1x de R$ 1.000,00. Total R$ 1.000,00, sem juros.",
+    );
+  });
+
+  it("cada opção com juros mostra taxa, acréscimo e CET; a escolhida vai para o resumo", async () => {
+    await abrirCartao();
+
+    await user.click(screen.getByLabelText("Parcelas"));
+    const opcao12 = await screen.findByRole("option", { name: /12x de R\$/ });
+    expect(norm(opcao12.textContent)).toContain(
+      "juros de 2,99% a.m. Acréscimo de R$ 204,80. CET 2,99% a.m. (42,41% a.a.)",
+    );
+    const opcao3 = screen.getByRole("option", { name: /3x de R\$/ });
+    expect(norm(opcao3.textContent)).toContain("sem juros");
+    expect(norm(opcao3.textContent)).not.toContain("CET");
+
+    await user.click(opcao12);
+
+    expect(norm(screen.getByTestId("parcelas-resumo").textContent)).toBe(
+      "12x de R$ 100,40. Total R$ 1.204,80, acréscimo de R$ 204,80. Juros 2,99% a.m., CET 2,99% a.m. (42,41% a.a.).",
     );
   });
 });

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { CLARITY_PROJECT_ID, initClarity, shouldLoadClarity } from "./clarity";
+import { MEASUREMENT_OPTOUT_KEY } from "./measurement-optout";
 import { DEFAULT_SITE_URL } from "./site-host.mjs";
 
 /**
@@ -51,6 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.head.innerHTML = "";
+  localStorage.clear();
   navegarPara("http://localhost:3000/");
 });
 
@@ -94,6 +96,29 @@ describe("injeção da tag", () => {
     initClarity();
 
     expect(document.querySelectorAll("#clarity-script")).toHaveLength(1);
+  });
+});
+
+describe("opt-out de medição", () => {
+  /**
+   * O link "Não medir minha navegação" do rodapé grava `mp_no_measure` = "1". Com a chave
+   * presente o Clarity fica de fora mesmo no host canônico, que é o único onde ele
+   * gravaria; é a mesma chave que segura o GTM no `index.html`.
+   */
+  it("não injeta a tag quando o navegador pediu para não ser medido", () => {
+    navegarPara(`https://${HOST_CANONICO}/`);
+    localStorage.setItem(MEASUREMENT_OPTOUT_KEY, "1");
+
+    expect(initClarity()).toBe(false);
+    expect(document.getElementById("clarity-script")).toBeNull();
+  });
+
+  it("volta a injetar quando a chave sai", () => {
+    navegarPara(`https://${HOST_CANONICO}/`);
+    localStorage.setItem(MEASUREMENT_OPTOUT_KEY, "1");
+    localStorage.removeItem(MEASUREMENT_OPTOUT_KEY);
+
+    expect(initClarity()).toBe(true);
   });
 });
 
