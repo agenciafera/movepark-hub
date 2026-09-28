@@ -529,6 +529,16 @@ describe("destinationSchema", () => {
     expect(destinationSchema({ ...base, image: [] }).image).toBeUndefined();
     expect(destinationSchema(base).image).toBeUndefined();
   });
+
+  it("aeroporto conhecido ganha sameAs pro QID da Wikidata", () => {
+    const s = destinationSchema({ ...base, type: "airport", code: "GRU" });
+    expect(s.sameAs).toBe("https://www.wikidata.org/wiki/Q385406");
+  });
+
+  it("sem QID mapeado (código desconhecido, ou destino que não é aeroporto), sameAs some", () => {
+    expect(destinationSchema({ ...base, type: "airport", code: "ZZZ" }).sameAs).toBeUndefined();
+    expect(destinationSchema({ ...base, type: "bus_terminal", code: "tiete" }).sameAs).toBeUndefined();
+  });
 });
 
 describe("webPageSchema · speakable", () => {

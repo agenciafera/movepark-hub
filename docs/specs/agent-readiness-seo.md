@@ -227,6 +227,45 @@ set/2026 não achou `speakable` em nenhum dos dois. Candidato natural para esten
 `/precos` e `/destinos` quando essas páginas ganharem um bloco de resposta rápida
 equivalente ao do FAQ.
 
+## Auditoria de paridade 28/09/2026: xpark.ai, bandeirapark.com.br e o Hub, lado a lado
+
+> Três agentes em paralelo (curl cru, sem JS) leram os dois concorrentes e o próprio
+> `origin/main`. Achado geral: **estamos à frente nos dois** em `Content-Signal` no
+> `robots.txt` (nenhum dos dois declara), `.well-known/mcp/*` + `api-catalog` +
+> `security.txt` + `agent-skills` (nenhum dos dois tem nada em `.well-known/`),
+> IndexNow, `speakable`, hreflang completo com `x-default` (o xpark não tem hreflang
+> nenhum), RSS real (o `/feed` do xpark é fallback de SPA; o do bandeira dá 404), e SSG
+> de verdade via `vite-react-ssg` — o "snapshot" do xpark é uma `div` escondida por CSS
+> e revelada só em `<noscript>` (funciona, mas é gambiarra de crawler sem JS, não SSR).
+
+Dois gaps reais, fechados na mesma auditoria:
+
+- **`llms-full.txt` sem detalhe por unidade.** Tinha a tabela de preço por destino
+  (`tabelaMarkdown`), mas não distância/traslado/nota — o `llms.txt` já tinha isso
+  (`linhaUnidade`, criada em 08/09/2026), só não estava compartilhado. Virou função de
+  topo em `scripts/generate-geo-artifacts.mjs`, reusada nos dois arquivos, com traslado
+  e nota agregada a mais do que já existia. Fecha (e passa) o padrão do xpark, que lista
+  as 127 fichas de operadora no `llms-full.txt` dele mas sem traslado/nota nesse nível.
+- **`sameAs` para Wikidata nos aeroportos.** `destinationSchema` (`src/lib/jsonld.ts`)
+  ganhou um mapa `IATA → QID`, resolvido pela property `P238` direto na SPARQL da
+  Wikidata (não digitado à mão), emitindo `sameAs: https://www.wikidata.org/wiki/<QID>`
+  em todo aeroporto com QID conhecido. Nenhum dos dois concorrentes declara Wikidata em
+  schema nenhum (`sameAs` deles aponta só para rede social e Google Maps) — é o que
+  ancora "Aeroporto de Guarulhos" à entidade canônica do grafo de conhecimento em vez de
+  depender do buscador desambiguar sozinho.
+
+Achados que ficaram só registrados, sem virar tarefa agora (custo/benefício baixo ou
+prematuro): `QAPage`/`HowTo`/`Article` isolados (nenhum dos três usa, inclusive os
+concorrentes só têm `FAQPage`); sitemap de imagem/vídeo (nenhum dos três tem); Web Bot
+Auth / HTTP Message Signatures (padrão emergente de 2026, adoção zero no mercado);
+`Content-Signal` como header HTTP por resposta além do `robots.txt` estático (redundante
+na prática); JSON Feed ao lado do RSS (`blog/feed.xml` já existe e nenhum concorrente
+tem feed nenhum, então não é gap competitivo, só enriquecimento). O achado mais
+interessante do bandeira foi a árvore `/okf/*` (markdown nativo por conceito, granular,
+fora do sitemap, só para agente) — o Hub já cobre esse terreno com os `/faq/<slug>` e os
+gêmeos Markdown de destino/unidade, com a vantagem de estarem no sitemap (competem por
+rank também, não só por citação).
+
 ## O `llms.txt` diz como consumir, não só o que existe
 
 > **Implementado em 16/09/2026** (Conteúdo 25). Antes o arquivo era um mapa de páginas:

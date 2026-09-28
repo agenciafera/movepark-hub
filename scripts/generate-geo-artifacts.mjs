@@ -484,6 +484,36 @@ const fmtDistancia = (m) => {
   return `${Number.isInteger(km) ? String(km) : km.toFixed(1).replace(".", ",")} km`;
 };
 
+/**
+ * Uma unidade em uma linha: preço por duração, distância, traslado e avaliação, com a
+ * URL. Extraída pro topo do arquivo (antes só existia dentro do bloco do `llms.txt`,
+ * lá embaixo) para o `llms-full.txt` também usar: hoje ele só tem a tabela de preço por
+ * destino (`tabelaMarkdown`), sem distância/traslado/nota, que é justamente o detalhe
+ * por operadora que o comparador concorrente inclui nas 127 fichas do `llms-full.txt`
+ * dele. Aqui sai mais completo que o deles: eles não têm traslado nem nota agregada
+ * nesse nível de detalhe, o dado já existe na `priceIndex` e nunca diverge do site.
+ */
+const linhaUnidade = (u) => {
+  const partes = [];
+  const dia1 = totalDe(u, 1);
+  if (dia1 != null) partes.push(`${brl(dia1)} a diária`);
+  for (const d of [7, 30]) {
+    const t = totalDe(u, d);
+    if (t != null) partes.push(`${brl(t)} em ${d} diárias (${brl(t / d)}/dia)`);
+  }
+  const dist = fmtDistancia(u.distance_m);
+  const onde = dist ? `, a ${dist} do terminal` : "";
+  const traslado = u.has_shuttle
+    ? `, traslado${u.shuttle_minutes != null ? ` a cada ${u.shuttle_minutes} min` : ""}`
+    : "";
+  const nota =
+    u.review_avg != null && u.review_count
+      ? `, nota ${u.review_avg.toFixed ? u.review_avg.toFixed(1) : u.review_avg} (${u.review_count} avaliações)`
+      : "";
+  const url = u.public_path ? ` ${SITE_URL}${u.public_path}` : "";
+  return `  - ${u.company_name}, ${u.parking_type_name.toLowerCase()}${onde}${traslado}${nota}: ${partes.join("; ")}.${url}`;
+};
+
 /** Menor total por duração, com quem pratica. Mesma regra da página. */
 function resumoPorDuracao(dest, dias) {
   const out = [];
@@ -883,6 +913,15 @@ function tabelaTopMarkdown(dest, limit = 5) {
         );
       }
       linhas.push(...tabelaMarkdown(dest, diasIndice), "");
+      // Distância, traslado e nota por unidade, além da tabela de preço: é o detalhe que faltava
+      // aqui (o `llms.txt` já tinha, ver `linhaUnidade` acima). Sem isso o `llms-full.txt`
+      // respondia preço mas não "qual tem traslado" ou "qual tem melhor nota" sem abrir outra URL.
+      const unidadesDest = unidadesCarro(dest);
+      if (unidadesDest.length > 0) {
+        linhas.push("", "Detalhe por unidade:");
+        for (const u of unidadesDest) linhas.push(linhaUnidade(u));
+      }
+      linhas.push("");
     }
   }
 
@@ -1382,20 +1421,6 @@ for (const d of destinations) {
 {
   const alvo = path.join(DIST, "llms.txt");
   if (fs.existsSync(alvo)) {
-    const linhaUnidade = (u) => {
-      const partes = [];
-      const dia1 = totalDe(u, 1);
-      if (dia1 != null) partes.push(`${brl(dia1)} a diária`);
-      for (const d of [7, 30]) {
-        const t = totalDe(u, d);
-        if (t != null) partes.push(`${brl(t)} em ${d} diárias (${brl(t / d)}/dia)`);
-      }
-      const dist = fmtDistancia(u.distance_m);
-      const onde = dist ? `, a ${dist} do terminal` : "";
-      const url = u.public_path ? ` ${SITE_URL}${u.public_path}` : "";
-      return `  - ${u.company_name}, ${u.parking_type_name.toLowerCase()}${onde}: ${partes.join("; ")}.${url}`;
-    };
-
     const secoes = [];
     for (const dest of destinosComPreco) {
       const meta = destinations.find((d) => d.slug === dest.slug);

@@ -349,6 +349,40 @@ export function productOfferSchema(
   };
 }
 
+/**
+ * IATA → QID da Wikidata, só para os aeroportos que o Hub publica. Resolvido pela
+ * property `P238` (código IATA) direto na SPARQL da Wikidata em 28/09/2026, não
+ * digitado à mão: `SELECT ?iata ?item WHERE { VALUES ?iata {"GRU" ...} ?item wdt:P238
+ * ?iata }`. Isso é `sameAs` de verdade (a mesma entidade, não um link relacionado), e
+ * nenhum dos dois concorrentes auditados (xpark.ai, bandeirapark.com.br) declara
+ * Wikidata em nó nenhum — é o que ancora "Aeroporto de Guarulhos" à entidade canônica
+ * no grafo de conhecimento em vez de deixar o buscador/IA desambiguar sozinho.
+ */
+const WIKIDATA_POR_IATA: Record<string, string> = {
+  BSB: "Q909488",
+  CGB: "Q1030919",
+  CGH: "Q862401",
+  CGR: "Q607211",
+  CNF: "Q1987608",
+  CWB: "Q180464",
+  FLN: "Q539298",
+  FOR: "Q2074717",
+  GIG: "Q733998",
+  GRU: "Q385406",
+  GYN: "Q2661286",
+  JPA: "Q2876050",
+  LDB: "Q3308198",
+  MCZ: "Q2448604",
+  NVT: "Q1432040",
+  POA: "Q1432702",
+  REC: "Q387704",
+  SDU: "Q865475",
+  SSA: "Q926029",
+  THE: "Q3312799",
+  VCP: "Q381653",
+  VIX: "Q2578887",
+};
+
 export function destinationSchema(d: {
   name: string;
   slug: string;
@@ -369,12 +403,14 @@ export function destinationSchema(d: {
   // só entra quando tem cara de IATA (3 letras); "tiete" e "centro-sp" ficam de fora.
   const isAirport = d.type === "airport";
   const iata = d.code && /^[A-Z]{3}$/.test(d.code) ? d.code : undefined;
+  const wikidataId = iata ? WIKIDATA_POR_IATA[iata] : undefined;
   return {
     "@context": "https://schema.org",
     "@type": isAirport ? ["Place", "Airport"] : "Place",
     "@id": NO.destino(`${SITE_URL}${caminhoDestino(d.public_slug ?? d.slug)}`),
     isPartOf: { "@id": SITE_ID },
     iataCode: isAirport ? iata : undefined,
+    sameAs: wikidataId ? `https://www.wikidata.org/wiki/${wikidataId}` : undefined,
     name: d.name,
     description: d.meta_description ?? undefined,
     image,
