@@ -91,11 +91,17 @@ export function alternativasDeIdioma(args: {
   const idiomas = args.dados?.idiomas ?? [];
   if (idiomas.length === 0) return [];
 
+  // Pela família, e não numa fila de `??`, porque os campos se cruzam: o post do blog
+  // também carrega `destination` (o aeroporto de que ele fala), e na fila o slug do
+  // aeroporto passava na frente do slug do post. A versão em inglês do post do Aeropark
+  // mandava o "Português" para `/blog/aeroporto-guarulhos/`, que não existe, e o
+  // `check-internal-links` reprovou o build a partir de 28/09/2026.
   const slugPt =
-    args.dados?.faq?.slug ??
-    args.dados?.destination?.public_slug ??
-    args.dados?.destination?.slug ??
-    args.dados?.slug;
+    familia === "faq"
+      ? args.dados?.faq?.slug
+      : familia === "destino"
+        ? (args.dados?.destination?.public_slug ?? args.dados?.destination?.slug)
+        : args.dados?.slug;
   if (!slugPt) return [];
 
   return [

@@ -71,6 +71,25 @@ describe("alternativasDeIdioma", () => {
     ]);
   });
 
+  /**
+   * O post do blog também carrega `destination`, e com o slug do aeroporto na frente o
+   * "Português" da versão em inglês ia para `/blog/aeroporto-guarulhos/`, que não existe.
+   * Foi o link que o `check-internal-links` reprovou no build de 28/09/2026.
+   */
+  it("o post com aeroporto relacionado usa o slug do post, não o do aeroporto", () => {
+    const post = {
+      slug: "vagas-cobertas-em-guarulhos",
+      destination: { public_slug: "aeroporto-guarulhos", slug: "aeroporto-guarulhos" },
+      idiomas: [{ locale: "en" as const, slug: "covered-spots-guarulhos-airport" }],
+    };
+    expect(
+      alternativasDeIdioma({ pathname: "/en/blog/covered-spots-guarulhos-airport", dados: post }),
+    ).toEqual([
+      { locale: "pt-BR", caminho: "/blog/vagas-cobertas-em-guarulhos/" },
+      { locale: "en", caminho: "/en/blog/covered-spots-guarulhos-airport" },
+    ]);
+  });
+
   it("sem slug em português não monta nada, em vez de montar `/faq/undefined`", () => {
     expect(
       alternativasDeIdioma({
