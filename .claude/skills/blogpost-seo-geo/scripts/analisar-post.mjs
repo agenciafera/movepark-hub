@@ -696,6 +696,25 @@ else verde(G_GEO, "Listas", `${listas} itens de lista.`);
 if (!meta.destination) laranja(G_GEO, "Entidade do destino", "Front matter sem `destination`. Sem ele o post não entra no grafo do aeroporto.");
 else verde(G_GEO, "Entidade do destino", meta.destination);
 
+// Um post de 3.000 palavras vira vários pedaços num RAG (chunker corta por tamanho,
+// não por H2), e um parágrafo que abre com "Essa tabela...", "Ele fica..." só faz
+// sentido colado no parágrafo anterior. A regra de parágrafo autossuficiente do
+// Passo 4 hoje só é aplicada ao primeiro parágrafo de cada seção; isto verifica os
+// demais, onde o pronome solto de fato aparece (achado em auditoria de 26/09/2026:
+// zero ocorrência no FAQ/destino, que já nomeiam o sujeito em todo parágrafo).
+const ABRE_DEITICO = /^(Isso|Essa|Esse|Ela|Ele|Eles|Elas|Ali|Nessa|Nesse|Aqui)\b/;
+const paragrafosSoltos = paragrafos.filter((p) => ABRE_DEITICO.test(textoPuro(p)));
+if (paragrafosSoltos.length)
+  laranja(
+    G_GEO,
+    "Parágrafo com referência solta",
+    `${paragrafosSoltos.length} parágrafo(s) abrindo em pronome/dêitico sem repetir o sujeito: ${paragrafosSoltos
+      .slice(0, 3)
+      .map((p) => `"${textoPuro(p).slice(0, 40)}…"`)
+      .join(", ")}. Reescreva a primeira frase citando o nome, não o pronome: um chunk de RAG é recuperado sozinho.`,
+  );
+else verde(G_GEO, "Parágrafo com referência solta", "Nenhum parágrafo depende do anterior para fazer sentido.");
+
 // ------------------------------------------------------------------ relatório
 
 const ORDEM = { vermelho: 0, laranja: 1, verde: 2 };

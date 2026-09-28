@@ -209,6 +209,16 @@ consegue extrair inteiro sem reescrever.
 **Entidade do destino.** `destination` no front matter. É o que liga o post ao
 aeroporto no grafo do site e ao CTA que converte.
 
+**Parágrafo com referência solta.** Nenhum parágrafo (fora o primeiro de cada
+seção, já coberto pela regra do Passo 4) pode abrir em "Essa/Esse/Ele/Ela/Isso/
+Ali/Nessa/Nesse/Aqui" sem repetir o sujeito. Laranja quando acontece: um post de
+3.000 palavras vira vários pedaços num RAG (o chunker corta por tamanho, não por
+H2), e um parágrafo que só faz sentido colado no anterior perde o antecedente
+quando é recuperado sozinho. Auditoria de 26/09/2026 achou zero ocorrência no
+FAQ e nos H2 de `/destinos` (que já nomeiam o sujeito em cada abertura por design)
+e 3 a 6 por post na amostra do blog — é onde o risco de fato mora, porque só o
+blog tem seção longa o bastante para um chunker cortar no meio.
+
 ## 7. Onde o analisador difere do Yoast
 
 - **Mínimo de 3.000 palavras** em vez de 300. Regra do projeto.

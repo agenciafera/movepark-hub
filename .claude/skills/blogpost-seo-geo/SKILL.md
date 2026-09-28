@@ -320,6 +320,18 @@ falta o preço ou o CTA.
    dois-pontos e fragmento indireto ("Voo atrasou: o que fazer") continuam sem
    "?", porque não são pergunta. O portão `Pergunta sem "?"` do
    [`analisar-post.mjs`](scripts/analisar-post.mjs) reprova o meio-caminho.
+
+   **A autossuficiência vale para TODO parágrafo da seção, não só o primeiro.**
+   Um post de 3.000 palavras não é lido inteiro por um RAG: o chunker corta por
+   tamanho, não por H2, então o 3º ou 4º parágrafo de uma seção pode virar chunk
+   sozinho, sem o parágrafo anterior por perto. "Essa tabela usa a tarifa cheia…",
+   "Ele fica próximo ao P1…", "Esse desenho explica a escolha…" só fazem sentido
+   colados no parágrafo de cima — fora de contexto, o pronome não tem antecedente
+   e o trecho vira ruído para quem o recupera sozinho. Reescreva citando o nome
+   (do estacionamento, do aeroporto, do bolsão) na primeira frase, não o pronome.
+   O portão `Parágrafo com referência solta` do
+   [`analisar-post.mjs`](scripts/analisar-post.mjs) pega a abertura em
+   "Essa/Esse/Ele/Ela/Isso/Ali/Aqui" sem sujeito repetido.
 3. **Bloco de fato, uma frase por unidade.** É o trecho que a visão geral de IA
    copia, porque traz **entidade, número, unidade e condição na mesma frase**.
    Adjetivo não sobrevive à extração: "seguro" e "ótimo custo-benefício" somem, e
