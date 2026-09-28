@@ -331,11 +331,19 @@ export type ProximityRow = {
   detail: string | null;
   /** Endereço do lote, quando existe. Vinha do card mapeado, que a lista absorveu. */
   address: string | null;
-  /** Nota do Google, só no lote mapeado e só quando o snapshot ainda vale. */
+  /** Nota do Google, com o snapshot fresco. No parceiro sai do card (mesma vitrine da
+   *  busca); no mapeado, da própria RPC. Nunca é a avaliação PRÓPRIA da Movepark: essa é
+   *  gateada por `caps.reviews` (checkout_mode), e misturar as duas aqui inflaria a nota
+   *  do parceiro com um histórico que pode não valer mais para ele (mesmo raciocínio da
+   *  ficha, 28/09/2026). */
   rating: { avg: number; count: number } | null;
   /** `null` no lote sem coordenada aproveitável: ele entra no fim da lista, sem número. */
   meters: number | null;
   distanceLabel: string | null;
+  /** Diária de referência: a de 1 dia do motor no parceiro, a pesquisada no mapeado. Nulo
+   *  quando não dá para saber (parceiro com estadia mínima maior que 1, ou mapeado sem
+   *  pesquisa) — nunca um chute. Alimenta o selo de "menor preço" da seção. */
+  dailyFrom: number | null;
   path: string;
   kind: "partner" | "mapped";
 };
@@ -359,6 +367,8 @@ export type ProximityProspect = {
   /** Ponto do destino mais perto deste lote ("Terminal 2"), quando o destino tem pontos. */
   reference_name?: string | null;
   rating?: { avg: number; count: number } | null;
+  /** Diária pesquisada (ADR-010, E0.17-k). Nulo na maioria: cobre só quem já foi cotado. */
+  researched_daily_brl?: number | null;
 };
 
 /**
@@ -385,6 +395,9 @@ export function proximityRanking(args: {
    * do parceiro sai sem endereço, e a lista continua de pé.
    */
   addressByLocation?: Map<string, string | null>;
+  /** Nota do Google por `company_slug/location_slug`, do mesmo card da vitrine (fresca,
+   *  fato da unidade). Sem o mapa, o parceiro entra sem nota — nunca com a própria. */
+  googleRatingByLocation?: Map<string, { avg: number; count: number } | null>;
 }): ProximityRow[] {
   const sufixo = args.anchorLabel ? ` ${args.anchorLabel}` : "";
   const carros = carUnits(args.units);
@@ -408,9 +421,10 @@ export function proximityRanking(args: {
     // traslado continua no card e na página da unidade, que é onde ele é verdade.
     detail: null,
     address: args.addressByLocation?.get(chave) ?? null,
-    rating: null,
+    rating: args.googleRatingByLocation?.get(chave) ?? null,
     meters: u.distance_m as number,
     distanceLabel: `${formatDistance(u.distance_m)}${sufixo}`,
+    dailyFrom: perDay(priceFor(u, 1)),
     path: u.public_path ?? "",
     kind: "partner",
   }));
@@ -430,6 +444,7 @@ export function proximityRanking(args: {
         meters == null
           ? null
           : `${formatDistance(meters)}${p.reference_name ? ` do ${p.reference_name}` : sufixo}`,
+      dailyFrom: p.researched_daily_brl ?? null,
       path: p.public_path ?? caminhoFicha(args.destinationSlug, p.public_slug ?? p.slug),
       kind: "mapped" as const,
     };
@@ -440,4 +455,36 @@ export function proximityRanking(args: {
   return [...parceiros, ...mapeados].sort(
     (a, b) => (a.meters ?? Infinity) - (b.meters ?? Infinity),
   );
+}
+
+/**
+ * Os dois selos de mercado da seção de proximidade: menor diária e melhor nota, entre
+ * TODOS os lotes da lista (parceiro e mapeado, sem distinção — é comparação de mercado,
+ * não vitrine de venda). `null` quando ninguém no destino tem o dado (a maioria dos
+ * mapeados ainda não foi pesquisada em preço; ver ADR-010, E0.17-k).
+ *
+ * Empate no preço ou na nota fica com quem está mais perto: a lista já vem ordenada por
+ * distância, então o primeiro que bate o valor máximo/mínimo é o correto.
+ */
+export type MarketSuperlatives = {
+  cheapest: ProximityRow | null;
+  bestRated: ProximityRow | null;
+};
+
+export function marketSuperlatives(rows: ProximityRow[]): MarketSuperlatives {
+  let cheapest: ProximityRow | null = null;
+  let bestRated: ProximityRow | null = null;
+  for (const row of rows) {
+    if (row.dailyFrom != null && (cheapest === null || row.dailyFrom < (cheapest.dailyFrom as number))) {
+      cheapest = row;
+    }
+    if (
+      row.rating != null &&
+      row.rating.count > 0 &&
+      (bestRated === null || row.rating.avg > (bestRated.rating?.avg as number))
+    ) {
+      bestRated = row;
+    }
+  }
+  return { cheapest, bestRated };
 }

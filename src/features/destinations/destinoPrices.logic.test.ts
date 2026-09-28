@@ -9,6 +9,7 @@ import {
   destinationMetaDescription,
   isPesquisaFresca,
   longStayInsight,
+  marketSuperlatives,
   pesquisadoRows,
   pesquisadoSummary,
   proximityRanking,
@@ -348,6 +349,73 @@ describe("proximityRanking", () => {
     });
     expect(linhas.find((l) => l.kind === "partner")?.detail).toBeNull();
     expect(linhas.find((l) => l.kind === "mapped")?.detail).toBe("sem reserva online");
+  });
+
+  it("dailyFrom do parceiro vem da diária de 1 dia do motor; do mapeado, da pesquisa", () => {
+    const linhas = proximityRanking({
+      units: [unit({ distance_m: 328 })],
+      prospects: [
+        { name: "Pesquisado", slug: "pesquisado", distance_km: 1, researched_daily_brl: 25 },
+        { name: "Sem pesquisa", slug: "sem-pesquisa", distance_km: 2 },
+      ],
+      destinationSlug: "aeroporto-de-viracopos",
+    });
+    expect(linhas.find((l) => l.kind === "partner")?.dailyFrom).toBe(40);
+    expect(linhas.find((l) => l.name === "Pesquisado")?.dailyFrom).toBe(25);
+    expect(linhas.find((l) => l.name === "Sem pesquisa")?.dailyFrom).toBeNull();
+  });
+
+  it("nota do parceiro vem só do mapa (nunca a própria avaliação da Movepark)", () => {
+    const semMapa = proximityRanking({
+      units: [unit({ distance_m: 328 })],
+      prospects: [],
+      destinationSlug: "aeroporto-de-viracopos",
+    });
+    expect(semMapa[0].rating).toBeNull();
+
+    const comMapa = proximityRanking({
+      units: [unit({ distance_m: 328 })],
+      prospects: [],
+      destinationSlug: "aeroporto-de-viracopos",
+      googleRatingByLocation: new Map([["virapark/virapark", { avg: 4.7, count: 320 }]]),
+    });
+    expect(comMapa[0].rating).toEqual({ avg: 4.7, count: 320 });
+  });
+});
+
+describe("marketSuperlatives", () => {
+  it("menor diária e melhor nota, entre parceiro e mapeado juntos", () => {
+    const linhas = proximityRanking({
+      units: viracopos().units, // Virapark R$40/dia, Garageinn R$59,99/dia
+      prospects: [
+        { name: "Barato", slug: "barato", distance_km: 3, researched_daily_brl: 20 },
+        { name: "Bem avaliado", slug: "bem-avaliado", distance_km: 4, rating: { avg: 4.9, count: 50 } },
+      ],
+      destinationSlug: "aeroporto-de-viracopos",
+    });
+    const { cheapest, bestRated } = marketSuperlatives(linhas);
+    expect(cheapest?.name).toBe("Barato");
+    expect(bestRated?.name).toBe("Bem avaliado");
+  });
+
+  it("empate fica com quem está mais perto, porque a lista já vem ordenada por distância", () => {
+    const linhas = proximityRanking({
+      units: [unit({ distance_m: 328 }), unit({ location_slug: "outro", distance_m: 1000 })],
+      prospects: [],
+      destinationSlug: "aeroporto-de-viracopos",
+    });
+    expect(marketSuperlatives(linhas).cheapest?.meters).toBe(328);
+  });
+
+  it("sem nenhum preço ou nota no destino inteiro, os dois selos somem", () => {
+    const linhas = proximityRanking({
+      units: [],
+      prospects: [{ name: "Mapeado", slug: "mapeado", distance_km: 1 }],
+      destinationSlug: "d",
+    });
+    const { cheapest, bestRated } = marketSuperlatives(linhas);
+    expect(cheapest).toBeNull();
+    expect(bestRated).toBeNull();
   });
 });
 

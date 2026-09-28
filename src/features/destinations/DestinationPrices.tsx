@@ -12,7 +12,12 @@ import {
   sortRowsByPeriod,
 } from "@/features/price-index/priceIndex.logic";
 
-import type { DestinoPrices, PesquisadoRow, ProximityRow } from "./destinoPrices.logic";
+import type {
+  DestinoPrices,
+  MarketSuperlatives,
+  PesquisadoRow,
+  ProximityRow,
+} from "./destinoPrices.logic";
 import { DESTINO_DURATIONS, pesquisadoSummary } from "./destinoPrices.logic";
 import { caminhoPrecos } from "@/lib/urls";
 
@@ -504,10 +509,14 @@ export function DestinationProximity({
   rows,
   heading,
   lead,
+  superlatives,
 }: {
   rows: ProximityRow[];
   heading: string;
   lead?: string;
+  /** Selos de "menor diária"/"melhor nota" do mercado inteiro (parceiro + mapeado). Sem
+   *  isso os dois selos simplesmente não saem — não é obrigatório para a lista existir. */
+  superlatives?: MarketSuperlatives;
 }) {
   const T = useTextos();
   if (rows.length === 0) return null;
@@ -521,56 +530,81 @@ export function DestinationProximity({
       </div>
 
       <ul className="mt-6 border-t border-hairline">
-        {rows.map((row) => (
-          <li
-            key={row.key}
-            data-testid="proximity-row"
-            data-kind={row.kind}
-            className="relative grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1 border-b border-hairline-soft py-4 transition focus-within:bg-surface-soft hover:bg-surface-soft desktop:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_auto]"
-          >
-            <span className="flex flex-wrap items-center gap-2">
-              {/* A linha inteira é clicável, e o alvo vem de um `::after` esticado, não de
-                  um `<Link>` em volta de tudo: assim o texto âncora continua sendo só o
-                  nome do lote. Link engolindo endereço, distância e selo vira âncora
-                  poluída, que é o oposto do que esta lista existe para fazer. */}
-              <Link
-                to={row.path}
-                className="text-title-md text-ink underline-offset-2 after:absolute after:inset-0 after:content-[''] hover:text-mp-primary hover:underline"
-              >
-                {row.name}
-              </Link>
-              <span
-                className={cn(
-                  "shrink-0 rounded-full border px-2.5 py-1 text-badge",
-                  row.kind === "partner"
-                    ? "border-mp-indigo/30 text-mp-indigo"
-                    : "border-hairline text-muted",
-                )}
-              >
-                {row.kind === "partner" ? "Reserva online" : "Sem reserva online"}
-              </span>
-            </span>
-
-            {/* No mobile o endereço desce para a segunda linha e a distância fica ao lado
-                do nome, que é a comparação que a pessoa faz rolando a lista. No desktop os
-                três voltam para a mesma linha. */}
-            <span className="col-span-2 row-start-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted desktop:col-span-1 desktop:col-start-2 desktop:row-start-1">
-              {row.address && <span className="text-pretty">{row.address}</span>}
-              {row.rating && (
-                <RatingBadge
-                  avg={row.rating.avg}
-                  count={row.rating.count}
-                  className="text-body-sm"
-                  suffix="no Google"
-                />
+        {rows.map((row) => {
+          const isCheapest = superlatives?.cheapest?.key === row.key;
+          const isBestRated = superlatives?.bestRated?.key === row.key;
+          return (
+            <li
+              key={row.key}
+              data-testid="proximity-row"
+              data-kind={row.kind}
+              className={cn(
+                "relative grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1 border-b border-hairline-soft py-4 transition focus-within:bg-surface-soft hover:bg-surface-soft desktop:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_auto]",
+                // Destaque do parceiro: fundo tênue na linha inteira, não só o selo. É a
+                // forma honesta de dar prioridade visual sem mexer na ordem por distância
+                // (que continua sendo verdade sobre o mapa, não sobre quem vende mais).
+                row.kind === "partner" && "bg-mp-pale/60",
               )}
-            </span>
+            >
+              <span className="flex flex-wrap items-center gap-2">
+                {/* A linha inteira é clicável, e o alvo vem de um `::after` esticado, não de
+                    um `<Link>` em volta de tudo: assim o texto âncora continua sendo só o
+                    nome do lote. Link engolindo endereço, distância e selo vira âncora
+                    poluída, que é o oposto do que esta lista existe para fazer. */}
+                <Link
+                  to={row.path}
+                  className="text-title-md text-ink underline-offset-2 after:absolute after:inset-0 after:content-[''] hover:text-mp-primary hover:underline"
+                >
+                  {row.name}
+                </Link>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full border px-2.5 py-1 text-badge",
+                    row.kind === "partner"
+                      ? "border-mp-indigo bg-mp-indigo text-white"
+                      : "border-hairline text-muted",
+                  )}
+                >
+                  {row.kind === "partner" ? "Parceiro Movepark · Reserva online" : "Sem reserva online"}
+                </span>
+                {isCheapest && (
+                  <span className="shrink-0 rounded-full border border-mp-primary/30 px-2.5 py-1 text-badge text-mp-primary">
+                    Menor diária da região
+                  </span>
+                )}
+                {isBestRated && (
+                  <span className="shrink-0 rounded-full border border-mp-primary/30 px-2.5 py-1 text-badge text-mp-primary">
+                    Melhor avaliação da região
+                  </span>
+                )}
+              </span>
 
-            <span className="col-start-2 row-start-1 text-right text-body-md tabular-nums text-ink desktop:col-start-3">
-              {row.distanceLabel ?? "sem distância medida"}
-            </span>
-          </li>
-        ))}
+              {/* No mobile o endereço desce para a segunda linha e a distância fica ao lado
+                  do nome, que é a comparação que a pessoa faz rolando a lista. No desktop os
+                  três voltam para a mesma linha. */}
+              <span className="col-span-2 row-start-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted desktop:col-span-1 desktop:col-start-2 desktop:row-start-1">
+                {row.address && <span className="text-pretty">{row.address}</span>}
+                {row.rating && (
+                  <RatingBadge
+                    avg={row.rating.avg}
+                    count={row.rating.count}
+                    className="text-body-sm"
+                    suffix="no Google"
+                  />
+                )}
+                {row.dailyFrom != null && (
+                  <span className="text-body-sm text-ink">
+                    a partir de {formatBRL(row.dailyFrom)}/dia
+                  </span>
+                )}
+              </span>
+
+              <span className="col-start-2 row-start-1 text-right text-body-md tabular-nums text-ink desktop:col-start-3">
+                {row.distanceLabel ?? "sem distância medida"}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

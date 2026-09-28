@@ -95,6 +95,13 @@ export async function fetchDestinationProspects(slug: string): Promise<ProspectC
  * O caminho até o tipo de vaga passa por `company_parking_type`. Não existe FK direta de
  * `location_parking_type` para `parking_type`: tentar embutir direto devolve PGRST200.
  */
+/**
+ * `go2park_enabled` entra no select porque é fato da unidade (go2park-transfer-ao-vivo.md:
+ * "vale também no checkout externo"), mas antes de 28/09/2026 não vinha aqui: o selo de
+ * rastreio ao vivo só aparecia depois que `useSearchResults` hidratava no cliente, então o
+ * crawler que não roda JS nunca via a frase "van rastreada ao vivo" no HTML do build, mesmo
+ * nas unidades com o contrato Go2Park. Mesma classe de bug que motivou este arquivo existir.
+ */
 export async function fetchDestinationUnits(destination: {
   id: string;
   latitude: number | string | null;
@@ -109,6 +116,7 @@ export async function fetchDestinationUnits(destination: {
       location:location!inner(
         id, slug, public_slug, public_name, name, address, latitude, longitude,
         review_avg, review_count, google_place_id, photos, is_listed, deleted_at,
+        go2park_enabled,
         company:company!inner(slug, name, status),
         amenities:location_amenity(amenity_code)
       ),

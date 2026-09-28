@@ -42,6 +42,7 @@ export type UnitRow = {
     photos: unknown;
     is_listed: boolean;
     deleted_at: string | null;
+    go2park_enabled: boolean | null;
     company: { slug: string; name: string; status: string } | null;
     amenities: { amenity_code: string }[] | null;
   } | null;
@@ -142,6 +143,9 @@ export function buildStaticUnits(
         // Sinal de demanda depende da janela buscada. Num HTML congelado ele seria uma
         // afirmação sem lastro, então nasce falso e só a busca do cliente pode ligá-lo.
         high_demand_today: false,
+        // Fato da unidade (go2park-transfer-ao-vivo.md), não depende de data: entra direto
+        // no HTML do build, igual à nota do Google acima.
+        go2park: loc.go2park_enabled === true,
       },
       parking_type: { code: tipo.code, name: tipo.name },
       capacity: row.capacity ?? 0,

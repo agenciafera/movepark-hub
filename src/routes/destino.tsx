@@ -62,6 +62,7 @@ import { DestinationHero } from "@/features/destinations/DestinationHero";
 import {
   buildDestinoPrices,
   destinationMetaDescription,
+  marketSuperlatives,
   pesquisadoRows,
   proximityRanking,
   type ProximityProspect,
@@ -327,6 +328,20 @@ export default function DestinoPage() {
     results.map((r) => [`${r.operator.slug}/${r.location.slug}`, r.location.address ?? null]),
   );
 
+  // Nota do Google do parceiro, também da vitrine (fato da unidade, sempre fresca).
+  // NUNCA a avaliação própria da Movepark (`location.review_avg`, gateada por
+  // `caps.reviews`/checkout_mode): misturar as duas aqui inflaria a nota do parceiro
+  // externo com histórico que pode não valer mais para ele (mesmo raciocínio de 28/09/2026
+  // que já vale para a ficha e para `listing.tsx`).
+  const googleRatingByLocation = new Map(
+    results.map((r) => [
+      `${r.operator.slug}/${r.location.slug}`,
+      r.location.google_rating && r.location.google_rating_count
+        ? { avg: r.location.google_rating, count: r.location.google_rating_count }
+        : null,
+    ]),
+  );
+
   // A nota do Google do lote mapeado só sobrevive 30 dias, e esta página é a única em
   // que ninguém mais confere: o loader roda no BUILD, então o HTML sai congelado com o
   // resultado do dia do deploy. Sem o filtro aqui, uma página construída no dia 0
@@ -350,6 +365,7 @@ export default function DestinoPage() {
       distance_km: p.distance_km,
       reference_name: p.reference_name,
       rating: badge ? { avg: badge.avg, count: badge.count } : null,
+      researched_daily_brl: p.researched_daily_brl,
     };
   });
 
@@ -369,7 +385,9 @@ export default function DestinoPage() {
           ? T.doTerminal
           : null,
     addressByLocation,
+    googleRatingByLocation,
   });
+  const superlatives = marketSuperlatives(proximity);
 
   // Espelha exatamente o que está visível, na mesma ordem: unidades vendáveis primeiro,
   // lotes mapeados depois. A LISTA sai da vitrine (`results`), não da matriz de preço, para
@@ -779,6 +797,7 @@ export default function DestinoPage() {
               rows={proximity}
               heading={H.distancia}
               lead={T.distanciaIntroLonga}
+              superlatives={superlatives}
             />
           </section>
         )}

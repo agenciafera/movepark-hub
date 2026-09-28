@@ -483,6 +483,25 @@ O que passou a sair no HTML pré-renderizado:
 4. **Cross-link entre destinos**, que dependia de `usePublishedDestinations` (hook de cliente)
    e por isso **não existia** no HTML do build. Eram 6 links internos por página que nenhum
    crawler via. Passou para o `destinoLoader`; o hook segue cobrindo a navegação no cliente.
+5. **Cobertura de mercado no ranking de distância (28/09/2026).** A mesma lista do item 2
+   ganhou três coisas que faltavam para comparar o mercado inteiro, não só a distância:
+   - **Diária de referência por linha** (`ProximityRow.dailyFrom`): a de 1 dia do motor no
+     parceiro, a pesquisada (`researched_daily_brl`) no lote mapeado (ADR-010). `null` quando
+     não dá para saber — nunca um chute.
+   - **Nota do Google no parceiro também**, não só no mapeado. Vem do mesmo card da vitrine
+     (fresco, fato da unidade), **nunca** a avaliação própria da Movepark
+     (`location.review_avg`, gateada por `caps.reviews`/`checkout_mode`): misturar as duas
+     inflaria a nota do parceiro externo com um histórico que pode não valer mais para ele —
+     o mesmo raciocínio decidido para a ficha em 28/09/2026 (ver `avaliacoes-google.md` §7).
+   - **Dois selos de mercado** (`marketSuperlatives`, `destinoPrices.logic.ts`): "Menor diária
+     da região" e "Melhor avaliação da região", calculados sobre TODOS os lotes da lista
+     (parceiro e mapeado juntos, sem favorecer o parceiro na conta — só no visual, ver abaixo).
+     Empate fica com quem está mais perto, porque a lista já vem ordenada por distância.
+   - **Destaque visual do parceiro**: fundo tênue na linha inteira e o selo virou "Parceiro
+     Movepark · Reserva online". A ORDEM continua 100% por distância medida — um mapeado mais
+     perto segue aparecendo acima do parceiro. Reordenar pra empurrar o parceiro pra cima
+     seria mentir sobre o mapa, e a régua de distância é precisamente o que diferencia esta
+     lista do concorrente (item 2 acima). O destaque é decoração, não reordenação.
 
 **Os números não podem divergir de `/precos/<slug>`.** `buildDestinoPrices` compõe em cima de
 `buildMatrix` e `destinationSummary` do índice de preços, sem reimplementar conta nenhuma

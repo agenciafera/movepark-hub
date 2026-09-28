@@ -1049,9 +1049,16 @@ describe("DestinoPage · quanto custa e distância", () => {
     // Ordem por distância medida, com o lote mapeado no meio e marcado. É o ponto:
     // parceiro e mapeado na mesma régua, sem misturar o que dá para reservar.
     expect(linhas).toEqual([
-      { texto: "GarageinnReserva online328 m do terminal", kind: "partner" },
+      {
+        texto:
+          "GarageinnParceiro Movepark · Reserva onlineMenor diária da regiãoa partir de R$ 40,00/dia328 m do terminal",
+        kind: "partner",
+      },
       { texto: "Talentos ParkSem reserva online1,2 km do terminal", kind: "mapped" },
-      { texto: "ViraparkReserva online1,3 km do terminal", kind: "partner" },
+      {
+        texto: "ViraparkParceiro Movepark · Reserva onlinea partir de R$ 40,00/dia1,3 km do terminal",
+        kind: "partner",
+      },
     ]);
   });
 

@@ -126,12 +126,19 @@ marca e três superfícies, e injetar a paleta de outro produto quebraria isso p
 
 | Superfície | Fonte | Campo |
 |---|---|---|
-| `/search` e `/destinos/<slug>` | Edge `search` | `location.go2park` (mapeado de `go2park_enabled`) |
+| `/search` e navegação SPA em `/destinos/<slug>` | Edge `search` | `location.go2park` (mapeado de `go2park_enabled`) |
+| **HTML do build de `/destinos/<slug>`** | PostgREST em `fetchDestinationUnits` | `location.go2park_enabled` |
 | Home ("os mais reservados") | PostgREST em `usePopularOffers` | `location.go2park` |
 | `/p/<empresa>/<unidade>/<tipo>` | PostgREST em `fetchListing` | `location.go2park_enabled` + `go2park_whatsapp` |
 
-Ausência é lida como `false` nas três: prometer rastreio que a unidade não tem é pior que deixar
-de mostrar o que ela tem.
+Ausência é lida como `false` nas quatro: prometer rastreio que a unidade não tem é pior que
+deixar de mostrar o que ela tem.
+
+**Bug fechado em 28/09/2026:** a linha do HTML do build não existia até essa data. O `select` de
+`fetchDestinationUnits` não pedia `go2park_enabled`, então o selo só aparecia depois que
+`useSearchResults` hidratava no cliente — invisível para qualquer crawler que não roda JS,
+inclusive nas 4 unidades com o contrato hoje ativo. Mesma classe de bug que motivou
+`units.logic.ts` existir (ver o comentário no topo do arquivo).
 
 ## Copy
 

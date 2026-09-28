@@ -61,6 +61,18 @@ describe("buildStaticUnits", () => {
     expect(item.price.per_day).toBe(30);
   });
 
+  it("go2park_enabled vira o selo de rastreio ao vivo direto no HTML do build, sem esperar o cliente", () => {
+    const [comGo2park] = buildStaticUnits(
+      [row({}, { go2park_enabled: true })],
+      precos(),
+      prox,
+    );
+    expect(comGo2park.location.go2park).toBe(true);
+
+    const [semGo2park] = buildStaticUnits([row()], precos(), prox);
+    expect(semGo2park.location.go2park).toBe(false);
+  });
+
   it("converte numeric do Postgres, que chega como string", () => {
     const [item] = buildStaticUnits([row()], precos(), prox);
     expect(item.location.latitude).toBe(-25.53);
