@@ -680,6 +680,15 @@ export function webPageSchema(args: {
   dateModified?: string | null;
   /** Idioma da página. Default pt-BR, o idioma fonte. */
   locale?: Locale;
+  /**
+   * `speakable` (Google Assistant/leitores de tela e, cada vez mais, o trecho que uma IA
+   * extrai para responder em áudio) aponta pelo `cssSelector` os nós que sozinhos
+   * respondem à pergunta da página: `[data-speakable="question"]` (o H1) e
+   * `[data-speakable="answer"]` (a Resposta rápida). Atributo, não classe do Tailwind,
+   * porque classe muda com o design e o schema quebraria em silêncio. Nenhum concorrente
+   * auditado (xpark.ai, bandeirapark.com.br) emite isso hoje (set/2026).
+   */
+  speakable?: boolean;
 }) {
   return {
     "@context": "https://schema.org",
@@ -696,6 +705,12 @@ export function webPageSchema(args: {
     // Sem data conhecida o campo sai fora. Carimbar a data do build diria "mudou hoje"
     // todo dia, e frescor que mente é pior que frescor ausente.
     dateModified: args.dateModified ?? undefined,
+    speakable: args.speakable
+      ? {
+          "@type": "SpeakableSpecification",
+          cssSelector: ['[data-speakable="question"]', '[data-speakable="answer"]'],
+        }
+      : undefined,
   };
 }
 

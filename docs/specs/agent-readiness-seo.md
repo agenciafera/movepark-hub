@@ -215,6 +215,18 @@ A ferramenta (lançada 17/abr/2026) pontua 4 dimensões. Priorizar os **maduros/
 - **Achados citáveis do índice** repetidos com a mesma redação nos gêmeos
   Markdown e no `llms-full.txt`, mais `tags` no frontmatter do FAQ.
 
+## `speakable` (set/2026) — nenhum concorrente auditado emite isso
+
+`/faq/<slug>` (o modelo answer-first, uma pergunta por URL) ganhou `speakable` no
+`webPageSchema` (`speakable: true`), apontando via `cssSelector` para
+`[data-speakable="question"]` (o H1) e `[data-speakable="answer"]` (a Resposta rápida) —
+atributo, não classe do Tailwind, porque classe muda com o design e o schema quebraria em
+silêncio. É o trecho que um assistente de voz (Google Assistant) ou uma IA que responde em
+áudio lê sozinho, sem o resto da página. Auditoria de xpark.ai e bandeirapark.com.br em
+set/2026 não achou `speakable` em nenhum dos dois. Candidato natural para estender a
+`/precos` e `/destinos` quando essas páginas ganharem um bloco de resposta rápida
+equivalente ao do FAQ.
+
 ## O `llms.txt` diz como consumir, não só o que existe
 
 > **Implementado em 16/09/2026** (Conteúdo 25). Antes o arquivo era um mapa de páginas:

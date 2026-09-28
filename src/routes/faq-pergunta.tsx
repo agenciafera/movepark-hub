@@ -17,7 +17,7 @@ import {
 import type { FaqPageData } from "@/features/faqs/api";
 import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
-import { breadcrumbSchema, faqSchema } from "@/lib/jsonld";
+import { breadcrumbSchema, faqSchema, webPageSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
@@ -191,6 +191,15 @@ export default function FaqPerguntaPage() {
     { name: "Perguntas frequentes", url: `${SITE_URL}/faq` },
     { name: pergunta, url: canonical },
   ]);
+  // `speakable` aponta pro H1 e pra Resposta rápida (data-speakable no JSX logo abaixo):
+  // é o trecho que um assistente de voz ou uma IA que responde em áudio lê sozinho.
+  const pagina = webPageSchema({
+    url: canonical,
+    name: pergunta,
+    dateModified: faq.updated_at,
+    locale,
+    speakable: true,
+  });
 
   return (
     <>
@@ -207,6 +216,7 @@ export default function FaqPerguntaPage() {
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
+        <script type="application/ld+json">{JSON.stringify(pagina)}</script>
       </Helmet>
       <OgImage area="conteudo" alt={T.ogImageAlt} />
 
@@ -237,7 +247,9 @@ export default function FaqPerguntaPage() {
         </nav>
 
         <header>
-          <h1 className="text-balance text-display-xl text-ink">{pergunta}</h1>
+          <h1 data-speakable="question" className="text-balance text-display-xl text-ink">
+            {pergunta}
+          </h1>
           {/* Primeiro parágrafo da página: é aqui que a palavra-chave de tráfego
               de aeroporto aparece em texto corrido. */}
           <p className="mt-3 text-pretty text-body-md text-muted">{intro}</p>
@@ -253,7 +265,10 @@ export default function FaqPerguntaPage() {
             aprofundamento. É o trecho que buscador e IA extraem. */}
         <section className="mt-6 rounded-lg bg-mp-pale p-5 tablet:p-6">
           <h2 className="text-title-md text-ink">{T.faqRespostaRapida}</h2>
-          <p className="mt-2 whitespace-pre-wrap text-body-md leading-[1.65] text-body">
+          <p
+            data-speakable="answer"
+            className="mt-2 whitespace-pre-wrap text-body-md leading-[1.65] text-body"
+          >
             {resposta}
           </p>
         </section>

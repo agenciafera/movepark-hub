@@ -16,6 +16,7 @@ import {
   datasetSchema,
   organizationSchema,
   webApplicationSchema,
+  webPageSchema,
   webSiteSchema,
   SITE_ID,
 } from "./jsonld";
@@ -527,6 +528,25 @@ describe("destinationSchema", () => {
     expect(destinationSchema({ ...base, image: imgs }).image).toEqual(imgs);
     expect(destinationSchema({ ...base, image: [] }).image).toBeUndefined();
     expect(destinationSchema(base).image).toBeUndefined();
+  });
+});
+
+describe("webPageSchema · speakable", () => {
+  it("sem speakable, o campo não sai", () => {
+    const s = webPageSchema({ url: "https://hub.movepark.co/faq/posso-cancelar", name: "Posso cancelar?" });
+    expect(s.speakable).toBeUndefined();
+  });
+
+  it("com speakable, aponta pergunta e resposta pelo atributo data-speakable, não por classe", () => {
+    const s = webPageSchema({
+      url: "https://hub.movepark.co/faq/posso-cancelar",
+      name: "Posso cancelar?",
+      speakable: true,
+    });
+    expect(s.speakable).toMatchObject({
+      "@type": "SpeakableSpecification",
+      cssSelector: ['[data-speakable="question"]', '[data-speakable="answer"]'],
+    });
   });
 });
 
