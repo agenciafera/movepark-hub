@@ -17,7 +17,6 @@ import {
   MapPin,
   Question,
   Scales,
-  Seal,
   SquaresFour,
   Storefront,
   Tag,
@@ -109,7 +108,7 @@ const DESTAQUES: ItemDeMenu[] = [
  * O menu inteiro fala com quem viaja, então só o bloco do parceiro precisa de
  * placa. Ele não é uma gaveta porque o título já o nomeia, e um título em cima de
  * uma gaveta com o mesmo nome seria a mesma palavra duas vezes; aberto, ainda
- * custa três linhas, que é o preço de deixar claro que ali a conversa é outra.
+ * custa duas linhas, que é o preço de deixar claro que ali a conversa é outra.
  *
  * O nome diz o público, e é o público que separa B2C de B2B. "Estacionamentos"
  * ficou impossível no dia em que o item de cima passou a se chamar assim, e
@@ -121,7 +120,6 @@ const TITULO_B2B = "Para donos de estacionamento";
 
 const LINKS_DO_PARCEIRO: ItemDeMenu[] = [
   { to: "/seja-parceiro", label: "Seja parceiro", icone: Storefront },
-  { to: "/selo", label: "Selo de parceiro", icone: Seal },
   { to: "/operator", label: "Painel do estacionamento", icone: Gauge },
 ];
 
@@ -138,8 +136,9 @@ const LINKS_DO_PARCEIRO: ItemDeMenu[] = [
  *
  * Nada some: fechada, a gaveta custa um toque, e é o toque que separa "quero
  * reservar" de "quero ler os termos". O teste `ConsumerMobileMenu.test.tsx` abre
- * todas as gavetas e compara as duas listas, então um link novo no rodapé
- * continua tendo que aparecer aqui no mesmo commit.
+ * todas as gavetas e compara as duas listas nos dois sentidos: um link novo no
+ * rodapé tem que aparecer aqui no mesmo commit, e um link que sai de lá sai
+ * daqui também.
  *
  * A exceção é a Central de Ajuda, que o rodapé não lista: ela é a porta de
  * entrada do suporte no celular, e por isso abre o grupo em vez de ficar de fora.

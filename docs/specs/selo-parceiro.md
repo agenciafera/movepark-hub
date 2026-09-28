@@ -127,8 +127,11 @@ os e-mails (`/brand/simbolo-movepark-email.png` e `-white-email.png`).
 
 ## Onde a página vive
 
-Indexável (`SITEMAP_STATIC_ROUTES`), linkada no rodapé e no menu mobile dentro do
-grupo "Estacionamentos", ao lado de "Seja parceiro".
+Indexável (`SITEMAP_STATIC_ROUTES`), mas fora da navegação do site: saiu do
+rodapé e do menu mobile em 28/09/2026, onde ficava sob "Para donos de
+estacionamento". Os dois saíram juntos porque o menu espelha o rodapé item por
+item, e o `ConsumerMobileMenu.test.tsx` reprova quando as listas divergem.
+Nenhuma página do site aponta para `/selo`: ela abre pelo endereço direto.
 
 Ela é a única página de conteúdo do consumer que **não** fecha com o `CtaBanner`.
 O banner chama o viajante para buscar vaga, e quem abre `/selo` é o parceiro

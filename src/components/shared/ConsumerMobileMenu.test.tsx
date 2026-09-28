@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
@@ -110,6 +110,34 @@ describe("ConsumerMobileMenu", () => {
   });
 
   /**
+   * O sentido inverso: link que sai do rodapé sai do menu também. Só com o teste
+   * de cima, o menu seguia levando uma página que o rodapé já tinha tirado e nada
+   * ficava vermelho. A Central de Ajuda é a exceção declarada no menu.
+   */
+  it("não leva link que o rodapé não tem", async () => {
+    renderWithProviders(
+      <>
+        <ConsumerMobileMenu />
+        <ConsumerFooter />
+      </>,
+    );
+    const noRodape = [...screen.getByRole("contentinfo").querySelectorAll("ul a")].map(
+      (a) => `${a.getAttribute("href")} ${a.textContent}`,
+    );
+
+    await abrirMenu();
+    await abrirGavetas();
+    const noMenu = within(screen.getByRole("dialog"))
+      .getAllByRole("group")
+      .flatMap((g) => [...g.querySelectorAll("a")])
+      .filter((a) => a.getAttribute("href") !== "/ajuda");
+    expect(noMenu.length).toBeGreaterThan(10);
+    for (const a of noMenu) {
+      expect(noRodape).toContain(`${a.getAttribute("href")} ${a.textContent}`);
+    }
+  });
+
+  /**
    * As duas placas são o que separa os dois lados da praça: sem elas, o "Seja
    * parceiro" parecia oferta pra quem ia viajar. Depois delas vem o que não é de
    * nenhum dos dois em particular, e o suporte fecha a lista, porque quem precisa
@@ -142,7 +170,7 @@ describe("ConsumerMobileMenu", () => {
     for (const rotulo of ["Estacionamentos", "Índice de preços", "Calculadora de estacionamento"]) {
       expect(blocoDe(rotulo)).toBe("Para quem viaja");
     }
-    for (const rotulo of ["Seja parceiro", "Selo de parceiro", "Painel do estacionamento"]) {
+    for (const rotulo of ["Seja parceiro", "Painel do estacionamento"]) {
       expect(blocoDe(rotulo)).toBe("Para donos de estacionamento");
     }
   });

@@ -19,7 +19,8 @@ type FooterGroup = { title: string; links: FooterLink[] };
  * não são de nenhum dos dois públicos em particular.
  *
  * Ao mexer aqui, mexa no `ConsumerMobileMenu` no mesmo commit: o teste
- * `ConsumerMobileMenu.test.tsx` cobra que todo link deste rodapé exista lá.
+ * `ConsumerMobileMenu.test.tsx` cobra que os dois levem os mesmos links, então
+ * link que entra ou sai daqui entra ou sai de lá também.
  */
 const groups: FooterGroup[] = [
   {
@@ -36,7 +37,6 @@ const groups: FooterGroup[] = [
     title: "Para donos de estacionamento",
     links: [
       { to: "/seja-parceiro", label: "Seja parceiro" },
-      { to: "/selo", label: "Selo de parceiro" },
       { to: "/operator", label: "Painel do estacionamento" },
     ],
   },
