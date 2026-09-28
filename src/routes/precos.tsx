@@ -478,8 +478,11 @@ export default function PrecosPage() {
     { name: "Índice de preços", url: canonical },
   ]);
   // Um `Product` por vaga de parceiro precificada, com a mesma tabela que a página
-  // mostra. Nulo quando nenhum aeroporto tem preço, e aí o bloco não sai.
-  const produtos = priceTableOffersSchema({ itens: itensDePreco(sections), generatedAt });
+  // mostra. Nulo quando nenhum aeroporto tem preço, e aí o bloco não sai. A mesma lista
+  // também alimenta o `Dataset` abaixo (uma `DataDownload` por unidade), sem chamar
+  // `itensDePreco` de novo.
+  const itensPreco = itensDePreco(sections);
+  const produtos = priceTableOffersSchema({ itens: itensPreco, generatedAt });
   const lista = itemListSchema(
     sections.map((s) => ({
       name: `Preços de estacionamento em ${nomeDoAeroporto(s.meta)}`,
@@ -521,6 +524,7 @@ export default function PrecosPage() {
             datasetSchema({
               dateModified: precoEm ?? generatedAt,
               spatial: aeroportos.map((a) => a.name),
+              units: itensPreco.map((i) => ({ url: i.url })),
             }),
           )}
         </script>

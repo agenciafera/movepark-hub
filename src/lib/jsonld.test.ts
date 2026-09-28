@@ -812,6 +812,25 @@ describe("datasetSchema", () => {
     ]);
     expect(datasetSchema({ dateModified: "2026-08-28" }).spatialCoverage).toBeUndefined();
   });
+
+  it("uma DataDownload por unidade, além dos 3 arquivos de sempre", () => {
+    const s = datasetSchema({
+      dateModified: "2026-09-28",
+      units: [{ url: "/p/aeropark/gru/coberta" }, { url: "https://movepark.co/p/aerovalet/gru/coberta" }],
+    });
+    const urls = s.distribution?.map((d: { contentUrl: string }) => d.contentUrl);
+    expect(urls).toHaveLength(5);
+    // URL relativa vira absoluta; URL já absoluta não duplica o host.
+    expect(urls).toContain("https://movepark.co/p/aeropark/gru/coberta");
+    expect(urls).toContain("https://movepark.co/p/aerovalet/gru/coberta");
+    expect(
+      s.distribution?.find((d: { contentUrl: string }) => d.contentUrl.endsWith("/aeropark/gru/coberta")),
+    ).toMatchObject({ "@type": "DataDownload", encodingFormat: "text/html" });
+  });
+
+  it("sem units, a distribuição segue só com os 3 arquivos (comportamento antigo intacto)", () => {
+    expect(datasetSchema({ dateModified: "2026-09-28", units: [] }).distribution).toHaveLength(3);
+  });
 });
 
 describe("webApplicationSchema", () => {

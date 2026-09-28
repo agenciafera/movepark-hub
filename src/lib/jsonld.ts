@@ -750,7 +750,19 @@ export function webPageSchema(args: {
   };
 }
 
-export function datasetSchema(args: { dateModified: string; spatial?: string[] }) {
+export function datasetSchema(args: {
+  dateModified: string;
+  spatial?: string[];
+  /**
+   * Uma `DataDownload` por vaga de parceiro precificada, além dos 3 arquivos de sempre
+   * (JSON/Markdown/txt). Espelha o padrão do xpark.ai (auditoria de 28/09/2026): o
+   * `Dataset` dele lista as 127 fichas de operadora como parte formal da distribuição,
+   * um "sitemap semântico" dentro do próprio schema. Sem URL nenhuma (índice vazio no
+   * build), o campo simplesmente não aparece — a lista de 3 arquivos continua valendo
+   * sozinha.
+   */
+  units?: { url: string }[];
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "Dataset",
@@ -790,6 +802,11 @@ export function datasetSchema(args: { dateModified: string; spatial?: string[] }
         encodingFormat: "text/plain",
         contentUrl: `${SITE_URL}/llms-full.txt`,
       },
+      ...(args.units ?? []).map((u) => ({
+        "@type": "DataDownload" as const,
+        encodingFormat: "text/html",
+        contentUrl: absoluta(u.url),
+      })),
     ],
   };
 }

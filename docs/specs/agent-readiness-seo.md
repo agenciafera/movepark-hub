@@ -266,7 +266,24 @@ fora do sitemap, só para agente) — o Hub já cobre esse terreno com os `/faq/
 gêmeos Markdown de destino/unidade, com a vantagem de estarem no sitemap (competem por
 rank também, não só por citação).
 
-## O `llms.txt` diz como consumir, não só o que existe
+### Fechamento em 28/09/2026: Dataset com DataDownload por unidade, e o engano do "caps.reviews"
+
+O `Dataset` de `/precos` (`datasetSchema`) ganhou uma `DataDownload` por vaga de
+parceiro precificada, além dos 3 arquivos de sempre (JSON/Markdown/txt) — espelha o
+padrão do xpark, que lista as 127 fichas de operadora como parte formal do `Dataset`
+dele. Vem de `itensDePreco(sections)`, já calculado pra `priceTableOffersSchema`; sem
+consulta nova.
+
+O segundo item da lista de gaps ("xpark mostra `AggregateRating` sempre, nós escondemos
+em checkout externo") **era leitura errada**, corrigida antes de virar código. Existem
+duas notas na ficha, não uma: `GoogleReviewsBlock` (a nota pública do Google, `fato da
+unidade`) já renderiza sempre, inclusive em unidade externa (comentário no próprio
+`listing.tsx`, ver também [avaliacoes-google.md](./avaliacoes-google.md) §7) — bate com
+o que xpark/bandeira mostram, não era gap. `caps.reviews` gateia outra coisa: a nota
+**própria da Movepark**, coletada de reserva feita pelo Hub. Mostrá-la numa unidade que
+reserva fora hoje seria publicar avaliação de "um arranjo que não vale mais para esta
+unidade" (comentário original do código) — decisão consciente do Léo em 28/09/2026: não
+mexer.
 
 > **Implementado em 16/09/2026** (Conteúdo 25). Antes o arquivo era um mapa de páginas:
 > listava o que o site tem e deixava o agente adivinhar como ler aquilo sem raspar HTML.
