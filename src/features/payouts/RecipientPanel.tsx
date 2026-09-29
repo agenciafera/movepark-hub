@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PayoutRecipientStatus } from "@/types/domain";
 import { useRecipient, useSyncRecipient, type PayoutRequirement } from "./api";
-import { payoutStatusLabel, payoutStatusTone } from "./status";
+import { payoutStatusTone, recipientStatusLabel } from "./status";
 import { PayoutKycDialog } from "./PayoutKycDialog";
 import { PayoutSettingsDialog } from "./PayoutSettingsDialog";
 
@@ -46,7 +46,7 @@ export function RecipientPanel({
     <div className="flex flex-col gap-3 border-t border-hairline pt-4">
       <div className="flex items-center justify-between">
         <span className="text-caption text-muted-steel">Recebedor (pagamento)</span>
-        {!isLoading && <Badge tone={payoutStatusTone[status]}>{payoutStatusLabel[status]}</Badge>}
+        {!isLoading && <Badge tone={payoutStatusTone[status]}>{recipientStatusLabel(status, recipient?.last_provider_status)}</Badge>}
       </div>
 
       {recipient?.kyc_url && (

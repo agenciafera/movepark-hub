@@ -41,6 +41,17 @@ describe("mapRecipientRow", () => {
     expect(row.hasRecipient).toBe(true);
   });
 
+  it("carrega o estágio cru do gateway e a validade do link de prova de vida", () => {
+    const row = mapRecipientRow({
+      id: "c-kyc", name: "BePark", onboarding_status: "active",
+      payout_recipient: [{ provider: "pagarme", status: "pending", last_provider_status: "registration", external_recipient_id: "re_1", kyc_url: "https://kyc/x", kyc_url_expires_at: "2026-09-28T20:00:00Z", requirements: [], deleted_at: null }],
+      company_payout_account: [{ deleted_at: null }],
+    });
+    expect(row.lastProviderStatus).toBe("registration");
+    expect(row.kycUrlExpiresAt).toBe("2026-09-28T20:00:00Z");
+    expect(row.hasRecipient).toBe(true);
+  });
+
   it("recebedor ativo → não precisa de atenção", () => {
     const row = mapRecipientRow(
       raw({

@@ -232,6 +232,8 @@ type RawRecipient = {
   external_recipient_id: string | null;
   kyc_url: string | null;
   kyc_url_expires_at: string | null;
+  /** Estágio cru do gateway (`registration`, `affiliation`, `active`...), para o rótulo fino. */
+  last_provider_status?: string | null;
   requirements: unknown;
   deleted_at: string | null;
   /** O gateway respondeu que este recebedor não existe (E0.3.5). */
@@ -263,7 +265,7 @@ export function useRecipientsOverview() {
       const { data, error } = await supabase
         .from("company")
         .select(
-          "id, name, onboarding_status, gateway_split_enabled, payout_recipient(provider, status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at, gateway_missing_at, balance_available_cents, balance_waiting_cents, balance_transferred_cents, balance_synced_at), company_payout_account(deleted_at)",
+          "id, name, onboarding_status, gateway_split_enabled, payout_recipient(provider, status, last_provider_status, external_recipient_id, kyc_url, kyc_url_expires_at, requirements, deleted_at, gateway_missing_at, balance_available_cents, balance_waiting_cents, balance_transferred_cents, balance_synced_at), company_payout_account(deleted_at)",
         )
         .is("deleted_at", null)
         .order("name");

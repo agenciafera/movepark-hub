@@ -31,7 +31,7 @@ import { PartnerAccount } from "@/features/payouts/PartnerAccount";
 import { PartnerDebtCard } from "@/features/payouts/PartnerDebtCard";
 import { PartnerChannelsCard } from "@/features/commission/PartnerChannelsCard";
 import { resumoSaldo } from "@/features/payouts/saldo.logic";
-import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
+import { payoutStatusTone, recipientStatusLabel } from "@/features/payouts/status";
 import { formatBRL, formatDate } from "@/lib/format";
 
 function recentMonths(n: number) {
@@ -120,7 +120,7 @@ export default function OperatorFinance() {
               <div className="text-caption text-muted">Status do recebimento</div>
               <div className="mt-1">
                 {recStatus ? (
-                  <Badge tone={payoutStatusTone[recStatus]}>{payoutStatusLabel[recStatus]}</Badge>
+                  <Badge tone={payoutStatusTone[recStatus]}>{recipientStatusLabel(recStatus, recipient.data?.last_provider_status)}</Badge>
                 ) : (
                   <span className="text-body-sm text-muted">recebedor ainda não configurado</span>
                 )}

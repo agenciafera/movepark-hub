@@ -653,3 +653,14 @@ mecanismo de **excedente** do `buildSplit`: `create-pix-charge` e `create-card-c
 3DS com challenge/redirect (assume cartão sem challenge nesta fase), **estorno parcial**
 (interface/coluna já prontos), `api_cancel_booking` (public API) ainda sem refund, trigger automático de
 criação do recebedor ao concluir o KYC, e o `base64_qrcode` da prova de vida (hoje exibimos só a `url`).
+
+## Prova de vida gerada pela Movepark (28/09/2026)
+
+Enquanto a equipe faz o cadastro no lugar do estacionamento, o link de verificação de identidade da
+Pagar.me (válido por 20 minutos) precisa sair do Manager, e não só do Operator. Em Recebedores, a
+linha de recebedor ainda não apto ganhou o botão **Prova de vida**: abre `KycLinkDialog` com o link
+vigente (contagem regressiva e "Copiar link") ou, se não houver ou tiver expirado, gera um novo pela
+mesma Edge `sync-recipient` (`action: reissue_kyc`). O rótulo de status passou a distinguir o estágio
+cru do gateway: `registration`/`affiliation` (o "Afiliação" do painel deles) aparece como
+**"Aguardando prova de vida"** em vez do genérico "Em análise" (`recipientStatusLabel` em
+`src/features/payouts/status.ts`; o overview passou a carregar `last_provider_status`).

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { recipientStatusLabel } from "./status";
 import type { PayoutRecipientStatus } from "@/types/domain";
 import { payoutStatusLabel, payoutStatusTone } from "./status";
 
@@ -25,5 +26,12 @@ describe("payouts/status", () => {
     expect(payoutStatusTone.suspended).toBe("cancelled");
     expect(payoutStatusTone.draft).toBe("neutral");
     expect(payoutStatusLabel.action_required).toMatch(/ação/i);
+  });
+
+  it("pendente em registration/affiliation vira 'Aguardando prova de vida'; outros pendentes seguem 'Em análise'", () => {
+    expect(recipientStatusLabel("pending", "registration")).toBe("Aguardando prova de vida");
+    expect(recipientStatusLabel("pending", "Affiliation")).toBe("Aguardando prova de vida");
+    expect(recipientStatusLabel("pending", null)).toBe("Em análise");
+    expect(recipientStatusLabel("active", "active")).toBe("Apto a receber");
   });
 });

@@ -16,6 +16,10 @@ export interface RecipientOverviewRow {
   hasKyc: boolean;
   externalRecipientId: string | null;
   kycUrl: string | null;
+  /** Validade do link de prova de vida vigente (ISO), se houver. */
+  kycUrlExpiresAt: string | null;
+  /** Estágio cru do gateway (`registration`/`affiliation` = falta a prova de vida). */
+  lastProviderStatus: string | null;
   requirements: PayoutRequirement[];
   /** Empresa vende (catálogo) mas não está apta a receber → bloqueia o pagamento. */
   needsAttention: boolean;
@@ -87,6 +91,8 @@ export function mapRecipientRow(raw: RawCompanyRecipient): RecipientOverviewRow 
     hasKyc,
     externalRecipientId: rec?.external_recipient_id ?? null,
     kycUrl: rec?.kyc_url ?? null,
+    kycUrlExpiresAt: rec?.kyc_url_expires_at ?? null,
+    lastProviderStatus: rec?.last_provider_status ?? null,
     requirements,
     needsAttention:
       SELLABLE_ONBOARDING.includes(onboardingStatus) && recipientStatus !== "active",

@@ -24,7 +24,8 @@ import {
 } from "@/features/payouts/api";
 import { useAutoRefreshBalances } from "@/features/payouts/useAutoRefreshBalances";
 import { formatBRL, formatDateTime } from "@/lib/format";
-import { payoutStatusLabel, payoutStatusTone } from "@/features/payouts/status";
+import { payoutStatusTone, recipientStatusLabel } from "@/features/payouts/status";
+import { KycLinkDialog } from "@/features/payouts/KycLinkDialog";
 import { PayoutKycDialog } from "@/features/payouts/PayoutKycDialog";
 import { PayoutSettingsDialog } from "@/features/payouts/PayoutSettingsDialog";
 import { AccessLinkDialog } from "@/features/payouts/AccessLinkDialog";
@@ -48,6 +49,25 @@ export default function ManagerFinanceRecipients() {
   const [kyc, setKyc] = React.useState<{ id: string; name: string } | null>(null);
   const [payoutId, setPayoutId] = React.useState<string | null>(null);
   const [accessFor, setAccessFor] = React.useState<{ id: string; name: string } | null>(null);
+  // Prova de vida pela Movepark (28/09/2026): o link de 20 min da Pagar.me sai daqui para o
+  // WhatsApp do representante enquanto a equipe faz o cadastro no lugar do estacionamento.
+  const [kycLink, setKycLink] = React.useState<{
+    id: string;
+    name: string;
+    url: string | null;
+    expiresAt: string | null;
+  } | null>(null);
+
+  async function reissueKyc(companyId: string, name: string) {
+    try {
+      const r = await sync.mutateAsync({ company_id: companyId, action: "reissue_kyc" });
+      setKycLink({ id: companyId, name, url: r.kyc_url, expiresAt: r.kyc_url_expires_at });
+      if (r.kyc_url) toast.success("Link gerado. Vale 20 minutos: mande agora.");
+      else toast.warning("O gateway não devolveu link. Sincronize e tente de novo.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não consegui gerar o link de prova de vida.");
+    }
+  }
 
   const rows = React.useMemo(() => buildRecipientOverview(data ?? []), [data]);
   const summary = React.useMemo(() => summarizeRecipients(rows), [rows]);
@@ -237,7 +257,7 @@ export default function ManagerFinanceRecipients() {
                     </TableCell>
                     <TableCell>
                       <Badge tone={payoutStatusTone[row.recipientStatus]}>
-                        {payoutStatusLabel[row.recipientStatus]}
+                        {recipientStatusLabel(row.recipientStatus, row.lastProviderStatus)}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono text-caption text-muted">
@@ -345,6 +365,22 @@ export default function ManagerFinanceRecipients() {
                                 {busy ? "Sincronizando…" : "Sincronizar"}
                               </Button>
                             )}
+                            {row.hasRecipient && row.recipientStatus !== "active" && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() =>
+                                  setKycLink({
+                                    id: row.companyId,
+                                    name: row.companyName,
+                                    url: row.kycUrl,
+                                    expiresAt: row.kycUrlExpiresAt,
+                                  })
+                                }
+                              >
+                                Prova de vida
+                              </Button>
+                            )}
                             {row.hasRecipient && (
                               <Button
                                 size="sm"
@@ -385,6 +421,17 @@ export default function ManagerFinanceRecipients() {
           companyName={accessFor.name}
           open={!!accessFor}
           onOpenChange={(o) => !o && setAccessFor(null)}
+        />
+      )}
+      {kycLink && (
+        <KycLinkDialog
+          open
+          onOpenChange={(o) => !o && setKycLink(null)}
+          companyName={kycLink.name}
+          kycUrl={kycLink.url}
+          expiresAt={kycLink.expiresAt}
+          onReissue={() => reissueKyc(kycLink.id, kycLink.name)}
+          reissuing={sync.isPending}
         />
       )}
       {payoutId && (
