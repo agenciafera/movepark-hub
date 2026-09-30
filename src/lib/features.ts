@@ -56,3 +56,28 @@ export function contasDoConsumidorLigadas(): boolean {
 export function assistenteDoSiteLigado(): boolean {
   return import.meta.env.VITE_WEB_ASSISTANT === "on";
 }
+
+/**
+ * Motor de crescimento do cliente: Movepark Clube (níveis e cashback na
+ * carteira) e Indique e ganhe.
+ *
+ * **Desligado por padrão desde 30/09/2026.** A tela existia, mas o fluxo de
+ * ponta a ponta (cashback caindo na carteira, crédito usado no checkout,
+ * indicação recompensada) não foi testado, e a Movepark decidiu não lançar
+ * agora. Prometer dinheiro de volta que ninguém validou é oferta que vincula
+ * (CDC art. 30, a mesma razão do ADR-009), então o bloco some da conta
+ * inteira: sidebar, menu mobile, menu do avatar, card "Dinheiro de volta" do
+ * perfil, linha "Recebeu de volta" das reservas, banner de indicação e as
+ * rotas `/account/clube`, `/account/indicar` e `/motor-preview`, que voltam
+ * para a conta ou para a home.
+ *
+ * O banco e as RPCs (`get_my_membership`, `get_my_wallet`) seguem como estão;
+ * com a chave desligada o front só não as chama.
+ *
+ * **Para ligar:** `VITE_GROWTH=on` no ambiente de build (no Cloudflare, em
+ * Settings › Build › Variables and Secrets, escopos Production e Preview) e
+ * publique.
+ */
+export function clubeEIndicacaoLigados(): boolean {
+  return import.meta.env.VITE_GROWTH === "on";
+}

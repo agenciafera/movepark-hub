@@ -31,7 +31,7 @@ import { useDestinations } from "@/features/search/api";
 import { Wordmark } from "./Brand";
 import { ConsumerMobileMenu } from "./ConsumerMobileMenu";
 import { useHeaderOculto } from "./useHeaderOculto";
-import { contasDoConsumidorLigadas } from "@/lib/features";
+import { clubeEIndicacaoLigados, contasDoConsumidorLigadas } from "@/lib/features";
 import { useHeroSearchPassed } from "./useHeroSearchPassed";
 import type { Destination } from "@/features/search/api";
 import { caminhoDestino } from "@/lib/urls";
@@ -289,9 +289,11 @@ export function ConsumerTopbar() {
                     <DropdownMenuItem onClick={() => navigate("/account/saved")}>
                       <Heart className="h-4 w-4" /> Favoritos
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/account/indicar")}>
-                      <Gift className="h-4 w-4" /> Indique e ganhe
-                    </DropdownMenuItem>
+                    {clubeEIndicacaoLigados() && (
+                      <DropdownMenuItem onClick={() => navigate("/account/indicar")}>
+                        <Gift className="h-4 w-4" /> Indique e ganhe
+                      </DropdownMenuItem>
+                    )}
                   </>
                 )}
                 {effectiveRole === "hub_admin" && (

@@ -5,6 +5,17 @@
 > fase e dependem do fluxo de pagamento (ADR-004). Esta spec fixa o que existe e o **contrato de
 > reversão** que o trabalho de cancelamento/reembolso/alteração de data vai ter que respeitar.
 
+> **30/09/2026, fora da conta do cliente até o lançamento:** o Clube (cashback) e o Indique e ganhe
+> não foram testados de ponta a ponta e a Movepark decidiu não lançá-los agora. A chave de build
+> `VITE_GROWTH` (`clubeEIndicacaoLigados()` em `src/lib/features.ts`) sai desligada por padrão e
+> esconde tudo do front: itens "Movepark Clube" e "Indique e ganhe" da sidebar, do menu mobile e do
+> menu do avatar, o banner de indicação, o card "Dinheiro de volta" do perfil, a linha "Recebeu de
+> volta" do resumo das reservas, e as rotas `/account/clube`, `/account/indicar` e `/motor-preview`
+> (redirecionam). Com a chave desligada o front não chama `get_my_membership` nem `get_my_wallet`.
+> O banco **não** mudou: os triggers de crédito seguem lançando cashback na conclusão da reserva,
+> sem que o cliente veja. Para lançar: `VITE_GROWTH=on` nas variáveis de build do Cloudflare
+> (Production e Preview) e publicar. Teste: `src/lib/features.test.tsx`.
+
 > **27/09/2026:** a copy do Clube (`MotorCrescimento.tsx`) e da indicação (`growth.logic.ts`,
 > `IndiqueGanhe.tsx`) deixou de prometer "usa direto no checkout" e "desconto na 1ª reserva": enquanto o
 > débito não existe, a tela diz que o saldo fica na conta e que abater no checkout vem em breve, e a

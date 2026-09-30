@@ -31,6 +31,7 @@ import {
 import { formatBRL, formatDayTime } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import { cn } from "@/lib/utils";
+import { clubeEIndicacaoLigados } from "@/lib/features";
 
 /**
  * Cinco linhas por página. Com dez, o card do histórico ficava mais alto que a
@@ -48,7 +49,8 @@ export function CustomerBookingsPanel({ detailBase = "/bookings" }: { detailBase
   const { session } = useAuth();
   const profileId = session?.userId;
   const { data, isLoading, error } = useAllMyBookings(profileId);
-  const wallet = useWallet(!!profileId);
+  // Sem o Clube no ar, a carteira nem é consultada e o "Recebeu de volta" some do resumo.
+  const wallet = useWallet(!!profileId && clubeEIndicacaoLigados());
   const last = useLastCompletedBooking(profileId);
   const [filter, setFilter] = React.useState<MyBookingStatus | "all">("all");
   const [page, setPage] = React.useState(1);

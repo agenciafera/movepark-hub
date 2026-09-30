@@ -23,6 +23,9 @@ vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "");
 // de conta), e com a chave desligada aqui dezenas de casos passariam a testar o vazio. Quem cobre o
 // desligado é `src/lib/features.test.tsx`, que baixa a chave de propósito e varre a superfície toda.
 vi.stubEnv("VITE_CONSUMER_ACCOUNTS", "on");
+// Clube e Indique e ganhe LIGADOS nos testes pelo mesmo motivo: a suíte do growth cobre a
+// funcionalidade, e o desligado (padrão do build) é coberto em `src/lib/features.test.tsx`.
+vi.stubEnv("VITE_GROWTH", "on");
 
 // MSW: intercepta chamadas a Edge Functions / REST do Supabase nos testes de
 // componente/integração. Handlers vazios por ora, adicionados conforme a leva.

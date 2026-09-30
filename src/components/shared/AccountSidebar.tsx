@@ -15,7 +15,7 @@ import {
   User,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { contasDoConsumidorLigadas } from "@/lib/features";
+import { clubeEIndicacaoLigados, contasDoConsumidorLigadas } from "@/lib/features";
 import { useAuth } from "@/auth/context";
 import { userInitials } from "@/lib/initials";
 import { useMembership } from "@/features/growth/api";
@@ -57,9 +57,13 @@ const secoesBrutas = [
   },
 ];
 
+/** Rotas do Clube e do Indique e ganhe, que só aparecem com `clubeEIndicacaoLigados()`. */
+const ROTAS_DO_CLUBE = new Set(["/account/clube", "/account/indicar"]);
+
 /**
- * Favoritos sai da sidebar junto com o resto do favoritar. Grupo que fica vazio
- * some inteiro, senão sobraria um título sem itens embaixo.
+ * Favoritos sai da sidebar junto com o resto do favoritar, e o Clube e o Indique
+ * e ganhe saem enquanto não forem lançados. Grupo que fica vazio some inteiro,
+ * senão sobraria um título sem itens embaixo.
  *
  * Calculado a cada render, e não uma vez no módulo: como constante de topo, o
  * valor congelaria no estado da chave no instante do import. Em produção a
@@ -67,9 +71,15 @@ const secoesBrutas = [
  * apareceu no teste, onde ela muda entre casos.
  */
 function secoesVisiveis() {
-  if (contasDoConsumidorLigadas()) return secoesBrutas;
+  const contas = contasDoConsumidorLigadas();
+  const clube = clubeEIndicacaoLigados();
   return secoesBrutas
-    .map((s) => ({ ...s, items: s.items.filter((i) => i.to !== "/account/saved") }))
+    .map((s) => ({
+      ...s,
+      items: s.items.filter(
+        (i) => (contas || i.to !== "/account/saved") && (clube || !ROTAS_DO_CLUBE.has(i.to)),
+      ),
+    }))
     .filter((s) => s.items.length > 0);
 }
 
@@ -82,8 +92,9 @@ export function AccountSidebar() {
   // pior que badge nenhum.
   const upcoming = useMyBookings(profileId, "upcoming");
   const vehicles = useMyVehicles(profileId);
-  const membership = useMembership(!!profileId);
-  const tierName = membership.data?.tier_name ?? null;
+  const clube = clubeEIndicacaoLigados();
+  const membership = useMembership(!!profileId && clube);
+  const tierName = clube ? (membership.data?.tier_name ?? null) : null;
   const badges: Record<string, number> = {
     "/account/reservas": upcoming.data?.length ?? 0,
     "/account/vehicles": vehicles.data?.length ?? 0,
@@ -156,7 +167,7 @@ export function AccountSidebar() {
 
       {/* Indicação no rodapé, logo acima do Sair: some sozinho quando o cliente
           ainda não tem código. */}
-      <ReferralSidebarBanner />
+      {clube && <ReferralSidebarBanner />}
 
       <button
         type="button"
@@ -214,7 +225,7 @@ export function AccountMobileMenu() {
       {/* O mesmo banner do rodapé da sidebar do desktop. O card antigo daqui
           tinha outro layout, e a mesma oferta com duas caras em duas telas faz
           parecer que são duas ofertas. */}
-      <ReferralSidebarBanner />
+      {clubeEIndicacaoLigados() && <ReferralSidebarBanner />}
 
       <button type="button" onClick={handleSignOut} className={cn(LINHA, "mt-6 text-error")}>
         <SignOut className="h-5 w-5 shrink-0" />

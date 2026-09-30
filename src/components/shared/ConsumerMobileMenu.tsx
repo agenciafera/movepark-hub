@@ -37,7 +37,7 @@ import { userInitials } from "@/lib/initials";
 import { secaoAtiva } from "./menuAtivo";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
 import { Wordmark } from "./Brand";
-import { contasDoConsumidorLigadas } from "@/lib/features";
+import { clubeEIndicacaoLigados, contasDoConsumidorLigadas } from "@/lib/features";
 
 /**
  * Traços do menu que viram X quando o painel abre.
@@ -487,7 +487,10 @@ export function ConsumerMobileMenu() {
         <nav aria-label="Menu" className="mt-2 flex flex-col px-3 pb-2">
           {session && (
             <>
-              {contasDoConsumidorLigadas() && LINKS_DA_CONTA.map((l) => <Item key={l.to} {...l} />)}
+              {contasDoConsumidorLigadas() &&
+                LINKS_DA_CONTA.filter(
+                  (l) => clubeEIndicacaoLigados() || l.to !== "/account/indicar",
+                ).map((l) => <Item key={l.to} {...l} />)}
               {effectiveRole === "hub_admin" && (
                 <Item to="/manager" label="Ir pro Manager" icone={SquaresFour} />
               )}

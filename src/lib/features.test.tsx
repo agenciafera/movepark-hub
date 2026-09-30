@@ -4,7 +4,10 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { server } from "@/test/msw/server";
-import { contasDoConsumidorLigadas } from "@/lib/features";
+import { clubeEIndicacaoLigados, contasDoConsumidorLigadas } from "@/lib/features";
+import { Route, Routes } from "react-router-dom";
+import AccountClubePage from "@/routes/account/clube";
+import AccountIndicarPage from "@/routes/account/indicar";
 import { ParkingCard } from "@/features/search/ParkingCard";
 import { ConsumerTopbar } from "@/components/shared/ConsumerTopbar";
 import { ConsumerMobileMenu } from "@/components/shared/ConsumerMobileMenu";
@@ -164,5 +167,77 @@ describe("chave ligada — o comportamento atual volta sem tocar em componente",
       auth: mockAuth({ session: mockSession("customer"), effectiveRole: "customer" }),
     });
     expect(favoritos()).toBeInTheDocument();
+  });
+});
+
+/**
+ * Clube (cashback) e Indique e ganhe: desligados no build desde 30/09/2026,
+ * porque o fluxo não foi testado de ponta a ponta. O `setup.ts` liga a chave
+ * para a suíte do growth; aqui ela desce, que é o estado de produção.
+ */
+describe("clubeEIndicacaoLigados", () => {
+  afterEach(() => {
+    vi.stubEnv("VITE_GROWTH", "on");
+  });
+
+  it("só o valor exato `on` liga; a ausência mantém desligado", () => {
+    vi.stubEnv("VITE_GROWTH", "on");
+    expect(clubeEIndicacaoLigados()).toBe(true);
+    for (const valor of ["", "true", "1", "ON", "off"]) {
+      vi.stubEnv("VITE_GROWTH", valor);
+      expect(clubeEIndicacaoLigados()).toBe(false);
+    }
+  });
+});
+
+describe("Clube desligado: cashback e indicação somem da conta", () => {
+  const cliente = () => mockAuth({ session: mockSession("customer"), effectiveRole: "customer" });
+
+  beforeEach(() => {
+    vi.stubEnv("VITE_GROWTH", "off");
+    server.use(
+      http.get("*/rest/v1/destination", () => HttpResponse.json([])),
+      http.get("*/rest/v1/destination_point", () => HttpResponse.json([])),
+    );
+  });
+
+  afterEach(() => {
+    vi.stubEnv("VITE_GROWTH", "on");
+  });
+
+  it("a sidebar da conta não lista Clube nem Indique e ganhe", () => {
+    renderWithProviders(<AccountSidebar />, { auth: cliente() });
+    expect(screen.queryByText(/movepark clube/i)).toBeNull();
+    expect(screen.queryByText(/indique e ganhe/i)).toBeNull();
+    // O resto da conta continua.
+    expect(screen.getByText(/minhas reservas/i)).toBeInTheDocument();
+    expect(screen.getByText(/^descontos$/i)).toBeInTheDocument();
+  });
+
+  it("o Indique e ganhe some do menu do avatar", async () => {
+    renderWithProviders(<ConsumerTopbar />, { auth: cliente() });
+    await userEvent.click(screen.getByRole("button", { name: /menu da conta/i }));
+    expect(screen.queryByText(/indique e ganhe/i)).toBeNull();
+    expect(screen.getByText(/minhas reservas/i)).toBeInTheDocument();
+  });
+
+  it("o Indique e ganhe some do menu mobile", async () => {
+    renderWithProviders(<ConsumerMobileMenu />, { auth: cliente() });
+    await userEvent.click(screen.getByRole("button", { name: /abrir menu/i }));
+    expect(screen.queryByText(/indique e ganhe/i)).toBeNull();
+  });
+
+  it.each([
+    ["/account/clube", <AccountClubePage key="c" />],
+    ["/account/indicar", <AccountIndicarPage key="i" />],
+  ])("a URL direta %s volta para a conta", (rota, pagina) => {
+    renderWithProviders(
+      <Routes>
+        <Route path={rota} element={pagina} />
+        <Route path="/account" element={<p>conta</p>} />
+      </Routes>,
+      { auth: cliente(), route: rota },
+    );
+    expect(screen.getByText("conta")).toBeInTheDocument();
   });
 });

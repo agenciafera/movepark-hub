@@ -30,11 +30,14 @@ import { documentMask, onlyDigits } from "@/lib/masks";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { formatBRL, formatDayTimeInline } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { clubeEIndicacaoLigados } from "@/lib/features";
 
 /** Card branco da área. O fundo da página virou painel, então o card leva a borda. */
 function Card({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <section className={cn("rounded-lg border border-hairline bg-canvas p-5 desktop:p-7", className)}>
+    <section
+      className={cn("rounded-lg border border-hairline bg-canvas p-5 desktop:p-7", className)}
+    >
       {children}
     </section>
   );
@@ -53,8 +56,9 @@ export default function ProfilePage() {
   const upcoming = useMyBookings(profileId, "upcoming");
   const vehicles = useMyVehicles(profileId);
   const cards = useMyPaymentMethods(profileId);
-  const membership = useMembership(!!profileId);
-  const wallet = useWallet(!!profileId);
+  const clube = clubeEIndicacaoLigados();
+  const membership = useMembership(!!profileId && clube);
+  const wallet = useWallet(!!profileId && clube);
 
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
@@ -147,18 +151,26 @@ export default function ProfilePage() {
         {subline && <p className="mt-1 text-body-sm text-muted">{subline}</p>}
       </header>
 
-      {/* Linha 1: o que já está contratado (viagem, clube) e o que ainda falta. */}
-      <div className="grid grid-cols-1 gap-5 desktop:grid-cols-3">
+      {/* Linha 1: o que já está contratado (viagem, clube) e o que ainda falta. Sem o
+          Clube no ar, o card do cashback sai e a linha fica com duas colunas. */}
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-5",
+          clube ? "desktop:grid-cols-3" : "desktop:grid-cols-2",
+        )}
+      >
         <NextTripCard booking={nextBooking} days={trip?.days ?? null} today={!!trip?.today} />
-        <ClubCard
-          tierName={membership.data?.tier_name ?? null}
-          cashbackBps={membership.data?.cashback_bps ?? null}
-          windowBookings={membership.data?.window_bookings ?? 0}
-          nextMinBookings={membership.data?.next_tier?.min_bookings ?? null}
-          bookingsNeeded={membership.data?.next_tier?.bookings_needed ?? null}
-          nextTierName={membership.data?.next_tier?.name ?? null}
-          balanceCents={wallet.data?.balance_cents ?? null}
-        />
+        {clube && (
+          <ClubCard
+            tierName={membership.data?.tier_name ?? null}
+            cashbackBps={membership.data?.cashback_bps ?? null}
+            windowBookings={membership.data?.window_bookings ?? 0}
+            nextMinBookings={membership.data?.next_tier?.min_bookings ?? null}
+            bookingsNeeded={membership.data?.next_tier?.bookings_needed ?? null}
+            nextTierName={membership.data?.next_tier?.name ?? null}
+            balanceCents={wallet.data?.balance_cents ?? null}
+          />
+        )}
         <CompletionCard completion={completion} />
       </div>
 
@@ -256,7 +268,6 @@ export default function ProfilePage() {
           </Button>
         </Card>
       </div>
-
     </div>
   );
 }
@@ -385,7 +396,10 @@ function ClubCard({
   balanceCents: number | null;
 }) {
   const progresso = tierProgress(windowBookings, nextMinBookings);
-  const apoio = [tierName && `nível ${tierName}`, cashbackBps ? `${cashbackPctLabel(cashbackBps)} por reserva` : null]
+  const apoio = [
+    tierName && `nível ${tierName}`,
+    cashbackBps ? `${cashbackPctLabel(cashbackBps)} por reserva` : null,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -394,7 +408,7 @@ function ClubCard({
       <h2 className="text-title-md text-white">Dinheiro de volta</h2>
       {apoio && <p className="mt-1 text-body-sm text-white/70">{apoio}</p>}
 
-      <p className="mt-4 text-display-xl leading-none tabular-nums text-white">
+      <p className="mt-4 text-display-xl tabular-nums leading-none text-white">
         {formatBRL((balanceCents ?? 0) / 100)}
       </p>
       <p className="mt-2 text-body-sm text-white/75">crédito disponível na carteira</p>
@@ -470,7 +484,7 @@ function CompletionCard({ completion }: { completion: ReturnType<typeof profileC
         </svg>
         {/* O número mora dentro do arco, ancorado na base pra nunca tocar o traço. */}
         <div className="absolute inset-x-0 bottom-0 text-center">
-          <span className="block text-display-xl leading-none tabular-nums text-ink">
+          <span className="block text-display-xl tabular-nums leading-none text-ink">
             {completion.pct}%
           </span>
           <span className="mt-1 block text-caption-sm text-muted">
