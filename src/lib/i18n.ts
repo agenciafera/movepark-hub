@@ -100,6 +100,46 @@ export function caminhoLocalizado(args: {
 }
 
 /**
+ * A home naquele idioma: `/`, `/en`, `/es`.
+ *
+ * Sem barra final nos traduzidos, como nas outras rotas de idioma: `/en/` é 301 para
+ * `/en` na borda, e declarar canônica numa URL que redireciona é defeito autoinfligido.
+ */
+export function caminhoDaHome(locale: Locale): string {
+  return locale === LOCALE_PADRAO ? "/" : `/${locale}`;
+}
+
+/**
+ * A URL ABSOLUTA da home naquele idioma, para canônica e `hreflang`.
+ *
+ * Existe separada do caminho por um detalhe que parece bobo e não é: a canônica que a
+ * home portuguesa publica é `https://movepark.co`, sem barra. Montar o `hreflang` como
+ * `origem + "/"` daria `https://movepark.co/`, que é a mesma URL pelo RFC mas não é a
+ * mesma STRING, e auto-referência de `hreflang` conferida por igualdade de string é
+ * justamente o que alguns validadores fazem. Aqui as duas saem do mesmo lugar.
+ */
+export function urlDaHome(origem: string, locale: Locale): string {
+  const base = origem.replace(/\/+$/, "");
+  return locale === LOCALE_PADRAO ? base : `${base}/${locale}`;
+}
+
+/**
+ * O caminho do ÍNDICE de uma família naquele idioma.
+ *
+ * Existe porque o índice não tem slug, e passar `slug: ""` para `caminhoLocalizado`
+ * devolve o separador solto no fim: `/en/blog/` em vez de `/en/blog`. Tirar a barra
+ * com um `replace` cego resolveria o inglês e quebraria o português, onde `/blog/` COM
+ * barra é a canônica herdada do WordPress. Aqui a regra é uma só, com teste.
+ */
+export function caminhoDoIndice(familia: keyof typeof SEGMENTO, locale: Locale): string {
+  const seg = SEGMENTO[familia][locale];
+  if (locale === LOCALE_PADRAO) {
+    return BARRA_FINAL_EM_PT.has(familia) ? `/${seg}/` : `/${seg}`;
+  }
+  return `/${locale}/${seg}`;
+}
+
+/**
  * A canônica da página, que é SEMPRE a dela mesma.
  *
  * Existe porque errar isso é silencioso e caro. Até 26/09/2026 a página de destino

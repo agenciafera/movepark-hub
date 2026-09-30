@@ -230,9 +230,9 @@ async function getFaqRoutes(sb: SupabaseClient | null): Promise<RotaComData[]> {
  * maior: anunciar no sitemap uma URL que o build não gerou é prometer página e entregar
  * 404 direto ao Google, sem nem um clique de humano no meio.
  *
- * `blog_post_i18n` está vazia hoje, então o blog contribui com zero linhas. É o
- * comportamento certo: a URL nasce no sitemap no mesmo build em que a página passa a
- * existir.
+ * A URL nasce no sitemap no mesmo build em que a página passa a existir: cada família
+ * contribui com as linhas que a tabela `*_i18n` devolve naquele momento, e tradução em
+ * rascunho não passa pela RLS.
  */
 async function getRotasTraduzidas(sb: SupabaseClient | null): Promise<RotaComData[]> {
   if (!sb) return [];
@@ -252,10 +252,23 @@ async function getRotasTraduzidas(sb: SupabaseClient | null): Promise<RotaComDat
   ]);
 
   const rotas: RotaComData[] = [];
+  // A HOME de cada idioma. Ela não depende de tabela nenhuma: existe porque o build a
+  // gera, e é a raiz do cluster de `hreflang` daquele idioma.
+  for (const locale of ["en", "es"] as const) rotas.push({ route: `/${locale}` });
   // As CAPAS de cada idioma. Elas não vêm de tabela: a rota existe porque o build a
   // gera, e sem elas o índice traduzido só seria descoberto pelo link interno.
-  for (const locale of ["en", "es"]) {
-    rotas.push({ route: `/${locale}/${SEGMENTO.faq[locale as "en" | "es"]}` });
+  //
+  // A do blog entra só quando aquele idioma TEM post traduzido. A rota existe de
+  // qualquer jeito, mas mandar o crawler para um índice vazio gasta orçamento de
+  // rastreio para provar que não há nada ali; quando o primeiro post daquele idioma
+  // for publicado, a URL entra no sitemap no mesmo build.
+  // deno-lint-ignore no-explicit-any
+  const postsPorLocale = new Set(((posts.data ?? []) as any[]).map((p) => p.locale));
+  for (const locale of ["en", "es"] as const) {
+    rotas.push({ route: `/${locale}/${SEGMENTO.faq[locale]}` });
+    if (postsPorLocale.has(locale)) {
+      rotas.push({ route: `/${locale}/${SEGMENTO.blog[locale]}` });
+    }
   }
   // deno-lint-ignore no-explicit-any
   for (const d of (destinos.data ?? []) as any[])

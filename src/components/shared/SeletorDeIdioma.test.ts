@@ -141,9 +141,20 @@ describe("alternativasDeIdioma: destino e índice", () => {
     ]);
   });
 
+  it("o índice do blog oferece os três, e o português mantém a barra final", () => {
+    // A barra de `/blog/` é a canônica herdada do WordPress, e o cluster do índice
+    // precisa apontar para ela: `/blog` sem barra serve, mas não é a canônica.
+    const esperado = [
+      { locale: "pt-BR", caminho: "/blog/" },
+      { locale: "en", caminho: "/en/blog" },
+      { locale: "es", caminho: "/es/blog" },
+    ];
+    expect(alternativasDeIdioma({ pathname: "/blog/", dados: null })).toEqual(esperado);
+    expect(alternativasDeIdioma({ pathname: "/en/blog", dados: null })).toEqual(esperado);
+  });
+
   it("índice sem rota traduzida não oferece troca", () => {
-    // `/estacionamentos` e `/blog/` existem só em português; oferecer levaria a 404.
+    // `/estacionamentos` existe só em português; oferecer troca levaria a 404.
     expect(alternativasDeIdioma({ pathname: "/estacionamentos", dados: null })).toEqual([]);
-    expect(alternativasDeIdioma({ pathname: "/blog/", dados: null })).toEqual([]);
   });
 });

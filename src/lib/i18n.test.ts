@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   LOCALES,
   LOCALE_PADRAO,
+  caminhoDaHome,
+  caminhoDoIndice,
   caminhoLocalizado,
   canonicalDoIdioma,
   clusterHreflang,
   ehLocaleTraduzido,
   localeDoCaminho,
+  urlDaHome,
 } from "./i18n";
 
 describe("caminhoLocalizado", () => {
@@ -177,5 +180,74 @@ describe("canonicalDoIdioma", () => {
     expect(
       canonicalDoIdioma({ familia: "blog", locale: "pt-BR", canonicalPt: `${O}/blog/x/`, slugTraduzido: null, origem: O }),
     ).toBe(`${O}/blog/x/`);
+  });
+});
+
+describe("caminhoDoIndice", () => {
+  it("o português do blog mantém a barra, e os traduzidos não ganham nenhuma", () => {
+    // O defeito que este teste tranca: montar o índice com `caminhoLocalizado` e slug
+    // vazio devolvia `/en/blog/`, que o worker 301 para `/en/blog`. Tirar a barra com
+    // um `replace` cego consertava o inglês e apagava a barra do `/blog/` português,
+    // que é a canônica que o Google já conhece.
+    expect(caminhoDoIndice("blog", "pt-BR")).toBe("/blog/");
+    expect(caminhoDoIndice("blog", "en")).toBe("/en/blog");
+    expect(caminhoDoIndice("blog", "es")).toBe("/es/blog");
+  });
+
+  it("a FAQ não ganha barra em idioma nenhum, e o segmento dela é traduzido", () => {
+    expect(caminhoDoIndice("faq", "pt-BR")).toBe("/faq");
+    expect(caminhoDoIndice("faq", "en")).toBe("/en/faq");
+    expect(caminhoDoIndice("faq", "es")).toBe("/es/preguntas-frecuentes");
+  });
+
+  it("nenhum caminho de índice traduzido termina em barra", () => {
+    for (const familia of ["blog", "faq", "destino"] as const) {
+      for (const locale of ["en", "es"] as const) {
+        expect(caminhoDoIndice(familia, locale)).not.toMatch(/\/$/);
+      }
+    }
+  });
+});
+
+describe("caminhoDaHome", () => {
+  it("o português é a raiz e os traduzidos não ganham barra final", () => {
+    expect(caminhoDaHome("pt-BR")).toBe("/");
+    expect(caminhoDaHome("en")).toBe("/en");
+    expect(caminhoDaHome("es")).toBe("/es");
+  });
+
+  it("`localeDoCaminho` fecha o ciclo: o caminho da home volta o mesmo idioma", () => {
+    for (const l of LOCALES) {
+      expect(localeDoCaminho(caminhoDaHome(l)).locale).toBe(l);
+    }
+  });
+});
+
+describe("urlDaHome", () => {
+  const O = "https://movepark.co";
+
+  it("o português é a origem SEM barra, que é a canônica que a home publica", () => {
+    // Se isto virar `https://movepark.co/`, a auto-referência do `hreflang` deixa de
+    // casar como string com a canônica da própria página.
+    expect(urlDaHome(O, "pt-BR")).toBe("https://movepark.co");
+    expect(urlDaHome(O, "en")).toBe("https://movepark.co/en");
+    expect(urlDaHome(O, "es")).toBe("https://movepark.co/es");
+  });
+
+  it("origem com barra sobrando não gera barra dupla", () => {
+    expect(urlDaHome("https://movepark.co/", "en")).toBe("https://movepark.co/en");
+    expect(urlDaHome("https://movepark.co//", "pt-BR")).toBe("https://movepark.co");
+  });
+
+  it("o cluster da home fecha o ciclo nos três idiomas mais o x-default", () => {
+    const cluster = clusterHreflang(
+      LOCALES.map((l) => ({ locale: l, caminho: urlDaHome(O, l) })),
+    );
+    expect(cluster).toEqual([
+      { hreflang: "pt-BR", href: "https://movepark.co" },
+      { hreflang: "en", href: "https://movepark.co/en" },
+      { hreflang: "es", href: "https://movepark.co/es" },
+      { hreflang: "x-default", href: "https://movepark.co" },
+    ]);
   });
 });

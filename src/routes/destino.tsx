@@ -5,6 +5,7 @@ import { OgImage } from "@/lib/ogImage";
 import {
   LANG_HTML,
   LOCALE_PADRAO,
+  caminhoDoIndice,
   caminhoLocalizado,
   canonicalDoIdioma,
   LOCALES,
@@ -940,7 +941,9 @@ export default function DestinoPage() {
                 ))}
               </ul>
               <Link
-                to="/blog/"
+                /* O "ver todos" também: era `/blog/` fixo, então em en/es ele levava ao
+                   índice português. Agora existe `/en/blog` e `/es/blog` para onde ir. */
+                to={caminhoDoIndice("blog", locale)}
                 className="mt-6 inline-block text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline"
               >
                 {T.verTodosArtigos}

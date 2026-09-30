@@ -4,6 +4,7 @@ import {
   LOCALES,
   LOCALE_PADRAO,
   SEGMENTO,
+  caminhoDoIndice,
   caminhoLocalizado,
   localeDoCaminho,
   type Locale,
@@ -36,11 +37,13 @@ type DadosComIdiomas = {
 /**
  * Famílias cujo ÍNDICE existe nos três idiomas.
  *
- * Índice não tem slug, então não entra pelo caminho de item. Hoje só a FAQ tem rota
- * localizada de índice (`/en/faq`, `/es/preguntas-frecuentes`); `/estacionamentos` e
- * `/blog/` existem só em português, e oferecer troca de idioma neles levaria a 404.
+ * Índice não tem slug, então não entra pelo caminho de item. Hoje a FAQ (`/en/faq`,
+ * `/es/preguntas-frecuentes`) e o blog (`/en/blog`, `/es/blog`) têm rota localizada de
+ * índice; `/estacionamentos` existe só em português, e oferecer troca de idioma nele
+ * levaria a 404. Ao criar um índice localizado novo, a família entra AQUI, senão o
+ * rodapé segue mostrando só o rótulo na página que já tem as três versões.
  */
-const INDICE_TRADUZIDO: ReadonlySet<keyof typeof SEGMENTO> = new Set(["faq"]);
+const INDICE_TRADUZIDO: ReadonlySet<keyof typeof SEGMENTO> = new Set(["faq", "blog"]);
 
 /**
  * A família da URL atual (`destino`, `faq` ou `blog`), pelo segmento do caminho.
@@ -82,10 +85,10 @@ export function alternativasDeIdioma(args: {
   const semSlug = resto.split("/").filter(Boolean).length <= 1;
   if (semSlug) {
     if (!INDICE_TRADUZIDO.has(familia)) return [];
-    return LOCALES.map((l) => ({
-      locale: l,
-      caminho: caminhoLocalizado({ familia, slug: "", locale: l }).replace(/\/$/, ""),
-    }));
+    // `caminhoDoIndice`, e não `caminhoLocalizado` com slug vazio: aquele devolvia o
+    // separador solto no fim (`/en/blog/`) e o `replace` que consertava o inglês
+    // apagava a barra do `/blog/` português, que é a canônica herdada do WordPress.
+    return LOCALES.map((l) => ({ locale: l, caminho: caminhoDoIndice(familia, l) }));
   }
 
   const idiomas = args.dados?.idiomas ?? [];

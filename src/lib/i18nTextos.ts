@@ -53,6 +53,42 @@ export type Textos = {
   postCtaTexto: string;
   postCtaBotao: string;
   postVoltar: string;
+  // Home de idioma traduzido (/en, /es). O português usa a home própria.
+  homeMetaTitle: string;
+  homeMetaDescription: string;
+  homeEyebrow: string;
+  homeH1: string;
+  homeLead: string;
+  homeSelos: readonly string[];
+  homeProvaSocial: (clientes: string) => string;
+  homeAvisoIdioma: string;
+  homeDestinosTitulo: string;
+  homeDestinosLead: string;
+  homeMaisBuscados: string;
+  homeOutrosDestinos: string;
+  homeFaqTitulo: string;
+  homeFaqLead: string;
+  homeFaqBotao: string;
+  homeBlogTitulo: string;
+  homeBlogLead: string;
+  homeBlogBotao: string;
+  // Índice do blog (/blog/ e equivalentes traduzidos).
+  blogIndiceTitulo: string;
+  blogIndiceMetaTitle: string;
+  blogIndiceMetaDescription: string;
+  blogIndiceLead: string;
+  blogIndiceSoTraduzidos: string;
+  blogIndiceArquivoPt: string;
+  blogIndiceBuscar: string;
+  blogIndiceMaisRecentes: string;
+  blogIndiceEncontrados: (n: number) => string;
+  blogIndiceNadaNaBusca: string;
+  blogIndiceNadaNaBuscaTexto: string;
+  blogIndiceNenhumPost: string;
+  blogPaginacao: string;
+  blogAnterior: string;
+  blogProxima: string;
+  blogPaginaN: (n: number) => string;
   postLeitura: (minutos: number) => string;
   // Página de um post do blog.
   postNaoEncontrado: string;
@@ -215,6 +251,46 @@ const PT: Textos = {
   postCtaTexto: "Compare os estacionamentos parceiros e garanta sua vaga antes de sair de casa.",
   postCtaBotao: "Ver estacionamentos",
   postVoltar: "Voltar para o blog",
+  homeMetaTitle: "Estacionamento de aeroporto pelo menor preço | Movepark",
+  homeMetaDescription:
+    "Estacionamento de aeroporto perto do terminal, com o menor preço por diária comparado entre os parceiros. Compare e reserve pela Movepark.",
+  homeEyebrow: "Onde a Movepark atua",
+  homeH1: "Estacionamento de aeroporto pelo menor preço",
+  homeLead:
+    "Compare preço, distância do terminal e traslado dos estacionamentos de cada aeroporto, com a data de cada valor ao lado.",
+  homeSelos: ["Estacionamentos verificados", "Compare em segundos", "Sem taxa da Movepark"],
+  homeProvaSocial: (clientes) => `+${clientes} clientes já reservaram com a Movepark`,
+  homeAvisoIdioma: "",
+  homeDestinosTitulo: "Os aeroportos atendidos",
+  homeDestinosLead:
+    "Uma página por aeroporto, com os estacionamentos da praça, a distância medida até o terminal e o preço com a data da consulta.",
+  homeMaisBuscados: "Mais buscados",
+  homeOutrosDestinos: "Outros destinos",
+  homeFaqTitulo: "Perguntas frequentes",
+  homeFaqLead: "As dúvidas que aparecem antes de deixar o carro, respondidas uma por página.",
+  homeFaqBotao: "Ver as perguntas",
+  homeBlogTitulo: "Guias por aeroporto",
+  homeBlogLead: "Comparativo de preço, distância e traslado em cada praça, com a fonte de cada número.",
+  homeBlogBotao: "Ler os guias",
+  blogIndiceTitulo: "Blog",
+  blogIndiceMetaTitle: "Blog de estacionamento de aeroporto | Movepark",
+  blogIndiceMetaDescription:
+    "Blog de estacionamento de aeroporto: guia de preço por diária, distância do terminal " +
+    "e traslado em cada aeroporto. Confira a tabela atualizada.",
+  blogIndiceLead:
+    "Guias de estacionamento nos aeroportos onde a Movepark opera: preço, distância do terminal e o que olhar antes de reservar.",
+  blogIndiceSoTraduzidos: "",
+  blogIndiceArquivoPt: "Blog completo",
+  blogIndiceBuscar: "Buscar no blog",
+  blogIndiceMaisRecentes: "Mais recentes",
+  blogIndiceEncontrados: (n) => (n === 1 ? "1 post encontrado" : `${n} posts encontrados`),
+  blogIndiceNadaNaBusca: "Nada encontrado para essa busca.",
+  blogIndiceNadaNaBuscaTexto: "Tente outra palavra ou use as categorias acima.",
+  blogIndiceNenhumPost: "Nenhum post publicado ainda.",
+  blogPaginacao: "Paginação",
+  blogAnterior: "Anterior",
+  blogProxima: "Próxima",
+  blogPaginaN: (n) => `página ${n}`,
   postLeitura: (m) => `${m} min de leitura`,
   postNaoEncontrado: "Post não encontrado.",
   postNaoEncontradoTexto: "Ele pode ter saído do ar.",
@@ -394,6 +470,47 @@ const EN: Textos = {
   postCtaTexto: "Compare partner parking lots and lock in your spot before you leave home.",
   postCtaBotao: "See parking",
   postVoltar: "Back to the blog",
+  homeMetaTitle: "Airport parking in Brazil, at the lowest price | Movepark",
+  homeMetaDescription:
+    "Airport parking near the terminal in Brazil: compare the daily rate, the distance and the transfer at each airport, with the date every figure was gathered.",
+  homeEyebrow: "Airport parking in Brazil",
+  homeH1: "Airport parking in Brazil, at the lowest price",
+  homeLead:
+    "Compare the price, the distance from the terminal and the transfer at the car parks of each Brazilian airport, with the date of every figure beside it.",
+  homeSelos: ["Verified car parks", "Compare in seconds", "No Movepark fee"],
+  homeProvaSocial: (clientes) => `${clientes}+ travellers have booked with Movepark`,
+  homeAvisoIdioma:
+    "Prices are in Brazilian reais. The airport pages, the answers and the guides are in English; the final booking steps are in Portuguese.",
+  homeDestinosTitulo: "The airports we cover",
+  homeDestinosLead:
+    "One page per airport, with the car parks in that location, the measured distance to the terminal and the price with the date it was queried.",
+  homeMaisBuscados: "Most searched",
+  homeOutrosDestinos: "Other destinations",
+  homeFaqTitulo: "Frequently asked questions",
+  homeFaqLead: "The questions that come up before leaving a car, answered one per page.",
+  homeFaqBotao: "See the questions",
+  homeBlogTitulo: "Guides by airport",
+  homeBlogLead: "Price, distance and transfer compared in each location, with the source of every figure.",
+  homeBlogBotao: "Read the guides",
+  blogIndiceTitulo: "Blog",
+  blogIndiceMetaTitle: "Airport parking blog | Movepark",
+  blogIndiceMetaDescription:
+    "The airport parking blog: daily rate guides, distance from the terminal and the " +
+    "transfer at each airport, with the date each figure was gathered.",
+  blogIndiceLead:
+    "Parking guides for the airports where Movepark operates: price, distance from the terminal and what to check before booking.",
+  blogIndiceSoTraduzidos: "This page lists the posts published in English.",
+  blogIndiceArquivoPt: "Full archive, in Portuguese",
+  blogIndiceBuscar: "Search the blog",
+  blogIndiceMaisRecentes: "Latest",
+  blogIndiceEncontrados: (n) => (n === 1 ? "1 post found" : `${n} posts found`),
+  blogIndiceNadaNaBusca: "Nothing found for that search.",
+  blogIndiceNadaNaBuscaTexto: "Try another word.",
+  blogIndiceNenhumPost: "No posts published yet.",
+  blogPaginacao: "Pagination",
+  blogAnterior: "Previous",
+  blogProxima: "Next",
+  blogPaginaN: (n) => `page ${n}`,
   postLeitura: (m) => `${m} min read`,
   postNaoEncontrado: "Post not found.",
   postNaoEncontradoTexto: "It may have been taken down.",
@@ -576,6 +693,47 @@ const ES: Textos = {
   postCtaTexto: "Compará los estacionamientos asociados y asegurá tu plaza antes de salir de casa.",
   postCtaBotao: "Ver estacionamientos",
   postVoltar: "Volver al blog",
+  homeMetaTitle: "Estacionamiento de aeropuerto en Brasil, al precio más bajo | Movepark",
+  homeMetaDescription:
+    "Estacionamiento de aeropuerto cerca de la terminal en Brasil: compará la tarifa diaria, la distancia y el traslado en cada aeropuerto, con la fecha de cada valor.",
+  homeEyebrow: "Estacionamiento de aeropuerto en Brasil",
+  homeH1: "Estacionamiento de aeropuerto en Brasil, al precio más bajo",
+  homeLead:
+    "Compará el precio, la distancia de la terminal y el traslado de los estacionamientos de cada aeropuerto brasileño, con la fecha de cada valor al lado.",
+  homeSelos: ["Estacionamientos verificados", "Compará en segundos", "Sin cargo de Movepark"],
+  homeProvaSocial: (clientes) => `Más de ${clientes} viajeros ya reservaron con Movepark`,
+  homeAvisoIdioma:
+    "Los precios están en reales brasileños. Las páginas de aeropuerto, las respuestas y las guías están en español; los pasos finales de la reserva están en portugués.",
+  homeDestinosTitulo: "Los aeropuertos que cubrimos",
+  homeDestinosLead:
+    "Una página por aeropuerto, con los estacionamientos de la zona, la distancia medida hasta la terminal y el precio con la fecha de la consulta.",
+  homeMaisBuscados: "Más buscados",
+  homeOutrosDestinos: "Otros destinos",
+  homeFaqTitulo: "Preguntas frecuentes",
+  homeFaqLead: "Las dudas que aparecen antes de dejar el auto, respondidas una por página.",
+  homeFaqBotao: "Ver las preguntas",
+  homeBlogTitulo: "Guías por aeropuerto",
+  homeBlogLead: "Precio, distancia y traslado comparados en cada zona, con la fuente de cada número.",
+  homeBlogBotao: "Leer las guías",
+  blogIndiceTitulo: "Blog",
+  blogIndiceMetaTitle: "Blog de estacionamiento de aeropuerto | Movepark",
+  blogIndiceMetaDescription:
+    "El blog de estacionamiento de aeropuerto: guías de tarifa diaria, distancia de la " +
+    "terminal y traslado en cada aeropuerto, con la fecha de cada valor.",
+  blogIndiceLead:
+    "Guías de estacionamiento en los aeropuertos donde opera Movepark: precio, distancia de la terminal y qué mirar antes de reservar.",
+  blogIndiceSoTraduzidos: "Esta página lista las publicaciones en español.",
+  blogIndiceArquivoPt: "Archivo completo, en portugués",
+  blogIndiceBuscar: "Buscar en el blog",
+  blogIndiceMaisRecentes: "Más recientes",
+  blogIndiceEncontrados: (n) => (n === 1 ? "1 publicación encontrada" : `${n} publicaciones encontradas`),
+  blogIndiceNadaNaBusca: "No se encontró nada para esa búsqueda.",
+  blogIndiceNadaNaBuscaTexto: "Probá con otra palabra.",
+  blogIndiceNenhumPost: "Todavía no hay publicaciones.",
+  blogPaginacao: "Paginación",
+  blogAnterior: "Anterior",
+  blogProxima: "Siguiente",
+  blogPaginaN: (n) => `página ${n}`,
   postLeitura: (m) => `${m} min de lectura`,
   postNaoEncontrado: "Publicación no encontrada.",
   postNaoEncontradoTexto: "Puede que haya salido del aire.",

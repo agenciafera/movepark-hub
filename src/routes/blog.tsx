@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeaturedPostCard, PostCard } from "@/features/blog/PostCard";
+import { Paginacao } from "@/features/blog/Paginacao";
 import {
   useBlogAuthors,
   useBlogCategories,
@@ -17,12 +18,12 @@ import {
   filterPosts,
   pageHref,
   pageSlice,
-  pageWindow,
   parseBlogPath,
   searchPosts,
   totalPages,
 } from "@/features/blog/listing.logic";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import { LOCALES, caminhoDoIndice, clusterHreflang, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { BlogPostListItem } from "@/types/domain";
 import { OgImage } from "@/lib/ogImage";
@@ -55,56 +56,6 @@ const EYEBROW: Record<BlogListingData["kind"], string | undefined> = {
   autor: "Autor",
   aeroporto: "Aeroporto",
 };
-
-function Paginacao({ page, total, base }: { page: number; total: number; base: string }) {
-  if (total <= 1) return null;
-
-  return (
-    <nav aria-label="Paginação" className="mt-10 flex flex-wrap items-center justify-center gap-2">
-      {page > 1 && (
-        <Link
-          to={pageHref(page - 1, base)}
-          rel="prev"
-          className="rounded-sm border border-hairline px-3 py-2 text-body-sm text-body hover:bg-surface-soft"
-        >
-          Anterior
-        </Link>
-      )}
-
-      {pageWindow(page, total).map((p, i) =>
-        p === null ? (
-          <span key={`gap-${i}`} className="px-1 text-body-sm text-muted" aria-hidden>
-            ...
-          </span>
-        ) : (
-          <Link
-            key={p}
-            to={pageHref(p, base)}
-            aria-current={p === page ? "page" : undefined}
-            className={cn(
-              "min-w-10 rounded-sm border px-3 py-2 text-center text-body-sm",
-              p === page
-                ? "border-mp-primary bg-mp-primary text-white"
-                : "border-hairline text-body hover:bg-surface-soft",
-            )}
-          >
-            {p}
-          </Link>
-        ),
-      )}
-
-      {page < total && (
-        <Link
-          to={pageHref(page + 1, base)}
-          rel="next"
-          className="rounded-sm border border-hairline px-3 py-2 text-body-sm text-body hover:bg-surface-soft"
-        >
-          Próxima
-        </Link>
-      )}
-    </nav>
-  );
-}
 
 export default function BlogListingPage() {
   const loaded = useLoaderData() as BlogListingData | null;
@@ -233,12 +184,35 @@ export default function BlogListingPage() {
   */
   const noindex = kind !== "index" || page > 1;
 
+  /*
+    O cluster de idioma do ÍNDICE, e só dele.
+
+    Ele é a outra metade do par: `/en/blog` e `/es/blog` já declaravam a portuguesa
+    como alternativa, e a portuguesa não declarava nenhuma das duas. Cluster que não
+    fecha o ciclo o Google descarta inteiro, então meia declaração vale zero.
+
+    Arquivo de taxonomia e página 2 ficam de fora porque não têm equivalente traduzido:
+    os eixos são portugueses e as duas saem do índice por `noindex` de qualquer jeito.
+  */
+  const hreflangs =
+    kind === "index" && page === 1
+      ? clusterHreflang(
+          LOCALES.map((l: Locale) => ({
+            locale: l,
+            caminho: `${SITE_URL}${caminhoDoIndice("blog", l)}`,
+          })),
+        )
+      : [];
+
   return (
     <>
       <Helmet>
         <title>{metaTitle}</title>
         <meta name="description" content={metaDesc} />
         <link rel="canonical" href={canonical} />
+        {hreflangs.map((h) => (
+          <link key={h.hreflang} rel="alternate" hrefLang={h.hreflang} href={h.href} />
+        ))}
         <link
           rel="alternate"
           type="application/rss+xml"

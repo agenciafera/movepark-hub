@@ -5,6 +5,42 @@ import { textos, type Textos } from "./i18nTextos";
 
 const CHAVES = Object.keys(textos("pt-BR")) as (keyof Textos)[];
 
+/**
+ * Chaves vazias NO PORTUGUÊS de propósito: o aviso só existe quando há o que avisar,
+ * e no idioma fonte nunca há.
+ *
+ * - `traducaoParcial`: parte das respostas da página ainda em português.
+ * - `blogIndiceSoTraduzidos`: o índice daquele idioma lista menos posts que o arquivo
+ *   português. No português ele é o arquivo completo, então não há o que declarar.
+ * - `homeAvisoIdioma`: avisa que o fim da reserva acontece em português. Na home
+ *   portuguesa não há nada a avisar.
+ *
+ * A lista é nomeada aqui, com motivo, em vez de o teste checar `!== undefined`: chave
+ * vazia por esquecimento e chave vazia por decisão precisam se distinguir.
+ */
+const VAZIAS_NO_PT: ReadonlySet<keyof Textos> = new Set([
+  "traducaoParcial",
+  "blogIndiceSoTraduzidos",
+  "homeAvisoIdioma",
+]);
+
+/**
+ * Chaves que são LEGITIMAMENTE iguais ao português, e por isso saem da checagem de
+ * cópia crua.
+ *
+ * - `blogIndiceTitulo`: "Blog" é a mesma palavra em português, inglês e espanhol.
+ *   Traduzir para "Bitácora" ou "Weblog" trocaria o rótulo que o leitor reconhece por
+ *   um sinônimo que ninguém usa.
+ * - `blogAnterior` e `blogPaginaN`: "Anterior" e "página" são as mesmas palavras em
+ *   português e espanhol. O inglês ("Previous", "page") continua sendo checado, porque
+ *   a chave só sai da regra nos idiomas em que a coincidência é real.
+ */
+const IGUAIS_DE_PROPOSITO: ReadonlyMap<keyof Textos, readonly string[]> = new Map([
+  ["blogIndiceTitulo", ["en", "es"]],
+  ["blogAnterior", ["es"]],
+  ["blogPaginaN", ["es"]],
+]);
+
 describe("dicionário da casca", () => {
   /**
    * A casca precisa existir nos três idiomas ANTES de qualquer tradução de conteúdo.
@@ -15,18 +51,23 @@ describe("dicionário da casca", () => {
     const t = textos(locale as Locale);
     for (const k of CHAVES) {
       const v = t[k];
-      // `traducaoParcial` é vazio no português de propósito: o aviso só existe quando
-      // há o que avisar, e no idioma fonte nunca há.
-      if (k === "traducaoParcial" && locale === "pt-BR") continue;
+      if (VAZIAS_NO_PT.has(k) && locale === "pt-BR") continue;
       if (typeof v === "string") {
         expect(v.length, `${locale}.${k}`).toBeGreaterThan(0);
       } else if (Array.isArray(v)) {
-        // `trasladoPassos` é a única lista: cada passo precisa de título e texto nos
-        // três idiomas, senão o bloco sai com um degrau vazio.
+        // Lista vazia é um bloco sem conteúdo, e nenhum item da lista pode ser vazio:
+        // `trasladoPassos` sairia com um degrau em branco, `homeSelos` com um selo sem
+        // texto. Os dois formatos convivem (`{t,d}` e string crua), então a checagem
+        // olha o que o item é em vez de assumir um deles.
         expect(v.length, `${locale}.${k}`).toBeGreaterThan(0);
-        for (const passo of v as { t: string; d: string }[]) {
-          expect(passo.t.length, `${locale}.${k}.t`).toBeGreaterThan(0);
-          expect(passo.d.length, `${locale}.${k}.d`).toBeGreaterThan(0);
+        for (const [i, item] of (v as unknown[]).entries()) {
+          if (typeof item === "string") {
+            expect(item.length, `${locale}.${k}[${i}]`).toBeGreaterThan(0);
+          } else {
+            const passo = item as { t: string; d: string };
+            expect(passo.t?.length, `${locale}.${k}[${i}].t`).toBeGreaterThan(0);
+            expect(passo.d?.length, `${locale}.${k}[${i}].d`).toBeGreaterThan(0);
+          }
         }
       } else {
         expect(typeof v, `${locale}.${k}`).toBe("function");
@@ -107,6 +148,7 @@ describe("dicionário da casca", () => {
         // Função cujo retorno depende só do argumento pode coincidir sem ser cópia;
         // string vazia (`traducaoParcial` no pt) não é sinal de nada.
         if (!pt) continue;
+        if (IGUAIS_DE_PROPOSITO.get(k)?.includes(locale)) continue;
         expect(valor(locale, k), `${locale}.${String(k)} repete o português`).not.toBe(pt);
       }
     }

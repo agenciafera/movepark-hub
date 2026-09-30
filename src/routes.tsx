@@ -67,16 +67,20 @@ import {
   idiomasDaFaq,
 } from "@/features/faqs/i18nApi";
 import {
+  fetchListaTraduzida,
   fetchPostTraduzidoPorSlug,
-  fetchTraducoesDePost,
+  fetchTraducoesDePostLeve,
   idiomasDoPost,
 } from "@/features/blog/i18nApi";
 import {
   LOCALES_TRADUZIDOS,
   LOCALE_PADRAO,
   SEGMENTO,
+  caminhoDaHome,
+  caminhoDoIndice,
   caminhoLocalizado,
   localeDoCaminho,
+  type LocaleTraduzido,
 } from "@/lib/i18n";
 
 /** Base só para o `new URL` do loader resolver caminho relativo. Não vai para a tela. */
@@ -91,6 +95,8 @@ import EstacionamentoMapeadoPage from "@/routes/estacionamento-mapeado";
 import DestinosPage from "@/routes/destinos";
 import NotFoundPage from "@/routes/not-found";
 import BlogListingPage, { type BlogListingData } from "@/routes/blog";
+import BlogIndiceIdiomaPage, { type BlogIndiceIdiomaData } from "@/routes/blog-idioma";
+import HomeIdiomaPage, { type HomeIdiomaData } from "@/routes/home-idioma";
 import BlogPostPage from "@/routes/blog-post";
 import GrupoPage from "@/routes/grupo";
 import SobrePage from "@/routes/sobre";
@@ -591,7 +597,7 @@ async function blogPostLoader({ params, request }: LoaderFunctionArgs) {
 
   const post = flattenTags([data])[0];
 
-  const idiomas = await fetchTraducoesDePost()
+  const idiomas = await fetchTraducoesDePostLeve()
     .then((t) => idiomasDoPost(t, post.id as string))
     .catch(() => []);
   /*
@@ -644,7 +650,7 @@ async function blogPostLoader({ params, request }: LoaderFunctionArgs) {
  * `blog_post_i18n` (slug, título e corpo), o build não gera rota de idioma nenhuma.
  */
 async function fetchLocalizedBlogPaths(): Promise<string[]> {
-  const traducoes = await fetchTraducoesDePost().catch(() => []);
+  const traducoes = await fetchTraducoesDePostLeve().catch(() => []);
   return traducoes.map((t) =>
     caminhoLocalizado({ familia: "blog", slug: t.slug, locale: t.locale }),
   );
@@ -1127,6 +1133,125 @@ async function calculadoraLoader(): Promise<CalculadoraData | null> {
   };
 }
 
+/**
+ * Loader do índice do blog num idioma traduzido.
+ *
+ * O idioma vem do CAMINHO, como em toda rota de idioma: `/en/blog` e `/es/blog`
+ * compartilham o mesmo `element`, e ler o idioma de `params` não daria, porque ele é
+ * segmento fixo da rota, não parâmetro.
+ *
+ * A fatia da página sai daqui para o HTML do build já trazer os cards. Página fora do
+ * intervalo devolve lista vazia, e a tela cai no estado vazio em vez de quebrar.
+ */
+async function blogIndiceIdiomaLoader({
+  request,
+}: LoaderFunctionArgs): Promise<BlogIndiceIdiomaData | null> {
+  const { locale } = localeDoCaminho(new URL(request.url, SITE_URL_INTERNO).pathname);
+  if (locale === LOCALE_PADRAO) return null;
+
+  const page = paginaDoCaminhoDoBlog(new URL(request.url, SITE_URL_INTERNO).pathname);
+  const todos = await fetchListaTraduzida(locale as LocaleTraduzido).catch(() => []);
+  return {
+    locale: locale as LocaleTraduzido,
+    posts: pageSlice(todos, page),
+    page,
+    total: totalPages(todos.length),
+  };
+}
+
+/** `/en/blog/page/3` devolve 3. Duplica a leitura do componente por ser outro contexto. */
+function paginaDoCaminhoDoBlog(pathname: string): number {
+  const seg = pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+  const i = seg.indexOf("page");
+  return i < 0 ? 1 : Math.max(1, Number(seg[i + 1]) || 1);
+}
+
+/**
+ * Uma URL por fatia da paginação do índice traduzido.
+ *
+ * A página 1 é a própria rota do índice, então só as seguintes entram aqui, igual ao
+ * índice português. Com menos de 13 posts traduzidos num idioma a lista sai vazia, e é
+ * o comportamento certo: não existe página 2 para pré-renderizar.
+ */
+function blogIndiceIdiomaPaths(locale: LocaleTraduzido) {
+  return async (): Promise<string[]> => {
+    const todos = await fetchListaTraduzida(locale).catch(() => []);
+    const total = totalPages(todos.length);
+    const base = caminhoDoIndice("blog", locale);
+    return Array.from({ length: Math.max(0, total - 1) }, (_, i) => `${base}/page/${i + 2}`);
+  };
+}
+
+/**
+ * Loader da home de um idioma traduzido.
+ *
+ * Três consultas, todas em lote: os destinos publicados, as traduções deles naquele
+ * idioma e a prova social. Uma consulta por destino estouraria o statement timeout do
+ * papel anônimo, que é a armadilha que já apareceu na página de destino.
+ *
+ * Destino sem tradução naquele idioma FICA FORA da grade, em vez de entrar com o
+ * rótulo português: o card levaria o leitor para uma URL que não existe no idioma, e é
+ * a mesma regra do `hreflang` e do `aplicaTraducao`.
+ */
+async function homeIdiomaLoader({ request }: LoaderFunctionArgs): Promise<HomeIdiomaData | null> {
+  const { locale } = localeDoCaminho(new URL(request.url, SITE_URL_INTERNO).pathname);
+  if (locale === LOCALE_PADRAO) return null;
+  const idioma = locale as LocaleTraduzido;
+
+  const [destinos, traducoes, clientes, postsDoIdioma] = await Promise.all([
+    supabase
+      .from("destination")
+      .select("id, name, short_name, slug, public_slug, city, state, is_popular, sort_order")
+      .eq("is_published", true)
+      .order("sort_order")
+      .then((r) => r.data ?? []),
+    fetchDestinosTraduzidos().catch(() => []),
+    supabase
+      .from("app_setting")
+      .select("value")
+      .eq("key", "social_proof_customers")
+      .maybeSingle()
+      .then((r) => Number(r.data?.value)),
+    supabase
+      .from("blog_post_i18n")
+      .select("locale")
+      .eq("locale", idioma)
+      .not("slug", "is", null)
+      .not("title", "is", null)
+      .not("body_md", "is", null)
+      .limit(1)
+      .then((r) => r.data ?? []),
+  ]);
+
+  const porDestino = new Map(
+    traducoes.filter((t) => t.locale === idioma).map((t) => [t.destination_id, t]),
+  );
+
+  const grade = destinos.flatMap((d) => {
+    const t = porDestino.get(d.id as string);
+    const slug = t?.slug?.trim();
+    if (!slug) return [];
+    return [
+      {
+        id: d.id as string,
+        rotulo: (t?.seo_label?.trim() || (d.short_name as string) || (d.name as string)) as string,
+        slug,
+        cidade: d.city as string,
+        estado: (d.state as string | null) ?? null,
+        popular: Boolean(d.is_popular),
+      },
+    ];
+  });
+
+  return {
+    locale: idioma,
+    destinos: grade,
+    // Valor sujo ou zerado esconde o bloco, em vez de anunciar "+0 clientes".
+    clientes: Number.isFinite(clientes) && clientes > 0 ? Math.floor(clientes) : 0,
+    temBlog: postsDoIdioma.length > 0,
+  };
+}
+
 /** Uma URL por destino publicado com unidade precificada. */
 async function fetchAllPrecosPaths(): Promise<string[]> {
   const data = await fetchPriceIndex().catch(() => null);
@@ -1159,6 +1284,15 @@ export const routes: RouteRecord[] = [
         element: <ConsumerAppShell />,
         children: [
           { path: "/", element: <HomePage /> },
+          // A home de cada idioma. Não é a tradução da portuguesa: a de lá abre com a
+          // busca e com os cards de unidade, e os dois levam a rotas que só existem em
+          // português (`/search` e `/estacionamentos/<destino>/<lote>`). Ver o cabeçalho
+          // de `home-idioma.tsx`.
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            path: caminhoDaHome(locale),
+            element: <HomeIdiomaPage />,
+            loader: homeIdiomaLoader,
+          })),
           { path: "/search", element: <SearchResultsPage /> },
           { path: "/faq", element: <FaqPage />, loader: faqIndexLoader },
           ...LOCALES_TRADUZIDOS.map((locale) => ({
@@ -1277,6 +1411,23 @@ export const routes: RouteRecord[] = [
             loader: blogPostLoader,
             getStaticPaths: async () =>
               (await fetchLocalizedBlogPaths()).filter((p) => p.startsWith(`/${locale}/`)),
+          })),
+          // O índice do blog em cada idioma. Vem DEPOIS da rota do post de propósito:
+          // `page` é segmento fixo e o React Router o resolve antes de `:slug`, mas a
+          // ordem deixa explícito que `/en/blog/page/2` é paginação, e não um post
+          // chamado "page". Sem estas rotas o post traduzido não tinha índice para onde
+          // voltar, e `/en/blog` respondia 404.
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            path: `/${locale}/${SEGMENTO.blog[locale]}`,
+            element: <BlogIndiceIdiomaPage />,
+            loader: blogIndiceIdiomaLoader,
+          })),
+          ...LOCALES_TRADUZIDOS.map((locale) => ({
+            path: `/${locale}/${SEGMENTO.blog[locale]}/page/:page`,
+            element: <BlogIndiceIdiomaPage />,
+            loader: blogIndiceIdiomaLoader,
+            shouldRevalidate: naoRevalidar,
+            getStaticPaths: blogIndiceIdiomaPaths(locale),
           })),
           { path: "/precos", element: <PrecosPage />, loader: precosLoader },
           {

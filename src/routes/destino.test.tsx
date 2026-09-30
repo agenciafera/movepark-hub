@@ -1189,3 +1189,46 @@ describe("cluster de hreflang", () => {
     );
   });
 });
+
+describe("o `ver todos` do blog na página de destino", () => {
+  beforeEach(() => {
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: undefined, isLoading: false } as never);
+    vi.mocked(useSearchResults).mockReturnValue({ data: undefined, isLoading: true } as never);
+  });
+
+  /**
+   * O commit 58d2bbcc consertou o link de cada POST, e o "ver todos" seguiu apontando
+   * para o `/blog/` português: em en/es ele levava o leitor de volta ao idioma fonte.
+   * Deixou de ser 404 só porque `/blog/` existe, e é por isso que o
+   * `check-internal-links` não pegou este.
+   */
+  it("em inglês aponta para o índice daquele idioma", async () => {
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospects: [],
+      units: [],
+      locale: "en",
+      posts: [{ slug: "guarulhos-airport-guide", title: "Guarulhos guide", excerpt: null }],
+    });
+
+    render();
+
+    await screen.findByRole("link", { name: "Guarulhos guide" });
+    expect(document.querySelectorAll('a[href="/en/blog"]').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('a[href="/blog/"]').length).toBe(0);
+  });
+
+  it("em português continua sendo `/blog/`, com a barra herdada", async () => {
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospects: [],
+      units: [],
+      posts: [{ slug: "guia-de-guarulhos", title: "Guia de Guarulhos", excerpt: null }],
+    });
+
+    render();
+
+    await screen.findByRole("link", { name: "Guia de Guarulhos" });
+    expect(document.querySelectorAll('a[href="/blog/"]').length).toBeGreaterThan(0);
+  });
+});

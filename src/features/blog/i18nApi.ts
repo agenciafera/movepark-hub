@@ -72,14 +72,122 @@ export type IdiomaDoPost = { locale: LocaleTraduzido; slug: string };
  * acima: listar no `hreflang` um idioma cuja página não vai existir é anunciar
  * um endereço vazio.
  */
-export function idiomasDoPost(traducoes: PostTraducao[], postId: string): IdiomaDoPost[] {
+export function idiomasDoPost(
+  traducoes: {
+    blog_post_id: string;
+    locale: LocaleTraduzido;
+    slug: string;
+    title: string;
+    /**
+     * AUSENTE significa "já filtrado na consulta"; PRESENTE é checado aqui.
+     *
+     * A distinção existe porque a consulta leve não traz o corpo (ele é o campo caro,
+     * e são uns 12 KB por post) mas filtra `body_md not.is.null` no servidor. Exigir o
+     * campo aqui obrigaria a baixar o acervo traduzido inteiro só para conferir que
+     * ele não é nulo; ignorar o campo quando ele vem deixaria passar a linha nula de
+     * quem chamar com dado cru.
+     */
+    body_md?: string | null;
+  }[],
+  postId: string,
+): IdiomaDoPost[] {
+  const temCorpo = (t: { body_md?: string | null }) => !("body_md" in t) || Boolean(t.body_md);
   const porLocale = new Map(
     traducoes
-      .filter((t) => t.blog_post_id === postId && t.slug && t.title && t.body_md)
+      .filter((t) => t.blog_post_id === postId && t.slug && t.title && temCorpo(t))
       .map((t) => [t.locale, t.slug]),
   );
   return LOCALES_TRADUZIDOS.filter((l) => porLocale.has(l)).map((l) => ({
     locale: l,
     slug: porLocale.get(l)!,
   }));
+}
+
+/**
+ * As mesmas traduções, SEM o corpo.
+ *
+ * O `SELECT` acima traz `body_md` porque a página do post precisa dele. Quem só
+ * monta URL (o `getStaticPaths`, o `hreflang`, a listagem) não precisa, e o custo
+ * cresce com o acervo: a cada post traduzido são uns 12 KB a mais baixados em toda
+ * execução, e o build roda isso uma vez por rota traduzida. O filtro continua
+ * exigindo corpo (`not.is.null`), que é o que define se a página existe; ele só não
+ * é mais trazido de volta.
+ */
+const SELECT_LEVE = "blog_post_id, locale, slug, title, excerpt";
+
+export type PostTraducaoLeve = Omit<PostTraducao, "body_md" | "meta_title" | "meta_description">;
+
+export async function fetchTraducoesDePostLeve(): Promise<PostTraducaoLeve[]> {
+  const { data, error } = await supabase
+    .from("blog_post_i18n")
+    .select(SELECT_LEVE)
+    .not("slug", "is", null)
+    .not("title", "is", null)
+    .not("body_md", "is", null);
+  if (error) throw error;
+  return (data ?? []) as PostTraducaoLeve[];
+}
+
+/** Um card da listagem traduzida: o texto vem da tradução, a capa e a data do original. */
+export type PostTraduzidoNaLista = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover_image_url: string | null;
+  published_at: string;
+  destination: { name: string; slug: string } | null;
+};
+
+/**
+ * Os posts de um idioma, para o índice daquele idioma.
+ *
+ * Lista SÓ o que está traduzido, de propósito. Completar a página com os posts em
+ * português daria ao leitor de inglês uma lista majoritariamente portuguesa e ao
+ * buscador uma página que se declara inglesa com conteúdo em outra língua. Índice
+ * curto e honesto é melhor que índice cheio e misturado.
+ *
+ * Capa, data e aeroporto vêm do post original por `!inner`: eles não têm versão por
+ * idioma, e o `inner` garante que tradução órfã (post despublicado, apagado) some da
+ * lista em vez de virar card sem imagem apontando para 404.
+ */
+export async function fetchListaTraduzida(locale: LocaleTraduzido): Promise<PostTraduzidoNaLista[]> {
+  const { data, error } = await supabase
+    .from("blog_post_i18n")
+    .select(
+      "blog_post_id, slug, title, excerpt," +
+        " post:blog_post!inner(cover_image_url, published_at, is_published, deleted_at," +
+        " destination:destination(name, slug))",
+    )
+    .eq("locale", locale)
+    .not("slug", "is", null)
+    .not("title", "is", null)
+    .not("body_md", "is", null)
+    .eq("post.is_published", true)
+    .is("post.deleted_at", null);
+  if (error) throw error;
+
+  type Linha = {
+    blog_post_id: string;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    post: {
+      cover_image_url: string | null;
+      published_at: string;
+      destination: { name: string; slug: string } | null;
+    } | null;
+  };
+
+  return ((data ?? []) as unknown as Linha[])
+    .map((l) => ({
+      id: l.blog_post_id,
+      slug: l.slug,
+      title: l.title,
+      excerpt: l.excerpt,
+      cover_image_url: l.post?.cover_image_url ?? null,
+      published_at: l.post?.published_at ?? "",
+      destination: l.post?.destination ?? null,
+    }))
+    .sort((a, b) => b.published_at.localeCompare(a.published_at));
 }

@@ -1,8 +1,34 @@
 import { Link } from "react-router-dom";
 import { CoverImage } from "./CoverImage";
 import { formatDate } from "@/lib/format";
+import { formatUpdated } from "@/features/content/types";
 import { userInitials } from "@/lib/initials";
-import type { BlogPostListItem } from "@/types/domain";
+import { LOCALE_PADRAO, caminhoLocalizado, type Locale } from "@/lib/i18n";
+import { textos } from "@/lib/i18nTextos";
+
+/**
+ * O que um card precisa, e nada mais.
+ *
+ * O tipo é estrutural em vez de `BlogPostListItem` porque o card também serve o
+ * índice traduzido, onde o dado vem de `blog_post_i18n` e não tem categoria, autor
+ * nem tags. Pedir o tipo cheio ali obrigaria a inventar campos nulos só para
+ * satisfazer a assinatura, e campo inventado é o que depois alguém lê como dado.
+ */
+export type CardPost = {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover_image_url: string | null;
+  published_at: string;
+  category?: { name: string } | null;
+  destination?: { name: string } | null;
+  author?: { name: string; avatar_url?: string | null } | null;
+};
+
+/** O endereço do post naquele idioma. O slug JÁ é o do idioma; aqui só entra o caminho. */
+function href(slug: string, locale: Locale): string {
+  return caminhoLocalizado({ familia: "blog", slug, locale });
+}
 
 /**
  * Categoria e destino como eyebrow, não como texto cinza na linha da data.
@@ -11,7 +37,7 @@ import type { BlogPostListItem } from "@/types/domain";
  * precisava ler para descobrir do que o post tratava. Como eyebrow eles viram um
  * rótulo escaneável, que é o papel que já cumprem no resto do consumer.
  */
-function Eyebrow({ post }: { post: BlogPostListItem }) {
+function Eyebrow({ post }: { post: CardPost }) {
   const rotulo = post.category?.name ?? post.destination?.name;
   if (!rotulo) return null;
   return (
@@ -28,7 +54,7 @@ function Eyebrow({ post }: { post: BlogPostListItem }) {
  * usam. O avatar existe porque post de blog é assinado por gente, e o rosto é o
  * que separa uma assinatura de mais uma linha de metadado cinza.
  */
-function Assinatura({ post }: { post: BlogPostListItem }) {
+function Assinatura({ post, locale }: { post: CardPost; locale: Locale }) {
   const autor = post.author;
   return (
     <div className="flex items-center gap-2 text-caption-sm text-muted">
@@ -51,7 +77,12 @@ function Assinatura({ post }: { post: BlogPostListItem }) {
         ))}
       <span className="min-w-0 truncate">
         {autor && `${autor.name} · `}
-        {formatDate(post.published_at)}
+        {/* Em português fica `dd/MM/yyyy`, que é o formato do resto do consumer. Em
+            inglês e espanhol a data sai por extenso, pelo `Intl`, porque `25/09/2026`
+            é lido como 9 de maio por quem escreve a data ao contrário. */}
+        {locale === LOCALE_PADRAO
+          ? formatDate(post.published_at)
+          : formatUpdated(post.published_at, textos(locale).intlLocale)}
       </span>
     </div>
   );
@@ -65,10 +96,10 @@ function Assinatura({ post }: { post: BlogPostListItem }) {
  * leitura. A capa, o título e o resumo já delimitam o item sozinhos, e sem a
  * borda o título ganha o peso que a moldura tomava.
  */
-export function PostCard({ post }: { post: BlogPostListItem }) {
+export function PostCard({ post, locale = LOCALE_PADRAO }: { post: CardPost; locale?: Locale }) {
   return (
     <article className="flex flex-col">
-      <Link to={`/blog/${post.slug}/`} className="block">
+      <Link to={href(post.slug, locale)} className="block">
         {post.cover_image_url && (
           <CoverImage
             src={post.cover_image_url}
@@ -82,13 +113,13 @@ export function PostCard({ post }: { post: BlogPostListItem }) {
       <div className="mt-4 flex flex-1 flex-col gap-2">
         <Eyebrow post={post} />
         <h2 className="text-display-sm text-ink">
-          <Link to={`/blog/${post.slug}/`} className="hover:underline">
+          <Link to={href(post.slug, locale)} className="hover:underline">
             {post.title}
           </Link>
         </h2>
         {post.excerpt && <p className="line-clamp-3 text-body-md text-body">{post.excerpt}</p>}
         <div className="mt-auto pt-3">
-          <Assinatura post={post} />
+          <Assinatura post={post} locale={locale} />
         </div>
       </div>
     </article>
@@ -106,11 +137,17 @@ export function PostCard({ post }: { post: BlogPostListItem }) {
  * Na referência o destaque tem o tamanho do nome da publicação, e é essa
  * proporção que faz o bloco abrir a página em vez de só ocupar espaço.
  */
-export function FeaturedPostCard({ post }: { post: BlogPostListItem }) {
+export function FeaturedPostCard({
+  post,
+  locale = LOCALE_PADRAO,
+}: {
+  post: CardPost;
+  locale?: Locale;
+}) {
   return (
     <article className="grid gap-5 desktop:grid-cols-[1.15fr_1fr] desktop:items-center desktop:gap-10">
       {post.cover_image_url && (
-        <Link to={`/blog/${post.slug}/`} className="block">
+        <Link to={href(post.slug, locale)} className="block">
           <CoverImage
             src={post.cover_image_url}
             alt={post.title}
@@ -124,13 +161,13 @@ export function FeaturedPostCard({ post }: { post: BlogPostListItem }) {
       <div className="flex flex-col gap-3">
         <Eyebrow post={post} />
         <h2 className="text-display-xl text-ink">
-          <Link to={`/blog/${post.slug}/`} className="hover:underline">
+          <Link to={href(post.slug, locale)} className="hover:underline">
             {post.title}
           </Link>
         </h2>
         {post.excerpt && <p className="text-body-md text-body">{post.excerpt}</p>}
         <div className="pt-1">
-          <Assinatura post={post} />
+          <Assinatura post={post} locale={locale} />
         </div>
       </div>
     </article>

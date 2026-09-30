@@ -45,6 +45,7 @@ import { formatUpdated } from "@/features/content/types";
 import {
   LANG_HTML,
   LOCALE_PADRAO,
+  caminhoDoIndice,
   caminhoLocalizado,
   clusterHreflang,
   type Locale,
@@ -94,6 +95,15 @@ export default function BlogPostPage() {
 
   const locale = loaded?.locale ?? LOCALE_PADRAO;
   const T = textos(locale);
+  /*
+    O índice do blog NAQUELE idioma.
+
+    Era `/blog/` fixo nos três lugares que voltam para a listagem, então a versão em
+    inglês de um post mandava o leitor para o índice em português. Foi um dos motivos de
+    `/en/blog` precisar existir: o link de volta já apontava para um índice, só não para
+    o do idioma da página.
+  */
+  const indiceDoBlog = caminhoDoIndice("blog", locale);
   const traducao = loaded?.traducao ?? null;
   const idiomas = loaded?.idiomas ?? [];
 
@@ -212,7 +222,7 @@ export default function BlogPostPage() {
           description={T.postNaoEncontradoTexto}
           action={
             <Button asChild>
-              <Link to="/blog/">{T.postVerTodos}</Link>
+              <Link to={indiceDoBlog}>{T.postVerTodos}</Link>
             </Button>
           }
         />
@@ -357,7 +367,7 @@ export default function BlogPostPage() {
               <div className="min-w-0">
                 <PageHeader
                   variant="content"
-                  back={{ to: "/blog/", label: T.postVoltar }}
+                  back={{ to: indiceDoBlog, label: T.postVoltar }}
                   eyebrow={loaded?.destinoLabel ?? post.destination?.name ?? undefined}
                   title={post.title}
                   description={leadFrom(post.excerpt, post.body_md) ?? undefined}
@@ -480,7 +490,7 @@ export default function BlogPostPage() {
               </div>
               <div className="mt-8 flex justify-center">
                 <Button asChild variant="outline">
-                  <Link to="/blog/">{T.postVerTodos}</Link>
+                  <Link to={indiceDoBlog}>{T.postVerTodos}</Link>
                 </Button>
               </div>
             </div>

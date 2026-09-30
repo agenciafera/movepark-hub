@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { fetchListaTraduzida } from "./i18nApi";
+import type { LocaleTraduzido } from "@/lib/i18n";
 import type { Database } from "@/types/database";
 import type {
   BlogAuthor,
@@ -109,6 +111,23 @@ const listSelect =
  * servidor a cada tecla ou a cada página. O TanStack Query segura o cache, então
  * é uma requisição por sessão.
  */
+/**
+ * O acervo de um idioma traduzido, para o índice daquele idioma.
+ *
+ * Existe pelo mesmo motivo do `useBlogPostList`: o loader entrega só a FATIA da página,
+ * para o HTML pré-renderizado não carregar o acervo inteiro, e a busca e a paginação
+ * precisam do conjunto completo. Sem ele o componente fatiava de novo o que já vinha
+ * fatiado, e a página 2 saía vazia.
+ */
+export function useListaTraduzida(locale: LocaleTraduzido | null) {
+  return useQuery({
+    enabled: Boolean(locale),
+    queryKey: [...blogKeys.list(), "i18n", locale] as const,
+    queryFn: () => fetchListaTraduzida(locale as LocaleTraduzido),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useBlogPostList(enabled = true) {
   return useQuery({
     enabled,
