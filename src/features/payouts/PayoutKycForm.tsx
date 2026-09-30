@@ -6,6 +6,7 @@ import {
   useFormContext,
   type Control,
   type Path,
+  type UseFormReturn,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { fetchCep } from "@/lib/cep";
@@ -463,6 +464,23 @@ export function KycBankSection({ control }: { control: Control<KycValues> }) {
   );
 }
 
+/**
+ * O form valida ao sair do campo (`onBlur`), e antes do primeiro envio o react-hook-form não
+ * revalida na digitação. Resultado: depois que o "Continuar" acusava um campo vazio, o erro seguia
+ * na tela enquanto o parceiro digitava, e parecia que o campo não aceitava o valor (caso da
+ * Nationpark com o complemento, 30/09/2026). Aqui, campo que JÁ está com erro revalida a cada
+ * tecla; campo sem erro segue esperando o blur, para não acusar e-mail incompleto no meio da digitação.
+ */
+export function useRevalidateInvalidOnChange(methods: UseFormReturn<KycValues>) {
+  const { watch, trigger, getFieldState } = methods;
+  React.useEffect(() => {
+    const sub = watch((_values, { name }) => {
+      if (name && getFieldState(name).invalid) void trigger(name);
+    });
+    return () => sub.unsubscribe();
+  }, [watch, trigger, getFieldState]);
+}
+
 export type PayoutKycFormProps = {
   defaultValues: KycValues;
   onSubmit: (values: KycValues) => Promise<void> | void;
@@ -491,6 +509,7 @@ export function PayoutKycForm({
     defaultValues,
     mode: "onBlur",
   });
+  useRevalidateInvalidOnChange(methods);
   const {
     control,
     handleSubmit,

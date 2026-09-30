@@ -11,6 +11,7 @@ import {
   KycRepresentativeSection,
   KycRepAddressSection,
   KycBankSection,
+  useRevalidateInvalidOnChange,
 } from "./PayoutKycForm";
 
 type KycStep = {
@@ -77,6 +78,7 @@ export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }:
     defaultValues,
     mode: "onBlur",
   });
+  useRevalidateInvalidOnChange(methods);
   const {
     control,
     handleSubmit,
@@ -116,12 +118,14 @@ export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }:
         ) : (
           <span />
         )}
+        {/* key distinta: sem ela o React reaproveita o mesmo <button> e troca o type para
+            "submit" antes de o clique do Continuar terminar, e o navegador envia o form. */}
         {isLast ? (
-          <Button type="submit" disabled={busy}>
+          <Button key="submit" type="submit" disabled={busy}>
             {busy ? "Salvando…" : "Salvar e continuar"} <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button type="button" onClick={next} disabled={busy}>
+          <Button key="next" type="button" onClick={next} disabled={busy}>
             Continuar <ArrowRight className="h-4 w-4" />
           </Button>
         )}
