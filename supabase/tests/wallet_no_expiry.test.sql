@@ -12,6 +12,11 @@
 begin;
 select plan(17);
 
+-- O crédito nasce desligado (20261127140000, Clube fora do ar); este teste cobre o crédito
+-- em si, então liga a chave dentro da transação. O desligado é coberto em
+-- wallet_credit_disabled.test.sql.
+update public.app_setting set value = 'true' where key = 'wallet_credit_enabled';
+
 -- ── Estrutura ────────────────────────────────────────────────────────────────
 select is(
   (select value from public.app_setting where key = 'wallet_debit_enabled'),

@@ -12,9 +12,16 @@
 > menu do avatar, o banner de indicação, o card "Dinheiro de volta" do perfil, a linha "Recebeu de
 > volta" do resumo das reservas, e as rotas `/account/clube`, `/account/indicar` e `/motor-preview`
 > (redirecionam). Com a chave desligada o front não chama `get_my_membership` nem `get_my_wallet`.
-> O banco **não** mudou: os triggers de crédito seguem lançando cashback na conclusão da reserva,
-> sem que o cliente veja. Para lançar: `VITE_GROWTH=on` nas variáveis de build do Cloudflare
-> (Production e Preview) e publicar. Teste: `src/lib/features.test.tsx`.
+> **O crédito também está desligado no banco** (migration `20261127140000_credito_da_carteira_desligado`):
+> a chave `app_setting.wallet_credit_enabled` (`'false'`, lida por `wallet_credit_enabled()`) barra os
+> dois triggers. Reserva concluída continua recalculando o nível (`recompute_membership`), mas não
+> lança cashback; a indicação não credita nenhum lado e fica `pending`. Como a indicação só paga na
+> **primeira** reserva concluída do indicado, a que concluir com a chave desligada não é paga
+> depois. Os 3 lançamentos que já existiam no `wallet_ledger` não foram tocados. pgTAP
+> `wallet_credit_disabled.test.sql`; `wallet.test.sql` e `wallet_no_expiry.test.sql` ligam a chave
+> na transação para seguir cobrindo o crédito. **Para lançar:** `VITE_GROWTH=on` nas variáveis de
+> build do Cloudflare (Production e Preview), `update app_setting set value = 'true' where key =
+> 'wallet_credit_enabled'` e publicar. Teste do front: `src/lib/features.test.tsx`.
 
 > **27/09/2026:** a copy do Clube (`MotorCrescimento.tsx`) e da indicação (`growth.logic.ts`,
 > `IndiqueGanhe.tsx`) deixou de prometer "usa direto no checkout" e "desconto na 1ª reserva": enquanto o
