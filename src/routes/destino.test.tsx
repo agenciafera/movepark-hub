@@ -1165,4 +1165,27 @@ describe("cluster de hreflang", () => {
       expect(document.querySelectorAll('link[rel="alternate"][hreflang]')).toHaveLength(0);
     });
   });
+
+  // Regressão (30/09/2026): o "Leia também" montava `/blog/<slug>` sem o prefixo do idioma, e o
+  // post traduzido só existe em `/en/blog/` e `/es/blog/`. O check de links do build reprovou e
+  // nenhum deploy saiu a partir das 11h52.
+  it("o Leia também aponta para o post no idioma da página", () => {
+    const post = { slug: "congonhas-airport-complete-information", title: "Congonhas", excerpt: null };
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [], posts: [post], locale: "en" });
+    render();
+    expect(screen.getByRole("link", { name: "Congonhas" })).toHaveAttribute(
+      "href",
+      "/en/blog/congonhas-airport-complete-information",
+    );
+  });
+
+  it("em português o Leia também mantém a barra final do legado do WordPress", () => {
+    const post = { slug: "guia-de-congonhas", title: "Guia de Congonhas", excerpt: null };
+    loaderData.mockReturnValue({ destination: dest(), prospects: [], units: [], posts: [post] });
+    render();
+    expect(screen.getByRole("link", { name: "Guia de Congonhas" })).toHaveAttribute(
+      "href",
+      "/blog/guia-de-congonhas/",
+    );
+  });
 });

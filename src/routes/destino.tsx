@@ -925,8 +925,10 @@ export default function DestinoPage() {
               <ul className="grid grid-cols-1 gap-x-8 gap-y-6 tablet:grid-cols-2">
                 {postsDoDestino.map((p) => (
                   <li key={p.slug}>
+                    {/* Em en/es o post chega com o slug traduzido e só existe sob `/en/blog/` ou
+                        `/es/blog/`; o caminho cru dava 404 no clique e derrubava o build. */}
                     <Link
-                      to={`/blog/${p.slug}/`}
+                      to={caminhoLocalizado({ familia: "blog", slug: p.slug, locale })}
                       className="text-title-md text-ink underline-offset-2 hover:text-mp-primary hover:underline"
                     >
                       {p.title}
