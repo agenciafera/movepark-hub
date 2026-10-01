@@ -165,6 +165,25 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
     ),
   },
   {
+    // Mesmo motor da reserva, desfeito no fim: o total é o que create_booking gravaria.
+    name: "quote_booking",
+    description:
+      "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado.",
+    inputSchema: obj(
+      {
+        location_parking_type_id: { type: "string", description: "id do tipo de vaga (location_parking_type)" },
+        check_in_at: { type: "string", format: "date-time", description: "Check-in ISO-8601" },
+        check_out_at: { type: "string", format: "date-time", description: "Check-out ISO-8601" },
+        fare_tier: { type: "string", enum: ["basica", "flex", "superflex"], description: "Tarifa (default basica)" },
+        add_on_service_ids: { type: "array", items: { type: "string" }, description: "Serviços adicionais (opcional)" },
+        coupon_code: { type: "string", description: "Cupom (opcional)" },
+        passenger_count: { type: "integer", description: "Nº de passageiros (opcional)" },
+        has_pcd: { type: "boolean", description: "Vaga PCD (opcional)" },
+      },
+      ["location_parking_type_id", "check_in_at", "check_out_at"],
+    ),
+  },
+  {
     name: "set_booking_customer",
     description:
       "Preenche os dados do pagador na reserva (CPF/CNPJ e telefone são exigidos no pagamento). Campos ausentes ficam como estão.",
@@ -207,12 +226,13 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
   },
   {
     name: "list_my_bookings",
-    description: "Lista as reservas do usuário logado.",
+    description:
+      "Lista as reservas do usuário logado, cada uma com o último aviso que o Movepark mandou (last_notification: evento, canal e quando), para entender a que mensagem o cliente está respondendo.",
     inputSchema: obj({ limit: { type: "integer", description: "máximo (default 10)" } }),
   },
   {
     name: "get_booking",
-    description: "Detalhe de uma reserva do usuário pelo código.",
+    description: "Detalhe de uma reserva do usuário pelo código, com o último aviso enviado (last_notification).",
     inputSchema: obj({ booking_code: { type: "string", description: "Código (MP-...)" } }, ["booking_code"]),
   },
   {
@@ -252,3 +272,17 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
 
 // Nomes das tools que exigem sessão (JWT). O handler recusa cedo, com mensagem amigável, se faltar.
 export const CUSTOMER_TXN_NAMES: ReadonlySet<string> = new Set(CUSTOMER_TXN_TOOLS.map((t) => t.name));
+
+/** Corpo da RPC `quote_booking` a partir dos argumentos da tool. Puro (testável). */
+export function buildQuoteBookingArgs(a: Record<string, unknown>): Record<string, unknown> {
+  return {
+    p_location_parking_type_id: a.location_parking_type_id,
+    p_check_in_at: a.check_in_at,
+    p_check_out_at: a.check_out_at,
+    p_fare_tier: a.fare_tier ?? "basica",
+    p_add_on_ids: a.add_on_service_ids ?? null,
+    p_coupon_code: a.coupon_code ?? null,
+    p_passenger_count: a.passenger_count ?? null,
+    p_has_pcd: a.has_pcd ?? false,
+  };
+}

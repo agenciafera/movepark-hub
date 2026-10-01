@@ -173,11 +173,12 @@ caminho do checkout web. Definições em `mcp/customer.logic.ts`; handler `callC
 
 | Tool | Substrato | Status |
 |---|---|---|
+| `quote_booking` | RPC `quote_booking` (JWT) | ✅ no ar (01/10/2026). Total exato da reserva sem criá-la (§5.1) |
 | `create_booking` | Edge `create-booking` (JWT) | ✅ no ar. Segura a vaga (`status=pending`) |
 | `set_booking_customer` | update em `booking` (RLS) | ✅ no ar. `customer_tax_id`, `customer_phone`, `customer_email`, nomes |
 | `add_vehicle` | insert em `vehicle` (RLS) | ✅ no ar. Cadastra pela placa, devolve `vehicle_id` |
 | `set_booking_vehicle` | update em `booking` (RLS) | ✅ no ar |
-| `list_my_bookings` / `get_booking` | query `booking` (RLS) | ✅ no ar |
+| `list_my_bookings` / `get_booking` | query `booking` (RLS) + `my_booking_notifications` | ✅ no ar. Cada reserva traz `last_notification` (§5.2) |
 | `get_booking_status` | `booking` + `payment` (RLS) | ✅ no ar. Evita o agente dar poll em tabela crua |
 | `cancel_booking` | Edge `cancel-booking` (JWT) | ✅ no ar |
 | `accept_terms` | Edge `accept-terms` (JWT) | F3 (ressalva jurídica, §8) |
@@ -192,6 +193,29 @@ limit próprio); `add_vehicle` aceita a placa direto, então a reserva fecha sem
 
 Ficam **fora** por decisão: `delete-account` (irreversível), `attach-phone-silent` (identidade), e
 tudo de pagamento.
+
+### 5.1 Cotação (`quote_booking`)
+
+O `simulate_price` recebe só o número de diárias: não conta a tolerância da unidade, não sabe da
+tarifa (Flex/Superflex), do cupom, dos adicionais nem do desconto por antecedência, que depende da
+data. O agente citava um valor e a reserva gravava outro. A `quote_booking` recebe os mesmos
+argumentos do `create_booking` e roda o **próprio** `_create_booking_core` numa subtransação desfeita
+no fim: o total é, por construção, o que a reserva gravaria, e as recusas (sem vaga, estadia mínima,
+antecedência) saem com as mesmas mensagens. Não segura a vaga e não deixa rastro (nenhum trigger da
+reserva chama rede de forma síncrona). Exige sessão, porque cupom tem limite por usuário. O que ainda
+pode mudar depois é só o que o cliente escolhe no checkout: adicionais no passo 3 e juros do cartão
+parcelado acima de 3x. Migration `20261128110000`; pgTAP `quote_booking.test.sql`. Validado em
+produção em 01/10/2026 (Agência Fera: R$ 81,00 na Básica, R$ 93,90 na Flex).
+
+### 5.2 Último aviso (`last_notification`)
+
+Os avisos do Hub (confirmação, lembretes, alteração, extensão, cancelamento) saem pelo mesmo número
+de WhatsApp do agente (phone_number_id `456610384191644`). Quando o cliente responde a um template, a
+resposta cai na conversa do agente, que não sabia do envio. `list_my_bookings` e `get_booking` trazem,
+por reserva, o último registro de `notification_log` (`event`, `channel`, `status`, `sent_at`), pela
+RPC `my_booking_notifications`, que filtra por `auth.uid()` porque a RLS daquela tabela é só do
+hub_admin. Só aviso que passou pelo `notify.ts` entra no log; o e-mail de confirmação tem trilho
+próprio (`confirmation_email_sent_at`) e não aparece aqui.
 
 ---
 

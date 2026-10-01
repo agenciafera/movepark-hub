@@ -157,6 +157,7 @@ verificadas pela chave `mp_` no `X-API-Key`: `create_checkout_link` (`checkout:l
 | descoberta (as 9 do consumidor) | `READ_TOOLS` / `callRead` | ✅ no ar |
 | `request_login_otp` / `verify_login_otp` / `whoami` | GoTrue (`customer.logic.ts`) | ✅ no ar |
 | `assert_verified_identity` | GoTrue + Send SMS Hook (`identity_assertion_*`) | ✅ no ar |
+| `quote_booking` | RPC `quote_booking` (JWT): o motor da reserva desfeito no fim | ✅ no ar |
 | `create_booking` / `cancel_booking` | Edges `create-booking` / `cancel-booking` (JWT) | ✅ no ar |
 | `set_booking_customer` / `add_vehicle` / `set_booking_vehicle` | escrita direta (RLS do dono) | ✅ no ar |
 | `list_my_bookings` / `get_booking` / `get_booking_status` | leitura direta (RLS do dono) | ✅ no ar |

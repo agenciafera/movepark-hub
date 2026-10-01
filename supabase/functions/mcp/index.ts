@@ -42,6 +42,7 @@ import { hasValidCheckDigits } from "../_shared/payments/documents.ts";
 import { isValidPhoneBr } from "../_shared/payments/contact.ts";
 import {
   buildCreateBookingBody,
+  buildQuoteBookingArgs,
   CUSTOMER_TXN_NAMES,
   normalizeAssertedPhone,
   otpRequestParams,
@@ -614,6 +615,27 @@ async function callCustomerTxn(
     return data;
   };
 
+  /*
+    O último aviso de cada reserva (P12 da Mia). Os avisos do Hub saem pelo mesmo
+    número de WhatsApp do agente: quando o cliente responde a um template, o
+    agente precisa saber qual. A RPC filtra pelo dono (`auth.uid()`), porque a
+    RLS de `notification_log` é só do hub_admin.
+  */
+  const comUltimoAviso = async <T extends { code: string }>(lista: T[]) => {
+    if (lista.length === 0) return lista;
+    const avisos = unwrap(
+      await sb.rpc("my_booking_notifications", { p_booking_codes: lista.map((b) => b.code) }),
+    ) as Array<{ booking_code: string; event: string; channel: string; status: string; sent_at: string }> | null;
+    const porCodigo = new Map((avisos ?? []).map((n) => [n.booking_code, n]));
+    return lista.map((b) => {
+      const n = porCodigo.get(b.code);
+      return {
+        ...b,
+        last_notification: n ? { event: n.event, channel: n.channel, status: n.status, sent_at: n.sent_at } : null,
+      };
+    });
+  };
+
   switch (name) {
     case "create_booking":
       // Dedup do consumidor é derivada no servidor (create_booking_atomic): não mandamos chave.
@@ -698,8 +720,11 @@ async function callCustomerTxn(
       return { updated: true, booking_code: rows.code };
     }
 
-    case "list_my_bookings":
-      return unwrap(
+    case "quote_booking":
+      return unwrap(await sb.rpc("quote_booking", buildQuoteBookingArgs(a)));
+
+    case "list_my_bookings": {
+      const lista = unwrap(
         await sb
           .from("booking")
           .select("code, status, check_in_at, check_out_at, total_amount, currency")
@@ -707,10 +732,12 @@ async function callCustomerTxn(
           .is("deleted_at", null)
           .order("check_in_at", { ascending: false })
           .limit(Number(a.limit ?? 10)),
-      );
+      ) as Array<{ code: string }>;
+      return comUltimoAviso(lista);
+    }
 
-    case "get_booking":
-      return unwrap(
+    case "get_booking": {
+      const b = unwrap(
         await sb
           .from("booking")
           .select(
@@ -719,7 +746,9 @@ async function callCustomerTxn(
           .eq("code", a.booking_code as string)
           .eq("profile_id", dono)
           .maybeSingle(),
-      );
+      ) as { code: string } | null;
+      return b ? (await comUltimoAviso([b]))[0] : null;
+    }
 
     case "get_booking_status": {
       const b = unwrap(

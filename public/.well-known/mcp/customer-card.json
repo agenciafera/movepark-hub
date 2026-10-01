@@ -301,6 +301,63 @@
       "scope": "identity:assert"
     },
     {
+      "name": "quote_booking",
+      "description": "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string",
+            "description": "id do tipo de vaga (location_parking_type)"
+          },
+          "check_in_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-in ISO-8601"
+          },
+          "check_out_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-out ISO-8601"
+          },
+          "fare_tier": {
+            "type": "string",
+            "enum": [
+              "basica",
+              "flex",
+              "superflex"
+            ],
+            "description": "Tarifa (default basica)"
+          },
+          "add_on_service_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Serviços adicionais (opcional)"
+          },
+          "coupon_code": {
+            "type": "string",
+            "description": "Cupom (opcional)"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "description": "Nº de passageiros (opcional)"
+          },
+          "has_pcd": {
+            "type": "boolean",
+            "description": "Vaga PCD (opcional)"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "check_in_at",
+          "check_out_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "create_booking",
       "description": "Cria uma reserva pendente para o usuário logado e segura a vaga. Use os ids vindos de get_parking_types. Confirme os dados com o usuário antes de reservar.",
       "inputSchema": {
@@ -447,7 +504,7 @@
     },
     {
       "name": "list_my_bookings",
-      "description": "Lista as reservas do usuário logado.",
+      "description": "Lista as reservas do usuário logado, cada uma com o último aviso que o Movepark mandou (last_notification: evento, canal e quando), para entender a que mensagem o cliente está respondendo.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -462,7 +519,7 @@
     },
     {
       "name": "get_booking",
-      "description": "Detalhe de uma reserva do usuário pelo código.",
+      "description": "Detalhe de uma reserva do usuário pelo código, com o último aviso enviado (last_notification).",
       "inputSchema": {
         "type": "object",
         "properties": {
