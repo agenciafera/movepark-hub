@@ -1,5 +1,6 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
+  bookingOrigin,
   buildQuoteBookingArgs,
   erroDeSessao,
   normalizeAssertedPhone,
@@ -224,7 +225,10 @@ Deno.test("buildQuoteBookingArgs: mesmos campos do create_booking, com defaults"
 Deno.test("quote_booking e create_booking têm o mesmo schema de entrada", () => {
   const q = CUSTOMER_TXN_TOOLS.find((t) => t.name === "quote_booking")!;
   const c = CUSTOMER_TXN_TOOLS.find((t) => t.name === "create_booking")!;
-  assertEquals(q.inputSchema, c.inputSchema);
+  // `channel` é só da reserva (procedência); o resto do schema é o mesmo.
+  const props = { ...(c.inputSchema.properties as Record<string, unknown>) };
+  delete props.channel;
+  assertEquals(q.inputSchema, { ...c.inputSchema, properties: props });
   assertEquals(q.scope, undefined);
 });
 
@@ -244,4 +248,20 @@ Deno.test("erroDeSessao: reconhece token ruim e não engole erro de consulta", (
   assertEquals(erroDeSessao({ message: "PGRST301" }), true);
   assertEquals(erroDeSessao(new Error("relation does not exist")), false);
   assertEquals(erroDeSessao(new Error("Destino não encontrado")), false);
+});
+
+// Venda do agente da Movepark separada em relatório; agente de terceiro não se passa pelo nosso.
+Deno.test("bookingOrigin: canal só vale com a chave de agente confiável", () => {
+  assertEquals(bookingOrigin("whatsapp-bot", true), "whatsapp-bot");
+  assertEquals(bookingOrigin("webchat-bot", true), "webchat-bot");
+  assertEquals(bookingOrigin("whatsapp-bot", false), "mcp");
+  assertEquals(bookingOrigin("white_label", true), "mcp");
+  assertEquals(bookingOrigin(undefined, true), "mcp");
+});
+
+Deno.test("buildCreateBookingBody: canal entra como origin só para o agente confiável", () => {
+  const a = { location_parking_type_id: "x", check_in_at: "a", check_out_at: "b", channel: "whatsapp-bot" };
+  assertEquals(buildCreateBookingBody(a, true).origin, "whatsapp-bot");
+  assertEquals(buildCreateBookingBody(a).origin, "mcp");
+  assertEquals("channel" in buildCreateBookingBody(a, true), false);
 });

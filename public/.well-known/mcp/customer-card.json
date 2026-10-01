@@ -302,7 +302,7 @@
     },
     {
       "name": "quote_booking",
-      "description": "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado.",
+      "description": "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado. Com chave de agente confiável, cota sem login (sem cupom).",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -404,6 +404,14 @@
           "has_pcd": {
             "type": "boolean",
             "description": "Vaga PCD (opcional)"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "whatsapp-bot",
+              "webchat-bot"
+            ],
+            "description": "Canal do agente da Movepark (só vale com chave de agente confiável; sem ela a reserva fica como mcp)"
           }
         },
         "required": [

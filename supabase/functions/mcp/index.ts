@@ -504,12 +504,29 @@ async function callCustomer(
     }
   }
 
+  /*
+    Cotação sem conta (agent-booking.md §5.1). Sem sessão, mas com a chave de
+    agente da Movepark, cota sem usuário: uma pergunta de preço não pode criar
+    cliente no Hub, que é o que `assert_verified_identity` faz com telefone novo.
+    Cupom fica de fora, porque o limite por cliente não tem contra quem medir.
+  */
+  if (name === "quote_booking" && !temSessao(authHeader) && apiKeyId) {
+    if (a.coupon_code) throw new Error("Cotação com cupom exige login do cliente.");
+    const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+      auth: { persistSession: false },
+    });
+    const { p_coupon_code: _cupom, ...args } = buildQuoteBookingArgs(a);
+    const { data, error } = await admin.rpc("quote_booking_for_agent", { p_api_key_id: apiKeyId, ...args });
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
   // Transacionais: exigem sessão. Recusa cedo com mensagem amigável se faltar o JWT.
   if (CUSTOMER_TXN_NAMES.has(name)) {
     if (!authHeader?.startsWith("Bearer ")) {
       throw new Error("Faça login primeiro (request_login_otp e verify_login_otp).");
     }
-    return callCustomerTxn(authHeader, name, a);
+    return callCustomerTxn(authHeader, name, a, apiKeyId);
   }
 
   throw new Error(`Tool desconhecida: ${name}`);
@@ -594,6 +611,7 @@ async function callCustomerTxn(
   authHeader: string,
   name: string,
   a: Record<string, unknown>,
+  apiKeyId: string | null = null,
 ): Promise<unknown> {
   const sb = userClient(authHeader);
   /*
@@ -659,7 +677,8 @@ async function callCustomerTxn(
   switch (name) {
     case "create_booking":
       // Dedup do consumidor é derivada no servidor (create_booking_atomic): não mandamos chave.
-      return invokeEdge("create-booking", buildCreateBookingBody(a));
+      // `apiKeyId` só existe com chave de agente da Movepark aceita: é ela que libera o `channel`.
+      return invokeEdge("create-booking", buildCreateBookingBody(a, apiKeyId !== null));
 
     case "cancel_booking":
       return invokeEdge("cancel-booking", { booking_code: a.booking_code, reason: a.reason ?? null });

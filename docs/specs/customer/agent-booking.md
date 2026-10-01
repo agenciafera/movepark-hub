@@ -174,13 +174,13 @@ caminho do checkout web. Definições em `mcp/customer.logic.ts`; handler `callC
 | Tool | Substrato | Status |
 |---|---|---|
 | `quote_booking` | RPC `quote_booking` (JWT) | ✅ no ar (01/10/2026). Total exato da reserva sem criá-la (§5.1) |
-| `create_booking` | Edge `create-booking` (JWT) | ✅ no ar. Segura a vaga (`status=pending`) |
+| `create_booking` | Edge `create-booking` (JWT) | ✅ no ar. Segura a vaga (`status=pending`). `channel` (`whatsapp-bot`/`webchat-bot`) vira `booking.origin` só com chave de agente da Movepark; sem ela, `origin = mcp` |
 | `set_booking_customer` | update em `booking` (RLS) | ✅ no ar. `customer_tax_id`, `customer_phone`, `customer_email`, nomes |
 | `add_vehicle` | insert em `vehicle` (RLS) | ✅ no ar. Cadastra pela placa, devolve `vehicle_id` |
 | `set_booking_vehicle` | update em `booking` (RLS) | ✅ no ar |
 | `list_my_bookings` / `get_booking` | query `booking` (RLS) + `my_booking_notifications` | ✅ no ar. Cada reserva traz `last_notification` (§5.2) |
 | `get_booking_status` | `booking` + `payment` (RLS) | ✅ no ar. Evita o agente dar poll em tabela crua |
-| `cancel_booking` | Edge `cancel-booking` (JWT) | ✅ no ar |
+| `cancel_booking` | Edge `cancel-booking` (JWT) | ✅ no ar. Pendente sem pagamento vira `expired` (abandono) e a resposta diz `expired`, sem aviso de cancelamento |
 | `accept_terms` | Edge `accept-terms` (JWT) | F3 (ressalva jurídica, §8) |
 | `lookup_plate` | Edge `lookup-vehicle-plate` (JWT) | F3 (API externa paga, rate limit próprio) |
 
@@ -223,7 +223,15 @@ no fim: o total é, por construção, o que a reserva gravaria, e as recusas (se
 antecedência) saem com as mesmas mensagens. Não segura a vaga e não deixa rastro (nenhum trigger da
 reserva chama rede de forma síncrona). Exige sessão, porque cupom tem limite por usuário. O que ainda
 pode mudar depois é só o que o cliente escolhe no checkout: adicionais no passo 3 e juros do cartão
-parcelado acima de 3x. Migration `20261128110000`; pgTAP `quote_booking.test.sql`. Validado em
+parcelado acima de 3x. Migration `20261128110000`; pgTAP `quote_booking.test.sql`.
+
+**Sem conta, para agente confiável.** Sem `Authorization`, mas com a chave de agente da Movepark
+(`X-API-Key`, `company_id is null`), a tool cota sem usuário (`quote_booking_for_agent`, só
+`service_role`, que confere a chave de novo). Motivo: o agente abria sessão só para responder
+"quanto custa?", e `assert_verified_identity` cria conta para telefone novo; uma pergunta de preço não
+pode criar cliente. Cupom fica de fora sem sessão (o limite por cliente não tem contra quem medir):
+"Cotação com cupom exige login do cliente." Sem cupom, o total é idêntico ao da cotação com sessão.
+Migration `20261128120000`. Validado em
 produção em 01/10/2026 (Agência Fera: R$ 81,00 na Básica, R$ 93,90 na Flex).
 
 ### 5.2 Último aviso (`last_notification`)

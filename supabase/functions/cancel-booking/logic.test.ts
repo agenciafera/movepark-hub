@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  desfechoDoCancelamento,
   freeCancelDeadline,
   parseCancelInput,
   refundDecision,
@@ -145,4 +146,13 @@ Deno.test("parseCancelInput: exige booking_code; normaliza reason", () => {
     bookingCode: "MP-2",
     reason: "desisti",
   });
+});
+
+// Regressão (01/10/2026, MP-FD5240): pendente sem pagamento cancelada pelo agente virou `expired`
+// no banco, mas a Edge respondeu `cancelled`, gravou "→ cancelled" e mandou e-mail de cancelamento.
+Deno.test("desfechoDoCancelamento: abandono não é cancelamento e não avisa o cliente", () => {
+  assertEquals(desfechoDoCancelamento("expired"), { status: "expired", avisarCliente: false });
+  assertEquals(desfechoDoCancelamento("cancelled"), { status: "cancelled", avisarCliente: true });
+  // leitura falhou: segue o comportamento antigo, que é o do caso pago
+  assertEquals(desfechoDoCancelamento(null), { status: "cancelled", avisarCliente: true });
 });

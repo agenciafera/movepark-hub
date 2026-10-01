@@ -126,8 +126,19 @@ export const CUSTOMER_AUTH_TOOLS: ToolDef[] = [
 // Monta o corpo do POST /create-booking a partir dos argumentos da tool. Puro (testável).
 // Não manda idempotency_key: a dedup do consumidor é DERIVADA no servidor em create_booking_atomic
 // (profile + vaga + datas), porque um modelo não inventa chave estável entre duas mensagens.
-// origin: "mcp" marca a procedência da reserva feita pelo agente.
-export function buildCreateBookingBody(a: Record<string, unknown>): Record<string, unknown> {
+// origin: "mcp" marca a procedência da reserva feita pelo agente. O agente da Movepark (chave de
+// agente confiável) pode dizer o canal, para separar a venda dele em relatório; sem a chave o canal
+// é ignorado, senão qualquer agente se passaria pelo nosso.
+export const AGENT_CHANNELS = ["whatsapp-bot", "webchat-bot"] as const;
+
+export function bookingOrigin(channel: unknown, agenteConfiavel: boolean): string {
+  return agenteConfiavel && (AGENT_CHANNELS as readonly unknown[]).includes(channel) ? (channel as string) : "mcp";
+}
+
+export function buildCreateBookingBody(
+  a: Record<string, unknown>,
+  agenteConfiavel = false,
+): Record<string, unknown> {
   return {
     location_parking_type_id: a.location_parking_type_id,
     check_in_at: a.check_in_at,
@@ -137,7 +148,7 @@ export function buildCreateBookingBody(a: Record<string, unknown>): Record<strin
     coupon_code: a.coupon_code ?? null,
     passenger_count: a.passenger_count ?? null,
     has_pcd: a.has_pcd ?? false,
-    origin: "mcp",
+    origin: bookingOrigin(a.channel, agenteConfiavel),
   };
 }
 
@@ -160,6 +171,11 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
         coupon_code: { type: "string", description: "Cupom (opcional)" },
         passenger_count: { type: "integer", description: "Nº de passageiros (opcional)" },
         has_pcd: { type: "boolean", description: "Vaga PCD (opcional)" },
+        channel: {
+          type: "string",
+          enum: [...AGENT_CHANNELS],
+          description: "Canal do agente da Movepark (só vale com chave de agente confiável; sem ela a reserva fica como mcp)",
+        },
       },
       ["location_parking_type_id", "check_in_at", "check_out_at"],
     ),
@@ -168,7 +184,7 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
     // Mesmo motor da reserva, desfeito no fim: o total é o que create_booking gravaria.
     name: "quote_booking",
     description:
-      "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado.",
+      "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado. Com chave de agente confiável, cota sem login (sem cupom).",
     inputSchema: obj(
       {
         location_parking_type_id: { type: "string", description: "id do tipo de vaga (location_parking_type)" },

@@ -13,7 +13,7 @@
 -- Ver docs/specs/customer/agent-booking.md §5.1.
 
 begin;
-select plan(10);
+select plan(15);
 
 insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at)
 values ('00000000-0000-4000-8000-0000000000b1', '00000000-0000-0000-0000-000000000000',
@@ -117,6 +117,47 @@ select is(
      array[(select r ->> 'code' from _b), current_setting('test.alheia')])),
   1,
   'my_booking_notifications só devolve aviso de reserva do próprio usuário'
+);
+
+-- ── 6. Cotação sem conta, para agente confiável ─────────────────────────────
+
+reset role;
+insert into public.api_key (id, company_id, name, key_prefix, key_hash, environment, scopes)
+values ('00000000-0000-4000-8000-0000000000b2', null, 'pgtap-quote-bot', 'mp_test_pgtapqb2',
+        repeat('d', 64), 'test', array['identity:assert']);
+select set_config('test.n_antes', (select count(*)::text from public.booking), true);
+
+select is(
+  (select (public.quote_booking_for_agent('00000000-0000-4000-8000-0000000000b2',
+     current_setting('test.lpt')::uuid, current_setting('test.in')::timestamptz,
+     current_setting('test.out')::timestamptz) ->> 'total_amount')::numeric),
+  (select (basica ->> 'total_amount')::numeric from _q),
+  'sem conta: mesmo total da cotação com sessão (sem cupom)'
+);
+
+select is((select count(*)::text from public.booking), current_setting('test.n_antes'),
+  'sem conta: a cotação não deixa reserva');
+
+select throws_ok(
+  format($$ select public.quote_booking_for_agent(%L::uuid, %L::uuid, %L::timestamptz, %L::timestamptz) $$,
+         gen_random_uuid(), current_setting('test.lpt'), current_setting('test.in'), current_setting('test.out')),
+  '42501', null,
+  'id que não é chave da Movepark é recusado'
+);
+
+update public.api_key set revoked_at = now() where id = '00000000-0000-4000-8000-0000000000b2';
+select throws_ok(
+  format($$ select public.quote_booking_for_agent('00000000-0000-4000-8000-0000000000b2', %L::uuid, %L::timestamptz, %L::timestamptz) $$,
+         current_setting('test.lpt'), current_setting('test.in'), current_setting('test.out')),
+  '42501', null,
+  'chave revogada é recusada'
+);
+
+select is_empty(
+  $$ select grantee from information_schema.role_routine_grants
+      where routine_name in ('quote_booking_for_agent', '_quote_booking')
+        and grantee in ('anon', 'authenticated', 'PUBLIC') $$,
+  'só service_role executa a cotação sem conta'
 );
 
 select * from finish();

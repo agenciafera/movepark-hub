@@ -85,3 +85,19 @@ export function parseCancelInput(body: unknown): { input: CancelInput | null; er
   const reason = typeof b.reason === "string" && b.reason.trim() ? b.reason.trim() : null;
   return { input: { bookingCode: code, reason } };
 }
+
+/**
+ * O que a Edge diz e avisa depois de encerrar a reserva, a partir do status que FICOU no banco.
+ *
+ * `cancel_booking_with_release` decide pelo dinheiro, não pelo pedido: reserva pendente sem nenhum
+ * pagamento comprometido vira `expired` (carrinho abandonado, booking-flow.md), e só a que teve
+ * dinheiro envolvido vira `cancelled`. A Edge respondia `cancelled`, gravava "→ cancelled" no
+ * histórico e mandava o e-mail de reserva cancelada nos dois casos.
+ */
+export function desfechoDoCancelamento(statusFinal: string | null | undefined): {
+  status: string;
+  avisarCliente: boolean;
+} {
+  const status = statusFinal ?? "cancelled";
+  return { status, avisarCliente: status === "cancelled" };
+}

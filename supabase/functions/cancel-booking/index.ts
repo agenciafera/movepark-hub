@@ -10,7 +10,8 @@
 // POST /functions/v1/cancel-booking
 // Authorization: Bearer <JWT>
 // { "booking_code": "MP-XXXX", "reason"?: "..." }
-// → { status: "cancelled", refunded: boolean, refund_pending: boolean, refund_manual: boolean }
+// → { status: "cancelled" | "expired", refunded: boolean, refund_pending: boolean, refund_manual: boolean }
+//   `expired` quando a reserva era pendente sem nenhum pagamento (abandono, booking-flow.md): sem aviso.
 //
 // Estorno (E0.3.5): sai 100% do master quando a cobrança foi com split, e a perna do parceiro vira
 // dívida no razão. Recusa DEFINITIVA do gateway (prazo vencido, sem saldo) não aborta mais: a
@@ -26,7 +27,7 @@ import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { sweepDebtEmails } from "../_shared/debt-email.ts";
 import { cancellationRefund, sendBookingCancellationEmail } from "../_shared/booking-cancellation.ts";
 import { notifyBooking } from "../_shared/notify.ts";
-import { parseCancelInput, refundDecision, type Actor } from "./logic.ts";
+import { desfechoDoCancelamento, parseCancelInput, refundDecision, type Actor } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -275,19 +276,24 @@ Deno.serve(async (req: Request) => {
   });
   if (rpcErr) return jsonResponse({ error: rpcErr.message }, 500);
 
+  // O status que ficou: pendente sem dinheiro envolvido vira `expired` (abandono), não `cancelled`.
+  const { data: depois } = await admin.from("booking").select("status").eq("id", booking.id).maybeSingle();
+  const desfecho = desfechoDoCancelamento((depois as { status?: string } | null)?.status);
+
   // Estorno pago pelo master vira dívida do parceiro: avisa na hora (a varredura do cron cobre o
   // resto). Best-effort.
   if (refunded && absorvidoPeloMaster) await sweepDebtEmails(admin);
 
-  // O cliente fica sabendo do cancelamento e do que acontece com o dinheiro (best-effort).
-  await sendBookingCancellationEmail(admin, booking.id, {
+  // O cliente fica sabendo do cancelamento e do que acontece com o dinheiro (best-effort). Abandono
+  // (`expired`) não é cancelamento: não manda aviso de reserva cancelada.
+  if (desfecho.avisarCliente) await sendBookingCancellationEmail(admin, booking.id, {
     refund: cancellationRefund({ refunded, refundPending, refundManual }),
     amount: refunded || refundManual ? Number(payment?.amount ?? 0) || null : null,
     method: payment?.method === "card" ? "card" : payment?.method === "pix" ? "pix" : null,
     reason: input.reason ?? null,
   });
   // WhatsApp do cancelamento para quem tem o benefício (o e-mail acima é o canal de todos).
-  await notifyBooking(admin, {
+  if (desfecho.avisarCliente) await notifyBooking(admin, {
     bookingId: booking.id,
     event: "cancelled",
     whatsappParams: (c) => [c.name ?? "cliente", booking.code],
@@ -300,7 +306,7 @@ Deno.serve(async (req: Request) => {
       p_type: "cancel",
       p_actor_id: userId,
       p_actor_role: actor,
-      p_changes: { status: { from: booking.status, to: "cancelled" } },
+      p_changes: { status: { from: booking.status, to: desfecho.status } },
       p_amount_delta_cents: refunded && payment ? -Math.round(Number(payment.amount) * 100) : null,
       p_reason: input.reason ?? null,
     })
@@ -312,7 +318,7 @@ Deno.serve(async (req: Request) => {
   // wl_delivery → Edge wl-deliver (E2.5.2). Nada inline aqui.
 
   return jsonResponse({
-    status: "cancelled",
+    status: desfecho.status,
     refunded,
     refund_pending: refundPending,
     refund_manual: refundManual,

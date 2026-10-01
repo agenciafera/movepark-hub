@@ -89,6 +89,9 @@ no_show ──────→ (terminal, sem transições)
 > encerrado (pelo cron ou por cancelamento) vira **`expired`**. Um `pending` que já tem pagamento
 > `paid`/`authorized`/cartão em voo (a janela entre pagar e o webhook confirmar) vira **`cancelled`**:
 > tem estorno a fazer, não é abandono. Detalhe na seção **Abandono vs cancelamento**.
+> A Edge `cancel-booking` responde o status que ficou (`expired` ou `cancelled`), grava esse status no
+> histórico e só manda o aviso de reserva cancelada (e-mail e WhatsApp) quando ele é `cancelled`. Até
+> 01/10/2026 ela respondia `cancelled` e avisava o cliente também no abandono (MP-FD5240).
 
 > **Guarda de transição server-authoritative (trigger, migration `20260915000000`).** A criação e a
 > transição de status são impostas no banco, não só na UI. O trigger `booking_guard_status_transition`
