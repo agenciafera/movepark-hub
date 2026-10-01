@@ -246,7 +246,7 @@ o filtro do handler, o teste mostra o que volta a vazar.
 | `upsert_blog_post` | `blog:write` | Cria o post, ou atualiza o que já tem o mesmo slug |
 | `publish_blog_post` | `blog:write` | Publica ou despublica |
 | `delete_blog_post` | `blog:write` | Soft delete |
-| `get_wl_mapping` | `wl:read` | Unidades de checkout externo com domínio, slugs e diárias mínimas do WL |
+| `get_wl_mapping` | `wl:read` | Unidades de checkout externo com domínio, slugs e diárias mínimas do WL. Cada item traz `checkout_mode`; `include_hub: true` inclui as unidades `hub` que ainda têm WL, para consultar reserva feita lá antes da virada (01/10/2026) |
 
 Os handlers do blog são os mesmos da rota interna da API v1: `_shared/blog-write.ts`. Uma regra, duas
 superfícies, porque duplicar a validação entre elas é drift garantido.
