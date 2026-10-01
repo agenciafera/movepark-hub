@@ -45,6 +45,28 @@ export function otpVerifyParams(
   return { email: id, token, type: "email" };
 }
 
+/**
+ * Telefone afirmado pelo chamador confiável, no formato do `auth.users`: só dígitos, sem `+`.
+ *
+ * Aceita `+5541988149449` e `5541988149449`. Número do Brasil exige DDD e o nono dígito
+ * (13 dígitos, `55 DD 9XXXXXXXX`): sem ele o GoTrue trataria como outro telefone e criaria uma
+ * conta duplicada para a mesma pessoa. Fora do Brasil vale E.164 genérico (8 a 15 dígitos).
+ * Lança em formato inválido.
+ */
+export function normalizeAssertedPhone(v: unknown): string {
+  const bruto = typeof v === "string" ? v.trim() : "";
+  if (!/^\+?[\d\s().-]+$/.test(bruto)) throw new Error("Telefone inválido. Use E.164, ex.: 5541988149449.");
+  const d = bruto.replace(/\D/g, "");
+  if (d.startsWith("55")) {
+    if (!/^55[1-9]\d9\d{8}$/.test(d)) {
+      throw new Error("Telefone do Brasil precisa de DDD e do nono dígito, ex.: 5541988149449.");
+    }
+    return d;
+  }
+  if (!/^[1-9]\d{7,14}$/.test(d)) throw new Error("Telefone inválido. Use E.164, ex.: 5541988149449.");
+  return d;
+}
+
 const obj = (properties: Record<string, unknown>, required: string[] = []) => ({
   type: "object" as const,
   properties,
@@ -85,6 +107,19 @@ export const CUSTOMER_AUTH_TOOLS: ToolDef[] = [
     description:
       "Diz se há usuário autenticado no token atual e devolve id/e-mail/telefone. Não exige argumentos.",
     inputSchema: obj({}),
+  },
+  {
+    // Chamador confiável: exige chave mp_ com `identity:assert` (header X-API-Key). Cria sessão
+    // sem OTP, então é privilégio do bot da Movepark, que recebe o telefone já verificado pela
+    // Meta. Sem a chave a tool nem aparece no tools/list. Ver agent-booking.md §4.
+    name: "assert_verified_identity",
+    scope: "identity:assert",
+    description:
+      "Entra como o dono de um telefone que o canal (WhatsApp) já verificou, sem código. Cria a conta se o telefone ainda não tiver uma. Devolve access_token e refresh_token, como verify_login_otp. Exige chave de agente confiável.",
+    inputSchema: obj(
+      { phone: { type: "string", description: "Telefone verificado pelo canal, E.164 com ou sem +, ex.: 5541988149449" } },
+      ["phone"],
+    ),
   },
 ];
 

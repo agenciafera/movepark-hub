@@ -84,7 +84,7 @@ O supabase-js só embrulha os endpoints REST do GoTrue (`/auth/v1/otp`, `/auth/v
 | `request_login_otp({ identifier, channel })` | Dispara OTP por WhatsApp ou e-mail (`signInWithOtp`) | ✅ no ar |
 | `verify_login_otp({ identifier, channel, code })` | Troca o código por `access_token` + `refresh_token` (`verifyOtp`) | ✅ no ar |
 | `whoami()` | Retorna o usuário do JWT corrente, ou não autenticado | ✅ no ar |
-| `assert_verified_identity({ channel, identifier })` | Chamador confiável (chave `mp_` + escopo `identity:assert`) afirma identidade verificada pelo canal, sem OTP | adiada |
+| `assert_verified_identity({ phone })` | Chamador confiável (chave `mp_` + escopo `identity:assert`) afirma telefone verificado pelo canal, sem OTP | ✅ no ar (01/10/2026) |
 
 `channel` ∈ `whatsapp` (verifica com `type: "sms"`) ou `email`. `verify_login_otp` devolve os tokens
 para o agente agir em nome do usuário; o usuário consentiu ao passar o código.
@@ -110,11 +110,57 @@ Proteção contra abuso de OTP (mensagem tem custo), em duas camadas:
   como defesa: o `otp_request_allowed` fecha por identificador, que o atacante não pode rotacionar
   de graça.
 
-**`assert_verified_identity` foi adiada de propósito.** É a capacidade mais poderosa do desenho (cria
-sessão sem OTP) e só tem uso junto do bot de WhatsApp, que ainda não existe. Exige escopo novo
-`identity:assert` no catálogo `api_scope` e verificação de chave `mp_` na superfície `/customer`. Será
-construída junto da integração do bot, não antes: uma tool que mina sessão de qualquer telefone não
-deve existir sem consumidor.
+### 4.1 Identidade afirmada (`assert_verified_identity`)
+
+É a capacidade mais poderosa do desenho (cria sessão sem OTP). Ficou adiada até existir o consumidor,
+e entrou em 01/10/2026 junto da Mia (agente de WhatsApp da Movepark, no BeastBots), que fala com o
+cliente por um número que a Meta já verificou.
+
+**Quem pode chamar.** Só chave `mp_` da Movepark (`company_id is null`) com o escopo
+`identity:assert`, mandada no header `X-API-Key` para `mcp.movepark.co/customer` (o path declarado:
+na raiz, sem JWT, a resolução cai no perfil público). O escopo é de plataforma (`is_platform_scope`):
+chave de empresa não o carrega, e só `hub_admin` o coloca numa chave. Sem a chave a tool nem aparece
+no `tools/list`. Concedido à chave `Movepark-MIA` (live) em 01/10/2026.
+
+**Como a sessão nasce.** O GoTrue não cria sessão de telefone sem OTP, então o caminho é o próprio
+OTP, sem que ele saia do servidor:
+
+1. a tool abre uma afirmação pendente (`identity_assertion_begin`, tabela `identity_assertion`,
+   telefone em SHA-256, prazo de 30 s);
+2. pede o OTP ao GoTrue (`signInWithOtp`, `shouldCreateUser: true`);
+3. o GoTrue chama o Send SMS Hook (`send-whatsapp-otp`), que acha a afirmação aberta
+   (`identity_assertion_capture`), guarda o código e **não** manda a mensagem;
+4. a tool lê o código uma vez (`identity_assertion_take`, que o apaga) e troca por sessão
+   (`verifyOtp`).
+
+Tudo cabe numa requisição, porque o hook roda dentro do `signInWithOtp`. Se o hook não achar
+afirmação (OTP comum de login), ele envia normalmente; se a consulta falhar, também envia (o login
+comum nunca depende disto).
+
+**Decisões de produto (Kallef, 01/10/2026):**
+- Telefone sem conta: **cria a conta**, como o `request_login_otp` já faz. A conta nasce só com o
+  telefone; o e-mail entra no checkout como dica (ADR-006), sem virar login.
+- Telefone que já é login de uma conta com e-mail: **entra nessa conta**. Risco aceito: número
+  reciclado pela operadora dá acesso à conta, o mesmo risco do login por OTP de WhatsApp.
+
+**Contrato.** Entrada `{ phone }`, E.164 com ou sem `+`. Número do Brasil exige DDD e o nono dígito
+(`55 DD 9XXXXXXXX`, 13 dígitos), senão o GoTrue veria outro telefone e criaria conta duplicada
+(`normalizeAssertedPhone`). Saída igual à do `verify_login_otp`: `access_token` (1 h),
+`refresh_token`, `expires_at`, `token_type` e `user: { id, new_account }`.
+
+**Limites.** O GoTrue recusa um segundo código para o mesmo número em ~60 s, então quem afirma deve
+guardar a sessão por conversa e renovar pelo `refresh_token`, e só afirmar de novo quando ela cair.
+Freio no banco: 10 afirmações por telefone e 300 por chave, por hora; a recusa é registrada.
+
+**Trilha.** `identity_assertion` guarda chave, hash do telefone, IP, status, conta resultante, se a
+conta é nova e o erro. RLS sem policy (só as RPCs `service_role`). O código só existe entre o hook e
+a leitura; o cron `prune-identity-assertion` apaga código esquecido e a trilha com mais de 180 dias.
+Migration `20261128100000_identity_assert.sql`; pgTAP `identity_assertion.test.sql`.
+
+**Validado em produção (01/10/2026)** com chave temporária e a conta de teste `peu+teste1@fera.ag`
+(telefone verificado e e-mail): sem chave a tool é recusada; com chave a sessão sai na conta
+existente (`new_account: false`), o código foi capturado e nenhuma mensagem foi enviada; a
+repetição imediata bateu no freio de 60 s do GoTrue. Sessão encerrada e chave revogada no fim.
 
 ---
 
@@ -270,7 +316,7 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
 - **Pré-requisito de segurança** - ✅ no ar. Telefone do checkout deixou de virar credencial.
 - **F1 - Autenticação de consumidor no MCP** - ✅ no ar (caminho OTP). Superfície `/customer` com
   descoberta + `request_login_otp`/`verify_login_otp`/`whoami`, rate limit por IP na borda.
-  `assert_verified_identity` (chamador confiável) adiada para junto do bot (§4).
+  `assert_verified_identity` (chamador confiável) no ar desde 01/10/2026 (§4.1).
 - **F2 - Tools transacionais** - ✅ no ar (§5). `create_booking`, `set_booking_customer`, `add_vehicle`,
   `set_booking_vehicle`, `list_my_bookings`, `get_booking`, `get_booking_status`, `cancel_booking`, sob
   JWT + RLS.

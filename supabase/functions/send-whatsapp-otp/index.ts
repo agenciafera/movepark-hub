@@ -16,12 +16,17 @@
 //
 // A função verifica a assinatura, monta a chamada de template OTP da
 // WhatsApp Business Cloud API (Meta) e devolve 200.
+//
+// Exceção: se o telefone tem uma afirmação de identidade aberta (tool MCP
+// `assert_verified_identity`, chamador confiável), o código é guardado no banco
+// para a tool e nenhuma mensagem sai. Ver docs/specs/customer/agent-booking.md §4.
 
 import {
   buildTemplateComponents,
   extractOtp,
   type OtpPayload,
   parseSecret,
+  sha256Hex,
   timestampWithinWindow,
   verifyStandardWebhook,
 } from "./webhook.ts";
@@ -38,6 +43,27 @@ function jsonError(status: number, message: string) {
     status,
     headers: { ...CORS_HEADERS, "content-type": "application/json" },
   });
+}
+
+async function capturadoPorAfirmacao(phone: string, otp: string): Promise<boolean> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return false;
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/identity_assertion_capture`, {
+      method: "POST",
+      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_phone_hash: await sha256Hex(phone), p_otp: otp }),
+    });
+    if (!res.ok) {
+      console.error("identity_assertion_capture falhou:", res.status, await res.text());
+      return false;
+    }
+    return (await res.json()) === true;
+  } catch (err) {
+    console.error("identity_assertion_capture falhou:", err);
+    return false;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -98,6 +124,17 @@ Deno.serve(async (req) => {
   const parsed = extractOtp(payload);
   if (!parsed) return jsonError(400, "phone/otp ausentes no payload");
   const { phone, otp } = parsed;
+
+  // Identidade afirmada por chamador confiável (mcp `assert_verified_identity`):
+  // se este telefone tem afirmação aberta, o código fica guardado para a tool e
+  // a mensagem NÃO sai. Falha aqui não bloqueia o login comum: o código é
+  // enviado normalmente e a afirmação, sem código, termina em erro.
+  if (await capturadoPorAfirmacao(phone, otp)) {
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...CORS_HEADERS, "content-type": "application/json" },
+    });
+  }
 
   const components = buildTemplateComponents(otp, includeOtpButton);
 

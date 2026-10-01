@@ -107,3 +107,14 @@ export function buildTemplateComponents(
   }
   return components;
 }
+
+/**
+ * SHA-256 hex (minúsculo) do telefone já normalizado (só dígitos). Casa com o
+ * `sha256Hex` da Edge `mcp`, que grava o hash na abertura da afirmação.
+ */
+export async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}

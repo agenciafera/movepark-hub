@@ -20,7 +20,7 @@
       "type": "mcp",
       "description": "MCP do Movepark (consumidor autenticado): descoberta + login por OTP (WhatsApp/e-mail) para reservar em nome do usuário final. Endpoint: https://mcp.movepark.co/customer",
       "url": "https://movepark.co/.well-known/mcp/customer-card.json",
-      "sha256": "0d8cfaa2664b8ea030941166b790f96ccc366e4c320cededce035929a9f4d05f"
+      "sha256": "272ba1a5d89fb2d024cbb9e2b89ed6dbdcd0f1a46e7d207ab8c7fa8cd2347c57"
     }
   ]
 }

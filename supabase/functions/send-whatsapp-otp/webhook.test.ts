@@ -5,6 +5,7 @@ import {
   bytesToB64,
   extractOtp,
   parseSecret,
+  sha256Hex,
   signStandardWebhook,
   timestampWithinWindow,
   verifyStandardWebhook,
@@ -72,4 +73,14 @@ Deno.test("buildTemplateComponents: body sempre; botão url só quando habilitad
   const comBotao = buildTemplateComponents("123456", true);
   assertEquals(comBotao.length, 2);
   assertEquals(comBotao[1].type, "button");
+});
+
+// O hook acha a afirmação de identidade pelo hash do telefone que a Edge `mcp`
+// gravou. Se os dois hashes divergirem, a afirmação nunca captura o código e o
+// cliente recebe um OTP que não pediu.
+Deno.test("sha256Hex do hook casa com o da Edge mcp (afirmação de identidade)", async () => {
+  const { sha256Hex: doMcp } = await import("../mcp/auth.ts");
+  const tel = extractOtp({ user: { phone: "+55 41 98814-9449" }, sms: { otp: "123456" } })!.phone;
+  assertEquals(tel, "5541988149449");
+  assertEquals(await sha256Hex(tel), await doMcp("5541988149449"));
 });

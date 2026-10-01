@@ -107,6 +107,7 @@ não conta na invariante "o Dono tem todos", que vale sobre o catálogo de empre
 | Escopo | Atribuível a chave | Para quê |
 |---|---|---|
 | `checkout:link` | ✔ | Tool que gera link de checkout, concedida só à chave do bot interno |
+| `identity:assert` | ✔ | Tool que afirma telefone já verificado pelo WhatsApp e devolve a sessão do cliente sem OTP, concedida só à chave do bot interno |
 | `fares:write` | – | Editar plano de cancelamento (Básica/Flex/Superflex) por tipo de vaga |
 | `blog:write` | ✔ | Criar, publicar e excluir post pelas rotas internas do blog |
 | `wl:read` | ✔ | Ler o mapeamento unidade → slug do white-label, para o agente de WhatsApp |

@@ -242,7 +242,23 @@ Deno.test("listTools customer = descoberta + login + reserva, sem chave de agent
   }
   // sem chave de agente confiável, gerar link não aparece (session fixation, §9 item 6)
   assertEquals(names.includes("create_checkout_link"), false);
-  assertEquals(listTools("customer", []).length, CUSTOMER_TOOLS.length - 1);
+  assertEquals(names.includes("assert_verified_identity"), false);
+  assertEquals(listTools("customer", []).length, CUSTOMER_TOOLS.length - 2);
+});
+
+Deno.test("assert_verified_identity só aparece/roda com identity:assert", () => {
+  const semChave = listTools("customer", []).map((t) => t.name);
+  const soLink = listTools("customer", ["checkout:link"]).map((t) => t.name);
+  const comChave = listTools("customer", ["identity:assert"]).map((t) => t.name);
+  assertEquals(semChave.includes("assert_verified_identity"), false);
+  // o escopo de gerar link não abre a de afirmar identidade
+  assertEquals(soLink.includes("assert_verified_identity"), false);
+  assertEquals(comChave.includes("assert_verified_identity"), true);
+  assertEquals(isToolCallable("customer", "assert_verified_identity", []), false);
+  assertEquals(isToolCallable("customer", "assert_verified_identity", ["checkout:link"]), false);
+  assertEquals(isToolCallable("customer", "assert_verified_identity", ["identity:assert"]), true);
+  // não existe fora do customer
+  assertEquals(isToolCallable("public", "assert_verified_identity", ["identity:assert"]), false);
 });
 
 Deno.test("create_checkout_link só aparece/roda com a chave de agente confiável", () => {
@@ -270,10 +286,10 @@ Deno.test("isToolCallable é consistente com listTools no customer", () => {
   }
 });
 
-Deno.test("no customer só a de gerar link tem scope; o resto é gateado por JWT + RLS", () => {
+Deno.test("no customer só gerar link e afirmar identidade têm scope; o resto é JWT + RLS", () => {
   assertEquals(
-    CUSTOMER_TOOLS.filter((t) => t.scope).map((t) => t.name),
-    ["create_checkout_link"],
+    CUSTOMER_TOOLS.filter((t) => t.scope).map((t) => t.name).sort(),
+    ["assert_verified_identity", "create_checkout_link"],
   );
 });
 

@@ -6,7 +6,7 @@
   "contact": "contato@movepark.co",
   "authentication": {
     "type": "user-otp",
-    "note": "Login passwordless: request_login_otp dispara o código, verify_login_otp devolve a sessão. As tools de reserva recebem Authorization: Bearer <access_token>. Gerar link de checkout exige, além disso, chave de agente confiável (X-API-Key: mp_...) com o escopo checkout:link."
+    "note": "Login passwordless: request_login_otp dispara o código, verify_login_otp devolve a sessão. As tools de reserva recebem Authorization: Bearer <access_token>. Gerar link de checkout exige, além disso, chave de agente confiável (X-API-Key: mp_...) com o escopo checkout:link. Afirmar identidade sem OTP (assert_verified_identity) exige chave de agente confiável com o escopo identity:assert."
   },
   "tools": [
     {
@@ -281,6 +281,24 @@
         "required": [],
         "additionalProperties": false
       }
+    },
+    {
+      "name": "assert_verified_identity",
+      "description": "Entra como o dono de um telefone que o canal (WhatsApp) já verificou, sem código. Cria a conta se o telefone ainda não tiver uma. Devolve access_token e refresh_token, como verify_login_otp. Exige chave de agente confiável.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Telefone verificado pelo canal, E.164 com ou sem +, ex.: 5541988149449"
+          }
+        },
+        "required": [
+          "phone"
+        ],
+        "additionalProperties": false
+      },
+      "scope": "identity:assert"
     },
     {
       "name": "create_booking",

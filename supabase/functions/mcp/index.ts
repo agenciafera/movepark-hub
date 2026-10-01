@@ -40,7 +40,13 @@ import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog
 import { callRead, READ_TOOL_NAMES } from "../_shared/assistant-tools.ts";
 import { hasValidCheckDigits } from "../_shared/payments/documents.ts";
 import { isValidPhoneBr } from "../_shared/payments/contact.ts";
-import { buildCreateBookingBody, CUSTOMER_TXN_NAMES, otpRequestParams, otpVerifyParams } from "./customer.logic.ts";
+import {
+  buildCreateBookingBody,
+  CUSTOMER_TXN_NAMES,
+  normalizeAssertedPhone,
+  otpRequestParams,
+  otpVerifyParams,
+} from "./customer.logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 
 const CORS = {
@@ -90,6 +96,8 @@ export interface Deps {
     partner: PartnerCtx | null;
     authorization: string | null;
     ip: string | null;
+    /** Chave `mp_` aceita no `X-API-Key` do consumidor (o agente), para auditoria. */
+    apiKeyId: string | null;
   }) => Promise<unknown>;
   /** Grava a linha de auditoria. Não pode lançar nem bloquear a resposta. */
   auditar: (linha: ApiLogRow) => void;
@@ -262,6 +270,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           partner,
           authorization: req.headers.get("Authorization"),
           ip: clientIp(req),
+          apiKeyId: resolucao.status === 200 ? resolucao.apiKeyId : null,
         });
         resp = json(rpcResult(id, toolTextContent(data)));
         break;
@@ -405,6 +414,7 @@ async function callCustomer(
   name: string,
   a: Record<string, unknown>,
   ip: string | null,
+  apiKeyId: string | null,
 ): Promise<unknown> {
   if (READ_TOOL_NAMES.has(name)) return callRead(anonClient(), name, a);
 
@@ -456,6 +466,10 @@ async function callCustomer(
         user: { id: data.user?.id ?? null },
       };
     }
+    case "assert_verified_identity":
+      // O gate de escopo (isToolCallable) já exigiu a chave com `identity:assert`.
+      if (!apiKeyId) throw new Error("Chave de agente confiável obrigatória.");
+      return assertVerifiedIdentity(apiKeyId, a.phone, ip);
     case "whoami": {
       if (!authHeader?.startsWith("Bearer ")) return { authenticated: false };
       const { data, error } = await userClient(authHeader).auth.getUser();
@@ -478,6 +492,79 @@ async function callCustomer(
   }
 
   throw new Error(`Tool desconhecida: ${name}`);
+}
+
+/*
+  Identidade afirmada por chamador confiável (agent-booking.md §4).
+
+  O GoTrue não cria sessão de telefone sem OTP. Então a sessão nasce pelo próprio
+  OTP, sem que ele saia do servidor: abre uma afirmação pendente, pede o código,
+  o Send SMS Hook (`send-whatsapp-otp`) acha a afirmação, guarda o código e não
+  manda a mensagem, e aqui o código é lido uma vez e trocado por sessão. O hook
+  roda dentro do `signInWithOtp`, então tudo cabe numa requisição.
+
+  O GoTrue recusa um segundo código para o mesmo número em ~60 s. Quem afirma
+  deve guardar a sessão e renovar pelo refresh_token, não afirmar de novo.
+*/
+async function assertVerifiedIdentity(
+  apiKeyId: string,
+  phoneArg: unknown,
+  ip: string | null,
+): Promise<unknown> {
+  const phone = normalizeAssertedPhone(phoneArg);
+  const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+    auth: { persistSession: false },
+  });
+  const rpc = async <T>(fn: string, args: Record<string, unknown>): Promise<T> => {
+    const { data, error } = await admin.rpc(fn, args);
+    if (error) throw new Error(error.message);
+    return data as T;
+  };
+
+  const inicio = Date.now();
+  const id = await rpc<string | null>("identity_assertion_begin", {
+    p_api_key_id: apiKeyId,
+    p_phone_hash: await sha256Hex(phone),
+    p_ip: ip,
+  });
+  if (!id) throw new Error("Muitas tentativas para este telefone. Espere alguns minutos e tente de novo.");
+
+  const falhar = async (motivo: string, mensagem: string): Promise<never> => {
+    await rpc("identity_assertion_finish", { p_id: id, p_ok: false, p_error: motivo }).catch(() => {});
+    throw new Error(mensagem);
+  };
+
+  const sb = anonClient();
+  const pedido = await sb.auth.signInWithOtp(otpRequestParams("whatsapp", phone));
+  if (pedido.error) {
+    // O caso comum é o freio de 60 s do GoTrue: houve um código para este número há pouco.
+    await falhar(pedido.error.message, `Não foi possível entrar agora: ${pedido.error.message}`);
+  }
+
+  const codigo = await rpc<string | null>("identity_assertion_take", { p_id: id });
+  if (!codigo) await falhar("otp_not_captured", "Não foi possível entrar agora. Tente de novo em um minuto.");
+
+  const { data, error } = await sb.auth.verifyOtp(otpVerifyParams("whatsapp", phone, codigo));
+  const s = data?.session;
+  if (error || !s || !data.user) {
+    await falhar(error?.message ?? "no_session", "Não foi possível entrar agora. Tente de novo em um minuto.");
+  }
+
+  // Conta nova: nasceu durante esta afirmação.
+  const newAccount = Date.parse(data.user!.created_at) >= inicio - 5_000;
+  await rpc("identity_assertion_finish", {
+    p_id: id,
+    p_ok: true,
+    p_profile_id: data.user!.id,
+    p_new_account: newAccount,
+  });
+  return {
+    access_token: s!.access_token,
+    refresh_token: s!.refresh_token,
+    expires_at: s!.expires_at,
+    token_type: s!.token_type,
+    user: { id: data.user!.id, new_account: newAccount },
+  };
 }
 
 // Transacionais do consumidor: reservar em nome do usuário logado. Escrita/leitura direta sob a
@@ -885,13 +972,13 @@ function depsDeProducao(): Deps {
       });
       return (data ?? { ok: false }) as ChaveVerificada;
     },
-    chamarTool: ({ endpoint, nome, args, partner, authorization, ip }) =>
+    chamarTool: ({ endpoint, nome, args, partner, authorization, ip, apiKeyId }) =>
       endpoint === "manager"
         ? callManager(admin, nome, args)
         : endpoint === "partner"
           ? callPartner(admin, partner!, nome, args)
           : endpoint === "customer"
-            ? callCustomer(authorization, nome, args, ip)
+            ? callCustomer(authorization, nome, args, ip, apiKeyId)
             : callPublic(nome, args),
     // Auditoria nunca derruba a request: erro aqui morre no catch de `logRequest`.
     auditar: (linha) => background(logRequest(admin, linha)),

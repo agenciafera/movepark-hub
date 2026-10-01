@@ -18,13 +18,16 @@ const CHAVE_PARCEIRO = "mp_live_parceiro_abcdefghijk";
 const CHAVE_PLATAFORMA = "mp_live_plataforma_abcdefgh";
 const CHAVE_REVOGADA = "mp_live_revogada_abcdefghijk";
 const CHAVE_EXPIRADA = "mp_live_expirada_abcdefghijk";
+const CHAVE_BOT = "mp_live_bot_mia_abcdefghijkl";
 const JWT_USUARIO =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LTEifQ.assinatura";
 
 type Chamada = { endpoint: string; nome: string; args: Record<string, unknown> };
+type Agente = { nome: string; apiKeyId: string | null };
 
 function ambiente() {
   const chamadas: Chamada[] = [];
+  const agentes: Agente[] = [];
   const auditoria: Record<string, unknown>[] = [];
   let relogio = 1000;
 
@@ -41,6 +44,11 @@ function ambiente() {
             ok: true, api_key_id: "k-plataforma", company_id: null,
             scopes: ["blog:write"], environment: "live",
           });
+        case CHAVE_BOT:
+          return Promise.resolve({
+            ok: true, api_key_id: "k-bot", company_id: null,
+            scopes: ["wl:read", "checkout:link", "identity:assert"], environment: "live",
+          });
         case CHAVE_REVOGADA:
           return Promise.resolve({ ok: false, reason: "revoked" });
         case CHAVE_EXPIRADA:
@@ -49,15 +57,16 @@ function ambiente() {
           return Promise.resolve({ ok: false, reason: "invalid_key" });
       }
     },
-    chamarTool: ({ endpoint, nome, args }) => {
+    chamarTool: ({ endpoint, nome, args, apiKeyId }) => {
       chamadas.push({ endpoint, nome, args });
+      agentes.push({ nome, apiKeyId });
       return Promise.resolve({ ok: true });
     },
     auditar: (linha) => auditoria.push(linha as unknown as Record<string, unknown>),
     agora: () => (relogio += 5),
   };
 
-  return { deps, chamadas, auditoria };
+  return { deps, chamadas, auditoria, agentes };
 }
 
 function pedido(
@@ -508,4 +517,50 @@ Deno.test("get_booking do parceiro e do consumidor não se misturam", async () =
       { Authorization: `Bearer ${CHAVE_PARCEIRO}` }), deps);
   const b = await corpo(trocado) as unknown as { error: { message: string } };
   assertEquals(b.error.message.includes("booking_id"), true);
+});
+
+// ── Identidade afirmada (assert_verified_identity) ─────────────────────────
+// Cria sessão sem OTP. Só a chave do bot com `identity:assert` chega a executar,
+// e o handler recebe o id da chave para gravar quem afirmou.
+
+Deno.test("assert_verified_identity: sem a chave do bot não executa", async () => {
+  const { deps, chamadas } = ambiente();
+
+  const cabecalhos: Record<string, string>[] = [
+    {},
+    { Authorization: `Bearer ${JWT_USUARIO}` },
+    // chave de empresa no X-API-Key não vira agente confiável
+    { "X-API-Key": CHAVE_PARCEIRO },
+  ];
+  for (const cab of cabecalhos) {
+    const r = await handle(pedido("/customer", chamar("assert_verified_identity", { phone: "5541988149449" }), cab), deps);
+    const b = await corpo(r) as unknown as { error?: { message: string } };
+    assertEquals(b.error?.message.includes("Tool indisponível"), true);
+  }
+  assertEquals(chamadas, []);
+});
+
+Deno.test("assert_verified_identity: com a chave do bot executa e leva o id da chave", async () => {
+  const { deps, chamadas, agentes } = ambiente();
+
+  const lista = await corpo(await handle(pedido("/customer", listar, { "X-API-Key": CHAVE_BOT }), deps));
+  const nomes = (lista as unknown as { result: { tools: { name: string }[] } }).result.tools.map((t) => t.name);
+  assertEquals(nomes.includes("assert_verified_identity"), true);
+
+  const r = await handle(
+    pedido("/customer", chamar("assert_verified_identity", { phone: "5541988149449" }), { "X-API-Key": CHAVE_BOT }),
+    deps,
+  );
+  assertEquals(r.status, 200);
+  assertEquals(chamadas.at(-1)?.nome, "assert_verified_identity");
+  assertEquals(chamadas.at(-1)?.endpoint, "customer");
+  assertEquals(agentes.at(-1)?.apiKeyId, "k-bot");
+});
+
+Deno.test("assert_verified_identity: telefone é obrigatório", async () => {
+  const { deps, chamadas } = ambiente();
+  const r = await handle(pedido("/customer", chamar("assert_verified_identity", {}), { "X-API-Key": CHAVE_BOT }), deps);
+  const b = await corpo(r) as unknown as { error: { message: string } };
+  assertEquals(b.error.message.includes("phone"), true);
+  assertEquals(chamadas, []);
 });

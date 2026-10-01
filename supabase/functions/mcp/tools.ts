@@ -356,7 +356,8 @@ export function listTools(
   scopes: string[] = [],
 ): Array<Pick<ToolDef, "name" | "description" | "inputSchema">> {
   // Regra única em qualquer superfície: tool sem `scope` é sempre visível; com `scope`, só quando a
-  // chave concede. Público não tem tool com escopo; no consumidor só `create_checkout_link` tem.
+  // chave concede. Público não tem tool com escopo; no consumidor só `create_checkout_link` e
+  // `assert_verified_identity` têm.
   return registry(endpoint)
     .filter((t) => !t.scope || scopes.includes(t.scope))
     .map(({ name, description, inputSchema }) => ({ name, description, inputSchema }));

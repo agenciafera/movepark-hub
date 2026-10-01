@@ -1,5 +1,6 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
+  normalizeAssertedPhone,
   buildCreateBookingBody,
   CUSTOMER_AUTH_TOOLS,
   CUSTOMER_TXN_NAMES,
@@ -63,13 +64,44 @@ Deno.test("otpVerifyParams: código ausente lança", () => {
 
 Deno.test("CUSTOMER_AUTH_TOOLS: nomes esperados e schema fechado", () => {
   assertEquals(CUSTOMER_AUTH_TOOLS.map((t) => t.name).sort(), [
+    "assert_verified_identity",
     "request_login_otp",
     "verify_login_otp",
     "whoami",
   ]);
   for (const t of CUSTOMER_AUTH_TOOLS) {
     assertEquals(t.inputSchema.additionalProperties, false, t.name);
-    assertEquals((t as { scope?: string }).scope, undefined, `${t.name} não tem scope`);
+  }
+});
+
+// Cria sessão sem OTP: só com a chave do bot da Movepark. Sem escopo, qualquer agente do MCP
+// público afirmaria o telefone de outra pessoa e receberia a sessão dela (agent-booking.md §2.1).
+Deno.test("no login, só assert_verified_identity exige escopo, e é identity:assert", () => {
+  assertEquals(
+    CUSTOMER_AUTH_TOOLS.filter((t) => t.scope).map((t) => [t.name, t.scope]),
+    [["assert_verified_identity", "identity:assert"]],
+  );
+});
+
+Deno.test("normalizeAssertedPhone: aceita E.164 com e sem +, devolve só dígitos", () => {
+  assertEquals(normalizeAssertedPhone("5541988149449"), "5541988149449");
+  assertEquals(normalizeAssertedPhone("+5541988149449"), "5541988149449");
+  assertEquals(normalizeAssertedPhone(" +55 (41) 98814-9449 "), "5541988149449");
+  // fora do Brasil: E.164 genérico
+  assertEquals(normalizeAssertedPhone("+351912345678"), "351912345678");
+});
+
+// Sem o nono dígito o GoTrue veria outro telefone e criaria conta duplicada para a mesma pessoa.
+Deno.test("normalizeAssertedPhone: Brasil exige DDD e nono dígito", () => {
+  assertThrows(() => normalizeAssertedPhone("554188149449"), Error, "nono dígito");
+  assertThrows(() => normalizeAssertedPhone("5541388149449"), Error, "nono dígito");
+  assertThrows(() => normalizeAssertedPhone("5501988149449"), Error, "nono dígito");
+  assertThrows(() => normalizeAssertedPhone("55419881494490"), Error, "nono dígito");
+});
+
+Deno.test("normalizeAssertedPhone: lixo, vazio e e-mail lançam", () => {
+  for (const v of ["", "abc", "a@b.com", null, undefined, 5541988149449, "+0123456789", "1234"]) {
+    assertThrows(() => normalizeAssertedPhone(v), Error, "Telefone");
   }
 });
 

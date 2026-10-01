@@ -1213,9 +1213,8 @@ navegador, sem OTP. A fronteira de segurança é o **tipo de credencial**, não 
 usuário do site; chave `mp_` confiável com `identity:assert` = agente externo (WhatsApp). O
 `create_checkout_link` é o único que o usuário do site **não** recebe (é de plataforma).
 
-**Ainda não construído (canal WhatsApp):** `assert_verified_identity` e o escopo `identity:assert` não
-existem no código. É o que falta para o agente de WhatsApp autenticar um número já verificado pela Meta
-sem OTP. Ver o plano em `agent-booking.md`.
+**Canal WhatsApp (atualizado em 01/10/2026):** `assert_verified_identity` e o escopo `identity:assert`
+estão no ar e foram validados em produção (`agent-booking.md` §4.1).
 
 ---
 

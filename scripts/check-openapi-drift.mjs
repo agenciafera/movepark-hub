@@ -253,7 +253,7 @@ const ASSIGNABLE_SCOPES = new Set([
   "bookings:read", "bookings:write", "coupons:read", "coupons:write", "discounts:read",
   "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
   "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
-  "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write", "wl:read",
+  "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write", "wl:read", "identity:assert",
 ]);
 
 // `def(` e `internalRoute(`: escopo de rota interna também conta como usado, senão
@@ -261,7 +261,7 @@ const ASSIGNABLE_SCOPES = new Set([
 const routerScopes = [
   ...router.matchAll(/\b(?:def|internalRoute)\(\s*"[A-Z]+",\s*"[^"]+",\s*\[[^\]]*\],\s*"([^"]+)"/g),
 ].map((m) => m[1]);
-// Escopos declarados em tools.ts E em customer.logic.ts (onde vive `checkout:link`).
+// Escopos declarados em tools.ts E em customer.logic.ts (onde vivem `checkout:link` e `identity:assert`).
 const toolScopes = [toolsSrc, customerSrc].flatMap((src) =>
   [...src.matchAll(/scope:\s*"([^"]+)"/g)].map((m) => m[1]),
 );

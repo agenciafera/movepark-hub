@@ -148,12 +148,15 @@ Edge `chat` consome. O MCP converte com `toMcpToolDef` e roteia por `callRead`; 
 ### Consumidor autenticado (`/customer`)
 
 Terceira superfície, para um agente reservar em nome do usuário final. `serverInfo.name`
-`movepark-customer`; card `customer-card.json`. Sem modelo de escopo (as tools não têm `scope`).
+`movepark-customer`; card `customer-card.json`. Só duas tools têm `scope`, ambas de plataforma e
+verificadas pela chave `mp_` no `X-API-Key`: `create_checkout_link` (`checkout:link`) e
+`assert_verified_identity` (`identity:assert`). As demais são gateadas pelo JWT + RLS do dono.
 
 | Tool | Substrato | Status |
 |---|---|---|
 | descoberta (as 9 do consumidor) | `READ_TOOLS` / `callRead` | ✅ no ar |
 | `request_login_otp` / `verify_login_otp` / `whoami` | GoTrue (`customer.logic.ts`) | ✅ no ar |
+| `assert_verified_identity` | GoTrue + Send SMS Hook (`identity_assertion_*`) | ✅ no ar |
 | `create_booking` / `cancel_booking` | Edges `create-booking` / `cancel-booking` (JWT) | ✅ no ar |
 | `set_booking_customer` / `add_vehicle` / `set_booking_vehicle` | escrita direta (RLS do dono) | ✅ no ar |
 | `list_my_bookings` / `get_booking` / `get_booking_status` | leitura direta (RLS do dono) | ✅ no ar |
@@ -162,7 +165,7 @@ Terceira superfície, para um agente reservar em nome do usuário final. `server
 
 Login por OTP (WhatsApp/e-mail) e handoff de checkout em
 [agent-booking.md](./customer/agent-booking.md). `assert_verified_identity` (chamador confiável, sem
-OTP) fica para a integração do bot.
+OTP) em [agent-booking.md §4.1](./customer/agent-booking.md).
 
 #### Freio de disparo de OTP
 
