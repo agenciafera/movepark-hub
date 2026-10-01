@@ -286,3 +286,17 @@ export function buildQuoteBookingArgs(a: Record<string, unknown>): Record<string
     p_has_pcd: a.has_pcd ?? false,
   };
 }
+
+/** Há um JWT de usuário no `Authorization`? Chave `mp_` não é sessão (o resolvedor nem a deixa chegar aqui). */
+export function temSessao(authHeader: string | null): boolean {
+  const v = (authHeader ?? "").trim();
+  if (!v.toLowerCase().startsWith("bearer ")) return false;
+  const t = v.slice(7).trim();
+  return t.split(".").length === 3 && !t.startsWith("mp_");
+}
+
+/** Erro que vem do token (vencido, assinatura ruim), e não da consulta. */
+export function erroDeSessao(e: unknown): boolean {
+  const m = String((e as { message?: string })?.message ?? e ?? "");
+  return /jwt|token is expired|invalid claim|bad_jwt|PGRST30[0-3]/i.test(m);
+}

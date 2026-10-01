@@ -1,7 +1,9 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   buildQuoteBookingArgs,
+  erroDeSessao,
   normalizeAssertedPhone,
+  temSessao,
   buildCreateBookingBody,
   CUSTOMER_AUTH_TOOLS,
   CUSTOMER_TXN_NAMES,
@@ -224,4 +226,22 @@ Deno.test("quote_booking e create_booking têm o mesmo schema de entrada", () =>
   const c = CUSTOMER_TXN_TOOLS.find((t) => t.name === "create_booking")!;
   assertEquals(q.inputSchema, c.inputSchema);
   assertEquals(q.scope, undefined);
+});
+
+// Leitura do /customer usa a sessão quando ela vem (rascunho visível ao testador).
+Deno.test("temSessao: só JWT de usuário conta como sessão", () => {
+  assertEquals(temSessao("Bearer aaa.bbb.ccc"), true);
+  assertEquals(temSessao("bearer aaa.bbb.ccc"), true);
+  for (const v of [null, "", "Bearer ", "Bearer null", "Bearer mp_live_abc", "Basic x", "aaa.bbb.ccc"]) {
+    assertEquals(temSessao(v), false, String(v));
+  }
+});
+
+// JWT vencido não pode derrubar a descoberta: a leitura volta para o anônimo.
+Deno.test("erroDeSessao: reconhece token ruim e não engole erro de consulta", () => {
+  assertEquals(erroDeSessao(new Error("JWT expired")), true);
+  assertEquals(erroDeSessao(new Error("invalid JWT: unable to parse or verify signature")), true);
+  assertEquals(erroDeSessao({ message: "PGRST301" }), true);
+  assertEquals(erroDeSessao(new Error("relation does not exist")), false);
+  assertEquals(erroDeSessao(new Error("Destino não encontrado")), false);
 });

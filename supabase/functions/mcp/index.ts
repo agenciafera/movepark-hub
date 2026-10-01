@@ -44,8 +44,10 @@ import {
   buildCreateBookingBody,
   buildQuoteBookingArgs,
   CUSTOMER_TXN_NAMES,
+  erroDeSessao,
   normalizeAssertedPhone,
   otpRequestParams,
+  temSessao,
   otpVerifyParams,
 } from "./customer.logic.ts";
 import { siteUrl } from "../_shared/site.ts";
@@ -417,7 +419,25 @@ async function callCustomer(
   ip: string | null,
   apiKeyId: string | null,
 ): Promise<unknown> {
-  if (READ_TOOL_NAMES.has(name)) return callRead(anonClient(), name, a);
+  if (READ_TOOL_NAMES.has(name)) {
+    /*
+      Leitura com a sessão, quando ela vem. A RLS de `location` mostra rascunho a
+      quem é testador (`is_tester()`), e o agente que reserva em nome de um
+      testador precisa enxergar a mesma unidade que vai cotar e reservar: antes,
+      a leitura ia sempre anônima e o rascunho sumia, enquanto `quote_booking` e
+      `create_booking` (que usam a sessão) o aceitavam.
+
+      JWT vencido ou inválido não pode derrubar a descoberta, que funciona sem
+      sessão nenhuma: nesse caso a leitura volta para o anônimo.
+    */
+    if (!temSessao(authHeader)) return callRead(anonClient(), name, a);
+    try {
+      return await callRead(userClient(authHeader!), name, a);
+    } catch (e) {
+      if (erroDeSessao(e)) return callRead(anonClient(), name, a);
+      throw e;
+    }
+  }
 
   // Login (pré-sessão): não exige JWT.
   switch (name) {

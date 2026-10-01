@@ -194,6 +194,25 @@ limit próprio); `add_vehicle` aceita a placa direto, então a reserva fecha sem
 Ficam **fora** por decisão: `delete-account` (irreversível), `attach-phone-silent` (identidade), e
 tudo de pagamento.
 
+### 5.0 Leitura com a sessão
+
+No `/customer`, as tools de descoberta (`list_locations`, `get_parking_types`...) rodam com o JWT do
+usuário quando ele vem, e não mais sempre anônimas. Motivo: a RLS de `location` mostra a unidade em
+rascunho a quem é testador (`is_tester()`), e o agente que reserva em nome de um testador tem que
+enxergar a mesma unidade que `quote_booking` e `create_booking` aceitam. JWT vencido ou inválido volta
+para a leitura anônima, sem erro: a descoberta nunca depende de sessão. Validado em 01/10/2026: a
+Agência Fera (rascunho) aparece para `peu+teste1` e some para o anônimo.
+
+### 5.3 Sessão compartilhada com o link de checkout (medido em 01/10/2026)
+
+O `create_checkout_link` guarda o `access_token` e o `refresh_token` do agente, e o navegador passa a
+usar **a mesma sessão** do GoTrue. Medido em produção: reusar um `refresh_token` já rotacionado devolve
+`refresh_token_already_used` para quem chegou atrasado, mas **não revoga a sessão** (o token vivo
+segue valendo); reusar o pai cujo filho ainda não foi usado devolve sucesso. E um `logout` de qualquer
+lado encerra a sessão dos dois. Recomendação ao agente: entregar a sessão ao link e parar de usá-la;
+quando precisar de novo (acompanhar o pagamento), afirmar a identidade outra vez, o que abre uma
+sessão independente.
+
 ### 5.1 Cotação (`quote_booking`)
 
 O `simulate_price` recebe só o número de diárias: não conta a tolerância da unidade, não sabe da
