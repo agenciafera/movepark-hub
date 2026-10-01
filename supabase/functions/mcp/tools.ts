@@ -299,8 +299,13 @@ export const MANAGER_TOOLS: ToolDef[] = [
     name: "get_wl_mapping",
     scope: "wl:read",
     description:
-      "Unidades de checkout externo com o domínio e os slugs do white-label, e as diárias mínimas de cada tipo de vaga. Use antes de cotar preço ou gerar link de pagamento.",
-    inputSchema: obj({}),
+      "Unidades de checkout externo com o domínio e os slugs do white-label, e as diárias mínimas de cada tipo de vaga. Use antes de cotar preço ou gerar link de pagamento. Cada unidade traz checkout_mode; com include_hub=true vêm também as unidades que vendem pelo Hub mas ainda têm white-label, para consultar reserva feita lá.",
+    inputSchema: obj({
+      include_hub: {
+        type: "boolean",
+        description: "Incluir unidades checkout_mode=hub que ainda têm white-label (para consultar reserva antiga). Padrão false: só as que vendem pelo white-label.",
+      },
+    }),
   },
   {
     name: "upsert_blog_post",

@@ -828,7 +828,7 @@ async function callCustomerTxn(
 async function callManager(admin: any, name: string, a: Record<string, unknown>): Promise<unknown> {
   // Leitura: sai antes do bloco de escrita do blog, que assume `ok`/`message`.
   if (name === "get_wl_mapping") {
-    const { data, error } = await admin.rpc("wl_agent_mapping");
+    const { data, error } = await admin.rpc("wl_agent_mapping", { p_include_hub: a.include_hub === true });
     if (error) throw error;
     return { unidades: data ?? [] };
   }
