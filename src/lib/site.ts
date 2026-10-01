@@ -23,3 +23,14 @@ export const SITE_URL = (import.meta.env?.VITE_PUBLIC_SITE_URL || DEFAULT_SITE_U
 export function siteUrl(path = "/"): string {
   return `${SITE_URL}/${path.replace(/^\/+/, "")}`;
 }
+
+/**
+ * Garante URL absoluta para quem roda fora do site (og:image, JSON-LD, preview de WhatsApp).
+ *
+ * URL que já tem esquema passa intacta (Storage do Supabase, CDN). Caminho relativo, como a
+ * capa de post versionada em `public/images/blog/`, ganha o host canônico: crawler de rede
+ * social não resolve `/images/...` contra a página, e o preview saía sem imagem.
+ */
+export function absoluteUrl(url: string): string {
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : siteUrl(url);
+}

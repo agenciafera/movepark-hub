@@ -60,7 +60,7 @@ export type BlogPostCarregado = BlogPostWithDestination & {
   destinoLabel?: string | null;
   destinoSlug?: string | null;
 };
-import { SITE_URL } from "@/lib/site";
+import { absoluteUrl, SITE_URL } from "@/lib/site";
 
 /**
  * O post ocupa a largura de conteúdo (1080), não a de leitura (720).
@@ -261,8 +261,9 @@ export default function BlogPostPage() {
   const title = post.meta_title ?? post.title;
   const description = metaDescription(post.meta_description, post.excerpt, post.body_md);
   const minutes = readingMinutes(post.body_md);
-  const ogImage = post.cover_image_url
-    ? optimizedImageUrl(post.cover_image_url, { width: 1200, height: 630, resize: "cover" })
+  const coverAbsoluta = post.cover_image_url ? absoluteUrl(post.cover_image_url) : null;
+  const ogImage = coverAbsoluta
+    ? optimizedImageUrl(coverAbsoluta, { width: 1200, height: 630, resize: "cover" })
     : null;
 
   return (
