@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 
 import { renderWithProviders } from "@/test/utils";
@@ -103,36 +103,46 @@ describe("contrato de URL do índice traduzido", () => {
    * barra, então a canônica apontava para uma URL que redireciona, enquanto a
    * auto-referência do `hreflang` na mesma página apontava para a forma sem barra.
    */
+  // O Helmet escreve no <head> depois do corpo (fora do ciclo de render), então
+  // achar o card do post não garante que a canônica já exista: sem `waitFor` o
+  // teste lia o <head> vazio de vez em quando, no CI e localmente (02/10/2026).
   it("a canônica da página 1 é a própria rota, SEM barra final", async () => {
     const { container } = setup();
     await screen.findByRole("link", { name: "Parking post 2" });
-    const canonical = container.ownerDocument.querySelector('link[rel="canonical"]');
-    expect(canonical?.getAttribute("href")).toBe(`${SITE_URL}/en/blog`);
+    await waitFor(() => {
+      const canonical = container.ownerDocument.querySelector('link[rel="canonical"]');
+      expect(canonical?.getAttribute("href")).toBe(`${SITE_URL}/en/blog`);
+    });
   });
 
   it("a auto-referência do hreflang bate com a canônica, string por string", async () => {
     const { container } = setup();
     await screen.findByRole("link", { name: "Parking post 2" });
     const doc = container.ownerDocument;
-    const canonical = doc.querySelector('link[rel="canonical"]')?.getAttribute("href");
-    const auto = doc.querySelector('link[hreflang="en"]')?.getAttribute("href");
-    expect(auto).toBe(canonical);
+    await waitFor(() => {
+      const canonical = doc.querySelector('link[rel="canonical"]')?.getAttribute("href");
+      const auto = doc.querySelector('link[hreflang="en"]')?.getAttribute("href");
+      expect(canonical).toBeTruthy();
+      expect(auto).toBe(canonical);
+    });
   });
 
   it("o cluster traz os três idiomas mais o x-default no português", async () => {
     const { container } = setup();
     await screen.findByRole("link", { name: "Parking post 2" });
     const doc = container.ownerDocument;
-    const cluster = [...doc.querySelectorAll("link[hreflang]")].map((l) => [
-      l.getAttribute("hreflang"),
-      l.getAttribute("href"),
-    ]);
-    expect(cluster).toEqual([
-      ["pt-BR", `${SITE_URL}/blog/`],
-      ["en", `${SITE_URL}/en/blog`],
-      ["es", `${SITE_URL}/es/blog`],
-      ["x-default", `${SITE_URL}/blog/`],
-    ]);
+    await waitFor(() => {
+      const cluster = [...doc.querySelectorAll("link[hreflang]")].map((l) => [
+        l.getAttribute("hreflang"),
+        l.getAttribute("href"),
+      ]);
+      expect(cluster).toEqual([
+        ["pt-BR", `${SITE_URL}/blog/`],
+        ["en", `${SITE_URL}/en/blog`],
+        ["es", `${SITE_URL}/es/blog`],
+        ["x-default", `${SITE_URL}/blog/`],
+      ]);
+    });
   });
 });
 
