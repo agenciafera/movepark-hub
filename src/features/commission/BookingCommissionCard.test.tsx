@@ -40,7 +40,11 @@ describe("BookingCommissionCard", () => {
     expect(screen.getByText("5%")).toBeInTheDocument();
     expect(screen.getByText("Estacionamento paga")).toBeInTheDocument();
     expect(screen.getByText("Estacionamento arca com tudo")).toBeInTheDocument();
-    expect(screen.getByText("abbapark")).toBeInTheDocument();
+    // Origem e atribuição (02/10/2026): rótulo humano, chips e o detalhe no acordeão.
+    expect(screen.getByTestId("reserva-origem-label")).toHaveTextContent("Origem não registrada");
+    expect(screen.getByText("source: abbapark")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Ver todos os parâmetros de origem/ }));
+    expect(screen.getByTestId("reserva-atribuicao")).toHaveTextContent("Chegou pelo link em");
   });
 
   it("o estacionamento vê o canal e a comissão, sem taxa, chargeback, prova nem botão", () => {
@@ -49,7 +53,8 @@ describe("BookingCommissionCard", () => {
     expect(screen.getByText("5%")).toBeInTheDocument();
     expect(screen.queryByText("Taxa do gateway")).not.toBeInTheDocument();
     expect(screen.queryByText("Chargeback")).not.toBeInTheDocument();
-    expect(screen.queryByText("De onde o cliente veio")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ver todos os parâmetros de origem/)).not.toBeInTheDocument();
+    expect(screen.getByTestId("reserva-origem-label")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Corrigir canal" })).not.toBeInTheDocument();
   });
 

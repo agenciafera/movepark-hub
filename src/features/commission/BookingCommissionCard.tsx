@@ -27,11 +27,18 @@ import {
   rulesForCompany,
   type BookingCommissionLike,
 } from "./bookingCommission.logic";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { attributionChips, attributionEntries, bookingOriginLabel } from "@/lib/bookingOrigin";
 
 const HUB = "__hub__";
 
 type Props = {
-  booking: BookingCommissionLike & { id: string };
+  booking: BookingCommissionLike & {
+    id: string;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    created_via_api_key_id?: string | null;
+  };
   companyId: string | null | undefined;
   payments: { status: string }[] | null | undefined;
   audience: "manager" | "operator";
@@ -49,6 +56,11 @@ export function BookingCommissionCard({ booking, companyId, payments, audience, 
   const [fixing, setFixing] = React.useState(false);
   const manager = audience === "manager";
   const fixable = manager && canFix && canFixChannel(payments);
+  // Origem e atribuição (02/10/2026): de onde a reserva veio (site, Mia, API, white-label) numa
+  // linha, os UTMs em chips, e o detalhe inteiro escondido num acordeão, porque pode ser longo.
+  const origem = bookingOriginLabel(booking.origin);
+  const chips = attributionChips(booking);
+  const detalhes = manager ? attributionEntries(booking, (iso) => formatDateTime(iso)) : [];
 
   return (
     <Card>
@@ -79,19 +91,37 @@ export function BookingCommissionCard({ booking, companyId, payments, audience, 
           </dl>
         )}
 
-        {manager && view.proof.length > 0 && (
-          <div>
-            <div className="text-caption text-muted">De onde o cliente veio</div>
-            <dl className="mt-1 grid gap-x-6 gap-y-1 tablet:grid-cols-2">
-              {view.proof.map((p) => (
-                <div key={p.label} className="flex gap-2 text-body-sm">
-                  <dt className="shrink-0 text-muted">{p.label}:</dt>
-                  <dd className="min-w-0 break-all text-ink">{p.value}</dd>
-                </div>
-              ))}
-            </dl>
+        <div className="flex flex-col gap-2" data-testid="reserva-origem">
+          <div className="flex flex-wrap items-center gap-2 text-body-sm">
+            <span className="text-muted">Onde reservou:</span>
+            <span className="text-ink" data-testid="reserva-origem-label">{origem}</span>
+            {chips.map((c) => (
+              <Badge key={c} tone="neutral">{c}</Badge>
+            ))}
           </div>
-        )}
+          {manager && detalhes.length > 0 && (
+            <Accordion type="single" collapsible>
+              <AccordionItem value="atribuicao" className="border-0">
+                <AccordionTrigger className="py-1 text-caption text-muted hover:no-underline">
+                  Ver todos os parâmetros de origem ({detalhes.length})
+                </AccordionTrigger>
+                <AccordionContent>
+                  <dl className="grid gap-x-6 gap-y-1 tablet:grid-cols-2" data-testid="reserva-atribuicao">
+                    {detalhes.map((p) => (
+                      <div key={p.label} className="flex gap-2 text-body-sm">
+                        <dt className="shrink-0 text-muted">{p.label}:</dt>
+                        <dd className="min-w-0 break-all text-ink">{p.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
+          {manager && detalhes.length === 0 && (
+            <p className="text-caption text-muted">Sem UTM nem link de atribuição nesta reserva.</p>
+          )}
+        </div>
 
         {manager && canFix && !canFixChannel(payments) && (
           <p className="text-caption text-muted">

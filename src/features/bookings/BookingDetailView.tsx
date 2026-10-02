@@ -17,6 +17,8 @@ import { awaitingRealCheckout, flightNotice, type OperatorExtension } from "./fl
 import { usePayoutReleaseDays } from "@/features/payouts/api";
 import { useChangeBookingVehicle } from "./customerApi";
 import { BookingMoneyCard } from "./BookingMoneyCard";
+import { BookingStateBanner } from "./BookingStateBanner";
+import { bookingStateSummary } from "./bookingState.logic";
 import { GatewayTrail } from "./GatewayTrail";
 import { BookingCommissionCard } from "@/features/commission/BookingCommissionCard";
 import { SupportTicketsCard } from "@/features/support/SupportTicketsCard";
@@ -125,6 +127,11 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
   const busy = statusMutation.isPending || cancelMutation.isPending;
 
   const pagamento = mainPayment((booking.payments ?? []) as unknown as (MoneyPaymentLike & { created_at: string })[]);
+  const estado = bookingStateSummary(
+    booking as unknown as Parameters<typeof bookingStateSummary>[0],
+    (booking.payments ?? []) as unknown as Parameters<typeof bookingStateSummary>[1],
+    { dateTime: formatDateTime, brl: formatBRL },
+  );
   const money = buildMoneyBreakdown(
     (booking as unknown as { price_breakdown?: PriceBreakdownLike | null }).price_breakdown ?? null,
     Number(booking.total_amount),
@@ -192,6 +199,8 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
         }
       />
 
+      <BookingStateBanner state={estado} />
+
       {dinheiro?.manualRefund && (
         <div role="alert" className="rounded-md border border-error/40 bg-error/5 p-3 text-body-sm text-error" data-testid="aviso-devolucao-pendente">
           {audience === "manager" ? (
@@ -241,7 +250,7 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
         </Card>
       </div>
 
-      <BookingMoneyCard money={money} audience={audience} />
+      <BookingMoneyCard money={money} audience={audience} paymentState={estado.payment} bookingStatus={booking.status} />
 
       {/* De onde a venda veio e que comissão ela paga (E0.3.12). */}
       <BookingCommissionCard

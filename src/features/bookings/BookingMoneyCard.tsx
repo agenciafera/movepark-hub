@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBRL, formatDate } from "@/lib/format";
 import type { MoneyBreakdown } from "./bookingMoney.logic";
+import { customerBlockCopy, type CustomerPaymentState } from "./bookingState.logic";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 const signed = (cents: number) => (cents < 0 ? `−${brl(-cents)}` : brl(cents));
@@ -31,30 +32,45 @@ function Bloco({ title, hint, children }: { title: string; hint?: string; childr
  * O dinheiro da reserva destrinchado (18/09/2026): o que o cliente pagou, o que foi para o
  * estacionamento, o que ficou com a Movepark, a taxa do gateway e o estorno. Só Manager.
  */
-export function BookingMoneyCard({ money, audience = "manager" }: { money: MoneyBreakdown; audience?: "manager" | "operator" }) {
+export function BookingMoneyCard({
+  money,
+  audience = "manager",
+  paymentState = "paid",
+  bookingStatus = "confirmed",
+}: {
+  money: MoneyBreakdown;
+  audience?: "manager" | "operator";
+  /** Estado do pagamento visto pelo cliente (02/10/2026): "O cliente pagou" só quando pagou. */
+  paymentState?: CustomerPaymentState;
+  bookingStatus?: string;
+}) {
   const { customer, split, refund } = money;
   // O estacionamento vê o que o cliente pagou e a parte dele. A coluna da Movepark (comissão,
   // plano, taxa do gateway) é da Movepark; taxa de processamento não aparece para ele.
   const parceiro = audience === "operator";
   const meio = customer.method ? METODO[customer.method] ?? customer.method : null;
+  const cliente = customerBlockCopy(paymentState, meio, customer.installments, bookingStatus);
+  const semPagamento = paymentState === "unpaid" || paymentState === "failed";
   return (
     <Card data-testid="reserva-valores">
       <CardHeader>
         <CardTitle>Valores</CardTitle>
       </CardHeader>
       <CardContent className={`grid gap-4 ${parceiro ? "desktop:grid-cols-2" : "desktop:grid-cols-3"}`}>
-        <Bloco title="O cliente pagou" hint={meio ? `${meio}${customer.installments && customer.installments > 1 ? ` em ${customer.installments}x` : ""}` : "ainda sem pagamento"}>
+        <Bloco title={cliente.title} hint={cliente.hint}>
           {customer.lines.map((l) => (
             <Linha key={`${l.kind}-${l.label}`} label={l.label} value={signed(l.cents)} />
           ))}
-          <Linha label="Total cobrado" value={brl(customer.chargedCents ?? customer.totalCents)} strong testId="valores-total" />
+          <Linha label={paymentState === "paid" || paymentState === "refunded" || paymentState === "refunding" ? "Total cobrado" : "Total da reserva"} value={brl(customer.chargedCents ?? customer.totalCents)} strong testId="valores-total" />
         </Bloco>
 
         <Bloco
           title={parceiro ? "Sua parte" : "Estacionamento"}
           hint={
             !split
-              ? "entra quando o pagamento for aprovado"
+              ? semPagamento
+                ? "não entra: a reserva não foi paga"
+                : "entra quando o pagamento for aprovado"
               : split.custody
                 ? parceiro
                   ? "o valor ficou com a Movepark e chega por repasse"

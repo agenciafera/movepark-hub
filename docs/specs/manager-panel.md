@@ -551,3 +551,23 @@ Na reserva do Manager, o card **Chamados do cliente** lista os chamados abertos 
 site (motivo, mensagem, estado) com **Encerrar chamado** (hub_admin). Em **Conversas**, a conversa
 do chamado sobe ao topo com o selo `Chamado CH-XXXXXX` e o agente fica mudo até alguém devolver.
 Ver [chamado-de-atendimento.md](./chamado-de-atendimento.md).
+
+## Ficha da reserva: estado em uma frase e origem (02/10/2026)
+
+Achado do Kallef na MP-EE8890: "Expirada" era um selo miúdo no canto e o card de valores dizia
+"O cliente pagou" numa reserva nunca paga. Três mudanças na ficha (Manager e Operator):
+
+- **Faixa de estado** logo abaixo do título (`BookingStateBanner`, lógica em
+  `bookingState.logic.ts`): título e motivo pelo status da reserva e do dinheiro ("Expirada sem
+  pagamento: o cliente não pagou até X e a vaga foi liberada. Nada foi cobrado", "Paga no PIX em X",
+  "Cancelada e devolvida: R$ Y devolvidos", "Aguardando pagamento até X"), com a borda na cor do
+  estado.
+- **Card Valores** só diz "O cliente pagou" quando pagou (`customerBlockCopy`): "O cliente vai
+  pagar", "Valor da reserva (não pago: a reserva expirou)", "O cliente pagou e foi devolvido"; o
+  bloco do estacionamento diz "não entra: a reserva não foi paga" em vez de "entra quando o
+  pagamento for aprovado".
+- **Origem** no card Canal da venda: "Onde reservou" com rótulo humano de `booking.origin`
+  (`bookingOriginLabel`: site pela busca, pelo destino, por link direto, white-label, API, Mia pelo
+  MCP, Mia no WhatsApp, assistente do site), chips com utm_source/medium/campaign e, para o Manager,
+  o acordeão "Ver todos os parâmetros de origem" com tudo que `booking.attribution` guarda (página
+  de entrada, referrer, data do clique, chave de API). Sem UTM, a ficha diz isso em vez de esconder.

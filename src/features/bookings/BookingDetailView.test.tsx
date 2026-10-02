@@ -26,6 +26,7 @@ function booking(status: string, payments: unknown[]) {
     customer_name: "kallef alexandre", customer_phone: "+5541988149449", customer_email: "k@ex.com", customer_tax_id: null,
     fare_tier: "flex", fare_cancel_until: "2026-10-09T12:00:00Z",
     price_breakdown: { days: 1, total: 30.9, line_items: [{ kind: "parking", quantity: 1, subtotal: 18 }, { kind: "fare", name: "Flex", tier: "flex", subtotal: 12.9 }] },
+    origin: "whatsapp-bot", expires_at: "2026-09-18T18:01:00Z",
     location: { name: "Agência Fera", company: { id: "c1", name: "Agência Fera" } },
     profile: { full_name: "kallef", tax_id: null },
     vehicle: { license_plate: "BAI-2J44", model: "PEUGEOT/2008", color: "Branco" },
@@ -68,6 +69,10 @@ describe("BookingDetailView", () => {
     expect(screen.getByText("Reserva MP-7E2482")).toBeInTheDocument();
     expect(screen.getByText("Confirmada")).toBeInTheDocument();
     expect(screen.getByTestId("badge-pagamento")).toHaveTextContent("Pago");
+    // 02/10/2026: o estado em uma frase, e a origem (Mia no WhatsApp) no card do canal.
+    expect(screen.getByTestId("reserva-estado")).toHaveTextContent("Paga no cartão em");
+    expect(screen.getByText("O cliente pagou")).toBeInTheDocument();
+    expect(screen.getByTestId("reserva-origem-label")).toHaveTextContent("Mia no WhatsApp");
     expect(screen.getByText("Estacionamento (diária)")).toBeInTheDocument();
     expect(screen.getByText("Plano Flex")).toBeInTheDocument();
     const norm = (s: string | null) => (s ?? "").replace(/\u00a0/g, " ");
@@ -170,5 +175,17 @@ describe("BookingDetailView", () => {
     state.booking = null;
     abre();
     expect(screen.getByText("Não achamos essa reserva")).toBeInTheDocument();
+  });
+
+  it("reserva expirada: estado explica que nada foi cobrado e o card não diz que o cliente pagou", async () => {
+    state.booking = booking("expired", []);
+    state.trail = { events: [], payments: [] };
+    abre();
+    expect(await screen.findByTestId("reserva-estado")).toHaveTextContent("Expirada sem pagamento");
+    expect(screen.getByTestId("reserva-estado")).toHaveTextContent("Nada foi cobrado");
+    expect(screen.queryByText("O cliente pagou")).not.toBeInTheDocument();
+    expect(screen.getByText("Valor da reserva")).toBeInTheDocument();
+    expect(screen.getByText("não pago: a reserva expirou")).toBeInTheDocument();
+    expect(screen.getByText("não entra: a reserva não foi paga")).toBeInTheDocument();
   });
 });
