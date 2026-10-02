@@ -30,6 +30,11 @@ vi.mock("@/features/profile/api", () => ({
   useProfile: () => ({ data: { tax_id: "04810388417" }, isLoading: false }),
   useUpdateProfile: () => ({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false }),
 }));
+const acceptMutate = vi.hoisted(() => vi.fn());
+vi.mock("@/features/legal/api", () => ({
+  useAcceptTerms: () => ({ mutateAsync: acceptMutate, isPending: false }),
+}));
+vi.mock("@/features/legal/LegalDocumentModal", () => ({ LegalDocumentModal: () => null }));
 vi.mock("@/lib/pagarme-tokenize", () => ({
   tokenizeCard: vi.fn().mockResolvedValue({ token: "token_1", brand: "visa", last4: "1111" }),
 }));
@@ -96,6 +101,66 @@ const norm = (s: string | null) => (s ?? "").replace(/\u00a0/g, " ");
 describe("Step4Payment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    acceptMutate.mockResolvedValue({ ok: true, version: 1 });
+  });
+
+  // Link do agente (01/10/2026): quem pula o passo 1 aceita os Termos aqui, colado ao pagamento.
+  it("sem aceite: mostra o clickwrap e grava o aceite antes de gerar o PIX", async () => {
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        termsAccepted={false}
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.getByText(/Ao pagar, você aceita os/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Gerar PIX/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Copiar código PIX/i })).toBeInTheDocument(),
+    );
+    expect(acceptMutate).toHaveBeenCalledWith({ booking_code: "MP-ABC123" });
+  });
+
+  it("se o aceite falha, não cobra", async () => {
+    acceptMutate.mockRejectedValueOnce(new Error("Falha ao registrar o aceite"));
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        termsAccepted={false}
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Gerar PIX/i }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Falha ao registrar o aceite"));
+    expect(screen.queryByRole("button", { name: /Copiar código PIX/i })).not.toBeInTheDocument();
+  });
+
+  it("com aceite já feito no passo 1, não repete o aviso nem o registro", async () => {
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        termsAccepted
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.queryByText(/Ao pagar, você aceita os/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Gerar PIX/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Copiar código PIX/i })).toBeInTheDocument(),
+    );
+    expect(acceptMutate).not.toHaveBeenCalled();
   });
 
   it("gera o PIX e mostra o QR + aguardo de confirmação", async () => {

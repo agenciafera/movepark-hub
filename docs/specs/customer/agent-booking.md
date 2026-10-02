@@ -213,6 +213,17 @@ lado encerra a sessão dos dois. Recomendação ao agente: entregar a sessão ao
 quando precisar de novo (acompanhar o pagamento), afirmar a identidade outra vez, o que abre uma
 sessão independente.
 
+### 5.4 Link cai no pagamento (01/10/2026)
+
+O `create_checkout_link` devolve `.../checkout/MP-XXX?pay=1#ht=...`, e o checkout pula o que a reserva
+já tem (`resolveInitialStep`): com nome, telefone e e-mail do titular e o veículo, abre direto no
+**Pagamento**; sem veículo, no passo do veículo; sem titular, no passo 1. O CPF fica no próprio
+pagamento, como sempre. Os **Termos** também: quem pula o passo 1 vê o mesmo clickwrap ("Ao pagar, você
+aceita os Termos e Condições") colado ao pagamento, e o aceite é gravado pela Edge `accept-terms` (versão,
+data, IP) antes da cobrança. O aceite continua sendo da pessoa, no navegador; o agente não aceita por ela
+(§8 segue valendo). Antes, a regra exigia CPF e Termos para pular, e o link do agente sempre abria no
+passo 1 com tudo preenchido, o que a pessoa lia como "pedindo login" (MP-6CB259).
+
 ### 5.1 Cotação (`quote_booking`)
 
 O `simulate_price` recebe só o número de diárias: não conta a tolerância da unidade, não sabe da
@@ -374,7 +385,7 @@ jurídico antes de implementar. Se não passar, o link cai no passo 1 só para o
 - **F3 - Handoff de checkout** - ✅ no ar (§6). Tabela `checkout_handoff` + RPC de resgate atômica +
   cron de purga; Edges `create-checkout-handoff` (JWT) e `redeem-checkout-handoff` (anon); tool
   `create_checkout_link`; front resgata o `#ht=`, faz `setSession` e deriva o passo (`resolveInitialStep`).
-  O deep-link só cai no pagamento quando o aceite existe (fallback: cai no passo 1). Falta ainda o
+  O deep-link cai no pagamento quando a reserva tem titular e veículo; o aceite dos Termos vai junto do pagamento (§5.4). Falta ainda o
   `accept_terms` (com aval jurídico) e o `lookup_plate` (API paga) para o fluxo pular o passo 1.
 - **F4 - Superfície, doc e descoberta** - planejado. Terceiro branch de endpoint na Edge `mcp`,
   `customer-card.json`, atualização de `api-catalog`/`llms.txt`/`auth.md`.

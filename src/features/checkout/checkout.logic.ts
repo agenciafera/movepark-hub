@@ -109,23 +109,28 @@ export function isCheckoutBlocked(
 export interface InitialStepArgs {
   /** O link pediu para cair no pagamento (handoff de reserva por agente, ?pay=1). */
   requestedPay: boolean;
-  /** Dados do pagador exigidos no pagamento já preenchidos (CPF/CNPJ + telefone + e-mail). */
-  hasPayerData: boolean;
-  /** Aceite dos Termos já registrado para a reserva. */
-  termsAccepted: boolean;
+  /** O que o passo 1 coleta já está na reserva: nome, telefone e e-mail do titular. */
+  hasIdentity: boolean;
+  /** O veículo (passo 2) já está na reserva. */
+  hasVehicle: boolean;
 }
 
 /**
- * Passo inicial do checkout. Regra: só pula pro pagamento (passo 4) quando o link pediu E a reserva
- * está pronta de fato (dados do pagador + Termos aceitos). Deriva do estado, nunca confia só no
- * parâmetro do link: se falta algo, cai no passo 1 (onde o usuário completa e aceita os Termos).
+ * Passo inicial do checkout. Com o link do agente (?pay=1), pula o que já está preenchido na
+ * reserva e cai no primeiro passo que falta, de preferência o pagamento. Deriva do estado, nunca
+ * confia só no parâmetro: sem nome, telefone ou e-mail, começa no passo 1.
+ *
+ * O CPF não entra na conta porque quem o pede é o próprio pagamento. Os Termos também não: quando
+ * a pessoa pula o passo 1, o aceite (clickwrap) aparece colado ao botão de pagar e é gravado antes
+ * da cobrança (Step4Payment). Até 01/10/2026 exigia CPF e Termos para pular, e o link do agente
+ * sempre caía no passo 1, porque o agente não coleta nenhum dos dois.
  *
  * Pular direto pro pagamento também pula os adicionais, e é o certo: quem chega por esse link já
  * fechou o que queria, e interromper com uma oferta seria empurrada.
  */
 export function resolveInitialStep(a: InitialStepArgs): CheckoutStep {
-  if (a.requestedPay && a.hasPayerData && a.termsAccepted) return 4;
-  return 1;
+  if (!a.requestedPay || !a.hasIdentity) return 1;
+  return a.hasVehicle ? 4 : 2;
 }
 
 /** Passo pra onde auto-avançar quando o pagamento confirma (confirmação); null = não mexe. */

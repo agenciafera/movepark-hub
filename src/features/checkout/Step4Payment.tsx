@@ -42,6 +42,9 @@ import {
   viaCepUrl,
 } from "./billingAddress.logic";
 import { useMyPaymentMethods } from "@/features/payment-methods/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAcceptTerms } from "@/features/legal/api";
+import { LegalDocumentModal } from "@/features/legal/LegalDocumentModal";
 
 type Props = {
   bookingId: string;
@@ -49,6 +52,13 @@ type Props = {
   totalAmount: number;
   /** CPF/CNPJ já no snapshot do booking (pra pré-preencher). */
   customerTaxId: string | null;
+  /**
+   * Termos já aceitos nesta reserva. Quem vem pelo link do agente pula o passo 1, onde o aceite
+   * acontece; aí o clickwrap aparece aqui, colado ao pagamento, e é gravado antes da cobrança.
+   * `undefined` enquanto carrega conta como não aceito: gravar de novo é inofensivo, cobrar sem
+   * aceite não (as Edges de cobrança recusam com 422).
+   */
+  termsAccepted?: boolean;
   paymentStatus: "pending" | "authorized" | "paid" | "refunded" | "failed" | "cancelled" | null;
   onBack: () => void;
 };
@@ -58,9 +68,21 @@ export function Step4Payment({
   bookingCode,
   totalAmount,
   customerTaxId,
+  termsAccepted,
   paymentStatus,
   onBack,
 }: Props) {
+  const qc = useQueryClient();
+  const acceptTerms = useAcceptTerms();
+  const [termsOpen, setTermsOpen] = React.useState(false);
+  const precisaAceite = termsAccepted !== true;
+
+  /** Grava o aceite dos Termos antes de cobrar, quando ele ainda não existe. */
+  async function garantirAceite(): Promise<void> {
+    if (!precisaAceite) return;
+    await acceptTerms.mutateAsync({ booking_code: bookingCode });
+    await qc.invalidateQueries({ queryKey: ["terms-accepted", bookingId] });
+  }
   const pix = useCreatePixCharge();
   const card = useCreateCardCharge();
   const config = usePaymentConfig();
@@ -188,6 +210,7 @@ export function Step4Payment({
   async function initPix() {
     try {
       if (!(await persistTaxId())) return;
+      await garantirAceite();
       const res = await pix.mutateAsync({ booking_code: bookingCode });
       setPixPayload(res.qr_code);
       if (res.qr_code) setPixSvg(await toSvgString(res.qr_code, 256));
@@ -201,6 +224,7 @@ export function Step4Payment({
     e.preventDefault();
     try {
       if (!(await persistTaxId())) return;
+      await garantirAceite();
       if (cardChoice !== "new") {
         await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: cardChoice });
       } else {
@@ -294,6 +318,28 @@ export function Step4Payment({
           Vai na nota e é exigido pelo pagamento.
         </span>
       </div>
+
+      {/* Clickwrap de quem pulou o passo 1 (link do agente): o mesmo aviso, colado ao pagamento.
+          O aceite é gravado no clique de pagar, antes da cobrança (`garantirAceite`). */}
+      {precisaAceite && (
+        <p className="text-body-sm text-muted">
+          Ao pagar, você aceita os{" "}
+          <button
+            type="button"
+            onClick={() => setTermsOpen(true)}
+            className="font-semibold text-ink underline hover:text-mp-primary"
+          >
+            Termos e Condições
+          </button>
+          .
+        </p>
+      )}
+      <LegalDocumentModal
+        slug="terms"
+        title="Termos e Condições"
+        open={termsOpen}
+        onOpenChange={setTermsOpen}
+      />
 
       <Tabs defaultValue="pix">
         <TabsList>

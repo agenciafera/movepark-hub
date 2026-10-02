@@ -180,28 +180,22 @@ describe("validateStep1Identity", () => {
 });
 
 describe("resolveInitialStep (deep-link do handoff)", () => {
-  it("cai no pagamento só quando pedido E pronto (dados + termos)", () => {
-    expect(
-      resolveInitialStep({ requestedPay: true, hasPayerData: true, termsAccepted: true }),
-    ).toBe(4);
+  // Regressão (01/10/2026, MP-6CB259): reserva da Mia com nome, telefone, e-mail e veículo caiu no
+  // passo 1, porque a regra exigia CPF e Termos, que o agente não coleta.
+  it("link do agente com titular e veículo cai no pagamento, sem CPF nem Termos", () => {
+    expect(resolveInitialStep({ requestedPay: true, hasIdentity: true, hasVehicle: true })).toBe(4);
+  });
+
+  it("sem veículo, cai no passo do veículo", () => {
+    expect(resolveInitialStep({ requestedPay: true, hasIdentity: true, hasVehicle: false })).toBe(2);
   });
 
   it("sem pedir pagamento, começa no passo 1 (comportamento normal intacto)", () => {
-    expect(
-      resolveInitialStep({ requestedPay: false, hasPayerData: true, termsAccepted: true }),
-    ).toBe(1);
+    expect(resolveInitialStep({ requestedPay: false, hasIdentity: true, hasVehicle: true })).toBe(1);
   });
 
-  it("pediu pagamento mas falta dado do pagador → passo 1", () => {
-    expect(
-      resolveInitialStep({ requestedPay: true, hasPayerData: false, termsAccepted: true }),
-    ).toBe(1);
-  });
-
-  it("pediu pagamento mas Termos não aceitos → passo 1 (não confia só no link)", () => {
-    expect(
-      resolveInitialStep({ requestedPay: true, hasPayerData: true, termsAccepted: false }),
-    ).toBe(1);
+  it("pediu pagamento mas falta o titular → passo 1 (não confia só no link)", () => {
+    expect(resolveInitialStep({ requestedPay: true, hasIdentity: false, hasVehicle: true })).toBe(1);
   });
 });
 

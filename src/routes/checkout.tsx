@@ -51,20 +51,19 @@ export default function CheckoutPage() {
   const addonsCarregados = addons !== undefined;
   const hasAddons = (addons?.length ?? 0) > 0;
 
-  // Passo inicial: só cai no pagamento quando o link pediu (?pay=1) E a reserva está pronta
-  // (dados do pagador + Termos aceitos). Deriva do estado; roda uma vez quando os dados chegam.
+  // Passo inicial: com o link do agente (?pay=1), pula o que a reserva já tem e cai no pagamento.
+  // Deriva do estado; roda uma vez quando os dados chegam.
   const initialStepSet = React.useRef(false);
   React.useEffect(() => {
-    if (initialStepSet.current || !booking || termsAccepted === undefined) return;
+    if (initialStepSet.current || !booking) return;
     initialStepSet.current = true;
-    const hasPayerData = !!(booking.customer_tax_id && booking.customer_phone && booking.customer_email);
     const initial = resolveInitialStep({
       requestedPay: wantsPayStep(window.location.search),
-      hasPayerData,
-      termsAccepted: !!termsAccepted,
+      hasIdentity: !!(booking.customer_first_name && booking.customer_phone && booking.customer_email),
+      hasVehicle: !!booking.vehicle_id,
     });
     if (initial !== 1) setStep(initial);
-  }, [booking, termsAccepted]);
+  }, [booking]);
 
   // Auto-avança pro Step 4 quando o pagamento for confirmado
   React.useEffect(() => {
@@ -220,6 +219,7 @@ export default function CheckoutPage() {
                   bookingCode={booking.code}
                   totalAmount={booking.total_amount}
                   customerTaxId={booking.customer_tax_id}
+                  termsAccepted={termsAccepted}
                   paymentStatus={booking.payment?.status ?? null}
                   onBack={() => setStep(stepBefore(4, hasAddons))}
                 />

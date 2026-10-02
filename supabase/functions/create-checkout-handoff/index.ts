@@ -91,6 +91,8 @@ Deno.serve(async (req: Request) => {
 
   // O segredo viaja no fragment (#ht=), não em query string (não vaza em log/Referer).
   const site = siteUrl();
-  const url = `${site}/checkout/${booking.code}#ht=${secret}`;
+  // `?pay=1`: o checkout pula o que a reserva já tem e cai no pagamento (resolveInitialStep). Sem ele
+  // o link do agente sempre abria no passo 1, com tudo preenchido (MP-6CB259, 01/10/2026).
+  const url = `${site}/checkout/${booking.code}?pay=1#ht=${secret}`;
   return json({ url, expires_at: expiresAt });
 });
