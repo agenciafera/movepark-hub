@@ -280,7 +280,7 @@ function mcpDocsHtml(): string {
   <title>Movepark | MCP</title>
   <style>
     :root { color-scheme: light dark; }
-    body { font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 820px;
+    body { font: 16px/1.6 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 820px;
            margin: 0 auto; padding: 2rem 1.25rem 4rem; }
     h1 { margin-bottom: .25rem; } .sub { color: #6b7280; margin-top: 0; }
     h2 { margin-top: 2.25rem; border-bottom: 1px solid #8883; padding-bottom: .3rem; }

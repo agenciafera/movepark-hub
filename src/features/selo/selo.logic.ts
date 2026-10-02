@@ -101,7 +101,7 @@ export function montarUrl(parceiro?: string): string {
   return `${base}?utm_source=${slug}&utm_medium=selo&utm_campaign=parceiros`;
 }
 
-const FONTE = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+const FONTE = "Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 /**
  * Os valores do desenho, por fundo.

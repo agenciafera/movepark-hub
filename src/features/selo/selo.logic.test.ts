@@ -72,6 +72,10 @@ describe("gerarSnippet", () => {
     expect(gerarSnippet(padrao)).not.toContain("class=");
   });
 
+  it("pede a Inter, a fonte da marca, antes das fontes do sistema", () => {
+    expect(gerarSnippet(padrao)).toContain("font-family:Inter,");
+  });
+
   it("troca o navy do símbolo por branco no rodapé escuro", () => {
     expect(gerarSnippet({ ...padrao, fundo: "escuro" })).toContain('fill="#FFFFFF"');
     expect(gerarSnippet({ ...padrao, fundo: "claro" })).toContain('fill="#29263F"');
