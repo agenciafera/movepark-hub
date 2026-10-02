@@ -207,6 +207,21 @@
       }
     },
     {
+      "name": "list_fares",
+      "description": "Tarifas da reserva (Básica, Flex, Superflex) com o preço que soma à vaga, o cancelamento grátis, os benefícios incluídos e não incluídos (mesmo texto do site) e o que cada benefício faz. Use para oferecer a tarifa antes de cotar ou reservar; passe fare_tier no quote_booking/create_booking.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string",
+            "description": "id do tipo de vaga (opcional; hoje as tarifas são iguais em todas as unidades)"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "current_datetime",
       "description": "Data e hora atuais no fuso de São Paulo. Use para resolver datas relativas como 'amanhã' ou 'sexta que vem' sem perguntar ao usuário.",
       "inputSchema": {

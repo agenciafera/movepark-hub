@@ -224,6 +224,17 @@ data, IP) antes da cobrança. O aceite continua sendo da pessoa, no navegador; o
 (§8 segue valendo). Antes, a regra exigia CPF e Termos para pular, e o link do agente sempre abria no
 passo 1 com tudo preenchido, o que a pessoa lia como "pedindo login" (MP-6CB259).
 
+### 5.5 Tarifas (`list_fares`, 02/10/2026)
+
+Tool de leitura no registro único (`/public`, `/customer` e chat do site). Devolve, por tarifa: `tier`,
+`label`, `price` (reais, soma ao valor da vaga), `is_popular`, `cancellation` em texto ("Cancelamento grátis
+até 24h antes"), `included` e `not_included` com os rótulos do site, e `details` com o que o benefício faz
+quando ele gera dúvida (hoje, a Proteção de voo). O catálogo vem de `get_unit_fares`; os rótulos de
+`src/lib/fares.ts` (FARE_BENEFIT_LABELS), espelhados em `_shared/fares.ts` e soldados pelo teste
+`src/lib/fares.contract.test.ts`. Benefício que nenhuma tarifa oferece não aparece em lista nenhuma, como no
+comparativo do site (o `priority_support` saiu do catálogo em 25/09). A tarifa é escolhida antes de
+reservar: o checkout não troca; depois de confirmada, só sobe (upgrade pago na página da reserva).
+
 ### 5.1 Cotação (`quote_booking`)
 
 O `simulate_price` recebe só o número de diárias: não conta a tolerância da unidade, não sabe da

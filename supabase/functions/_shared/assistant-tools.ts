@@ -13,6 +13,7 @@
 // Ver docs/specs/mcp.md e docs/specs/chatbot.md.
 
 import { siteUrl } from "./site.ts";
+import { type FareRow, presentFares } from "./fares.ts";
 
 export interface ReadToolDef {
   name: string;
@@ -150,6 +151,14 @@ export const READ_TOOLS: ReadToolDef[] = [
     name: "get_destination",
     description: "Detalhe de um destino pelo slug, com seus pontos/terminais.",
     parameters: obj({ slug: S("slug do destino") }, ["slug"]),
+  },
+  {
+    name: "list_fares",
+    description:
+      "Tarifas da reserva (Básica, Flex, Superflex) com o preço que soma à vaga, o cancelamento grátis, os benefícios incluídos e não incluídos (mesmo texto do site) e o que cada benefício faz. Use para oferecer a tarifa antes de cotar ou reservar; passe fare_tier no quote_booking/create_booking.",
+    parameters: obj({
+      location_parking_type_id: S("id do tipo de vaga (opcional; hoje as tarifas são iguais em todas as unidades)"),
+    }),
   },
   {
     name: "current_datetime",
@@ -557,6 +566,14 @@ export async function callRead(
 
       if (!post) throw new Error(`Post "${a.slug}" não encontrado. Use search_blog para achar o slug.`);
       return { ...withFlatTags(post), url: `${siteUrl()}/blog/${post.slug}/` };
+    }
+
+    case "list_fares": {
+      // O catálogo é do banco; a apresentação (rótulos, janela em texto) é a mesma do site.
+      const rows = unwrap(
+        await sb.rpc("get_unit_fares", { p_location_parking_type_id: a.location_parking_type_id ?? null }),
+      ) as FareRow[];
+      return presentFares(rows ?? []);
     }
 
     case "current_datetime":
