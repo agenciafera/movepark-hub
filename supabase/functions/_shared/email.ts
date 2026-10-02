@@ -72,16 +72,29 @@ export async function getEmailConfig(admin: any): Promise<{ from: string | null;
   };
 }
 
+/** Anexo binário (ex.: o PDF do voucher). O denomailer codifica em base64 na hora de enviar. */
+export interface EmailAttachment {
+  filename: string;
+  contentType: string;
+  content: Uint8Array;
+}
+
+/** Monta o anexo de um PDF já gerado. */
+export function pdfAttachment(filename: string, content: Uint8Array): EmailAttachment {
+  return { filename, contentType: "application/pdf", content };
+}
+
 interface SendArgs {
   from: string;
   to: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }
 
 /** Envia um e-mail via SMTP. Nunca lança; retorna {ok}. */
-export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs): Promise<{ ok: boolean; error?: string }> {
+export async function sendEmail({ from, to, subject, html, replyTo, attachments }: SendArgs): Promise<{ ok: boolean; error?: string }> {
   const hostname = env("SES_SMTP_HOST");
   const port = Number(env("SES_SMTP_PORT") ?? "465");
   const username = env("SES_SMTP_USER");
@@ -121,6 +134,12 @@ export async function sendEmail({ from, to, subject, html, replyTo }: SendArgs):
           transferEncoding: "base64",
         },
       ],
+      attachments: (attachments ?? []).map((a) => ({
+        filename: a.filename,
+        contentType: a.contentType,
+        content: a.content,
+        encoding: "binary" as const,
+      })),
     });
     return { ok: true };
   } catch (e) {
@@ -659,7 +678,7 @@ export function tplBookingConfirmation(
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 32px;">${summary}</table>
       ${checkItem(`O <strong style="color:${BRAND.navy};">${escapeHtml(b.location_name)}</strong> espera você em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDayMonth(b.check_in_at))}</strong>.`)}
       ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}
-      ${checkItem(`O voucher fica na sua reserva, pronto para baixar quando quiser.`)}
+      ${checkItem(`O voucher vai em anexo neste e-mail e também fica na sua reserva, pronto para baixar quando quiser.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
       { preheader: `Reserva ${b.code} confirmada no ${b.location_name}` },
     ),

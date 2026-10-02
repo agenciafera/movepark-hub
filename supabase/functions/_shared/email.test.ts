@@ -2,6 +2,7 @@ import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
 import {
   htmlToBase64,
+  pdfAttachment,
   siteUrl,
   tplApprovalInvite,
   tplBookingConfirmation,
@@ -139,6 +140,24 @@ Deno.test("tplBookingConfirmation: resumo, total, checklist e link da reserva", 
   assertStringIncludes(m.html, "https://hub.movepark.co/bookings/MP-7K2Q9X");
   // Sem travessão (regra de marca).
   assert(!m.html.includes("—") && !m.html.includes("–"));
+});
+
+Deno.test("tplBookingConfirmation: avisa que o voucher vai em anexo (02/10/2026)", () => {
+  const b: VoucherBooking = {
+    code: "MP-F3FC9F", check_in_at: "2026-10-02T13:00:00-03:00", check_out_at: "2026-10-05T13:00:00-03:00",
+    total_amount: 83.7, currency: "BRL", company_name: "Abbapark", location_name: "Aeroporto Afonso Pena",
+    location_address: null, parking_type_name: "Vaga Coberta", vehicle: null,
+  };
+  const m = tplBookingConfirmation(b, "Kallef", "https://movepark.co/bookings/MP-F3FC9F");
+  assertStringIncludes(m.html, "O voucher vai em anexo neste e-mail");
+});
+
+Deno.test("pdfAttachment: nome do voucher e tipo application/pdf, bytes intactos", () => {
+  const bytes = new TextEncoder().encode("%PDF-1.7 fake");
+  const a = pdfAttachment("voucher-MP-F3FC9F.pdf", bytes);
+  assertEquals(a.filename, "voucher-MP-F3FC9F.pdf");
+  assertEquals(a.contentType, "application/pdf");
+  assertEquals(a.content, bytes);
 });
 
 Deno.test("tplBookingConfirmation: sem nome cai em saudação genérica", () => {

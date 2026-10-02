@@ -6,9 +6,39 @@
 // (WHERE ... IS NULL). Só quem ganha a corrida envia; se o envio falhar, o campo é limpo para
 // que uma reentrega futura tente de novo.
 
-import { getEmailConfig, sendEmail, siteUrl, tplBookingConfirmation } from "./email.ts";
-import { mapBookingRowToVoucher, VOUCHER_BOOKING_SELECT } from "./voucher/fields.ts";
+import {
+  type EmailAttachment,
+  getEmailConfig,
+  pdfAttachment,
+  sendEmail,
+  siteUrl,
+  tplBookingConfirmation,
+} from "./email.ts";
+import {
+  mapBookingRowToVoucher,
+  VOUCHER_BOOKING_SELECT,
+  type VoucherBooking,
+  voucherFilename,
+} from "./voucher/fields.ts";
+import { buildVoucherPdf, voucherValidateUrl } from "./voucher/pdf.ts";
 import { notifyBooking } from "./notify.ts";
+
+/**
+ * O voucher vai em anexo no e-mail de confirmação (02/10/2026): o cliente recebe o PDF sem
+ * precisar entrar no site. É o mesmo gerador do bucket (`buildVoucherPdf`), montado de novo
+ * aqui em vez de baixado do storage, porque a pré-geração do webhook corre em paralelo a este
+ * envio e o arquivo pode ainda não existir. Best-effort: se o PDF falhar, o e-mail sai sem
+ * anexo, como saía antes, em vez de não sair.
+ */
+async function voucherAttachment(voucher: VoucherBooking): Promise<EmailAttachment[]> {
+  try {
+    const bytes = await buildVoucherPdf(voucher, voucherValidateUrl(siteUrl(), voucher.code));
+    return [pdfAttachment(voucherFilename(voucher.code), bytes)];
+  } catch (e) {
+    console.error("[booking-confirmation] voucher não anexado:", voucher.code, e);
+    return [];
+  }
+}
 
 // deno-lint-ignore no-explicit-any
 export async function sendBookingConfirmationEmail(admin: any, bookingId: string): Promise<void> {
@@ -58,7 +88,8 @@ export async function sendBookingConfirmationEmail(admin: any, bookingId: string
     const voucher = mapBookingRowToVoucher(b);
     const url = `${siteUrl()}/bookings/${voucher.code}`;
     const tpl = tplBookingConfirmation(voucher, name, url);
-    const res = await sendEmail({ from, to: email, subject: tpl.subject, html: tpl.html });
+    const attachments = await voucherAttachment(voucher);
+    const res = await sendEmail({ from, to: email, subject: tpl.subject, html: tpl.html, attachments });
     if (!res.ok) throw new Error(res.error ?? "falha no SMTP");
   } catch (e) {
     // Rollback da guarda: libera para retry num próximo evento de confirmação.

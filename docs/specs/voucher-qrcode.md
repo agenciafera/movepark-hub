@@ -21,6 +21,11 @@
   `booking_operator_update`); **cliente** vê aviso + link para a própria reserva; **anônimo** vê CTA de
   login. Validade em `voucher.logic.ts` (estado por status + janela -30min/+2h, pura/testável). A
   **saída** (checked_in → completed) segue no drawer do painel do operador.
+- **Voucher em anexo no e-mail de confirmação (02/10/2026):** `sendBookingConfirmationEmail`
+  (`_shared/booking-confirmation.ts`) monta o mesmo PDF com `buildVoucherPdf` e o anexa como
+  `voucher-<code>.pdf` (`sendEmail` ganhou `attachments`, codificados em base64 pelo denomailer). É
+  montado de novo, e não baixado do bucket, porque a pré-geração do webhook corre em paralelo ao
+  envio. Best-effort: se o PDF falhar, o e-mail sai sem anexo e o cliente ainda baixa na reserva.
 - **Cliente vê a entrada:** `useBookingDetail` carrega `checked_in_at`; o voucher mostra "Entrada
   registrada às HH:MM" quando `checked_in`.
 

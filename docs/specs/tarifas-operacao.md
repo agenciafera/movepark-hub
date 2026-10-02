@@ -76,7 +76,9 @@ chama `sendBookingConfirmationEmail` (`supabase/functions/_shared/booking-confir
 é **exatamente uma vez** por reserva, reivindicado por UPDATE condicional em
 `booking.confirmation_email_sent_at`; se o SMTP falhar, o campo é limpo e a próxima reentrega tenta
 de novo. O destinatário é o snapshot do pedido (`booking.customer_email`) e só cai no `auth.users`
-se faltar. O e-mail leva o resumo e o link `/bookings/<code>`, de onde sai o voucher.
+se faltar. O e-mail leva o resumo, o link `/bookings/<code>` e, desde 02/10/2026, **o voucher em
+anexo** (`voucher-<code>.pdf`, o mesmo PDF do bucket, montado na hora; se a geração falhar, o
+e-mail sai sem anexo). Ver `voucher-qrcode.md`.
 
 **Onde se configura:** remetente em `app_setting.partner_email_from` (hoje `contato@movepark.co`),
 editável no Manager. Credenciais SMTP do SES nos Edge Secrets (`SES_SMTP_*`). O **conteúdo** do
