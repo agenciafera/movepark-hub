@@ -6,16 +6,52 @@
 begin;
 select plan(18);
 
--- ── fixture: customer + um tipo de vaga do seed com capacidade = 1 ──────────
+-- ── datas sempre no futuro ──────────────────────────────────────────────────
+-- O core recusa check-in no passado, e o arquivo nasceu com datas cravadas de
+-- outubro de 2026, que venceram e derrubaram o job `db` em 01/10/2026. `d(n)` é
+-- o dia n contado de 29 dias à frente, às 12:00 UTC, e `dia(n)` a data desse
+-- check-in para as asserções de capacidade. A distância entre as reservas é a
+-- mesma de antes (dias 1, 5, 8, 11, 15, 20, 22, 25 e 26).
+create function pg_temp.d(n int) returns timestamptz language sql as $f$
+  select ((current_date + 29 + n)::timestamp + interval '12 hours') at time zone 'UTC'
+$f$;
+create function pg_temp.dia(n int) returns date language sql as $f$
+  select current_date + 29 + n
+$f$;
+
+-- ── fixture: customer + uma unidade própria com capacidade = 1 ─────────────
+-- A unidade é criada aqui (e não pega do seed) porque o teste precisa de UMA vaga
+-- livre em todas as datas: numa unidade com reservas de verdade, "capacidade = 1"
+-- vira "sem disponibilidade" na primeira reserva. Fecha no Hub, tem preço e cumpre
+-- o pré-voo (contrato, split, recebedor), que é o que o core exige para reservar.
 do $$
-declare u uuid := gen_random_uuid(); v_lpt uuid;
+declare
+  u uuid := gen_random_uuid();
+  cid uuid := gen_random_uuid(); loc uuid := gen_random_uuid(); pt uuid := gen_random_uuid();
+  cpt uuid := gen_random_uuid(); v_lpt uuid := gen_random_uuid();
 begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
     values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','hold@ex.com',now(),now());
   insert into public.profiles(id, role) values (u,'customer') on conflict (id) do nothing;
-  select id into v_lpt from public.location_parking_type where capacity > 0 and is_active limit 1;
-  update public.location_parking_type set capacity = 1, has_minimum_stay = false, has_minimum_date = false
-   where id = v_lpt;
+
+  insert into public.company(id, name, slug, status, onboarding_status, contract_accepted_at, gateway_split_enabled)
+    values (cid, 'Hold Empresa', 'hold-empresa', 'active', 'active', now(), true);
+  insert into public.payout_recipient(company_id, provider, external_recipient_id, status)
+    values (cid, 'pagarme', 're_hold', 'active');
+  insert into public.location(id, company_id, name, slug, status, photos, checkout_mode)
+    values (loc, cid, 'Hold Unidade', 'hold-unidade', 'active',
+            '["/Estacionamentos/seed/foto-de-teste.webp"]'::jsonb, 'hub');
+  insert into public.parking_type(id, code, name) values (pt, 'hold_coberta', 'Hold Coberta');
+  insert into public.company_parking_type(id, company_id, parking_type_id, base_price, default_capacity)
+    values (cpt, cid, pt, 10, 1);
+  insert into public.location_parking_type(id, location_id, company_parking_type_id, capacity, is_active,
+                                           has_minimum_stay, has_minimum_date)
+    values (v_lpt, loc, cpt, 1, true, false, false);
+  insert into public.pricing_rule(location_parking_type_id, strategy) values (v_lpt, 'uniform_by_duration');
+  perform public.wl_mirror_apply_pricing(
+    v_lpt, '{"strategy":"uniform_by_duration","old_price_strategy":"none"}'::jsonb,
+    '[{"from_day":1,"to_day":null,"unit_price":10,"is_old_price":false}]'::jsonb, 10, '[]'::jsonb, 1);
+
   perform set_config('test.u', u::text, false);
   perform set_config('test.lpt', v_lpt::text, false);
 end $$;
@@ -36,7 +72,7 @@ declare r jsonb;
 begin
   r := public.create_booking_atomic(
     current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-01T12:00:00Z', '2026-10-02T12:00:00Z');
+    pg_temp.d(1), pg_temp.d(2));
   perform set_config('test.bk_hold', r::text, false);
 end $$;
 
@@ -55,7 +91,7 @@ do $$
 declare r jsonb; v_bk uuid;
 begin
   r := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-05T12:00:00Z', '2026-10-06T12:00:00Z');
+    pg_temp.d(5), pg_temp.d(6));
   v_bk := (r ->> 'booking_id')::uuid;
   update public.booking set expires_at = now() - interval '1 hour' where id = v_bk;
   insert into public.payment(booking_id, provider, method, amount, status, provider_charge_id)
@@ -73,7 +109,7 @@ do $$
 declare r jsonb; v_bk uuid;
 begin
   r := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-08T12:00:00Z', '2026-10-09T12:00:00Z');
+    pg_temp.d(8), pg_temp.d(9));
   v_bk := (r ->> 'booking_id')::uuid;
   update public.booking set expires_at = now() - interval '1 hour' where id = v_bk;
   insert into public.payment(booking_id, provider, method, amount, status, provider_charge_id)
@@ -91,7 +127,7 @@ do $$
 declare r jsonb; v_bk uuid;
 begin
   r := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-11T12:00:00Z', '2026-10-12T12:00:00Z');
+    pg_temp.d(11), pg_temp.d(12));
   v_bk := (r ->> 'booking_id')::uuid;
   update public.booking set expires_at = now() - interval '1 hour' where id = v_bk;
   insert into public.payment(booking_id, provider, method, amount, status, provider_charge_id)
@@ -105,7 +141,7 @@ select is(
   'expired', 'cron expira PIX apenas gerado e não pago (ocioso = abandono)');
 select is(
   coalesce((select booked_count from public.location_parking_availability
-   where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-10-11'), 0),
+   where location_parking_type_id = current_setting('test.lpt')::uuid and date = pg_temp.dia(11)), 0),
   0, 'cron libera a capacidade do PIX ocioso');
 
 -- ── 5) grace: dentro do grace NÃO expira; além do grace expira ─────────────
@@ -113,7 +149,7 @@ do $$
 declare r jsonb; v_bk uuid;
 begin
   r := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-15T12:00:00Z', '2026-10-16T12:00:00Z');
+    pg_temp.d(15), pg_temp.d(16));
   v_bk := (r ->> 'booking_id')::uuid;
   update public.booking set expires_at = now() - interval '1 minute' where id = v_bk;  -- < grace (2min)
   perform public.cron_expire_pending_bookings();
@@ -141,7 +177,7 @@ do $$
 declare r jsonb; v_bk uuid; v_pay uuid; res jsonb;
 begin
   r := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-20T12:00:00Z', '2026-10-21T12:00:00Z');
+    pg_temp.d(20), pg_temp.d(21));
   v_bk := (r ->> 'booking_id')::uuid;
   insert into public.payment(booking_id, provider, method, amount, status, provider_charge_id)
     values (v_bk, 'pagarme', 'card', 10, 'paid', 'ch_6a') returning id into v_pay;
@@ -160,7 +196,7 @@ do $$
 declare r jsonb; v_bk uuid; v_pay uuid; res jsonb;
 begin
   r := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-22T12:00:00Z', '2026-10-23T12:00:00Z');
+    pg_temp.d(22), pg_temp.d(23));
   v_bk := (r ->> 'booking_id')::uuid;
   insert into public.payment(booking_id, provider, method, amount, status, provider_charge_id)
     values (v_bk, 'pagarme', 'pix', 10, 'paid', 'ch_6b') returning id into v_pay;
@@ -176,7 +212,7 @@ select is(
   'confirmed', '6b: reserva reconfirmada vira confirmed');
 select is(
   (select booked_count from public.location_parking_availability
-   where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-10-22'),
+   where location_parking_type_id = current_setting('test.lpt')::uuid and date = pg_temp.dia(22)),
   1, '6b: capacidade re-adquirida na reconfirmação');
 
 -- 6c) cancelled SEM vaga → needs_refund (outra reserva tomou a vaga)
@@ -185,14 +221,14 @@ declare r_b jsonb; v_b uuid; v_pay uuid; r_a jsonb; res jsonb;
 begin
   -- B segura a vaga, é paga e depois cancelada (libera)
   r_b := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-25T12:00:00Z', '2026-10-26T12:00:00Z');
+    pg_temp.d(25), pg_temp.d(26));
   v_b := (r_b ->> 'booking_id')::uuid;
   insert into public.payment(booking_id, provider, method, amount, status, provider_charge_id)
     values (v_b, 'pagarme', 'card', 10, 'paid', 'ch_6c') returning id into v_pay;
   perform public.cancel_booking_with_release(v_b, 'teste');   -- libera a vaga
   -- A toma a única vaga das mesmas datas
   r_a := public.create_booking_atomic(current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
-    '2026-10-25T12:00:00Z', '2026-10-26T12:00:00Z');
+    pg_temp.d(25), pg_temp.d(26));
   -- confirmação tardia de B: vaga cheia (A ocupa) → needs_refund
   res := public.confirm_or_refund_booking(v_b, v_pay);
   perform set_config('test.res_6c', res::text, false);

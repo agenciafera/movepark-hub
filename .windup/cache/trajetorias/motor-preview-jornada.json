@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "motor-preview-jornada",
     "start_url": "/motor-preview",
-    "start_sig": "sig:d81fd038a56350e0",
+    "start_sig": "sig:9d7dd055a6830f48",
     "scenario_sig": "74f8fea187c71087"
   },
   "plan": {
@@ -63,17 +63,14 @@
           "selector": "img",
           "description": "illustration image on the page"
         },
-        "expect": {
-          "selector": "img"
-        },
         "timeout_ms": 5000
       },
       {
         "id": "a5",
         "type": "click",
         "target": {
-          "selector": "main button",
-          "description": "Entrar button inside main content area"
+          "selector": "main button:has-text('Entrar')",
+          "description": "Entrar button in main content area"
         },
         "timeout_ms": 10000
       },
@@ -85,7 +82,7 @@
           "description": "page body after navigation"
         },
         "expect": {
-          "url": "**/login**"
+          "url": "/login"
         },
         "timeout_ms": 10000
       },
@@ -124,15 +121,15 @@
     "task": "Passo 1: verifique que a pagina exibe o texto \"Entre para ver seu Clube\". Passo 2: verifique que a pagina exibe o texto \"Seu nivel, seu dinheiro de volta\" (procure por \"dinheiro de volta\"). Passo 3: verifique que a pagina exibe o texto \"link de indicacao\" (procure por \"link de indica\"). Passo 4: verifique que existe a ilustracao da pagina, checando o seletor img. Passo 5: clique no botao \"Entrar\". Passo 6: verifique SOMENTE a url, com a postcondicao url do tipo contains e o valor \"/login\". Nao use seletor nenhum neste passo. Passo 7: verifique que a tela de login exibe o texto \"Entre na Movepark\". Passo 8: verifique que a tela de login exibe o texto \"Reserve em segundos. Sem senha\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T16:20:51.343Z"
+      "at": "2026-10-02T12:44:04.708Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T16:20:52.137Z",
+    "created_at": "2026-10-02T12:44:11.039Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

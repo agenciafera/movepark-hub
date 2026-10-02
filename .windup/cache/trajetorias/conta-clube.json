@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página carregado"
+          "description": "página do Movepark Clube"
         },
         "expect": {
           "text_contains": {
@@ -31,7 +31,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página carregado"
+          "description": "página do Movepark Clube"
         },
         "expect": {
           "text_contains": {
@@ -46,7 +46,7 @@
         "type": "wait_for",
         "target": {
           "selector": "body",
-          "description": "Corpo da página carregado"
+          "description": "página do Movepark Clube"
         },
         "expect": {
           "text_contains": {
@@ -61,15 +61,15 @@
     "task": "Passo 1: verifique que a pagina exibe o texto \"Dinheiro de volta\". Passo 2: verifique que a pagina exibe o texto \"Como funciona\". Passo 3: verifique que a pagina exibe o texto \"Indique e ganhe\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-04T14:11:50.671Z"
+      "at": "2026-10-02T12:41:37.051Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-04T14:11:52.154Z",
+    "created_at": "2026-10-02T12:41:38.415Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

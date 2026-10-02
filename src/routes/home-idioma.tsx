@@ -131,7 +131,7 @@ export default function HomeIdiomaPage() {
           <span className="text-[11px] font-bold uppercase tracking-[0.4px] text-muted-steel">
             {T.homeEyebrow}
           </span>
-          <h1 className="mt-3 max-w-[22ch] text-display-3xl text-ink">{T.homeH1}</h1>
+          <h1 className="mt-3 text-balance text-display-3xl text-ink">{T.homeH1}</h1>
           <p className="mt-5 max-w-[60ch] text-body-md text-body">{T.homeLead}</p>
 
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2">

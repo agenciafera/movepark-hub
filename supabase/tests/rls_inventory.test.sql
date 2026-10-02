@@ -50,9 +50,10 @@ select set_eq(
     'knowledge_chunk',       -- base do RAG
     'knowledge_source_queue',-- fila de ingestão da base
     'otp_request_log',       -- freio de disparo de OTP; o identificador vai em SHA-256
-    'partner_contract_version' -- texto e hash do contrato do parceiro; lido só por RPC (partner_contract_current)
+    'partner_contract_version', -- texto e hash do contrato do parceiro; lido só por RPC (partner_contract_current)
+    'identity_assertion'     -- prova de identidade do agente (OTP de terceiro); só Edge, pelas RPCs identity_assertion_*
   ],
-  'as tabelas fail-closed são exatamente estas nove'
+  'as tabelas fail-closed são exatamente estas dez'
 );
 
 -- ── nenhuma escrita passa com predicado trivial ──────────────────────────────
