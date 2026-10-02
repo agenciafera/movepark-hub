@@ -146,6 +146,17 @@ Fonte que se contradiz é fonte que a IA descarta. Em 28 e 29/09:
 
    **Resolvido no gerador em 02/10/2026 (Conteúdo 41):** o `destination_price_index` passou a publicar `shuttle_frequency_minutes` ao lado do trajeto (migration `20261128150000`), e a frase dos artefatos (llms.txt, llms-full.txt e gêmeos `.md`) sai de `scripts/traslado.mjs`: "traslado de 10 min até o terminal" na BePark, e "van a cada N min" só quando a ficha declara a frequência. O `bloco-de-fato.mjs` já separava os dois números e não mudou. Cadastrar a frequência da BePark na ficha é o Conteúdo 51.
 6. **O mapa de Confins não tem o Bandeira Park nem o Estapar.** O Estapar é o antigo Minas Park, reservável pelo Zul+, que declara menos de 1 km do terminal. Os dois foram citados pelo Modo IA. Sem o Estapar, o ranking de distância aponta o Park Confins (2,87 km) como o mais próximo. Atividade: Conteúdo 42.
+
+   **Resolvido em 02/10/2026 (Conteúdo 42):** os dois entraram como lote mapeado publicado (migration `20261128160000`), com `google_place_id`, coordenada e endereço da Places API e preço datado:
+
+   | Pátio | Distância medida (PostGIS) | Preço registrado | Fonte |
+   | --- | ---: | --- | --- |
+   | Estapar Aeroporto (antigo Minas Park) | 5,0 km | a partir de R$ 26,90 a diária | blog do Zul+; a tabela por período só aparece no app |
+   | Bandeira Park | 9,8 km | R$ 24,99 a diária, R$ 125,93 em 7, R$ 233,85 em 15, R$ 323,70 em 30 (descoberta, sem cupom) | sistema de reserva bandeirapark.online, "tarifas de abertura" |
+
+   **A Estapar não fica a menos de 1 km.** É o que o Zul+ declara, mas as duas fichas do Google no endereço (Rua das Goiabeiras, km 03 da MG-10) dão 5,0 km. Então o Park Confins (2,87 km) continua sendo o mais próximo, e o ranking da página já estava certo. A FAQ da Estapar passou a dar a distância medida e a do Zul+ lado a lado. Não existe FAQ "qual o mais próximo" para Confins.
+
+   Confins fica com 11 lotes mapeados: 8 entre 2,9 km e 3,7 km, a Estapar a 5,0 km, o Multipark a 9,1 km e o Bandeira a 9,8 km. A FAQ "o que está incluso" dizia "entre 2,9 km e 3,1 km", o que já era falso por causa do Multipark, e dizia que nenhum lote tinha vaga coberta. As duas frases foram corrigidas.
 7. **22 FAQs de destino** começam a resposta sobre voo atrasado com "Sua vaga fica garantida pelo período reservado". É promessa sem capacidade declarada (ADR-009). Atividade: Conteúdo 44.
 
 Achados menores da checagem de 28/09, sem atividade própria. Entram quando alguém mexer na área:
