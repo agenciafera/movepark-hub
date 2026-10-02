@@ -153,6 +153,12 @@ export const READ_TOOLS: ReadToolDef[] = [
     parameters: obj({ slug: S("slug do destino") }, ["slug"]),
   },
   {
+    name: "list_addons",
+    description:
+      "Serviços adicionais ativos de uma unidade (ex.: Auto Start), com descrição e preço final. Cada um é cobrado uma vez por reserva. Ofereça junto com as tarifas e passe os escolhidos em add_on_service_ids no quote_booking/create_booking: o link de pagamento do agente pula o passo de adicionais do checkout.",
+    parameters: obj({ location_id: S("id da unidade (location)") }, ["location_id"]),
+  },
+  {
     name: "list_fares",
     description:
       "Tarifas da reserva (Básica, Flex, Superflex) com o preço que soma à vaga, o cancelamento grátis, os benefícios incluídos e não incluídos (mesmo texto do site) e o que cada benefício faz. Use para oferecer a tarifa antes de cotar ou reservar; passe fare_tier no quote_booking/create_booking.",
@@ -568,6 +574,19 @@ export async function callRead(
       return { ...withFlatTags(post), url: `${siteUrl()}/blog/${post.slug}/` };
     }
 
+    case "list_addons": {
+      // A mesma leitura do checkout do site (useLocationAddOns): vínculo ativo na unidade e serviço
+      // ativo. O core da reserva aplica os mesmos dois filtros, então o que sai aqui é o que ela aceita.
+      const rows = unwrap(
+        await sb
+          .from("location_add_on_service")
+          .select("price_override, add_on_service:add_on_service!inner(id, name, description, base_price, is_active, sort_order)")
+          .eq("location_id", a.location_id as string)
+          .eq("is_active", true),
+      ) as AddonRow[];
+      return { addons: presentAddons(rows ?? []) };
+    }
+
     case "list_fares": {
       // O catálogo é do banco; a apresentação (rótulos, janela em texto) é a mesma do site.
       const rows = unwrap(
@@ -582,4 +601,36 @@ export async function callRead(
     default:
       throw new Error(`Tool de leitura desconhecida: ${name}`);
   }
+}
+
+export interface AddonRow {
+  price_override: number | string | null;
+  add_on_service: {
+    id: string;
+    name: string;
+    description: string | null;
+    base_price: number | string | null;
+    is_active: boolean;
+    sort_order: number | null;
+  } | null;
+}
+
+/**
+ * Adicionais para o agente: só os ativos, na ordem do site, com o preço final (o da unidade vence o
+ * do catálogo). O core cobra quantidade 1 por reserva, e é isso que `charged` diz.
+ */
+export function presentAddons(rows: AddonRow[]) {
+  return rows
+    .filter((r) => r.add_on_service?.is_active)
+    .sort((x, y) => (x.add_on_service!.sort_order ?? 0) - (y.add_on_service!.sort_order ?? 0))
+    .map((r) => {
+      const a = r.add_on_service!;
+      return {
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        price: Number(r.price_override ?? a.base_price ?? 0),
+        charged: "por reserva",
+      };
+    });
 }

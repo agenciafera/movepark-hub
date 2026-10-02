@@ -224,6 +224,18 @@ data, IP) antes da cobrança. O aceite continua sendo da pessoa, no navegador; o
 (§8 segue valendo). Antes, a regra exigia CPF e Termos para pular, e o link do agente sempre abria no
 passo 1 com tudo preenchido, o que a pessoa lia como "pedindo login" (MP-6CB259).
 
+### 5.6 Adicionais (`list_addons`, 02/10/2026)
+
+Tool de leitura no registro único (`/public`, `/customer` e chat do site): `list_addons({ location_id })`
+devolve os adicionais **ativos** da unidade (`id`, `name`, `description`, `price` final e `charged: "por
+reserva"`), com a mesma leitura do checkout do site (`useLocationAddOns`): vínculo ativo na unidade, serviço
+ativo, ordem do catálogo, preço da unidade vencendo o do catálogo. O `_create_booking_core` aplica os mesmos
+filtros (`las.location_id`, `las.is_active`, `a.is_active`) e cobra quantidade 1. Importa para o agente
+porque o link `?pay=1` pula o passo de adicionais: se o agente não oferecer, o cliente não vê. Decisão do
+Kallef: o agente oferece todo adicional ativo como vier do Hub, sem interpretar a descrição. Não há regra de
+estadia mínima por adicional no schema; se um estacionamento precisar, ela entra no Hub (dado + recusa no
+core), nunca no agente.
+
 ### 5.5 Tarifas (`list_fares`, 02/10/2026)
 
 Tool de leitura no registro único (`/public`, `/customer` e chat do site). Devolve, por tarifa: `tier`,

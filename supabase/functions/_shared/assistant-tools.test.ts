@@ -7,6 +7,7 @@ import {
   callRead,
   nowContext,
   PARKING_TYPE_CODES,
+  presentAddons,
   READ_TOOLS,
   toGeminiDecl,
   toMcpToolDef,
@@ -393,4 +394,17 @@ Deno.test("callRead: slug ambiguo e recusado, e nao resolvido no chute", async (
   assertEquals(r.error!.includes("Nationpark"), true);
   // Busca por slug tem que pedir DUAS linhas, senao a ambiguidade some.
   assertEquals(calls[0].limit, 2);
+});
+
+// Adicionais (02/10/2026): o agente oferece o que o checkout do site ofereceria, com o mesmo preço.
+Deno.test("presentAddons: só ativos, na ordem do site, preço da unidade vence o do catálogo", () => {
+  const out = presentAddons([
+    { price_override: null, add_on_service: { id: "b", name: "Lavagem", description: null, base_price: "35", is_active: true, sort_order: 2 } },
+    { price_override: "20", add_on_service: { id: "a", name: "Auto Start", description: "Liga o carro", base_price: 25, is_active: true, sort_order: 1 } },
+    { price_override: 10, add_on_service: { id: "c", name: "Inativo", description: null, base_price: 10, is_active: false, sort_order: 0 } },
+  ]);
+  assertEquals(out.map((x) => [x.id, x.price, x.charged]), [
+    ["a", 20, "por reserva"],
+    ["b", 35, "por reserva"],
+  ]);
 });
