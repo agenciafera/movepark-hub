@@ -32,7 +32,10 @@ export type PriceUnit = {
   review_avg: number | null;
   review_count: number;
   has_shuttle: boolean;
+  /** Tempo de trajeto da van até o terminal (`location.shuttle_to_terminal_minutes`). */
   shuttle_minutes: number | null;
+  /** De quanto em quanto tempo a van sai. Opcional: o índice só passou a trazer em 10/2026. */
+  shuttle_frequency_minutes?: number | null;
   distance_m: number | null;
   min_stay_days: number | null;
   price_updated_at: string | null;

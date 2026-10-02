@@ -7,7 +7,7 @@
 -- deixar de ter uma entrada por duração pedida, o front quebra a tabela em silêncio.
 
 begin;
-select plan(23);
+select plan(25);
 
 -- ── Existência e superfície ──────────────────────────────────────────────────
 
@@ -52,10 +52,13 @@ begin
 
   -- Com foto + is_listed direto: o trigger de gate (photo_required_to_list) respeita
   -- o valor quando a foto existe e não vigia a coluna is_listed em si.
+  -- Traslado de 10 min até o terminal e frequência não declarada: o caso da BePark que o
+  -- llms.txt publicava como "van a cada 10 min" (Conteúdo 41).
   insert into public.location (company_id, destination_id, name, slug, latitude, longitude,
-                               photos, is_listed)
+                               photos, is_listed, has_shuttle, shuttle_to_terminal_minutes,
+                               shuttle_frequency_minutes)
     values (v_company, v_dest, 'PgTAP Unidade', 'pgtap-indice-unidade', -23.4400, -46.4800,
-            '["https://exemplo.test/foto.jpg"]'::jsonb, true)
+            '["https://exemplo.test/foto.jpg"]'::jsonb, true, true, 10, null)
     returning id into v_loc;
 
   -- Unidade NÃO listada no mesmo destino: não pode aparecer.
@@ -137,6 +140,13 @@ select is(pg_temp.unit('pgtap_piso') -> 'prices' -> 0 -> 'total', 'null'::jsonb,
 
 select is((pg_temp.unit('pgtap_piso') ->> 'min_stay_days')::int, 3,
   'a estadia mínima sai declarada, para a página explicar o vazio');
+
+select is((pg_temp.unit('pgtap_uniform') ->> 'shuttle_minutes')::int, 10,
+  'shuttle_minutes é o tempo de trajeto até o terminal');
+
+select ok(pg_temp.unit('pgtap_uniform') ? 'shuttle_frequency_minutes'
+          and pg_temp.unit('pgtap_uniform') -> 'shuttle_frequency_minutes' = 'null'::jsonb,
+  'a frequência sai em chave própria e nula quando a ficha não declara (não herda o trajeto)');
 
 select is((
   select count(*)::int

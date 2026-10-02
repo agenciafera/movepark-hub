@@ -25,6 +25,7 @@ import path from "node:path";
 import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
 import { agruparGuiasPorDestino, rebaixarHeadings } from "./llms-indice.mjs";
 import { buildPriceIndexJson } from "./price-index-json.mjs";
+import { fraseTraslado } from "./traslado.mjs";
 
 // Host canônico: mesma fonte do front e do sitemap. Este script escreve o corpus que as IAs
 // leem (llms-full.txt, faq/*.md, precos/*.md, destinos/*.md), então host errado aqui é o site
@@ -503,9 +504,9 @@ const linhaUnidade = (u) => {
   }
   const dist = fmtDistancia(u.distance_m);
   const onde = dist ? `, a ${dist} do terminal` : "";
-  const traslado = u.has_shuttle
-    ? `, traslado${u.shuttle_minutes != null ? ` a cada ${u.shuttle_minutes} min` : ""}`
-    : "";
+  // Trajeto e frequência são números diferentes, e misturar os dois publicou a van da BePark
+  // "a cada 10 min" (Conteúdo 41). A regra mora em `fraseTraslado`, que tem teste.
+  const traslado = fraseTraslado(u);
   const nota =
     u.review_avg != null && u.review_count
       ? `, nota ${u.review_avg.toFixed ? u.review_avg.toFixed(1) : u.review_avg} (${u.review_count} avaliações)`

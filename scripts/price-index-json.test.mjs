@@ -34,6 +34,7 @@ function priceIndexFake() {
             distance_m: 1200,
             has_shuttle: true,
             shuttle_minutes: 7,
+            shuttle_frequency_minutes: 20,
             review_avg: 4.8,
             review_count: 12,
             min_stay_days: null,
@@ -122,6 +123,14 @@ describe("buildPriceIndexJson", () => {
     expect(dest.units.map((u) => u.price_updated_at)).toEqual([
       "2026-09-10T12:00:00+00:00",
       "2026-09-16T04:02:06+00:00",
+    ]);
+  });
+
+  it("trajeto e frequência da van saem em campos separados (Conteúdo 41)", () => {
+    const [dest] = build().destinations;
+    expect(dest.units.map((u) => [u.shuttle_minutes, u.shuttle_frequency_minutes])).toEqual([
+      [7, 20],
+      [null, null],
     ]);
   });
 

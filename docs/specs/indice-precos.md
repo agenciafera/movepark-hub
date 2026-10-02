@@ -57,10 +57,16 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
       units: [{ company_slug, company_name, location_slug, location_name,
                 parking_type_code, parking_type_name, checkout_mode,
                 review_avg, review_count, has_shuttle, shuttle_minutes,
-                distance_m, min_stay_days, price_updated_at,
+                shuttle_frequency_minutes, distance_m, min_stay_days, price_updated_at,
                 prices: [{ days, total, old_total }] }] }] }
 ```
 
+- `shuttle_minutes` é o **tempo de trajeto** da van até o terminal
+  (`location.shuttle_to_terminal_minutes`), e `shuttle_frequency_minutes` é de quanto em quanto
+  tempo ela sai (`location.shuttle_frequency_minutes`, nulo quando a ficha não declara). São
+  números diferentes: o llms.txt publicou o trajeto como frequência até 10/2026 (Conteúdo 41,
+  migration `20261128150000_price_index_frequencia_da_van.sql`). O texto dos artefatos sai de
+  `scripts/traslado.mjs`.
 - O preço vem de `simulate_price` (motor no Postgres, ADR: nunca recalcular em TS);
   `old_total` é o balcão (`old_price_strategy`).
 - `distance_m` é `ST_Distance(location.geog, destination.geog)` (PostGIS, ADR-001).
@@ -197,8 +203,8 @@ gate `bun run test` (o projeto `unit` do Vitest passou a incluir
     cheapest: [{ days, total, per_day, company_name, parking_type_name, url }],
     units: [{ company_slug, company_name, location_slug, location_name,
               parking_type_code, parking_type_name, url, checkout_mode,
-              distance_m, has_shuttle, shuttle_minutes, review_avg, review_count,
-              min_stay_days, price_updated_at,
+              distance_m, has_shuttle, shuttle_minutes, shuttle_frequency_minutes,
+              review_avg, review_count, min_stay_days, price_updated_at,
               prices: [{ days, total, old_total, per_day }] }] }],
   destinations_without_online_booking: [{ slug, code, name, type, city, state, url }] }
 ```

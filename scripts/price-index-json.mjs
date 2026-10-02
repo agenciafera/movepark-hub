@@ -40,7 +40,10 @@ function unidadeJson(u, siteUrl) {
     checkout_mode: u.checkout_mode,
     distance_m: u.distance_m ?? null,
     has_shuttle: u.has_shuttle ?? false,
+    // Tempo de trajeto da van até o terminal. NÃO é a frequência, que vem no campo abaixo.
     shuttle_minutes: u.shuttle_minutes ?? null,
+    // De quanto em quanto tempo a van sai, quando a ficha declara (Conteúdo 41).
+    shuttle_frequency_minutes: u.shuttle_frequency_minutes ?? null,
     /*
       Nota só com volume (Conteúdo 30). O artefato é o que agente lê sem raspar HTML, e
       publicar 5,0 de uma avaliação aqui é pior que na tela: ninguém vê a contagem ao lado.

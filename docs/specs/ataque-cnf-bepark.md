@@ -143,6 +143,8 @@ Fonte que se contradiz é fonte que a IA descarta. Em 28 e 29/09:
    - a ficha não tem frequência.
 
    Atividades: Conteúdo 41 e 51.
+
+   **Resolvido no gerador em 02/10/2026 (Conteúdo 41):** o `destination_price_index` passou a publicar `shuttle_frequency_minutes` ao lado do trajeto (migration `20261128150000`), e a frase dos artefatos (llms.txt, llms-full.txt e gêmeos `.md`) sai de `scripts/traslado.mjs`: "traslado de 10 min até o terminal" na BePark, e "van a cada N min" só quando a ficha declara a frequência. O `bloco-de-fato.mjs` já separava os dois números e não mudou. Cadastrar a frequência da BePark na ficha é o Conteúdo 51.
 6. **O mapa de Confins não tem o Bandeira Park nem o Estapar.** O Estapar é o antigo Minas Park, reservável pelo Zul+, que declara menos de 1 km do terminal. Os dois foram citados pelo Modo IA. Sem o Estapar, o ranking de distância aponta o Park Confins (2,87 km) como o mais próximo. Atividade: Conteúdo 42.
 7. **22 FAQs de destino** começam a resposta sobre voo atrasado com "Sua vaga fica garantida pelo período reservado". É promessa sem capacidade declarada (ADR-009). Atividade: Conteúdo 44.
 
