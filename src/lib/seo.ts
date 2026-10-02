@@ -224,15 +224,19 @@ export function listingDescription(args: {
   destination?: SeoDestination | null;
   locationName: string;
   city?: string | null;
-  /** Diária mais barata da unidade, já filtrada (zero de catálogo não é preço). */
+  /**
+   * Total da estadia mais curta que a unidade vende (`aPartirDe`), já filtrado (zero de
+   * catálogo não é preço). Com `fromDays` 1, que é o caso comum, é a diária avulsa.
+   */
   fromPrice?: number | null;
+  fromDays?: number;
   hubCheckout?: boolean;
 }): string {
   const lugar = args.destination ? seoLabelPrimary(args.destination) : args.locationName;
   return buildMetaDescription({
     keyword: `Estacionamento ${lugar}: ${args.parkingTypeName} no ${args.companyName}`,
     extra: args.city,
-    price: priceHook(args.fromPrice),
+    price: priceHook(args.fromPrice, args.fromDays ?? 1),
     cta: args.hubCheckout ? "reservar" : "comparar",
   });
 }

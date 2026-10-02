@@ -71,8 +71,7 @@ import {
 import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import {
-  lowestMatrixDaily,
-  lowestPerDay,
+  diariaAvulsa,
   pickRelatedDestinations,
   pointsSummary,
 } from "./destino.logic";
@@ -443,11 +442,11 @@ export default function DestinoPage() {
         })
       : null;
 
-  // O "a partir de" do topo prefere a matriz do build: ela existe no HTML pré-renderizado
-  // e a busca por janela só responde depois do JS. Sem preço na matriz, cai na busca. Nos dois
-  // caminhos o número é a MENOR diária do destino, o mesmo que os cards mostram logo abaixo.
-  const fromPriceMatrix = priceDest ? lowestMatrixDaily(carUnits(priceDest.units)) : null;
-  const fromPrice = fromPriceMatrix ?? lowestPerDay(results);
+  // O "a partir de" do topo é a diária avulsa, o mesmo número da meta logo abaixo, e sai do
+  // resumo da matriz do build, que existe no HTML pré-renderizado. Não cai mais na busca do
+  // cliente: ela devolve a menor diária de qualquer duração, e era esse fallback que podia
+  // trazer de volta o R$ 13,33 de Confins (Conteúdo 40).
+  const fromPrice = diariaAvulsa(prices?.summary);
 
   // Meta description: a abertura escrita à mão no banco (a geografia que dado nenhum sabe)
   // MAIS o menor preço do motor MAIS o CTA. A estrutura mora em `destinationMetaDescription`;

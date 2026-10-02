@@ -60,7 +60,11 @@ export function shuttleLabel(listing: ListingDetail): string | null {
 
 export function buildListingTldr(
   listing: ListingDetail,
-  opts?: { nearest?: TerminalDistance | null; fromDaily?: number | null },
+  opts?: {
+    nearest?: TerminalDistance | null;
+    /** O "a partir de" da unidade (`aPartirDe`): a diária e a estadia em que ela vale. */
+    from?: { daily: number; days: number } | null;
+  },
 ): ListingTldr {
   const caps = getLocationCapabilities(listing.location);
   // A janela da Básica vem do catálogo carregado no loader; sem ele, o padrão de 24h.
@@ -74,13 +78,20 @@ export function buildListingTldr(
   //
   // Omitir, porém, custava caro do outro lado: nas espelhadas o resumo saía SEM preço nenhum, e
   // a meta description do parceiro ia para o índice sem o número que decide a busca. O piso real
-  // já existe e é o `lowDaily` do motor (`buildPriceShowcase`), o MESMO que o card e o
-  // `AggregateOffer` publicam. Na tabela escalonada do Virapark ele é R$ 24,90, não os R$ 40,00
-  // da primeira diária: "a partir de" é a menor diária que a unidade pratica, não a mais cara.
+  // já existe e vem do motor (`buildPriceShowcase`), o MESMO que o card de reserva mostra.
+  // Desde o Conteúdo 40 o "a partir de" é a diária da estadia mais curta que a unidade vende
+  // (`aPartirDe`), e não a menor diária da tabela: na BePark esta é a de 30 dias, R$ 13,33,
+  // e saía na meta contradizendo os R$ 45,00 da página do aeroporto e das FAQs.
   // Precedência idêntica à do `ReservationCard`, para os três lugares dizerem o mesmo número.
-  const price = opts?.fromDaily ?? showcaseFromPrice(listing.company_parking_type.base_price);
-  if (price != null) {
-    facts.push({ key: "price", label: "A partir de", value: `${formatBRL(price)} / diária` });
+  const from =
+    opts?.from ??
+    (() => {
+      const base = showcaseFromPrice(listing.company_parking_type.base_price);
+      return base != null ? { daily: base, days: 1 } : null;
+    })();
+  if (from != null) {
+    const sufixo = from.days > 1 ? ` / diária em ${from.days} diárias` : " / diária";
+    facts.push({ key: "price", label: "A partir de", value: `${formatBRL(from.daily)}${sufixo}` });
   }
 
   const nearest = opts?.nearest ?? null;
@@ -115,7 +126,7 @@ export function buildListingTldr(
     });
   }
 
-  return { summary: buildSummary(listing, { nearest, shuttle, count, avg, price, caps, cancelLabel }), facts };
+  return { summary: buildSummary(listing, { nearest, shuttle, count, avg, from, caps, cancelLabel }), facts };
 }
 
 /** Primeira letra maiúscula, para o segmento que sobrar na frente virar início de frase. */
@@ -130,7 +141,7 @@ function buildSummary(
     shuttle: string | null;
     count: number;
     avg: number | null;
-    price: number | null;
+    from: { daily: number; days: number } | null;
     caps: LocationCapabilities;
     cancelLabel: string;
   },
@@ -153,7 +164,9 @@ function buildSummary(
   // frase é montada por junção em vez de concatenação: sem isso, unidade sem preço abria com
   // vírgula solta ou minúscula.
   const s2 = [
-    ctx.price != null ? `a partir de ${formatBRL(ctx.price)} por diária` : null,
+    ctx.from != null
+      ? `a partir de ${formatBRL(ctx.from.daily)} por diária${ctx.from.days > 1 ? ` em ${ctx.from.days} diárias` : ""}`
+      : null,
     ctx.nearest?.distance_km != null
       ? `a ${formatDistance(ctx.nearest.distance_km)} de ${ctx.nearest.point_name}`
       : null,

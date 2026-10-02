@@ -1,28 +1,24 @@
 // Lógica pura da página de destino (testável sem render).
 
-/** Menor preço por diária entre os resultados de busca; null se vazio. */
-export function lowestPerDay(results: { price: { per_day: number } }[]): number | null {
-  if (!results.length) return null;
-  return Math.min(...results.map((r) => r.price.per_day));
-}
-
 /**
- * Menor diária do destino inteiro, lida da matriz de preço do motor.
+ * O "a partir de" do topo da página de destino: a menor diária AVULSA (1 dia) entre as
+ * unidades do destino.
  *
- * O "A partir de" do topo mostrava o total de 1 diária, que é a duração mais curta e por isso a
- * mais CARA da tabela: a página prometia "a partir de R$ 40,00" logo acima de cards que agora
- * dizem R$ 24,90. Aqui a conta percorre todas as durações da matriz, que é a mesma fonte da
- * tabela de preços mais abaixo.
+ * Era a menor diária de qualquer duração, e em Confins isso dava R$ 13,33, que é a diária de
+ * quem fica 30 dias na BePark. O mesmo destino dizia R$ 45,00 na meta, no `/precos`, no
+ * llms.txt e nas FAQs, e fonte que se contradiz é fonte que a IA descarta (Conteúdo 40,
+ * docs/specs/ataque-cnf-bepark.md §2.3). Agora o número solto é a diária avulsa, lida do mesmo
+ * resumo que monta a meta (`destinationSummary`), e a diária longa só aparece com a duração
+ * escrita ao lado, como nos cards e na tabela.
+ *
+ * Sem preço de 1 diária (todo parceiro do destino exige estadia mínima) devolve null: "diária a
+ * partir de" com o preço de uma semana seria afirmar o que ninguém vende.
  */
-export function lowestMatrixDaily(
-  units: { prices: { days: number; total: number | null }[] | null }[],
+export function diariaAvulsa(
+  summary: { byDuration: { days: number; from: number }[] } | null | undefined,
 ): number | null {
-  const diarias = units.flatMap((u) =>
-    (u.prices ?? [])
-      .filter((p) => p.total != null && p.total > 0 && p.days > 0)
-      .map((p) => Math.round((p.total! / p.days) * 100) / 100),
-  );
-  return diarias.length > 0 ? Math.min(...diarias) : null;
+  const avulsa = summary?.byDuration.find((d) => d.days === 1)?.from ?? null;
+  return avulsa != null && avulsa > 0 ? avulsa : null;
 }
 
 /**

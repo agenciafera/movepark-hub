@@ -312,8 +312,11 @@ describe("single da unidade EXTERNA", () => {
     expect(fora).toMatch(/"highPrice":"26.90"/);
     // A vaga continua sendo do parceiro: preço sim, estoque não.
     expect(fora).not.toMatch(/InStock/);
-    // E a tela diz o mesmo número que o schema.
-    expect(await screen.findAllByText(/A partir de R\$\s?25,90/)).not.toHaveLength(0);
+    // A tela mostra o "a partir de" solto, que é a estadia mais curta vendida (Conteúdo 40).
+    // Aqui o parceiro exige 7 diárias, então o número vem com a duração ao lado; a faixa do
+    // schema continua com o piso da tabela, que é outro fato.
+    expect(await screen.findAllByText(/A partir de R\$\s?26,90/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(/diária em 7 diárias/)).not.toHaveLength(0);
   });
 
   it("publica image absoluta, porque caminho relativo do legado o buscador não resolve", async () => {

@@ -281,6 +281,7 @@ describe("productOfferSchema · nó sem nada que qualifique", () => {
 describe("productOfferSchema · faixa do motor de preço", () => {
   const faixa = {
     lowDaily: 21.12,
+    entry: { days: 1, total: 119.2 },
     highDaily: 119.2,
     offerCount: 4,
     porDuracao: [
@@ -716,6 +717,7 @@ describe("escada de preço no AggregateOffer", () => {
     // 1 a 6 dias na diária avulsa, 7 a 14, 15 a 29 e 30 sem teto.
     const escadaCompleta = {
       lowDaily: 21.12,
+      entry: { days: 1, total: 119.2 },
       highDaily: 119.2,
       offerCount: 4,
       porDuracao: [
@@ -745,7 +747,7 @@ describe("escada de preço no AggregateOffer", () => {
 
   it("tabela de degrau único fica sem escada: faixa sozinha já diz tudo", () => {
     const schema = productOfferSchema(makeListing({ checkout_mode: "hub" }), [], {
-      showcase: { lowDaily: 27.9, highDaily: 27.9, offerCount: 1, porDuracao: [{ days: 7, total: 195.3 }] },
+      showcase: { lowDaily: 27.9, entry: { days: 7, total: 195.3 }, highDaily: 27.9, offerCount: 1, porDuracao: [{ days: 7, total: 195.3 }] },
     });
     expect(schema?.offers?.priceSpecification).toBeUndefined();
   });
@@ -1230,6 +1232,7 @@ describe("grafo de entidade: @id", () => {
     const naPagina = productOfferSchema(listing, [], {
       showcase: {
         lowDaily: 18.9,
+        entry: { days: 1, total: 30 },
         highDaily: 30,
         offerCount: 2,
         porDuracao: [

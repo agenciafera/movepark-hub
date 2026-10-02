@@ -7,6 +7,7 @@ import {
   type AddOnOption,
   perDayPrice,
   showcaseFromPrice,
+  aPartirDe,
   buildPriceShowcase,
   counterSavings,
   loginGatePath,
@@ -172,6 +173,7 @@ describe("buildPriceShowcase", () => {
   it("converte total por duração em diária e devolve a faixa", () => {
     expect(buildPriceShowcase(totais)).toEqual({
       lowDaily: 21.12,
+      entry: { days: 1, total: 119.2 },
       highDaily: 119.2,
       offerCount: 4,
       porDuracao: totais,
@@ -189,6 +191,7 @@ describe("buildPriceShowcase", () => {
     ]);
     expect(s).toEqual({
       lowDaily: 25.9,
+      entry: { days: 7, total: 188.3 },
       highDaily: 26.9,
       offerCount: 3,
       porDuracao: [
@@ -206,6 +209,7 @@ describe("buildPriceShowcase", () => {
     ]);
     expect(s).toEqual({
       lowDaily: 27.9,
+      entry: { days: 7, total: 195.3 },
       highDaily: 27.9,
       offerCount: 2,
       porDuracao: [
@@ -222,6 +226,39 @@ describe("buildPriceShowcase", () => {
 
   it("zero não é preço, do mesmo jeito que em showcaseFromPrice", () => {
     expect(buildPriceShowcase([{ days: 7, total: 0 }])).toBeNull();
+  });
+});
+
+/**
+ * O "a partir de" solto (Conteúdo 40). Tabela real da BePark em Confins: R$ 45,00 a diária
+ * avulsa, R$ 200,00 em 7, R$ 400,00 em 15 e em 30. A menor diária da tabela é R$ 13,33, e era
+ * ela que saía como "a partir de" na ficha enquanto a praça e as FAQs diziam R$ 45,00.
+ */
+describe("aPartirDe", () => {
+  const bepark = [
+    { days: 1, total: 45 },
+    { days: 7, total: 200 },
+    { days: 15, total: 400 },
+    { days: 30, total: 400 },
+  ];
+
+  it("é a diária avulsa, não a menor diária da tabela", () => {
+    const s = buildPriceShowcase(bepark);
+    expect(s?.lowDaily).toBe(13.33);
+    expect(aPartirDe(s)).toEqual({ days: 1, total: 45, daily: 45 });
+  });
+
+  it("com estadia mínima, é a estadia mais curta vendida e diz a duração", () => {
+    const s = buildPriceShowcase([
+      { days: 1, total: null },
+      { days: 7, total: 188.3 },
+      { days: 30, total: 777 },
+    ]);
+    expect(aPartirDe(s)).toEqual({ days: 7, total: 188.3, daily: 26.9 });
+  });
+
+  it("sem vitrine não inventa preço", () => {
+    expect(aPartirDe(null)).toBeNull();
   });
 });
 

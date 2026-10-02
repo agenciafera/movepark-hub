@@ -128,6 +128,14 @@ Fonte que se contradiz é fonte que a IA descarta. Em 28 e 29/09:
    - R$ 45,00;
    - R$ 20,00;
    - R$ 20,00 a R$ 105,00.
+
+   **Resolvido em 02/10/2026 (Conteúdo 40), itens 2 e 3:**
+
+   - A FAQ perdeu a frase e ganhou a linha do BePark na tabela e na `answer` (pt, en, es). As outras 17 FAQs com a frase são de praças sem parceiro, onde ela é verdade.
+   - **"A partir de" sem rótulo de duração é a diária da estadia mais curta que a unidade vende**: a diária avulsa, ou a estadia mínima com a duração escrita ao lado. Em Confins é R$ 45,00 no BePark. A menor diária da tabela (R$ 13,33, em 30 dias) só aparece com a duração ao lado, como nos cards da busca e na tabela de preços.
+   - No código: o topo da praça lê `diariaAvulsa()` (`src/routes/destino.logic.ts`), o mesmo resumo da meta. A ficha (meta, resumo e card de reserva) lê `aPartirDe()` (`src/features/listing/reservation.logic.ts`). O `AggregateOffer` segue com a faixa inteira, porque faixa é outro fato. Vale para todas as praças.
+   - A faixa do mercado de Confins é **R$ 20,00 a R$ 105,00** a diária (setembro de 2026). As metas de três posts que diziam "Diária a partir de R$ 45,00" sem dizer de quem passaram a dar a faixa, igual ao post de preço.
+
 4. **O post "TOP 3"** (fev/2025) diz que o Multipark sai por R$ 14,90 e o Park Confins por R$ 15,90. É a URL que aparece em "mais barato" com esse trecho velho. Atividade: Conteúdo 46.
 5. **O llms.txt diz que a van da BePark sai "a cada 10 min".** Esse 10 é o tempo de trajeto (`shuttle_to_terminal_minutes`), publicado como frequência em `scripts/generate-geo-artifacts.mjs`. Enquanto isso:
    - o site da BePark diz saída a cada 20 minutos;

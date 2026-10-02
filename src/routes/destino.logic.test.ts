@@ -1,25 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  lowestMatrixDaily,
-  lowestPerDay,
+  diariaAvulsa,
   pickRelatedDestinations,
   pointsSummary,
 } from "./destino.logic";
-
-describe("lowestPerDay", () => {
-  it("retorna o menor per_day", () => {
-    expect(
-      lowestPerDay([
-        { price: { per_day: 40 } },
-        { price: { per_day: 25 } },
-        { price: { per_day: 33 } },
-      ]),
-    ).toBe(25);
-  });
-  it("null quando vazio", () => {
-    expect(lowestPerDay([])).toBeNull();
-  });
-});
 
 describe("pickRelatedDestinations", () => {
   const all = [
@@ -57,43 +41,31 @@ describe("pointsSummary", () => {
   });
 });
 
-describe("lowestMatrixDaily", () => {
-  const unidade = (prices: { days: number; total: number | null }[]) => ({ prices });
+describe("diariaAvulsa", () => {
+  const resumo = (byDuration: { days: number; from: number }[]) => ({ byDuration });
 
-  it("pega a menor diária entre todas as durações, não o total de 1 diária", () => {
-    // O topo da página dizia "a partir de R$ 40,00" (1 diária, a duração mais cara) logo acima
-    // de cards que mostram a menor diária do lote.
+  it("é a diária de 1 dia, não a menor diária da tabela", () => {
+    // Regressão do Conteúdo 40: em Confins o topo dizia R$ 13,33 (30 diárias da BePark por
+    // R$ 400,00) enquanto a meta, o /precos e as FAQs diziam R$ 45,00.
     expect(
-      lowestMatrixDaily([
-        unidade([
-          { days: 1, total: 40 },
-          { days: 7, total: 174.3 },
-          { days: 30, total: 747 },
+      diariaAvulsa(
+        resumo([
+          { days: 1, from: 45 },
+          { days: 7, from: 200 },
+          { days: 15, from: 400 },
+          { days: 30, from: 400 },
         ]),
-      ]),
-    ).toBe(24.9);
+      ),
+    ).toBe(45);
   });
 
-  it("compara entre unidades", () => {
-    expect(
-      lowestMatrixDaily([unidade([{ days: 1, total: 40 }]), unidade([{ days: 1, total: 28 }])]),
-    ).toBe(28);
+  it("sem diária avulsa não promove o preço de outra duração", () => {
+    expect(diariaAvulsa(resumo([{ days: 7, from: 174.3 }]))).toBeNull();
   });
 
-  it("duração sem preço não conta como preço zero", () => {
-    expect(
-      lowestMatrixDaily([
-        unidade([
-          { days: 1, total: null },
-          { days: 7, total: 174.3 },
-        ]),
-      ]),
-    ).toBe(24.9);
-  });
-
-  it("sem preço nenhum devolve null", () => {
-    expect(lowestMatrixDaily([])).toBeNull();
-    expect(lowestMatrixDaily([{ prices: null }])).toBeNull();
-    expect(lowestMatrixDaily([unidade([{ days: 1, total: 0 }])])).toBeNull();
+  it("sem resumo ou com preço zero devolve null", () => {
+    expect(diariaAvulsa(null)).toBeNull();
+    expect(diariaAvulsa(resumo([]))).toBeNull();
+    expect(diariaAvulsa(resumo([{ days: 1, from: 0 }]))).toBeNull();
   });
 });

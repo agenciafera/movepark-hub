@@ -127,8 +127,17 @@ export function showcaseFromPrice(basePrice: number | null | undefined): number 
 
 /** Faixa de diária da unidade, calculada pelo motor de preço nas durações de referência. */
 export type PriceShowcase = {
-  /** Menor diária entre as durações com preço. É o "a partir de". */
+  /**
+   * Menor diária entre as durações com preço. É o piso da faixa (`AggregateOffer.lowPrice`) e
+   * só aparece na tela com a duração ao lado ("por diária na estadia de 30 dias").
+   */
   lowDaily: number;
+  /**
+   * A estadia mais curta que a unidade vende, com o total dela. É o "a partir de" solto, sem
+   * rótulo de duração: 1 diária na quase totalidade, e a estadia mínima quando o parceiro
+   * exige mais. Ver `aPartirDe`.
+   */
+  entry: { days: number; total: number };
   /** Maior diária. Igual à menor quando a tabela é plana. */
   highDaily: number;
   /** Quantas durações têm preço. Vira `offerCount` no JSON-LD. */
@@ -164,10 +173,32 @@ export function buildPriceShowcase(
   if (diarias.length === 0) return null;
   return {
     lowDaily: Math.min(...diarias),
+    entry: { days: validas[0].days, total: validas[0].total },
     highDaily: Math.max(...diarias),
     offerCount: diarias.length,
     porDuracao: validas.map((t) => ({ days: t.days, total: t.total })),
   };
+}
+
+/**
+ * O "a partir de" que sai sem rótulo de duração: a diária da estadia mais curta que a unidade
+ * vende, e não a menor diária da tabela.
+ *
+ * Decidido no Conteúdo 40 (docs/specs/ataque-cnf-bepark.md, §2.3): a menor diária da tabela é
+ * a de quem fica 30 dias, e escrita como "a partir de R$ 13,33" ela contradizia a meta, o
+ * `/precos`, o llms.txt e as FAQs, que diziam R$ 45,00 para a mesma BePark. Um número por
+ * fato: a diária avulsa é o "a partir de", e a diária longa só aparece com a duração escrita
+ * ao lado, como no card da busca.
+ *
+ * `days` volta junto porque na unidade com estadia mínima não existe diária avulsa, e quem
+ * mostra o número tem que dizer a condição.
+ */
+export function aPartirDe(
+  showcase: PriceShowcase | null | undefined,
+): { days: number; total: number; daily: number } | null {
+  if (!showcase) return null;
+  const { days, total } = showcase.entry;
+  return { days, total, daily: Math.round((total / days) * 100) / 100 };
 }
 
 /**

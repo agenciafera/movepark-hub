@@ -12,7 +12,7 @@ import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
-import type { PriceShowcase, ReservationSummary } from "@/features/listing/reservation.logic";
+import { aPartirDe, type PriceShowcase, type ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
 import { basicCancelLabel } from "@/features/listing/fareMatrix.logic";
 import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
@@ -155,9 +155,9 @@ export default function ListingPage() {
   const tldr = listing
     ? buildListingTldr(listing, {
         nearest: nearestTerminal(terminals ?? []),
-        // Mesma fonte do "a partir de" do card e do `AggregateOffer`: a menor diária do motor.
+        // Mesma fonte do "a partir de" do card de reserva: a estadia mais curta do motor.
         // Sem isso a unidade espelhada (`base_price` 0) ia pro índice sem preço na meta.
-        fromDaily: showcase?.lowDaily ?? null,
+        from: aPartirDe(showcase),
       })
     : null;
 
@@ -227,7 +227,8 @@ export default function ListingPage() {
       ? listingDescription({
           ...seoArgs,
           city: listing.location.destination?.city ?? null,
-          fromPrice: showcase?.lowDaily ?? null,
+          fromPrice: aPartirDe(showcase)?.total ?? null,
+          fromDays: aPartirDe(showcase)?.days,
           hubCheckout: getLocationCapabilities(listing.location).hubCheckout,
         })
       : "";

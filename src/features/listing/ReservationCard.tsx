@@ -53,6 +53,7 @@ import {
   type ReservationSummary,
   perDayPrice,
   counterSavings,
+  aPartirDe,
   showcaseFromPrice,
   loginGatePath,
 } from "./reservation.logic";
@@ -309,11 +310,17 @@ export function ReservationCard({
   // Preço de vitrine para quando a estadia escolhida não tem total: sem datas, esgotada, ou
   // abaixo do mínimo do parceiro.
   //
-  // A menor diária do motor manda, e `base_price` é a reserva. Era o contrário, e por isso a
-  // unidade espelhada não mostrava preço nenhum antes das datas: `base_price` é 0 nela, porque
-  // a tabela vem do parceiro e esse campo do catálogo nunca foi preenchido. O motor sabe o
-  // preço mesmo assim, e é o mesmo número que aparece quando a pessoa escolhe as datas.
-  const fromPrice = showcase?.lowDaily ?? showcaseFromPrice(listing.company_parking_type.base_price);
+  // O motor manda, e `base_price` é a reserva: ele é 0 na unidade espelhada, porque a tabela
+  // vem do parceiro e esse campo do catálogo nunca foi preenchido. O número é a estadia mais
+  // curta que a unidade vende (`aPartirDe`), e não a menor diária da tabela, que é a de quem
+  // fica 30 dias e não pode sair como "a partir de" sem a duração ao lado (Conteúdo 40).
+  const entrada =
+    aPartirDe(showcase) ??
+    (() => {
+      const base = showcaseFromPrice(listing.company_parking_type.base_price);
+      return base != null ? { days: 1, total: base, daily: base } : null;
+    })();
+  const fromPrice = entrada?.daily ?? null;
 
   const hasFareOrAddOns = canReserve && (fareSurcharge > 0 || !!applied);
 
@@ -416,7 +423,12 @@ export function ReservationCard({
               <span className="text-body-sm text-muted">/ diária</span>
             </div>
           ) : fromPrice != null ? (
-            <div className="text-display-sm text-ink">A partir de {formatBRL(fromPrice)}</div>
+            <div className="text-display-sm text-ink">
+              A partir de {formatBRL(fromPrice)}
+              {entrada && entrada.days > 1 && (
+                <span className="text-body-sm text-muted"> / diária em {entrada.days} diárias</span>
+              )}
+            </div>
           ) : null}
           <div className="text-body-sm text-muted">
             {days > 0
@@ -660,7 +672,7 @@ export function ReservationCard({
             <div className="flex items-baseline justify-between">
               <span className="text-title-sm text-ink">Total</span>
               <span className="text-display-md text-ink tabular-nums">
-                {canReserve ? formatBRL(displayTotal) : formatBRL(fromPrice!)}
+                {canReserve ? formatBRL(displayTotal) : formatBRL(entrada?.total ?? fromPrice!)}
               </span>
             </div>
           )}
