@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: recipient } = await admin
     .from("payout_recipient")
-    .select("external_recipient_id, gateway_missing_at")
+    .select("external_recipient_id, status, gateway_missing_at")
     .eq("company_id", location.company_id)
     .eq("provider", "pagarme")
     .is("deleted_at", null)

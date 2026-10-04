@@ -546,6 +546,16 @@ card:{token} | card_id, split[] } }`. **Tokenização é client-side** (`src/lib
 `POST api.pagar.me/core/v5/tokens?appId=<pk>`): o PAN **nunca** toca nosso backend; trafegamos só o token
 (single-use) ou o `card_id` (cartão salvo).
 
+**Incidente: cartão recusado com 409 para toda empresa com split (23/09 a 04/10/2026).** A trava
+"recebedor ativo no gateway" ganhou a condição `recipient.status !== "active"` nas duas Edges de
+cobrança em 23/09, mas só o `create-pix-charge` passou a selecionar a coluna `status`. No
+`create-card-charge` ela chegava `undefined` e toda cobrança de cartão com split caía em 409 antes
+de chamar a Pagar.me (sem rastro em `payment_gateway_event`). Como as primeiras empresas com split
+(Nationpark e Abbapark) entraram em 01/10, o cartão nunca funcionou para elas: 14 tentativas de 6
+clientes em 02 e 03/10, R$ 1.225,50 em reservas que expiraram. Achado pelos logs da Edge, não pelo
+rastro do gateway. Guarda: `_shared/payments/recipient-gate.contract.test.ts` (toda Edge que trava
+por `status` tem que selecionar `status`).
+
 **Endereço de cobrança (17/09/2026).** O antifraude da Pagar.me exige `billing_address` em todo
 pedido de cartão, e o endereço não entra no token: vai em `credit_card.card.billing_address`
 (`line_1` = "número, rua, bairro", `zip_code`, `city`, `state`, `country`). Sem ele a transação
