@@ -275,11 +275,25 @@ Campos:
   compra (`created_at`), não pelo check-in** (decidido em 16/09/2026): todos os presets olham
   para trás, e a reserva feita hoje para a semana que vem sumia da lista até o dia de chegar. O
   painel do operador segue por check-in, que é o que o pátio precisa (`BookingFilters.dateField`).
-- Busca por ID ou nome do cliente (a busca por código passa por cima do período)
+- Busca por código, nome, e-mail ou telefone do cliente (snapshot da reserva, ADR-006). A busca
+  passa por cima do período.
+- **Pagamento** (04/10/2026): PIX, cartão de crédito ou sem pagamento. PIX e cartão viram inner
+  join em `payment` filtrado por `method`; "sem pagamento" é o embed nulo. Sem esse filtro o join
+  segue left, senão a reserva que nunca teve pagamento sumiria.
+- **Canal** (04/10/2026): agrupa `booking.origin` (`hub_*` = site, `whatsapp-bot`, `webchat-bot`,
+  `mcp`, `white_label`, `api`), em `bookingList.logic.ts`.
+- "Limpar filtros" volta tudo ao padrão.
+
+Acima da tabela, um **resumo do recorte**: reservas, pagas (quantas no PIX e no cartão), valor
+pago (sem as devolvidas) e quantas não pagaram (expiradas ou recusadas, mais as aguardando). A
+lista traz até 500 linhas; passou disso, a tela avisa que mostra só as mais recentes.
 
 #### Tabela de Reservas
 
-Colunas: `#ID` · `Cliente` · `Empresa` · `Localização` · `Tipo de Vaga` · `Check-in` · `Check-out` · `Dias` · `Valor` · `Status`
+Colunas (04/10/2026, `BookingTable`, a mesma do Operator e do dashboard): `Reserva` ·
+`Criada em` (data da compra, com o canal embaixo) · `Cliente` · `Estacionamento` (empresa e
+unidade) · `Estadia` (check-in, check-out e dias) · `Pagamento` (forma pelo pagamento mais
+recente, "Cartão 3x" quando parcelado, e o estado do dinheiro) · `Valor` · `Status`.
 
 - Sort em todas as colunas
 - Export CSV

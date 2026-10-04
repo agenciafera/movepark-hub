@@ -25,7 +25,8 @@ import { SupportTicketsCard } from "@/features/support/SupportTicketsCard";
 import { FlightProtectionDialog } from "./FlightProtectionDialog";
 import { bookingCustomerName } from "./bookings.logic";
 import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
-import { paymentBadge, paymentState, refundWindow } from "./payment.logic";
+import { lastPayment, paymentBadge, paymentState, refundWindow } from "./payment.logic";
+import { paymentMethodLabel } from "./bookingList.logic";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { documentMask } from "@/lib/masks";
 import { parkingTitle } from "@/lib/parkingName";
@@ -138,6 +139,8 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
     pagamento ? { ...pagamento, amount: Number(pagamento.amount), debt_recovered_cents: pagamento.debt_recovered_cents ?? 0, refund_partner_cents: pagamento.refund_partner_cents ?? 0 } : null,
     releaseDays,
   );
+  const formaPagamento = paymentMethodLabel(booking.payments, "long");
+  const ultimoPagamento = lastPayment(booking.payments);
   const fareTier = (booking as unknown as { fare_tier?: string | null }).fare_tier ?? null;
   const fareCancelUntil = (booking as unknown as { fare_cancel_until?: string | null }).fare_cancel_until ?? null;
 
@@ -231,6 +234,10 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
             <Campo label="Check-in" value={formatDateTime(booking.check_in_at)} />
             <Campo label="Check-out" value={formatDateTime(booking.check_out_at)} />
             <Campo label="Valor total" value={formatBRL(booking.total_amount)} />
+            <Campo
+              label="Forma de pagamento"
+              value={formaPagamento ?? <span className="text-muted">Nenhuma, o cliente não chegou a pagar</span>}
+            />
             {booking.notes && <Campo label="Notas" value={booking.notes} />}
           </CardContent>
         </Card>
@@ -242,6 +249,15 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
           <CardContent>
             <ol className="space-y-1 text-body-sm">
               <li className="text-muted">Criada em {formatDateTime(booking.created_at)}</li>
+              {ultimoPagamento?.paid_at && (
+                <li className="text-muted">
+                  Paga em {formatDateTime(ultimoPagamento.paid_at)}
+                  {formaPagamento ? ` (${formaPagamento})` : ""}
+                </li>
+              )}
+              {ultimoPagamento?.status === "failed" && (
+                <li className="text-error">Pagamento recusado em {formatDateTime(ultimoPagamento.created_at)}</li>
+              )}
               {booking.checked_in_at && <li className="text-muted">Check-in em {formatDateTime(booking.checked_in_at)}</li>}
               {booking.checked_out_at && <li className="text-muted">Check-out em {formatDateTime(booking.checked_out_at)}</li>}
               {booking.status === "cancelled" && <li className="text-error">Cancelada em {formatDateTime(booking.updated_at)}</li>}

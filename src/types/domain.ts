@@ -368,7 +368,7 @@ export type BookingWithRelations = Booking & {
     | null;
   vehicle: Pick<Vehicle, "id" | "license_plate" | "model" | "color"> | null;
   /** Pagamentos da reserva (para gatear/exibir o estado de estorno no painel). */
-  payments?: Pick<Payment, "id" | "status" | "refunded_at" | "created_at" | "paid_at" | "method">[] | null;
+  payments?: Pick<Payment, "id" | "status" | "refunded_at" | "created_at" | "paid_at" | "method" | "installments">[] | null;
   /** Proteção de voo acionada (uma por reserva): coberta, pedida, excedente e saída real. */
   fare_extensions?: Pick<Tables<"booking_fare_extension">, "id" | "kind" | "flight_number" | "new_check_out_at" | "requested_check_out_at" | "overage_daily_cents" | "overage_cents" | "actual_check_out_at" | "overage_charged_cents" | "overage_note" | "partner_credit_cents">[] | null;
 };

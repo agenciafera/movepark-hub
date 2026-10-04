@@ -2,6 +2,7 @@ import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -17,6 +18,13 @@ import { periodLabel } from "@/features/manager-filters/managerFilters.logic";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
 import { useBookings, type BookingFilters } from "@/features/bookings/api";
+import {
+  CHANNEL_LABEL,
+  bookingListSummary,
+  type ChannelFilter,
+  type PaymentMethodFilter,
+} from "@/features/bookings/bookingList.logic";
+import { formatBRL } from "@/lib/format";
 import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
@@ -27,58 +35,100 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "completed", label: "Concluída" },
   { value: "cancelled", label: "Cancelada" },
   { value: "expired", label: "Expirada" },
+  { value: "no_show", label: "Não compareceu" },
 ];
+
+const paymentOptions: { value: PaymentMethodFilter | "all"; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "pix", label: "PIX" },
+  { value: "card", label: "Cartão de crédito" },
+  { value: "none", label: "Sem pagamento" },
+];
+
+const channelOptions: { value: ChannelFilter | "all"; label: string }[] = [
+  { value: "all", label: "Todos" },
+  ...(Object.keys(CHANNEL_LABEL) as ChannelFilter[]).map((k) => ({ value: k, label: CHANNEL_LABEL[k] })),
+];
+
+/** Teto da lista. Acima disso a tela avisa que mostra só as mais recentes. */
+const LIMIT = 500;
+
+function Numero({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-caption text-muted">{label}</div>
+      <div className="text-title-md tabular-nums text-ink">{value}</div>
+      {hint && <div className="text-caption text-muted">{hint}</div>}
+    </div>
+  );
+}
 
 export default function ManagerBookings() {
   // A command palette manda o código da reserva em `?q=` (ver operator/bookings).
   const [searchParams] = useSearchParams();
   const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
+  const [payment, setPayment] = React.useState<PaymentMethodFilter | "all">("all");
+  const [channel, setChannel] = React.useState<ChannelFilter | "all">("all");
   const navigate = useNavigate();
   const { period, range, scopedLocationIds } = useManagerFilters();
 
-  // Buscar por código atravessa o período: quem digita um código quer AQUELA
+  // Buscar atravessa o período: quem digita um código ou o nome do cliente quer AQUELA
   // reserva, não a reserva se ela por acaso cair no recorte da tela.
   // O recorte é pela data da COMPRA, não do check-in: todos os presets olham para trás, e a
   // reserva feita hoje para a semana que vem sumia da lista até o dia de chegar (16/09/2026).
+  const term = search.trim();
   const filters: BookingFilters = React.useMemo(
     () => ({
       status: status === "all" ? undefined : [status],
-      search: search || undefined,
+      search: term || undefined,
+      paymentMethod: payment === "all" ? undefined : payment,
+      channel: channel === "all" ? undefined : channel,
       locationIds: scopedLocationIds,
-      from: search ? undefined : range.from.toISOString(),
-      to: search ? undefined : range.to.toISOString(),
+      from: term ? undefined : range.from.toISOString(),
+      to: term ? undefined : range.to.toISOString(),
       dateField: "created_at",
+      limit: LIMIT,
     }),
-    [status, search, scopedLocationIds, range],
+    [status, term, payment, channel, scopedLocationIds, range],
   );
 
   const { data, isLoading } = useBookings(filters);
+  const resumo = React.useMemo(() => bookingListSummary(data ?? []), [data]);
+  const temFiltro = !!term || status !== "all" || payment !== "all" || channel !== "all";
+
+  function limpar() {
+    setSearch("");
+    setStatus("all");
+    setPayment("all");
+    setChannel("all");
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Reservas"
         description={
-          search
-            ? "Busca por código, sem recorte de período."
+          term
+            ? "Busca sem recorte de período."
             : `Reservas feitas em ${periodLabel(period, range).toLowerCase()}.`
         }
         actions={<ManagerFilterBar showCompare={false} />}
       />
 
       <Card>
-        <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:items-end">
-          <div className="flex flex-1 flex-col gap-1.5">
+        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto] desktop:items-end">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="search">Busca</Label>
             <Input
               id="search"
-              placeholder="Código da reserva"
+              type="search"
+              placeholder="Código, nome, e-mail ou telefone"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex w-full flex-col gap-1.5 tablet:w-60">
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="booking-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus | "all")}>
               <SelectTrigger id="booking-status">
@@ -93,13 +143,76 @@ export default function ManagerBookings() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="booking-payment">Pagamento</Label>
+            <Select value={payment} onValueChange={(v) => setPayment(v as PaymentMethodFilter | "all")}>
+              <SelectTrigger id="booking-payment">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {paymentOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="booking-channel">Canal</Label>
+            <Select value={channel} onValueChange={(v) => setChannel(v as ChannelFilter | "all")}>
+              <SelectTrigger id="booking-channel">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {channelOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="secondary" onClick={limpar} disabled={!temFiltro}>
+            Limpar filtros
+          </Button>
         </CardContent>
       </Card>
+
+      {!isLoading && (data?.length ?? 0) > 0 && (
+        <Card data-testid="resumo-reservas">
+          <CardContent className="grid grid-cols-2 gap-6 p-6 tablet:grid-cols-4">
+            <Numero label="Reservas" value={resumo.total} />
+            <Numero
+              label="Pagas"
+              value={resumo.paid}
+              hint={resumo.paid ? `${resumo.pix} no PIX, ${resumo.card} no cartão` : undefined}
+            />
+            <Numero label="Valor pago" value={formatBRL(resumo.paidAmount)} hint="sem as devolvidas" />
+            <Numero
+              label="Não pagaram"
+              value={resumo.lost}
+              hint={resumo.awaiting ? `e ${resumo.awaiting} aguardando pagamento` : "expiradas ou recusadas"}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cliente chegou e não tinha vaga (garantia). Some sem acionamento aberto. */}
       <GuaranteeClaimsCard />
 
-      <BookingTable bookings={data} isLoading={isLoading} onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)} />
+      {(data?.length ?? 0) >= LIMIT && (
+        <p className="text-body-sm text-muted">
+          Mostrando as {LIMIT} reservas mais recentes. Encurte o período ou use os filtros para ver as outras.
+        </p>
+      )}
+
+      <BookingTable
+        bookings={data}
+        isLoading={isLoading}
+        emptyDescription={temFiltro ? "Nenhuma reserva bate com esses filtros. Limpe os filtros ou mude o período." : undefined}
+        onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
+      />
     </div>
   );
 }

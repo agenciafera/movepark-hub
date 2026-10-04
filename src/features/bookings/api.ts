@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
 import type { BookingStatus, BookingWithRelations } from "@/types/domain";
+import { CHANNEL_ORIGINS, bookingSearchOr, type ChannelFilter, type PaymentMethodFilter } from "./bookingList.logic";
 
 type BookingUpdate = Database["public"]["Tables"]["booking"]["Update"];
 
@@ -18,7 +19,14 @@ export type BookingFilters = {
    * amanhã). A ordenação acompanha o campo.
    */
   dateField?: "check_in_at" | "created_at";
+  /** Código da reserva, nome, e-mail ou telefone do cliente (snapshot da reserva). */
   search?: string;
+  /** Forma do pagamento; `none` = reserva que nunca teve pagamento. */
+  paymentMethod?: PaymentMethodFilter;
+  /** Canal de venda (agrupa `booking.origin`). */
+  channel?: ChannelFilter;
+  /** Teto de linhas (padrão 100). */
+  limit?: number;
 };
 
 export const bookingsKeys = {
@@ -29,7 +37,7 @@ export const bookingsKeys = {
 };
 
 const baseSelect =
-  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at, paid_at, method), fare_extensions:booking_fare_extension(id, kind, flight_number, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents, overage_note, partner_credit_cents)";
+  "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at, paid_at, method, installments), fare_extensions:booking_fare_extension(id, kind, flight_number, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents, overage_note, partner_credit_cents)";
 
 async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
   // Reserva cancelada carrega `deleted_at` (que também é o "cancelada em" na UI). A lista
@@ -38,19 +46,25 @@ async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelati
   // status resolve o resto. Filtrar deleted_at deixava o filtro "Cancelada" natimorto.
   // Ver docs/testes/furos-visao-dono.md (F1).
   const dateField = filters.dateField ?? "check_in_at";
+  // Filtrar pela forma de pagamento exige o embed como inner join; sem filtro ele segue left join,
+  // senão a reserva que nunca teve pagamento sumiria da lista.
+  const pm = filters.paymentMethod;
+  const select = pm === "pix" || pm === "card" ? baseSelect.replace("payments:payment(", "payments:payment!inner(") : baseSelect;
   let query = supabase
     .from("booking")
-    .select(baseSelect)
+    .select(select)
     .order(dateField, { ascending: false })
-    .limit(100);
+    .limit(filters.limit ?? 100);
 
   if (filters.status?.length) query = query.in("status", filters.status);
   if (filters.locationIds?.length) query = query.in("location_id", filters.locationIds);
   if (filters.from) query = query.gte(dateField, filters.from);
   if (filters.to) query = query.lte(dateField, filters.to);
-  if (filters.search) {
-    query = query.or(`code.ilike.%${filters.search}%`);
-  }
+  if (pm === "pix" || pm === "card") query = query.eq("payments.method", pm);
+  if (pm === "none") query = query.is("payments", null);
+  if (filters.channel) query = query.in("origin", CHANNEL_ORIGINS[filters.channel]);
+  const or = filters.search ? bookingSearchOr(filters.search) : null;
+  if (or) query = query.or(or);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -75,7 +89,7 @@ export function useBookings(filters: BookingFilters) {
  * a empresa ler os pagamentos das próprias reservas, então vale para Manager e Operator.
  */
 const detailSelect = baseSelect.replace(
-  "payments:payment(id, status, refunded_at, created_at, paid_at, method)",
+  "payments:payment(id, status, refunded_at, created_at, paid_at, method, installments)",
   "payments:payment(id, status, refunded_at, created_at, paid_at, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents)",
 );
 

@@ -93,6 +93,47 @@ describe("useBookings", () => {
   });
 });
 
+describe("useBookings: filtros da lista do Manager (04/10/2026)", () => {
+  async function urlDe(filters: Parameters<typeof useBookings>[0]) {
+    let capturedUrl = "";
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
+        capturedUrl = request.url;
+        return HttpResponse.json([]);
+      }),
+    );
+    const { result } = renderHook(() => useBookings(filters), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    return decodeURIComponent(capturedUrl);
+  }
+
+  it("PIX ou cartão vira inner join no pagamento, filtrado pelo método", async () => {
+    const url = await urlDe({ paymentMethod: "pix" });
+    expect(url).toContain("payments:payment!inner(");
+    expect(url).toContain("payments.method=eq.pix");
+  });
+
+  it("sem pagamento mantém o left join e pede o embed nulo", async () => {
+    const url = await urlDe({ paymentMethod: "none" });
+    expect(url).not.toContain("!inner");
+    expect(url).toContain("payments=is.null");
+  });
+
+  it("sem filtro de pagamento a reserva sem pagamento continua na lista (left join)", async () => {
+    const url = await urlDe({});
+    expect(url).not.toContain("!inner");
+    expect(url).toContain("limit=100");
+  });
+
+  it("canal vira lista de origens e a busca percorre o contato do cliente", async () => {
+    const url = await urlDe({ channel: "site", search: "ana", limit: 500 });
+    expect(url).toContain('origin=in.(hub_search,hub_destino,hub_direct)');
+    expect(url).toContain("customer_name.ilike.%ana%");
+    expect(url).toContain("customer_email.ilike.%ana%");
+    expect(url).toContain("limit=500");
+  });
+});
+
 describe("useReconcileBookingFees", () => {
   it("pede à Edge reconcile-gateway-fees a apuração de UMA reserva, com o JWT do hub_admin", async () => {
     vi.spyOn(supabase.auth, "getSession").mockResolvedValue({ data: { session: { access_token: "jwt" } as never }, error: null } as never);

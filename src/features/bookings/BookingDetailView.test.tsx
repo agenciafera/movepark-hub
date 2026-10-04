@@ -73,6 +73,10 @@ describe("BookingDetailView", () => {
     expect(screen.getByTestId("reserva-estado")).toHaveTextContent("Paga no cartão em");
     expect(screen.getByText("O cliente pagou")).toBeInTheDocument();
     expect(screen.getByTestId("reserva-origem-label")).toHaveTextContent("Mia no WhatsApp");
+    // 04/10/2026: a forma de pagamento na ficha e a hora do pagamento na linha do tempo.
+    expect(screen.getByText("Forma de pagamento")).toBeInTheDocument();
+    expect(screen.getAllByText(/Cartão de crédito à vista/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/^Paga em /)).toBeInTheDocument();
     expect(screen.getByText("Estacionamento (diária)")).toBeInTheDocument();
     expect(screen.getByText("Plano Flex")).toBeInTheDocument();
     const norm = (s: string | null) => (s ?? "").replace(/\u00a0/g, " ");
@@ -187,5 +191,7 @@ describe("BookingDetailView", () => {
     expect(screen.getByText("Valor da reserva")).toBeInTheDocument();
     expect(screen.getByText("não pago: a reserva expirou")).toBeInTheDocument();
     expect(screen.getByText("não entra: a reserva não foi paga")).toBeInTheDocument();
+    expect(screen.getByText("Nenhuma, o cliente não chegou a pagar")).toBeInTheDocument();
+    expect(screen.queryByText(/^Paga em /)).not.toBeInTheDocument();
   });
 });
