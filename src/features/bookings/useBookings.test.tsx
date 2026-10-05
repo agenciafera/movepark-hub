@@ -74,7 +74,9 @@ describe("useBookings", () => {
     expect(url).not.toContain("check_in_at=gte");
   });
 
-  it("sem dateField, o recorte continua pelo check-in", async () => {
+  // A ordem é sempre a da compra (05/10/2026): o Operator filtra por check-in, mas a reserva
+  // recém-feita tem que estar no topo, não no meio da lista pela data de chegada.
+  it("sem dateField, o recorte continua pelo check-in e a ordem segue pela compra", async () => {
     let capturedUrl = "";
     server.use(
       http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
@@ -89,7 +91,8 @@ describe("useBookings", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const url = decodeURIComponent(capturedUrl);
     expect(url).toContain("check_in_at=gte.2026-09-01");
-    expect(url).toContain("order=check_in_at.desc");
+    expect(url).toContain("order=created_at.desc");
+    expect(url).not.toContain("order=check_in_at");
   });
 });
 

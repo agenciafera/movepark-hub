@@ -16,7 +16,9 @@ export type BookingFilters = {
    * Qual data o `from`/`to` recorta. Padrão `check_in_at` (o pátio olha quem chega). O Manager
    * usa `created_at`, a data da compra: reserva feita hoje para a semana que vem aparece hoje
    * (decidido em 16/09/2026, quando a primeira reserva de teste sumiu da lista por ter check-in
-   * amanhã). A ordenação acompanha o campo.
+   * amanhã). A ordenação NÃO acompanha o campo: a lista sai sempre da compra mais recente para a
+   * mais antiga (`created_at desc`), nas duas telas (decidido em 05/10/2026, porque ordenar por
+   * check-in jogava a reserva recém-feita para o meio da lista do Operator).
    */
   dateField?: "check_in_at" | "created_at";
   /** Código da reserva, nome, e-mail ou telefone do cliente (snapshot da reserva). */
@@ -53,7 +55,7 @@ async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelati
   let query = supabase
     .from("booking")
     .select(select)
-    .order(dateField, { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(filters.limit ?? 100);
 
   if (filters.status?.length) query = query.in("status", filters.status);

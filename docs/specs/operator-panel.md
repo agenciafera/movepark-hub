@@ -174,7 +174,9 @@ avisa que é com a equipe da Movepark, sem ação para ele.
 
 Colunas: `#ID` · `Cliente` · `Localização` · `Tipo de Vaga` · `Check-in` · `Check-out` · `Dias` · `Valor` · `Status` · `Ações`
 
-- Sort por qualquer coluna
+- **Ordem fixa: data da compra, mais recente primeiro** (`created_at desc`, 05/10/2026). O filtro de
+  período continua recortando pelo check-in; só a ordem segue a compra, para a reserva recém-feita
+  aparecer no topo.
 - Export CSV
 - Click na linha → drawer lateral (ver 4.2.1)
 - Ações inline: confirmar · cancelar (com permissão)
