@@ -118,6 +118,49 @@ describe("worker asset fallback", () => {
   });
 });
 
+describe("domínio antigo redireciona caminho a caminho, num salto só", () => {
+  const hosts = ["movepark.com.br", "www.movepark.com.br", "www.movepark.co"];
+
+  it.each(hosts)("%s: a raiz cai no apex", async (host) => {
+    const res = await worker.fetch(req("/", undefined, host), makeEnv({}));
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("https://movepark.co/");
+  });
+
+  // Regressão do Conteúdo 60: a regra do painel trocava só o domínio, e a ficha de mais acesso
+  // do WordPress dava até três saltos. Agora o primeiro 301 já é o destino final.
+  it.each(hosts)("%s: ficha do WordPress vai direto à página nova", async (host) => {
+    const res = await worker.fetch(
+      req("/estacionamento/ponce-park-guarulhos/?utm_source=x", undefined, host),
+      makeEnv({}),
+    );
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe(
+      "https://movepark.co/estacionamentos/aeroporto-guarulhos/ponce-park?utm_source=x",
+    );
+  });
+
+  it("caminho que nenhum mapa conhece mantém o caminho no apex", async () => {
+    const res = await worker.fetch(req("/blog/", undefined, "movepark.com.br"), makeEnv({}));
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("https://movepark.co/blog/");
+  });
+
+  // Subdomínio de white-label (`nationpark.movepark.com.br` e afins) não é deste worker: segue
+  // com a regra da zona, que troca só o domínio. Aqui só garantimos que o worker não o captura.
+  it.each(["nationpark.movepark.com.br", "movepark.com.br.evil.com"])(
+    "não pega %s",
+    async (host) => {
+      const res = await worker.fetch(req("/", undefined, host), makeEnv({}));
+
+      expect(res.status).not.toBe(301);
+    },
+  );
+});
+
 describe("www redireciona para o apex", () => {
   it("301 para o apex, preservando caminho e query", async () => {
     const env = makeEnv({});

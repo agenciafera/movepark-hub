@@ -20,8 +20,15 @@
   //
   // O `www` existe só para o worker devolver 301 para o apex (ver `redirecionaWww` no worker.ts).
   // Antes disso ele respondia 522, porque tinha registro DNS proxiado para uma origem morta.
+  //
+  // O domínio antigo (apex e `www`) passa pelo worker para o 301 ir direto ao destino final,
+  // pelos mesmos mapas do apex (ver `redirecionaAlias`). Os subdomínios de white-label da zona
+  // antiga (`<empresa>.movepark.com.br`) NÃO entram aqui: seguem na regra de redirect da zona.
+  // Ver docs/specs/plano-autoridade-backlinks.md, seção 2.3.
   "routes": [
-    { "pattern": "www.movepark.co/*", "zone_name": "movepark.co" }
+    { "pattern": "www.movepark.co/*", "zone_name": "movepark.co" },
+    { "pattern": "movepark.com.br/*", "zone_name": "movepark.com.br" },
+    { "pattern": "www.movepark.com.br/*", "zone_name": "movepark.com.br" }
   ],
   "assets": {
     "directory": "./dist",

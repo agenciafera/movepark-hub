@@ -21,3 +21,14 @@
  * docs/specs/seo-indexacao.md.
  */
 export const DEFAULT_SITE_URL = "https://movepark.co";
+
+/**
+ * O domínio antigo do site, que só existe para redirecionar. Ele acumulou links durante anos
+ * (o Semrush o aponta como o perfil de links mais parecido com o nosso), e esse sinal só passa
+ * para o canônico com 301 caminho a caminho. Quem atende é o `src/worker.ts`; ver a seção 2.3
+ * de docs/specs/plano-autoridade-backlinks.md.
+ *
+ * Sem esquema de propósito: é um host, não uma URL, e o guard de `site.contract.test.ts` procura
+ * o host canônico escrito como URL.
+ */
+export const LEGACY_SITE_HOST = "movepark.com.br";

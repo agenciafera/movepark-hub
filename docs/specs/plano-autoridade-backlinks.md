@@ -77,6 +77,37 @@ possivelmente o de maior efeito do plano (Conteúdo 60). Atenção: o `movepark.
 como `wl_domain` de backend legado por empresa, então o redirect não pode quebrar subdomínio de
 white-label.
 
+**Medido em 05/10/2026 (Conteúdo 60).** O domínio está ativo (registro até 30/11/2028, zona no
+Cloudflare com o mesmo par de nameservers do `movepark.co`) e **já respondia 301**: uma regra de
+redirect no painel da zona antiga troca só o domínio e preserva o caminho
+(`<qualquer>.movepark.com.br/<caminho>` → `<qualquer>.movepark.co/<caminho>`). O teste de 30/09
+provavelmente esbarrou num timeout de rede. O problema real era a **cadeia**:
+
+| URL antiga | Antes | Saltos |
+|---|---|---|
+| `movepark.com.br/` | → `movepark.co/` | 1 |
+| `www.movepark.com.br/` | → `www.movepark.co/` → `movepark.co/` | 2 |
+| `movepark.com.br/estacionamento/ponce-park-guarulhos/` | → `movepark.co/estacionamento/...` → `/estacionamentos/aeroporto-guarulhos/ponce-park` | 2 |
+| `www.movepark.com.br/estacionamento/ponce-park-guarulhos/` | → `www.movepark.co/...` → `movepark.co/...` → destino | 3 |
+
+**O que mudou.** O `src/worker.ts` passou a atender o apex e o `www` do domínio antigo
+(`redirecionaAlias`, host em `LEGACY_SITE_HOST` de `src/lib/site-host.mjs`, rotas em
+`wrangler.jsonc`) e resolve a URL pelos mesmos mapas de 301 do apex: o primeiro salto já é o
+destino final. O `www.movepark.co` ganhou o mesmo tratamento, então mesmo com a regra do painel
+ainda ativa a pior cadeia cai de 3 para 2 saltos.
+
+**Passo de painel que falta (zona `movepark.com.br`).** Redirect Rule roda antes do worker no
+Cloudflare. Para as rotas novas valerem, a regra da zona antiga precisa **excluir** o apex e o
+`www`, mantendo os subdomínios de white-label: acrescentar à expressão
+`and http.host ne "movepark.com.br" and http.host ne "www.movepark.com.br"`. Depois disso, conferir
+com `curl -sI https://www.movepark.com.br/estacionamento/ponce-park-guarulhos/`: o `location` tem
+que ser `https://movepark.co/estacionamentos/aeroporto-guarulhos/ponce-park`.
+
+**White-label.** Os `wl_domain`/`wl_public_domain` do banco estão todos em `*.movepark.co`
+(`nationpark-app.movepark.co` etc.). Os oito pares antigos em `.movepark.com.br` respondem 301
+para o equivalente em `.movepark.co` (testado antes da mudança), e continuam na regra da zona,
+fora do worker. Os `*-app.movepark.co` respondem 302 para `/backend/auth` e os públicos 200.
+
 ### 2.4 O histórico do WhitePress
 
 | Projeto | Publicações pagas | Inserções de link | Gasto total | Últimos 12 meses |

@@ -1,4 +1,4 @@
-import { DEFAULT_SITE_URL } from "./lib/site-host.mjs";
+import { DEFAULT_SITE_URL, LEGACY_SITE_HOST } from "./lib/site-host.mjs";
 import legacySlugs from "./features/blog/legacy-slugs.json";
 
 interface Env {
@@ -32,6 +32,13 @@ const INDEXABLE_HOSTS = new Set([new URL(DEFAULT_SITE_URL).hostname]);
 const HOST_WWW = `www.${new URL(DEFAULT_SITE_URL).hostname}`;
 
 /**
+ * Hosts que só existem para apontar para o canônico: o `www.` e o domínio antigo, com e sem
+ * `www.`. Casam o host inteiro, nunca prefixo, senão `movepark.com.br.evil.com` ganharia um
+ * 301 nosso.
+ */
+const HOSTS_ALIAS = new Set([HOST_WWW, LEGACY_SITE_HOST, `www.${LEGACY_SITE_HOST}`]);
+
+/**
  * `www.movepark.co` → 301 para o apex, com caminho e query preservados.
  *
  * Medido em 18/08/2026: o `www` tinha registro DNS proxiado apontando para uma origem que
@@ -45,13 +52,22 @@ const HOST_WWW = `www.${new URL(DEFAULT_SITE_URL).hostname}`;
  * residual.
  *
  * 301 e não 302: o endereço canônico não vai mudar, e é o permanente que transfere sinal.
+ *
+ * Vale igual para o domínio antigo (`movepark.com.br`, com e sem `www.`), e aqui o salto é
+ * resolvido ATÉ O FIM: a URL antiga passa pelos mesmos mapas de 301 do apex e o visitante vai
+ * direto ao destino final. Medido em 05/10/2026, antes disto: uma regra do painel na zona
+ * antiga trocava só o domínio, e `www.movepark.com.br/estacionamento/ponce-park-guarulhos/` (a
+ * ficha de mais acesso do WordPress) dava três saltos até a página nova. Cada salto é sinal
+ * que o buscador pode deixar no caminho.
  */
-function redirecionaWww(url: URL): Response | null {
-  if (url.hostname !== HOST_WWW) return null;
+async function redirecionaAlias(url: URL, env: Env): Promise<Response | null> {
+  if (!HOSTS_ALIAS.has(url.hostname)) return null;
 
-  const destino = new URL(url.toString());
-  destino.hostname = new URL(DEFAULT_SITE_URL).hostname;
-  return Response.redirect(destino.toString(), 301);
+  const canonico = new URL(url.pathname + url.search, DEFAULT_SITE_URL);
+  const salto = (await pontuacaoColada(canonico, env)) ?? (await saltoDeEndereco(canonico, env));
+  const alvo = salto?.headers.get("Location");
+  const destino = alvo ? new URL(alvo, canonico) : canonico;
+  return redirect301(destino.toString());
 }
 
 /**
@@ -794,9 +810,9 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Antes de tudo: no `www` não há o que servir, só para onde apontar.
-    const www = redirecionaWww(url);
-    if (www) return www;
+    // Antes de tudo: no `www` e no domínio antigo não há o que servir, só para onde apontar.
+    const alias = await redirecionaAlias(url, env);
+    if (alias) return alias;
 
     // Passa pela política de índice porque rota privada segue noindex até no redirect.
     return applyIndexPolicy(await serve(request, env), url);
