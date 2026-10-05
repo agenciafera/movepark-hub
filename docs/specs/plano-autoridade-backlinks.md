@@ -93,19 +93,19 @@ provavelmente esbarrou num timeout de rede. O problema real era a **cadeia**:
 **O que mudou.** O `src/worker.ts` passou a atender o apex e o `www` do domínio antigo
 (`redirecionaAlias`, host em `LEGACY_SITE_HOST` de `src/lib/site-host.mjs`, rotas em
 `wrangler.jsonc`) e resolve a URL pelos mesmos mapas de 301 do apex: o primeiro salto já é o
-destino final. O `www.movepark.co` ganhou o mesmo tratamento, então mesmo com a regra do painel
-ainda ativa a pior cadeia cai de 3 para 2 saltos.
+destino final. O `www.movepark.co` ganhou o mesmo tratamento.
 
-**Passo de painel que falta (zona `movepark.com.br`).** Redirect Rule roda antes do worker no
-Cloudflare. Para as rotas novas valerem, a regra da zona antiga precisa **excluir** o apex e o
-`www`, mantendo os subdomínios de white-label: acrescentar à expressão
-`and http.host ne "movepark.com.br" and http.host ne "www.movepark.com.br"`. Depois disso, conferir
-com `curl -sI https://www.movepark.com.br/estacionamento/ponce-park-guarulhos/`: o `location` tem
-que ser `https://movepark.co/estacionamentos/aeroporto-guarulhos/ponce-park`.
+**Depois do deploy (05/10/2026, commit `17611da7`).** A rota do worker passou na frente da regra
+da zona sem mexer no painel. As quatro URLs da tabela acima, e também
+`www.movepark.co/estacionamento/ponce-park-guarulhos/`, respondem **um 301 só** para o destino
+final, que responde 200. Para conferir de novo:
+`curl -sI https://www.movepark.com.br/estacionamento/ponce-park-guarulhos/` tem que trazer
+`location: https://movepark.co/estacionamentos/aeroporto-guarulhos/ponce-park`. A regra do painel
+continua lá e segue valendo para os subdomínios, que o worker não atende.
 
 **White-label.** Os `wl_domain`/`wl_public_domain` do banco estão todos em `*.movepark.co`
 (`nationpark-app.movepark.co` etc.). Os oito pares antigos em `.movepark.com.br` respondem 301
-para o equivalente em `.movepark.co` (testado antes da mudança), e continuam na regra da zona,
+para o equivalente em `.movepark.co`, antes e depois do deploy, e continuam na regra da zona,
 fora do worker. Os `*-app.movepark.co` respondem 302 para `/backend/auth` e os públicos 200.
 
 ### 2.4 O histórico do WhitePress
