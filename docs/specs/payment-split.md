@@ -556,6 +556,13 @@ clientes em 02 e 03/10, R$ 1.225,50 em reservas que expiraram. Achado pelos logs
 rastro do gateway. Guarda: `_shared/payments/recipient-gate.contract.test.ts` (toda Edge que trava
 por `status` tem que selecionar `status`).
 
+**Telefone do pagador no cartão (05/10/2026).** Assim que o 409 acima saiu do caminho, a primeira
+cobrança de cartão com split (MP-200728) caiu no gateway com 412 "At least one customer phone is
+required": o `create-card-charge` nunca selecionou `customer_phone` nem o enviou, enquanto o PIX
+sempre enviou. O cliente só fechou por PIX. A Edge do cartão passou a espelhar a do PIX: exige o
+telefone do snapshot (422 com instrução quando falta) e manda `customer.phones` ao gateway. Guarda:
+`_shared/payments/phone-gate.contract.test.ts`.
+
 **Endereço de cobrança (17/09/2026).** O antifraude da Pagar.me exige `billing_address` em todo
 pedido de cartão, e o endereço não entra no token: vai em `credit_card.card.billing_address`
 (`line_1` = "número, rua, bairro", `zip_code`, `city`, `state`, `country`). Sem ele a transação

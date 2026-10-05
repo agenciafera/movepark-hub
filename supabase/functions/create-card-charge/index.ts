@@ -24,6 +24,7 @@ import { appliedFeeCreditCents, debtFloorCents, effectiveSplitEnabled, maxDebtRe
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
 import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
+import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import {
   type BookingCommissionColumns,
@@ -100,7 +101,7 @@ Deno.serve(async (req: Request) => {
       "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, " +
         "price_breakdown, " +
         "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
-        "customer_name, customer_first_name, customer_last_name, customer_email, customer_tax_id",
+        "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id",
     )
     .eq("code", input.bookingCode)
     .maybeSingle();
@@ -292,6 +293,16 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Cartão no Pagar.me exige telefone do cliente (412 "At least one customer phone is required",
+  // medido na MP-200728 em 05/10/2026). Vem do snapshot do booking, como no PIX.
+  const phone = parseBrPhone(booking.customer_phone);
+  if (!phone) {
+    return jsonResponse(
+      { error: "Cliente sem telefone (com DDD) para a cobrança. Informe o telefone no checkout." },
+      422,
+    );
+  }
+
   // 7. Resolve o cartão: salvo (card_id) ou novo (token).
   let cardRef: { cardToken?: string; cardId?: string };
   if (input.paymentMethodId) {
@@ -326,6 +337,7 @@ Deno.serve(async (req: Request) => {
       email,
       document: booking.customer_tax_id ?? null,
       type: customerTypeFor(booking.customer_tax_id),
+      phone,
     },
     items: buildCardItems(booking.code, baseCents, interestCents),
     // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
