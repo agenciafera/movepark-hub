@@ -33,7 +33,7 @@ o Authority Score do Semrush está em **25 há 12 meses**, com os domínios de r
 | Domínios `.br` | 56 (7%) | `.com` 501, `.shop` 38 |
 | Domínios de viagem e turismo | 15 (2%) | O nicho que dá relevância quase não aparece |
 | Follow / nofollow | 81% / 19% | |
-| Pontuação de toxicidade | não medida | O Backlink Audit nunca foi configurado |
+| Pontuação de toxicidade | não medida | Medida em 05/10/2026: **Alta** (seção 2.6) |
 | Tráfego orgânico (estimado) | 2,6 mil/mês (+26,8%) | |
 | Palavras orgânicas | 5,7 mil (+22%) | |
 | Saúde do site | 76%, 35 erros, 248 avisos | Mas só **100 páginas** rastreadas, contra 934 no GSC |
@@ -131,10 +131,46 @@ Três leituras:
 
 ### 2.5 O que o print traz e que não deve guiar decisão
 
-- O widget "Rankings orgânicos" do painel está configurado para **United States**, por isso aparece
-  zerado. Trocar para Brasil.
+- O widget "Rankings orgânicos" do painel estava configurado para **United States**, por isso aparecia
+  zerado. Trocado para Brasil em 05/10/2026.
 - O Traffic Analytics é estimativa de painel. A queda de 71% no tempo médio só vira problema depois
   de conectar GA e GSC ao Semrush e confirmar com dado real.
+
+### 2.6 O projeto do Semrush em 05/10/2026 (Conteúdo 61)
+
+**A conta é do plano gratuito.** Isso define o que o painel consegue medir, e decidimos não assinar
+(05/10/2026). O que mudou, o que ficou de fora e por quê:
+
+| Item | Estado | Observação |
+|---|---|---|
+| Widget "Rankings orgânicos" | **Brasil** | Estava em United States; a troca persiste ao recarregar |
+| Backlink Audit | **Configurado e rodado** | Já conectado ao Search Console; primeira rodada concluída em 05/10 |
+| Search Console | Conectado ao Backlink Audit | |
+| Google Analytics | **Desconectado** | O Organic Traffic Insights pede "Reconectar conta". Autorização OAuth na conta Google, feita por quem administra o GA |
+| Auditoria do site acima de 1.000 páginas | **Bloqueada pelo plano** | O limite por auditoria é fixo em 100 no gratuito ("Você atingiu o limite de rastreamento 100/100") |
+| Domínios novos com AS ≥ 20 por mês | **Bloqueado pelo plano** | O relatório completo de domínios de referência, que traz a data de descoberta, redireciona para a visão geral no gratuito |
+
+**Primeira nota de toxicidade (Backlink Audit, 05/10/2026): Alta.**
+
+| | Tóxicos | Potencialmente tóxicos | Não tóxicos | Total analisado |
+|---|---|---|---|---|
+| Domínios de referência | 217 (57,4%) | 35 (9,3%) | 126 (33,3%) | 378 |
+| Backlinks | 676 | 84 | 937 | 1,7 mil |
+
+Insights do relatório: 68 domínios tóxicos novos e 16 potencialmente tóxicos; 113 domínios com o
+mesmo título de página e 81 numa rede de links por caminho de URL (assinatura de rede); 631 backlinks
+com âncora frequente e 236 de domínio desindexado; 93,7% dos domínios com AS de 0 a 20. O Backlink
+Audit analisa 378 dos 851 domínios que a Análise de backlinks conta, então a nota vale para essa
+amostra. **Atenção para a Conteúdo 63:** o `virapark.com.br` (parceiro, 146 backlinks, AS 28)
+aparece como tóxico com TS 42. Rede de parceiro não entra em disavow pela nota da ferramenta.
+
+**Retrato da Análise de backlinks no mesmo dia:** 851 domínios de referência (+11%), 2,6 mil
+backlinks, Authority Score 25. Por faixa de AS: 50 domínios com AS acima de 20 (22 de 21 a 30, 17 de
+31 a 40, 11 acima de 40), 32 de 11 a 20 e 770 de 0 a 10. Brasil segue com 15 domínios. Auditoria do
+site (02/10, 100 páginas): saúde 82%, 13 erros, 204 avisos.
+
+**Como medir sem o plano pago.** A auditoria completa e a linha de base de AS ≥ 20 por mês saem de
+fonte própria; ver a seção 5.5.
 
 ## 3. A tese
 
@@ -212,6 +248,11 @@ concentrado num único mês.
 
 - **[Conteúdo 73](https://app.clickup.com/t/17tn9e9gfhj):** revisão de 30 dias, com print novo do Semrush.
 - **[Conteúdo 74](https://app.clickup.com/t/17tn9e9gfhm):** revisão de 90 dias.
+- **Sem o plano pago do Semrush (seção 2.6):** a auditoria completa do site sai de varredura própria
+  sobre o sitemap de produção, somada às checagens que o build já faz (`check-internal-links`,
+  `audit-structured-data`, `check-meta-producao`, Lighthouse). A linha de base de domínios novos por
+  mês sai do Ahrefs Webmaster Tools (gratuito para site verificado, com DR e data de descoberta por
+  domínio). Nesse caso a meta da seção 6 passa a ser medida em DR, não em AS.
 
 ## 6. Metas
 
@@ -219,11 +260,11 @@ concentrado num único mês.
 |---|---|---|---|
 | Authority Score | 25 | 30 | 35 |
 | Domínios de ref. de `/estacionamentos/aeroporto-guarulhos` | 17 | 40 | 60 |
-| Domínios novos com AS ≥ 20 por mês | a medir (Conteúdo 61) | 10 | 15 |
+| Domínios novos com AS ≥ 20 por mês | sem linha de base no plano gratuito (50 domínios com AS > 20 no total em 05/10; seção 2.6) | 10 | 15 |
 | Domínios de ref. do Brasil | 15 | 40 | 70 |
 | Posição média dos termos de cabeça de GRU no GSC | 40 a 55 | até 20 | até 5 |
 | Termos monitorados no top 10 | 5 de 9 | 20 de 60 | 35 de 60 |
-| Saúde do site no Semrush (auditoria completa) | 76% sobre 100 páginas | 85% | 90% |
+| Saúde do site no Semrush (auditoria completa) | 76% sobre 100 páginas (82% em 02/10; o plano gratuito não passa de 100) | 85% | 90% |
 
 A meta de posição soma o efeito deste plano com o do plano de conteúdo. As duas specs medem o mesmo
 GSC, então a revisão é feita junto.
