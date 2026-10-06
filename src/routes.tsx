@@ -670,6 +670,20 @@ async function fetchAllBlogPaths(): Promise<string[]> {
 }
 
 /**
+ * Guias Master: posts que começam com "guia-master-" são pré-renderizados como rotas estáticas.
+ * Cada guia fica em `/blog/guia-master-<slug-destino>`.
+ */
+async function fetchAllGuideMasterPaths(): Promise<string[]> {
+  const { data } = await supabase
+    .from("blog_post")
+    .select("slug")
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .like("slug", "guia-master-%");
+  return (data ?? []).map((p) => `/blog/${p.slug as string}`);
+}
+
+/**
  * Posts publicados para a listagem, SEM `body_md`.
  *
  * O `BLOG_SELECT` usa `*` porque a página do post precisa do corpo. Aqui não:
