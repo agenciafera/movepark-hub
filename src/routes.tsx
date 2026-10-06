@@ -667,7 +667,7 @@ async function fetchAllBlogPaths(): Promise<string[]> {
     .eq("is_published", true)
     .is("deleted_at", null);
   return (data ?? []).map((p) => `/blog/${p.slug as string}`);
-  // Nota: Inclui posts normais E guias master (slug começa com "guia-master-")
+  // Nota: Inclui posts normais E guias completos (slug começa com "guia-completo-")
 }
 
 /**
