@@ -572,7 +572,10 @@ export function useCreateCardCharge() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `Falha ao processar o cartão (HTTP ${res.status})`);
+        // O status vai junto para o rastro do checkout (checkoutTrail.ts).
+        throw Object.assign(new Error(err.error ?? `Falha ao processar o cartão (HTTP ${res.status})`), {
+          httpStatus: res.status,
+        });
       }
       return res.json();
     },

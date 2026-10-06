@@ -26,6 +26,7 @@ import {
   summarizeInstallmentOption,
 } from "@/features/checkout/installments.logic";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
+import { cardFailureEvent, logCheckoutEvent, type CardFailureStage } from "./checkoutTrail";
 import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
 import { brandLabel, detectBrand } from "@/lib/card-brand";
@@ -216,30 +217,51 @@ export function Step4Payment({
       if (res.qr_code) setPixSvg(await toSvgString(res.qr_code, 256));
       toast.success("PIX gerado. Pague no seu app de banco.");
     } catch (err) {
+      logCheckoutEvent(bookingCode, "client:pix_failed", null, {
+        message: err instanceof Error ? err.message.slice(0, 300) : "erro",
+      });
       toast.error(err instanceof Error ? err.message : "Erro ao gerar PIX");
     }
   }
 
   async function payCard(e: React.FormEvent) {
     e.preventDefault();
+    // Rastro do checkout: cada tentativa e onde ela morreu vão para a reserva no Manager.
+    const savedCard = cardChoice !== "new";
+    const ctx = {
+      saved_card: savedCard,
+      installments,
+      brand: savedCard ? null : detectBrand(onlyDigits(cardNumber)),
+    };
+    let stage: CardFailureStage = "validation";
+    logCheckoutEvent(bookingCode, "client:card_attempt", null, ctx);
+    const falhaLocal = (message: string) => {
+      logCheckoutEvent(bookingCode, "client:card_validation", null, { ...ctx, message });
+      toast.error(message);
+    };
     try {
-      if (!(await persistTaxId())) return;
+      if (!(await persistTaxId())) {
+        logCheckoutEvent(bookingCode, "client:card_validation", null, { ...ctx, message: "documento" });
+        return;
+      }
       await garantirAceite();
-      if (cardChoice !== "new") {
+      if (savedCard) {
+        stage = "charge";
         await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: cardChoice });
       } else {
         const validade = parseValidade(cardExpiry, new Date());
         if (!validade) {
-          toast.error("Validade inválida (use MM/AA).");
+          falhaLocal("Validade inválida (use MM/AA).");
           return;
         }
         // Endereço antes de tokenizar: sem ele o antifraude recusa, e o token é de uso único.
         const parts = { cep, number: addrNumber, complement: addrComplement, ...addr };
         const cobranca = buildBillingAddress(parts);
         if (cobranca.error) {
-          toast.error(cobranca.error);
+          falhaLocal(cobranca.error);
           return;
         }
+        stage = "tokenize";
         const tok = await tokenizeCard(config.data!.public_key, {
           number: cardNumber,
           holder_name: cardName,
@@ -247,6 +269,7 @@ export function Step4Payment({
           exp_year: validade.ano,
           cvv: cardCvv,
         });
+        stage = "charge";
         await card.mutateAsync({
           booking_code: bookingCode,
           installments,
@@ -269,8 +292,11 @@ export function Step4Payment({
             .catch(() => {});
         }
       }
+      logCheckoutEvent(bookingCode, "client:card_charge_ok", null, ctx);
       toast.success("Pagamento aprovado. Confirmando…");
     } catch (err) {
+      const ev = cardFailureEvent(stage, err, ctx);
+      logCheckoutEvent(bookingCode, ev.kind, ev.httpStatus, ev.detail);
       toast.error(err instanceof Error ? err.message : "Pagamento recusado");
     }
   }

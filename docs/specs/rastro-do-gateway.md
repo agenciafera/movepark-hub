@@ -45,3 +45,35 @@ da reserva no Manager avisa antes do clique: vencida, um bloco em vermelho com a
 consequência; a vencer em até 7 dias, um bloco de atenção com a data. Lógica pura em
 `payment.logic.ts` (`refundWindow`, `REFUND_WINDOW_DAYS`), com o embed de `payments` da reserva
 trazendo `paid_at` e `method`.
+
+## Rastro do checkout no navegador (06/10/2026)
+
+O rastro só via o que a Edge mandou à Pagar.me. Duas falhas de cartão ficavam de fora, e foi assim
+que o cartão passou de 23/09 a 05/10 sem vender: as 14 tentativas que morreram em 409 na trava de
+recebedor e as duas recusadas por falta de telefone (412) só apareciam no log da Edge.
+
+- **Recusa da Edge antes do gateway.** No `create-card-charge`, toda recusa depois de achar a
+  reserva passa por `recusar()` e grava `charge_rejected`, com o HTTP, a mensagem devolvida ao
+  cliente e, no 502 do gateway, a resposta crua. Guarda: `rejection-trail.contract.test.ts`.
+- **O que acontece no navegador.** A tokenização vai direto do navegador à Pagar.me e nunca passava
+  pelo backend. O checkout grava `client:*` pela RPC `log_checkout_event` (security definer, só o
+  dono da reserva, kind por allowlist, teto de 60 por reserva):
+  `client:card_attempt` no clique, `client:card_validation` (validade, endereço, documento),
+  `client:card_tokenize_failed` (HTTP da Pagar.me, `0` quando a chamada nem saiu por rede,
+  bloqueador ou CORS, mais a mensagem e os NOMES dos campos recusados),
+  `client:card_charge_failed` (HTTP e mensagem da Edge), `client:card_charge_ok` e
+  `client:pix_failed`. Nunca entra dado de cartão: só bandeira, parcelas e se é cartão salvo.
+- **Antifraude.** A reprovação aparece como `charge_failed` com a nota "reprovado pelo antifraude",
+  e o navegador grava o `client:card_charge_failed` com HTTP 402 e `code` na mensagem.
+
+Leitura do funil (só hub_admin, view `checkout_card_funnel` com `security_invoker`):
+
+```sql
+select booking_code, created_at, kind, http_status, note
+from checkout_card_funnel
+where created_at > now() - interval '7 days'
+order by booking_code, created_at;
+```
+
+Testes: pgTAP `log_checkout_event.test.sql` (8), Vitest `checkoutTrail.test.ts` e
+`pagarme-tokenize.test.ts`.

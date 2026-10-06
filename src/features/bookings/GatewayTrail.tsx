@@ -10,6 +10,13 @@ const brl = (cents: number) => formatBRL(cents / 100);
 const KIND_LABEL: Record<string, string> = {
   charge_created: "Cobrança criada",
   charge_failed: "Cobrança recusada",
+  charge_rejected: "Recusada antes do gateway",
+  "client:card_attempt": "Navegador: tentou pagar com cartão",
+  "client:card_validation": "Navegador: dado do cartão inválido",
+  "client:card_tokenize_failed": "Navegador: Pagar.me não aceitou o cartão",
+  "client:card_charge_failed": "Navegador: cobrança do cartão falhou",
+  "client:card_charge_ok": "Navegador: cartão aprovado",
+  "client:pix_failed": "Navegador: PIX não foi gerado",
   refund: "Estorno",
   payables: "Recebíveis apurados",
   withdrawal: "Saque",

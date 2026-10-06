@@ -109,11 +109,27 @@ Deno.serve(async (req: Request) => {
   if (booking.profile_id !== userData.user.id) {
     return jsonResponse({ error: "Reserva não pertence a você" }, 403);
   }
+
+  // Toda recusa daqui para baixo deixa rastro na reserva (kind `charge_rejected`): erro devolvido
+  // antes do gateway não aparecia em lugar nenhum além do log da Edge, e foi assim que o cartão
+  // ficou quebrado de 23/09 a 05/10 sem ninguém ver.
+  const recusar = async (status: number, error: string, extra?: { response?: unknown; code?: string }) => {
+    await logGatewayEvent(admin, {
+      paymentId: null,
+      bookingId: (booking as unknown as { id: string }).id,
+      kind: "charge_rejected",
+      httpStatus: status,
+      request: { method: "card", installments: input.installments, saved_card: Boolean(input.paymentMethodId) },
+      response: extra?.response ?? null,
+      note: error,
+    });
+    return jsonResponse(extra?.code ? { error, code: extra.code } : { error }, status);
+  };
   if (booking.status !== "pending") {
-    return jsonResponse({ error: `Reserva já está ${booking.status}` }, 400);
+    return await recusar(400, `Reserva já está ${booking.status}`);
   }
   if (booking.expires_at && new Date(booking.expires_at) < new Date()) {
-    return jsonResponse({ error: "Reserva expirada" }, 400);
+    return await recusar(400, "Reserva expirada");
   }
 
   // 1a. Gate de conformidade (RFN005/LGPD): sem aceite explícito dos Termos, não cobra.
@@ -122,7 +138,7 @@ Deno.serve(async (req: Request) => {
     .select("id", { count: "exact", head: true })
     .eq("booking_id", booking.id);
   if (!termsCount) {
-    return jsonResponse({ error: "É necessário aceitar os Termos de Uso antes de pagar." }, 422);
+    return await recusar(422, "É necessário aceitar os Termos de Uso antes de pagar.");
   }
 
   // 1b. Idempotência: não cobrar de novo se já há pagamento aprovado/autorizado.
@@ -133,7 +149,7 @@ Deno.serve(async (req: Request) => {
     .in("status", ["paid", "authorized"])
     .limit(1)
     .maybeSingle();
-  if (paid) return jsonResponse({ error: "Esta reserva já foi paga." }, 409);
+  if (paid) return await recusar(409, "Esta reserva já foi paga.");
 
   // 2. Empresa + take_rate + recebedor do parceiro
   const { data: location } = await admin
@@ -141,7 +157,7 @@ Deno.serve(async (req: Request) => {
     .select("company_id")
     .eq("id", booking.location_id)
     .maybeSingle();
-  if (!location) return jsonResponse({ error: "Unidade não encontrada" }, 404);
+  if (!location) return await recusar(404, "Unidade não encontrada");
 
   const { data: company } = await admin
     .from("company")
@@ -178,21 +194,18 @@ Deno.serve(async (req: Request) => {
   // Recebedor que o gateway não reconhece (`gateway_missing_at`) conta como ausente: a cobrança
   // com split apontando para ele falharia na venda (decisão 5 do E0.3.5: bloqueia).
   if (splitEnabled && (!recipient?.external_recipient_id || recipient.gateway_missing_at || recipient.status !== "active")) {
-    return jsonResponse(
-      { error: "O estacionamento ainda não tem recebedor ativo no gateway." },
-      409,
-    );
+    return await recusar(409, "O estacionamento ainda não tem recebedor ativo no gateway.");
   }
 
   const policy = parseInstallmentPolicy(settingMap.card_installment_policy);
-  if (!policy.enabled) return jsonResponse({ error: "Pagamento com cartão indisponível." }, 422);
+  if (!policy.enabled) return await recusar(422, "Pagamento com cartão indisponível.");
 
   // 4. Parcela escolhida revalidada contra a política (server-authoritative). O cliente parcela o
   // TOTAL (vaga + tarifa); os juros incidem sobre esse total.
   const baseCents = reaisToCents(Number(booking.total_amount));
   const plan = computeInstallmentPlan(baseCents, policy);
   const chosen = plan.find((o) => o.installments === input.installments);
-  if (!chosen) return jsonResponse({ error: "Parcelamento inválido para esta reserva." }, 422);
+  if (!chosen) return await recusar(422, "Parcelamento inválido para esta reserva.");
   const chargedCents = chosen.totalCents;
   const interestCents = chosen.interestCents;
 
@@ -226,7 +239,7 @@ Deno.serve(async (req: Request) => {
       feePayer: commission.feePayer,
     });
   } catch (e) {
-    return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
+    return await recusar(422, e instanceof Error ? e.message : "Falha ao montar o split");
   }
 
   // 4b. Split dinâmico (E0.3.5): se o parceiro está devendo, esta venda abate até 100% da perna
@@ -273,7 +286,7 @@ Deno.serve(async (req: Request) => {
     try {
       gatewaySplit = splitForGateway(split, debtRecoveryCents, moveparkRecipientId, feeCreditCents) as typeof split;
     } catch (e) {
-      return jsonResponse({ error: e instanceof Error ? e.message : "Falha ao montar o split" }, 422);
+      return await recusar(422, e instanceof Error ? e.message : "Falha ao montar o split");
     }
   }
 
@@ -285,22 +298,16 @@ Deno.serve(async (req: Request) => {
     "Cliente Movepark";
   const { data: authUser } = await admin.auth.admin.getUserById(booking.profile_id);
   const email = booking.customer_email ?? authUser?.user?.email ?? null;
-  if (!email) return jsonResponse({ error: "Cliente sem e-mail para a cobrança." }, 422);
+  if (!email) return await recusar(422, "Cliente sem e-mail para a cobrança.");
   if (!isValidChargeDocument(booking.customer_tax_id)) {
-    return jsonResponse(
-      { error: "Cliente sem CPF/CNPJ válido para a cobrança. Informe o documento no checkout." },
-      422,
-    );
+    return await recusar(422, "Cliente sem CPF/CNPJ válido para a cobrança. Informe o documento no checkout.");
   }
 
   // Cartão no Pagar.me exige telefone do cliente (412 "At least one customer phone is required",
   // medido na MP-200728 em 05/10/2026). Vem do snapshot do booking, como no PIX.
   const phone = parseBrPhone(booking.customer_phone);
   if (!phone) {
-    return jsonResponse(
-      { error: "Cliente sem telefone (com DDD) para a cobrança. Informe o telefone no checkout." },
-      422,
-    );
+    return await recusar(422, "Cliente sem telefone (com DDD) para a cobrança. Informe o telefone no checkout.");
   }
 
   // 7. Resolve o cartão: salvo (card_id) ou novo (token).
@@ -314,7 +321,7 @@ Deno.serve(async (req: Request) => {
       .eq("provider", "pagarme")
       .is("deleted_at", null)
       .maybeSingle();
-    if (!pm?.provider_token) return jsonResponse({ error: "Cartão salvo não encontrado." }, 404);
+    if (!pm?.provider_token) return await recusar(404, "Cartão salvo não encontrado.");
     cardRef = { cardId: pm.provider_token };
   } else {
     cardRef = { cardToken: input.cardToken! };
@@ -325,7 +332,7 @@ Deno.serve(async (req: Request) => {
   try {
     gateway = getGateway("pagarme");
   } catch (e) {
-    if (e instanceof GatewayConfigError) return jsonResponse({ error: e.message }, 503);
+    if (e instanceof GatewayConfigError) return await recusar(503, e.message);
     throw e;
   }
 
@@ -397,7 +404,7 @@ Deno.serve(async (req: Request) => {
   }
   if (!result.orderId || (result.httpStatus ?? 500) >= 400) {
     console.error("Pagar.me card order falhou:", result.httpStatus, JSON.stringify(result.raw));
-    return jsonResponse({ error: "Falha ao processar o cartão." }, 502);
+    return await recusar(502, "Falha ao processar o cartão.", { response: result.raw });
   }
 
   // 9. Grava o payment (paid imediato ou pending p/ análise → webhook confirma)
@@ -419,7 +426,7 @@ Deno.serve(async (req: Request) => {
     fee_credit_returned_cents: feeCreditCents,
     fee_credit_reservation_id: feeCreditReservationId,
   });
-  if (payErr) return jsonResponse({ error: payErr.message }, 500);
+  if (payErr) return await recusar(500, payErr.message);
   // Rastro do gateway (E0.3.9). O cartão nunca entra aqui: só ids, valor, parcelas e split.
   await logGatewayEvent(admin, {
     paymentId,
