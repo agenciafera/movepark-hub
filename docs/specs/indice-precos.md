@@ -146,6 +146,37 @@ destination_price_index(p_days int[] default '{1,7,15,30}', p_destination text d
 - Indexação: vale a regra de host de [seo-indexacao.md](./seo-indexacao.md) (hoje
   o Hub respondia noindex no `hub.movepark.co`; desde 18/08/2026 as páginas estão no ar e indexáveis no `movepark.co`).
 
+## A página "mais barato" responde o mercado (Conteúdo 39, 06/10/2026)
+
+`/estacionamentos/<destino>/mais-barato` respondia só com parceiro, porque só enxergava o motor.
+Numa praça de parceiro único ele virava "o mais barato perto do aeroporto": em Confins a página e
+o FAQPage diziam R$ 45,00 no BePark enquanto o AeroPark e o Auto Park Brasil cobravam R$ 20,00, e
+os nossos próprios posts e FAQs diziam R$ 20,00.
+
+A regra agora, para **toda praça**:
+
+- A resposta direta (e o `acceptedAnswer` do FAQPage, com o mesmo texto) compara o vencedor do
+  motor com o menor **preço pesquisado** de lote mapeado na mesma duração (1, 7 e 30 dias). Quando
+  o pesquisado é mais barato, a frase nomeia ele, com a data da pesquisa e "sem reserva online
+  pela Movepark", e diz em seguida qual é o menor **com reserva pela Movepark**. Empate fica com o
+  parceiro.
+- O texto sai de um módulo só, [`src/lib/resposta-mais-barato.mjs`](../../src/lib/resposta-mais-barato.mjs),
+  usado pela página React e pelo gêmeo Markdown (`scripts/generate-geo-artifacts.mjs`), para os dois
+  darem a mesma resposta.
+- A tabela do motor passou a se chamar "Menor preço com reserva pela Movepark". Os lotes com preço
+  pesquisado ganham tabela própria, "Sem reserva online pela Movepark", com a data em cada linha e
+  link para a ficha, sem botão de reserva (ADR-009). Lote sem preço segue na lista "E os outros
+  estacionamentos da região?".
+- O `Product`/`AggregateOffer` continua só com vaga de parceiro (ADR-010).
+- A description cita o menor preço do mercado. Quando ele é de terceiro, o CTA é "Confira a tabela
+  atualizada." e não "Compare e reserve pela Movepark.", que prometeria reservar por aquele valor.
+- A validade de 90 dias do preço pesquisado vale aqui também (`pesquisadoRows`, conferida de novo
+  na renderização porque a página é SSG).
+
+No build de 06/10/2026 a resposta mudou em cinco praças: Confins, Congonhas, Guarulhos, Viracopos e
+Tietê. Testes: `maisBarato.logic.test.ts` (praça de parceiro único com os números de Confins) e
+`estacionamento-mais-barato.test.tsx` (texto visível igual ao FAQPage, oferta só do parceiro).
+
 ## Endpoint JSON, datado (`/precos.json`)
 
 > **Decidido em 16/09/2026 (Conteúdo 24).** O índice responde em JSON **como asset

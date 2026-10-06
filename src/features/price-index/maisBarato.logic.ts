@@ -95,9 +95,22 @@ export function vagasDoRanking(linhas: MaisBaratoLinha[]) {
       if (!opcao) continue;
       const atual = porVaga.get(opcao.key);
       if (atual) atual.porDuracao.push({ days: linha.days, total: opcao.total });
-      else porVaga.set(opcao.key, { opcao, porDuracao: [{ days: linha.days, total: opcao.total }] });
+      else
+        porVaga.set(opcao.key, { opcao, porDuracao: [{ days: linha.days, total: opcao.total }] });
     }
   }
 
   return [...porVaga.values()];
 }
+
+/**
+ * A resposta de mercado (parceiro + lote com preço pesquisado) mora num `.mjs` compartilhado com
+ * o gerador do gêmeo Markdown, para a página e o `.md` darem a mesma resposta (Conteúdo 39).
+ */
+export {
+  menorPesquisado,
+  ondePesquisado,
+  respostaMaisBarato,
+  type PesquisadoVencedor,
+  type RespostaMaisBarato,
+} from "@/lib/resposta-mais-barato.mjs";

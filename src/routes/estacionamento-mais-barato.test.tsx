@@ -90,7 +90,7 @@ describe("EstacionamentoMaisBaratoPage", () => {
 
   it("a tabela traz vencedor com link e a segunda opção", async () => {
     setup();
-    await screen.findByRole("heading", { name: "Menor preço por duração" });
+    await screen.findByRole("heading", { name: "Menor preço com reserva pela Movepark" });
     const vencedor = screen.getAllByRole("link", { name: "Virapark" })[0];
     expect(vencedor).toHaveAttribute("href", "/p/virapark/matriz/uncovered");
     expect(screen.getByText(/Garageinn, R\$ 45,00/)).toBeInTheDocument();
@@ -107,8 +107,8 @@ describe("EstacionamentoMaisBaratoPage", () => {
       }),
     ).toBeInTheDocument();
     await waitFor(() => {
-      const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map(
-        (s) => JSON.parse(s.textContent ?? "{}"),
+      const blocos = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) =>
+        JSON.parse(s.textContent ?? "{}"),
       );
       const faqPage = blocos.find((b) => b["@type"] === "FAQPage");
       expect(faqPage?.mainEntity?.[0]?.name).toBe(
@@ -127,12 +127,24 @@ describe("EstacionamentoMaisBaratoPage", () => {
     );
   });
 
-  /** A praça completa: mapeados (inclusive o oficial) entram por link, sem preço. */
-  it("lista os lotes mapeados da região com link pra ficha, sem preço", async () => {
+  /** A praça completa: lote ainda sem preço pesquisado (inclusive o oficial) entra por link. */
+  it("lista os lotes mapeados sem preço com link pra ficha", async () => {
     setup({
       ...DATA,
-      mapeados: [{ name: "Estacionamento Oficial de Viracopos (Estapar)", slug: "estacionamento-oficial-viracopos-estapar" }],
-    } as MaisBaratoData);
+      lotes: [
+        {
+          name: "Estapar",
+          public_name: "Estacionamento Oficial de Viracopos (Estapar)",
+          slug: "estapar-legado",
+          public_slug: "estacionamento-oficial-viracopos-estapar",
+          researched_daily_brl: null,
+          researched_weekly_brl: null,
+          researched_biweekly_brl: null,
+          researched_monthly_brl: null,
+          researched_at: null,
+        },
+      ],
+    });
     expect(
       await screen.findByRole("heading", { name: "E os outros estacionamentos da região?" }),
     ).toBeInTheDocument();
@@ -142,11 +154,15 @@ describe("EstacionamentoMaisBaratoPage", () => {
       "href",
       "/estacionamentos/aeroporto-de-viracopos/estacionamento-oficial-viracopos-estapar",
     );
+    // Sem preço pesquisado, a tabela do mercado não aparece.
+    expect(
+      screen.queryByRole("heading", { name: "Sem reserva online pela Movepark" }),
+    ).not.toBeInTheDocument();
   });
 
   it("sem lote mapeado, a seção da região não aparece", async () => {
     setup();
-    await screen.findByRole("heading", { name: "Menor preço por duração" });
+    await screen.findByRole("heading", { name: "Menor preço com reserva pela Movepark" });
     expect(
       screen.queryByRole("heading", { name: "E os outros estacionamentos da região?" }),
     ).not.toBeInTheDocument();
@@ -192,5 +208,110 @@ describe("EstacionamentoMaisBaratoPage", () => {
     expect(vencedor.offers.offerCount).toBe(1);
     expect(vencedor.offers.priceValidUntil).toBe("2026-12-15");
     expect(vencedor.image).toEqual(["https://movepark.co/Estacionamentos/virapark/capa.webp"]);
+  });
+
+  /**
+   * Conteúdo 39: em Confins o parceiro único (BePark, R$ 45,00) virava "a diária mais barata
+   * perto do aeroporto", enquanto o mercado cobrava R$ 20,00. A resposta tem que ser verdade
+   * para o mercado e idêntica no texto visível e no FAQPage (ADR-002).
+   */
+  describe("praça de parceiro único com mercado mais barato", () => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const lote = (name: string, d1: number, d7: number) => ({
+      name,
+      public_name: `${name} - Estacionamento Aeroporto Confins`,
+      slug: name.toLowerCase().replace(/\s+/g, "-"),
+      public_slug: name.toLowerCase().replace(/\s+/g, "-"),
+      researched_daily_brl: d1,
+      researched_weekly_brl: d7,
+      researched_biweekly_brl: null,
+      researched_monthly_brl: null,
+      researched_at: hoje,
+    });
+    const CONFINS: MaisBaratoData = {
+      destino: {
+        name: "Aeroporto de Confins",
+        short_name: "Confins (CNF)",
+        slug: "aeroporto-confins",
+        code: "CNF",
+      },
+      unitCount: 1,
+      generatedAt: "2026-10-06T12:00:00Z",
+      linhas: [1, 7].map((days) => ({
+        days,
+        vencedor: {
+          label: "BePark",
+          parkingTypeName: "Vaga Coberta",
+          total: days === 1 ? 45 : 200,
+          perDay: days === 1 ? 45 : 200 / 7,
+          path: "/estacionamentos/aeroporto-confins/bepark",
+          photo: null,
+          key: "bepark/coberta",
+        },
+        vice: null,
+      })),
+      lotes: [lote("AeroPark Confins", 20, 119), lote("Central Park", 22, 140)],
+    };
+    const norm = (t: string | null | undefined) => (t ?? "").replace(/\u00a0/g, " ");
+
+    it("a resposta nomeia o menor preço do mercado e o menor com reserva", async () => {
+      setup(CONFINS);
+      await screen.findByRole("heading", { level: 1 });
+      const pagina = norm(document.body.textContent);
+      expect(pagina).toContain(
+        "a diária avulsa mais barata perto do Aeroporto de Confins é R$ 20,00, no AeroPark Confins",
+      );
+      expect(pagina).toContain("Com reserva pela Movepark, a menor diária é R$ 45,00, no BePark");
+      expect(pagina).not.toMatch(/mais barata perto do Aeroporto de Confins custa R\$ 45,00/);
+      expect(pagina).toContain("1 com reserva pela Movepark");
+      expect(pagina).toContain("2 sem reserva online, com preço pesquisado");
+      // A description cita o menor do mercado, mas sem prometer reserva por ele (ADR-009).
+      await waitFor(() => {
+        const meta = norm(
+          document.querySelector('meta[name="description"]')?.getAttribute("content"),
+        );
+        expect(meta).toContain("A partir de R$ 20,00 a diária.");
+        expect(meta).not.toContain("reserve");
+      });
+    });
+
+    it("o FAQPage traz exatamente o texto visível", async () => {
+      setup(CONFINS);
+      await screen.findByRole("heading", { name: "Perguntas rápidas" });
+      await waitFor(() => {
+        const faqPage = [...document.querySelectorAll('script[type="application/ld+json"]')]
+          .map((s) => JSON.parse(s.textContent ?? "{}"))
+          .find((b) => b["@type"] === "FAQPage");
+        const resposta = faqPage?.mainEntity?.[0]?.acceptedAnswer?.text as string;
+        expect(norm(resposta)).toMatch(/^Hoje, a diária avulsa mais barata .* é R\$ 20,00/);
+        // O mesmo parágrafo aparece no topo e na pergunta rápida.
+        const paragrafos = [...document.querySelectorAll("p")].filter(
+          (p) => p.textContent === resposta,
+        );
+        expect(paragrafos.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    it("lote pesquisado aparece com data, sem virar oferta nem botão de reserva", async () => {
+      setup(CONFINS);
+      expect(
+        await screen.findByRole("heading", { name: "Sem reserva online pela Movepark" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "AeroPark Confins" })).toHaveAttribute(
+        "href",
+        "/estacionamentos/aeroporto-confins/aeroPark-confins".toLowerCase(),
+      );
+      expect(document.querySelectorAll("time").length).toBeGreaterThanOrEqual(2);
+      await waitFor(() => {
+        const produtos = [...document.querySelectorAll('script[type="application/ld+json"]')]
+          .map((s) => JSON.parse(s.textContent ?? "{}"))
+          .find((d) => Array.isArray(d) && d[0]?.["@type"] === "Product") as { name: string }[];
+        // ADR-010: só a vaga do parceiro vira Product/Offer.
+        expect(produtos.map((p) => p.name)).toEqual(["BePark · Vaga Coberta"]);
+      });
+      // ADR-009: nenhum "reservar" aponta para ficha de lote mapeado.
+      const reservas = screen.getAllByRole("link", { name: /reservar/i });
+      expect(reservas.every((a) => !a.getAttribute("href")?.includes("aeropark"))).toBe(true);
+    });
   });
 });

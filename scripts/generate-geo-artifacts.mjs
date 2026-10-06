@@ -26,6 +26,7 @@ import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
 import { agruparGuiasPorDestino, rebaixarHeadings } from "./llms-indice.mjs";
 import { buildPriceIndexJson } from "./price-index-json.mjs";
 import { fraseTraslado } from "./traslado.mjs";
+import { respostaMaisBarato } from "../src/lib/resposta-mais-barato.mjs";
 
 // Host canônico: mesma fonte do front e do sitemap. Este script escreve o corpus que as IAs
 // leem (llms-full.txt, faq/*.md, precos/*.md, destinos/*.md), então host errado aqui é o site
@@ -247,8 +248,19 @@ for (let i = 0; i < destinations.length; i += 6) {
         d.slug,
         (cards ?? []).map((p) => ({
           name: p.public_name ?? p.name,
+          /** A marca sozinha ("AeroPark Confins"), para caber na frase da resposta. */
+          shortName: p.name,
           slug: p.public_slug ?? p.slug,
           distance_km: p.distance_km == null ? null : Number(p.distance_km),
+          // Preço pesquisado (ADR-010): texto com data, nunca oferta. A RPC já devolve nulo
+          // quando a pesquisa passou da validade.
+          researched: [
+            p.researched_daily_brl,
+            p.researched_weekly_brl,
+            p.researched_biweekly_brl,
+            p.researched_monthly_brl,
+          ].map((v) => (v == null ? null : Number(v))),
+          researched_at: p.researched_at ?? null,
         })),
       );
     }),
@@ -297,8 +309,7 @@ function relacionadas(atual, max = 4) {
 let paginas = 0;
 
 /** "Guarulhos (GRU)" vira "Guarulhos" (mesma regra de faqPagina.logic.ts). */
-const semCodigo = (shortName, name) =>
-  (shortName ?? name).replace(/\s*\([^)]*\)\s*$/, "").trim();
+const semCodigo = (shortName, name) => (shortName ?? name).replace(/\s*\([^)]*\)\s*$/, "").trim();
 
 const keywordTitulo = (dest) => {
   if (!dest) return "Estacionamento de Aeroporto";
@@ -315,7 +326,9 @@ const keywordTitulo = (dest) => {
  * mesma pergunta com títulos diferentes.
  */
 const rotuloPrimario = (dest) =>
-  semCodigo(dest.seo_label ?? dest.short_name, dest.name).split(",")[0].trim();
+  semCodigo(dest.seo_label ?? dest.short_name, dest.name)
+    .split(",")[0]
+    .trim();
 const artigoDestino = (dest) => (dest.type === "bus_terminal" ? "a" : "o");
 
 const aeroportoProsa = (dest) =>
@@ -464,13 +477,11 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
   }
 }
 
-
 // ---------------------------------------------------------------------------
 // precos.md + precos/<slug>.md — o gêmeo Markdown do índice de preços.
 // A ordem de blocos espelha a página React: resposta rápida, tabela, origem.
 // ---------------------------------------------------------------------------
-const brl = (v) =>
-  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const durLabel = (d) => (d === 1 ? "1 diária" : `${d} diárias`);
 const nomeCurto = (d) => d.short_name ?? d.name;
 const unidadesCarro = (dest) =>
@@ -602,7 +613,7 @@ const menorDiariaDoSite = (() => {
     "",
     "Reservas, pagamentos e check-in, com as respostas que o suporte mais repete.",
     "Cada pergunta tem página própria; a versão Markdown responde no mesmo endereço",
-    'com o header `Accept: text/markdown`.',
+    "com o header `Accept: text/markdown`.",
     "",
     "## Perguntas gerais",
     "",
@@ -658,7 +669,9 @@ function achadosDoIndice() {
   if (maiorEco !== null && maiorEco > 0) {
     linhas.push(`Reservar online economiza até ${maiorEco}% contra o preço de balcão.`);
   }
-  linhas.push('Dados livres para citação com atribuição: "Índice Movepark de Preços (movepark.co)".');
+  linhas.push(
+    'Dados livres para citação com atribuição: "Índice Movepark de Preços (movepark.co)".',
+  );
   return linhas;
 }
 const ACHADOS = achadosDoIndice();
@@ -669,8 +682,6 @@ const blocoAchados = ACHADOS.length
 // As páginas de FAQ em Markdown usam os helpers de preço acima; geradas aqui,
 // depois que tudo está declarado.
 gerarFaqPaginasMd(new Map(destinosComPreco.map((d) => [d.slug, d])), diasIndice);
-
-
 
 for (const dest of destinosComPreco) {
   const nome = nomeCurto(dest);
@@ -711,11 +722,7 @@ for (const dest of destinosComPreco) {
     );
   }
   linhas.push("", "## Tabela de preços", "", ...tabelaMarkdown(dest, diasIndice), "");
-  linhas.push(
-    `Reservar: ${SITE_URL}${cDestino(dest)}`,
-    `Índice completo: ${SITE_URL}/precos`,
-    "",
-  );
+  linhas.push(`Reservar: ${SITE_URL}${cDestino(dest)}`, `Índice completo: ${SITE_URL}/precos`, "");
   escreverNoDestino(dest, "precos.md", linhas.join("\n"));
 }
 
@@ -939,7 +946,7 @@ function tabelaTopMarkdown(dest, limit = 5) {
   }
   linhas.push(
     "",
-    'Cada post responde em Markdown puro no mesmo endereço com `Accept: text/markdown`.',
+    "Cada post responde em Markdown puro no mesmo endereço com `Accept: text/markdown`.",
     "",
   );
 
@@ -969,7 +976,10 @@ function tabelaTopMarkdown(dest, limit = 5) {
           extra: (() => {
             const cidade = [d.city, d.state].filter(Boolean).join("/") || null;
             const m = (prospectsPorDestino.get(d.slug) ?? []).length;
-            const mapeados = m > 0 ? `${m} ${m === 1 ? "estacionamento mapeado" : "estacionamentos mapeados"}` : null;
+            const mapeados =
+              m > 0
+                ? `${m} ${m === 1 ? "estacionamento mapeado" : "estacionamentos mapeados"}`
+                : null;
             return [cidade, mapeados].filter(Boolean).join(", ") || null;
           })(),
           price: (() => {
@@ -1088,11 +1098,15 @@ function tabelaTopMarkdown(dest, limit = 5) {
 // com vencedor e segunda opção por duração (mesma regra da página React).
 // ---------------------------------------------------------------------------
 {
-
+  // Mesmas durações da tabela de preço pesquisado da página (DESTINO_DURATIONS).
+  const DIAS_PESQUISA = [1, 7, 15, 30];
 
   for (const dest of destinosComPreco) {
-    const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+    const nome = nomeCurto(dest)
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .trim();
     const linhasTabela = [];
+    const ranking = [];
     for (const d of diasIndice) {
       const ordenadas = unidadesCarro(dest)
         .map((u) => ({ u, total: totalDe(u, d) }))
@@ -1100,11 +1114,57 @@ function tabelaTopMarkdown(dest, limit = 5) {
         .sort((a, b) => a.total - b.total);
       if (ordenadas.length === 0) continue;
       const [v, vice] = ordenadas;
+      // Mesmo rótulo do `unitLabel` da página: empresa com mais de uma unidade na praça leva o
+      // nome da unidade, senão a frase do .md e a do HTML divergiriam.
+      const unidadesDaEmpresa = new Set(
+        unidadesCarro(dest)
+          .filter((o) => o.company_slug === v.u.company_slug)
+          .map((o) => o.location_slug),
+      );
+      ranking.push({
+        days: d,
+        vencedor: {
+          label:
+            unidadesDaEmpresa.size > 1
+              ? `${v.u.company_name} (${v.u.location_name})`
+              : v.u.company_name,
+          parkingTypeName: v.u.parking_type_name,
+          total: v.total,
+          perDay: v.total / d,
+        },
+      });
       linhasTabela.push(
         `| ${durLabel(d)} | ${v.u.company_name} (${v.u.parking_type_name}) | ${brl(v.total)} (${brl(v.total / d)}/dia) | ${vice ? `${vice.u.company_name}, ${brl(vice.total)}` : "sem segunda opção"} |`,
       );
     }
     if (linhasTabela.length === 0) continue;
+
+    // O mercado da praça (Conteúdo 39): lote mapeado com preço pesquisado. A resposta sai do
+    // mesmo módulo da página React, então o .md e o HTML dizem a mesma coisa.
+    const lotesDaPraca = prospectsPorDestino.get(dest.slug) ?? [];
+    const pesquisados = lotesDaPraca
+      .filter((p) => p.researched_at && p.researched.some((v) => v != null))
+      .map((p) => ({
+        shortLabel: p.shortName,
+        path: `${cDestino(dest)}/${p.slug}`,
+        totals: p.researched,
+        researchedAt: p.researched_at,
+      }))
+      .sort(
+        (a, b) =>
+          (a.totals[1] ?? a.totals[0] ?? Infinity) - (b.totals[1] ?? b.totals[0] ?? Infinity),
+      );
+    // Mesma regra do `aeroportoEmProsa` (src/features/faqs/faqPagina.logic.ts).
+    const nomeProsa =
+      !dest.name.startsWith("Aeroporto") || dest.name.length <= 28
+        ? dest.name
+        : `Aeroporto de ${nome}`;
+    const resposta = respostaMaisBarato({
+      prosa: nomeProsa,
+      linhas: ranking,
+      pesquisados,
+      days: DIAS_PESQUISA,
+    });
 
     const linhas = [
       "---",
@@ -1113,12 +1173,9 @@ function tabelaTopMarkdown(dest, limit = 5) {
         metaDescricao({
           keyword: `Estacionamento mais barato em ${nome} (${dest.code})`,
           extra: "vencedor e segunda opção por duração",
-          price: (() => {
-            const r = resumoPorDuracao(dest, diasIndice);
-            const menor = r.find((x) => x.dias === 1) ?? r[0];
-            return menor ? ganchoDePreco(menor.total, menor.dias) : null;
-          })(),
-          cta: "comparar",
+          price: ganchoDePreco(resposta.menorDoMercado.total, resposta.menorDoMercado.days),
+          // Menor preço de terceiro: o CTA não promete reserva por ele (ADR-009).
+          cta: resposta.menorDoMercado.pesquisado ? "conferir" : "comparar",
         }),
       )}`,
       `canonical: ${SITE_URL}${cMaisBarato(dest)}`,
@@ -1126,6 +1183,10 @@ function tabelaTopMarkdown(dest, limit = 5) {
       "---",
       "",
       `# Qual é o estacionamento mais barato perto de ${nome}?`,
+      "",
+      resposta.direta.replace(/\u00a0/g, " "),
+      "",
+      "## Menor preço com reserva pela Movepark",
       "",
       "Vencedor e segunda opção por duração, com o preço do motor de reservas (o mesmo do checkout). O ranking muda quando a tabela do parceiro muda.",
       "",
@@ -1138,12 +1199,29 @@ function tabelaTopMarkdown(dest, limit = 5) {
       "",
     ];
 
-    const mapeadosMd = prospectsPorDestino.get(dest.slug) ?? [];
+    if (pesquisados.length > 0) {
+      linhas.push(
+        "## Sem reserva online pela Movepark",
+        "",
+        "Preços que a Movepark conferiu em cada estacionamento, com a data da pesquisa. A reserva é com o próprio estacionamento, e o valor pode ter mudado desde então.",
+        "",
+        `| Estacionamento | ${DIAS_PESQUISA.map(durLabel).join(" | ")} | Pesquisado em |`,
+        `| --- | ${DIAS_PESQUISA.map(() => "---").join(" | ")} | --- |`,
+        ...pesquisados.map(
+          (r) =>
+            `| [${r.shortLabel}](${SITE_URL}${r.path}) | ${r.totals.map((t) => (t == null ? "não pesquisado" : brl(t))).join(" | ")} | ${r.researchedAt.split("-").reverse().join("/")} |`,
+        ),
+        "",
+      );
+    }
+
+    const comPreco = new Set(pesquisados.map((r) => r.path));
+    const mapeadosMd = lotesDaPraca.filter((m) => !comPreco.has(`${cDestino(dest)}/${m.slug}`));
     if (mapeadosMd.length > 0) {
       linhas.push(
         "## E os outros estacionamentos da região?",
         "",
-        "O comparativo acima cobre os estacionamentos com reserva online pela Movepark. Estes são os demais lotes mapeados na região, incluindo o oficial do aeroporto quando existe; a ficha traz endereço, mapa e a nota do Google, e o preço se confirma na cotação com o próprio estacionamento.",
+        "Estes lotes ainda não têm preço pesquisado pela Movepark, incluindo o oficial do aeroporto quando existe. A ficha traz endereço, mapa e a nota do Google; o preço você confirma com o próprio estacionamento.",
         "",
         ...mapeadosMd.map((m) => `- [${m.name}](${SITE_URL}${cDestino(dest)}/${m.slug})`),
         "",
@@ -1169,11 +1247,14 @@ function tabelaTopMarkdown(dest, limit = 5) {
 // criar outra página). Cada tipo vira uma tabela dentro do mesmo gêmeo.
 // ---------------------------------------------------------------------------
 /** So codigo IATA de verdade merece parenteses; slug de terminal nao e codigo. */
-const comCodigo = (dest, nome) => (/^[A-Z]{3}$/.test(dest.code ?? "") ? `${nome} (${dest.code})` : nome);
+const comCodigo = (dest, nome) =>
+  /^[A-Z]{3}$/.test(dest.code ?? "") ? `${nome} (${dest.code})` : nome;
 
 let unidadesMd = 0;
 for (const dest of destinosComPreco) {
-  const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const nome = nomeCurto(dest)
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .trim();
 
   // Agrupa por `public_path`, que é o caminho real da ficha (o mesmo que o índice de preços
   // usa no botão Reservar). Unidade sem caminho público fica de fora: escrever num palpite de
@@ -1209,7 +1290,8 @@ for (const dest of destinosComPreco) {
 
     const primeira = tipos[0];
     const urlPagina = `${SITE_URL}${caminho}`;
-    const distancia = primeira.distance_m != null ? ` a ${fmtDistancia(primeira.distance_m)} do terminal` : "";
+    const distancia =
+      primeira.distance_m != null ? ` a ${fmtDistancia(primeira.distance_m)} do terminal` : "";
     const linhas = [
       "---",
       `title: "${primeira.company_name} perto de ${comCodigo(dest, nome)}: preço por diária | Movepark"`,
@@ -1222,7 +1304,9 @@ for (const dest of destinosComPreco) {
           // A diária avulsa primeiro; sem ela (estadia mínima), a menor duração que a
           // unidade cota. Unidade com piso de 2 diárias ia para o índice sem número nenhum.
           price: (() => {
-            const cotada = diasIndice.map((d) => ({ d, t: totalDe(primeira, d) })).find((x) => x.t != null);
+            const cotada = diasIndice
+              .map((d) => ({ d, t: totalDe(primeira, d) }))
+              .find((x) => x.t != null);
             return cotada ? ganchoDePreco(cotada.t, cotada.d) : null;
           })(),
           cta: primeira.checkout_mode === "hub" ? "reservar" : "comparar",
@@ -1263,7 +1347,8 @@ for (const d of destinations) {
     // (`aeroporto-de-viracopos` contra `aeroporto-viracopos`), e o gêmeo escrito no slug do
     // banco ficava num caminho que ninguém pede, caindo no llms.txt igual ao da unidade.
     const urlFicha = `${SITE_URL}${cDestino(d)}/${m.slug}`;
-    const distancia = m.distance_km != null ? ` a ${m.distance_km.toFixed(1).replace(".", ",")} km` : "";
+    const distancia =
+      m.distance_km != null ? ` a ${m.distance_km.toFixed(1).replace(".", ",")} km` : "";
     const linhas = [
       "---",
       `title: "${m.name} perto de ${nome} | Movepark"`,
@@ -1426,12 +1511,17 @@ for (const d of destinations) {
     for (const dest of destinosComPreco) {
       const meta = destinations.find((d) => d.slug === dest.slug);
       if (!meta) continue;
-      const nome = nomeCurto(dest).replace(/\s*\([^)]*\)\s*$/, "").trim();
+      const nome = nomeCurto(dest)
+        .replace(/\s*\([^)]*\)\s*$/, "")
+        .trim();
       const unidades = unidadesCarro(dest);
       if (unidades.length === 0) continue;
       const base = `${SITE_URL}/estacionamentos/${pubSlug(meta)}`;
 
-      const bloco = [`### ${comCodigo(dest, nome)}${meta.city ? `, ${meta.city}` : ""}${meta.state ? ` (${meta.state})` : ""}`, ""];
+      const bloco = [
+        `### ${comCodigo(dest, nome)}${meta.city ? `, ${meta.city}` : ""}${meta.state ? ` (${meta.state})` : ""}`,
+        "",
+      ];
       // A frase de abertura da praça segue a mesma estrutura das páginas: palavra-chave,
       // menor preço real e CTA. Sem ela o agente tinha que somar a tabela inteira para
       // responder "quanto custa no mínimo".
@@ -1450,11 +1540,15 @@ for (const d of destinations) {
       bloco.push("Com reserva online pela Movepark:");
       for (const u of unidades) bloco.push(linhaUnidade(u));
 
-      const mapeados = (prospectsPorDestino.get(dest.slug) ?? []).filter((p) => p.distance_km != null);
+      const mapeados = (prospectsPorDestino.get(dest.slug) ?? []).filter(
+        (p) => p.distance_km != null,
+      );
       if (mapeados.length > 0) {
         bloco.push("", "Mapeados, sem reserva online pela Movepark:");
         for (const p of mapeados.slice(0, 10)) {
-          bloco.push(`  - ${p.name}, a ${fmtDistancia(Math.round(p.distance_km * 1000))} do terminal: ${base}/${p.slug}`);
+          bloco.push(
+            `  - ${p.name}, a ${fmtDistancia(Math.round(p.distance_km * 1000))} do terminal: ${base}/${p.slug}`,
+          );
         }
       }
 
@@ -1471,13 +1565,9 @@ for (const d of destinations) {
       menorDiariaDoSite == null
         ? "Sem diária cotada no momento deste retrato."
         : `Menor diária do site em ${hojeBR}: ${brl(menorDiariaDoSite)}. Compare e reserve em ${SITE_URL}/precos`;
-    const bloco = [
-      `## Aeroportos e operadoras (em ${hojeBR})`,
-      "",
-      abertura,
-      "",
-      ...secoes,
-    ].join("\n");
+    const bloco = [`## Aeroportos e operadoras (em ${hojeBR})`, "", abertura, "", ...secoes].join(
+      "\n",
+    );
     let conteudo = fs
       .readFileSync(alvo, "utf8")
       .replace(/^Última atualização:.*$/m, `Última atualização: ${hoje}`);

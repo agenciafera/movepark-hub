@@ -57,6 +57,16 @@ describe("aeroportoEmProsa", () => {
   it("cai na forma corrente quando o oficial é longo", () => {
     expect(aeroportoEmProsa(GRU)).toBe("Aeroporto de Guarulhos");
   });
+
+  // Regressão de 06/10/2026: a rodoviária saía como "Aeroporto de Tietê".
+  it("destino que não é aeroporto sai com o próprio nome", () => {
+    expect(
+      aeroportoEmProsa({ name: "Terminal Rodoviário Tietê", short_name: "Tietê" } as typeof SDU),
+    ).toBe("Terminal Rodoviário Tietê");
+    expect(
+      aeroportoEmProsa({ name: "Centro de São Paulo", short_name: "Centro SP" } as typeof SDU),
+    ).toBe("Centro de São Paulo");
+  });
 });
 
 describe("introDaPergunta", () => {

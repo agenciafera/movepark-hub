@@ -40,9 +40,15 @@ export function keywordDoTitulo(dest: FaqDestinoRef | null | undefined): string 
  * "Aeroporto Santos Dumont"); quando o oficial é longo demais pra correr no meio
  * da frase ("Aeroporto Internacional de São Paulo..."), usa a forma corrente
  * "Aeroporto de <curto>".
+ *
+ * Destino que não é aeroporto sai com o próprio nome. Antes caía na forma corrente e a
+ * rodoviária virava "Aeroporto de Tietê" (achado em 06/10/2026, na página "mais barato").
+ * Os quatro de hoje são masculinos (Terminal Rodoviário Tietê, Centro de São Paulo, Centro
+ * de Nova Iguaçu, Jardim Paulista), então "perto do" e "no" continuam certos.
  */
 export function aeroportoEmProsa(dest: FaqDestinoRef): string {
-  if (dest.name.startsWith("Aeroporto") && dest.name.length <= 28) return dest.name;
+  if (!dest.name.startsWith("Aeroporto")) return dest.name;
+  if (dest.name.length <= 28) return dest.name;
   return `Aeroporto de ${shortSemCodigo(dest.short_name, dest.name)}`;
 }
 
@@ -92,6 +98,4 @@ export type FaqPrecoRede = {
 };
 
 export type FaqPrecoContexto =
-  | { kind: "destino"; destino: FaqPrecoDestino }
-  | { kind: "rede"; rede: FaqPrecoRede }
-  | null;
+  { kind: "destino"; destino: FaqPrecoDestino } | { kind: "rede"; rede: FaqPrecoRede } | null;

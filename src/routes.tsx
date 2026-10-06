@@ -546,7 +546,6 @@ async function fetchAllDestinationPaths(): Promise<string[]> {
   return (data ?? []).map((d) => `/estacionamentos/${d.public_slug as string}`);
 }
 
-
 const BLOG_SELECT =
   // `public_slug` e `is_published` do destino não são enfeite: sem o primeiro o CTA da
   // sidebar cai no slug legado, e sem o segundo ele oferece página de destino que o SSG
@@ -809,11 +808,26 @@ async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
   if (linhas.length === 0) return null;
   const resumo = destinationSummary(dest, index.days);
   // Os lotes mapeados da região (inclusive o oficial do aeroporto, quando está
-  // cadastrado) completam a resposta: o comparativo cobre os parceiros com
-  // reserva; a praça inteira aparece por link, sem preço (ADR-010).
-  const mapeados = await fetchDestinationProspects(dest.slug)
-    .then((ps) => ps.map((p) => ({ name: p.public_name ?? p.name, slug: p.public_slug ?? p.slug })))
-    .catch(() => [] as { name: string; slug: string }[]);
+  // cadastrado) entram com o preço pesquisado, quando há: sem eles, a praça de um
+  // parceiro só afirmava que o parceiro era "o mais barato" (Conteúdo 39). Preço
+  // pesquisado é texto com data, nunca oferta (ADR-010). Só os campos que a página
+  // usa viajam no HTML.
+  const lotes = await fetchDestinationProspects(dest.slug)
+    .then((ps) =>
+      ps.map((p) => ({
+        name: p.name,
+        public_name: p.public_name,
+        slug: p.slug,
+        public_slug: p.public_slug,
+        public_path: p.public_path,
+        researched_daily_brl: p.researched_daily_brl,
+        researched_weekly_brl: p.researched_weekly_brl,
+        researched_biweekly_brl: p.researched_biweekly_brl,
+        researched_monthly_brl: p.researched_monthly_brl,
+        researched_at: p.researched_at,
+      })),
+    )
+    .catch(() => []);
   return {
     destino: {
       name: dest.name,
@@ -823,7 +837,7 @@ async function maisBaratoLoader({ params }: LoaderFunctionArgs) {
     },
     linhas,
     unitCount: resumo.unitCount,
-    mapeados,
+    lotes,
     generatedAt: new Date().toISOString(),
   };
 }
@@ -965,9 +979,7 @@ async function faqPerguntaLoader({ params, request }: LoaderFunctionArgs) {
   // toda tradução publicada tem resposta, mas não quero a página em branco caso essa
   // constraint saia um dia. Isso já tira a maior parte dos 7,5 KB.
   const payload =
-    locale === LOCALE_PADRAO
-      ? data
-      : { ...data, related: [], faq: { ...data.faq, body_md: null } };
+    locale === LOCALE_PADRAO ? data : { ...data, related: [], faq: { ...data.faq, body_md: null } };
 
   return { ...payload, precos, locale, traducao, idiomas, destinoLabel, destinoSlug };
 }
@@ -1545,7 +1557,6 @@ export const routes: RouteRecord[] = [
         ],
       },
 
-
       // Manager (hub_admin)
       {
         element: <RequireRole roles={["hub_admin"]} />,
@@ -1563,7 +1574,7 @@ export const routes: RouteRecord[] = [
               { path: "destinations", element: <ManagerDestinations /> },
               { path: "lotes-mapeados", element: <ManagerLotesMapeados /> },
               { path: "pesquisa-de-preco", element: <ManagerPesquisaDePreco /> },
-        { path: "conversas", element: <ManagerConversas /> },
+              { path: "conversas", element: <ManagerConversas /> },
               { path: "auditoria-enderecos", element: <ManagerAuditoriaEnderecos /> },
               { path: "blog", element: <ManagerBlog /> },
               { path: "api-interna", element: <ManagerApiInterna /> },

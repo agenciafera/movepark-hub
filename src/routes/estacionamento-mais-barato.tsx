@@ -5,13 +5,19 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { aeroportoEmProsa, shortSemCodigo } from "@/features/faqs/faqPagina.logic";
 import {
+  DESTINO_DURATIONS,
+  pesquisadoRows,
+  type PesquisadoInput,
+} from "@/features/destinations/destinoPrices.logic";
+import {
   mesAnoAtual,
+  respostaMaisBarato,
   vagasDoRanking,
   type MaisBaratoLinha,
 } from "@/features/price-index/maisBarato.logic";
 import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, formatDate } from "@/lib/format";
 import { breadcrumbSchema, faqSchema, priceTableOffersSchema } from "@/lib/jsonld";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
@@ -26,18 +32,23 @@ export type MaisBaratoData = {
   };
   linhas: MaisBaratoLinha[];
   unitCount: number;
-  /** Lotes mapeados da região (inclusive o oficial), sem preço (ADR-010). */
-  mapeados?: { name: string; slug: string }[];
+  /**
+   * Lotes mapeados da região (inclusive o oficial), com o preço pesquisado quando há.
+   * Preço pesquisado entra no texto com a data, nunca como oferta (ADR-010).
+   */
+  lotes?: PesquisadoInput[];
   /** Momento do build em que o motor foi consultado. Vira a validade da oferta. */
   generatedAt?: string;
 } | null;
 
 /**
  * Página da intenção "estacionamento mais barato em <aeroporto>": responde a
- * pergunta na primeira frase, com vencedor e segunda opção por duração, direto
- * do motor de reservas. É uma página por consulta de dinheiro, separada do hub
- * do destino (/destinos) e da tabela completa (/precos), cada uma com o seu
- * title, sem disputar a mesma posição.
+ * pergunta na primeira frase olhando o mercado da praça, e não só os parceiros.
+ * O parceiro sai do motor de reservas (vencedor e segunda opção por duração); o
+ * lote mapeado entra com o preço pesquisado e a data (ADR-010). Até a Conteúdo 39
+ * a página só via parceiro, e numa praça de parceiro único ele virava "o mais
+ * barato" mesmo com o mercado cobrando menos da metade. É uma página por consulta
+ * de dinheiro, separada do hub do destino e da tabela completa (/precos).
  */
 export default function EstacionamentoMaisBaratoPage() {
   const data = useLoaderData() as MaisBaratoData;
@@ -58,37 +69,24 @@ export default function EstacionamentoMaisBaratoPage() {
     );
   }
 
-  const { destino, linhas, unitCount, mapeados = [], generatedAt } = data;
+  const { destino, linhas, unitCount, lotes = [], generatedAt } = data;
   const curto = shortSemCodigo(destino.short_name, destino.name);
   const prosa = aeroportoEmProsa(destino);
   const mesAno = mesAnoAtual();
   const canonical = `${SITE_URL}${caminhoMaisBarato(destino.slug)}`;
   const pergunta = `Qual é o estacionamento mais barato no ${prosa}?`;
 
-  const diaria = linhas.find((l) => l.days === 1) ?? linhas[0];
-  const semana = linhas.find((l) => l.days === 7) ?? null;
-  const mes = linhas.find((l) => l.days === 30) ?? null;
+  // O mercado da praça: lote mapeado com preço pesquisado e fresco. A validade é conferida
+  // de novo aqui, na renderização, porque a página é SSG e o HTML envelhece (destinoPrices).
+  const pesquisados = pesquisadoRows(lotes, destino.slug, DESTINO_DURATIONS);
+  const comPreco = new Set(pesquisados.map((r) => r.key));
+  const semPreco = lotes.filter((l) => !comPreco.has(`pesquisado:${l.slug}`));
 
   // A resposta direta, na primeira frase. É o trecho que a IA extrai e o mesmo
   // texto vai pro FAQPage (schema idêntico ao visível, ADR-002).
-  const respostaDireta = [
-    diaria.days === 1
-      ? `Hoje, a diária avulsa mais barata perto do ${prosa} custa ${formatBRL(diaria.vencedor.total)}, no ${diaria.vencedor.label} (${diaria.vencedor.parkingTypeName}).`
-      : `Hoje, o menor total para ${durationLabel(diaria.days).toLowerCase()} perto do ${prosa} é ${formatBRL(diaria.vencedor.total)}, no ${diaria.vencedor.label} (${diaria.vencedor.parkingTypeName}).`,
-    semana
-      ? `Para 7 dias, o menor total é ${formatBRL(semana.vencedor.total)} (${formatBRL(semana.vencedor.perDay)} por dia), no ${semana.vencedor.label}.`
-      : null,
-    mes
-      ? `Para 30 dias, ${formatBRL(mes.vencedor.total)} (${formatBRL(mes.vencedor.perDay)} por dia), no ${mes.vencedor.label}.`
-      : null,
-    "Os valores saem do motor de reservas, os mesmos do checkout, e mudam quando a tabela do parceiro muda.",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const respostaSemana = semana
-    ? `Estacionar 7 dias perto do ${prosa} custa a partir de ${formatBRL(semana.vencedor.total)} (${formatBRL(semana.vencedor.perDay)} por dia), no ${semana.vencedor.label}. A tabela completa por parceiro está na página de preços.`
-    : null;
+  const resposta = respostaMaisBarato({ prosa, linhas, pesquisados, days: DESTINO_DURATIONS });
+  const respostaDireta = resposta.direta;
+  const respostaSemana = resposta.semana;
 
   const perguntasRapidas = [
     { q: pergunta, a: respostaDireta },
@@ -123,12 +121,12 @@ export default function EstacionamentoMaisBaratoPage() {
     `Estacionamento mais barato em ${curto} (${destino.code})`,
   );
   // Estrutura única da description do site: palavra-chave, menor preço real e CTA. O número é
-  // o mesmo vencedor que a tabela mostra logo abaixo, então snippet e página não divergem.
+  // o mesmo da resposta direta (o menor do mercado), então snippet e página não divergem.
   const description = buildMetaDescription({
     keyword: `Estacionamento mais barato perto do ${prosa}`,
     extra: "vencedor e segunda opção",
-    price: priceHook(diaria.vencedor.total, diaria.days),
-    cta: "comparar",
+    price: priceHook(resposta.menorDoMercado.total, resposta.menorDoMercado.days),
+    cta: resposta.menorDoMercado.pesquisado ? "conferir" : "comparar",
   });
 
   return (
@@ -141,10 +139,10 @@ export default function EstacionamentoMaisBaratoPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        <script type="application/ld+json">{JSON.stringify(faqSchema(perguntasRapidas.map((p) => ({ question: p.q, answer: p.a }))))}</script>
-        {produtos && (
-          <script type="application/ld+json">{JSON.stringify(produtos)}</script>
-        )}
+        <script type="application/ld+json">
+          {JSON.stringify(faqSchema(perguntasRapidas.map((p) => ({ question: p.q, answer: p.a }))))}
+        </script>
+        {produtos && <script type="application/ld+json">{JSON.stringify(produtos)}</script>}
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([
@@ -184,8 +182,11 @@ export default function EstacionamentoMaisBaratoPage() {
         <header>
           <h1 className="text-balance text-display-xl text-ink">{pergunta}</h1>
           <p className="mt-3 text-caption-sm text-muted">
-            Preços de {mesAno}, direto do motor de reservas. {unitCount}{" "}
-            {unitCount === 1 ? "estacionamento comparado" : "estacionamentos comparados"}.
+            Preços de {mesAno}. {unitCount} com reserva pela Movepark, direto do motor de reservas
+            {pesquisados.length > 0
+              ? `, e ${pesquisados.length} sem reserva online, com preço pesquisado`
+              : ""}
+            .
           </p>
         </header>
 
@@ -197,7 +198,7 @@ export default function EstacionamentoMaisBaratoPage() {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-display-sm text-ink">Menor preço por duração</h2>
+          <h2 className="text-display-sm text-ink">Menor preço com reserva pela Movepark</h2>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-body-sm">
               <thead>
@@ -243,6 +244,63 @@ export default function EstacionamentoMaisBaratoPage() {
           </p>
         </section>
 
+        {/* O resto do mercado: lote mapeado com o preço pesquisado e a data de cada linha.
+            Sem botão de reserva e fora do JSON-LD de oferta (ADR-009 e ADR-010). */}
+        {pesquisados.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-display-sm text-ink">Sem reserva online pela Movepark</h2>
+            <p className="mt-2 text-pretty text-body-md text-body">
+              Preços que a Movepark conferiu em cada estacionamento, com a data da pesquisa. A
+              reserva é com o próprio estacionamento, e o valor pode ter mudado desde então.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-body-sm">
+                <thead>
+                  <tr className="border-b border-hairline text-muted">
+                    <th className="py-2 pr-4 font-medium">Estacionamento</th>
+                    {DESTINO_DURATIONS.map((d) => (
+                      <th key={d} className="py-2 pr-4 font-medium">
+                        {durationLabel(d)}
+                      </th>
+                    ))}
+                    <th className="py-2 font-medium">Pesquisado em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pesquisados.map((r) => (
+                    <tr key={r.key} className="border-b border-hairline-soft">
+                      <td className="py-2 pr-4 text-ink">
+                        {r.path ? (
+                          <Link
+                            to={r.path}
+                            className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+                          >
+                            {r.shortLabel}
+                          </Link>
+                        ) : (
+                          r.shortLabel
+                        )}
+                      </td>
+                      {r.totals.map((t, i) => (
+                        <td key={DESTINO_DURATIONS[i]} className="py-2 pr-4 text-body">
+                          {t == null ? (
+                            <span className="text-muted">não pesquisado</span>
+                          ) : (
+                            formatBRL(t)
+                          )}
+                        </td>
+                      ))}
+                      <td className="py-2 text-muted">
+                        <time dateTime={r.researchedAt}>{formatDate(r.researchedAt)}</time>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         <section className="mt-8">
           <h2 className="text-display-sm text-ink">Mais barato nem sempre é o melhor</h2>
           <ul className="mt-3 space-y-2">
@@ -260,30 +318,25 @@ export default function EstacionamentoMaisBaratoPage() {
           </ul>
         </section>
 
-        {/* A praça completa: o comparativo cobre os parceiros com reserva; os
-            demais lotes mapeados (inclusive o oficial do aeroporto, quando está
-            cadastrado) entram por link, sem preço (ADR-010). É a resposta que a
-            IA procura quando pergunta "e o estacionamento oficial?". */}
-        {mapeados.length > 0 && (
+        {/* A praça completa: os lotes mapeados ainda sem preço pesquisado (inclusive o
+            oficial do aeroporto, quando está cadastrado) entram por link. É a resposta
+            que a IA procura quando pergunta "e o estacionamento oficial?". */}
+        {semPreco.length > 0 && (
           <section className="mt-8">
-            <h2 className="text-display-sm text-ink">
-              E os outros estacionamentos da região?
-            </h2>
+            <h2 className="text-display-sm text-ink">E os outros estacionamentos da região?</h2>
             <p className="mt-2 text-body-md text-body">
-              O comparativo acima cobre os estacionamentos com reserva online pela
-              Movepark. Estes são os demais lotes mapeados perto do {aeroportoEmProsa(destino)},
-              incluindo o oficial do aeroporto quando existe. A ficha de cada um traz
-              endereço, mapa e a nota do Google; o preço você confirma na cotação com o
-              próprio estacionamento.
+              Estes lotes perto do {aeroportoEmProsa(destino)} ainda não têm preço pesquisado pela
+              Movepark, incluindo o oficial do aeroporto quando existe. A ficha de cada um traz
+              endereço, mapa e a nota do Google; o preço você confirma com o próprio estacionamento.
             </p>
             <ul className="mt-3 space-y-2">
-              {mapeados.map((m) => (
+              {semPreco.map((m) => (
                 <li key={m.slug}>
                   <Link
-                    to={caminhoFicha(destino.slug, m.slug)}
+                    to={m.public_path ?? caminhoFicha(destino.slug, m.public_slug ?? m.slug)}
                     className="font-medium text-mp-indigo underline-offset-2 hover:underline"
                   >
-                    {m.name}
+                    {m.public_name ?? m.name}
                   </Link>
                 </li>
               ))}
