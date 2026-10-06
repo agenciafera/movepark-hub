@@ -121,8 +121,8 @@ export default function BlogPostPage() {
     `caminhoLocalizado`, com o slug daquele idioma.
   */
   const post = React.useMemo(
-    () =>
-      base && traducao
+    () => {
+      const normalized = base && traducao
         ? {
             ...base,
             title: traducao.title,
@@ -131,7 +131,15 @@ export default function BlogPostPage() {
             meta_title: traducao.meta_title,
             meta_description: traducao.meta_description,
           }
-        : base,
+        : base;
+
+      // Normalizar quebras de linha escapadas (caso raríssimo, mas proteção de cargo-cult)
+      if (normalized?.body_md && typeof normalized.body_md === 'string') {
+        normalized.body_md = normalized.body_md.replace(/\\n/g, '\n');
+      }
+
+      return normalized;
+    },
     [base, traducao],
   );
 
