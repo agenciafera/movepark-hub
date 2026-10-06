@@ -80,3 +80,8 @@ test-results/
 
 # Repositório separado (plataforma de chatbots Mastra do grupo), versionado no próprio git
 beast-bots/
+
+# Prévia em HTML que o gerador de imagem (MCP gemini-image) grava ao lado de cada .webp. Em
+# public/ ela vira página pública e entra no sitemap: foram 40 em 05/10/2026, achadas pela
+# auditoria do site (scripts/auditoria-site.mjs).
+public/images/**/*.html

@@ -33,6 +33,7 @@
     "seo:indexnow": "node scripts/indexnow-ping.mjs",
     "seo:gsc-baseline": "node --env-file-if-exists=.env.local scripts/gsc-baseline.mjs",
     "seo:gsc-comparar": "node scripts/gsc-comparar.mjs",
+    "seo:auditoria": "node scripts/auditoria-site.mjs",
     "test:windup": "windup run --all",
     "report:windup": "windup run --all --reporter json --base-url ${WINDUP_BASE_URL:-http://localhost:5173} && node scripts/windup-suite-report.mjs",
     "test:e2e": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test",

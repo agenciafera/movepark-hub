@@ -1,0 +1,118 @@
+name: Auditoria do site
+
+# Varre o site inteiro no ar, a partir do sitemap (scripts/auditoria-site.mjs): status de cada URL,
+# noindex, canonical, title e description duplicados, H1, link interno quebrado, página órfã e
+# link de saída morto. Faz o papel da auditoria do Semrush, que no plano gratuito para em 100
+# páginas (docs/specs/plano-autoridade-backlinks.md, seção 2.6).
+#
+# É rotina porque o conteúdo se publica sozinho a partir do Manager: uma página pode quebrar sem
+# commit de código nenhum, e só uma varredura do que está no ar enxerga isso.
+#
+# Mesmo desenho do site-rebuild-health.yml, pela mesma lição: issue sem dono e run verde não
+# avisam ninguém. Com erro, a issue é aberta ou atualizada, atribuída, e o run fica vermelho.
+# Aviso não reprova: aparece no relatório (resumo do run e artefato) para a revisão do plano.
+
+on:
+  schedule:
+    - cron: "0 12 * * 1" # segunda, 09:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  auditoria:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Varre o site
+        id: varre
+        # O script só usa módulos do node, então dispensa `bun install`.
+        run: |
+          set +e
+          node scripts/auditoria-site.mjs --saida relatorio.md --json relatorio.json > /dev/null
+          echo "codigo=$?" >> "$GITHUB_OUTPUT"
+          cat relatorio.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guarda o relatório completo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-site
+          path: |
+            relatorio.md
+            relatorio.json
+          retention-days: 90
+
+      - name: Abre ou atualiza a issue quando há erro
+        if: steps.varre.outputs.codigo != '0'
+        uses: actions/github-script@v7
+        env:
+          ASSIGNEES: ${{ vars.AUDITORIA_SITE_ASSIGNEES || 'diegoguedesgomes' }}
+        with:
+          script: |
+            const fs = require("fs");
+            const title = "🔎 A auditoria do site encontrou erros";
+            const relatorio = fs.existsSync("relatorio.md")
+              ? fs.readFileSync("relatorio.md", "utf8")
+              : "O script falhou antes de gerar o relatório. Veja o log do run.";
+            // Corpo de issue tem limite; o relatório inteiro fica no artefato do run.
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [relatorio.slice(0, 60000), "", `Relatório completo (JSON) no artefato do run: ${run}`].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "auditoria-site",
+            });
+            const assignees = process.env.ASSIGNEES.split(",").map(s => s.trim()).filter(Boolean);
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body,
+              });
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, assignees,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["auditoria-site"], assignees,
+              });
+            }
+
+      - name: Falha o run enquanto houver erro
+        if: steps.varre.outputs.codigo != '0'
+        run: |
+          # Vem DEPOIS da issue de propósito: o registro fica feito e só então o run fica vermelho.
+          echo "::error title=Auditoria do site::há erros no relatório; veja o resumo do run"
+          exit 1
+
+      - name: Fecha a issue quando a auditoria volta limpa
+        if: steps.varre.outputs.codigo == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🔎 A auditoria do site encontrou erros";
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "auditoria-site",
+            });
+            for (const issue of issues.filter(i => i.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "A auditoria desta semana não encontrou erro. Fechando.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: "closed",
+              });
+            }

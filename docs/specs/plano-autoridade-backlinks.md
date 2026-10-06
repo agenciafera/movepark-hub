@@ -248,9 +248,25 @@ concentrado num único mês.
 
 - **[Conteúdo 73](https://app.clickup.com/t/17tn9e9gfhj):** revisão de 30 dias, com print novo do Semrush.
 - **[Conteúdo 74](https://app.clickup.com/t/17tn9e9gfhm):** revisão de 90 dias.
-- **Sem o plano pago do Semrush (seção 2.6):** a auditoria completa do site sai de varredura própria
-  sobre o sitemap de produção, somada às checagens que o build já faz (`check-internal-links`,
-  `audit-structured-data`, `check-meta-producao`, Lighthouse). A linha de base de domínios novos por
+- **Sem o plano pago do Semrush (seção 2.6):** a auditoria completa do site é a
+  [`scripts/auditoria-site.mjs`](../../scripts/auditoria-site.mjs) (`bun run seo:auditoria`), que
+  varre todas as URLs do sitemap de produção e roda **toda segunda** no workflow
+  `auditoria-site.yml` (com erro, abre issue atribuída e o run fica vermelho). Ela se soma às
+  checagens que o build já faz (`check-internal-links`, `audit-structured-data`,
+  `check-meta-producao`, Lighthouse). **Primeira rodada, 06/10/2026:** 1.187 URLs em 4 minutos,
+  70 erros e 200 avisos. Os achados que valem decisão:
+  - 40 prévias `.html` do gerador de imagem, commitadas em `public/images/blog/` em 05/10, viraram
+    páginas públicas no sitemap (título "Gemini Image: …"). Removidas no mesmo dia, e
+    `public/images/**/*.html` foi para o `.gitignore`.
+  - Os 70 erros: arquivo e paginação do blog (`/blog/page/*`, `/tag/*`, `/categoria/*`,
+    `/autor/*`, `/aeroporto/*`) estão no sitemap desde 18/08 e respondem `noindex, follow`, como
+    manda `blog.md`. Sitemap com URL `noindex` é sinal contraditório para o Google; uma das duas
+    decisões tem que ceder.
+  - 16 grupos de title repetido nas páginas de FAQ por aeroporto: a mesma pergunta sai com o mesmo
+    title em até 22 aeroportos (em pt, en e es).
+  - 12 links internos de post sem a barra final do blog, que custam um 301 a cada clique.
+  - 2 links de saída mortos (404): `seguranca.pr.gov.br/Pagina/Estatisticas-2` e a página de
+    ônibus do `bh-airport.com.br`. A linha de base de domínios novos por
   mês sai do Ahrefs Webmaster Tools (gratuito para site verificado, com DR e data de descoberta por
   domínio). Nesse caso a meta da seção 6 passa a ser medida em DR, não em AS.
 
