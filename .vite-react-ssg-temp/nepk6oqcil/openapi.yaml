@@ -1,0 +1,504 @@
+openapi: 3.1.0
+info:
+  title: Movepark Public API
+  version: "1.0.0"
+  description: >
+    API pública do Movepark Hub. Autenticada por chave de API com escopos; toda chamada
+    é tenant-scoped (só enxerga dados da empresa dona da chave). Fonte de verdade:
+    docs/specs/public-api.md. Atualize este arquivo ao criar/alterar endpoint (ADR-003).
+  contact:
+    name: Movepark
+    email: contato@movepark.co
+servers:
+  - url: https://api.movepark.co
+security:
+  - apiKey: []
+tags:
+  - name: locations
+  - name: parking-types
+  - name: availability
+  - name: pricing
+  - name: bookings
+  - name: faq
+paths:
+  /v1/locations:
+    get:
+      tags: [locations]
+      summary: Lista as unidades da empresa
+      security: [{ apiKey: [locations:read] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { $ref: "#/components/responses/List" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/locations/{id}:
+    get:
+      tags: [locations]
+      summary: Detalhe de uma unidade
+      security: [{ apiKey: [locations:read] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [locations]
+      summary: Edita dados de uma unidade (campos ausentes = mantém)
+      security: [{ apiKey: [locations:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+  /v1/locations/{id}/parking-types:
+    get:
+      tags: [parking-types]
+      summary: Tipos de vaga de uma unidade
+      security: [{ apiKey: [parking-types:read] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/List" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/availability:
+    get:
+      tags: [availability]
+      summary: Disponibilidade de um tipo de vaga num período
+      security: [{ apiKey: [availability:read] }]
+      parameters:
+        - { name: location_parking_type_id, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/pricing/simulate:
+    post:
+      tags: [pricing]
+      summary: Simula o preço de uma reserva
+      security: [{ apiKey: [pricing:read] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location_parking_type_id]
+              properties:
+                location_parking_type_id: { type: string, format: uuid }
+                days: { type: integer, minimum: 1, default: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings:
+    get:
+      tags: [bookings]
+      summary: Lista reservas da empresa
+      security: [{ apiKey: [bookings:read] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { $ref: "#/components/responses/List" }
+    post:
+      tags: [bookings]
+      summary: Cria uma reserva (atribuída à empresa)
+      description: >
+        Cria uma reserva em nome da empresa (sem JWT de consumidor). Idempotente via
+        header Idempotency-Key.
+      security: [{ apiKey: [bookings:write] }]
+      parameters:
+        - { name: Idempotency-Key, in: header, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [location_parking_type_id, check_in_at, check_out_at]
+              properties:
+                location_parking_type_id: { type: string, format: uuid }
+                check_in_at: { type: string, format: date-time }
+                check_out_at: { type: string, format: date-time }
+                customer_name: { type: string }
+                customer_email: { type: string, format: email }
+                customer_phone: { type: string }
+                passenger_count: { type: integer }
+                has_pcd: { type: boolean }
+                add_on_service_ids: { type: array, items: { type: string, format: uuid } }
+                coupon_code: { type: string }
+                origin: { type: string }
+      responses:
+        "201": { $ref: "#/components/responses/Object" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}:
+    get:
+      tags: [bookings]
+      summary: Detalhe de uma reserva
+      security: [{ apiKey: [bookings:read] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/bookings/{id}/cancel:
+    post:
+      tags: [bookings]
+      summary: Cancela uma reserva
+      security: [{ apiKey: [bookings:cancel] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { reason: { type: string } } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/bookings/{id}/check-in:
+    post:
+      tags: [bookings]
+      summary: Registra check-in (confirmed → checked_in)
+      security: [{ apiKey: [bookings:checkin] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}/check-out:
+    post:
+      tags: [bookings]
+      summary: Registra check-out (checked_in → completed)
+      security: [{ apiKey: [bookings:checkin] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}/change-dates:
+    post:
+      tags: [bookings]
+      summary: Reagenda uma reserva pendente (revalida capacidade e re-precifica)
+      security: [{ apiKey: [bookings:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [check_in_at, check_out_at]
+              properties:
+                check_in_at: { type: string, format: date-time }
+                check_out_at: { type: string, format: date-time }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/bookings/{id}/change-vehicle:
+    post:
+      tags: [bookings]
+      summary: Troca o veículo/placa de uma reserva (por vehicle_id ou license_plate)
+      security: [{ apiKey: [bookings:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicle_id: { type: string, description: "Veículo já cadastrado do titular" }
+                license_plate: { type: string, description: "Placa (cria/acha o veículo do titular)" }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/wps/events:
+    post:
+      tags: [wps]
+      summary: Evento de pátio (WPS) — entrada/saída de veículo → check-in/check-out
+      description: >
+        Webhook do sistema de pátio (ANPR/placa). Resolve a reserva por placa normalizada
+        + lote (location_ref) + janela, ou por booking_code, e aplica a transição.
+        Idempotente por event_id. Ver docs/specs/wps-integration.md.
+      security: [{ apiKey: [wps:write] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event_id, type]
+              properties:
+                version: { type: string, example: "1" }
+                event_id: { type: string }
+                type: { type: string, enum: [vehicle.entered, vehicle.exited] }
+                occurred_at: { type: string, format: date-time }
+                location_ref: { type: string }
+                plate: { type: string }
+                booking_code: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /v1/faq:
+    get:
+      tags: [faq]
+      summary: FAQ (global ou por unidade)
+      security: [{ apiKey: [faq:read] }]
+      parameters:
+        - { name: location_id, in: query, schema: { type: string, format: uuid } }
+        - { name: query, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+  /v1/blog/posts:
+    get:
+      tags: [blog]
+      summary: Lista os posts publicados do blog
+      description: >
+        Conteúdo editorial da Movepark, o mesmo publicado em movepark.co/blog/.
+        Não é dado de parceiro: o resultado é igual para qualquer chave. O corpo
+        do post não vem na lista, use o endpoint por slug.
+      security: [{ apiKey: [blog:read] }]
+      parameters:
+        - { name: q, in: query, description: "Casa título e resumo", schema: { type: string } }
+        - { name: category, in: query, description: "slug da categoria", schema: { type: string } }
+        - { name: tag, in: query, description: "slug da tag", schema: { type: string } }
+        - { name: author, in: query, description: "slug do autor", schema: { type: string } }
+        - { name: destination, in: query, description: "slug do destino (aeroporto)", schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+  /v1/blog/posts/{slug}:
+    get:
+      tags: [blog]
+      summary: Post completo por slug
+      description: >
+        Devolve o corpo em Markdown, a meta de SEO e as relações. O slug é o mesmo
+        da URL pública, em movepark.co/blog/{slug}/.
+      security: [{ apiKey: [blog:read] }]
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/blog/taxonomy:
+    get:
+      tags: [blog]
+      summary: Categorias, tags e autores do blog
+      description: >
+        Os slugs que os filtros de /v1/blog/posts aceitam.
+      security: [{ apiKey: [blog:read] }]
+      responses:
+        "200": { $ref: "#/components/responses/Object" }
+  /v1/coupons:
+    get:
+      tags: [coupons]
+      summary: Lista os cupons da empresa
+      security: [{ apiKey: [coupons:read] }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [coupons]
+      summary: Cria/atualiza um cupom (id no corpo = edição)
+      security: [{ apiKey: [coupons:write] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/coupons/{id}/active:
+    post:
+      tags: [coupons]
+      summary: Ativa/desativa um cupom
+      security: [{ apiKey: [coupons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { is_active: { type: boolean } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/coupons/{id}/delete:
+    post:
+      tags: [coupons]
+      summary: Exclui um cupom (bloqueado se já usado)
+      security: [{ apiKey: [coupons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses: { "200": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/discounts:
+    get:
+      tags: [discounts]
+      summary: Lista os descontos automáticos
+      security: [{ apiKey: [discounts:read] }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [discounts]
+      summary: Cria/atualiza um desconto automático
+      security: [{ apiKey: [discounts:write] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/discounts/{id}/active:
+    post:
+      tags: [discounts]
+      summary: Ativa/desativa um desconto
+      security: [{ apiKey: [discounts:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { content: { application/json: { schema: { type: object, properties: { is_active: { type: boolean } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/discounts/{id}/delete:
+    post:
+      tags: [discounts]
+      summary: Exclui um desconto (bloqueado se já usado)
+      security: [{ apiKey: [discounts:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses: { "200": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/addons:
+    get:
+      tags: [addons]
+      summary: Lista os serviços adicionais
+      security: [{ apiKey: [addons:read] }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [addons]
+      summary: Cria/atualiza um serviço adicional
+      security: [{ apiKey: [addons:write] }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/addons/{id}/locations:
+    post:
+      tags: [addons]
+      summary: Habilita/precifica um serviço numa unidade
+      security: [{ apiKey: [addons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { location_id: { type: string }, is_active: { type: boolean }, price_override: { type: number } }, required: [location_id] } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/addons/{id}/delete:
+    post:
+      tags: [addons]
+      summary: Exclui um serviço adicional (bloqueado se já usado)
+      security: [{ apiKey: [addons:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses: { "200": { $ref: "#/components/responses/Object" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/reviews:
+    get:
+      tags: [reviews]
+      summary: Lista avaliações das unidades da empresa
+      security: [{ apiKey: [reviews:read] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses: { "200": { $ref: "#/components/responses/List" } }
+  /v1/reviews/{id}/respond:
+    post:
+      tags: [reviews]
+      summary: Responde publicamente a uma avaliação
+      security: [{ apiKey: [reviews:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { response: { type: string } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /v1/occupancy:
+    get:
+      tags: [occupancy]
+      summary: Ocupação por data de uma unidade
+      security: [{ apiKey: [occupancy:read] }]
+      parameters:
+        - { name: location_id, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses: { "200": { $ref: "#/components/responses/List" }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /v1/parking-types/{id}:
+    post:
+      tags: [parking-types]
+      summary: Edita um tipo de vaga (status, capacidade, regras)
+      security: [{ apiKey: [parking-types:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+  /v1/parking-types/{id}/pricing:
+    post:
+      tags: [pricing]
+      summary: Edita a regra de preço de um tipo de vaga (base_price, estratégia, tiers)
+      security: [{ apiKey: [pricing:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                base_price: { type: number }
+                rule: { type: object }
+                tiers: { type: array, items: { type: object } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+  /v1/parking-types/{id}/date-blocks:
+    post:
+      tags: [pricing]
+      summary: Bloqueia/desbloqueia uma data de um tipo de vaga
+      security: [{ apiKey: [pricing:write] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, blocked]
+              properties:
+                date: { type: string, format: date }
+                blocked: { type: boolean }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/NotFound" } }
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: >
+        Chave de API da empresa no formato `mp_live_…` / `mp_test_…`
+        (Authorization: Bearer …; alias X-API-Key). Escopos por endpoint conforme `security`.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    List:
+      description: Lista
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { type: array, items: { type: object } }
+              meta: { $ref: "#/components/schemas/Meta" }
+    Object:
+      description: Objeto
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { type: object }
+              meta: { $ref: "#/components/schemas/Meta" }
+    Unauthorized:
+      description: Chave ausente/inválida/revogada/expirada
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Forbidden:
+      description: Escopo insuficiente
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    NotFound:
+      description: Recurso não encontrado nesta empresa
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Conflict:
+      description: "Conflito (ex.: sem disponibilidade)"
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    ValidationError:
+      description: Erro de validação
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    Meta:
+      type: object
+      properties:
+        request_id: { type: string }
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            request_id: { type: string }
