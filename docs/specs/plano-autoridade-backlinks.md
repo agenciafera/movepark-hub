@@ -208,6 +208,77 @@ conquistado (seção 5.4), e a compra é complemento.
 definido pelo Diego. Referência: o gasto histórico foi de cerca de R$ 18.900 no projeto Movepark,
 concentrado num único mês.
 
+### 4.1 A lista do WhitePress de 06/10/2026
+
+O WhitePress mandou 195 sites com preço, TF/CF (Majestic), DA (Moz), DR e tráfego (Ahrefs), e
+tráfego e AS (Semrush). A métrica que vale é o **AS do Semrush**, a mesma das metas da seção 6.
+O DA do Moz é a coluna menos confiável da planilha: há site com DA 62 e AS 21 com 411 visitas
+por mês (`mfpdigital.com.br`), ou DA 53 com AS 9 e Trust Flow 0 (`turistandonorio.com.br`).
+
+**Mais domínios ou poucos com autoridade alta?** Os dois extremos perdem. Volume sem qualidade a
+Movepark já testou: 851 domínios e AS parado em 25 há 12 meses. Na outra ponta o retorno cai
+rápido: o `g1.globo.com` custa R$ 7.245, 15 vezes o `gazetaweb.com` (AS 45 e 300 mil visitas
+por mês), e matéria patrocinada em portal grande costuma sair marcada como publicidade. O ponto
+certo é **muitos domínios diferentes, cada um com AS de 30 a 60, tráfego real e relevância de
+praça ou de viagem**, na faixa de R$ 300 a R$ 3.300. Um domínio novo pesa mais que um segundo link
+do mesmo site, então **nunca comprar duas vezes no mesmo domínio**.
+
+**O filtro aplicado:** AS ≥ 30, tráfego Semrush ≥ 5 mil e Ahrefs ≥ 1 mil sobram 113 dos 195.
+Depois sai o que não tem relação com praça da Movepark nem com viagem (portal de cidade sem
+aeroporto atendido, receita, maternidade, adolescente) e o que cai nos alertas abaixo.
+
+| Alerta | Sites | Motivo |
+|---|---|---|
+| Subdomínio com a métrica do domínio-raiz | `*.ig.com.br`, `cartaodevisita.r7.com`, `tnonline.uol.com.br`, `brusque.portaldacidade.com` | O AS 72 a 98 é do `ig`, do `r7` ou do `uol`, não da seção que publica; o `cartaodevisita.r7.com` é vitrine de anúncio |
+| DA inflado sem tráfego | `mfpdigital.com.br`, `turistandonorio.com.br`, `viajenodetalhe.com.br`, `followthecolours.com.br` | DA de 53 a 68 com AS abaixo de 30 |
+| Trust Flow desproporcional | `curtamais.com.br` (TF 6, CF 38), `atoananet.com.br/blog` (TF 0, CF 0) | Perfil de link artificial |
+| Fora do Brasil | `leca-palmeira.com`, `agendaculturalporto.org`, `portugalnummapa.com`, `atlaslisboa.com`, `surftotal.com`, `fulltravel.it` | Seção 4: Brasil e pt-BR |
+| Caro para o que entrega | `queroviajarmais.com` (R$ 17.860, AS 39), rede `dicas*.com.br` (R$ 3.470 a R$ 3.955, AS 30 a 34), `guiadasemana.com.br`, `cnnbrasil.com.br` | Sites equivalentes saem por um décimo |
+
+**A shortlist.** A lista não tem portal de Guarulhos nem de Curitiba, as duas praças prioritárias.
+Guarulhos recebe link de site nacional de viagem e do portal do Alto Tietê, e o WhitePress
+precisa ser consultado sobre portais das duas cidades (Conteúdo 85).
+
+| Lote | Site | Preço | AS | Tráfego Semrush | Destino do link |
+|---|---|---|---|---|---|
+| Outubro (C67) | `viagensecaminhos.com` | R$ 1.610,00 | 54 | 795 mil | `/estacionamentos/aeroporto-guarulhos` |
+| Outubro (C67) | `rotadeferias.com.br` | R$ 885,50 | 34 | 26 mil | `/estacionamentos/aeroporto-guarulhos` |
+| Outubro (C67) | `mochileiros.com` | R$ 483,00 | 33 | 31 mil | post dono do termo de GRU (`canonicalizacao-gru-cwb.md`) |
+| Oportunidade regional | `gazetaweb.com` (Maceió) | R$ 483,00 | 45 | 304 mil | `/estacionamentos/aeroporto-maceio` |
+| Oportunidade regional | `guiafloripa.com.br` | R$ 466,90 | 37 | 39 mil | `/estacionamentos/aeroporto-florianopolis` |
+| Oportunidade regional | `sul21.com.br` (Porto Alegre) | R$ 322,00 | 36 | 25 mil | `/estacionamentos/aeroporto-salgado-filho` |
+| Novembro (C68) | `em.com.br` (Estado de Minas) | R$ 3.220,00 | 61 | 521 mil | `/estacionamentos/aeroporto-confins` |
+| Novembro (C68) | `odiariodemogi.net.br` (Alto Tietê) | R$ 1.606,55 | 33 | 10 mil (Ahrefs 23 mil) | `/estacionamentos/aeroporto-guarulhos` |
+| Dezembro (C69) | `campinas.com.br` | R$ 1.046,50 | 32 | 27 mil | `/estacionamentos/aeroporto-viracopos` |
+| Dezembro (C69) | `maringapost.com.br` | R$ 1.932,00 | 37 | 48 mil | `/estacionamentos/aeroporto-afonso-pena` |
+
+São 10 domínios por **R$ 12.055**, média de R$ 1.206 por link e AS médio de 40, contra R$ 510
+por link no histórico sem filtro de autoridade. Por lote: outubro R$ 2.978,50, oportunidade
+regional R$ 1.271,90, novembro R$ 4.826,55 e dezembro R$ 2.978,50. Novembro passa da referência
+de R$ 3.000 por causa do `em.com.br`; se a pauta de BH da Conteúdo 56 sair no Estado de Minas sem
+custo, essa compra cai. O trio regional é o melhor custo por AS da lista inteira e não depende de
+mês.
+
+**Reservas** (trocar um item da shortlist, mantendo a praça): `bhaz.com.br` (BH, R$ 2.737, AS 45),
+`diariodorio.com` (Rio, R$ 2.415, AS 49, 920 mil visitas), `tnh1.com.br` (Maceió, R$ 2.415,
+AS 50), `turistaprofissional.com` (viagem, R$ 2.415, AS 46), `carpemundi.com.br` (viagem,
+R$ 1.433, AS 39), `ocp.news` (Joinville, perto de Navegantes, R$ 1.377, AS 41), `segs.com.br`
+(seguros, R$ 1.610, AS 43), `visitebrasilia.com.br` (R$ 1.530, AS 39), `reportermt.com`
+(Cuiabá, R$ 1.835, AS 37).
+
+**Atividades (criadas em 06/10/2026, todas com o Diego):** uma por compra, dentro do lote do mês.
+[Conteúdo 75](https://app.clickup.com/t/17tn9e9hy61) a [77](https://app.clickup.com/t/17tn9e9hy73) no
+lote de outubro, [78](https://app.clickup.com/t/17tn9e9hy7t) a [80](https://app.clickup.com/t/17tn9e9hy90)
+como oportunidade regional, [81](https://app.clickup.com/t/17tn9e9hy92) e
+[82](https://app.clickup.com/t/17tn9e9hy93) em novembro, [83](https://app.clickup.com/t/17tn9e9hy96) e
+[84](https://app.clickup.com/t/17tn9e9hy99) em dezembro, e a [85](https://app.clickup.com/t/17tn9e9hy9a)
+para pedir ao WhitePress portais de Guarulhos e Curitiba.
+
+**Antes de cada pedido** (a planilha não traz): AS conferido no Semrush no dia; o link sai
+dofollow ou com `rel="sponsored"`; o artigo fica no ar por quanto tempo; quantos links de saída
+o post tem; o site publica patrocinado de qualquer assunto (busca por "patrocinado" no próprio
+site); o domínio não está na lista tóxica da Conteúdo 63.
+
 ## 5. O plano
 
 ### 5.1 Semanas 1 e 2: limpar e medir
