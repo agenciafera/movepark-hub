@@ -667,20 +667,7 @@ async function fetchAllBlogPaths(): Promise<string[]> {
     .eq("is_published", true)
     .is("deleted_at", null);
   return (data ?? []).map((p) => `/blog/${p.slug as string}`);
-}
-
-/**
- * Guias Master: posts que começam com "guia-master-" são pré-renderizados como rotas estáticas.
- * Cada guia fica em `/blog/guia-master-<slug-destino>`.
- */
-async function fetchAllGuideMasterPaths(): Promise<string[]> {
-  const { data } = await supabase
-    .from("blog_post")
-    .select("slug")
-    .eq("is_published", true)
-    .is("deleted_at", null)
-    .like("slug", "guia-master-%");
-  return (data ?? []).map((p) => `/blog/${p.slug as string}`);
+  // Nota: Inclui posts normais E guias master (slug começa com "guia-master-")
 }
 
 /**
