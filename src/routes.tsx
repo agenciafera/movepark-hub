@@ -597,6 +597,11 @@ async function blogPostLoader({ params, request }: LoaderFunctionArgs) {
 
   const post = flattenTags([data])[0];
 
+  // Normalizar quebras de linha escapadas do JSON (proteção contra duplo-escape do banco)
+  if (post?.body_md && typeof post.body_md === 'string') {
+    post.body_md = post.body_md.replace(/\\n/g, '\n');
+  }
+
   const idiomas = await fetchTraducoesDePostLeve()
     .then((t) => idiomasDoPost(t, post.id as string))
     .catch(() => []);
