@@ -235,44 +235,60 @@ aeroporto atendido, receita, maternidade, adolescente) e o que cai nos alertas a
 | Fora do Brasil | `leca-palmeira.com`, `agendaculturalporto.org`, `portugalnummapa.com`, `atlaslisboa.com`, `surftotal.com`, `fulltravel.it` | Seção 4: Brasil e pt-BR |
 | Caro para o que entrega | `queroviajarmais.com` (R$ 17.860, AS 39), rede `dicas*.com.br` (R$ 3.470 a R$ 3.955, AS 30 a 34), `guiadasemana.com.br`, `cnnbrasil.com.br` | Sites equivalentes saem por um décimo |
 
-**A shortlist.** A lista não tem portal de Guarulhos nem de Curitiba, as duas praças prioritárias.
-Guarulhos recebe link de site nacional de viagem e do portal do Alto Tietê, e o WhitePress
-precisa ser consultado sobre portais das duas cidades (Conteúdo 85).
+**A shortlist.** Decisão do Diego em 06/10/2026: **a compra se concentra nas quatro praças da
+Movepark, Guarulhos, Viracopos, Curitiba e Confins**. Nenhum link vai para outro aeroporto, mesmo
+barato. A lista não tem portal de Guarulhos nem de Curitiba: Guarulhos recebe link de site
+nacional de viagem e do portal do Alto Tietê, Curitiba recebe dos dois maiores portais do interior
+do Paraná, e o WhitePress precisa ser consultado sobre portais das duas cidades (Conteúdo 85).
 
-| Lote | Site | Preço | AS | Tráfego Semrush | Destino do link |
+| Mês | Site | Preço | AS | Tráfego Semrush | Destino do link |
 |---|---|---|---|---|---|
 | Outubro (C67) | `viagensecaminhos.com` | R$ 1.610,00 | 54 | 795 mil | `/estacionamentos/aeroporto-guarulhos` |
 | Outubro (C67) | `rotadeferias.com.br` | R$ 885,50 | 34 | 26 mil | `/estacionamentos/aeroporto-guarulhos` |
 | Outubro (C67) | `mochileiros.com` | R$ 483,00 | 33 | 31 mil | post dono do termo de GRU (`canonicalizacao-gru-cwb.md`) |
-| Oportunidade regional | `gazetaweb.com` (Maceió) | R$ 483,00 | 45 | 304 mil | `/estacionamentos/aeroporto-maceio` |
-| Oportunidade regional | `guiafloripa.com.br` | R$ 466,90 | 37 | 39 mil | `/estacionamentos/aeroporto-florianopolis` |
-| Oportunidade regional | `sul21.com.br` (Porto Alegre) | R$ 322,00 | 36 | 25 mil | `/estacionamentos/aeroporto-salgado-filho` |
 | Novembro (C68) | `em.com.br` (Estado de Minas) | R$ 3.220,00 | 61 | 521 mil | `/estacionamentos/aeroporto-confins` |
 | Novembro (C68) | `odiariodemogi.net.br` (Alto Tietê) | R$ 1.606,55 | 33 | 10 mil (Ahrefs 23 mil) | `/estacionamentos/aeroporto-guarulhos` |
 | Dezembro (C69) | `campinas.com.br` | R$ 1.046,50 | 32 | 27 mil | `/estacionamentos/aeroporto-viracopos` |
-| Dezembro (C69) | `maringapost.com.br` | R$ 1.932,00 | 37 | 48 mil | `/estacionamentos/aeroporto-afonso-pena` |
+| Dezembro (C69) | `carpemundi.com.br` (viagem) | R$ 1.432,90 | 39 | 83 mil | `/estacionamentos/aeroporto-viracopos` |
+| Dezembro (C69) | `maringapost.com.br` (Maringá) | R$ 1.932,00 | 37 | 48 mil | `/estacionamentos/aeroporto-afonso-pena` |
+| Janeiro | `cgn.inf.br` (Cascavel) | R$ 2.237,90 | 48 | 379 mil | `/estacionamentos/aeroporto-afonso-pena` |
+| Janeiro | `bhaz.com.br` (BH) | R$ 2.737,00 | 45 | 89 mil | `/estacionamentos/aeroporto-confins` |
 
-São 10 domínios por **R$ 12.055**, média de R$ 1.206 por link e AS médio de 40, contra R$ 510
-por link no histórico sem filtro de autoridade. Por lote: outubro R$ 2.978,50, oportunidade
-regional R$ 1.271,90, novembro R$ 4.826,55 e dezembro R$ 2.978,50. Novembro passa da referência
-de R$ 3.000 por causa do `em.com.br`; se a pauta de BH da Conteúdo 56 sair no Estado de Minas sem
-custo, essa compra cai. O trio regional é o melhor custo por AS da lista inteira e não depende de
-mês.
+**Por praça:**
 
-**Reservas** (trocar um item da shortlist, mantendo a praça): `bhaz.com.br` (BH, R$ 2.737, AS 45),
-`diariodorio.com` (Rio, R$ 2.415, AS 49, 920 mil visitas), `tnh1.com.br` (Maceió, R$ 2.415,
-AS 50), `turistaprofissional.com` (viagem, R$ 2.415, AS 46), `carpemundi.com.br` (viagem,
-R$ 1.433, AS 39), `ocp.news` (Joinville, perto de Navegantes, R$ 1.377, AS 41), `segs.com.br`
-(seguros, R$ 1.610, AS 43), `visitebrasilia.com.br` (R$ 1.530, AS 39), `reportermt.com`
-(Cuiabá, R$ 1.835, AS 37).
+| Praça | Links | Investimento |
+|---|---|---|
+| Guarulhos | 4 | R$ 4.585,05 |
+| Confins | 2 | R$ 5.957,00 |
+| Curitiba | 2 | R$ 4.169,90 |
+| Viracopos | 2 | R$ 2.479,40 |
+| **Total** | **10** | **R$ 17.191,35** |
 
-**Atividades (criadas em 06/10/2026, todas com o Diego):** uma por compra, dentro do lote do mês.
-[Conteúdo 75](https://app.clickup.com/t/17tn9e9hy61) a [77](https://app.clickup.com/t/17tn9e9hy73) no
-lote de outubro, [78](https://app.clickup.com/t/17tn9e9hy7t) a [80](https://app.clickup.com/t/17tn9e9hy90)
-como oportunidade regional, [81](https://app.clickup.com/t/17tn9e9hy92) e
-[82](https://app.clickup.com/t/17tn9e9hy93) em novembro, [83](https://app.clickup.com/t/17tn9e9hy96) e
-[84](https://app.clickup.com/t/17tn9e9hy99) em dezembro, e a [85](https://app.clickup.com/t/17tn9e9hy9a)
-para pedir ao WhitePress portais de Guarulhos e Curitiba.
+Guarulhos leva mais links porque é o maior mercado e a página com menos domínios (17). Confins
+custa mais porque os dois portais de BH da lista são caros; se a pauta da Conteúdo 56 sair no
+Estado de Minas sem custo, a compra do `em.com.br` cai e Confins fica em R$ 2.737. Por mês:
+outubro R$ 2.978,50, novembro R$ 4.826,55, dezembro R$ 4.411,40 e janeiro R$ 4.974,90, média de
+R$ 1.719 por link e AS médio de 42.
+
+**Reservas por praça** (troca um item mantendo a praça): Guarulhos, `turistaprofissional.com`
+(viagem, R$ 2.415, AS 46) e `diariodoturismo.com.br` (trade de turismo, R$ 1.760, AS 36);
+Viracopos, `sampi.net.br` (rede de jornais do interior paulista, R$ 3.059, AS 52) e
+`maladeaventuras.com` (viagem, R$ 1.932, AS 38); Confins, `patoshoje.com.br` (interior de MG,
+R$ 1.607, AS 41, conferir a cidade antes); Curitiba, `turistaprofissional.com` se não for usado
+em Guarulhos.
+
+**Fora do foco, para registro:** `gazetaweb.com` (Maceió, R$ 483, AS 45), `guiafloripa.com.br`
+(R$ 467, AS 37) e `sul21.com.br` (Porto Alegre, R$ 322, AS 36) são o melhor custo por AS da lista,
+mas apontariam para aeroporto fora das quatro praças.
+
+**Atividades (todas com o Diego):** uma por compra.
+[Conteúdo 75](https://app.clickup.com/t/17tn9e9hy61) a [77](https://app.clickup.com/t/17tn9e9hy73) em
+outubro, [81](https://app.clickup.com/t/17tn9e9hy92) e [82](https://app.clickup.com/t/17tn9e9hy93) em
+novembro, [83](https://app.clickup.com/t/17tn9e9hy96), [84](https://app.clickup.com/t/17tn9e9hy99) e
+[78](https://app.clickup.com/t/17tn9e9hy7t) em dezembro, [79](https://app.clickup.com/t/17tn9e9hy8p) e
+[80](https://app.clickup.com/t/17tn9e9hy90) em janeiro, e a [85](https://app.clickup.com/t/17tn9e9hy9a)
+para pedir ao WhitePress portais de Guarulhos e Curitiba. As 78 a 80 nasceram para Maceió,
+Florianópolis e Porto Alegre e foram reaproveitadas quando o foco ficou nas quatro praças.
 
 **Antes de cada pedido** (a planilha não traz): AS conferido no Semrush no dia; o link sai
 dofollow ou com `rel="sponsored"`; o artigo fica no ar por quanto tempo; quantos links de saída
@@ -300,12 +316,13 @@ site); o domínio não está na lista tóxica da Conteúdo 63.
 - **[Conteúdo 65](https://app.clickup.com/t/17tn9e9gfh4):** os erros da auditoria do Semrush e as 38 ideias do On Page SEO Checker nas 7
   páginas que ele analisou.
 
-### 5.3 Meses 2 e 3: compra qualificada
+### 5.3 Meses 2 a 5: compra qualificada
 
 - **[Conteúdo 66](https://app.clickup.com/t/17tn9e9gfh8):** regras da seção 4 aplicadas no WhitePress, orçamento e planilha de controle.
 - **[Conteúdo 67](https://app.clickup.com/t/17tn9e9gfh9):** lote de outubro, Guarulhos.
 - **[Conteúdo 68](https://app.clickup.com/t/17tn9e9gfha):** lote de novembro, Guarulhos e Confins (junto do Ataque CNF).
 - **[Conteúdo 69](https://app.clickup.com/t/17tn9e9gfhb):** lote de dezembro, Curitiba e Viracopos.
+- **Janeiro (Conteúdo 79 e 80):** Curitiba e Confins, fechando dois links por praça (seção 4.1).
 
 ### 5.4 Meses 2 a 6: link conquistado
 
@@ -363,5 +380,7 @@ GSC, então a revisão é feita junto.
   antes de subir.
 - **Redirect do domínio antigo quebrar white-label.** A Conteúdo 60 testa os subdomínios antes e
   depois.
-- **Atribuição.** Conteúdo e link sobem juntos e o efeito se mistura. O controle é a página de
-  Guarulhos: ela recebe link novo, e a de Viracopos, que já tem 100 domínios, serve de comparação.
+- **Atribuição.** Conteúdo e link sobem juntos e o efeito se mistura. Até 06/10/2026 a
+  comparação era Viracopos, mas ela passou a receber link comprado (seção 4.1). O controle agora é
+  a página de **Congonhas**, que fica fora da compra: as quatro praças recebem link novo e
+  Congonhas mostra o que conteúdo e sazonalidade fazem sozinhos.
