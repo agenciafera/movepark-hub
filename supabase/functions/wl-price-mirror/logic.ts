@@ -2,8 +2,11 @@
  * Decisões puras do job de espelhamento (E0.13), separadas para teste sem rede nem banco.
  */
 
-/** Durações reamostradas na verificação diferencial, uma por faixa mais as bordas. */
-export const VERIFY_DURATIONS = [1, 3, 6, 7, 15] as const;
+/**
+ * Durações reamostradas na verificação diferencial, uma por faixa mais as bordas. O 45 entrou em
+ * 06/10/2026 junto com a amostragem até 61 dias: é o que prova que a cauda mensal foi medida.
+ */
+export const VERIFY_DURATIONS = [1, 3, 6, 7, 15, 45] as const;
 
 /**
  * As durações que fazem sentido conferir numa vaga com piso de estadia.
@@ -37,11 +40,12 @@ export function buildQuoteAnchor(now: Date): Date {
  * Quanto tempo a função pode GASTAR antes de parar de pegar vaga nova.
  *
  * A Edge derruba a invocação depois de 150s sem escrever resposta, e o job só responde no fim.
- * Uma vaga custa uns 45s, então parar de começar aos 90s deixa a última caber (90 + 45 = 135)
- * com folga. Ao virar as cinco unidades externas de 10/08/2026 o job passou de 1 para 12 vagas
- * e tomou IDLE_TIMEOUT no meio, deixando 7 vagas com a tabela velha apontando para o parceiro.
+ * Uma vaga custava uns 45s com 42 chamadas; com a amostragem até 61 dias (06/10/2026) são 78
+ * chamadas, uns 80s. Parar de começar aos 60s deixa a última caber (60 + 80 = 140) com folga.
+ * Ao virar as cinco unidades externas de 10/08/2026 o job passou de 1 para 12 vagas e tomou
+ * IDLE_TIMEOUT no meio, deixando 7 vagas com a tabela velha apontando para o parceiro.
  */
-export const START_BUDGET_MS = 90_000;
+export const START_BUDGET_MS = 60_000;
 
 /**
  * Ordena a fila pela vaga mais VELHA primeiro (nunca espelhada na frente de todas).

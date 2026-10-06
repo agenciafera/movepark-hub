@@ -103,7 +103,7 @@ preço errado e tem que honrar. Skill serve para construir o job e ler o relató
 5. **Verificação diária:** reamostrar 4 ou 5 durações e comparar com o motor do Hub.
    Divergiu ⇒ alarme e a vitrine cai automaticamente para "a partir de" até alguém olhar.
 
-**Custo:** 42 chamadas para reconstruir a tabela inteira de uma vaga, uns 40 segundos.
+**Custo:** 72 chamadas para reconstruir a tabela inteira de uma vaga (61 bordas e 11 sondagens), uns 80 segundos. Até 06/10/2026 eram 42, com bordas só até 31 dias.
 
 ## Amostrar nas bordas, não em grade
 
@@ -306,7 +306,15 @@ R$ 29,90 para R$ 40,00 por dia, porque o parceiro decompõe a estadia em mês ma
 Uma diária que sobe com a estadia parece defeito da extrapolação e é a regra do parceiro. Em
 35 diárias, o Hub cobrava R$ 871,50 contra os R$ 1.400,00 dele.
 
-Regra prática: **ao ligar uma unidade nova, cote acima de 30 diárias na mão.** É o mesmo tipo de
+**Desde 06/10/2026 a cauda é medida até 61 diárias.** A BePark trouxe o terceiro caso do mesmo
+desenho (R$ 400 o mês mais R$ 40 por dia excedente: 35 diárias custam R$ 600, e o Hub devolvia
+NULL acima de 31). Em vez de cotar na mão a cada unidade nova, o amostrador passou a ir até 61
+dias, o que cobre o mês seguinte inteiro, e a verificação diferencial ganhou a duração de 45
+diárias. A faixa final continua aberta só quando é diária; mês mais dias fecha no teto medido. O
+custo subiu de 42 para 72 chamadas por vaga, e o orçamento do job caiu de 90s para 60s de início
+de vaga nova para a última caber nos 150s da Edge.
+
+Regra prática que valia antes: **ao ligar uma unidade nova, cote acima de 30 diárias na mão.** É o mesmo tipo de
 verificação que já se faz para o piso de estadia, e pelo mesmo motivo, porque a única fonte
 confiável é o parceiro respondendo.
 

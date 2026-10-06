@@ -74,7 +74,7 @@ Deno.test("lê a tabela de balcão como tabela própria, não como multiplicador
   assertEquals(t.oldPriceTiers, [{ fromDay: 1, toDay: null, unitPrice: 40, totalPrice: null }]);
 });
 
-Deno.test("custa 42 chamadas: 31 bordas + 11 sondagens", async () => {
+Deno.test("custa 72 chamadas: 61 bordas + 11 sondagens", async () => {
   const e = espiao();
   const t = await sampleWlPriceTable(e.quote);
   assertEquals(e.calls, MAX_DAYS + 11);
@@ -294,4 +294,37 @@ Deno.test("faixa fechada no fim da amostragem não fica aberta", async () => {
     unitPrice: null,
     totalPrice: 200,
   });
+});
+
+// ──────────────────── Cauda mensal (BePark, 06/10/2026) ────────────────────
+
+/**
+ * Parceiro que muda de regra depois do mês: 1 a 4 diárias a R$ 45, 5 a 7 fechado em R$ 200,
+ * 8 a 11 soma R$ 45 por dia sobre os 200, 12 a 30 fechado em R$ 400, e de 31 em diante cobra o
+ * mês (R$ 400) mais R$ 40 por dia excedente: 35 diárias custam R$ 600. Amostrando só até 31 o
+ * Hub devolvia NULL para 35 dias, enquanto o site do parceiro cotava R$ 600.
+ */
+function precoBePark(days: number): number {
+  if (days <= 4) return days * 45;
+  if (days <= 7) return 200;
+  if (days <= 11) return 200 + (days - 7) * 45;
+  if (days <= 30) return 400;
+  return 400 + (days - 30) * 40;
+}
+
+Deno.test("a cauda acima de 30 diárias é medida até 61, e o Hub cota 35 e 45 diárias como o parceiro", async () => {
+  const asked: number[] = [];
+  const quote = (days: number, extra: number) => {
+    asked.push(days);
+    return Promise.resolve({ price: precoBePark(extra > 0 ? days + 1 : days), oldPrice: null });
+  };
+  const t = await sampleWlPriceTable(quote);
+  assert(asked.includes(61), "amostra até o dia 61");
+  const cobre = (d: number) => t.tiers.find((x) => x.fromDay <= d && (x.toDay == null || d <= x.toDay));
+  const t35 = cobre(35);
+  const t45 = cobre(45);
+  assertEquals(t35?.totalPrice ?? (t35?.unitPrice ?? 0) * 35, 600);
+  assertEquals(t45?.totalPrice ?? (t45?.unitPrice ?? 0) * 45, 1000);
+  // Mês mais dias não é diária uniforme, então a cauda fecha no teto medido, nunca aberta.
+  assertEquals(t.tiers[t.tiers.length - 1].toDay, MAX_DAYS);
 });

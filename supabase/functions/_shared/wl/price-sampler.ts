@@ -49,8 +49,17 @@ export type SampledTable = {
   anomalies: string[];
 };
 
-/** Até onde a curva é amostrada dia a dia. Acima disso a última faixa é aberta. */
-export const MAX_DAYS = 31;
+/**
+ * Até onde a curva é amostrada dia a dia. Acima disso a última faixa é aberta (só quando é diária).
+ *
+ * Era 31 até 06/10/2026, e a cauda de um mês em diante ficava extrapolada. Parceiro muda de regra
+ * depois do mês: a Aerovalet cobra o mês pela tabela mensal e a diária sobe de R$ 29,90 para
+ * R$ 40,00; a BePark cobra R$ 400 o mês mais R$ 40 por dia excedente (35 diárias = R$ 600), e o
+ * Hub devolvia NULL. Medir até 61 cobre o mês inteiro seguinte e deixa a verificação diferencial
+ * conferir 45 diárias de verdade. Custa 30 chamadas a mais por vaga, pagas no orçamento do job
+ * (START_BUDGET_MS em wl-price-mirror/logic.ts).
+ */
+export const MAX_DAYS = 61;
 /** Teto da busca binária da fração: um dia inteiro de minutos. */
 const DAY_MINUTES = 1440;
 /**
@@ -108,7 +117,7 @@ export async function discoverMinimumDays(
  * Reconstrói a tabela inteira de uma vaga.
  *
  * Custo: `MAX_DAYS - piso + 1` chamadas nas bordas (a do piso serve também para descobri-lo) e
- * 11 na busca binária. Para uma vaga sem mínimo e 31 dias, 42 chamadas; com piso de 3, 40.
+ * 11 na busca binária. Para uma vaga sem mínimo e 61 dias, 72 chamadas; com piso de 3, 70.
  */
 export async function sampleWlPriceTable(quote: QuoteFn): Promise<SampledTable> {
   const anomalies: string[] = [];

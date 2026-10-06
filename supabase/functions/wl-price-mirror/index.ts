@@ -4,7 +4,7 @@
 // wl_mirror_apply_pricing. Depois compara os dois motores nas mesmas entradas; divergiu, marca
 // a regra como `divergent` e a vitrine cai para "a partir de".
 //
-// Custo por vaga: ~42 chamadas de amostragem + 5 de verificação, uns 45 segundos. A Edge derruba
+// Custo por vaga: ~72 chamadas de amostragem + 6 de verificação, uns 80 segundos. A Edge derruba
 // a invocação em 150s, então o job processa as vagas MAIS VELHAS primeiro e para de pegar vaga
 // nova quando estoura o orçamento (START_BUDGET_MS), devolvendo `skipped`. O que sobra volta no
 // topo da próxima passada. Por isso o cron roda de 3 em 3 horas: a fila inteira gira todo dia.
