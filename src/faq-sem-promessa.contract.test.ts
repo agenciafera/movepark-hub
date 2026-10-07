@@ -9,7 +9,7 @@ import path from "node:path";
  * arquivos de origem no `bun run test`, sem precisar subir o Supabase.
  *
  * Migration aplicada não entra: ela é histórico e não se edita. A que corrigiu o texto
- * (`20261128170000_faq_sem_vaga_garantida.sql`) cita a frase antiga de propósito.
+ * (`20261128165000_faq_sem_vaga_garantida.sql`) cita a frase antiga de propósito.
  */
 const RAIZ = path.resolve(__dirname, "..");
 const PROMESSA = /(vaga|lugar)[^.']{0,20}garantid|fica garantida/i;

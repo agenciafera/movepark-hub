@@ -202,7 +202,7 @@ renderiza na página do aeroporto inteira (inclusive nas praças sem parceiro e 
 reserva online), então não tem uma unidade para consultar. A resposta virou fato verificável (o
 carro segue guardado, a diária a mais é paga na saída, quem volta antes não costuma receber de
 volta), igual ao primeiro parágrafo do `body_md`. Na mesma migration
-(`20261128170000_faq_sem_vaga_garantida.sql`) saíram a promessa das duas FAQs de vaga avulsa da
+(`20261128165000_faq_sem_vaga_garantida.sql`) saíram a promessa das duas FAQs de vaga avulsa da
 Garageinn em Viracopos (unidade `external`) e "a vaga é garantida" da FAQ global de pagamento. A
 origem do texto (`supabase/seed.sql` e `gestao/faq-destination-airports.sql`) foi corrigida, e dois
 guardas reprovam a volta: o pgTAP `faq_sem_promessa.test.sql`, no banco montado, e o

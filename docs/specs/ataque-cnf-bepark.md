@@ -170,6 +170,46 @@ Achados menores da checagem de 28/09, sem atividade própria. Entram quando algu
 - `/destinos/<slug inexistente>` responde 200 com a home;
 - o selo de categoria entra no H3 das FAQs da ficha da BePark.
 
+### 2.3.1 As donas com os 11 pátios (Conteúdo 45, 07/10/2026)
+
+As três donas de Confins (`preco-do-estacionamento-no-aeroporto-de-confins`,
+`estacionamento-mais-barato-no-aeroporto-de-confins` e
+`guia-completo-dos-estacionamentos-proximos-ao-aeoroporto-de-confins`) foram reescritas com os 11 pátios
+mapeados mais o BePark e com o preço de outubro. Cada uma ganhou, logo depois da abertura, a **caixa de
+fatos datados** (citação `>` com a data de cada fonte), no formato que o Modo IA copiou do Bandeira.
+
+**A fonte dos números é uma só: `prospect_location`.** O preço de cada pátio foi relido no site do
+operador em 07/10/2026 (migration `20261128180000_confins_precos_outubro.sql`, com o trecho literal de cada
+página em `prospect_price_research`), e as donas, as FAQs de destino, a página "mais barato", a de destino e
+o llms.txt leem dali ou citam o mesmo valor. O que a releitura mudou:
+
+| Fato | Setembro | 07/10/2026 |
+| --- | --- | --- |
+| Menor diária avulsa | R$ 20,00, AeroPark e Auto Park Brasil | **R$ 20,00, só o Auto Park Brasil** (o AeroPark subiu para R$ 22,00 e R$ 20,00/dia de 7 em diante) |
+| Menor total de 7 diárias | R$ 119,00, AeroPark | **R$ 125,93, Bandeira Park** (o Auto Park Brasil faz R$ 126,00) |
+| Menor total de 15 diárias | R$ 248,50, Multipark | **R$ 233,85, Bandeira Park** |
+| Menor total de 30 diárias | R$ 300,00, Auto Park Brasil | igual |
+| Space Park, 1 diária | R$ 24,00 | **R$ 40,00** (o site publica tarifa mínima de 24h; os R$ 24,00 valem de 2 diárias em diante) |
+| Mais próximo do terminal | Park Confins, 2,87 km | igual (o Estapar fica a 5,02 km, não a "menos de 1 km") |
+| Aplicativo passa a compensar | 9ª diária | 8ª diária |
+
+**Duração que o pátio não publica saiu do banco.** Park Confins, Space Park, Premium Park e Auto Park
+Brasil (15 dias) e Estapar (7, 15 e 30) tinham valores que eram a diária multiplicada pelos dias, e a
+tabela "Sem reserva online" das páginas os mostrava como preço. Também saiu de duas FAQs a "reserva
+antecipada do oficial a partir de R$ 26,90" e os R$ 807,00 em 30 dias: R$ 26,90 é o Estapar no Zul+, e o
+BH Airport publica a semana com reserva de 72h a partir de R$ 189,00 (migration
+`20261128190000_confins_faq_outubro.sql`, pt, en e es).
+
+**Bandeira Park:** os dois sites divergem (o bandeirapark.com.br anuncia R$ 18,49 de 1 a 6 dias; o
+sistema onde a reserva fecha cobra R$ 24,99 na descoberta, sem cupom; a página anuncia R$ 7,98 com o cupom
+BP26). Toda superfície usa o valor do sistema de reserva sem cupom, e os posts registram a divergência.
+
+Analisador da skill `blogpost-seo-geo`: preço e barato VERDES, com três avisos aceitos (densidade de uma
+frase-chave longa, frases longas de dado com fonte e data, e transições, que só subiriam com conector de
+redação escolar). A de proximidade tem um `XX` estrutural, a frase-chave fora do slug, porque o slug é
+herdado do WordPress e slug publicado não muda. `bun run lint:bloco-fato` confere o bloco da BePark
+nas três.
+
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
 | Critério | BePark | Referência da praça |
