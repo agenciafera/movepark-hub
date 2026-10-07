@@ -16,7 +16,7 @@
 | `from` | ISO datetime UTC | — | obrigatório |
 | `to` | ISO datetime UTC | — | obrigatório |
 | `vehicle` | `car` \| `motorcycle` | `car` | filtro |
-| `pax` | int 1–9 | 1 | passageiros (sem uso no card desde 07/10/2026; perguntado no passo 2 do checkout) |
+| `pax` | int 1-9 | 1 | passageiros (sem uso no card desde 07/10/2026; perguntado no passo 2 do checkout) |
 | `pcd` | `true`\|`false` | `false` | (se aplicável) |
 | `category` | code do `parking_type` (csv) | — | filtro de tipo |
 | `operator` | slug (csv) | — | filtro de estacionamento |
