@@ -63,8 +63,6 @@ function linha(
       latitude: -23,
       longitude: -47,
       google_place_id: null,
-      has_pcd_config: false,
-      has_passenger_quantity: false,
       review_avg: 5,
       // Volume acima do piso (reviews-volume.mjs): é o caso em que a unidade PRÓPRIA publica
       // nota, e o teste da externa prova que a capacidade continua calando mesmo assim.

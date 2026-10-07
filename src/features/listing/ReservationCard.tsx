@@ -468,7 +468,7 @@ export function ReservationCard({
 
         {/* Passageiros e PCD não ficam aqui: o passo 2 do checkout pergunta os dois para toda
             unidade (Step2Vehicle). Até 07/10/2026 o card repetia a pergunta quando a unidade tinha
-            `has_passenger_quantity`/`has_pcd_config`, e só a BePark tinha. */}
+            as flags do legado ligadas (só a BePark tinha); as flags foram apagadas do banco. */}
 
         {/* Seletor de tarifa */}
         {caps.fares && (

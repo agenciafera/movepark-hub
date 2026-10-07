@@ -28,7 +28,7 @@ vi.mock("@/features/fares/api", () => ({ useUnitFares: () => ({ data: unitFares.
 const listing = {
   id: "lpt-1",
   company: { slug: "aeropark", name: "Aeropark" },
-  location: { id: "loc-1", slug: "unidade-1", name: "Unidade 1", has_passenger_quantity: false, has_pcd_config: false },
+  location: { id: "loc-1", slug: "unidade-1", name: "Unidade 1" },
   parking_type: { code: "coberto", name: "Coberto" },
   company_parking_type: { base_price: 150 },
 } as never;
@@ -139,22 +139,16 @@ describe("ReservationCard — tarifas lidas do catálogo", () => {
 
 /**
  * Regressão (07/10/2026): o card perguntava passageiros e PCD quando a unidade tinha as flags do
- * legado ligadas (só a BePark), e o passo 2 do checkout perguntava de novo para toda unidade.
+ * legado ligadas (só a BePark), e o passo 2 do checkout perguntava de novo para toda unidade. As
+ * flags foram apagadas do banco; o card não pergunta nem em unidade que vende pelo Hub.
  */
 describe("ReservationCard: passageiros e PCD ficam só no checkout", () => {
-  it("não mostra os campos nem com as flags da unidade ligadas", () => {
-    const comFlags = {
+  it("unidade que vende pelo Hub não pergunta passageiros nem PCD no card", () => {
+    const hub = {
       ...(listing as object),
-      location: {
-        id: "loc-1",
-        slug: "unidade-1",
-        name: "Unidade 1",
-        checkout_mode: "hub",
-        has_passenger_quantity: true,
-        has_pcd_config: true,
-      },
+      location: { id: "loc-1", slug: "unidade-1", name: "Unidade 1", checkout_mode: "hub" },
     } as never;
-    renderWithProviders(<ReservationCard listing={comFlags} initialFrom={from} initialTo={to} />, {
+    renderWithProviders(<ReservationCard listing={hub} initialFrom={from} initialTo={to} />, {
       auth: mockAuth({ session: null }),
       route: "/p/aeropark/unidade-1/coberto",
     });

@@ -58,8 +58,6 @@ function linha(code: string, name: string, basePrice: number, capacity: number) 
       latitude: -23,
       longitude: -46,
       google_place_id: null,
-      has_pcd_config: false,
-      has_passenger_quantity: false,
       review_avg: null,
       review_count: 0,
       photos: [],
