@@ -63,14 +63,14 @@ export function CheckoutCouponRow({ bookingId, applied, allowsCoupons }: Props) 
         </button>
       </SheetTrigger>
 
-      <SheetContent className="overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>Cupons de desconto</SheetTitle>
         </SheetHeader>
 
-        {erro ? <p className="mt-3 text-body-sm text-error">{erro}</p> : null}
-
-        <div className="mt-4">
+        {/* O SheetContent não tem padding próprio: o respiro e a rolagem moram no corpo. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-2">
+          {erro ? <p className="mb-4 text-body-sm text-error">{erro}</p> : null}
           <CouponWalletView
             orderContext={{ bookingId }}
             onUse={usar}

@@ -98,9 +98,14 @@ export function CouponWalletView({
           onChange={(e) => setCodigo(e.target.value.toUpperCase())}
           placeholder="Digite o código"
           aria-label="Código promocional"
-
+          className="min-w-0 flex-1"
         />
-        <Button type="submit" variant="secondary" disabled={redeem.isPending || !codigo.trim()}>
+        <Button
+          type="submit"
+          variant="secondary"
+          className="h-14 shrink-0"
+          disabled={redeem.isPending || !codigo.trim()}
+        >
           Resgatar
         </Button>
       </form>
