@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Ticket } from "@phosphor-icons/react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { formatBRL } from "@/lib/format";
 import { CouponWalletView } from "./CouponWalletView";
 import { useApplyCouponToBooking, useRemoveCouponFromBooking } from "./api";
 import { couponUnavailableReason } from "./couponWallet.logic";
@@ -53,13 +52,13 @@ export function CheckoutCouponRow({ bookingId, applied, allowsCoupons }: Props) 
         >
           <span className="flex min-w-0 items-center gap-2">
             <Ticket className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+            {/* Com cupom aplicado, o desconto já aparece como linha do resumo, logo acima. O botão
+                vira só a porta para trocar, sem repetir código e valor. */}
             <span className="truncate text-body-sm text-ink">
-              {applied ? `Cupom ${applied.code}` : "Usar cupom"}
+              {applied ? "Trocar cupom" : "Usar cupom"}
             </span>
           </span>
-          <span className="shrink-0 text-body-sm tabular-nums text-badge-confirmed-fg">
-            {applied ? `−${formatBRL(applied.discount)}` : "Ver cupons"}
-          </span>
+          <span className="shrink-0 text-body-sm text-badge-confirmed-fg">Ver cupons</span>
         </button>
       </SheetTrigger>
 

@@ -138,6 +138,12 @@ valendo e chega ao checkout já aplicado.
 | `/descontos` | **Vitrine pública**, sem login. Ver §4.2 |
 | `/manager/marketing/cupons` | Onde a Movepark cria e pausa a campanha. Separada de `/operator/coupons`, onde o parceiro cria a dele e banca o desconto |
 
+Com cupom aplicado, o resumo mostra a linha **"Cupom CÓDIGO −R$ X"** entre os itens, e o botão
+passa a dizer "Trocar cupom" (sem repetir código e valor). O resumo lê o cupom do snapshot da
+própria reserva (`price_breakdown.coupon`, via `resolveBookingCoupon`), e **não** do embed
+`booking_coupon → coupon`: o cliente não tem leitura na tabela `coupon` (§6), então o join voltava
+nulo e o total caía sem a linha que explicasse por quê.
+
 `apply_coupon_to_booking` / `remove_coupon_from_booking` mexem no total de reserva **`pending`** do
 próprio cliente. Depois do pagamento a porta fecha: mudar o total quebraria o split já enviado.
 

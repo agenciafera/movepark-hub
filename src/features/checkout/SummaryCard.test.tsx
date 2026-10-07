@@ -136,6 +136,22 @@ describe("SummaryCard", () => {
     expect(screen.getByText(/reembolso integral/i)).toBeInTheDocument();
   });
 
+  it("cupom aplicado aparece como linha do resumo, com o desconto", () => {
+    renderWithProviders(
+      <SummaryCard
+        booking={{
+          ...booking(fullBreakdown()),
+          total_amount: 91.4,
+          coupon: { code: "AZULONE40", discount_applied: 60 },
+        }}
+      />,
+    );
+    expect(screen.getByText("Cupom AZULONE40")).toBeInTheDocument();
+    expect(screen.getByText("−R$ 60,00")).toBeInTheDocument();
+    // O botão não repete o cupom: ele só abre a troca.
+    expect(screen.getByRole("button", { name: /trocar cupom/i })).toBeInTheDocument();
+  });
+
   it("sem foto da unidade o cabeçalho não quebra", () => {
     renderWithProviders(<SummaryCard booking={booking(null)} />);
     expect(screen.queryByRole("img")).not.toBeInTheDocument();

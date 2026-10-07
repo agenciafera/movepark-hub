@@ -171,3 +171,26 @@ export function shouldPollCheckout(
 ): boolean {
   return status === "pending" || paymentStatus === "pending";
 }
+
+/** Cupom aplicado na reserva, do jeito que o resumo do checkout mostra. */
+export type CheckoutCoupon = { code: string; discount_applied: number };
+
+/**
+ * Lê o cupom aplicado de dentro da própria reserva.
+ *
+ * A fonte é o snapshot `price_breakdown.coupon`, que `apply_coupon_to_booking` grava junto com o
+ * total. O embed `booking_coupon → coupon` não serve para o cliente: a tabela `coupon` só é
+ * legível por admin e operador (a policy pública caiu no E3.3 para não expor os códigos), então o
+ * join volta `null` e o resumo cobrava o desconto sem mostrar a linha. O `discount_applied` do
+ * `booking_coupon` ainda é preferido para o valor, por ser o snapshot contábil.
+ */
+export function resolveBookingCoupon(
+  priceBreakdownCoupon: { code?: string | null; discount?: number | string | null } | null | undefined,
+  bookingCoupon: { discount_applied?: number | string | null } | null | undefined,
+): CheckoutCoupon | null {
+  const code = priceBreakdownCoupon?.code;
+  if (!code) return null;
+  const discount = Number(bookingCoupon?.discount_applied ?? priceBreakdownCoupon?.discount ?? 0);
+  if (!(discount > 0)) return null;
+  return { code: code.toUpperCase(), discount_applied: discount };
+}

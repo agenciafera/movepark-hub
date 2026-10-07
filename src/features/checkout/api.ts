@@ -2,7 +2,11 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { parseInstallmentPolicy, type InstallmentPolicy } from "@/lib/installments";
-import { shouldPollCheckout } from "@/features/checkout/checkout.logic";
+import {
+  resolveBookingCoupon,
+  shouldPollCheckout,
+  type CheckoutCoupon,
+} from "@/features/checkout/checkout.logic";
 import { parseHandoffToken } from "@/features/checkout/handoff";
 
 export type PriceBreakdown = {
@@ -77,12 +81,8 @@ export type BookingForCheckout = {
     method?: string;
     paid_at: string | null;
   } | null;
-  coupon: {
-    code: string;
-    discount_applied: number;
-    discount_type: "percent" | "fixed";
-    discount_value: number;
-  } | null;
+  /** Cupom aplicado, lido do snapshot da reserva (ver `resolveBookingCoupon`). */
+  coupon: CheckoutCoupon | null;
 };
 
 const checkoutKey = (code: string) => ["checkout-booking", code] as const;
@@ -109,9 +109,7 @@ export function useCheckoutBooking(code: string | undefined) {
              parking_type:parking_type(code, name),
              add_on_service:add_on_service(name)
            ),
-           coupons:booking_coupon(discount_applied,
-             coupon:coupon(code, discount_type, discount_value)
-           ),
+           coupons:booking_coupon(discount_applied),
            payments:payment(id, status, provider, paid_at, created_at)`,
         )
         .eq("code", code)
@@ -180,14 +178,7 @@ export function useCheckoutBooking(code: string | undefined) {
               paid_at: lastPayment.paid_at,
             }
           : null,
-        coupon: bc?.coupon
-          ? {
-              code: bc.coupon.code,
-              discount_applied: Number(bc.discount_applied),
-              discount_type: bc.coupon.discount_type,
-              discount_value: Number(bc.coupon.discount_value),
-            }
-          : null,
+        coupon: resolveBookingCoupon(row.price_breakdown?.coupon, bc),
       };
     },
     enabled: !!code,

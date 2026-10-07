@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isCheckoutBlocked,
   nextStepOnConfirm,
+  resolveBookingCoupon,
   resolveCheckoutGate,
   resolveInitialStep,
   shouldPollCheckout,
@@ -228,5 +229,33 @@ describe("sequência de passos (adicionais só quando a unidade tem)", () => {
   it("passo fora da sequência não trava a navegação", () => {
     expect(stepAfter(3, false)).toBe(4);
     expect(stepBefore(3, false)).toBe(2);
+  });
+});
+
+/**
+ * Regressão: o cliente não lê a tabela `coupon` (RLS), então o embed `booking_coupon → coupon`
+ * voltava nulo e o resumo cobrava o desconto sem mostrar a linha do cupom.
+ */
+describe("resolveBookingCoupon", () => {
+  it("lê o código do snapshot da reserva e o valor do booking_coupon", () => {
+    expect(
+      resolveBookingCoupon({ code: "AZULTOPAZIO15", discount: 60 }, { discount_applied: "60.00" }),
+    ).toEqual({ code: "AZULTOPAZIO15", discount_applied: 60 });
+  });
+
+  it("sem linha de booking_coupon, usa o desconto do snapshot", () => {
+    expect(resolveBookingCoupon({ code: "azulbasico10", discount: 40 }, null)).toEqual({
+      code: "AZULBASICO10",
+      discount_applied: 40,
+    });
+  });
+
+  it("cupom removido (snapshot nulo) não mostra linha", () => {
+    expect(resolveBookingCoupon(null, null)).toBeNull();
+    expect(resolveBookingCoupon(undefined, { discount_applied: 10 })).toBeNull();
+  });
+
+  it("desconto zero não vira linha de cupom", () => {
+    expect(resolveBookingCoupon({ code: "X", discount: 0 }, null)).toBeNull();
   });
 });
