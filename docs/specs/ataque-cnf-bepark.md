@@ -216,9 +216,11 @@ nas três.
 em 2026" (slug intacto; o título não usa "preço", "perto" nem "como reservar"). Compara os 12 pátios e o
 oficial por preço a partir de, distância do PostGIS, traslado e frequência da van, segurança declarada,
 canal de reserva e nota do Google com contagem e data, e diz qual escolher por perfil. A BePark é a
-indicação nomeada no perfil "sem imprevisto" pelo que só ela tem entre os 12: van acompanhada ao vivo
-(Go2Park), vaga coberta, reserva pela Movepark desde 06/10 e desconto Azul de 10% a 40% por categoria,
-conferido no site dela em 07/10. As tarifas da reserva pela Movepark são citadas com link para a ficha,
+indicação nomeada no perfil "sem imprevisto". O que só ela tem entre os 12 é a van acompanhada ao vivo
+(Go2Park); somam a vaga coberta vendida pela Movepark (o pátio tem mais de 350 vagas, cobertas e
+descobertas), van com saída a cada 20 minutos, reserva pela Movepark desde 06/10 e desconto Azul de 10%
+a 40% por categoria, tudo conferido no site dela em 07/10. Uma primeira versão dizia "só coberta" e "só
+dois pátios publicam frequência"; o site da BePark desmentiu as duas e o post foi corrigido no mesmo dia. As tarifas da reserva pela Movepark são citadas com link para a ficha,
 sem resumir regra (ADR-009). A frase-chave do analisador é "estacionamentos do Aeroporto de Confins",
 porque ela precisa caber no slug; "melhores estacionamentos" entra como sinônimo e no título.
 
@@ -230,6 +232,20 @@ na dona de proximidade, que dizia "sem dado".
 
 Analisador VERDE, com dois avisos aceitos (frases longas de dado com fonte e transições). Imagens no
 Higgsfield (`soul_2`), revisadas uma a uma: placa e letreiro inventados foram cortados ou desfocados.
+
+### 2.3.3 O guia da marca BePark Confins (Conteúdo 47, 07/10/2026)
+
+Post novo `bepark-confins` (categoria guias, destino Confins), dono da busca de marca ("bepark", "be
+park confins", "b park confins"), intenção que nenhum post do acervo cobria. Frase-chave "BePark
+Confins". Responde endereço e rota (MG-010, saída 31; evitar a 27), preço do motor (06/10), van (20 min,
+rastreio Go2Park), vagas, sala de espera, desconto Azul por categoria, avaliações do Google com as
+queixas de setembro sobre a van, B Park como nome antigo e o perfil para quem ela faz sentido. Publica o
+que pesa contra a parceira (diária curta cara, distância maior, espera da van), com fonte e data em
+cada número, e cita as tarifas da reserva só com link para a ficha (ADR-009).
+
+Criado no banco como **rascunho** (`is_published = false`), aguardando o ok de publicação. Analisador
+VERDE, 3.094 palavras. Imagens em `public/images/blog/bepark-confins/` (Higgsfield `soul_2`, revisadas;
+placa da van desfocada).
 
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
