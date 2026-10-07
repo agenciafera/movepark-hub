@@ -210,6 +210,27 @@ redação escolar). A de proximidade tem um `XX` estrutural, a frase-chave fora 
 herdado do WordPress e slug publicado não muda. `bun run lint:bloco-fato` confere o bloco da BePark
 nas três.
 
+### 2.3.2 A dona de "melhor" com a BePark no perfil sem imprevisto (Conteúdo 46, 07/10/2026)
+
+`top-3-estacionamentos-do-aeroporto-de-confins` virou "Melhores estacionamentos do Aeroporto de Confins
+em 2026" (slug intacto; o título não usa "preço", "perto" nem "como reservar"). Compara os 12 pátios e o
+oficial por preço a partir de, distância do PostGIS, traslado e frequência da van, segurança declarada,
+canal de reserva e nota do Google com contagem e data, e diz qual escolher por perfil. A BePark é a
+indicação nomeada no perfil "sem imprevisto" pelo que só ela tem entre os 12: van acompanhada ao vivo
+(Go2Park), vaga coberta, reserva pela Movepark desde 06/10 e desconto Azul de 10% a 40% por categoria,
+conferido no site dela em 07/10. As tarifas da reserva pela Movepark são citadas com link para a ficha,
+sem resumir regra (ADR-009). A frase-chave do analisador é "estacionamentos do Aeroporto de Confins",
+porque ela precisa caber no slug; "melhores estacionamentos" entra como sinônimo e no título.
+
+**A pesquisa da 46 corrigiu a 45:** o Estacionamento Pátio publica tabela na página de reservas
+(descoberta R$ 22,00 e R$ 140,00 a semana; coberta R$ 29,90 e R$ 175,00), e a home mostra outros valores.
+Entrou em `prospect_location` pela migration `20261128200000_confins_patio_preco.sql`, e as três donas e a
+FAQ "quanto custa" foram ajustadas. Também a nota do Google da BePark (4,3 em 774, 27/09) passou a aparecer
+na dona de proximidade, que dizia "sem dado".
+
+Analisador VERDE, com dois avisos aceitos (frases longas de dado com fonte e transições). Imagens no
+Higgsfield (`soul_2`), revisadas uma a uma: placa e letreiro inventados foram cortados ou desfocados.
+
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
 | Critério | BePark | Referência da praça |
