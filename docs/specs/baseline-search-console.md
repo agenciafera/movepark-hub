@@ -166,3 +166,9 @@ lugar.
 Rode o coletor de novo, com a mesma janela relativa, e compare `recorte-clusters.csv` célula a
 célula com a coleta anterior. O que importa na leitura de 90 dias é impressão e posição por
 célula, não o total do site: o total mistura marca, blog antigo e páginas fora do plano.
+
+## Monitoramento de posição
+
+A autenticação saiu deste coletor para [`scripts/gsc-auth.mjs`](../../scripts/gsc-auth.mjs) em
+07/10/2026, para ser dividida com o `bun run seo:posicao`, que mede a posição dos 59 termos do
+plano com a mesma credencial. Ver [monitoramento-posicao.md](./monitoramento-posicao.md).

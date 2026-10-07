@@ -305,6 +305,10 @@ site); o domínio não está na lista tóxica da Conteúdo 63.
 - **[Conteúdo 62](https://app.clickup.com/t/17tn9e9gfgy):** monitoramento de posição com cerca de 60 termos no Brasil: as 12 consultas do
   placar, os clusters de cabeça por aeroporto e as cabeças de CNF do Ataque CNF. Marca de parceiro
   (virapark, ponce park, urbanpark) fica num grupo separado, fora da meta.
+  **Feito em 07/10/2026, no Search Console e não no Semrush:** o Position Tracking gratuito não
+  passa de 10 termos. São 59 termos na meta, medidos por `bun run seo:posicao`; as 10 vagas do
+  Semrush ficam com as consultas que o GSC não enxerga. Ver
+  [monitoramento-posicao.md](./monitoramento-posicao.md).
 - **[Conteúdo 63](https://app.clickup.com/t/17tn9e9gfgz):** origem do pico de agosto e setembro e auditoria de toxicidade. Disavow **só**
   de rede claramente spam (âncora de venda de link, domínio sem conteúdo, sub-rede repetida), nunca
   em massa.
@@ -367,7 +371,7 @@ site); o domínio não está na lista tóxica da Conteúdo 63.
 | Domínios novos com AS ≥ 20 por mês | sem linha de base no plano gratuito (50 domínios com AS > 20 no total em 05/10; seção 2.6) | 10 | 15 |
 | Domínios de ref. do Brasil | 15 | 40 | 70 |
 | Posição média dos termos de cabeça de GRU no GSC | 40 a 55 | até 20 | até 5 |
-| Termos monitorados no top 10 | 5 de 9 | 20 de 60 | 35 de 60 |
+| Termos monitorados no top 10 (GSC, `bun run seo:posicao`) | 9 de 59 em 04/10 (eram 5 de 9 no Semrush, com marca de parceiro) | 20 de 59 | 35 de 59 |
 | Saúde do site no Semrush (auditoria completa) | 76% sobre 100 páginas (82% em 02/10; o plano gratuito não passa de 100) | 85% | 90% |
 
 A meta de posição soma o efeito deste plano com o do plano de conteúdo. As duas specs medem o mesmo
