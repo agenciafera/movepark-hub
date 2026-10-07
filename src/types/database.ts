@@ -2867,8 +2867,6 @@ export type Database = {
           google_place_id: string | null
           google_place_lookup_at: string | null
           has_notice: boolean
-          has_passenger_quantity: boolean
-          has_pcd_config: boolean
           has_shuttle: boolean
           id: string
           is_24h: boolean
@@ -2916,8 +2914,6 @@ export type Database = {
           google_place_id?: string | null
           google_place_lookup_at?: string | null
           has_notice?: boolean
-          has_passenger_quantity?: boolean
-          has_pcd_config?: boolean
           has_shuttle?: boolean
           id?: string
           is_24h?: boolean
@@ -2965,8 +2961,6 @@ export type Database = {
           google_place_id?: string | null
           google_place_lookup_at?: string | null
           has_notice?: boolean
-          has_passenger_quantity?: boolean
-          has_pcd_config?: boolean
           has_shuttle?: boolean
           id?: string
           is_24h?: boolean
