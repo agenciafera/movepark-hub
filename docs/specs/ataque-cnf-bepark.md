@@ -161,6 +161,8 @@ Fonte que se contradiz é fonte que a IA descarta. Em 28 e 29/09:
    Confins fica com 11 lotes mapeados: 8 entre 2,9 km e 3,7 km, a Estapar a 5,0 km, o Multipark a 9,1 km e o Bandeira a 9,8 km. A FAQ "o que está incluso" dizia "entre 2,9 km e 3,1 km", o que já era falso por causa do Multipark, e dizia que nenhum lote tinha vaga coberta. As duas frases foram corrigidas.
 7. **22 FAQs de destino** começam a resposta sobre voo atrasado com "Sua vaga fica garantida pelo período reservado". É promessa sem capacidade declarada (ADR-009). Atividade: Conteúdo 44.
 
+   **Resolvido em 07/10/2026 (Conteúdo 44):** as 22 respostas passaram a dizer só fato ("O carro segue guardado e não é removido por causa do atraso. O que muda é a cobrança..."), em pt, en e es, e a promessa da Tarifa Superflex saiu junto. A BePark passou a vender pelo Hub em 06/10/2026, e isso não muda a regra: a FAQ de destino aparece também nas 21 praças sem parceiro e, em Confins, ao lado de 11 pátios sem reserva online. A promessa da BePark mora na ficha e nas FAQs da unidade. Detalhe em [`capacidades-unidade.md`](capacidades-unidade.md).
+
 Achados menores da checagem de 28/09, sem atividade própria. Entram quando alguém mexer na área:
 
 - a página em inglês ranqueia em busca em português;

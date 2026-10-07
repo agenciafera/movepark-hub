@@ -195,6 +195,20 @@ mentir para o cliente das 9 unidades que ainda reservam no Hub. `JOURNEY_COMPARI
 `JOURNEY_STATS` (`src/features/how-it-works/journey.ts`) entraram no primeiro grupo, por serem
 selo/linha de tabela, não prosa.
 
+**FAQ de destino não promete vaga (Conteúdo 44, 07/10/2026).** A resposta de "E se meu voo
+atrasar ou eu voltar antes do previsto?" das 22 FAQs de destino começava com "Sua vaga fica
+garantida pelo período reservado" e prometia a Tarifa Superflex, em pt, en e es. A FAQ de destino
+renderiza na página do aeroporto inteira (inclusive nas praças sem parceiro e ao lado de lote sem
+reserva online), então não tem uma unidade para consultar. A resposta virou fato verificável (o
+carro segue guardado, a diária a mais é paga na saída, quem volta antes não costuma receber de
+volta), igual ao primeiro parágrafo do `body_md`. Na mesma migration
+(`20261128170000_faq_sem_vaga_garantida.sql`) saíram a promessa das duas FAQs de vaga avulsa da
+Garageinn em Viracopos (unidade `external`) e "a vaga é garantida" da FAQ global de pagamento. A
+origem do texto (`supabase/seed.sql` e `gestao/faq-destination-airports.sql`) foi corrigida, e dois
+guardas reprovam a volta: o pgTAP `faq_sem_promessa.test.sql`, no banco montado, e o
+`src/faq-sem-promessa.contract.test.ts`, nos arquivos de origem. Promessa de unidade que vende pelo
+Hub (como a BePark, desde 06/10/2026) continua na ficha e nas FAQs `location`.
+
 **A mesma revisão alcançou a central de ajuda (ClickUp 86ak0e7bd), fonte que o código-fonte
 sozinho não mostra.** O `ContentPageView` publica FAQ direto do banco (`faq`, escopo `global`),
 sem consultar `getLocationCapabilities` nenhuma, porque `/faq`, `/faq/<slug>` e o merge em
