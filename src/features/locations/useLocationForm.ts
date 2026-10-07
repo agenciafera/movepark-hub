@@ -146,10 +146,6 @@ type Snapshot = {
   longitude: number | null;
   photos: string[];
   externalRef: string;
-  /** Pergunta passageiros no card de reserva (só o Manager edita). */
-  hasPassengerQuantity: boolean;
-  /** Oferece vaga acessível PCD no card de reserva (só o Manager edita). */
-  hasPcdConfig: boolean;
   amenities: string[];
 };
 
@@ -196,8 +192,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [longitude, setLongitude] = React.useState<number | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
   const [externalRef, setExternalRef] = React.useState("");
-  const [hasPassengerQuantity, setHasPassengerQuantity] = React.useState(false);
-  const [hasPcdConfig, setHasPcdConfig] = React.useState(false);
   const [amenities, setAmenities_] = React.useState<string[]>([]);
   const [errors, setErrors] = React.useState<Partial<Record<LocationFieldError, string>>>({});
 
@@ -249,8 +243,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       longitude: location?.longitude ?? null,
       photos: Array.isArray(location?.photos) ? (location.photos as string[]) : [],
       externalRef: location?.external_ref ?? "",
-      hasPassengerQuantity: location?.has_passenger_quantity ?? false,
-      hasPcdConfig: location?.has_pcd_config ?? false,
       amenities: amenitiesData ?? [],
     }),
     [location, amenitiesData],
@@ -281,8 +273,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setLongitude(baseline.longitude);
     setPhotos(baseline.photos);
     setExternalRef(baseline.externalRef);
-    setHasPassengerQuantity(baseline.hasPassengerQuantity);
-    setHasPcdConfig(baseline.hasPcdConfig);
     setErrors({});
     // amenidades chegam depois (query própria); o efeito abaixo semeia quando vierem.
   }, [baseline]);
@@ -318,8 +308,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     longitude,
     photos,
     externalRef,
-    hasPassengerQuantity,
-    hasPcdConfig,
     amenities,
   };
 
@@ -393,10 +381,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       destination_id: uuidOuNulo(destinationId),
       company_id: companyId,
       external_ref: externalRef.trim() || null,
-      // Fora do `operatorPatch`: até 07/10/2026 estas duas só mudavam direto no banco, e por isso
-      // ninguém sabia por que só a BePark mostrava os campos. Agora é decisão da equipe, no Manager.
-      has_passenger_quantity: hasPassengerQuantity,
-      has_pcd_config: hasPcdConfig,
       latitude,
       longitude,
       photos,
@@ -526,10 +510,6 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setPhotos,
       externalRef,
       setExternalRef,
-      hasPassengerQuantity,
-      setHasPassengerQuantity,
-      hasPcdConfig,
-      setHasPcdConfig,
       amenities,
       setAmenities: setAmenities_,
     },

@@ -4,9 +4,6 @@ import { toast } from "sonner";
 import { CaretRight, Info, ShieldCheck, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -139,8 +136,6 @@ export function ReservationCard({
   const [openTooltip, setOpenTooltip] = React.useState<FareTier | null>(null);
   const [from, setFrom] = React.useState<Date | null>(initialFrom);
   const [to, setTo] = React.useState<Date | null>(initialTo);
-  const [passengers, setPassengers] = React.useState<number>(1);
-  const [hasPcd, setHasPcd] = React.useState<boolean>(false);
   const [priceTableOpen, setPriceTableOpen] = React.useState<boolean>(false);
   const [fareComparisonOpen, setFareComparisonOpen] = React.useState<boolean>(false);
   const [selectedFare, setSelectedFare] = React.useState<FareTier>("flex");
@@ -257,8 +252,6 @@ export function ReservationCard({
         returnTo: location.pathname,
         from: from.toISOString(),
         to: to.toISOString(),
-        passengers,
-        hasPcd,
         fare: effectiveFare,
         addOnIds: [],
         coupon: applied?.code ?? couponCode ?? null,
@@ -271,8 +264,6 @@ export function ReservationCard({
         location_parking_type_id: listing.id,
         check_in_at: from.toISOString(),
         check_out_at: to.toISOString(),
-        passenger_count: listing.location.has_passenger_quantity ? passengers : null,
-        has_pcd: listing.location.has_pcd_config ? hasPcd : false,
         coupon_code: applied?.code ?? null,
         // Tarifa escolhida (E2.8): o id "basic" da UI mapeia pro enum "basica" do banco.
         fare_tier: effectiveFare === "basic" ? "basica" : effectiveFare,
@@ -359,8 +350,6 @@ export function ReservationCard({
     const t = new Date(intent.to);
     if (!Number.isNaN(f.getTime())) setFrom(f);
     if (!Number.isNaN(t.getTime())) setTo(t);
-    setPassengers(intent.passengers);
-    setHasPcd(intent.hasPcd);
     if (intent.fare === "basic" || intent.fare === "flex" || intent.fare === "superflex") {
       setSelectedFare(intent.fare);
     }
@@ -477,29 +466,9 @@ export function ReservationCard({
           />
         </div>
 
-        {/* Passageiros */}
-        {caps.hubCheckout && listing.location.has_passenger_quantity && (
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <Label htmlFor="pax">Passageiros</Label>
-            <Input
-              id="pax"
-              type="number"
-              min={1}
-              max={9}
-              value={passengers}
-              onChange={(e) => setPassengers(Math.max(1, Number(e.target.value || 1)))}
-              className="h-10 w-20 text-center tabular-nums"
-            />
-          </div>
-        )}
-
-        {/* PCD */}
-        {caps.hubCheckout && listing.location.has_pcd_config && (
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <Label htmlFor="pcd">Vaga acessível PCD</Label>
-            <Switch checked={hasPcd} onCheckedChange={setHasPcd} />
-          </div>
-        )}
+        {/* Passageiros e PCD não ficam aqui: o passo 2 do checkout pergunta os dois para toda
+            unidade (Step2Vehicle). Até 07/10/2026 o card repetia a pergunta quando a unidade tinha
+            `has_passenger_quantity`/`has_pcd_config`, e só a BePark tinha. */}
 
         {/* Seletor de tarifa */}
         {caps.fares && (

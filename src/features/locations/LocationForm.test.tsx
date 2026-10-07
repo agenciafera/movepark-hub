@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/utils";
-import { rpc, tabela } from "@/test/msw/supabase";
 import { LocationForm } from "./LocationForm";
 import type { Location } from "@/types/domain";
 
@@ -139,49 +138,5 @@ describe("LocationForm: aviso de unidade sem e-mail (proteção de voo, 25/09/20
       />,
     );
     expect(screen.queryByTestId("location-email-warning")).not.toBeInTheDocument();
-  });
-});
-
-/**
- * Passageiros e PCD no card de reserva (07/10/2026). Até então as duas flags só mudavam direto no
- * banco, e só a BePark mostrava os campos sem ninguém saber por quê.
- */
-describe("LocationForm: passageiros e PCD no card de reserva", () => {
-  const PAX = /perguntar passageiros na reserva/i;
-  const PCD = /oferecer vaga acessível pcd/i;
-
-  it("o Manager liga e desliga as duas chaves e elas vão no salvamento", async () => {
-    const patch = tabela("location", "patch", { json: [{ id: "loc-1" }] });
-    rpc("operator_set_location_amenities");
-    const onOpenChange = vi.fn();
-    renderWithProviders(
-      <LocationForm
-        open
-        companyId="company-1"
-        location={{ ...location, has_passenger_quantity: false, has_pcd_config: true } as unknown as Location}
-        onOpenChange={onOpenChange}
-        editableScope="full"
-      />,
-    );
-    expect(screen.getByRole("switch", { name: PCD })).toBeChecked();
-    expect(screen.getByRole("switch", { name: PAX })).not.toBeChecked();
-
-    await userEvent.click(screen.getByRole("switch", { name: PAX }));
-    await userEvent.click(screen.getByRole("switch", { name: PCD }));
-    await userEvent.click(screen.getByRole("button", { name: /^salvar$/i }));
-
-    await waitFor(() => expect(patch.chamadas.length).toBe(1));
-    expect(patch.ultimoBody).toMatchObject({
-      has_passenger_quantity: true,
-      has_pcd_config: false,
-    });
-  });
-
-  it("o parceiro não vê as chaves", () => {
-    renderWithProviders(
-      <LocationForm open companyId="company-1" location={location} onOpenChange={() => {}} editableScope="operator" />,
-    );
-    expect(screen.queryByRole("switch", { name: PAX })).not.toBeInTheDocument();
-    expect(screen.queryByRole("switch", { name: PCD })).not.toBeInTheDocument();
   });
 });

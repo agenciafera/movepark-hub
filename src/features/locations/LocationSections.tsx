@@ -6,7 +6,6 @@ import { BusinessHoursField } from "./BusinessHoursField";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -62,31 +61,6 @@ function Section({
       </div>
       <div className="mt-5 grid grid-cols-1 gap-4 tablet:grid-cols-2">{children}</div>
     </section>
-  );
-}
-
-/** Chave liga/desliga com rótulo e dica, no mesmo grid dos outros campos. */
-function SwitchField({
-  id,
-  label,
-  hint,
-  checked,
-  onCheckedChange,
-}: {
-  id: string;
-  label: string;
-  hint: string;
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3 rounded-md border border-hairline p-3">
-      <div className="flex flex-col gap-1">
-        <Label htmlFor={id}>{label}</Label>
-        <p className="text-caption text-muted">{hint}</p>
-      </div>
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
-    </div>
   );
 }
 
@@ -422,22 +396,6 @@ export function LocationSections({
               placeholder="ex: lote-01"
             />
           </Field>
-          {/* Só aparecem no card de reserva de unidade que vende pelo Hub. O passo 2 do checkout
-              pergunta passageiros e assistência para toda unidade, com ou sem estas chaves. */}
-          <SwitchField
-            id="has-passenger-quantity"
-            label="Perguntar passageiros na reserva"
-            hint="Mostra o campo Passageiros no card de reserva da página da unidade."
-            checked={f.hasPassengerQuantity}
-            onCheckedChange={f.setHasPassengerQuantity}
-          />
-          <SwitchField
-            id="has-pcd-config"
-            label="Oferecer vaga acessível PCD"
-            hint="Mostra a opção Vaga acessível PCD no card de reserva da página da unidade."
-            checked={f.hasPcdConfig}
-            onCheckedChange={f.setHasPcdConfig}
-          />
           {/* O botão "Detectar" fica FORA do label: botão dentro de <label> é
               HTML inválido e o clique pode ser reencaminhado ao Select. */}
           <div className="flex flex-col gap-1.5 tablet:col-span-2">

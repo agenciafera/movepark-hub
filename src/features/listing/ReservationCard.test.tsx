@@ -136,3 +136,30 @@ describe("ReservationCard — tarifas lidas do catálogo", () => {
     unitFares.data = [];
   });
 });
+
+/**
+ * Regressão (07/10/2026): o card perguntava passageiros e PCD quando a unidade tinha as flags do
+ * legado ligadas (só a BePark), e o passo 2 do checkout perguntava de novo para toda unidade.
+ */
+describe("ReservationCard: passageiros e PCD ficam só no checkout", () => {
+  it("não mostra os campos nem com as flags da unidade ligadas", () => {
+    const comFlags = {
+      ...(listing as object),
+      location: {
+        id: "loc-1",
+        slug: "unidade-1",
+        name: "Unidade 1",
+        checkout_mode: "hub",
+        has_passenger_quantity: true,
+        has_pcd_config: true,
+      },
+    } as never;
+    renderWithProviders(<ReservationCard listing={comFlags} initialFrom={from} initialTo={to} />, {
+      auth: mockAuth({ session: null }),
+      route: "/p/aeropark/unidade-1/coberto",
+    });
+    expect(screen.getByText(/escolha sua tarifa/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^passageiros$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/vaga acessível pcd/i)).not.toBeInTheDocument();
+  });
+});

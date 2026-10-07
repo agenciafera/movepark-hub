@@ -125,11 +125,13 @@ Se há `pricing_rule` com surcharge por tipo de veículo no futuro, podemos filt
 
 ### Step 2.5 — Detalhes adicionais (condicional)
 
-Se `location.has_passenger_quantity = true`:
-- Input numérico "Quantos passageiros usarão a vaga?" 1–9.
+Para toda unidade, no passo 2 (Step2Vehicle), sem depender de flag da unidade:
+- Input numérico "Passageiros no transfer" (grava `booking.passenger_count`).
+- Checkbox de assistência especial no embarque ou desembarque (grava `booking.has_pcd`).
 
-Se `location.has_pcd_config = true`:
-- Toggle "Vai usar vaga preferencial / acessível?"
+As flags `location.has_passenger_quantity` e `location.has_pcd_config` vieram do legado e não
+são mais lidas: até 07/10/2026 elas faziam o card de reserva da página da unidade repetir as duas
+perguntas (só a BePark tinha as flags ligadas). O card não pergunta mais.
 
 Se `location.has_notice = true`:
 - Banner informativo `bg-mp-pale` com o texto de `location.notice`.

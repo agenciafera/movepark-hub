@@ -16,8 +16,6 @@ export type BookingIntent = {
   from: string;
   /** check-out em ISO. */
   to: string;
-  passengers: number;
-  hasPcd: boolean;
   /** Tarifa da UI: "basic" | "flex" | "superflex". */
   fare: string;
   addOnIds: string[];
@@ -67,8 +65,6 @@ export function getBookingIntent(): BookingIntent | null {
       returnTo: typeof v.returnTo === "string" ? v.returnTo : "",
       from: v.from,
       to: v.to,
-      passengers: typeof v.passengers === "number" ? v.passengers : 1,
-      hasPcd: v.hasPcd === true,
       fare: v.fare,
       addOnIds: Array.isArray(v.addOnIds) ? v.addOnIds.filter((x) => typeof x === "string") : [],
       coupon: typeof v.coupon === "string" ? v.coupon : null,
