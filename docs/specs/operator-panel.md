@@ -617,8 +617,15 @@ O parceiro edita a unidade em **`/operator/locations/:locationId/editar`**. Era 
 campos empilhados num grid de 2 colunas, sem seções: dentro de um modal o parceiro não sabia onde
 estava nem o que faltava. A página divide em blocos nomeados, cada um respondendo a uma pergunta:
 **Identificação**, **Contato**, **Chegada**, **Fotos** e **Política de reserva**. O bloco
-**Catálogo Movepark** (slug, status, fuso, âncora de destino, código WPS) só aparece no escopo
-`full`, ou seja, nunca para o parceiro.
+**Catálogo Movepark** (slug, status, fuso, âncora de destino, código WPS e as chaves "Perguntar
+passageiros na reserva" e "Oferecer vaga acessível PCD") só aparece no escopo `full`, ou seja,
+nunca para o parceiro.
+
+- As duas chaves gravam `location.has_passenger_quantity` e `location.has_pcd_config`, que decidem
+  se o card de reserva da página da unidade mostra os campos Passageiros e Vaga acessível PCD (só
+  em unidade que vende pelo Hub). Até 07/10/2026 elas só mudavam direto no banco, e a BePark era a
+  única com as duas ligadas sem ninguém saber por quê. O passo 2 do checkout pergunta passageiros
+  e assistência para toda unidade, independente das chaves.
 
 - A barra de ações é `sticky` no rodapé: com seis blocos o formulário passa da dobra em qualquer
   tela, e salvar não deve exigir rolar até o fim.

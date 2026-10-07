@@ -146,8 +146,8 @@ Campos que existem na `category` do legado e precisam de destino no Hub:
 
 | Campo legado | Destino sugerido | Descrição |
 |---|---|---|
-| `has_pcd_config` | `location` | habilita opção PCD |
-| `has_passenger_quantity` | `location` | habilita seleção de passageiros |
+| `has_pcd_config` | `location` | habilita opção PCD no card de reserva (chave no Manager desde 07/10/2026) |
+| `has_passenger_quantity` | `location` | habilita seleção de passageiros no card de reserva (chave no Manager desde 07/10/2026) |
 | `reservation_policy` | `location` | texto da política (rich text) |
 | `has_notice` / `notice` | `location` | aviso na página da unidade |
 | `phone` / `email` / `address` | `location` | dados de contato |
