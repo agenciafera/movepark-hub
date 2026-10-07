@@ -78,6 +78,24 @@ Todas `funded_by = 'platform'`, `company_id = null`.
 `BEMVINDO30` e `SEGUNDA15` têm limite 1, o que é redundante com a audiência mas fecha a janela
 entre criar a reserva e pagar, quando a contagem ainda não mudou.
 
+### Cupons de parceiro vindos do whitelabel
+
+A BePark (Confins) tinha no whitelabel legado os cupons da parceria **Azul Fidelidade**, e eles
+foram trazidos para o Hub em `20261128210000_bepark_cupons_azul_fidelidade.sql`:
+
+| Código | Nível | Desconto |
+|---|---|---|
+| `AZULONE40` | One / Unique | 40% |
+| `AZULDIAMANTE30` | Diamante | 30% |
+| `AZULSAFIRA25` | Safira | 25% |
+| `AZULTOPAZIO15` | Topázio | 15% |
+| `AZULBASICO10` | Básico | 10% |
+
+São cupons **da empresa** (`funded_by = 'company'`, sem teto), porque no whitelabel quem banca é o
+parceiro. `audience = 'public'` repete a lista do whitelabel: eles aparecem na carteira do checkout
+só quando a reserva é da BePark, já que cupom de empresa é filtrado pela empresa da unidade. O nível
+Azul não é conferido, igual ao whitelabel.
+
 ## 3. Quem banca, e como isso chega no repasse
 
 **Decisão do negócio: a Movepark banca a campanha dela.** O parceiro recebe o mesmo repasse que
