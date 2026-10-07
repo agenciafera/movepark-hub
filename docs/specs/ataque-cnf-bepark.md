@@ -243,7 +243,7 @@ queixas de setembro sobre a van, B Park como nome antigo e o perfil para quem el
 que pesa contra a parceira (diária curta cara, distância maior, espera da van), com fonte e data em
 cada número, e cita as tarifas da reserva só com link para a ficha (ADR-009).
 
-Criado no banco como **rascunho** (`is_published = false`), aguardando o ok de publicação. Analisador
+Publicado em 07/10/2026, depois do ok do usuário. Analisador
 VERDE, 3.094 palavras. Imagens em `public/images/blog/bepark-confins/` (Higgsfield `soul_2`, revisadas;
 placa da van desfocada).
 
