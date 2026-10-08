@@ -67,13 +67,25 @@ describe("PayoutKycWizard", () => {
   it("tira o erro do complemento assim que o parceiro digita, sem precisar sair do campo", async () => {
     renderWithProviders(<PayoutKycWizard defaultValues={semComplemento()} onSubmit={vi.fn()} />);
     continuar();
-    await screen.findByText("Endereço da empresa");
+    await screen.findByRole("heading", { name: "Endereço da empresa" });
     continuar();
     await screen.findByText("Informe o complemento");
 
     fireEvent.change(screen.getByLabelText("Complemento"), { target: { value: "Galpão" } });
 
     await waitFor(() => expect(screen.queryByText("Informe o complemento")).toBeNull());
+  });
+
+  // Regressão: um duplo clique no Continuar disparava dois avanços a partir da mesma etapa e o
+  // wizard pulava o endereço da empresa sem validá-lo (era também a causa do teste acima instável).
+  it("duplo clique no Continuar avança uma etapa só", async () => {
+    renderWithProviders(<PayoutKycWizard defaultValues={semComplemento()} onSubmit={vi.fn()} />);
+    continuar();
+    continuar();
+    await screen.findByRole("heading", { name: "Endereço da empresa" });
+    await waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Representante legal" })).toBeNull(),
+    );
   });
 
   // Regressão: "Continuar" e "Salvar e continuar" eram o mesmo <button> no DOM. No navegador, o
@@ -85,12 +97,12 @@ describe("PayoutKycWizard", () => {
     d.company.address.complement = "Galpão";
     renderWithProviders(<PayoutKycWizard defaultValues={d} onSubmit={vi.fn()} />);
     continuar();
-    await screen.findByText("Endereço da empresa");
+    await screen.findByRole("heading", { name: "Endereço da empresa" });
     continuar();
-    await screen.findByText("Representante legal");
+    await screen.findByRole("heading", { name: "Representante legal" });
     const botaoContinuar = screen.getByRole("button", { name: /Continuar/i });
     fireEvent.click(botaoContinuar);
-    await screen.findByText("Conta bancária para repasse");
+    await screen.findByRole("heading", { name: "Conta bancária para repasse" });
 
     expect(screen.getByRole("button", { name: /Salvar e continuar/i })).not.toBe(botaoContinuar);
   });

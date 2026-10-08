@@ -90,9 +90,20 @@ export function PayoutKycWizard({ defaultValues, onSubmit, submitting, onSkip }:
   const busy = submitting || isSubmitting;
   const isLast = step === STEPS.length - 1;
 
+  // Um avanço por vez, a partir da etapa em que o clique aconteceu. Sem isso, um duplo clique no
+  // Continuar disparava dois `next()` com a mesma etapa, os dois somavam 1 e o wizard pulava a
+  // etapa seguinte sem validá-la (o endereço da empresa, saindo da primeira).
+  const advancing = React.useRef(false);
   async function next() {
-    const ok = await trigger(STEPS[step].fields);
-    if (ok) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    if (advancing.current) return;
+    advancing.current = true;
+    const from = step;
+    try {
+      const ok = await trigger(STEPS[from].fields);
+      if (ok) setStep(Math.min(from + 1, STEPS.length - 1));
+    } finally {
+      advancing.current = false;
+    }
   }
 
   return (
