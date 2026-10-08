@@ -200,18 +200,48 @@ export function channelMix(rows: { created_via_api_key_id: string | null }[]): {
   return { site, api };
 }
 
-/** Soma capacidade e ocupação (booked) das linhas de ocupação, ignorando datas bloqueadas. */
+/**
+ * Soma capacidade e ocupação das linhas de ocupação (tipo de vaga × data), ignorando datas
+ * bloqueadas. A ocupação é o vendido no Hub (`booked_count`) MAIS o vendido no site do
+ * parceiro (`external_booked_count`), a mesma soma do anti-overbooking: sem o WL, a
+ * Abbapark aparecia com 3% numa semana de quase 45%. `days` é o número de datas distintas,
+ * base da média por dia.
+ */
 export function aggregateOccupancy(
-  rows: { capacity: number | null; booked_count: number | null; blocked: boolean | null }[],
-): { capacityDays: number; bookedDays: number } {
+  rows: {
+    date?: string;
+    capacity: number | null;
+    booked_count: number | null;
+    external_booked_count?: number | null;
+    blocked: boolean | null;
+  }[],
+): { capacityDays: number; bookedDays: number; days: number } {
   let capacityDays = 0;
   let bookedDays = 0;
+  const dates = new Set<string>();
   for (const r of rows) {
+    if (r.date) dates.add(r.date);
     if (r.blocked) continue;
     capacityDays += Number(r.capacity ?? 0);
-    bookedDays += Number(r.booked_count ?? 0);
+    bookedDays += Number(r.booked_count ?? 0) + Number(r.external_booked_count ?? 0);
   }
-  return { capacityDays, bookedDays };
+  return { capacityDays, bookedDays, days: dates.size };
+}
+
+/**
+ * Ocupação média por dia. O total do período é vaga-dia (capacidade de cada dia somada),
+ * e "1.720 vaga-dia" lido no card parecia o tamanho do pátio. Por dia o número bate com o
+ * que o parceiro conhece: as vagas que ele tem e quantas estão ocupadas.
+ */
+export function occupancyPerDay(agg: { capacityDays: number; bookedDays: number; days: number }): {
+  capacity: number;
+  occupied: number;
+  free: number;
+} {
+  if (agg.days <= 0) return { capacity: 0, occupied: 0, free: 0 };
+  const capacity = Math.round(agg.capacityDays / agg.days);
+  const occupied = Math.round(agg.bookedDays / agg.days);
+  return { capacity, occupied, free: Math.max(capacity - occupied, 0) };
 }
 
 /** Taxa de ocupação (%) = vagas ocupadas sobre a capacidade disponível no período. */

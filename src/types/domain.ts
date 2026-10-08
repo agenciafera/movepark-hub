@@ -328,6 +328,8 @@ export type LocationOccupancyRow = {
   capacity: number;
   booked_count: number;
   blocked: boolean;
+  /** Vendido no site do parceiro (WL), já somado no anti-overbooking. */
+  external_booked_count: number;
 };
 
 /** Cupom + os tipos de vaga aos quais está restrito (vazio = vale para todos). */

@@ -2,7 +2,7 @@
 -- operator_location_occupancy). Roda em transação com rollback.
 
 begin;
-select plan(10);
+select plan(11);
 
 -- ── fixture: um tipo de vaga ativo do seed, capacidade = 2 ──────────────────
 do $$
@@ -108,6 +108,30 @@ select is(
   0::bigint, 'unidade despublicada: availability_batch não devolve linha');
 
 update public.location set is_listed = true where id = current_setting('t.loc_id')::uuid;
+
+-- ── 7b) ocupação devolve o vendido no WL (external_booked_count) ─────────
+-- (20261129090000) o dashboard somava só booked_count e mostrava a Abbapark com 3% numa
+-- semana em que o WL tinha vendido quase metade do pátio.
+insert into public.location_parking_availability
+  (location_parking_type_id, date, booked_count, external_booked_count)
+values (current_setting('t.lpt')::uuid, '2026-10-11', 1, 5)
+on conflict (location_parking_type_id, date) do update set booked_count = 1, external_booked_count = 5;
+
+do $$
+declare u uuid := gen_random_uuid();
+begin
+  insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+    values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','occ-admin@ex.com',now(),now());
+  insert into public.profiles(id, role) values (u,'hub_admin')
+    on conflict (id) do update set role = 'hub_admin';
+  perform set_config('request.jwt.claims', json_build_object('sub', u::text, 'role','authenticated')::text, true);
+end $$;
+
+select is(
+  (select external_booked_count from public.operator_location_occupancy(
+     current_setting('t.loc_id')::uuid, '2026-10-11'::date, '2026-10-11'::date)
+   where location_parking_type_id = current_setting('t.lpt')::uuid),
+  5, 'operator_location_occupancy devolve external_booked_count');
 
 -- ── 8) guard de ocupação: usuário sem vínculo → 42501 ──────────────────────
 do $$

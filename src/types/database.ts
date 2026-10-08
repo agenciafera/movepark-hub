@@ -8169,6 +8169,7 @@ export type Database = {
           booked_count: number
           capacity: number
           date: string
+          external_booked_count: number
           location_parking_type_id: string
           parking_type_name: string
         }[]

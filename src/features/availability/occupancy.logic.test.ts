@@ -17,10 +17,10 @@ import {
 import type { LocationOccupancyRow } from "@/types/domain";
 
 const rows: LocationOccupancyRow[] = [
-  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-02", capacity: 10, booked_count: 2, blocked: false },
-  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-01", capacity: 4, booked_count: 4, blocked: false },
-  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-02", capacity: 4, booked_count: 1, blocked: true },
-  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-01", capacity: 10, booked_count: 0, blocked: false },
+  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-02", capacity: 10, booked_count: 2, blocked: false, external_booked_count: 0 },
+  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-01", capacity: 4, booked_count: 4, blocked: false, external_booked_count: 0 },
+  { location_parking_type_id: "a", parking_type_name: "Coberta", date: "2026-10-02", capacity: 4, booked_count: 1, blocked: true, external_booked_count: 0 },
+  { location_parking_type_id: "b", parking_type_name: "Valet", date: "2026-10-01", capacity: 10, booked_count: 0, blocked: false, external_booked_count: 0 },
 ];
 
 describe("buildOccupancyMatrix", () => {
@@ -52,7 +52,7 @@ describe("buildOccupancyMatrix", () => {
 
   it("pct = 0 quando capacity = 0 (sem divisão por zero)", () => {
     const m = buildOccupancyMatrix([
-      { location_parking_type_id: "x", parking_type_name: "Z", date: "2026-10-01", capacity: 0, booked_count: 0, blocked: false },
+      { location_parking_type_id: "x", parking_type_name: "Z", date: "2026-10-01", capacity: 0, booked_count: 0, blocked: false, external_booked_count: 0 },
     ]);
     expect(m.rows[0].cells["2026-10-01"].pct).toBe(0);
   });

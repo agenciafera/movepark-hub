@@ -105,7 +105,15 @@ receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera
 |---|---|
 | **Leitura do período** | Uma frase sobre o que os números dizem, em card navy |
 | **Receita do período** | Realizado em card violeta, com a barra de meta |
-| **Ocupação** | Medidor de meia-lua dos próximos 7 dias, com a folga de vaga-dia |
+| **Ocupação** | Medidor de meia-lua dos próximos 7 dias (hoje até hoje + 6), em média por dia: vagas ocupadas de quantas a unidade tem, e a folga diária |
+
+> **A ocupação conta o que o pátio vende, não só o Hub.** O ocupado é `booked_count` (Hub)
+> **mais** `external_booked_count` (site do parceiro), a mesma soma do anti-overbooking, e a
+> RPC `operator_location_occupancy` devolve as duas. O card mostra a **média por dia**, não o
+> total vaga-dia do período: em 08/10/2026 a Abbapark aparecia com "53 de 1.720 vaga-dia"
+> (3%), que eram três tipos de vaga (80 + 120 + 15) somados em 8 dias e só as reservas do
+> Hub. Contando o WL, a semana estava em 45% (97 de 215 vagas por dia). O RevPAR continua
+> dividindo pela capacidade vaga-dia do período, que é a base certa dele.
 
 > **A leitura nunca é escrita à mão.** `periodInsight()` escolhe entre um conjunto fechado
 > de frases, cada uma com a condição que a torna verdadeira: nada pago, receita empilhada

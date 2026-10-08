@@ -13,6 +13,7 @@ import {
   fareRevenueMix,
   channelMix,
   aggregateOccupancy,
+  occupancyPerDay,
   occupancyRate,
   revpar,
   fillStayBuckets,
@@ -221,7 +222,67 @@ describe("ocupação e RevPAR", () => {
       { capacity: 100, booked_count: 30, blocked: false },
       { capacity: 100, booked_count: 0, blocked: true }, // bloqueada: fora da conta
     ];
-    expect(aggregateOccupancy(rows)).toEqual({ capacityDays: 200, bookedDays: 70 });
+    expect(aggregateOccupancy(rows)).toEqual({ capacityDays: 200, bookedDays: 70, days: 0 });
+  });
+
+  // Regressão (Abbapark, 08/10/2026): o card mostrava "53 de 1.720 vaga-dia" (3%). Eram três
+  // tipos de vaga (80 + 120 + 15) somados em 8 dias, e só o vendido no Hub; o WL ficava fora.
+  it("soma o vendido no WL e dá a média por dia", () => {
+    const rows = [
+      {
+        date: "2026-10-08",
+        capacity: 80,
+        booked_count: 1,
+        external_booked_count: 59,
+        blocked: false,
+      },
+      {
+        date: "2026-10-08",
+        capacity: 120,
+        booked_count: 4,
+        external_booked_count: 47,
+        blocked: false,
+      },
+      {
+        date: "2026-10-08",
+        capacity: 15,
+        booked_count: 0,
+        external_booked_count: 6,
+        blocked: false,
+      },
+      {
+        date: "2026-10-09",
+        capacity: 80,
+        booked_count: 1,
+        external_booked_count: 62,
+        blocked: false,
+      },
+      {
+        date: "2026-10-09",
+        capacity: 120,
+        booked_count: 6,
+        external_booked_count: 42,
+        blocked: false,
+      },
+      {
+        date: "2026-10-09",
+        capacity: 15,
+        booked_count: 0,
+        external_booked_count: 5,
+        blocked: false,
+      },
+    ];
+    const agg = aggregateOccupancy(rows);
+    expect(agg).toEqual({ capacityDays: 430, bookedDays: 233, days: 2 });
+    expect(occupancyPerDay(agg)).toEqual({ capacity: 215, occupied: 117, free: 98 });
+  });
+
+  it("média por dia sem datas não divide por zero", () => {
+    expect(occupancyPerDay({ capacityDays: 0, bookedDays: 0, days: 0 })).toEqual({
+      capacity: 0,
+      occupied: 0,
+      free: 0,
+    });
   });
 
   it("taxa de ocupação e guarda de divisão por zero", () => {
