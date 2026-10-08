@@ -18,17 +18,20 @@ import { useAuth } from "@/auth/context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWlBookingsCount } from "@/features/wl-bookings/api";
 import { WlBookingsPanel } from "@/features/wl-bookings/WlBookingsPanel";
+import { partnerSeesBooking } from "@/features/bookings/bookingMoney.logic";
 import type { BookingStatus } from "@/types/domain";
 
+// O estacionamento só vê reserva que virou venda (08/10/2026, `partnerSeesBooking`): pendente e
+// expirada não entram no filtro porque não aparecem para ele.
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
-  { value: "pending", label: "Pendente" },
   { value: "confirmed", label: "Confirmada" },
   { value: "checked_in", label: "Em uso" },
   { value: "completed", label: "Concluída" },
+  { value: "no_show", label: "No-show" },
   { value: "cancelled", label: "Cancelada" },
-  { value: "expired", label: "Expirada" },
 ];
+const PARTNER_STATUSES: BookingStatus[] = ["confirmed", "checked_in", "completed", "no_show", "cancelled"];
 
 export default function OperatorBookings() {
   // A command palette manda o código da reserva em `?q=`. Semear o estado a
@@ -44,7 +47,7 @@ export default function OperatorBookings() {
 
   const filters: BookingFilters = React.useMemo(
     () => ({
-      status: status === "all" ? undefined : [status],
+      status: status === "all" ? PARTNER_STATUSES : [status],
       search: search || undefined,
       locationIds: scopedLocationIds,
       // filtra por data de check-in (inclui o dia inteiro do "até")
@@ -54,7 +57,8 @@ export default function OperatorBookings() {
     [status, search, scopedLocationIds, from, to],
   );
 
-  const { data, isLoading } = useBookings(filters);
+  const { data: all, isLoading } = useBookings(filters);
+  const data = React.useMemo(() => all?.filter(partnerSeesBooking), [all]);
 
   // Reservas do site white-label (reservas-wl-no-hub.md § 9): a aba só aparece para quem tem o
   // escopo e quando já há reserva importada. Sem site, ou com a importação desligada, a tela fica
@@ -108,6 +112,7 @@ export default function OperatorBookings() {
         bookings={data}
         isLoading={isLoading}
         showCompany={false}
+        valueMode="parking"
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
       />
     </>

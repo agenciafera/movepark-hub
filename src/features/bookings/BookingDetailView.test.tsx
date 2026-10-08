@@ -142,6 +142,17 @@ describe("BookingDetailView", () => {
     state.trail = trailPago;
     abre("operator");
     expect(screen.getByText("Sua parte")).toBeInTheDocument();
+    // 08/10/2026: o destaque é o valor das diárias; a conta fecha diárias - comissão - taxa = recebe,
+    // e o total cobrado com o plano vira nota de "taxas e custos da plataforma".
+    const norm = (t: string | null) => (t ?? "").replace(/\u00a0/g, " ");
+    expect(norm(screen.getByTestId("valores-diarias").textContent)).toBe("R$ 18,00");
+    expect(norm(screen.getByTestId("valores-comissao").textContent)).toBe("−R$ 3,60");
+    expect(norm(screen.getByTestId("valores-parceiro").textContent)).toBe("R$ 13,23");
+    expect(norm(screen.getByTestId("valores-cliente").textContent)).toBe("O cliente pagou R$ 30,90 (cartão), já com R$ 12,90 de taxas e custos da plataforma.");
+    expect(screen.queryByTestId("valores-total")).not.toBeInTheDocument();
+    expect(screen.queryByText("Plano Flex")).not.toBeInTheDocument();
+    expect(screen.queryByText("Valor total")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Valor das diárias").length).toBe(2);
     expect(screen.queryByText("Movepark")).not.toBeInTheDocument();
     expect(screen.queryByTestId("valores-movepark")).not.toBeInTheDocument();
     expect(screen.queryByText("Gateway (Pagar.me)")).not.toBeInTheDocument();

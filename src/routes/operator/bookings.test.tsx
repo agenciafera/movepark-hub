@@ -89,3 +89,38 @@ describe("OperatorBookings · reservas do site do parceiro", () => {
     expect(screen.queryByRole("button", { name: /cancelar|check-in/i })).not.toBeInTheDocument();
   });
 });
+
+describe("OperatorBookings · só o que virou venda, com o valor das diárias (08/10/2026)", () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  const reserva = (code: string, status: string, payments: { status: string }[]) => ({
+    id: code, code, status, origin: null, created_at: "2026-10-08T13:07:00Z",
+    check_in_at: "2026-10-10T08:30:00Z", check_out_at: "2026-10-14T01:00:00Z", total_amount: 136.5,
+    price_breakdown: { days: 4, line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", tier: "superflex", subtotal: 24.9 }] },
+    customer_name: "Cliente " + code, location: { name: "Abbapark" }, payments: payments.map((p) => ({ ...p, method: "pix", created_at: "2026-10-08T13:10:00Z" })),
+    fare_extensions: [],
+  });
+
+  it("esconde expirada, recusada e cancelada sem pagamento; a coluna mostra as diárias", () => {
+    vi.mocked(useBookings).mockReturnValue({
+      data: [
+        reserva("MP-PAGA", "confirmed", [{ status: "paid" }]),
+        reserva("MP-EXPIRADA", "expired", []),
+        reserva("MP-RECUSADA", "cancelled", [{ status: "failed" }]),
+      ],
+      isLoading: false,
+    } as never);
+    vi.mocked(useWlBookingsCount).mockReturnValue({ data: 0 } as never);
+    vi.mocked(useWlBookings).mockReturnValue({ data: [], isLoading: false, error: null } as never);
+    renderWithProviders(<OperatorBookings />, { auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: () => true }), route: "/operator/bookings" });
+
+    expect(screen.getByText("MP-PAGA")).toBeInTheDocument();
+    expect(screen.queryByText("MP-EXPIRADA")).not.toBeInTheDocument();
+    expect(screen.queryByText("MP-RECUSADA")).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
+    expect(screen.getByText(/111,60/)).toBeInTheDocument();
+    expect(screen.queryByText(/136,50/)).not.toBeInTheDocument();
+    // O filtro pede ao banco só os status que o estacionamento vê.
+    expect(vi.mocked(useBookings).mock.calls[0][0].status).toEqual(["confirmed", "checked_in", "completed", "no_show", "cancelled"]);
+  });
+});

@@ -65,12 +65,15 @@ export default function OperatorReports() {
   // Receita é financeiro (ADR-005): a aba Receita e o export de receita exigem finance:read.
   // A aba Reservas (funil) fica para todos (bookings:read). O papel Operação não vê receita aqui.
   const canFinance = hasScope("finance:read", effectiveCompanyIds[0]);
-  const revenue = useRevenueByDay(period, scopedLocationIds);
+  const revenue = useRevenueByDay(period, scopedLocationIds, true);
   const funnel = useStatusFunnel(period, scopedLocationIds);
 
-  const totalRevenue = (revenue.data ?? []).reduce((acc, r) => acc + r.total, 0);
+  // A conta do estacionamento (08/10/2026): diárias e o que ele recebe, a mesma da tela da reserva.
+  // O total cobrado do cliente (com plano) é da Movepark e não entra aqui.
+  const totalParking = (revenue.data ?? []).reduce((acc, r) => acc + r.parking, 0);
+  const totalNet = (revenue.data ?? []).reduce((acc, r) => acc + r.net, 0);
   const totalCount = (revenue.data ?? []).reduce((acc, r) => acc + r.count, 0);
-  const avgDaily = revenue.data?.length ? totalRevenue / revenue.data.length : 0;
+  const revenueCsv = (revenue.data ?? []).map((r) => ({ data: r.date, reservas: r.count, diarias: r.parking.toFixed(2), voce_recebe: r.net.toFixed(2) }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -103,14 +106,14 @@ export default function OperatorReports() {
           <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3">
             <Card>
               <CardContent className="p-6">
-                <div className="text-caption text-muted">Total no período</div>
-                <div className="text-display-md">{formatBRL(totalRevenue)}</div>
+                <div className="text-caption text-muted">Diárias no período</div>
+                <div className="text-display-md" data-testid="relatorio-diarias">{formatBRL(totalParking)}</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
-                <div className="text-caption text-muted">Média diária</div>
-                <div className="text-display-md">{formatBRL(avgDaily)}</div>
+                <div className="text-caption text-muted">Você recebe</div>
+                <div className="text-display-md" data-testid="relatorio-liquido">{formatBRL(totalNet)}</div>
               </CardContent>
             </Card>
             <Card>
@@ -123,7 +126,7 @@ export default function OperatorReports() {
 
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Receita diária</CardTitle>
+              <CardTitle>Diárias por dia</CardTitle>
             </CardHeader>
             <CardContent>
               {revenue.isLoading ? (
@@ -152,7 +155,8 @@ export default function OperatorReports() {
                       <Tooltip formatter={(v: number) => formatBRL(v)} />
                       <Area
                         type="monotone"
-                        dataKey="total"
+                        dataKey="parking"
+                        name="Diárias"
                         stroke="hsl(var(--mp-primary))"
                         strokeWidth={2}
                         fill="url(#rep-fill)"
@@ -203,7 +207,7 @@ export default function OperatorReports() {
                 {canFinance && (
                   <Button
                     variant="secondary"
-                    onClick={() => exportCsv(`receita-${period}d.csv`, revenue.data ?? [])}
+                    onClick={() => exportCsv(`receita-${period}d.csv`, revenueCsv)}
                     disabled={revenue.isLoading}
                   >
                     <Download className="h-4 w-4" /> Receita diária

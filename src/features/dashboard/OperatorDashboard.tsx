@@ -56,6 +56,7 @@ import {
   cancellationBenchmark,
   averageRating,
   pendingReviews,
+  occupancyPerDay,
   occupancyRate,
   revpar,
 } from "./dashboardMetrics.logic";
@@ -245,7 +246,7 @@ export default function OperatorDashboard() {
   const canEditGoal = hasScope("finance:write", companyId);
 
   const summary = useOperatorPeriodSummary(range, compareRange, scopedLocationIds);
-  const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds);
+  const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds, true);
   const funnel = useStatusFunnelRange(rangeFrom, rangeTo, scopedLocationIds);
   const upcoming = useUpcomingBookingsCount(days, scopedLocationIds);
   const highDemand = useHighDemandToday(scopedLocationIds);
@@ -259,7 +260,8 @@ export default function OperatorDashboard() {
   const locations = useOperatorLocations(effectiveCompanyIds);
   const occLocationIds = locations.data?.map((l) => l.id);
   const today = format(new Date(), "yyyy-MM-dd");
-  const in7 = format(addDays(new Date(), 7), "yyyy-MM-dd");
+  // Hoje + 6 = 7 dias. O intervalo da RPC é fechado nas duas pontas; com +7 eram 8 dias.
+  const in7 = format(addDays(new Date(), 6), "yyyy-MM-dd");
   const occ7 = useOccupancyAgg(occLocationIds, today, in7);
   const occPeriod = useOccupancyAgg(
     occLocationIds,
@@ -269,7 +271,8 @@ export default function OperatorDashboard() {
 
   const cur = summary.data?.current;
   const daily = React.useMemo(
-    () => (revenue.data ?? []).map((d) => ({ date: d.date, total: d.total })),
+    // As diárias, não o total cobrado (08/10/2026): o plano é da Movepark.
+    () => (revenue.data ?? []).map((d) => ({ date: d.date, total: d.parking })),
     [revenue.data],
   );
   const conv = conversion(funnel.data ?? []);
@@ -288,6 +291,7 @@ export default function OperatorDashboard() {
   const pending = pendingReviews(reviews.data ?? []);
   const channel = summary.data?.channelMix ?? { site: 0, api: 0 };
   const channelTotal = channel.site + channel.api;
+  const occ7Day = occupancyPerDay(occ7.data ?? { capacityDays: 0, bookedDays: 0, days: 0 });
   const occ7Rate = occupancyRate(occ7.data?.bookedDays ?? 0, occ7.data?.capacityDays ?? 0);
   const revparValue = revpar(cur?.revenue ?? 0, occPeriod.data?.capacityDays ?? 0);
   const label = periodLabel(period, range);
@@ -408,7 +412,7 @@ export default function OperatorDashboard() {
                 rate={occ7Rate}
                 caption={
                   occ7.data?.capacityDays
-                    ? `${int(occ7.data.bookedDays)} de ${int(occ7.data.capacityDays)} vaga-dia`
+                    ? `${int(occ7Day.occupied)} de ${int(occ7Day.capacity)} vagas, média por dia`
                     : "sem capacidade cadastrada"
                 }
               />
@@ -427,7 +431,7 @@ export default function OperatorDashboard() {
           </div>
           <p className="mt-3 text-caption leading-relaxed text-muted">
             {occ7.data?.capacityDays
-              ? `Sobram ${int((occ7.data.capacityDays ?? 0) - (occ7.data.bookedDays ?? 0))} vaga-dia na próxima semana.`
+              ? `Sobram ${int(occ7Day.free)} vagas por dia, em média, na próxima semana.`
               : "Cadastre a capacidade das unidades para acompanhar a ocupação."}
           </p>
         </Panel>

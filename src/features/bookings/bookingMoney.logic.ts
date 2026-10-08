@@ -186,3 +186,70 @@ export function buildMoneyBreakdown(
     refund,
   };
 }
+
+export interface PartnerMoneyView {
+  /** Diárias (e serviços extras) da reserva: o valor que é do estacionamento antes da comissão. */
+  parkingCents: number;
+  /** Cupom que saiu da conta do estacionamento. Zero quando a Movepark absorveu o desconto. */
+  discountCents: number;
+  commissionCents: number;
+  debtRecoveredCents: number;
+  feeCents: number;
+  feePending: boolean;
+  netCents: number | null;
+  custody: boolean;
+  /** O que o cliente pagou além das diárias (plano, juros): "taxas e custos da plataforma". */
+  platformCents: number;
+  chargedCents: number;
+}
+
+/**
+ * A conta que o parceiro faz (08/10/2026): diárias menos comissão dá o que ele recebe. O plano e os
+ * juros não são dele, então não entram na conta; aparecem somados como "taxas e custos da
+ * plataforma", ao lado do que o cliente pagou. A comissão é o que falta para fechar a conta com a
+ * perna dele no split, para a tela sempre bater com o que cai no saldo.
+ */
+export function partnerMoneyView(money: MoneyBreakdown): PartnerMoneyView {
+  const { customer, split } = money;
+  const sum = (kinds: CustomerLineKind[]) =>
+    customer.lines.filter((l) => kinds.includes(l.kind)).reduce((a, l) => a + l.cents, 0);
+  const parkingCents = sum(["parking", "addon"]);
+  const discount = Math.max(0, -sum(["discount"]));
+  const gross = split?.partner.grossCents ?? null;
+  // Se a perna do parceiro passa do que sobra depois do cupom, quem pagou o cupom foi a Movepark.
+  const discountCents = gross != null && gross > parkingCents - discount ? 0 : discount;
+  const base = parkingCents - discountCents;
+  const chargedCents = customer.chargedCents ?? customer.totalCents;
+  return {
+    parkingCents,
+    discountCents,
+    commissionCents: gross != null ? Math.max(0, base - gross) : 0,
+    debtRecoveredCents: split?.partner.debtRecoveredCents ?? 0,
+    feeCents: split?.partner.feeCents ?? 0,
+    feePending: !!split && split.feePending && split.feePayer === "partner" && !split.custody,
+    netCents: split ? split.partner.netCents : null,
+    custody: split?.custody ?? false,
+    platformCents: Math.max(0, chargedCents - (parkingCents - discount)),
+    chargedCents,
+  };
+}
+
+/** Valor das diárias (e serviços extras) de uma reserva, em reais; sem detalhamento, o total. */
+export function bookingParkingAmount(priceBreakdown: PriceBreakdownLike | null | undefined, bookingTotal: number): number {
+  const items = (priceBreakdown?.line_items ?? []).filter((li) => li.kind !== "fare");
+  if (!priceBreakdown?.line_items?.length) return Number(bookingTotal) || 0;
+  return Math.round(items.reduce((a, li) => a + toCents(li.subtotal), 0)) / 100;
+}
+
+const PARTNER_STATUSES = new Set(["confirmed", "checked_in", "completed", "no_show"]);
+
+/**
+ * Reserva que o estacionamento vê na lista (08/10/2026): só a que virou venda. Expirada, recusada,
+ * aguardando pagamento e cancelada sem nunca ter sido paga ficam só para o time Movepark: para o
+ * parceiro é ruído e, em volume, parece venda perdida por ele.
+ */
+export function partnerSeesBooking(b: { status: string; payments?: { status: string }[] | null }): boolean {
+  if (PARTNER_STATUSES.has(b.status)) return true;
+  if (b.status !== "cancelled") return false;
+  return (b.payments ?? []).some((p) => p.status === "paid" || p.status === "refunded");
+}

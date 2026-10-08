@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike } from "./bookingMoney.logic";
+import { bookingParkingAmount, buildMoneyBreakdown, mainPayment, partnerMoneyView, partnerSeesBooking, type MoneyPaymentLike } from "./bookingMoney.logic";
 
 const split = [
   { role: "partner", amount: 1440, liable: false, chargeProcessingFee: true },
@@ -94,5 +94,57 @@ describe("taxa e liberação para saque", () => {
   });
   it("sem o prazo da empresa a data de saque fica vazia em vez de inventada", () => {
     expect(buildMoneyBreakdown(breakdown, 30.9, pay({ paid_at: "2026-09-22T12:22:06Z" })).split?.partner.withdrawAt).toBeNull();
+  });
+});
+
+describe("partnerMoneyView (a conta do parceiro, 08/10/2026)", () => {
+  it("MP-14982A: 4 diárias R$ 111,60 menos 20% dá R$ 89,28; plano Superflex vira taxa da plataforma", () => {
+    const m = buildMoneyBreakdown(
+      { days: 4, total: 136.5, line_items: [{ kind: "parking", quantity: 4, subtotal: 111.6 }, { kind: "fare", tier: "superflex", subtotal: 24.9 }] },
+      136.5,
+      pay({ method: "pix", amount: 136.5, gateway_fee_cents: 0, split: [{ role: "partner", amount: 8928 }, { role: "movepark", amount: 4722 }] }),
+    );
+    const v = partnerMoneyView(m);
+    expect(v).toMatchObject({ parkingCents: 11160, discountCents: 0, commissionCents: 2232, netCents: 8928, platformCents: 2490, chargedCents: 13650 });
+    // A conta fecha: diárias - cupom - comissão - dívida - taxa = recebe.
+    expect(v.parkingCents - v.discountCents - v.commissionCents - v.debtRecoveredCents - v.feeCents).toBe(v.netCents);
+  });
+
+  it("taxa do gateway por conta do parceiro entra na conta e fecha no líquido", () => {
+    const v = partnerMoneyView(buildMoneyBreakdown(breakdown, 30.9, pay()));
+    expect(v).toMatchObject({ parkingCents: 1800, commissionCents: 360, feeCents: 117, netCents: 1323, platformCents: 1290 });
+    expect(v.parkingCents - v.commissionCents - v.feeCents).toBe(v.netCents);
+  });
+
+  it("cupom pago pela Movepark não aparece na conta do parceiro; pago por ele, aparece", () => {
+    const comCupom = { days: 1, total: 25.9, coupon: { code: "AZUL" }, line_items: breakdown.line_items };
+    const movepark = partnerMoneyView(buildMoneyBreakdown(comCupom, 25.9, pay({ amount: 25.9, gateway_fee_cents: 0 })));
+    expect(movepark).toMatchObject({ discountCents: 0, commissionCents: 360, netCents: 1440, platformCents: 1290 });
+    const parceiro = partnerMoneyView(
+      buildMoneyBreakdown(comCupom, 25.9, pay({ amount: 25.9, gateway_fee_cents: 0, split: [{ role: "partner", amount: 1040 }, { role: "movepark", amount: 1550 }] })),
+    );
+    expect(parceiro).toMatchObject({ discountCents: 500, commissionCents: 260, netCents: 1040 });
+  });
+
+  it("sem pagamento: diárias aparecem, líquido ainda não existe", () => {
+    const v = partnerMoneyView(buildMoneyBreakdown(breakdown, 30.9, null));
+    expect(v).toMatchObject({ parkingCents: 1800, commissionCents: 0, netCents: null, platformCents: 1290, chargedCents: 3090 });
+  });
+});
+
+describe("lista e relatório do parceiro (08/10/2026)", () => {
+  it("valor das diárias tira o plano; sem detalhamento usa o total", () => {
+    expect(bookingParkingAmount(breakdown, 30.9)).toBe(18);
+    expect(bookingParkingAmount({ line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "addon", subtotal: 20 }, { kind: "fare", subtotal: 24.9 }] }, 156.5)).toBe(131.6);
+    expect(bookingParkingAmount(null, 42)).toBe(42);
+  });
+
+  it("parceiro vê só o que virou venda", () => {
+    expect(partnerSeesBooking({ status: "confirmed" })).toBe(true);
+    expect(partnerSeesBooking({ status: "no_show" })).toBe(true);
+    expect(partnerSeesBooking({ status: "expired", payments: [] })).toBe(false);
+    expect(partnerSeesBooking({ status: "pending", payments: [{ status: "failed" }] })).toBe(false);
+    expect(partnerSeesBooking({ status: "cancelled", payments: [{ status: "failed" }] })).toBe(false);
+    expect(partnerSeesBooking({ status: "cancelled", payments: [{ status: "refunded" }] })).toBe(true);
   });
 });

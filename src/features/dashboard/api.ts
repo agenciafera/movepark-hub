@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
+import { bookingParkingAmount, type PriceBreakdownLike } from "@/features/bookings/bookingMoney.logic";
 import type {
   BookingWithRelations,
   DailyFlow,
@@ -162,14 +163,19 @@ async function fetchPaidBookings(
 ): Promise<PaidBookingRow[]> {
   let q = supabase
     .from("booking")
-    .select("check_in_at, check_out_at, total_amount, created_at, created_via_api_key_id")
+    .select("check_in_at, check_out_at, total_amount, price_breakdown, created_at, created_via_api_key_id")
     .gte("check_in_at", from)
     .lt("check_in_at", to)
     .in("status", ["confirmed", "checked_in", "completed"]);
   if (locationIds?.length) q = q.in("location_id", locationIds);
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as PaidBookingRow[];
+  // A receita do estacionamento é a das diárias (08/10/2026): o plano que o cliente paga é da
+  // Movepark e inflava o faturamento dele aqui, sem bater com o repasse.
+  return (data ?? []).map((r) => ({
+    ...r,
+    total_amount: bookingParkingAmount(r.price_breakdown as PriceBreakdownLike | null, Number(r.total_amount ?? 0)),
+  })) as PaidBookingRow[];
 }
 
 /**
@@ -250,7 +256,7 @@ export function useOccupancyAgg(locationIds: string[] | undefined, from: string,
     queryKey: ["dashboard", "occupancy-agg", locationIds, from, to],
     enabled: !!locationIds?.length,
     staleTime: 30_000,
-    queryFn: async (): Promise<{ capacityDays: number; bookedDays: number }> => {
+    queryFn: async (): Promise<{ capacityDays: number; bookedDays: number; days: number }> => {
       const results = await Promise.all(
         (locationIds ?? []).map((id) =>
           supabase.rpc("operator_location_occupancy", {

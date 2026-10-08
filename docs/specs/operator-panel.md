@@ -151,9 +151,20 @@ R$ 0,00. Migration `20260918000000_company_revenue_goal.sql`, pgTAP `revenue_goa
 **Tela da reserva (18/09/2026): `/operator/bookings/:code`.** Clicar numa linha abre a mesma
 tela do Manager (`BookingDetailView`), no lugar da ficha lateral: os dois status (o da reserva e o
 do dinheiro), Reserva, Linha do tempo, **Valores** e as ações. O que muda para o estacionamento:
-em Valores ele vê "O cliente pagou" e "Sua parte" (parte dele, abatimento de dívida, quanto
-recebe e quando entra no saldo); a coluna da Movepark, a taxa do gateway e o rastro da Pagar.me
-não aparecem. O bloco **Operação** traz confirmar, check-in, check-out, não compareceu e trocar
+em Valores o número grande é o **valor das diárias**, e "Sua parte" fecha a conta diárias menos
+comissão (e cupom, abatimento de dívida e taxa do gateway quando forem dele) no que ele recebe e
+quando entra no saldo. O total cobrado do cliente sai do destaque e vira uma nota pequena, com plano
+e juros somados como "taxas e custos da plataforma"; a coluna da Movepark e o rastro da Pagar.me
+não aparecem. Na ficha, "Valor total" vira "Valor das diárias".
+
+**Visão de parceiro (08/10/2026).** Na reunião de 08/10 apareceu o risco de o parceiro questionar
+a comissão ao ver R$ 136,50 (total com plano) no lugar de R$ 111,60 (diárias). Regra: toda tela do
+operador fala em **diárias e líquido**, nunca no total cobrado. Valem a tela da reserva
+(`partnerMoneyView`), a coluna "Diárias" da lista, o relatório (Diárias no período, Você recebe,
+CSV com `diarias` e `voce_recebe`) e a receita do dashboard (`bookingParkingAmount`). A lista
+mostra só reserva que virou venda (`partnerSeesBooking`): expirada, aguardando pagamento, recusada
+e cancelada sem pagamento ficam só para o time Movepark. O funil de status agregado do dashboard e
+do relatório segue contando todos os status (é a base da taxa de conversão). O bloco **Operação** traz confirmar, check-in, check-out, não compareceu e trocar
 placa; **Cancelar** pede confirmação e o servidor decide a elegibilidade. Devolução pendente
 avisa que é com a equipe da Movepark, sem ação para ele.
 

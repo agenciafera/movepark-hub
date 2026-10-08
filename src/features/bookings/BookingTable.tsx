@@ -13,6 +13,7 @@ import { formatBRL, formatDateTime, daysBetween } from "@/lib/format";
 import { bookingCustomerName } from "./bookings.logic";
 import { paymentBadge } from "./payment.logic";
 import { channelShortLabel, paymentMethodLabel } from "./bookingList.logic";
+import { bookingParkingAmount, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { Badge } from "@/components/ui/badge";
 import type { BookingWithRelations } from "@/types/domain";
 
@@ -23,6 +24,8 @@ type Props = {
   showCompany?: boolean;
   /** Texto do estado vazio quando há filtro ligado (a tela sabe; a tabela não). */
   emptyDescription?: string;
+  /** "parking": a coluna Valor mostra as diárias (visão do estacionamento, 08/10/2026). */
+  valueMode?: "total" | "parking";
 };
 
 /**
@@ -30,7 +33,7 @@ type Props = {
  * nove: empresa e unidade viram "Estacionamento", check-in, check-out e dias viram "Estadia", e
  * entram "Criada em" (com o canal da venda) e "Pagamento" (a forma e o estado do dinheiro).
  */
-export function BookingTable({ bookings, isLoading, onRowClick, showCompany = true, emptyDescription }: Props) {
+export function BookingTable({ bookings, isLoading, onRowClick, showCompany = true, emptyDescription, valueMode = "total" }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-2 rounded-md border border-hairline bg-canvas p-4">
@@ -63,7 +66,7 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
             <TableHead>{showCompany ? "Estacionamento" : "Unidade"}</TableHead>
             <TableHead>Estadia</TableHead>
             <TableHead>Pagamento</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
+            <TableHead className="text-right">{valueMode === "parking" ? "Diárias" : "Valor"}</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -105,7 +108,9 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-right tabular-nums text-ink">{formatBRL(b.total_amount)}</TableCell>
+                <TableCell className="whitespace-nowrap text-right tabular-nums text-ink">
+                  {formatBRL(valueMode === "parking" ? bookingParkingAmount(b.price_breakdown as PriceBreakdownLike | null, Number(b.total_amount)) : b.total_amount)}
+                </TableCell>
                 <TableCell>
                   <div className="flex flex-col items-start gap-1">
                     <StatusBadge status={b.status} />

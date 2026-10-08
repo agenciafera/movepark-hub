@@ -24,7 +24,7 @@ import { BookingCommissionCard } from "@/features/commission/BookingCommissionCa
 import { SupportTicketsCard } from "@/features/support/SupportTicketsCard";
 import { FlightProtectionDialog } from "./FlightProtectionDialog";
 import { bookingCustomerName } from "./bookings.logic";
-import { buildMoneyBreakdown, mainPayment, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
+import { buildMoneyBreakdown, mainPayment, partnerMoneyView, type MoneyPaymentLike, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { lastPayment, paymentBadge, paymentState, refundWindow } from "./payment.logic";
 import { paymentMethodLabel } from "./bookingList.logic";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
@@ -233,7 +233,12 @@ export function BookingDetailView({ code, audience }: { code: string | undefined
             <Campo label="Plano" value={fareTier ? `${PLANO[fareTier] ?? fareTier}${fareCancelUntil ? ` · cancela grátis até ${formatDateTime(fareCancelUntil)}` : ""}` : "-"} />
             <Campo label="Check-in" value={formatDateTime(booking.check_in_at)} />
             <Campo label="Check-out" value={formatDateTime(booking.check_out_at)} />
-            <Campo label="Valor total" value={formatBRL(booking.total_amount)} />
+            {/* O estacionamento vê o valor das diárias (08/10/2026); o total com plano fica na nota de Valores. */}
+            {audience === "operator" ? (
+              <Campo label="Valor das diárias" value={formatBRL(partnerMoneyView(money).parkingCents / 100)} />
+            ) : (
+              <Campo label="Valor total" value={formatBRL(booking.total_amount)} />
+            )}
             <Campo
               label="Forma de pagamento"
               value={formaPagamento ?? <span className="text-muted">Nenhuma, o cliente não chegou a pagar</span>}
