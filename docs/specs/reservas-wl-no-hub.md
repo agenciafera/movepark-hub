@@ -1,9 +1,11 @@
 # Reservas do white-label no Hub
 
-> **Status:** fases 0 e 4 (legado) em revisão nos PRs #614 e #615; fases 1, 2 e 4 (Hub) no ar,
-> **desligadas** até a importação e as ações ligarem, em 08/10/2026 (ver § 8, § 9 e § 10). Decididos em
-> 08/10/2026: Q1 (painel único), Q2 (rota nova no legado) e Q5 (as 8 empresas com WL no Hub).
-> Q3 e Q4 foram adotadas como recomendado (§ 7).
+> **Status:** **ligado em produção em 08/10/2026.** Legado: PRs #614 e #615 em produção (releases
+> #616 e #617). Hub: importação e ações ligadas (`wl_booking_import.enabled` e `actions_enabled`).
+> Primeira hora: 40 mil reservas importadas das 8 empresas; ação testada ponta a ponta com uma
+> recusa esperada (`before_checkin`), sem alterar reserva. O token de backend do legado **não** foi
+> rotacionado, por decisão do Kallef em 08/10/2026, apesar do vazamento registrado em
+> `agente-whatsapp-wl.md`.
 > **Pergunta:** dá para trazer as reservas feitas nos sites white-label (WL) para o Hub,
 > contabilizadas à parte e sem afetar quem vende só pelo Hub? E dá para dar, a essas unidades,
 > no Hub, as funcionalidades que elas têm no WL?
@@ -303,3 +305,14 @@ Migration `20261128235500_wl_booking_actions.sql`, Edge `wl-booking-action`, pgT
 3. `update app_setting set value = jsonb_set(value::jsonb, '{actions_enabled}', 'true')::text where key = 'wl_booking_import';`
 4. Fazer uma marcação e uma troca de placa de teste numa reserva real e conferir no backoffice do
    site e em `wl_booking_action_log`.
+
+## 11. Ligação em produção (08/10/2026): o que apareceu
+
+- **A view `wl_booking_import_target` não serve para embutir `company`** no PostgREST (view não tem
+  chave estrangeira): a primeira passada falhou com 500. A Edge lê os ids e depois as empresas.
+- **Começar do início do histórico era inviável**: a Aeropark leu 5.379 pedidos para importar 21.
+  Sem cursor salvo, a leitura começa em `lookback_months` + 2 meses (`initialCursor`).
+- **Empresas em sequência davam fome às outras**: a primeira com carga grande tomava o orçamento
+  inteiro. A passada agora é em rodízio, uma página por empresa por volta.
+- **Carga inicial**: o cron foi para cada 2 minutos durante a carga e volta para `7,22,37,52` quando
+  todas as empresas alcançam o presente.
