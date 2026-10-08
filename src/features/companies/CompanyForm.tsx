@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateCompany, useUpdateCompany } from "./api";
+import { useCreateCompany, useUpdateCompany, type ManagedCompany } from "./api";
 import { normalizeWlDomain, wlApiBaseUrl } from "./wl";
 import { cnpjMask } from "@/lib/masks";
 import type { Company, EntityStatus } from "@/types/domain";
@@ -56,7 +56,8 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
   const [wpsSecret, setWpsSecret] = React.useState("");
   const [wpsEnabled, setWpsEnabled] = React.useState(false);
   // Segredo é write-only: não exibimos o valor; só sabemos se já existe um.
-  const hasWpsSecret = !!company?.wps_webhook_secret;
+  // O valor nunca chega ao navegador (manager_company_restricted devolve só se existe).
+  const hasWpsSecret = !!(company as ManagedCompany | null | undefined)?.has_wps_webhook_secret;
 
   React.useEffect(() => {
     if (open) {

@@ -22,7 +22,11 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { wlGetCalculationPrice, type WlConfig } from "../_shared/wl/client.ts";
+import {
+  wlGetCalculationPrice,
+  type WlConfig,
+  hasInternalKey,
+} from "../_shared/wl/client.ts";
 import { sampleWlPriceTable, toHubPricing, type Quote } from "../_shared/wl/price-sampler.ts";
 import {
   buildQuoteAnchor,
@@ -42,7 +46,7 @@ Deno.serve(async (req: Request) => {
 
   // @ts-expect-error - Deno env
   const expected = Deno.env.get("WL_DELIVER_KEY");
-  if (!expected || req.headers.get("x-wl-deliver-key") !== expected) {
+  if (!hasInternalKey(req, expected)) {
     return json({ error: "unauthorized" }, 401);
   }
 

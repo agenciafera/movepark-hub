@@ -14,7 +14,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  normalizeWlDomain,
+  wlAllowedHost,
   wlGetAvailability,
   wlGetCatalog,
   wlReady,
@@ -89,7 +89,7 @@ Deno.serve(async (req: Request) => {
 
   // Catálogo usa a API PÚBLICA (storefront): basta o domínio — não precisa de token nem do toggle.
   if (mode === "catalog") {
-    if (!cfg || !normalizeWlDomain(cfg.wl_domain)) {
+    if (!cfg || !wlAllowedHost(cfg.wl_domain)) {
       return jsonResponse({ ready: false, categories: [], products: [] });
     }
     try {

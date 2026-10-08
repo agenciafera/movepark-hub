@@ -176,6 +176,28 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 > de dados da própria empresa segue a RLS por associação (qualquer membro lê); a UI é que esconde as
 > seções por escopo. Um membro sem o item no menu não tem como agir (a ação é bloqueada no servidor).
 
+## Colunas de `company` (08/10/2026)
+
+A policy `catalog_read_company` libera a linha de toda empresa ativa para anon e authenticated
+(a vitrine precisa do nome e do slug). Até 08/10/2026 isso liberava também **todas as colunas**:
+pela chave pública lia-se o IP de aceite do contrato, a comissão, o tenant do WL e a configuração
+de repasse. RLS escolhe linha, não coluna; por isso o corte é de privilégio
+(`20261129090000_company_colunas_e_wl_seguranca.sql`):
+
+| Papel | Lê | Escreve |
+|---|---|---|
+| `anon` | `id, name, slug, legal_name, tax_id, status, created_at, updated_at, deleted_at, onboarding_status, logo_url` | nada |
+| `authenticated` | tudo menos `wps_webhook_secret`, `contract_accepted_ip`, `wl_tenant_key`, `take_rate_bps` | INSERT/UPDATE (a RLS exige hub_admin) |
+| hub_admin | as quatro restritas pela RPC `manager_company_restricted` (o segredo do WPS só como "existe") | |
+
+Regras para quem mexe:
+- **`select("*")` em `company` falha** para o front. Use `COMPANY_COLUMNS` de
+  `src/features/companies/api.ts`.
+- **Coluna nova não tem leitura para ninguém** até entrar no `grant select (...)` de uma migration e
+  em `COMPANY_COLUMNS`. O pgTAP `company_column_privileges.test.sql` compara as listas exatas e
+  reprova coluna nova esquecida.
+- Função `SECURITY DEFINER` e o service_role não são afetados.
+
 ## Convite de usuário (E1.7)
 
 Quem tem **`team:write`** (Dono) convida por e-mail na tela **Operador → Usuários**. A Edge

@@ -22,6 +22,7 @@ import {
   wlReady,
   type SyncBody,
   type WlConfig,
+  hasInternalKey,
 } from "../_shared/wl/client.ts";
 import { nextBackoff } from "./logic.ts";
 
@@ -35,7 +36,7 @@ Deno.serve(async (req: Request) => {
 
   // @ts-expect-error - Deno env
   const expected = Deno.env.get("WL_DELIVER_KEY");
-  if (!expected || req.headers.get("x-wl-deliver-key") !== expected) {
+  if (!hasInternalKey(req, expected)) {
     return json({ error: "unauthorized" }, 401);
   }
 

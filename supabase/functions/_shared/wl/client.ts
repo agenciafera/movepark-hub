@@ -4,6 +4,8 @@
 // tenant (header X-Tenant). O Bearer é GLOBAL e vem do env WL_BACKEND_TOKEN, e nunca
 // trafega o front. Resolve-se a config por empresa via RPC wl_company_config / service-role.
 
+import { siteUrl } from "../site.ts";
+
 export const WL_API_PATH = "/api/v3/backend";
 
 export interface WlConfig {
@@ -60,9 +62,51 @@ export function normalizeWlDomain(input: string | null | undefined): string | nu
   return host || null;
 }
 
-/** A empresa está pronta para sincronizar (toggle ligado + domínio + tenant). */
+/** Hostname puro: rótulos separados por ponto e TLD de letras (sem porta, usuário@, IP nem espaço). */
+const HOSTNAME = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/;
+
+/**
+ * O host do backend do legado, se ele for permitido; senão null.
+ *
+ * O Bearer do legado é UM só para todos os tenants (08/10/2026): um `wl_domain` mal cadastrado
+ * (IP, porta, usuário@host, outro domínio) mandaria o token para outro lugar. Só vale hostname
+ * puro sob o domínio canônico do site, que é onde o legado mora. O domínio não é escrito aqui: vem
+ * de `_shared/site.ts` (regra de host do projeto). O banco confere o formato
+ * (`company_wl_domain_hostname`); o sufixo é conferido aqui, antes de qualquer chamada.
+ */
+export function wlAllowedHost(
+  input: string | null | undefined,
+  base: string = new URL(siteUrl()).hostname,
+): string | null {
+  const host = normalizeWlDomain(input);
+  if (!host || !HOSTNAME.test(host)) return null;
+  return host === base || host.endsWith(`.${base}`) ? host : null;
+}
+
+/** Igual a `wlAllowedHost`, mas falha alto: nenhuma chamada sai para host fora da lista. */
+export function requireWlHost(input: string | null | undefined): string {
+  const host = wlAllowedHost(input);
+  if (!host) throw new Error(`wl_domain fora do permitido: ${String(input ?? "").slice(0, 80)}`);
+  return host;
+}
+
+/** A empresa está pronta para sincronizar (toggle ligado + domínio permitido + tenant). */
 export function wlReady(c: WlConfig | null | undefined): boolean {
-  return !!c && !!c.wl_sync_enabled && !!normalizeWlDomain(c.wl_domain) && !!c.wl_tenant_key;
+  return !!c && !!c.wl_sync_enabled && !!wlAllowedHost(c.wl_domain) && !!c.wl_tenant_key;
+}
+
+/**
+ * Confere a chave interna (`x-wl-deliver-key`) das Edges chamadas pelo pg_cron, em tempo constante.
+ * Antes era `!==`, que responde mais rápido quanto mais cedo o primeiro caractere difere.
+ */
+export function hasInternalKey(req: Request, expected: string | null | undefined): boolean {
+  const got = req.headers.get("x-wl-deliver-key") ?? "";
+  if (!expected) return false;
+  const a = new TextEncoder().encode(got);
+  const b = new TextEncoder().encode(expected);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++) diff |= (a[i] ?? 0) ^ b[i];
+  return diff === 0;
 }
 
 /**
@@ -98,7 +142,7 @@ export function wlFetch(url: string, init: RequestInit = {}): Promise<Response> 
 }
 
 export function buildAvailabilityUrl(domain: string, p: AvailabilityParams): string {
-  const host = normalizeWlDomain(domain);
+  const host = requireWlHost(domain);
   const u = new URL(`https://${host}${WL_API_PATH}/availability`);
   u.searchParams.set("category_slug", p.category_slug);
   if (p.product_slug) u.searchParams.set("product_slug", p.product_slug);
@@ -182,7 +226,7 @@ export async function wlPostSync(
   token: string,
   body: SyncBody,
 ): Promise<{ status?: string }> {
-  const host = normalizeWlDomain(c.wl_domain);
+  const host = requireWlHost(c.wl_domain);
   const res = await wlFetch(`https://${host}${WL_API_PATH}/availability/sync`, {
     method: "POST",
     headers: wlHeaders(c.wl_tenant_key!, token),
@@ -239,7 +283,7 @@ export function parseCategoryProducts(json: unknown, categorySlug: string): WlPr
 }
 
 export async function wlGetCategories(c: WlConfig): Promise<WlCategory[]> {
-  const host = normalizeWlDomain(c.wl_domain);
+  const host = requireWlHost(c.wl_domain);
   const res = await wlFetch(`https://${host}${WL_PUBLIC_PATH}/categories?lang=pt-br`, {
     headers: publicHeaders(),
   });
@@ -248,7 +292,7 @@ export async function wlGetCategories(c: WlConfig): Promise<WlCategory[]> {
 }
 
 export async function wlGetCategoryProducts(c: WlConfig, categorySlug: string): Promise<WlProduct[]> {
-  const host = normalizeWlDomain(c.wl_domain);
+  const host = requireWlHost(c.wl_domain);
   const res = await wlFetch(
     `https://${host}${WL_PUBLIC_PATH}/categories/${encodeURIComponent(categorySlug)}?lang=pt-br&is_spot=1`,
     { headers: publicHeaders() },
@@ -359,7 +403,7 @@ export function buildCalculationPriceUrl(
   domain: string,
   p: { categorySlug: string; productSlug: string; initial: Date; final: Date },
 ): string {
-  const host = normalizeWlDomain(domain);
+  const host = requireWlHost(domain);
   const qs = new URLSearchParams({
     initial_date: formatWlDateTime(p.initial),
     final_date: formatWlDateTime(p.final),
@@ -419,7 +463,7 @@ export interface WlOrdersPage {
 }
 
 export function buildOrdersUrl(domain: string, cursor: WlOrdersCursor, limit: number): string {
-  const host = normalizeWlDomain(domain);
+  const host = requireWlHost(domain);
   const q = new URLSearchParams({
     updated_since: cursor.updated_since,
     after_id: String(cursor.after_id),
@@ -479,7 +523,7 @@ async function wlPostAction(
   path: string,
   body: Record<string, unknown>,
 ): Promise<WlActionResult> {
-  const host = normalizeWlDomain(c.wl_domain);
+  const host = requireWlHost(c.wl_domain);
   const res = await wlFetch(`https://${host}${WL_API_PATH}/${path}`, {
     method: "POST",
     headers: wlHeaders(c.wl_tenant_key!, token),

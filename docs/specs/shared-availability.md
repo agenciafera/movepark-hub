@@ -131,8 +131,28 @@ A integração falhava calada; agora cada peça deixa rastro e há quem reclame.
 - **Retenção:** `cron_prune_integration_logs` passa a apagar `wl_delivery` entregue há mais de
   180 dias. `failed` fica até alguém reenviar.
 
+## Segurança (08/10/2026)
+
+Migration **`20261129090000_company_colunas_e_wl_seguranca.sql`**.
+
+- **Domínio do legado restrito.** O Bearer do legado é um só para os 14 tenants. O banco aceita em
+  `wl_domain` e `wl_public_domain` só hostname puro (sem esquema, porta, usuário@, caminho nem IP),
+  e o cliente das Edges (`wlAllowedHost` / `requireWlHost` em `_shared/wl/client.ts`) só chama host
+  igual ao domínio canônico ou subdomínio dele, derivado de `_shared/site.ts`. Nenhuma chamada sai
+  para host fora disso, e `wlReady` devolve falso para ele.
+- **Chave interna em tempo constante.** `hasInternalKey` substitui o `!==` nas quatro Edges chamadas
+  pelo cron (`wl-deliver`, `wl-reconcile`, `wl-price-mirror`, `wl-bookings-sync`). A chave segue
+  única para as quatro; separar por Edge é melhoria possível, não urgente.
+- **`wl_company_config` com escopo** `occupancy:read` (ADR-005); hub_admin passa sempre.
+- **Colunas de `company`.** Ver `permissions.md` § Colunas de company: o anon lê só a vitrine, e o
+  tenant do WL (com a comissão, o IP do aceite e o segredo do WPS) saiu do alcance de todo usuário
+  logado. O Manager lê pela RPC `manager_company_restricted`.
+- **Ainda aberto, do lado humano:** rotacionar o token de backend do legado, que vazou nos exports
+  do Dify (`agente-whatsapp-wl.md`).
+
 ## Fora de escopo (próximos)
 
-- **Escopo read/write por chave-por-empresa** (hoje token global + `X-Tenant`) — dívida registrada.
+- **Escopo read/write por chave-por-empresa** (hoje token global + `X-Tenant`), dívida registrada.
+  O risco de o token sair para outro host foi fechado em 08/10/2026 (§ Segurança).
 - **Ocupação por coluna:** a Ocupação ainda faz pull ao vivo (`wl-sync`) por render; com
   `external_booked_count` no banco, pode passar a ler a coluna (fonte única, menos chamadas ao WL).

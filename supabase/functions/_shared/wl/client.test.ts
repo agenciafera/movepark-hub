@@ -16,6 +16,8 @@ import {
   parseCategoryProducts,
   parseMinimumStayDays,
   wlReady,
+  wlAllowedHost,
+  hasInternalKey,
 } from "./client.ts";
 
 Deno.test("normalizeWlDomain tira protocolo/path/caixa", () => {
@@ -28,15 +30,54 @@ Deno.test("normalizeWlDomain tira protocolo/path/caixa", () => {
   assertEquals(normalizeWlDomain(null), null);
 });
 
-Deno.test("wlReady exige toggle + domínio + tenant", () => {
-  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: "t", wl_sync_enabled: true }), true);
-  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: "t", wl_sync_enabled: false }), false);
+Deno.test("wlReady exige toggle + domínio permitido + tenant", () => {
+  const d = "parceiro-app.movepark.co";
+  assertEquals(wlReady({ wl_domain: d, wl_tenant_key: "t", wl_sync_enabled: true }), true);
+  assertEquals(wlReady({ wl_domain: d, wl_tenant_key: "t", wl_sync_enabled: false }), false);
   assertEquals(wlReady({ wl_domain: null, wl_tenant_key: "t", wl_sync_enabled: true }), false);
-  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: null, wl_sync_enabled: true }), false);
+  assertEquals(wlReady({ wl_domain: d, wl_tenant_key: null, wl_sync_enabled: true }), false);
+  // Domínio fora do canônico não é pronto: o Bearer global não sai para ele.
+  assertEquals(wlReady({ wl_domain: "x.com", wl_tenant_key: "t", wl_sync_enabled: true }), false);
+});
+
+Deno.test("wlAllowedHost: só hostname puro sob o domínio canônico", () => {
+  const base = "movepark.co";
+  assertEquals(wlAllowedHost("https://Parceiro-App.movepark.co/api", base), "parceiro-app.movepark.co");
+  assertEquals(wlAllowedHost("movepark.co", base), "movepark.co");
+  assertEquals(wlAllowedHost("evil.com", base), null);
+  assertEquals(wlAllowedHost("movepark.co.evil.com", base), null, "sufixo tem que ser o fim do host");
+  assertEquals(wlAllowedHost("evilmovepark.co", base), null, "sem o ponto não é subdomínio");
+  assertEquals(wlAllowedHost("user@parceiro-app.movepark.co", base), null);
+  assertEquals(wlAllowedHost("parceiro-app.movepark.co:8443", base), null);
+  assertEquals(wlAllowedHost("10.0.0.1", base), null);
+  assertEquals(wlAllowedHost(null, base), null);
+});
+
+Deno.test("hasInternalKey compara a chave inteira", () => {
+  const req = (k?: string) => new Request("https://x", { headers: k ? { "x-wl-deliver-key": k } : {} });
+  assertEquals(hasInternalKey(req("segredo"), "segredo"), true);
+  assertEquals(hasInternalKey(req("segredX"), "segredo"), false);
+  assertEquals(hasInternalKey(req("segredo-a-mais"), "segredo"), false);
+  assertEquals(hasInternalKey(req(), "segredo"), false);
+  assertEquals(hasInternalKey(req("qualquer"), undefined), false, "sem chave configurada, recusa tudo");
+});
+
+Deno.test("chamada a host fora da lista não sai", async () => {
+  let called = false;
+  await withFetch(
+    (() => {
+      called = true;
+      return Promise.resolve(new Response("{}", { status: 200 }));
+    }) as typeof fetch,
+    async () => {
+      await assertRejects(() => wlPostSync({ ...cfg, wl_domain: "evil.com" }, "token", body));
+    },
+  );
+  assertEquals(called, false);
 });
 
 Deno.test("buildAvailabilityUrl monta query com path fixo", () => {
-  const url = buildAvailabilityUrl("ferapark.movepark.com.br", {
+  const url = buildAvailabilityUrl("ferapark-app.movepark.co", {
     category_slug: "unidade-aeroporto",
     product_slug: "vaga-coberta",
     start_date: "2026-06-22",
@@ -44,13 +85,13 @@ Deno.test("buildAvailabilityUrl monta query com path fixo", () => {
   });
   assertEquals(
     url,
-    "https://ferapark.movepark.com.br/api/v3/backend/availability?category_slug=unidade-aeroporto&product_slug=vaga-coberta&start_date=2026-06-22&end_date=2026-07-05",
+    "https://ferapark-app.movepark.co/api/v3/backend/availability?category_slug=unidade-aeroporto&product_slug=vaga-coberta&start_date=2026-06-22&end_date=2026-07-05",
   );
 });
 
 Deno.test("buildAvailabilityUrl omite product/end opcionais", () => {
-  const url = buildAvailabilityUrl("x.com", { category_slug: "c", start_date: "2026-06-22" });
-  assertEquals(url, "https://x.com/api/v3/backend/availability?category_slug=c&start_date=2026-06-22");
+  const url = buildAvailabilityUrl("parceiro-app.movepark.co", { category_slug: "c", start_date: "2026-06-22" });
+  assertEquals(url, "https://parceiro-app.movepark.co/api/v3/backend/availability?category_slug=c&start_date=2026-06-22");
 });
 
 Deno.test("parseAvailabilityResponse aceita array, {data} e {days}", () => {

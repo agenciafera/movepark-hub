@@ -16,7 +16,7 @@ vi.mock("sonner", () => ({ toast: { error: (m: string) => toastError(m), success
 
 import { CompanyForm } from "./CompanyForm";
 
-function makeCompany(over: Partial<Company>): Company {
+function makeCompany(over: Partial<Company & { has_wps_webhook_secret: boolean }>): Company {
   return {
     id: "c1",
     name: "Ferapark",
@@ -59,7 +59,7 @@ describe("CompanyForm: integração White-label", () => {
         onOpenChange={() => {}}
         company={makeCompany({
           wps_webhook_url: "https://wps.parceiro.com/hook",
-          wps_webhook_secret: "ja-definido",
+          has_wps_webhook_secret: true,
           wps_webhook_enabled: true,
         })}
       />,

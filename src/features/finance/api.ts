@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { withRestricted } from "@/features/companies/api";
 
 export type CompanyFinance = {
   companyId: string;
@@ -21,7 +22,8 @@ export function useCompanyFinance(fromIso: string, toIso: string, locationIds?: 
     queryFn: async (): Promise<CompanyFinance[]> => {
       let q = supabase
         .from("booking")
-        .select("total_amount, location:location(company:company(id, name, take_rate_bps))")
+        // `take_rate_bps` não é legível pelo PostgREST (migration 20261129090000): vem da RPC de admin.
+        .select("total_amount, location:location(company:company(id, name))")
         .gte("check_in_at", fromIso)
         .lt("check_in_at", toIso)
         .in("status", ["confirmed", "checked_in", "completed"]);
@@ -33,7 +35,7 @@ export function useCompanyFinance(fromIso: string, toIso: string, locationIds?: 
       for (const row of (data ?? []) as unknown as Array<{
         total_amount: number;
         location: {
-          company: { id: string; name: string; take_rate_bps: number } | null;
+          company: { id: string; name: string } | null;
         } | null;
       }>) {
         const company = row.location?.company;
@@ -43,11 +45,16 @@ export function useCompanyFinance(fromIso: string, toIso: string, locationIds?: 
           companyName: company.name,
           reservations: 0,
           grossRevenue: 0,
-          takeRateBps: company.take_rate_bps ?? 0,
+          takeRateBps: 0,
         };
         existing.reservations += 1;
         existing.grossRevenue += Number(row.total_amount ?? 0);
         map.set(company.id, existing);
+      }
+      const rates = await withRestricted(Array.from(map.keys()).map((id) => ({ id })));
+      for (const r of rates) {
+        const row = map.get(r.id);
+        if (row) row.takeRateBps = r.take_rate_bps ?? 0;
       }
       return Array.from(map.values()).sort((a, b) => b.grossRevenue - a.grossRevenue);
     },
