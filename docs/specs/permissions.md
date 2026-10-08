@@ -139,6 +139,7 @@ empresa, então o mesmo escopo esconde o item do menu, tira a rota do alcance e 
 | `*:read` de catálogo/preço/disp./ocupação/faq | ✔ | ✔ | ✔ |
 | `locations:write` · `parking-types:write` · `pricing:write` | ✔ | – | – |
 | `bookings:read` | ✔ | ✔ | ✔ |
+| `wl-bookings:read` (reservas feitas no site white-label, só leitura) | ✔ | ✔ | ✔ |
 | `bookings:write` · `cancel` · `checkin` | ✔ | ✔ | – |
 | `coupons:*` · `discounts:*` · `addons:*` · `reviews:write` · `webhooks:write` | ✔ | – | – |
 | `reviews:read` | ✔ | ✔ | – |
@@ -164,6 +165,12 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 3. **UI** — `useAuth().hasScope(scope)` gateia rota (`<RequireScope>` em `routes.tsx`), itens da
    sidebar (`filterNavByScopes`) e ações na página (botões/seletor de papel). hub_admin → sempre
    `true`. Os escopos vêm no `loadSession` (cruza `company_role_scope` com o papel do usuário).
+
+> **Exceção de leitura com escopo no servidor: `wl-bookings:read` (08/10/2026).** As reservas do
+> site white-label (`wl_booking`) não têm RLS de membro: o único caminho do parceiro é a RPC
+> `operator_wl_bookings`, que exige o escopo. É dado do cliente do parceiro vindo de outro sistema
+> (contrato v2, Anexo A), e o escopo deixa explícito quem o lê. Não é atribuível a chave de API.
+> Ver `reservas-wl-no-hub.md` § 9.
 
 > **Leitura vs. escrita:** o gating de **escrita** é server-authoritative (RPC + RLS). A **leitura**
 > de dados da própria empresa segue a RLS por associação (qualquer membro lê); a UI é que esconde as

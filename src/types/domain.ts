@@ -881,3 +881,45 @@ export type WlHealthReport = {
   import_enabled: boolean;
   imports: WlImportStatus[];
 };
+
+// ── Reservas feitas no site white-label do parceiro (08/10/2026) ────────────
+// Linha de `operator_wl_bookings()` (migration 20261128234500). Só leitura: o dinheiro não passa
+// pelo Hub e a reserva é operada no site do parceiro. Ver docs/specs/reservas-wl-no-hub.md.
+
+export type WlBookingStatus =
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "expired"
+  | "refund_requested"
+  | "refunded"
+  | "unknown";
+
+export type WlBookingRow = {
+  id: string;
+  company_id: string;
+  wl_order_number: string;
+  status: WlBookingStatus;
+  wl_status: string | null;
+  origin: string | null;
+  check_in_at: string | null;
+  check_out_at: string | null;
+  license_plate: string | null;
+  passenger_count: number | null;
+  has_pcd: boolean;
+  total_cents: number | null;
+  paid_total_cents: number | null;
+  attendance_status: string | null;
+  attendance_marked_at: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  wl_created_at: string | null;
+  synced_at: string;
+  location_id: string | null;
+  location_name: string | null;
+  location_parking_type_id: string | null;
+  parking_type_name: string | null;
+  category_slug: string | null;
+  product_slug: string | null;
+};

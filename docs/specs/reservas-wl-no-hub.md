@@ -1,6 +1,7 @@
 # Reservas do white-label no Hub
 
-> **Status:** fase 0 em revisão e fase 1 no ar, **desligada**, em 08/10/2026 (ver § 8). Decididos em
+> **Status:** fase 0 em revisão; fases 1 e 2 no ar, **desligadas** até a importação ligar, em
+> 08/10/2026 (ver § 8 e § 9). Decididos em
 > 08/10/2026: Q1 (painel único), Q2 (rota nova no legado) e Q5 (as 8 empresas com WL no Hub).
 > Q3 e Q4 foram adotadas como recomendado (§ 7).
 > **Pergunta:** dá para trazer as reservas feitas nos sites white-label (WL) para o Hub,
@@ -148,7 +149,7 @@ base dela para um painel que ela não usa não tem destinatário, e é a que mai
 |---|---|---|
 | 0 | Rota `GET backend/orders?updated_since` + índice em `updated_at` | legado. **PR agenciafera/movepark-backoffice#614, em revisão** |
 | 1 | `wl_booking` + Edge de sincronização + saúde | Hub, nada das 68 funções. **Feita em 08/10/2026, desligada** |
-| 2 | Reservas do WL na lista do Operator, só leitura, com selo "do seu site" | uma RPC de leitura (`booking UNION ALL wl_booking`) |
+| 2 | Reservas do WL na tela de Reservas do Operator, só leitura | **Feita em 08/10/2026** como aba própria, e não misturada na lista do Hub (§ 9) |
 | 3 | Bloco "Vendas no site do parceiro" no Manager e no Dashboard do Operator, à parte da receita do Hub | duas RPCs novas |
 | 4 | Ações sobre a reserva do WL a partir do Hub (§ 5.1) | legado + Hub |
 
@@ -237,7 +238,7 @@ Migration `20261128233000_wl_booking_importacao.sql`, Edge `wl-bookings-sync`, p
   Desligada, a Edge responde `{"ok": true, "enabled": false}` e não chama o legado.
 - **Saúde:** motivo `importacao_parada` em `wl_integration_health` (só com a chave ligada), bloco
   "Reservas feitas no site do parceiro" em `/manager/white-label`, explicação no `wl-health.yml`.
-- **Leitura:** só `hub_admin` (RLS). O Operator entra na fase 2.
+- **Leitura:** só `hub_admin` (RLS). O Operator entrou na fase 2 (§ 9).
 
 ### Para ligar
 
@@ -247,3 +248,25 @@ Migration `20261128233000_wl_booking_importacao.sql`, Edge `wl-bookings-sync`, p
 3. `update app_setting set value = jsonb_set(value::jsonb, '{enabled}', 'true')::text where key = 'wl_booking_import';`
 4. Acompanhar a primeira carga em `/manager/white-label`. A Virapark é a maior (centenas de reservas
    por dia): leva algumas passadas de 15 minutos até alcançar o presente.
+
+## 9. Fase 2 implementada (08/10/2026): reservas do site no painel do parceiro
+
+Migration `20261128234500_wl_booking_operator.sql`, pgTAP `wl_booking_operator.test.sql` (13 casos).
+
+- **Escopo `wl-bookings:read`** (decisão Q3): de empresa, não atribuível a chave de API, nos quatro
+  papéis. O Financeiro vê sem operar.
+- **Leitura só por RPC**: `operator_wl_bookings(p_company_id, p_status, p_search, p_from, p_to)` e
+  `operator_wl_bookings_count(p_company_id)`, SECURITY DEFINER, devolvem só reserva de empresa em que
+  quem chama tem o escopo (hub_admin vê todas; impersonando, a tela passa a empresa). A RLS da
+  tabela continua só de hub_admin. O filtro é por **empresa**, e não por unidade, para não esconder
+  reserva que veio sem De/Para.
+- **Tela**: aba "Pelo seu site" em `/operator/bookings`, ao lado de "Pela Movepark", com busca por
+  número do pedido ou placa, período de entrada e status, e o detalhe só leitura num diálogo.
+  **A aba só aparece com o escopo e com pelo menos uma reserva importada**: enquanto a importação
+  estiver desligada, e para parceiro sem site, a tela de Reservas fica exatamente como era.
+- **Por que aba, e não lista única**: a lista do Hub abre a reserva na tela com ações (check-in,
+  cancelar, estorno), filtra por status do Hub e pagina por código. Misturar pediria tratar cada uma
+  dessas exceções, e a reserva do site seria a única linha da lista sem ação. Como aba, nada da
+  lista do Hub muda.
+- **Ainda sem ação** (fase 4): comparecimento, check-in e troca de placa gravando de volta no
+  legado dependem de rotas novas lá.

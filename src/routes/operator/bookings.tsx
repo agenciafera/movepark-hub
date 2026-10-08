@@ -14,6 +14,10 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { useBookings, type BookingFilters } from "@/features/bookings/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
+import { useAuth } from "@/auth/context";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useWlBookingsCount } from "@/features/wl-bookings/api";
+import { WlBookingsPanel } from "@/features/wl-bookings/WlBookingsPanel";
 import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
@@ -52,10 +56,17 @@ export default function OperatorBookings() {
 
   const { data, isLoading } = useBookings(filters);
 
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Reservas" description="Gestão das reservas da sua empresa." />
+  // Reservas do site white-label (reservas-wl-no-hub.md § 9): a aba só aparece para quem tem o
+  // escopo e quando já há reserva importada. Sem site, ou com a importação desligada, a tela fica
+  // exatamente como era. O gate real é do servidor (operator_wl_bookings).
+  const { impersonatedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
+  const scopeCompanyId = impersonatedCompanyId ?? effectiveCompanyIds[0];
+  const canSeeSite = hasScope("wl-bookings:read", scopeCompanyId);
+  const siteCount = useWlBookingsCount(impersonatedCompanyId ?? undefined, canSeeSite);
+  const showSiteTab = canSeeSite && (siteCount.data ?? 0) > 0;
 
+  const hubBookings = (
+    <>
       <Card>
         <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:items-end">
           <div className="flex flex-1 flex-col gap-1.5">
@@ -99,6 +110,29 @@ export default function OperatorBookings() {
         showCompany={false}
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
       />
+    </>
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Reservas" description="Gestão das reservas da sua empresa." />
+
+      {showSiteTab ? (
+        <Tabs defaultValue="hub">
+          <TabsList>
+            <TabsTrigger value="hub">Pela Movepark</TabsTrigger>
+            <TabsTrigger value="site">Pelo seu site</TabsTrigger>
+          </TabsList>
+          <TabsContent value="hub" className="flex flex-col gap-6 pt-4">
+            {hubBookings}
+          </TabsContent>
+          <TabsContent value="site" className="pt-4">
+            <WlBookingsPanel companyId={impersonatedCompanyId ?? undefined} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        hubBookings
+      )}
     </div>
   );
 }
