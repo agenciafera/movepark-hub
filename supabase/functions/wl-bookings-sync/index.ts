@@ -22,7 +22,7 @@ import {
   type WlOrdersCursor,
   hasInternalKey,
 } from "../_shared/wl/client.ts";
-import { cursorStuck, readPolicy, START_BUDGET_MS } from "./logic.ts";
+import { cursorStuck, initialCursor, readPolicy, START_BUDGET_MS } from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -58,12 +58,18 @@ Deno.serve(async (req: Request) => {
   const body = await req.json().catch(() => ({}));
   const onlyCompany = (body as { company_id?: string }).company_id ?? null;
 
-  let q = admin
-    .from("wl_booking_import_target")
-    .select("company_id, company:company!inner(wl_domain, wl_tenant_key, wl_sync_enabled)");
+  // A view não tem chave estrangeira, então o PostgREST não embute `company` a partir dela: lê as
+  // empresas-alvo e depois a configuração delas.
+  let q = admin.from("wl_booking_import_target").select("company_id");
   if (onlyCompany) q = q.eq("company_id", onlyCompany);
-  const { data: targets, error } = await q;
+  const { data: alvo, error } = await q;
   if (error) return json({ error: error.message }, 500);
+  const ids = (alvo ?? []).map((r: { company_id: string }) => r.company_id);
+  const { data: companies, error: cErr } = ids.length
+    ? await admin.from("company").select("id, wl_domain, wl_tenant_key, wl_sync_enabled").in("id", ids)
+    : { data: [], error: null };
+  if (cErr) return json({ error: cErr.message }, 500);
+  const targets = (companies ?? []).map((c: WlConfig & { id: string }) => ({ company_id: c.id, company: c }));
 
   const started = Date.now();
   let pages = 0;
@@ -81,10 +87,11 @@ Deno.serve(async (req: Request) => {
       .select("cursor_updated_since, cursor_after_id")
       .eq("company_id", row.company_id)
       .maybeSingle();
-    let cursor: WlOrdersCursor = {
-      updated_since: state?.cursor_updated_since ?? "1970-01-01 00:00:00",
-      after_id: Number(state?.cursor_after_id ?? 0),
-    };
+    // Sem cursor salvo (ou com o padrão da tabela), começa na janela, não no início do histórico.
+    const saved = state?.cursor_updated_since;
+    let cursor: WlOrdersCursor = !saved || saved === "1970-01-01 00:00:00"
+      ? initialCursor(new Date(), policy.lookbackMonths)
+      : { updated_since: saved, after_id: Number(state?.cursor_after_id ?? 0) };
 
     try {
       // Uma empresa grande (carga inicial) não pode tomar a invocação inteira: o orçamento para
