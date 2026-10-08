@@ -316,3 +316,9 @@ Migration `20261128235500_wl_booking_actions.sql`, Edge `wl-booking-action`, pgT
   inteiro. A passada agora é em rodízio, uma página por empresa por volta.
 - **Carga inicial**: o cron foi para cada 2 minutos durante a carga e volta para `7,22,37,52` quando
   todas as empresas alcançam o presente.
+- **Produto da vaga**: a rota do legado pegava o produto do primeiro item do pedido, e pedido com
+  adicional antes da vaga (seguro de voo, self-park, autostart) vinha sem vaga no Hub (243 de 133
+  mil). Corrigido no legado (PR #618, release #619: pega o item `is_spot`) e relido. Ficaram 32 sem
+  vaga, todos sem nenhum produto no pedido do site.
+- **Estado no fim de 08/10/2026**: 133.299 reservas, as 8 empresas em dia, cron de volta a
+  `7,22,37,52`, saúde da integração sem alerta.
