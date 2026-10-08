@@ -151,7 +151,7 @@ base dela para um painel que ela não usa não tem destinatário, e é a que mai
 | 1 | `wl_booking` + Edge de sincronização + saúde | Hub, nada das 68 funções. **Feita em 08/10/2026, desligada** |
 | 2 | Reservas do WL na tela de Reservas do Operator, só leitura | **Feita em 08/10/2026** como aba própria, e não misturada na lista do Hub (§ 9) |
 | 3 | Bloco "Vendas no site do parceiro" no Manager e no Dashboard do Operator, à parte da receita do Hub | duas RPCs novas |
-| 4 | Ações sobre a reserva do WL a partir do Hub (§ 5.1) | legado + Hub |
+| 4 | Ações sobre a reserva do WL a partir do Hub (§ 5.1) | legado: **PR agenciafera/movepark-backoffice#615** (comparecimento/check-in e troca de placa, empilhado sobre o #614). Hub: botões na aba "Pelo seu site" chamando essas rotas, ainda não feitos |
 
 ## 5. Funcionalidades do WL no Hub
 
@@ -269,4 +269,7 @@ Migration `20261128234500_wl_booking_operator.sql`, pgTAP `wl_booking_operator.t
   dessas exceções, e a reserva do site seria a única linha da lista sem ação. Como aba, nada da
   lista do Hub muda.
 - **Ainda sem ação** (fase 4): comparecimento, check-in e troca de placa gravando de volta no
-  legado dependem de rotas novas lá.
+  legado. As rotas estão no PR agenciafera/movepark-backoffice#615 (`POST backend/order/attendance`
+  e `POST backend/order/license-plate`, mesmas regras do backoffice, 409 com `data.code` quando a
+  regra recusa, reenvio da mesma placa responde `changed: false`). Falta o lado do Hub: os botões
+  na aba e uma Edge que chama o legado com o token, já que o token não pode ir ao navegador.
