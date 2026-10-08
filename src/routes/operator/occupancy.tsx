@@ -135,6 +135,13 @@ export default function OperatorOccupancy() {
         </CardContent>
       </Card>
 
+      {wl && wl.failed > 0 && (
+        <p role="status" className="-mt-2 text-caption text-error">
+          Não conseguimos ler agora as vendas do seu site. Os números abaixo mostram só as reservas
+          feitas pela Movepark.
+        </p>
+      )}
+
       {wl?.ready && (
         <p className="-mt-2 text-caption text-muted">
           Os números somam as reservas do hub e as vagas vendidas no white-label (ao vivo). O número

@@ -1,5 +1,5 @@
 // Edge Function: /wl-price-mirror
-// Espelhamento de preço WL→Hub (E0.13): pra cada unidade EXTERNA mapeada, reconstrói a tabela
+// Espelhamento de preço WL→Hub (E0.13): pra cada unidade mapeada de empresa com site WL, reconstrói a tabela
 // do parceiro amostrando a API de cálculo dele e grava em pricing_rule/pricing_tier via RPC
 // wl_mirror_apply_pricing. Depois compara os dois motores nas mesmas entradas; divergiu, marca
 // a regra como `divergent` e a vitrine cai para "a partir de".
@@ -7,7 +7,9 @@
 // Custo por vaga: ~72 chamadas de amostragem + 6 de verificação, uns 80 segundos. A Edge derruba
 // a invocação em 150s, então o job processa as vagas MAIS VELHAS primeiro e para de pegar vaga
 // nova quando estoura o orçamento (START_BUDGET_MS), devolvendo `skipped`. O que sobra volta no
-// topo da próxima passada. Por isso o cron roda de 3 em 3 horas: a fila inteira gira todo dia.
+// topo da próxima passada. Na prática cabe uma vaga por passada, por isso o cron roda de 20 em
+// 20 minutos (20261128230000): com 18 vagas, cada uma é conferida a cada 6 horas. De 3 em 3
+// horas, como era, a fila levava mais de dois dias para girar.
 //
 // Grava POR EVENTO: passada que acha o mesmo preço não deixa linha de log, só atualiza o
 // carimbo de frescor. Ver a regra e o porquê em supabase/migrations/*_pricing_mirror.sql.
@@ -55,8 +57,9 @@ Deno.serve(async (req: Request) => {
   const body = await req.json().catch(() => ({}));
   const onlyId = (body as { location_parking_type_id?: string }).location_parking_type_id ?? null;
 
-  // Só unidade EXTERNA: para a nativa quem manda é a tabela da Movepark, e sobrescrever com a
-  // do parceiro apagaria o preço que a gente pratica.
+  // Unidade externa e, desde 23/09/2026, também a hub de empresa com site WL: o parceiro segue
+  // vendendo e mudando preço lá, e o Hub precisa cobrar o mesmo. Mesmo recorte da view
+  // `wl_mirror_target`, que a saúde usa para saber quem deveria ter sido conferido.
   let q = admin
     .from("location_parking_type")
     .select(
@@ -74,7 +77,9 @@ Deno.serve(async (req: Request) => {
     .in("location.checkout_mode", ["external", "hub"])
     .not("location.company.wl_domain", "is", null)
     .not("wl_category_slug", "is", null)
-    .not("wl_product_slug", "is", null);
+    .not("wl_product_slug", "is", null)
+    .is("location.deleted_at", null)
+    .is("location.company.deleted_at", null);
   if (onlyId) q = q.eq("id", onlyId);
 
   const { data: lpts, error } = await q;
@@ -162,12 +167,13 @@ Deno.serve(async (req: Request) => {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       errors.push({ id: row.id, message });
-      // Falha de amostragem é evento: entra no log para não sumir. Sem isso a vaga congela
-      // com preço velho e ninguém fica sabendo.
-      await admin.from("pricing_mirror_run").insert({
-        location_parking_type_id: row.id,
-        kind: "error",
-        detail: { message },
+      // Falha de amostragem é ESTADO, não só log (08/10/2026): `mirror_status` vira `error` com
+      // a mensagem, e a verificação é carimbada. Só o log deixava a tela dizendo "ok" (a BePark
+      // errou 140 vezes assim), e sem o carimbo a vaga que falha seguia como a mais velha e
+      // voltava no topo de toda passada, ocupando a vez das outras.
+      await admin.rpc("wl_mirror_flag_error", {
+        p_location_parking_type_id: row.id,
+        p_message: message,
       });
     }
   }

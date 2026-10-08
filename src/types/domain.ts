@@ -801,3 +801,68 @@ export type MarketingRfmContact = {
   m_score: number;
   rfm_segment: MarketingRfmSegment;
 };
+
+// ── Saúde da integração com o white-label (08/10/2026) ──────────────────────
+// Formatos devolvidos por `manager_wl_health()` (migration 20261128230000). Curados à mão porque
+// a RPC não está em `database.ts`: ver o cast em src/features/wl-health/api.ts.
+
+export type WlHealthSummary = {
+  ok: boolean;
+  motivos: string[];
+  entregas_falhas: number;
+  entregas_atrasadas: number;
+  reconciliacao_parada: number;
+  reconciliacao_com_erro: number;
+  espelho_com_erro: number;
+  espelho_divergente: number;
+  espelho_atrasado: number;
+  espelho_mais_antigo: string | null;
+  limites: { entrega_minutos: number; reconciliacao_minutos: number; espelho_horas: number };
+};
+
+/** Entrega da fila Hub→WL que pede atenção: `failed` ou pendente há mais de 10 minutos. */
+export type WlDeliveryIssue = {
+  id: string;
+  event_id: string;
+  operation: "reserve" | "release";
+  status: "pending" | "failed" | "delivered";
+  attempts: number;
+  max_attempts: number;
+  last_status: number | null;
+  last_error: string | null;
+  next_attempt_at: string;
+  created_at: string;
+  start_date: string | null;
+  end_date: string | null;
+  booking_id: string;
+  /** Null quando a reserva foi apagada. */
+  booking_code: string | null;
+  company_name: string;
+};
+
+/** Uma vaga mapeada no WL, com o estado da reconciliação e do espelho de preço. */
+export type WlUnitHealth = {
+  location_parking_type_id: string;
+  company_name: string;
+  location_name: string;
+  parking_type_name: string;
+  checkout_mode: "hub" | "external";
+  wl_sync_enabled: boolean;
+  wl_category_slug: string | null;
+  wl_product_slug: string | null;
+  reconcile_expected: boolean;
+  reconciled_at: string | null;
+  reconcile_error: string | null;
+  reconcile_error_at: string | null;
+  mirror_status: "ok" | "divergent" | "error" | null;
+  mirror_verified_at: string | null;
+  mirror_sampled_at: string | null;
+  mirror_error: string | null;
+};
+
+export type WlHealthReport = {
+  health: WlHealthSummary;
+  deliveries: WlDeliveryIssue[];
+  recent: { delivered_24h: number; pending: number; last_delivered_at: string | null };
+  units: WlUnitHealth[];
+};

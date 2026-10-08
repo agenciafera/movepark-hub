@@ -65,6 +65,38 @@ export function wlReady(c: WlConfig | null | undefined): boolean {
   return !!c && !!c.wl_sync_enabled && !!normalizeWlDomain(c.wl_domain) && !!c.wl_tenant_key;
 }
 
+/**
+ * Teto de cada chamada ao WL. Sem ele, uma resposta que trava segura a Edge até o limite de
+ * 150s e ela morre antes do `catch`: nada é registrado e, no espelho de preço, a mesma vaga
+ * volta no topo da passada seguinte.
+ */
+export const WL_TIMEOUT_MS = 20_000;
+
+/** Erro HTTP do WL com o status separado, para a fila gravar `last_status`. */
+export class WlHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "WlHttpError";
+  }
+}
+
+/** O status HTTP de um erro do WL, ou null quando a falha foi de rede ou de tempo. */
+export function wlErrorStatus(e: unknown): number | null {
+  return e instanceof WlHttpError ? e.status : null;
+}
+
+/**
+ * `fetch` com teto de tempo e sem seguir redirecionamento. O Bearer é o mesmo para todos os
+ * tenants: um domínio mal cadastrado que redirecione para outro host não pode levar o token
+ * junto. Redirecionamento vira resposta não-ok e cai no erro de quem chamou.
+ */
+export function wlFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  return fetch(url, { ...init, redirect: "manual", signal: AbortSignal.timeout(WL_TIMEOUT_MS) });
+}
+
 export function buildAvailabilityUrl(domain: string, p: AvailabilityParams): string {
   const host = normalizeWlDomain(domain);
   const u = new URL(`https://${host}${WL_API_PATH}/availability`);
@@ -138,10 +170,10 @@ export async function wlGetAvailability(
   token: string,
   p: AvailabilityParams,
 ): Promise<WlAvailabilityDay[]> {
-  const res = await fetch(buildAvailabilityUrl(c.wl_domain!, p), {
+  const res = await wlFetch(buildAvailabilityUrl(c.wl_domain!, p), {
     headers: wlHeaders(c.wl_tenant_key!, token),
   });
-  if (!res.ok) throw new Error(`WL availability ${res.status}`);
+  if (!res.ok) throw new WlHttpError(res.status, `WL availability ${res.status}`);
   return parseAvailabilityResponse(await res.json(), p.product_slug);
 }
 
@@ -151,13 +183,13 @@ export async function wlPostSync(
   body: SyncBody,
 ): Promise<{ status?: string }> {
   const host = normalizeWlDomain(c.wl_domain);
-  const res = await fetch(`https://${host}${WL_API_PATH}/availability/sync`, {
+  const res = await wlFetch(`https://${host}${WL_API_PATH}/availability/sync`, {
     method: "POST",
     headers: wlHeaders(c.wl_tenant_key!, token),
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`WL sync ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok) throw new WlHttpError(res.status, `WL sync ${res.status}: ${JSON.stringify(json)}`);
   return json as { status?: string };
 }
 
@@ -208,7 +240,7 @@ export function parseCategoryProducts(json: unknown, categorySlug: string): WlPr
 
 export async function wlGetCategories(c: WlConfig): Promise<WlCategory[]> {
   const host = normalizeWlDomain(c.wl_domain);
-  const res = await fetch(`https://${host}${WL_PUBLIC_PATH}/categories?lang=pt-br`, {
+  const res = await wlFetch(`https://${host}${WL_PUBLIC_PATH}/categories?lang=pt-br`, {
     headers: publicHeaders(),
   });
   if (!res.ok) throw new Error(`WL categories ${res.status}`);
@@ -217,7 +249,7 @@ export async function wlGetCategories(c: WlConfig): Promise<WlCategory[]> {
 
 export async function wlGetCategoryProducts(c: WlConfig, categorySlug: string): Promise<WlProduct[]> {
   const host = normalizeWlDomain(c.wl_domain);
-  const res = await fetch(
+  const res = await wlFetch(
     `https://${host}${WL_PUBLIC_PATH}/categories/${encodeURIComponent(categorySlug)}?lang=pt-br&is_spot=1`,
     { headers: publicHeaders() },
   );
@@ -358,14 +390,14 @@ export async function wlGetCalculationPrice(
   c: WlConfig,
   p: { categorySlug: string; productSlug: string; initial: Date; final: Date },
 ): Promise<WlPriceQuote> {
-  const res = await fetch(buildCalculationPriceUrl(c.wl_domain!, p), {
+  const res = await wlFetch(buildCalculationPriceUrl(c.wl_domain!, p), {
     headers: { Accept: "application/json", "X-Tenant": c.wl_tenant_key! },
   });
   const body = await res.text();
   if (!res.ok) {
     const minimumDays = parseMinimumStayDays(body);
     if (minimumDays != null) throw new WlMinimumStayError(minimumDays, `${p.productSlug} ${res.status}`);
-    throw new Error(`WL calculation-price ${res.status}: ${body.slice(0, 300)}`);
+    throw new WlHttpError(res.status, `WL calculation-price ${res.status}: ${body.slice(0, 300)}`);
   }
   return parseCalculationPrice(JSON.parse(body));
 }

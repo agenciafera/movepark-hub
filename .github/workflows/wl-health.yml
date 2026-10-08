@@ -1,0 +1,135 @@
+name: Saúde do white-label
+
+# Por que este workflow existe. A integração com os sites white-label dos parceiros falhava
+# calada: entrega recusada virava `failed` sem ninguém saber, a reconciliação só escrevia no
+# console da Edge, e o espelho de preço errou 140 vezes na BePark com a tela do Manager dizendo
+# "ok". Em 08/10/2026 o espelho tinha vaga sem conferência havia dois dias, e ninguém sabia.
+#
+# Uma vez por dia a checagem pergunta ao banco se a integração está de pé
+# (`public.wl_integration_health()`) e, quando não está, abre ou atualiza uma issue atribuída e
+# falha o run. Quando volta ao normal, a issue fecha sozinha. É o mesmo desenho do
+# site-rebuild-health.yml, pelos mesmos motivos: log que ninguém lê é silêncio, issue sem dono
+# também, e run verde não notifica ninguém.
+#
+# Quem recebe vem da variável de repositório WL_HEALTH_ASSIGNEES (logins separados por vírgula);
+# sem ela, vale a mesma lista do site-rebuild-health. O detalhe de cada problema está na tela
+# /manager/white-label.
+
+on:
+  schedule:
+    - cron: "15 12 * * *" # 09:15 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_REF: mgaigbezdalbyuqiofcf
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Pergunta ao banco se a integração está de pé
+        id: health
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          resp=$(curl -fsSL -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"select public.wl_integration_health() as h"}' \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query")
+          h=$(echo "$resp" | jq -c '.[0].h')
+          echo "ok=$(echo "$h" | jq -r '.ok')" >> "$GITHUB_OUTPUT"
+          echo "motivos=$(echo "$h" | jq -r '.motivos | join(",")')" >> "$GITHUB_OUTPUT"
+          echo "json=$h" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Integração com o white-label"
+            echo '```json'
+            echo "$h" | jq .
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Abre ou atualiza a issue quando há problema
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        uses: actions/github-script@v7
+        env:
+          HEALTH: ${{ steps.health.outputs.json }}
+          ASSIGNEES: ${{ vars.WL_HEALTH_ASSIGNEES || vars.SITE_REBUILD_ASSIGNEES || 'diegoguedesgomes' }}
+        with:
+          script: |
+            const title = "🚨 A integração com o white-label precisa de atenção";
+            const h = JSON.parse(process.env.HEALTH);
+            const explicacao = {
+              entrega_falhou: `${h.entregas_falhas} envio(s) ao site do parceiro recusado(s) até desistirmos. A vaga pode estar ocupada (ou livre) no site dele sem estar no Hub. Abra /manager/white-label e use "Reenviar" depois de entender o erro.`,
+              entrega_atrasada: `${h.entregas_atrasadas} envio(s) esperando há mais de ${h.limites.entrega_minutos} minutos. O cron wl-deliver pode estar parado; confira net._http_response.`,
+              reconciliacao_parada: `${h.reconciliacao_parada} vaga(s) sem leitura das vendas do parceiro há mais de ${h.limites.reconciliacao_minutos} minutos (${h.reconciliacao_com_erro} com erro). O anti-overbooking está usando número velho.`,
+              espelho_com_erro: `${h.espelho_com_erro} vaga(s) com erro na última conferência de preço. O Hub segue com o preço da última conferência boa.`,
+              espelho_divergente: `${h.espelho_divergente} vaga(s) em que o preço do Hub não bate com o do site do parceiro.`,
+              espelho_atrasado: `${h.espelho_atrasado} vaga(s) sem conferência de preço há mais de ${h.limites.espelho_horas} horas (mais antiga: ${h.espelho_mais_antigo ?? "nunca"}).`,
+            };
+            const body = [
+              `A checagem diária encontrou problema na integração com os sites white-label.`,
+              ``,
+              ...h.motivos.map((m) => `- **\`${m}\`**: ${explicacao[m] ?? "motivo não catalogado"}`),
+              ``,
+              `Detalhe por vaga e por envio: https://movepark.co/manager/white-label`,
+              `Contexto: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/main/docs/specs/shared-availability.md`,
+              `Run desta checagem: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "wl-health",
+            });
+            const assignees = process.env.ASSIGNEES.split(",").map(s => s.trim()).filter(Boolean);
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body,
+              });
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, assignees,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["wl-health"], assignees,
+              });
+            }
+
+      - name: Falha o run enquanto houver problema
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        run: |
+          echo "::error title=White-label com problema::${{ steps.health.outputs.motivos }}"
+          exit 1
+
+      - name: Fecha a issue quando a integração volta
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🚨 A integração com o white-label precisa de atenção";
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "wl-health",
+            });
+            for (const issue of issues.filter(i => i.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "A checagem de hoje voltou saudável. Fechando.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: "closed",
+              });
+            }
+
+      - name: Aviso se o token não está configurado
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          echo "⏭️ SUPABASE_ACCESS_TOKEN não configurado; saúde do white-label não foi checada." >> "$GITHUB_STEP_SUMMARY"

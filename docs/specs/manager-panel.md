@@ -204,7 +204,7 @@ Campos:
 - `slug` — texto (auto-gerado, editável)
 - `logo` — upload de imagem
 - `status` — toggle (active/inactive)
-- `whitelabel_key` — texto (chave única de integração)
+- Integração white-label: `wl_domain` (host do backend), `wl_tenant_key` (header `X-Tenant`), `wl_sync_enabled` e `wl_public_domain` (o campo `whitelabel_key` não existe mais)
 - `contact_email` — e-mail
 - `contact_phone` — telefone
 - `billing_config` — seção colapsável:
@@ -507,6 +507,15 @@ Implementação: `20261031090000_home_featured_offer.sql` (tabela `home_featured
 (gate + grants), `featured.logic.test.ts` (ordenação) e `featuredApi.test.tsx` (contrato de rede).
 
 ---
+
+### 4.14 White-label (08/10/2026)
+
+Rota `/manager/white-label` (`src/routes/manager/white-label.tsx`), item "White-label" na seção
+Operação. Mostra a saúde da integração com os sites dos parceiros: resumo com os motivos de
+`wl_integration_health`, envios ao site do parceiro que falharam ou estão parados (com o HTTP, o
+erro e o botão "Reenviar") e cada vaga mapeada com o estado da leitura de vendas e do espelho de
+preço (com a mensagem do último erro e o botão "Conferir preço agora"). Lê tudo da RPC
+`manager_wl_health` (hub_admin). Spec: `shared-availability.md` § Saúde da integração.
 
 ## 5. Componentes Adaptados do Design System
 

@@ -327,6 +327,8 @@ Baseada em análise dos projetos legados `movepark-backoffice-v4` e `movepark-ne
 | `20261127110000_listar_no_hub_exige_pre_voo.sql` | **Listar no Hub exige o pré-voo:** trigger `location_listing_guard` (before update of `is_listed`, `checkout_mode`) recusa ligar `is_listed` em unidade hub reprovada em `_hub_readiness` quando quem escreve é pessoa (Manager/Operator); `location_hub_readiness` passa a delegar. Achado de 27/09: Nova Iguaçu listada sem contrato, recebedor nem split. pgTAP `location_listing_guard.test.sql` |
 | `20261127120000_listing_guard_privs.sql` | `location_listing_guard()` sem EXECUTE para anon/authenticated (nasceu definer com o grant padrão e reprovou os inventários do CI) |
 | `20261128220000_drop_location_pcd_passenger_flags.sql` | Apaga `location.has_pcd_config` e `location.has_passenger_quantity` (legado). Só faziam o card de reserva repetir passageiros e PCD, que o passo 2 do checkout já pergunta para toda unidade; nenhuma função, view ou policy as usava |
+| `20261128230000_wl_saude_fila_e_fuso.sql` | Integração white-label: data ao WL no fuso de São Paulo (`wl_local_date`), fila com ordem e concessão (`wl_delivery_claim`) e reenvio (`wl_delivery_retry`), erro do espelho vira estado (`mirror_status = 'error'`, `mirror_error`), frescor da reconciliação (`wl_sync_state`), saúde (`wl_integration_health`, `manager_wl_health`), cron do espelho de 20 em 20 min e timeout nos crons, retenção da `wl_delivery`. Ver `shared-availability.md` § Saúde |
+| `20261128230100_wl_saude_codigo_da_reserva.sql` | `manager_wl_health` devolve o código da reserva de cada envio, para a tela abrir a reserva |
 
 ## Pendências
 

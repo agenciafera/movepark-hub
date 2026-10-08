@@ -1,0 +1,75 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-white-label",
+    "start_url": "/manager/white-label",
+    "start_sig": "sig:0220ddecfb1188ce",
+    "scenario_sig": "49b28e744a38169c"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-white-label",
+    "start_url": "http://localhost:5180/manager/white-label",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h1",
+          "description": "Main page heading White-label"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h1",
+            "text": "White-label"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "[aria-label=\"Resumo da saúde\"]",
+          "description": "Health summary region"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "[aria-label=\"Resumo da saúde\"]",
+            "text": "Tudo em dia."
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main h3",
+          "description": "Empty state heading for blocked submissions"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main h3",
+            "text": "Nenhum envio travado"
+          },
+          "selector": "main h3"
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"White-label\", depois o texto \"Tudo em dia.\", depois o texto \"Nenhum envio travado\".",
+    "generated_by": {
+      "model": "claude-code/claude-sonnet-4-6",
+      "at": "2026-10-08T14:01:14.860Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-10-08T14:01:16.430Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

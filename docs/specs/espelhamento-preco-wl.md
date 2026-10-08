@@ -6,7 +6,9 @@
 > gatilho manual (`wl_mirror_trigger`), pra forçar a passada de uma vaga fora do ciclo.
 > Migrations `*_pricing_mirror.sql`, `*_pricing_mirror_cron.sql`, `*_pricing_minimum_stay.sql`,
 > `*_pricing_mirror_cron_reschedule.sql` e `*_wl_mirror_manual_trigger.sql`. Edge `wl-price-mirror`,
-> cron de 3 em 3 horas.
+> cron de 20 em 20 minutos desde 08/10/2026 (`20261128230000_wl_saude_fila_e_fuso.sql`). Desde
+> 23/09/2026 também espelha as unidades `hub` de empresa com site WL (o parceiro segue vendendo e
+> mudando preço lá). Erro de amostragem é estado (`mirror_status = 'error'`), não só log.
 
 Reconstrói no Hub a tabela de preço de uma unidade externa **amostrando** a API de cálculo do
 parceiro. Sem consulta em tempo real.
@@ -102,6 +104,8 @@ preço errado e tem que honrar. Skill serve para construir o job e ler o relató
 4. Gravar em `pricing_rule` + `pricing_tier` **com carimbo da amostragem**.
 5. **Verificação diária:** reamostrar 4 ou 5 durações e comparar com o motor do Hub.
    Divergiu ⇒ alarme e a vitrine cai automaticamente para "a partir de" até alguém olhar.
+   (Era o plano. Medido em 08/10/2026: a vitrine não lê o status; o alarme é o workflow
+   `wl-health.yml`. Ver "Erro é estado".)
 
 **Custo:** 72 chamadas para reconstruir a tabela inteira de uma vaga (61 bordas e 11 sondagens), uns 80 segundos. Até 06/10/2026 eram 42, com bordas só até 31 dias.
 
@@ -130,7 +134,7 @@ do Hub. O amostrador detecta isso sozinho, o que torna o job também auditoria d
 |---|---|
 | Amostrador (lógica pura, rede injetada) | `supabase/functions/_shared/wl/price-sampler.ts` |
 | Cotação no parceiro | `wlGetCalculationPrice` em `_shared/wl/client.ts` |
-| Job | Edge `wl-price-mirror`, cron diário 07:00 UTC |
+| Job | Edge `wl-price-mirror`, cron de 20 em 20 minutos (era diário 07:00 UTC, depois de 3 em 3 horas) |
 | Carimbo e log | `pricing_rule.mirror_*` + `pricing_mirror_run` |
 | Gatilho manual (emergência) | RPC `wl_mirror_trigger`, hub_admin, botão no Manager |
 | Testes | deno 16 (amostrador + lógica do job), pgTAP 20 |
@@ -228,6 +232,25 @@ recusa da cotação é a única fonte confiável, e é dela que o amostrador lê
 O piso também é espelhado para `location_parking_type.has_minimum_stay` /
 `minimum_stay_value`, e some sozinho quando o parceiro deixa de exigir.
 
+### Erro é estado, e o rodízio não para nele (08/10/2026)
+
+Até aqui, falha de amostragem gravava uma linha `error` em `pricing_mirror_run` e deixava
+`mirror_status = 'ok'` e `mirror_verified_at` intocados. Dois efeitos medidos em produção: a BePark
+errou 140 vezes (`calculation-price 400`, produto não encontrado) com a tela dizendo "ok", e a vaga
+que falha continuava sendo a mais velha da fila, voltando no topo de toda passada e ocupando a vez
+das outras. Com uma vaga por passada, a fila chegou a ter vaga sem conferência havia dois dias.
+
+Agora a Edge chama `wl_mirror_flag_error(lpt, mensagem)`: `mirror_status = 'error'`,
+`mirror_error` com a mensagem e `mirror_verified_at = now()`, mais a linha de log. O preço gravado
+continua o da última passada boa. O trigger `pricing_rule_mirror_error_clear` limpa a mensagem
+quando o status sai de `error`. Nem o erro nem a divergência pedem rebuild do site (o status não
+aparece na vitrine), então as duas funções ligam `movepark.skip_site_rebuild`.
+
+**O status não muda a vitrine nem o checkout.** A spec dizia que a vitrine "cai para a partir de"
+quando diverge, mas nenhuma função nem componente lê `mirror_status` além da tela do Manager
+(medido em 08/10/2026). Fazer divergência ou erro mudar o que o consumidor vê, ou bloquear a venda
+no Hub, é decisão de negócio em aberto.
+
 ### Lote: a fila não cabe numa invocação só
 
 Com 12 vagas a ~45s cada, a passada leva uns 9 minutos e a Edge derruba em 150s sem resposta. Na
@@ -320,24 +343,24 @@ confiável é o parceiro respondendo.
 
 ### Gatilho manual para emergência (18/08/2026)
 
-O ciclo de 3 em 3h é automático e cobre o caso normal. Pra quando não dá pra esperar (parceiro
+O ciclo automático (de 20 em 20 minutos desde 08/10/2026) cobre o caso normal. Pra quando não dá pra esperar (parceiro
 avisou que mudou a tabela, ou a vitrine caiu para "a partir de" e alguém quer reverificar na
 hora), existe a RPC `public.wl_mirror_trigger(p_location_parking_type_id uuid)`, chamável por
 `hub_admin` autenticado, com botão "Sincronizar agora" na tela de tipos de vaga do Manager
-(`/manager/companies/:id/locations/:id/parking-types`), visível só quando a vaga é `external` e
-tem `wl_category_slug`/`wl_product_slug` salvos.
+(`/manager/companies/:id/locations/:id/parking-types`), visível quando a empresa tem site WL
+(`wl_domain`) e a vaga tem `wl_category_slug`/`wl_product_slug` salvos, seja ela `external` ou
+`hub` (até 08/10/2026 só aparecia na `external`). O mesmo botão está em `/manager/white-label`.
 
 Mesmo mecanismo do cron: `net.http_post` pra `wl-price-mirror` com o secret `wl_deliver_key` do
 vault, só que disparado pela RPC em vez do `cron.schedule`. `net.http_post` é **assíncrono**
 (enfileira e devolve só um `request_id`, não o resultado do espelho), então a RPC não espera a
 Edge terminar. O botão avisa que leva uns 40 segundos (o mesmo tempo de uma vaga no job normal) e
-a tela reconsulta sozinha depois desse tempo; quem quiser conferir na hora olha
-`pricing_rule.mirror_status`/`mirror_verified_at` direto, porque não existe painel dedicado a
-isso ainda.
+a tela reconsulta sozinha depois desse tempo. O painel dedicado agora existe:
+`/manager/white-label` mostra o estado e a última mensagem de erro de cada vaga.
 
-A RPC repete as mesmas duas validações que a Edge já faz (`checkout_mode = 'external'` e De/Para
-mapeado) antes de gastar a chamada de rede, pra falhar rápido com mensagem clara em vez de
-estourar dentro do job.
+A RPC repete as validações que a Edge já faz (empresa com `wl_domain` e De/Para mapeado; desde
+23/09/2026 não exige mais `checkout_mode = 'external'`) antes de gastar a chamada de rede, pra
+falhar rápido com mensagem clara em vez de estourar dentro do job.
 
 **`wl_sync_enabled` da empresa não entra no gate, de propósito.** Esse campo (toggle "Integração
 White-label" no cadastro da empresa) liga/desliga só a sincronização de **disponibilidade**

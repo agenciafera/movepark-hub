@@ -28,6 +28,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { useWlCatalog, type WlCatalog } from "@/features/availability/api";
 import { useLocation as useLocationData } from "@/features/locations/api";
 import { useCompany } from "@/features/companies/api";
+import { mirrorStatusView, shouldShowMirror } from "@/features/wl-health/wlHealth.logic";
 import {
   useLocationParkingTypes,
   useUpdateLocationParkingType,
@@ -190,6 +191,7 @@ export default function ParkingTypesPage() {
               showWlMapping={!isOperator}
               wlCatalog={wlCatalog.data}
               checkoutMode={location.data?.checkout_mode}
+              hasWlSite={!!company.data?.wl_domain}
               onTriggerMirror={() => triggerWlMirror(lpt.id)}
               triggerMirrorPending={triggerMirror.isPending}
               onEditPricing={() => setEditing(lpt)}
@@ -256,6 +258,7 @@ type CardProps = {
   showWlMapping: boolean;
   wlCatalog?: WlCatalog;
   checkoutMode?: string | null;
+  hasWlSite: boolean;
   onTriggerMirror: () => void;
   triggerMirrorPending: boolean;
   onEditPricing: () => void;
@@ -276,6 +279,7 @@ function ParkingTypeCard({
   showWlMapping,
   wlCatalog,
   checkoutMode,
+  hasWlSite,
   onTriggerMirror,
   triggerMirrorPending,
   onEditPricing,
@@ -511,23 +515,16 @@ function ParkingTypeCard({
               Salvar
             </Button>
 
-            {/* Espelho de preço (E0.13): só unidade externa com mapeamento salvo, nunca a nativa
-                (ela usa a tabela da própria Movepark). Gatilho de emergência; o ciclo normal já
-                roda sozinho de 3 em 3h. */}
-            {checkoutMode === "external" && lpt.wl_category_slug && lpt.wl_product_slug && (
+            {/* Espelho de preço (E0.13): toda vaga mapeada de empresa com site WL, externa ou hub
+                (desde 23/09/2026 a Edge espelha as duas). Gatilho de emergência; o ciclo normal
+                já roda sozinho de 20 em 20 minutos. */}
+            {shouldShowMirror({
+              hasWlSite,
+              categorySlug: lpt.wl_category_slug,
+              productSlug: lpt.wl_product_slug,
+            }) && (
               <div className="flex w-full flex-wrap items-center justify-between gap-3 border-t border-hairline pt-3">
-                <span className="text-caption text-muted">
-                  Espelho de preço:{" "}
-                  {lpt.pricing_rule?.mirror_status === "divergent" ? (
-                    <span className="font-medium text-error">divergente</span>
-                  ) : lpt.pricing_rule?.mirror_verified_at ? (
-                    <span className="font-medium text-ink">
-                      ok · verificado em {formatDateTime(lpt.pricing_rule.mirror_verified_at)}
-                    </span>
-                  ) : (
-                    "ainda não sincronizado"
-                  )}
-                </span>
+                <MirrorStatusLine rule={lpt.pricing_rule} checkoutMode={checkoutMode} />
                 <Button
                   size="sm"
                   variant="secondary"
@@ -543,5 +540,29 @@ function ParkingTypeCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function MirrorStatusLine({
+  rule,
+  checkoutMode,
+}: {
+  rule: LocationParkingTypeWithRelations["pricing_rule"];
+  checkoutMode?: string | null;
+}) {
+  const view = mirrorStatusView(rule);
+  const tone =
+    view.tone === "error" ? "text-error" : view.tone === "ok" ? "text-ink" : "text-muted";
+  return (
+    <span className="flex flex-col gap-0.5 text-caption text-muted">
+      <span>
+        Espelho de preço{checkoutMode === "hub" ? " (o Hub cobra o preço do site do parceiro)" : ""}:{" "}
+        <span className={`font-medium ${tone}`}>{view.label}</span>
+        {rule?.mirror_verified_at ? (
+          <> · conferido em {formatDateTime(rule.mirror_verified_at)}</>
+        ) : null}
+      </span>
+      {view.detail ? <span className="text-error">{view.detail}</span> : null}
+    </span>
   );
 }

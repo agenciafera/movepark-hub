@@ -72,7 +72,9 @@ export type WlExternalMap = Record<string, Record<string, number>>;
  * Pull ao vivo da disponibilidade do white-label (E2.5.1): para cada tipo de vaga da
  * unidade que tenha mapeamento WL (category/product slug), chama a Edge `wl-sync` e
  * devolve quantas vagas o WL já vendeu por data. Best-effort: se o WL falhar, não
- * derruba a tela (a Ocupação segue mostrando só o contador do hub).
+ * derruba a tela (a Ocupação segue mostrando só o contador do hub), mas conta a falha em
+ * `failed` para a tela avisar. Antes o erro era engolido e o operador via um número menor do
+ * que o real sem saber (08/10/2026).
  */
 export function useWlExternalOccupancy(
   companyId: string | undefined,
@@ -85,7 +87,7 @@ export function useWlExternalOccupancy(
     enabled: !!companyId && !!locationId && !!from && !!to,
     staleTime: 15_000,
     retry: false,
-    queryFn: async (): Promise<{ ready: boolean; byLpt: WlExternalMap }> => {
+    queryFn: async (): Promise<{ ready: boolean; failed: number; byLpt: WlExternalMap }> => {
       const { data: lpts, error } = await supabase
         .from("location_parking_type")
         .select("id, wl_category_slug, wl_product_slug")
@@ -94,10 +96,11 @@ export function useWlExternalOccupancy(
       if (error) throw error;
 
       const mapped = (lpts ?? []).filter((l) => l.wl_category_slug && l.wl_product_slug);
-      if (mapped.length === 0) return { ready: false, byLpt: {} };
+      if (mapped.length === 0) return { ready: false, failed: 0, byLpt: {} };
 
       const byLpt: WlExternalMap = {};
       let anyReady = false;
+      let failed = 0;
       await Promise.all(
         mapped.map(async (l) => {
           const { data, error: invErr } = await supabase.functions.invoke("wl-sync", {
@@ -109,10 +112,13 @@ export function useWlExternalOccupancy(
               end_date: to,
             },
           });
-          if (invErr) return;
           const res = data as
-            | { ready?: boolean; days?: { date: string; sold_wl?: number }[] }
+            | { ready?: boolean; error?: string; days?: { date: string; sold_wl?: number }[] }
             | null;
+          if (invErr || res?.error) {
+            failed++;
+            return;
+          }
           if (res?.ready) anyReady = true;
           const m: Record<string, number> = {};
           // sold_wl = vendas próprias do white-label (o que o hub não enxerga).
@@ -121,7 +127,7 @@ export function useWlExternalOccupancy(
           byLpt[l.id] = m;
         }),
       );
-      return { ready: anyReady, byLpt };
+      return { ready: anyReady, failed, byLpt };
     },
   });
 }

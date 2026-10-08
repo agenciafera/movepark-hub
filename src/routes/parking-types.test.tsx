@@ -15,8 +15,9 @@ import { useWlCatalog } from "@/features/availability/api";
 import { usePricingCurve } from "@/features/parking-types/pricing-curve";
 
 // O gate de quem dispara é server-authoritative (wl_mirror_trigger exige is_hub_admin, coberto
-// no pgTAP) e a rota /manager fica sob RequireRole hub_admin. Aqui o foco é o botão: só aparece
-// pra vaga externa mapeada, pede confirmação e dispara a mutation certa.
+// no pgTAP) e a rota /manager fica sob RequireRole hub_admin. Aqui o foco é o botão: aparece pra
+// vaga mapeada de empresa com site WL (externa ou hub, desde 23/09/2026), pede confirmação e
+// dispara a mutation certa.
 vi.mock("@/features/parking-types/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/parking-types/api")>();
   return {
@@ -82,6 +83,7 @@ function makeLpt(overrides?: Partial<LocationParkingTypeWithRelations>): Locatio
 function setup(opts: {
   lpt: LocationParkingTypeWithRelations;
   checkoutMode: string;
+  wlDomain?: string | null;
   triggerMutateAsync?: ReturnType<typeof vi.fn>;
   triggerPending?: boolean;
 }) {
@@ -111,7 +113,11 @@ function setup(opts: {
     isLoading: false,
   } as never);
   vi.mocked(useCompany).mockReturnValue({
-    data: { id: "company-1", slug: "aerovalet" },
+    data: {
+      id: "company-1",
+      slug: "aerovalet",
+      wl_domain: opts.wlDomain === undefined ? "aerovalet-app.movepark.co" : opts.wlDomain,
+    },
     isLoading: false,
   } as never);
   vi.mocked(useWlCatalog).mockReturnValue({ data: undefined, isLoading: false } as never);
@@ -129,12 +135,38 @@ describe("ParkingTypesPage · sincronização manual do espelho de preço WL", (
   it("mostra o botão e o status do espelho pra vaga externa mapeada", () => {
     setup({ lpt: makeLpt(), checkoutMode: "external" });
     expect(screen.getByRole("button", { name: /Sincronizar agora/ })).toBeInTheDocument();
-    expect(screen.getByText(/ok · verificado em/)).toBeInTheDocument();
+    expect(screen.getByText("ok")).toBeInTheDocument();
+    expect(screen.getByText(/conferido em/)).toBeInTheDocument();
   });
 
-  it("não mostra o botão pra vaga nativa (checkout_mode=hub)", () => {
+  // Regressão de 08/10/2026: o bloco só aparecia em vaga externa, e nas três unidades que vendem
+  // pelo Hub (cujo preço o espelho reescreve) o admin não via nada.
+  it("mostra o espelho também na vaga hub de empresa com site WL", () => {
     setup({ lpt: makeLpt(), checkoutMode: "hub" });
+    expect(screen.getByRole("button", { name: /Sincronizar agora/ })).toBeInTheDocument();
+    expect(screen.getByText(/o Hub cobra o preço do site do parceiro/)).toBeInTheDocument();
+  });
+
+  it("não mostra o botão quando a empresa não tem site WL", () => {
+    setup({ lpt: makeLpt(), checkoutMode: "hub", wlDomain: null });
     expect(screen.queryByRole("button", { name: /Sincronizar agora/ })).not.toBeInTheDocument();
+  });
+
+  // Regressão de 08/10/2026: a BePark errou 140 vezes e a tela seguia dizendo "ok".
+  it("mostra o erro e a mensagem quando a última conferência falhou", () => {
+    const base = makeLpt();
+    const lpt = {
+      ...base,
+      pricing_rule: {
+        ...base.pricing_rule!,
+        mirror_status: "error",
+        mirror_error: "WL calculation-price 400: produto não encontrado",
+      },
+    } as unknown as LocationParkingTypeWithRelations;
+
+    setup({ lpt, checkoutMode: "hub" });
+    expect(screen.getByText("erro na última conferência")).toBeInTheDocument();
+    expect(screen.getByText(/produto não encontrado/)).toBeInTheDocument();
   });
 
   it("não mostra o botão pra vaga externa sem mapeamento WL salvo", () => {

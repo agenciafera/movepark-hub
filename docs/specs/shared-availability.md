@@ -59,8 +59,10 @@ não responder, cai no texto livre.
 - **Edge `wl-sync`** — pull ao vivo (front): gateia via `wl_company_config` com o JWT do usuário e
   chama o `GET /availability`. Retorna `{ ready, days }`.
 - **Pull (exibição):** `useWlExternalOccupancy` chama a `wl-sync` por lpt mapeado **ao abrir a
-  Ocupação** e soma `sold_external` nas células (`withExternal` = hub + WL, pct travado em 1).
-  Best-effort: WL fora do ar → tela segue mostrando só o hub.
+  Ocupação** e soma `sold_wl` (as vendas próprias do WL; `sold_external` é o que o Hub empurrou e
+  já está no `booked_count`) nas células (`withExternal` = hub + WL, pct travado em 1).
+  Best-effort: WL fora do ar → tela segue mostrando só o hub, **com aviso** ao operador desde
+  08/10/2026 (antes o erro era engolido).
 ## Anti-overbooking + reconciliação (E2.5.2)
 
 - **Coluna espelho:** `location_parking_availability.external_booked_count integer not null default 0`
@@ -73,9 +75,15 @@ não responder, cai no texto livre.
 - **Push Hub→WL confiável (outbox + retry):** tabela **`wl_delivery`** (event_id único,
   `operation` reserve|release, payload, `attempts`/`max_attempts`/`next_attempt_at`/backoff). Um
   **trigger** enfileira `reserve` no `INSERT` de `booking_item` (parking) e `release` quando a
-  `booking` vira `cancelled` — só com `wl_sync_enabled` + lpt mapeada; idempotente por `event_id`
-  (`on conflict do nothing`). A Edge **`wl-deliver`** (cron 1 min, `nextBackoff` exponencial até 4h)
-  drena a outbox via `wlPostSync`. Substitui o antigo push inline best-effort (`_shared/wl/push.ts`,
+  `booking` vira `cancelled` ou `expired`, só com `wl_sync_enabled` + lpt mapeada; idempotente por
+  `event_id` (`on conflict do nothing`). Mudança de período (troca de data, troca paga, extensão
+  por voo) libera o id vigente e reserva um id novo `<booking>#<n>` (`booking.wl_external_version`,
+  `wl_enqueue_dates_changed`). A Edge **`wl-deliver`** (cron 1 min, `nextBackoff` exponencial até 4h)
+  drena a outbox via `wlPostSync`, pegando as linhas por **`wl_delivery_claim`** (ver § Saúde).
+- **Datas no fuso de São Paulo:** `start_date`/`end_date` saem de `wl_local_date(ts)` (dia em
+  `America/Sao_Paulo`). Até 08/10/2026 saíam em UTC, e entrada às 22h ia ao WL com o dia
+  seguinte (5 de 31 reservas entregues). O motor de capacidade do próprio Hub segue contando dia em
+  UTC (`::date`), consistente consigo mesmo; trocar essa convenção é decisão à parte. Substitui o antigo push inline best-effort (`_shared/wl/push.ts`,
   removido) — `create-booking`/`cancel-booking` não empurram mais direto.
 - **Reconciliação WL→Hub (pull):** Edge **`wl-reconcile`** (cron 15 min) percorre cada lpt mapeada de
   empresa com sync ligado, puxa `GET /availability` numa janela (hoje..+90d) e chama a RPC
@@ -88,6 +96,40 @@ não responder, cai no texto livre.
 
 Migrations: **`20260711000000_wl_reconcile_sync.sql`** (coluna + core + outbox + trigger + log + RPC) e
 **`20260711010000_wl_cron.sql`** (agendamento).
+
+## Saúde da integração (08/10/2026)
+
+Migrations **`20261128230000_wl_saude_fila_e_fuso.sql`** e **`20261128230100_wl_saude_codigo_da_reserva.sql`**.
+A integração falhava calada; agora cada peça deixa rastro e há quem reclame.
+
+- **Fila com ordem e concessão:** `wl_delivery_claim(limit, lease)` (service_role) reivindica as
+  pendentes vencidas em ordem de criação com `FOR UPDATE SKIP LOCKED` e empurra `next_attempt_at`
+  5 minutos (concessão): outra execução do cron não pega a mesma linha, e a linha volta sozinha se
+  a Edge morrer. O `release` só sai quando nenhum `reserve` do mesmo `external_id` está pendente
+  (senão o WL ignoraria o release e a vaga ficaria presa). `last_status` passa a guardar o HTTP.
+- **Reenvio:** `failed` continua terminal para o cron, mas `wl_delivery_retry(id)` (hub_admin)
+  devolve a linha à fila. Botão "Reenviar" na tela.
+- **Frescor da reconciliação:** `wl_sync_state` (uma linha por vaga): `reconciled_at` é carimbado
+  por `wl_reconcile_apply`, e a falha vai para `reconcile_error` por `wl_reconcile_fail`. Mora fora
+  de `location_parking_type` porque gravar lá a cada 15 minutos dispararia rebuild do site.
+- **Saúde:** `wl_integration_health()` devolve `{ ok, motivos[] }` com os motivos `entrega_falhou`,
+  `entrega_atrasada` (> 60 min), `reconciliacao_parada` (> 120 min), `espelho_com_erro`,
+  `espelho_divergente` e `espelho_atrasado` (> 24 h). Limites ajustáveis em
+  `app_setting.wl_health_policy` (`delivery_max_age_minutes`, `reconcile_max_age_minutes`,
+  `mirror_max_age_hours`). Os recortes de "quem deveria ter sido lido/conferido" são as views
+  `wl_reconcile_target` e `wl_mirror_target`, iguais aos filtros das Edges.
+- **Tela:** `/manager/white-label` (RPC `manager_wl_health`, hub_admin): resumo, envios falhos ou
+  parados com o erro e o botão de reenvio, e cada vaga mapeada com o estado da leitura de vendas e
+  do espelho de preço, mais o botão de conferir o preço na hora.
+- **Alarme:** `.github/workflows/wl-health.yml`, todo dia às 09:15 de Brasília, no molde do
+  `site-rebuild-health.yml`: issue atribuída (`WL_HEALTH_ASSIGNEES`) e run vermelho enquanto houver
+  motivo; fecha sozinha quando volta.
+- **Rede:** toda chamada ao WL passa por `wlFetch` (teto de 20 s e `redirect: "manual"`, para o
+  Bearer global não seguir um redirecionamento). Os crons `wl-deliver` e `wl-reconcile` ganharam
+  `timeout_milliseconds` (antes valia o padrão de 5 s do pg_net, que estourava na resolução de DNS
+  umas 16 vezes por dia).
+- **Retenção:** `cron_prune_integration_logs` passa a apagar `wl_delivery` entregue há mais de
+  180 dias. `failed` fica até alguém reenviar.
 
 ## Fora de escopo (próximos)
 

@@ -1,7 +1,10 @@
 // deno test: partes puras do cliente WL.
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   buildAvailabilityUrl,
+  WlHttpError,
+  wlErrorStatus,
+  wlPostSync,
   normalizeWlDomain,
   parseAvailabilityResponse,
   parseCategories,
@@ -157,4 +160,60 @@ Deno.test("parseMinimumStayDays devolve null no que não é recusa por estadia",
   assertEquals(parseMinimumStayDays("<html>500</html>"), null);
   // Zero não é piso: seria um "mínimo" que não restringe nada e viraria laço infinito.
   assertEquals(parseMinimumStayDays("Período mínimo de permanência: 0 dia(s)"), null);
+});
+
+// ── rede: teto de tempo, redirecionamento e status do erro (08/10/2026) ──────────────────────
+
+function withFetch(fake: typeof fetch, fn: () => Promise<void>) {
+  const real = globalThis.fetch;
+  globalThis.fetch = fake;
+  return fn().finally(() => {
+    globalThis.fetch = real;
+  });
+}
+
+const cfg = { wl_domain: "parceiro-app.movepark.co", wl_tenant_key: "parceiro", wl_sync_enabled: true };
+const body = {
+  external_id: "b1",
+  operation: "reserve" as const,
+  category_slug: "c",
+  product_slug: "p",
+  quantity: 1,
+  start_date: "2027-04-30",
+};
+
+Deno.test("wlPostSync não segue redirecionamento e chama com teto de tempo", async () => {
+  let init: RequestInit | undefined;
+  await withFetch(
+    ((_url: string, i?: RequestInit) => {
+      init = i;
+      return Promise.resolve(new Response("{}", { status: 200 }));
+    }) as typeof fetch,
+    async () => {
+      await wlPostSync(cfg, "token", body);
+    },
+  );
+  assertEquals(init?.redirect, "manual");
+  assertEquals(init?.signal instanceof AbortSignal, true);
+});
+
+Deno.test("wlPostSync com erro HTTP carrega o status para a fila", async () => {
+  await withFetch(
+    (() => Promise.resolve(new Response('{"error":"cheio"}', { status: 422 }))) as typeof fetch,
+    async () => {
+      const e = await assertRejects(() => wlPostSync(cfg, "token", body), WlHttpError);
+      assertEquals(wlErrorStatus(e), 422);
+    },
+  );
+});
+
+Deno.test("redirecionamento vira erro, e falha de rede não tem status", async () => {
+  await withFetch(
+    (() => Promise.resolve(new Response(null, { status: 302, headers: { Location: "https://x" } }))) as typeof fetch,
+    async () => {
+      const e = await assertRejects(() => wlPostSync(cfg, "token", body), WlHttpError);
+      assertEquals(wlErrorStatus(e), 302);
+    },
+  );
+  assertEquals(wlErrorStatus(new TypeError("network")), null);
 });

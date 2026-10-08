@@ -4,8 +4,12 @@
 // wl_reconcile_apply (preserva booked_count, loga divergência). É o que torna o anti-overbooking real.
 // Chamada interna pelo pg_cron (pg_net) — header x-wl-deliver-key (secret WL_DELIVER_KEY). verify_jwt = false.
 //
+// Cada vaga deixa rastro em `wl_sync_state` (08/10/2026): leitura boa carimba `reconciled_at`
+// (dentro de wl_reconcile_apply), falha grava a mensagem por wl_reconcile_fail. Antes a falha só
+// ia ao console, e um WL fora do ar congelava `external_booked_count` sem ninguém ver.
+//
 // POST /functions/v1/wl-reconcile   (header: x-wl-deliver-key: <WL_DELIVER_KEY>)
-// → { ok, lpts, changed }
+// → { ok, lpts, changed, failed }
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -45,12 +49,16 @@ Deno.serve(async (req: Request) => {
     )
     .eq("is_active", true)
     .not("wl_category_slug", "is", null)
-    .not("wl_product_slug", "is", null);
+    .not("wl_product_slug", "is", null)
+    // Mesmo recorte da view `wl_reconcile_target`, que a saúde usa.
+    .is("location.deleted_at", null)
+    .is("location.company.deleted_at", null);
   if (error) return json({ error: error.message }, 500);
 
   const win = reconcileWindow(new Date(), 90);
   let processed = 0;
   let changed = 0;
+  let failed = 0;
 
   for (const lpt of lpts ?? []) {
     // deno-lint-ignore no-explicit-any
@@ -68,16 +76,16 @@ Deno.serve(async (req: Request) => {
         p_lpt_id: lpt.id,
         p_rows: rows,
       });
-      if (applyErr) {
-        console.error(`reconcile apply ${lpt.id}:`, applyErr.message);
-        continue;
-      }
+      if (applyErr) throw new Error(`apply: ${applyErr.message}`);
       processed++;
       changed += Number(n ?? 0);
     } catch (e) {
-      console.error(`reconcile ${lpt.id}:`, e instanceof Error ? e.message : e);
+      const message = e instanceof Error ? e.message : String(e);
+      failed++;
+      console.error(`reconcile ${lpt.id}:`, message);
+      await admin.rpc("wl_reconcile_fail", { p_lpt_id: lpt.id, p_error: message });
     }
   }
 
-  return json({ ok: true, lpts: processed, changed });
+  return json({ ok: true, lpts: processed, changed, failed });
 });

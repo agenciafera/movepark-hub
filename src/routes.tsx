@@ -150,6 +150,7 @@ import ManagerLotesMapeados from "@/routes/manager/lotes-mapeados";
 import ManagerPesquisaDePreco from "@/routes/manager/pesquisa-de-preco";
 import ManagerConversas from "@/routes/manager/conversas";
 import ManagerAuditoriaEnderecos from "@/routes/manager/auditoria-enderecos";
+import ManagerWhiteLabel from "@/routes/manager/white-label";
 import ManagerBlog from "@/routes/manager/blog";
 import ManagerApiInterna from "@/routes/manager/api-interna";
 import ManagerReviews from "@/routes/manager/reviews";
@@ -1576,6 +1577,7 @@ export const routes: RouteRecord[] = [
               { path: "pesquisa-de-preco", element: <ManagerPesquisaDePreco /> },
               { path: "conversas", element: <ManagerConversas /> },
               { path: "auditoria-enderecos", element: <ManagerAuditoriaEnderecos /> },
+              { path: "white-label", element: <ManagerWhiteLabel /> },
               { path: "blog", element: <ManagerBlog /> },
               { path: "api-interna", element: <ManagerApiInterna /> },
               { path: "companies/:id/locations", element: <ManagerLocations /> },
