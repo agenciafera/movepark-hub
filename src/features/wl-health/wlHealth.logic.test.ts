@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bookingIdFromEventId,
   healthReasonLabel,
+  importStatusView,
   isMirrorStale,
   isReconcileStale,
   mirrorStatusView,
@@ -97,5 +98,20 @@ describe("reconcileStatusView", () => {
     expect(
       reconcileStatusView({ ...base, ...erro, reconcile_error_at: "2026-10-08T10:00:00Z" }, now).label,
     ).toBe("em dia");
+  });
+});
+
+describe("importStatusView", () => {
+  const now = new Date("2026-10-08T12:00:00Z");
+  const ok = { last_ok_at: "2026-10-08T11:50:00Z", last_error: null, last_error_at: null };
+  it("desligada não é problema", () => {
+    expect(importStatusView(ok, false, now).tone).toBe("muted");
+  });
+  it("em dia, atrasada, erro depois da leitura boa", () => {
+    expect(importStatusView(ok, true, now).label).toBe("em dia");
+    expect(importStatusView({ ...ok, last_ok_at: null }, true, now).label).toBe("atrasada");
+    expect(
+      importStatusView({ ...ok, last_error: "WL orders 404", last_error_at: "2026-10-08T11:55:00Z" }, true, now),
+    ).toEqual({ label: "erro", tone: "error", detail: "WL orders 404" });
   });
 });

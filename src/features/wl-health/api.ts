@@ -43,6 +43,8 @@ async function fetchReport(): Promise<WlHealthReport> {
     deliveries: r.deliveries ?? [],
     recent: r.recent ?? { delivered_24h: 0, pending: 0, last_delivered_at: null },
     units: r.units ?? [],
+    import_enabled: r.import_enabled === true,
+    imports: r.imports ?? [],
   };
 }
 

@@ -69,6 +69,7 @@ jobs:
               espelho_com_erro: `${h.espelho_com_erro} vaga(s) com erro na última conferência de preço. O Hub segue com o preço da última conferência boa.`,
               espelho_divergente: `${h.espelho_divergente} vaga(s) em que o preço do Hub não bate com o do site do parceiro.`,
               espelho_atrasado: `${h.espelho_atrasado} vaga(s) sem conferência de preço há mais de ${h.limites.espelho_horas} horas (mais antiga: ${h.espelho_mais_antigo ?? "nunca"}).`,
+              importacao_parada: `${h.importacao_parada} parceiro(s) sem trazer as reservas do site há mais de ${h.limites.reconciliacao_minutos} minutos, ou com erro na última leitura. A lista de reservas do site no Hub está desatualizada.`,
             };
             const body = [
               `A checagem diária encontrou problema na integração com os sites white-label.`,

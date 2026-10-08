@@ -1,7 +1,8 @@
-# Reservas do white-label no Hub (estudo)
+# Reservas do white-label no Hub
 
-> **Status:** estudo, 08/10/2026. Nada implementado. Decididos em 08/10/2026: Q1 (painel único) e
-> Q5 (as 8 empresas com WL no Hub). Q2 a Q4 seguem como gates em § 7.
+> **Status:** fase 0 em revisão e fase 1 no ar, **desligada**, em 08/10/2026 (ver § 8). Decididos em
+> 08/10/2026: Q1 (painel único), Q2 (rota nova no legado) e Q5 (as 8 empresas com WL no Hub).
+> Q3 e Q4 foram adotadas como recomendado (§ 7).
 > **Pergunta:** dá para trazer as reservas feitas nos sites white-label (WL) para o Hub,
 > contabilizadas à parte e sem afetar quem vende só pelo Hub? E dá para dar, a essas unidades,
 > no Hub, as funcionalidades que elas têm no WL?
@@ -145,8 +146,8 @@ base dela para um painel que ela não usa não tem destinatário, e é a que mai
 
 | Fase | Entrega | Mexe em |
 |---|---|---|
-| 0 | Rota `GET backend/orders?updated_since` + índice em `updated_at` | legado |
-| 1 | `wl_booking` + Edge de sincronização + saúde | Hub, nada das 68 funções |
+| 0 | Rota `GET backend/orders?updated_since` + índice em `updated_at` | legado. **PR agenciafera/movepark-backoffice#614, em revisão** |
+| 1 | `wl_booking` + Edge de sincronização + saúde | Hub, nada das 68 funções. **Feita em 08/10/2026, desligada** |
 | 2 | Reservas do WL na lista do Operator, só leitura, com selo "do seu site" | uma RPC de leitura (`booking UNION ALL wl_booking`) |
 | 3 | Bloco "Vendas no site do parceiro" no Manager e no Dashboard do Operator, à parte da receita do Hub | duas RPCs novas |
 | 4 | Ações sobre a reserva do WL a partir do Hub (§ 5.1) | legado + Hub |
@@ -208,7 +209,41 @@ Tamanho: grande, e depende mais de negócio que de código.
 | # | Decisão | Recomendação |
 |---|---|---|
 | Q1 | Leitura 1 (painel único) ou leitura 2 (Hub substitui o WL)? | **Decidido em 08/10/2026: leitura 1, painel único.** A venda segue no site WL; o parceiro vê e opera no Hub. A leitura 2 volta na revisão de 20/01/2027 |
-| Q2 | Rota nova no legado ou ler o Postgres dos tenants? | Rota nova |
-| Q3 | Quem vê: só Movepark (Manager) ou também o parceiro (Operator)? Escopo novo `wl-bookings:read` ou o `bookings:read`? | Os dois, com escopo próprio só-leitura, para o papel Financeiro poder ver sem operar |
-| Q4 | Janela da carga inicial | Últimos 12 meses mais tudo que ainda vai acontecer |
+| Q2 | Rota nova no legado ou ler o Postgres dos tenants? | **Decidido em 08/10/2026: rota nova** (PR #614) |
+| Q3 | Quem vê: só Movepark (Manager) ou também o parceiro (Operator)? Escopo novo `wl-bookings:read` ou o `bookings:read`? | Os dois, com escopo próprio só-leitura, para o papel Financeiro poder ver sem operar. **Fase 1 abre só para hub_admin**; o escopo entra na fase 2, junto da tela do Operator |
+| Q4 | Janela da carga inicial | Últimos 12 meses mais tudo que ainda vai acontecer. **Adotado** (`app_setting.wl_booking_import.lookback_months = 12`) |
 | Q5 | Quais empresas: as 4 com sync ligado, as 8 conhecidas, ou os 14 tenants? E a Virapark (`silent`)? | **Decidido em 08/10/2026: as 8 empresas com WL no Hub**, Virapark incluída. Consequência: a Virapark sozinha é a maior parte do volume (cerca de 436 vagas ocupadas por dia) e é a relação silenciosa, então o cuidado de § 3.4 (uso só operacional, nada de marketing nem de ligação de conta) pesa mais nela. A recomendação era começar pelas 3 que vendem pelo Hub |
+
+## 8. Fase 1 implementada (08/10/2026)
+
+Migration `20261128233000_wl_booking_importacao.sql`, Edge `wl-bookings-sync`, pgTAP
+`wl_booking_import.test.sql` (18 casos).
+
+- **`wl_booking`**: uma linha por pedido do site, única por `(company_id, wl_order_id)`. Datas do
+  legado (hora local sem fuso) convertidas de `America/Sao_Paulo`. Status do legado traduzido
+  (`complete` → `confirmed`, `canceled` → `cancelled`, `refund-requested` → `refund_requested`…),
+  com o original em `wl_status`. De/Para por `(wl_category_slug, wl_product_slug)` dentro da empresa;
+  sem par, a reserva entra sem vaga. Nenhuma FK de entrada, nenhum trigger além de `updated_at`.
+- **`wl_booking_sync_state`**: cursor `(cursor_updated_since, cursor_after_id)` por empresa, última
+  leitura boa e último erro.
+- **`wl_booking_apply_page`** (service_role): grava a página e avança o cursor na mesma transação.
+  Pula, avançando o cursor, pedido cujo `external_id` é uma reserva do Hub e pedido que saiu antes
+  da janela. Não regride: versão mais velha do pedido não sobrescreve a mais nova.
+- **Edge `wl-bookings-sync`** (cron `7,22,37,52 * * * *`): para cada empresa de
+  `wl_booking_import_target` (domínio e tenant de WL), pede página após página até `has_more = false`
+  ou até o orçamento de 90 s; o que sobrar continua na próxima passada. Cursor que não anda com
+  `has_more = true` vira erro em vez de laço.
+- **Chave:** `app_setting.wl_booking_import = {"enabled": false, "lookback_months": 12, "page_limit": 200}`.
+  Desligada, a Edge responde `{"ok": true, "enabled": false}` e não chama o legado.
+- **Saúde:** motivo `importacao_parada` em `wl_integration_health` (só com a chave ligada), bloco
+  "Reservas feitas no site do parceiro" em `/manager/white-label`, explicação no `wl-health.yml`.
+- **Leitura:** só `hub_admin` (RLS). O Operator entra na fase 2.
+
+### Para ligar
+
+1. Merge do PR #614 na `develop`, conferir em staging, merge na `main` (deploy do legado em
+   produção, de preferência fora do pico por causa do índice).
+2. Rotacionar o token de backend do legado (vazou) e atualizar o segredo `WL_BACKEND_TOKEN` no Hub.
+3. `update app_setting set value = jsonb_set(value::jsonb, '{enabled}', 'true')::text where key = 'wl_booking_import';`
+4. Acompanhar a primeira carga em `/manager/white-label`. A Virapark é a maior (centenas de reservas
+   por dia): leva algumas passadas de 15 minutos até alcançar o presente.

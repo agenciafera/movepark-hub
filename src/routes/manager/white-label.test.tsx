@@ -40,6 +40,8 @@ function setup(report: Partial<WlHealthReport>) {
       deliveries: [],
       recent: { delivered_24h: 12, pending: 0, last_delivered_at: null },
       units: [],
+      import_enabled: false,
+      imports: [],
       ...report,
     },
     isLoading: false,
@@ -98,6 +100,32 @@ describe("ManagerWhiteLabel", () => {
     expect(screen.getByText("HTTP 422")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Reenviar" }));
     expect(retry).toHaveBeenCalledWith("d-1", expect.anything());
+  });
+
+  it("diz que a importação está desligada enquanto a rota do legado não existe", () => {
+    setup({});
+    expect(screen.getByText(/A importação está desligada/)).toBeInTheDocument();
+  });
+
+  it("mostra a importação por parceiro, com o erro", () => {
+    setup({
+      import_enabled: true,
+      imports: [
+        {
+          company_id: "c-1",
+          company_name: "Abbapark",
+          last_ok_at: null,
+          last_error: "WL orders 404: not found",
+          last_error_at: "2026-10-08T12:00:00Z",
+          cursor_updated_since: "1970-01-01 00:00:00",
+          bookings: 0,
+          upcoming: 0,
+        },
+      ],
+    });
+    expect(screen.queryByText(/A importação está desligada/)).not.toBeInTheDocument();
+    expect(screen.getByText("Abbapark")).toBeInTheDocument();
+    expect(screen.getByText(/WL orders 404/)).toBeInTheDocument();
   });
 
   it("mostra o erro do espelho na vaga", () => {

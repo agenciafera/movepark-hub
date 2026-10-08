@@ -88,6 +88,21 @@ export function reconcileStatusView(
   return { label: "em dia", tone: "ok" };
 }
 
+/** Estado da importação das reservas do site de uma empresa. */
+export function importStatusView(
+  imp: { last_ok_at: string | null; last_error: string | null; last_error_at: string | null },
+  enabled: boolean,
+  now: Date = new Date(),
+): StatusView {
+  if (!enabled) return { label: "desligada", tone: "muted" };
+  const erroDepoisDaLeitura =
+    !!imp.last_error &&
+    (!imp.last_ok_at || (!!imp.last_error_at && imp.last_error_at > imp.last_ok_at));
+  if (erroDepoisDaLeitura) return { label: "erro", tone: "error", detail: imp.last_error };
+  if (isReconcileStale(imp.last_ok_at, now)) return { label: "atrasada", tone: "warn" };
+  return { label: "em dia", tone: "ok" };
+}
+
 /** Badge do design system para cada tom. */
 export const TONE_BADGE: Record<Tone, "confirmed" | "pending" | "cancelled" | "neutral"> = {
   ok: "confirmed",
@@ -104,6 +119,7 @@ export const HEALTH_REASON_LABEL: Record<string, string> = {
   espelho_com_erro: "O espelho de preço falhou ao conferir uma vaga.",
   espelho_divergente: "O preço do Hub não bate com o do site do parceiro em alguma vaga.",
   espelho_atrasado: "Alguma vaga está sem conferência de preço há mais de 24 horas.",
+  importacao_parada: "O Hub não traz as reservas do site de algum parceiro há mais de duas horas.",
 };
 
 export function healthReasonLabel(reason: string): string {

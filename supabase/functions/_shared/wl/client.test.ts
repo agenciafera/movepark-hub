@@ -2,6 +2,9 @@
 import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   buildAvailabilityUrl,
+  buildOrdersUrl,
+  parseOrdersPage,
+  wlListOrders,
   WlHttpError,
   wlErrorStatus,
   wlPostSync,
@@ -216,4 +219,42 @@ Deno.test("redirecionamento vira erro, e falha de rede não tem status", async (
     },
   );
   assertEquals(wlErrorStatus(new TypeError("network")), null);
+});
+
+// ── lista de pedidos (reservas do site no Hub) ───────────────────────────────────────────────
+
+Deno.test("buildOrdersUrl monta o cursor na query", () => {
+  assertEquals(
+    buildOrdersUrl("https://parceiro-app.movepark.co/", { updated_since: "2026-10-01 12:00:00", after_id: 7 }, 200),
+    "https://parceiro-app.movepark.co/api/v3/backend/orders?updated_since=2026-10-01+12%3A00%3A00&after_id=7&limit=200",
+  );
+});
+
+Deno.test("parseOrdersPage lê data e o próximo cursor", () => {
+  const page = parseOrdersPage(
+    { data: [{ id: 1 }], meta: { next_cursor: { updated_since: "2026-10-02 08:00:00", after_id: 1 }, has_more: true } },
+    { updated_since: "1970-01-01 00:00:00", after_id: 0 },
+  );
+  assertEquals(page.rows.length, 1);
+  assertEquals(page.nextCursor, { updated_since: "2026-10-02 08:00:00", after_id: 1 });
+  assertEquals(page.hasMore, true);
+});
+
+Deno.test("parseOrdersPage recusa resposta sem data[] em vez de fingir página vazia", async () => {
+  await assertRejects(async () => {
+    parseOrdersPage({ message: "erro" }, { updated_since: "x", after_id: 0 });
+  });
+});
+
+Deno.test("wlListOrders: 404 (rota ainda não publicada) vira erro com status", async () => {
+  await withFetch(
+    (() => Promise.resolve(new Response("not found", { status: 404 }))) as typeof fetch,
+    async () => {
+      const e = await assertRejects(
+        () => wlListOrders(cfg, "token", { updated_since: "1970-01-01 00:00:00", after_id: 0 }, 200),
+        WlHttpError,
+      );
+      assertEquals(wlErrorStatus(e), 404);
+    },
+  );
 });

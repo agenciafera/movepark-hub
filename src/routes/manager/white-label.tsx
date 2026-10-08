@@ -18,6 +18,7 @@ import { useRetryWlDelivery, useWlHealth } from "@/features/wl-health/api";
 import { useTriggerWlMirror } from "@/features/parking-types/api";
 import {
   healthReasonLabel,
+  importStatusView,
   isMirrorStale,
   mirrorStatusView,
   reconcileStatusView,
@@ -25,7 +26,7 @@ import {
   type StatusView,
 } from "@/features/wl-health/wlHealth.logic";
 import { formatDateTime } from "@/lib/format";
-import type { WlDeliveryIssue, WlUnitHealth } from "@/types/domain";
+import type { WlDeliveryIssue, WlImportStatus, WlUnitHealth } from "@/types/domain";
 
 /**
  * Saúde da integração com os sites white-label dos parceiros.
@@ -76,6 +77,10 @@ export default function ManagerWhiteLabel() {
           />
           <EntregasComProblema deliveries={report.data?.deliveries ?? []} />
           <Vagas units={report.data?.units ?? []} />
+          <ImportacaoDoSite
+            enabled={report.data?.import_enabled ?? false}
+            imports={report.data?.imports ?? []}
+          />
         </>
       )}
     </div>
@@ -301,6 +306,60 @@ function Vagas({ units }: { units: WlUnitHealth[] }) {
                         Conferir preço agora
                       </Button>
                     </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Reservas feitas no site do parceiro, trazidas para o Hub (`wl_booking`). Contadas à parte:
+ * o dinheiro não passa pelo Hub e nada de capacidade, repasse ou comissão olha para elas.
+ * Spec: docs/specs/reservas-wl-no-hub.md.
+ */
+function ImportacaoDoSite({ enabled, imports }: { enabled: boolean; imports: WlImportStatus[] }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-title-md text-ink">Reservas feitas no site do parceiro</h2>
+      {!enabled ? (
+        <p className="text-body-sm text-muted">
+          A importação está desligada. Ela liga quando a rota de lista de pedidos estiver publicada
+          no site do parceiro.
+        </p>
+      ) : null}
+      {imports.length === 0 ? null : (
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Parceiro</TableHead>
+                <TableHead>Importação</TableHead>
+                <TableHead className="text-right">Reservas trazidas</TableHead>
+                <TableHead className="text-right">Ainda vão acontecer</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {imports.map((imp) => {
+                const view = importStatusView(imp, enabled);
+                return (
+                  <TableRow key={imp.company_id}>
+                    <TableCell className="font-medium">{imp.company_name}</TableCell>
+                    <TableCell>
+                      <StatusBadgeView view={view} />
+                      {imp.last_ok_at ? (
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          lido em {formatDateTime(imp.last_ok_at)}
+                        </div>
+                      ) : null}
+                      {view.detail ? <div className="mt-1 text-sm text-error">{view.detail}</div> : null}
+                    </TableCell>
+                    <TableCell className="text-right">{imp.bookings}</TableCell>
+                    <TableCell className="text-right">{imp.upcoming}</TableCell>
                   </TableRow>
                 );
               })}

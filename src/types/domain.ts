@@ -860,9 +860,24 @@ export type WlUnitHealth = {
   mirror_error: string | null;
 };
 
+/** Importação das reservas do site de uma empresa (`wl_booking_sync_state`). */
+export type WlImportStatus = {
+  company_id: string;
+  company_name: string;
+  last_ok_at: string | null;
+  last_error: string | null;
+  last_error_at: string | null;
+  cursor_updated_since: string | null;
+  bookings: number;
+  upcoming: number;
+};
+
 export type WlHealthReport = {
   health: WlHealthSummary;
   deliveries: WlDeliveryIssue[];
   recent: { delivered_24h: number; pending: number; last_delivered_at: string | null };
   units: WlUnitHealth[];
+  /** Reservas do site importadas para `wl_booking` (reservas-wl-no-hub.md). */
+  import_enabled: boolean;
+  imports: WlImportStatus[];
 };

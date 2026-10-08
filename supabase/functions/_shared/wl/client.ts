@@ -401,3 +401,65 @@ export async function wlGetCalculationPrice(
   }
   return parseCalculationPrice(JSON.parse(body));
 }
+
+// ── Lista incremental de pedidos (reservas do site no Hub) ────────────────────────────────────
+// GET /api/v3/backend/orders?updated_since=&after_id=&limit= (legado: agenciafera/movepark-backoffice#614,
+// contrato em .claude/specs/api-backend-lista-pedidos.md daquele repo). Paginação por cursor
+// (alterado_em, id). Ver docs/specs/reservas-wl-no-hub.md.
+
+export interface WlOrdersCursor {
+  updated_since: string;
+  after_id: number;
+}
+
+export interface WlOrdersPage {
+  rows: Record<string, unknown>[];
+  nextCursor: WlOrdersCursor;
+  hasMore: boolean;
+}
+
+export function buildOrdersUrl(domain: string, cursor: WlOrdersCursor, limit: number): string {
+  const host = normalizeWlDomain(domain);
+  const q = new URLSearchParams({
+    updated_since: cursor.updated_since,
+    after_id: String(cursor.after_id),
+    limit: String(limit),
+  });
+  return `https://${host}${WL_API_PATH}/orders?${q.toString()}`;
+}
+
+/**
+ * Lê a resposta da rota. Recusa formato inesperado em vez de devolver página vazia: página vazia
+ * com cursor parado é indistinguível de "nada mudou", e a importação ficaria calada para sempre.
+ */
+export function parseOrdersPage(json: unknown, fallback: WlOrdersCursor): WlOrdersPage {
+  const o = (json ?? {}) as Record<string, unknown>;
+  if (!Array.isArray(o.data)) {
+    throw new Error(`resposta sem data[]: ${JSON.stringify(json).slice(0, 200)}`);
+  }
+  const meta = (o.meta ?? {}) as Record<string, unknown>;
+  const next = (meta.next_cursor ?? {}) as Record<string, unknown>;
+  const updatedSince = typeof next.updated_since === "string" ? next.updated_since : fallback.updated_since;
+  const afterId = Number.isFinite(Number(next.after_id)) ? Number(next.after_id) : fallback.after_id;
+  return {
+    rows: o.data as Record<string, unknown>[],
+    nextCursor: { updated_since: updatedSince, after_id: afterId },
+    hasMore: meta.has_more === true,
+  };
+}
+
+export async function wlListOrders(
+  c: WlConfig,
+  token: string,
+  cursor: WlOrdersCursor,
+  limit: number,
+): Promise<WlOrdersPage> {
+  const res = await wlFetch(buildOrdersUrl(c.wl_domain!, cursor, limit), {
+    headers: wlHeaders(c.wl_tenant_key!, token),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new WlHttpError(res.status, `WL orders ${res.status}: ${body.slice(0, 200)}`);
+  }
+  return parseOrdersPage(await res.json(), cursor);
+}
