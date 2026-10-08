@@ -77,29 +77,42 @@ Deno.serve(async (req: Request) => {
   let skipped = 0;
   const errors: { company_id: string; message: string }[] = [];
 
-  for (const t of targets ?? []) {
-    // deno-lint-ignore no-explicit-any
-    const row = t as any;
-    const cfg = row.company as WlConfig;
-
+  // Cursor de cada empresa: o salvo, ou a janela quando ainda não há (começar do início do
+  // histórico lia anos de pedidos só para pular).
+  type Fila = { companyId: string; cfg: WlConfig; cursor: WlOrdersCursor };
+  const fila: Fila[] = [];
+  for (const t of targets) {
     const { data: state } = await admin
       .from("wl_booking_sync_state")
       .select("cursor_updated_since, cursor_after_id")
-      .eq("company_id", row.company_id)
+      .eq("company_id", t.company_id)
       .maybeSingle();
-    // Sem cursor salvo (ou com o padrão da tabela), começa na janela, não no início do histórico.
     const saved = state?.cursor_updated_since;
-    let cursor: WlOrdersCursor = !saved || saved === "1970-01-01 00:00:00"
-      ? initialCursor(new Date(), policy.lookbackMonths)
-      : { updated_since: saved, after_id: Number(state?.cursor_after_id ?? 0) };
+    fila.push({
+      companyId: t.company_id,
+      cfg: t.company,
+      cursor: !saved || saved === "1970-01-01 00:00:00"
+        ? initialCursor(new Date(), policy.lookbackMonths)
+        : { updated_since: saved, after_id: Number(state?.cursor_after_id ?? 0) },
+    });
+  }
 
-    try {
-      // Uma empresa grande (carga inicial) não pode tomar a invocação inteira: o orçamento para
-      // de pedir página nova, e o cursor salvo continua de onde parou na próxima passada.
-      while (Date.now() - started < START_BUDGET_MS) {
-        const page = await wlListOrders(cfg, token, cursor, policy.pageLimit);
+  // Rodízio: uma página por empresa a cada volta, até o orçamento acabar. Em sequência, a primeira
+  // empresa com carga inicial grande tomava a invocação inteira e as outras esperavam (08/10/2026:
+  // a Aeropark leu 7 mil pedidos enquanto as outras sete não começaram). Quem termina ou erra sai
+  // da fila; o cursor salvo continua de onde parou na próxima passada.
+  let ativas = fila;
+  while (ativas.length > 0 && Date.now() - started < START_BUDGET_MS) {
+    const seguem: Fila[] = [];
+    for (const f of ativas) {
+      if (Date.now() - started >= START_BUDGET_MS) {
+        seguem.push(f);
+        continue;
+      }
+      try {
+        const page = await wlListOrders(f.cfg, token, f.cursor, policy.pageLimit);
         const { data: applied, error: applyErr } = await admin.rpc("wl_booking_apply_page", {
-          p_company_id: row.company_id,
+          p_company_id: f.companyId,
           p_rows: page.rows,
           p_next_updated_since: page.nextCursor.updated_since,
           p_next_after_id: page.nextCursor.after_id,
@@ -109,23 +122,24 @@ Deno.serve(async (req: Request) => {
         written += Number((applied as { written?: number } | null)?.written ?? 0);
         skipped += Number((applied as { skipped?: number } | null)?.skipped ?? 0);
 
-        if (cursorStuck(cursor, page.nextCursor, page.hasMore)) {
-          throw new Error(`cursor parado em ${cursor.updated_since} / ${cursor.after_id}`);
+        if (cursorStuck(f.cursor, page.nextCursor, page.hasMore)) {
+          throw new Error(`cursor parado em ${f.cursor.updated_since} / ${f.cursor.after_id}`);
         }
-        cursor = page.nextCursor;
-        if (!page.hasMore) break;
+        f.cursor = page.nextCursor;
+        if (page.hasMore) seguem.push(f);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        errors.push({ company_id: f.companyId, message });
+        await admin.rpc("wl_booking_sync_fail", { p_company_id: f.companyId, p_error: message });
       }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      errors.push({ company_id: row.company_id, message });
-      await admin.rpc("wl_booking_sync_fail", { p_company_id: row.company_id, p_error: message });
     }
+    ativas = seguem;
   }
 
   return json({
     ok: true,
     enabled: true,
-    companies: (targets ?? []).length,
+    companies: targets.length,
     pages,
     written,
     skipped,
