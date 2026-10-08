@@ -56,3 +56,13 @@ export const WL_BOOKING_STATUS_OPTIONS: { value: WlBookingStatus | "all"; label:
   { value: "refunded", label: WL_BOOKING_STATUS_LABEL.refunded },
   { value: "expired", label: WL_BOOKING_STATUS_LABEL.expired },
 ];
+
+/**
+ * "Cliente chegou" só a partir do horário de entrada: o site recusa antes disso
+ * (`before_checkin`), então a tela nem oferece. Sem horário, deixa o site decidir.
+ */
+export function canMarkArrived(checkInAt: string | null | undefined, now: Date = new Date()): boolean {
+  if (!checkInAt) return true;
+  const t = new Date(checkInAt).getTime();
+  return !Number.isFinite(t) || t <= now.getTime();
+}

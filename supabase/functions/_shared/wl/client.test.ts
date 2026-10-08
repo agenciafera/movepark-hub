@@ -5,6 +5,8 @@ import {
   buildOrdersUrl,
   parseOrdersPage,
   wlListOrders,
+  wlMarkAttendance,
+  wlChangeLicensePlate,
   WlHttpError,
   wlErrorStatus,
   wlPostSync,
@@ -255,6 +257,64 @@ Deno.test("wlListOrders: 404 (rota ainda não publicada) vira erro com status", 
         WlHttpError,
       );
       assertEquals(wlErrorStatus(e), 404);
+    },
+  );
+});
+
+// ── ações sobre o pedido (fase 4) ────────────────────────────────────────────────────────────
+
+Deno.test("wlMarkAttendance: 409 do legado vira recusa com o código, não exceção", async () => {
+  await withFetch(
+    (() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ message: "Só pedido pago", data: { code: "not_eligible" } }), { status: 409 }),
+      )) as typeof fetch,
+    async () => {
+      const r = await wlMarkAttendance(cfg, "token", { orderNumber: "A-1", status: "no_show" });
+      assertEquals(r, { kind: "refused", status: 409, code: "not_eligible", message: "Só pedido pago" });
+    },
+  );
+});
+
+Deno.test("wlChangeLicensePlate: manda o corpo do contrato e lê data", async () => {
+  let sent: Record<string, unknown> = {};
+  await withFetch(
+    ((_u: string, i?: RequestInit) => {
+      sent = JSON.parse(String(i?.body));
+      return Promise.resolve(
+        new Response(JSON.stringify({ data: { license_plate: "XYZ9K88", changed: true } }), { status: 200 }),
+      );
+    }) as typeof fetch,
+    async () => {
+      const r = await wlChangeLicensePlate(cfg, "token", {
+        orderNumber: "A-1",
+        licensePlate: "xyz-9k88",
+        reason: "carro da esposa",
+        actor: "Ana",
+      });
+      assertEquals(r.kind, "ok");
+    },
+  );
+  assertEquals(sent, {
+    order_number: "A-1",
+    license_plate: "xyz-9k88",
+    reason: "carro da esposa",
+    brand: null,
+    model: null,
+    color: null,
+    actor: "Ana",
+  });
+});
+
+Deno.test("wlMarkAttendance: 5xx do legado é exceção com status", async () => {
+  await withFetch(
+    (() => Promise.resolve(new Response("{}", { status: 502 }))) as typeof fetch,
+    async () => {
+      const e = await assertRejects(
+        () => wlMarkAttendance(cfg, "token", { orderNumber: "A-1", status: "compareceu" }),
+        WlHttpError,
+      );
+      assertEquals(wlErrorStatus(e), 502);
     },
   );
 });

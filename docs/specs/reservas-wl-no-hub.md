@@ -1,7 +1,7 @@
 # Reservas do white-label no Hub
 
-> **Status:** fase 0 em revisão; fases 1 e 2 no ar, **desligadas** até a importação ligar, em
-> 08/10/2026 (ver § 8 e § 9). Decididos em
+> **Status:** fases 0 e 4 (legado) em revisão nos PRs #614 e #615; fases 1, 2 e 4 (Hub) no ar,
+> **desligadas** até a importação e as ações ligarem, em 08/10/2026 (ver § 8, § 9 e § 10). Decididos em
 > 08/10/2026: Q1 (painel único), Q2 (rota nova no legado) e Q5 (as 8 empresas com WL no Hub).
 > Q3 e Q4 foram adotadas como recomendado (§ 7).
 > **Pergunta:** dá para trazer as reservas feitas nos sites white-label (WL) para o Hub,
@@ -151,7 +151,7 @@ base dela para um painel que ela não usa não tem destinatário, e é a que mai
 | 1 | `wl_booking` + Edge de sincronização + saúde | Hub, nada das 68 funções. **Feita em 08/10/2026, desligada** |
 | 2 | Reservas do WL na tela de Reservas do Operator, só leitura | **Feita em 08/10/2026** como aba própria, e não misturada na lista do Hub (§ 9) |
 | 3 | Bloco "Vendas no site do parceiro" no Manager e no Dashboard do Operator, à parte da receita do Hub | duas RPCs novas |
-| 4 | Ações sobre a reserva do WL a partir do Hub (§ 5.1) | legado: **PR agenciafera/movepark-backoffice#615** (comparecimento/check-in e troca de placa, empilhado sobre o #614). Hub: botões na aba "Pelo seu site" chamando essas rotas, ainda não feitos |
+| 4 | Ações sobre a reserva do WL a partir do Hub (§ 5.1) | legado: **PR agenciafera/movepark-backoffice#615**, empilhado sobre o #614. Hub: **feito em 08/10/2026, desligado** (§ 10) |
 
 ## 5. Funcionalidades do WL no Hub
 
@@ -271,5 +271,35 @@ Migration `20261128234500_wl_booking_operator.sql`, pgTAP `wl_booking_operator.t
 - **Ainda sem ação** (fase 4): comparecimento, check-in e troca de placa gravando de volta no
   legado. As rotas estão no PR agenciafera/movepark-backoffice#615 (`POST backend/order/attendance`
   e `POST backend/order/license-plate`, mesmas regras do backoffice, 409 com `data.code` quando a
-  regra recusa, reenvio da mesma placa responde `changed: false`). Falta o lado do Hub: os botões
-  na aba e uma Edge que chama o legado com o token, já que o token não pode ir ao navegador.
+  regra recusa, reenvio da mesma placa responde `changed: false`). O lado do Hub está em § 10.
+
+## 10. Fase 4 no Hub (08/10/2026): operar a reserva do site pelo painel
+
+Migration `20261128235500_wl_booking_actions.sql`, Edge `wl-booking-action`, pgTAP
+`wl_booking_actions.test.sql` (14 casos).
+
+- **No detalhe da reserva do site**, para reserva paga: "Cliente chegou" (check-in, travado antes do
+  horário de entrada), "Não veio", "Desfazer marcação" e "Trocar placa" (nova placa e motivo).
+  Cancelar e mudar data continuam no painel do site: o estorno é feito no Pagar.me do parceiro.
+- **Permissão: os escopos das reservas do Hub**, sem escopo novo (ADR-005, a mesma permissão é o
+  mesmo escopo): check-in e no-show exigem `bookings:checkin`; troca de placa exige
+  `bookings:write`. O Financeiro, que tem `wl-bookings:read`, vê e não opera.
+- **Edge `wl-booking-action`** (com JWT): confere a permissão pela RPC `wl_booking_action_context`
+  com o JWT de quem clicou, chama o legado com o token de backend (que nunca vai ao navegador), e
+  devolve a mensagem pronta para a tela. Recusa do site (409 com `data.code`) vira mensagem, não erro
+  genérico.
+- **Rastro**: toda tentativa, aceita, recusada ou com falha de rede, grava em
+  `wl_booking_action_log` (quem pediu, o que foi mandado, status HTTP, código e mensagem). O legado
+  registra a origem no histórico do pedido ("pelo Movepark Hub: <nome>").
+- **Reflexo local**: o que o site aceitou atualiza a linha de `wl_booking` na hora
+  (`wl_booking_record_action`); a próxima leitura incremental confirma.
+- **Chave:** `app_setting.wl_booking_import.actions_enabled = false`. Desligada, o contexto recusa
+  com `disabled` e os botões não aparecem (`wl_booking_my_actions`).
+
+### Para ligar as ações
+
+1. PRs #614 e #615 do legado em produção, e o token de backend rotacionado.
+2. Importação ligada e conferida (§ 8).
+3. `update app_setting set value = jsonb_set(value::jsonb, '{actions_enabled}', 'true')::text where key = 'wl_booking_import';`
+4. Fazer uma marcação e uma troca de placa de teste numa reserva real e conferir no backoffice do
+   site e em `wl_booking_action_log`.

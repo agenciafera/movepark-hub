@@ -4,7 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { mockAuth, renderWithProviders } from "@/test/utils";
 import OperatorBookings from "./bookings";
 import { useBookings } from "@/features/bookings/api";
-import { useWlBookings, useWlBookingsCount } from "@/features/wl-bookings/api";
+import {
+  useWlBookingAction,
+  useWlBookingActions,
+  useWlBookings,
+  useWlBookingsCount,
+} from "@/features/wl-bookings/api";
 import type { WlBookingRow } from "@/types/domain";
 
 // O gate é do servidor (operator_wl_bookings exige wl-bookings:read, coberto no pgTAP
@@ -16,7 +21,13 @@ vi.mock("@/features/bookings/api", async (importOriginal) => {
 });
 vi.mock("@/features/wl-bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/wl-bookings/api")>();
-  return { ...actual, useWlBookings: vi.fn(), useWlBookingsCount: vi.fn() };
+  return {
+    ...actual,
+    useWlBookings: vi.fn(),
+    useWlBookingsCount: vi.fn(),
+    useWlBookingActions: vi.fn(),
+    useWlBookingAction: vi.fn(),
+  };
 });
 
 const RESERVA_DO_SITE: WlBookingRow = {
@@ -48,10 +59,24 @@ const RESERVA_DO_SITE: WlBookingRow = {
   product_slug: "vaga-coberta",
 };
 
-function setup(opts: { count: number; canSee?: boolean }) {
+function setup(opts: {
+  count: number;
+  canSee?: boolean;
+  actions?: { enabled: boolean; attendance: boolean; license_plate: boolean };
+  mutate?: ReturnType<typeof vi.fn>;
+  checkInAt?: string;
+}) {
   vi.mocked(useBookings).mockReturnValue({ data: [], isLoading: false } as never);
+  vi.mocked(useWlBookingActions).mockReturnValue({
+    data: opts.actions ?? { enabled: false, attendance: false, license_plate: false },
+  } as never);
+  vi.mocked(useWlBookingAction).mockReturnValue({ mutate: opts.mutate ?? vi.fn(), isPending: false } as never);
   vi.mocked(useWlBookingsCount).mockReturnValue({ data: opts.count } as never);
-  vi.mocked(useWlBookings).mockReturnValue({ data: [RESERVA_DO_SITE], isLoading: false, error: null } as never);
+  vi.mocked(useWlBookings).mockReturnValue({
+    data: [{ ...RESERVA_DO_SITE, check_in_at: opts.checkInAt ?? RESERVA_DO_SITE.check_in_at }],
+    isLoading: false,
+    error: null,
+  } as never);
   const auth = mockAuth({
     effectiveCompanyIds: ["company-1"],
     hasScope: (scope) => (scope === "wl-bookings:read" ? opts.canSee !== false : true),
@@ -83,10 +108,50 @@ describe("OperatorBookings · reservas do site do parceiro", () => {
 
     await userEvent.click(screen.getByText("Ana Souza"));
     expect(screen.getByRole("dialog")).toHaveTextContent("Pedido 271001-0001");
-    expect(screen.getByRole("dialog")).toHaveTextContent("Para alterar, use o painel do seu site");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Para cancelar ou mudar a data, use o painel do seu site");
     expect(screen.getByRole("dialog")).toHaveTextContent("11999990000");
-    // Só leitura: nenhuma ação de reserva do Hub (cancelar, check-in) no detalhe.
-    expect(screen.queryByRole("button", { name: /cancelar|check-in/i })).not.toBeInTheDocument();
+    // Com as ações desligadas: nenhum botão, nem de cancelar (que nunca é pelo Hub).
+    expect(screen.queryByRole("button", { name: /cancelar|chegou|não veio|trocar placa/i })).not.toBeInTheDocument();
+  });
+
+  it("com as ações ligadas e permissão, marca a chegada no site", async () => {
+    const mutate = vi.fn();
+    setup({
+      count: 1,
+      actions: { enabled: true, attendance: true, license_plate: true },
+      mutate,
+      checkInAt: "2020-01-01T10:00:00Z",
+    });
+    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
+    await userEvent.click(screen.getByText("Ana Souza"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Cliente chegou" }));
+    expect(mutate).toHaveBeenCalledWith(
+      { action: "attendance", wlBookingId: "w-1", status: "compareceu" },
+      expect.anything(),
+    );
+    expect(screen.getByRole("button", { name: "Trocar placa" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /cancelar/i })).not.toBeInTheDocument();
+  });
+
+  it("antes do horário de entrada, Cliente chegou fica travado", async () => {
+    setup({
+      count: 1,
+      actions: { enabled: true, attendance: true, license_plate: false },
+      checkInAt: "2099-01-01T10:00:00Z",
+    });
+    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
+    await userEvent.click(screen.getByText("Ana Souza"));
+    expect(screen.getByRole("button", { name: "Cliente chegou" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Não veio" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Trocar placa" })).not.toBeInTheDocument();
+  });
+
+  it("sem permissão de operar (Financeiro), nenhum botão", async () => {
+    setup({ count: 1, actions: { enabled: true, attendance: false, license_plate: false } });
+    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
+    await userEvent.click(screen.getByText("Ana Souza"));
+    expect(screen.queryByRole("button", { name: /chegou|não veio|trocar placa/i })).not.toBeInTheDocument();
   });
 });
 

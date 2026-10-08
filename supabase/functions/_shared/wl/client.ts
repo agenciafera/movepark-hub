@@ -463,3 +463,70 @@ export async function wlListOrders(
   }
   return parseOrdersPage(await res.json(), cursor);
 }
+
+// ── Ações sobre o pedido (fase 4 das reservas do site no Hub) ─────────────────────────────────
+// POST /api/v3/backend/order/attendance e /order/license-plate (legado: agenciafera/movepark-backoffice#615,
+// contrato em .claude/specs/api-backend-acoes-pedido.md daquele repo). Regra recusada volta 409
+// com data.code; aqui isso NÃO vira exceção, porque é resposta esperada que vira mensagem na tela.
+
+export type WlActionResult =
+  | { kind: "ok"; status: number; data: Record<string, unknown> }
+  | { kind: "refused"; status: number; code: string; message: string };
+
+async function wlPostAction(
+  c: WlConfig,
+  token: string,
+  path: string,
+  body: Record<string, unknown>,
+): Promise<WlActionResult> {
+  const host = normalizeWlDomain(c.wl_domain);
+  const res = await wlFetch(`https://${host}${WL_API_PATH}/${path}`, {
+    method: "POST",
+    headers: wlHeaders(c.wl_tenant_key!, token),
+    body: JSON.stringify(body),
+  });
+  const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (res.ok) return { kind: "ok", status: res.status, data: (json.data ?? {}) as Record<string, unknown> };
+  if (res.status === 409 || res.status === 404 || res.status === 422) {
+    const data = (json.data ?? {}) as Record<string, unknown>;
+    const code = res.status === 404 ? "not_found" : res.status === 422 ? "invalid" : String(data.code ?? "refused");
+    return { kind: "refused", status: res.status, code, message: String(json.message ?? "") };
+  }
+  throw new WlHttpError(res.status, `WL ${path} ${res.status}: ${JSON.stringify(json).slice(0, 200)}`);
+}
+
+export function wlMarkAttendance(
+  c: WlConfig,
+  token: string,
+  p: { orderNumber: string; status: "pendente" | "compareceu" | "no_show"; actor?: string | null },
+): Promise<WlActionResult> {
+  return wlPostAction(c, token, "order/attendance", {
+    order_number: p.orderNumber,
+    status: p.status,
+    actor: p.actor ?? null,
+  });
+}
+
+export function wlChangeLicensePlate(
+  c: WlConfig,
+  token: string,
+  p: {
+    orderNumber: string;
+    licensePlate: string;
+    reason: string;
+    brand?: string | null;
+    model?: string | null;
+    color?: string | null;
+    actor?: string | null;
+  },
+): Promise<WlActionResult> {
+  return wlPostAction(c, token, "order/license-plate", {
+    order_number: p.orderNumber,
+    license_plate: p.licensePlate,
+    reason: p.reason,
+    brand: p.brand ?? null,
+    model: p.model ?? null,
+    color: p.color ?? null,
+    actor: p.actor ?? null,
+  });
+}
