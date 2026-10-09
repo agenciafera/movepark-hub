@@ -102,7 +102,9 @@ Só entra se a venda da BePark pela Movepark (Conteúdo 50) tiver saído com a p
 Descrever como condição da tarifa, com o nome da tarifa e a regra exata da ficha, nunca como
 promessa. Se não tiver saído até 16/11, a nota segue sem este parágrafo.
 
-O desconto Azul na BePark fica de fora até a Conteúdo 52 fechar as regras (spec, §6).
+O desconto Azul na BePark teve as regras confirmadas em 09/10/2026 (Conteúdo 52, spec §6) e pode
+entrar como condição da BePark, nunca como "condição da Azul": de 10% a 40% conforme a categoria,
+sobre qualquer período, levando a categoria no app da Azul e o cartão de embarque.
 
 ## 3. Envio
 

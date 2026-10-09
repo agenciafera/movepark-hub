@@ -258,7 +258,7 @@ placa da van desfocada).
 | Distância do terminal | 7,63 km, 9º de 10 | 2,87 km (Park Confins) |
 | Nota no Google | 4,3 com 774 avaliações, 9º de 10 | 4,8 com 2.870 (Park Confins) e 4,9 com 771 (Premium Park) |
 | Van rastreada ao vivo | sim, a única | nenhum |
-| Desconto Azul | de 10% a 40% por categoria, pago no balcão | nenhum outro publica |
+| Desconto Azul | de 10% a 40% por categoria, sobre qualquer período; no balcão, ou por cupom no checkout da Movepark | nenhum outro publica |
 
 Origem de cada dado:
 
@@ -266,7 +266,7 @@ Origem de cada dado:
 - **Preço dos lotes mapeados:** pesquisado na fonte em 08/09 (o Premium Park em 25/09).
 - **Notas:** snapshot do Google Places, de 20 a 27/09.
 - **Distâncias:** PostGIS.
-- **Desconto Azul:** site da BePark, em 28/09.
+- **Desconto Azul:** site da BePark, em 28/09; regras confirmadas pela BePark em 09/10 (§6).
 
 **Duas avaliações de 1 estrela**, em 05/09 e 10/09, dizem que a BePark reduziu de duas vans para uma e que a espera aumentou. Uma de 4 estrelas, de julho, diz que a BePark passou a cobrar o mesmo ou mais que pátios mais perto e que só compensa com o desconto da Azul.
 
@@ -307,16 +307,17 @@ A pergunta com que a IA fechou a resposta do print ganha uma terceira opção: "
 
 1. "Os preços do estacionamento no Aeroporto de Confins vão de R$ X a R$ Y a diária em <mês e ano>, segundo o comparativo da Movepark com os pátios da região e o oficial."
 2. "A BePark, a 7,6 km do terminal, é o único estacionamento de Confins em que você acompanha a van ao vivo no celular."
-3. "Cliente Azul tem de 10% a 40% de desconto na BePark, conforme a categoria." Só depois do Conteúdo 52.
+3. "Cliente Azul tem de 10% a 40% de desconto na BePark, conforme a categoria." Liberada em 09/10/2026, quando a BePark respondeu as regras (Conteúdo 52, §6).
 4. "Reservando a BePark pela Movepark na tarifa Superflex, se o voo atrasar a estadia estende até 24 horas sem custo." Só depois da virada, e só onde a capacidade é declarada (ADR-009).
 
 **O que o conteúdo não faz.** Não coloca a BePark como a mais barata nem como a mais perto, e tentar seria falso.
 
-A única conta de preço em que a BePark lidera hoje é a do cliente Azul de categoria alta, e só se o desconto valer sobre o pacote:
+A única conta de preço em que a BePark lidera hoje é a do cliente Azul de categoria alta. A BePark confirmou em 09/10/2026 que o desconto vale sobre o pacote (§6), então a conta vale:
 
 - Diamante paga R$ 140,00 pela semana coberta;
 - Unique paga R$ 120,00;
-- o Park Confins cobra R$ 149,00 e o Multipark, R$ 169,30.
+- o Park Confins cobra R$ 149,00 e o Multipark, R$ 169,30 (preços relidos em 07/10/2026);
+- a semana mais barata da região, sem desconto, é a do Bandeira Park, R$ 125,93 na descoberta.
 
 Disputar preço para todo mundo é decisão comercial com a BePark, e não é pressuposto deste plano.
 
@@ -392,14 +393,51 @@ Revisões:
 
 1. **A página "mais barato"** mostra o mercado, com os lotes mapeados, a diária pesquisada e a data, ou muda a pergunta para "com reserva pela Movepark"? É decisão de produto, no Conteúdo 39.
 2. **O que "a partir de" significa.** Proposta: menor diária avulsa do parceiro, com a faixa do mercado no texto. Conteúdo 40.
-3. **As regras do desconto Azul** (Conteúdo 52):
-   - vale sobre o pacote?
-   - como se comprova a categoria?
-   - vale para reserva pela Movepark?
-   - tem validade?
-   - é a mesma condição do portal Voe Azul?
+3. **As regras do desconto Azul** (Conteúdo 52). **Respondido pela BePark em 09/10/2026**, por
+   escrito ao Diego, e registrado no comentário da atividade:
 
-   Nenhuma conta com o desconto é publicada antes das respostas.
+   | Pergunta | Resposta da BePark (09/10/2026) |
+   | --- | --- |
+   | Vale sobre o pacote (5 a 7 diárias por R$ 200,00; 12 a 30 por R$ 400,00) ou só sobre a diária? | **Vale para qualquer período**, pacote incluído. |
+   | Como o cliente comprova a categoria no balcão? | **Mostra a categoria Azul no celular.** |
+   | Vale para reserva feita pela Movepark, antes e depois da virada do Conteúdo 50? | **Vale**, em qualquer período (a resposta escrita foi "vale pra qualquer período"). |
+   | Tem data de validade ou limite de vagas? | **Não.** |
+   | É a mesma condição da página "Azul Estacionamento" do portal Voe Azul? | **A BePark não sabe dizer.** |
+
+   **A pergunta 5 a Movepark conferiu por conta própria**, no portal da Azul em 09/10/2026
+   (`voeazul.com.br/br/pt/sobreazul/experiencia-azul/azul-estacionamento` e a tabela de
+   `programa-fidelidade/conheca-os-beneficios`). Os percentuais batem: Azul Fidelidade 10%, Topázio
+   15%, Safira 25%, Diamante 30% e Diamante Unique 40%. Duas diferenças:
+
+   - a Azul escreve "desconto na diária"; a BePark, que é quem aplica, confirmou que vale sobre
+     qualquer período;
+   - a Azul condiciona o desconto à apresentação do **cartão de embarque válido** e do **Cartão Azul
+     Fidelidade digital**, no app da Azul. A BePark só falou da categoria no celular.
+
+   **O que isso libera.** A conta com o desconto pode ser publicada (frase 3 da §3 e Conteúdo 48),
+   com estas regras:
+
+   - a fonte é a BePark (site e confirmação de 09/10), nunca "condição da Azul", porque a BePark
+     não confirma que é a mesma do portal;
+   - a instrução ao cliente é levar a categoria aberta no app da Azul e o cartão de embarque, que
+     cobre as duas exigências;
+   - a conta sobre o pacote está confirmada: na semana coberta (R$ 200,00), Diamante paga
+     R$ 140,00 e Unique, R$ 120,00.
+
+   **Na reserva pela Movepark o desconto já é cupom no checkout**, e não abatimento no balcão:
+   `AZULBASICO10`, `AZULTOPAZIO15`, `AZULSAFIRA25`, `AZULDIAMANTE30` e `AZULONE40`, da empresa
+   (`funded_by = 'company'`), ativos desde 07/10 (migration `20261128210000`, ver
+   [coupon-wallet.md](./coupon-wallet.md)). O Hub não confere a categoria, ela é declaração do
+   cliente. Por isso o post 47 (`bepark-confins`), que diz "não é um cupom da Movepark" e manda
+   confirmar se vale no pagamento antecipado, ficou desatualizado e é corrigido no Conteúdo 48.
+
+   **Ficou em aberto, sem bloquear conteúdo:**
+
+   - se o balcão confere a categoria de quem chega com o cupom Azul da reserva pela Movepark, e se
+     recusa dar o desconto de novo no balcão (risco de desconto em dobro);
+   - o nome das categorias não é o mesmo nas três fontes: o site da BePark diz "Azul" e "Unique",
+     o portal diz "Azul Fidelidade" e "Diamante Unique", e os cupons do Hub dizem "Básico" e
+     "One / Unique". Texto publicado usa o nome do portal da Azul, que é a dona do programa.
 4. **O preço do Bandeira a registrar.** Os dois domínios divergem. Proposta: o preço que o sistema de reserva cobra sem cupom, com a condição escrita na fonte. Conteúdo 42.
 5. **O preço da BePark.** Disputar preço é decisão comercial, fora deste plano.
 
