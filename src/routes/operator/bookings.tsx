@@ -14,6 +14,8 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
+import { BulkAttendanceBar } from "@/features/bookings/BulkAttendanceBar";
+import { useWlBookingActions } from "@/features/wl-bookings/api";
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
@@ -53,7 +55,15 @@ export default function OperatorBookings() {
   const navigate = useNavigate();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const { hasWl } = useHasWl();
-  const { impersonatedCompanyId } = useAuth();
+  const { impersonatedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
+  const companyId = impersonatedCompanyId ?? effectiveCompanyIds[0];
+  // Ação em massa (fase 6): quem pode marcar chegada no Hub (bookings:checkin ou :write). No site,
+  // vale o que o servidor diz para quem está logado (chave de ações + permissão).
+  const canCheckin =
+    hasScope("bookings:checkin", companyId) || hasScope("bookings:write", companyId);
+  const wlPerms = useWlBookingActions(hasWl ? companyId : undefined);
+  const wlAttendance = !!wlPerms.data?.enabled && !!wlPerms.data?.attendance;
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
 
   const filters: BookingPageFilters = React.useMemo(
     () => ({
@@ -77,8 +87,11 @@ export default function OperatorBookings() {
   // Filtro novo volta para a primeira página.
   const filtroKey = [status, search, source, from, to, impersonatedCompanyId].join("|");
   React.useEffect(() => setPage(0), [filtroKey]);
+  // A seleção é da página que está na tela: muda o recorte ou a página, ela zera.
+  React.useEffect(() => setSelected(new Set()), [filtroKey, page]);
 
   const { data, isLoading } = useBookingsPage(filters);
+  const selecionadas = (data?.rows ?? []).filter((r) => selected.has(`${r.source}:${r.id}`));
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,20 +113,35 @@ export default function OperatorBookings() {
             <Label htmlFor="search">Busca</Label>
             <Input
               id="search"
-              placeholder={hasWl ? "Código, pedido, nome ou placa" : "Código, nome, e-mail ou telefone"}
+              placeholder={
+                hasWl ? "Código, pedido, nome ou placa" : "Código, nome, e-mail ou telefone"
+              }
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="from">Check-in de</Label>
-            <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+            <Input
+              id="from"
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="w-40"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="to">até</Label>
-            <Input id="to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-40" />
+            <Input
+              id="to"
+              type="date"
+              value={to}
+              min={from || undefined}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-40"
+            />
           </div>
-          <div className="flex w-full tablet:w-48 flex-col gap-1.5">
+          <div className="flex w-full flex-col gap-1.5 tablet:w-48">
             <Label htmlFor="booking-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus | "all")}>
               <SelectTrigger id="booking-status">
@@ -129,7 +157,7 @@ export default function OperatorBookings() {
             </Select>
           </div>
           {hasWl && (
-            <div className="flex w-full tablet:w-40 flex-col gap-1.5">
+            <div className="flex w-full flex-col gap-1.5 tablet:w-40">
               <Label htmlFor="booking-source">Origem</Label>
               <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
                 <SelectTrigger id="booking-source">
@@ -148,6 +176,14 @@ export default function OperatorBookings() {
         </CardContent>
       </Card>
 
+      {selecionadas.length > 0 && (
+        <BulkAttendanceBar
+          rows={selecionadas}
+          wlAttendance={wlAttendance}
+          onDone={() => setSelected(new Set())}
+        />
+      )}
+
       <BookingTable
         rows={data?.rows}
         isLoading={isLoading}
@@ -156,6 +192,8 @@ export default function OperatorBookings() {
         valueMode="parking"
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
         onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
+        selected={canCheckin ? selected : undefined}
+        onSelectedChange={canCheckin ? setSelected : undefined}
       />
 
       <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />

@@ -11,9 +11,16 @@ import type { UnifiedBookingRow, WlListRow } from "@/types/domain";
 // reserva do site quem tem white-label, e o estacionamento só vê o que virou venda. Aqui o foco é
 // a tela: uma lista só, etiqueta e filtro de origem apenas para quem tem white-label, e a reserva do
 // site abrindo a tela dela (reservas-unificadas-hub-wl.md § 3).
+const hubMutate = vi.fn().mockResolvedValue(undefined);
+const wlMutate = vi.fn().mockResolvedValue({});
+const wlPerms = { data: { enabled: true, attendance: true, license_plate: true } };
 vi.mock("@/features/bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/bookings/api")>();
-  return { ...actual, useBookingsPage: vi.fn() };
+  return { ...actual, useBookingsPage: vi.fn(), useUpdateBookingStatus: () => ({ mutateAsync: hubMutate }) };
+});
+vi.mock("@/features/wl-bookings/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/wl-bookings/api")>();
+  return { ...actual, useWlBookingActions: () => wlPerms, useWlBookingAction: () => ({ mutateAsync: wlMutate }) };
 });
 vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: vi.fn() }));
 const mockNavigate = vi.fn();
@@ -144,5 +151,30 @@ describe("OperatorBookings · estacionamento com white-label", () => {
     setup({ hasWl: true, rows: [site()] });
     await userEvent.click(screen.getByText("Ana Souza"));
     expect(mockNavigate).toHaveBeenCalledWith("/operator/bookings/site/w-1");
+  });
+
+  it("ação em massa: seleciona Hub e site e marca a chegada, cada um pelo seu caminho", async () => {
+    hubMutate.mockClear();
+    wlMutate.mockClear();
+    setup({ hasWl: true, rows: [site("2020-01-01T10:00:00Z"), reservaHub("MP-PAGA")] });
+    await userEvent.click(screen.getByRole("checkbox", { name: "Selecionar todas desta página" }));
+    expect(screen.getByTestId("acao-em-massa")).toHaveTextContent("2 selecionadas");
+    await userEvent.click(screen.getByRole("button", { name: "Cliente chegou" }));
+    expect(hubMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingId: "MP-PAGA", status: "checked_in" }),
+    );
+    expect(wlMutate).toHaveBeenCalledWith({ action: "attendance", wlBookingId: "w-1", status: "compareceu" });
+  });
+});
+
+describe("OperatorBookings · ação em massa sem permissão", () => {
+  it("sem bookings:checkin nem :write, não há coluna de seleção", () => {
+    vi.mocked(useHasWl).mockReturnValue({ hasWl: true, isLoading: false });
+    vi.mocked(useBookingsPage).mockReturnValue({ data: { rows: [site()], total: 1, summary: undefined }, isLoading: false } as never);
+    renderWithProviders(<OperatorBookings />, {
+      auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: (s) => !s.startsWith("bookings:") }),
+      route: "/operator/bookings",
+    });
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 });

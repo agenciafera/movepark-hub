@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDateTime, daysBetween } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { unifiedRowView } from "./unifiedBookingRow.logic";
 import type { BookingWithRelations, UnifiedBookingRow, WlListRow } from "@/types/domain";
 
@@ -29,6 +30,12 @@ type Props = {
   emptyDescription?: string;
   /** "parking": a coluna Valor mostra as diárias (visão do estacionamento, 08/10/2026). */
   valueMode?: "total" | "parking";
+  /**
+   * Seleção para ação em massa (fase 6). A chave é `hub:<id>` ou `wl:<id>`, a mesma de
+   * `unifiedRowView`. Sem `onSelectedChange` a coluna de seleção não aparece.
+   */
+  selected?: Set<string>;
+  onSelectedChange?: (next: Set<string>) => void;
 };
 
 /**
@@ -46,7 +53,10 @@ export function BookingTable({
   showSource = false,
   emptyDescription,
   valueMode = "total",
+  selected,
+  onSelectedChange,
 }: Props) {
+  const selecionavel = !!onSelectedChange;
   const lista: UnifiedBookingRow[] | undefined =
     rows ?? bookings?.map((b) => ({ source: "hub" as const, id: b.id, booking: b }));
 
@@ -76,13 +86,37 @@ export function BookingTable({
       <Table>
         <TableHeader>
           <TableRow>
+            {selecionavel && (
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Selecionar todas desta página"
+                  checked={
+                    lista.length > 0 && lista.every((r) => selected?.has(`${r.source}:${r.id}`))
+                      ? true
+                      : lista.some((r) => selected?.has(`${r.source}:${r.id}`))
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={(v) => {
+                    const next = new Set(selected);
+                    for (const r of lista) {
+                      if (v === true) next.add(`${r.source}:${r.id}`);
+                      else next.delete(`${r.source}:${r.id}`);
+                    }
+                    onSelectedChange?.(next);
+                  }}
+                />
+              </TableHead>
+            )}
             <TableHead>Reserva</TableHead>
             <TableHead>Criada em</TableHead>
             <TableHead>Cliente</TableHead>
             <TableHead>{showCompany ? "Estacionamento" : "Unidade"}</TableHead>
             <TableHead>Estadia</TableHead>
             <TableHead>Pagamento</TableHead>
-            <TableHead className="text-right">{valueMode === "parking" ? "Diárias" : "Valor"}</TableHead>
+            <TableHead className="text-right">
+              {valueMode === "parking" ? "Diárias" : "Valor"}
+            </TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -95,8 +129,24 @@ export function BookingTable({
               <TableRow
                 key={v.key}
                 className={clicavel ? "cursor-pointer" : undefined}
-                onClick={() => (row.source === "hub" ? onRowClick?.(row.booking) : onWlRowClick?.(row.wl))}
+                onClick={() =>
+                  row.source === "hub" ? onRowClick?.(row.booking) : onWlRowClick?.(row.wl)
+                }
               >
+                {selecionavel && (
+                  <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      aria-label={`Selecionar ${v.code}`}
+                      checked={selected?.has(v.key) ?? false}
+                      onCheckedChange={(c) => {
+                        const next = new Set(selected);
+                        if (c === true) next.add(v.key);
+                        else next.delete(v.key);
+                        onSelectedChange?.(next);
+                      }}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="whitespace-nowrap">
                   <div className="font-mono text-caption text-ink">{v.code}</div>
                   {v.sourceLabel && (
@@ -112,7 +162,9 @@ export function BookingTable({
                 <TableCell className="text-ink">{v.customer ?? "-"}</TableCell>
                 <TableCell>
                   {showCompany && <div className="text-ink">{v.companyName ?? "-"}</div>}
-                  <div className={showCompany ? "text-caption text-muted" : "text-ink"}>{v.unitName ?? "-"}</div>
+                  <div className={showCompany ? "text-caption text-muted" : "text-ink"}>
+                    {v.unitName ?? "-"}
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap tabular-nums">
                   <div className="text-ink">{formatDateTime(v.checkIn)}</div>
@@ -140,7 +192,10 @@ export function BookingTable({
                   <div className="flex flex-col items-start gap-1">
                     <StatusBadge status={v.status} />
                     {v.flightProtection && (
-                      <Badge tone="pending" title="Proteção de voo acionada: confira até quando sai sem custo">
+                      <Badge
+                        tone="pending"
+                        title="Proteção de voo acionada: confira até quando sai sem custo"
+                      >
                         Proteção de voo
                       </Badge>
                     )}
