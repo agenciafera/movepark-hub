@@ -8,6 +8,7 @@ import type {
   UnifiedBookingRow,
   WlListRow,
 } from "@/types/domain";
+import type { BookingHistoryEntry } from "./bookingHistory.logic";
 import { CHANNEL_ORIGINS, type ChannelFilter, type PaymentMethodFilter } from "./bookingList.logic";
 
 type BookingUpdate = Database["public"]["Tables"]["booking"]["Update"];
@@ -109,7 +110,10 @@ async function fetchBookingsPage(f: BookingPageFilters): Promise<BookingsPage> {
   const hubIds = items.filter((i) => i.source === "hub").map((i) => i.id);
   const hubById = new Map<string, BookingWithRelations>();
   if (hubIds.length) {
-    const { data: hub, error: hubErr } = await supabase.from("booking").select(baseSelect).in("id", hubIds);
+    const { data: hub, error: hubErr } = await supabase
+      .from("booking")
+      .select(baseSelect)
+      .in("id", hubIds);
     if (hubErr) throw hubErr;
     for (const b of (hub ?? []) as unknown as BookingWithRelations[]) hubById.set(b.id, b);
   }
@@ -117,7 +121,8 @@ async function fetchBookingsPage(f: BookingPageFilters): Promise<BookingsPage> {
   const rows: UnifiedBookingRow[] = [];
   for (const i of items) {
     if (i.source === "wl" && i.wl) rows.push({ source: "wl", id: i.id, wl: i.wl });
-    else if (i.source === "hub" && hubById.has(i.id)) rows.push({ source: "hub", id: i.id, booking: hubById.get(i.id)! });
+    else if (i.source === "hub" && hubById.has(i.id))
+      rows.push({ source: "hub", id: i.id, booking: hubById.get(i.id)! });
   }
   return { total: Number(r.total ?? 0), rows, summary: r.summary ?? EMPTY_SUMMARY };
 }
@@ -140,6 +145,22 @@ export async function fetchBookingsForExport(
     if (r.rows.length < pageSize || rows.length >= total) break;
   }
   return { total, rows: rows.slice(0, max) };
+}
+
+/**
+ * Histórico da reserva com quem fez (`booking_history`, fase 6). A chave fica sob `bookingsKeys.all`
+ * para a marcação de check-in/no-show na própria tela já recarregar a linha do tempo.
+ */
+export function useBookingHistory(bookingId: string | undefined) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "history", bookingId ?? ""] as const,
+    enabled: !!bookingId,
+    queryFn: async (): Promise<BookingHistoryEntry[]> => {
+      const { data, error } = await rpc("booking_history", { p_booking_id: bookingId });
+      if (error) throw new Error(error.message);
+      return Array.isArray(data) ? (data as BookingHistoryEntry[]) : [];
+    },
+  });
 }
 
 export function useBookingsPage(filters: BookingPageFilters) {
@@ -166,7 +187,11 @@ export function useBookingByCode(code: string | undefined) {
     queryKey: [...bookingsKeys.all, "by-code", code ?? ""] as const,
     enabled: !!code,
     queryFn: async (): Promise<BookingWithRelations | null> => {
-      const { data, error } = await supabase.from("booking").select(detailSelect).eq("code", code!).limit(1);
+      const { data, error } = await supabase
+        .from("booking")
+        .select(detailSelect)
+        .eq("code", code!)
+        .limit(1);
       if (error) throw error;
       return ((data ?? [])[0] ?? null) as unknown as BookingWithRelations | null;
     },
@@ -224,7 +249,12 @@ export function useUpdateBookingStatus() {
 export function useRecordFlightCheckout() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { bookingId: string; actualCheckOutAt: string; chargedCents: number; note: string | null }) => {
+    mutationFn: async (args: {
+      bookingId: string;
+      actualCheckOutAt: string;
+      chargedCents: number;
+      note: string | null;
+    }) => {
       const { data, error } = await supabase.rpc("operator_record_flight_checkout", {
         p_booking_id: args.bookingId,
         p_actual_check_out_at: args.actualCheckOutAt,
@@ -232,7 +262,11 @@ export function useRecordFlightCheckout() {
         p_note: args.note ?? undefined,
       });
       if (error) throw error;
-      return data as { overage_cents: number; overage_charged_cents: number; actual_check_out_at: string };
+      return data as {
+        overage_cents: number;
+        overage_charged_cents: number;
+        actual_check_out_at: string;
+      };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all }),
   });
@@ -301,7 +335,15 @@ export type GatewayTrailPayment = {
   refund_partner_cents: number;
   refund_partner_balance_cents: number | null;
   refund_split: unknown;
-  split: { role?: string; recipientId?: string | null; amount: number; liable?: boolean; chargeProcessingFee?: boolean }[] | null;
+  split:
+    | {
+        role?: string;
+        recipientId?: string | null;
+        amount: number;
+        liable?: boolean;
+        chargeProcessingFee?: boolean;
+      }[]
+    | null;
   split_sent_to_gateway: boolean | null;
   debt_recovered_cents: number;
   gateway_fee_cents: number | null;
@@ -354,7 +396,9 @@ const RECONCILE_FEES_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/re
 export function useReconcileBookingFees() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (bookingId: string): Promise<{ ok: boolean; checked: number; updated: number }> => {
+    mutationFn: async (
+      bookingId: string,
+    ): Promise<{ ok: boolean; checked: number; updated: number }> => {
       const {
         data: { session },
       } = await supabase.auth.getSession();

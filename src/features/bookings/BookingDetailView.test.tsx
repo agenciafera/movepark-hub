@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import { mockAuth, renderWithProviders } from "@/test/utils";
 
-const state = vi.hoisted(() => ({ booking: null as unknown, trail: null as unknown }));
+const state = vi.hoisted(() => ({ booking: null as unknown, trail: null as unknown, history: [] as unknown[] }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const updateMutate = vi.hoisted(() => vi.fn());
 const reconcileFees = vi.hoisted(() => vi.fn());
@@ -13,6 +13,7 @@ vi.mock("./api", () => ({
   useBookingGatewayTrail: () => ({ data: state.trail, isLoading: false, isError: false }),
   useCancelBookingStaff: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateBookingStatus: () => ({ mutate: updateMutate, isPending: false }),
+  useBookingHistory: () => ({ data: state.history ?? [] }),
 }));
 vi.mock("./customerApi", () => ({ useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }) }));
 vi.mock("@/features/payouts/api", () => ({ usePayoutReleaseDays: () => ({ data: 30 }) }));
@@ -76,7 +77,7 @@ describe("BookingDetailView", () => {
     // 04/10/2026: a forma de pagamento na ficha e a hora do pagamento na linha do tempo.
     expect(screen.getByText("Forma de pagamento")).toBeInTheDocument();
     expect(screen.getAllByText(/Cartão de crédito à vista/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/^Paga em /)).toBeInTheDocument();
+    expect(screen.getByTestId("linha-do-tempo")).toHaveTextContent(/: Paga/);
     expect(screen.getByText("Estacionamento (diária)")).toBeInTheDocument();
     expect(screen.getByText("Plano Flex")).toBeInTheDocument();
     const norm = (s: string | null) => (s ?? "").replace(/\u00a0/g, " ");
@@ -203,6 +204,18 @@ describe("BookingDetailView", () => {
     expect(screen.getByText("não pago: a reserva expirou")).toBeInTheDocument();
     expect(screen.getByText("não entra: a reserva não foi paga")).toBeInTheDocument();
     expect(screen.getByText("Nenhuma, o cliente não chegou a pagar")).toBeInTheDocument();
-    expect(screen.queryByText(/^Paga em /)).not.toBeInTheDocument();
+    expect(screen.getByTestId("linha-do-tempo")).not.toHaveTextContent(/: Paga/);
+  });
+
+  // Fase 6: a linha do tempo da reserva do Hub diz quem fez, como a do site.
+  it("linha do tempo com quem fez o check-in", () => {
+    state.booking = booking("checked_in", [{ id: "p", status: "paid", method: "pix", paid_at: "2026-10-01T10:05:00Z", created_at: "2026-10-01T10:00:00Z" }]);
+    state.history = [
+      { id: "h1", type: "status_change", created_at: "2026-10-02T10:00:00Z", actor_role: "staff", actor_name: "Equipe Movepark",
+        changes: { status: { from: "confirmed", to: "checked_in" } }, amount_delta_cents: null, reason: null },
+    ];
+    renderWithProviders(<BookingDetailView code="MP-7E2482" audience="operator" />);
+    expect(screen.getByTestId("linha-do-tempo")).toHaveTextContent("Check-in por Equipe Movepark");
+    state.history = [];
   });
 });
