@@ -122,6 +122,26 @@ async function fetchBookingsPage(f: BookingPageFilters): Promise<BookingsPage> {
   return { total: Number(r.total ?? 0), rows, summary: r.summary ?? EMPTY_SUMMARY };
 }
 
+/**
+ * Todas as linhas do recorte, para exportar (fase 6): a mesma consulta da tela, de 500 em 500, até
+ * `max`. Devolve também o total, para a tela avisar quando o recorte passa do teto.
+ */
+export async function fetchBookingsForExport(
+  filters: Omit<BookingPageFilters, "page" | "pageSize">,
+  max: number,
+): Promise<{ total: number; rows: UnifiedBookingRow[] }> {
+  const pageSize = 500;
+  const rows: UnifiedBookingRow[] = [];
+  let total = 0;
+  for (let page = 0; rows.length < max; page++) {
+    const r = await fetchBookingsPage({ ...filters, page, pageSize });
+    total = r.total;
+    rows.push(...r.rows);
+    if (r.rows.length < pageSize || rows.length >= total) break;
+  }
+  return { total, rows: rows.slice(0, max) };
+}
+
 export function useBookingsPage(filters: BookingPageFilters) {
   return useQuery({
     queryKey: [...bookingsKeys.all, "page", filters] as const,

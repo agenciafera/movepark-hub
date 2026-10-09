@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { useBookingsPage, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
+import { fetchBookingsForExport, useBookingsPage, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
 import { supabase } from "@/lib/supabase";
 import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import { vi } from "vitest";
@@ -102,6 +102,34 @@ describe("useBookingsPage (lista única, 09/10/2026)", () => {
     falha("rpc", "bookings_list_page", 403, "Autenticação necessária.");
     const { result } = renderMutation(() => useBookingsPage({ page: 0, pageSize: 50 }));
     await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe("fetchBookingsForExport (fase 6)", () => {
+  it("usa a mesma consulta da tela, de 500 em 500, e para quando acabou", async () => {
+    const fn = rpc("bookings_list_page", {
+      json: {
+        total: 2,
+        items: [
+          { source: "wl", id: "w1", wl: { id: "w1" } },
+          { source: "wl", id: "w2", wl: { id: "w2" } },
+        ],
+      },
+    });
+    const r = await fetchBookingsForExport({ source: "wl", partnerView: true }, 10_000);
+    expect(r.total).toBe(2);
+    expect(r.rows).toHaveLength(2);
+    expect(fn.chamadas).toHaveLength(1);
+    expect(fn.ultimoBody).toMatchObject({ p_source: "wl", p_partner_view: true, p_limit: 500, p_offset: 0 });
+  });
+
+  it("corta no teto pedido", async () => {
+    rpc("bookings_list_page", {
+      json: { total: 3, items: [1, 2, 3].map((n) => ({ source: "wl", id: `w${n}`, wl: { id: `w${n}` } })) },
+    });
+    const r = await fetchBookingsForExport({}, 2);
+    expect(r.rows).toHaveLength(2);
+    expect(r.total).toBe(3);
   });
 });
 

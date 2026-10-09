@@ -19,6 +19,7 @@ import { BookingTable } from "@/features/bookings/BookingTable";
 import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
+import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { CHANNEL_LABEL, type ChannelFilter, type PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
 import { formatBRL } from "@/lib/format";
@@ -120,7 +121,16 @@ export default function ManagerBookings() {
             ? "Busca sem recorte de período."
             : `Reservas feitas em ${periodLabel(period, range).toLowerCase()}.`
         }
-        actions={<ManagerFilterBar showCompare={false} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <ManagerFilterBar showCompare={false} />
+            <ExportBookingsButton
+              filters={filters}
+              options={{ showSource: true, showCompany: true, valueMode: "total" }}
+              filePrefix="reservas-rede"
+            />
+          </div>
+        }
       />
 
       <Card>

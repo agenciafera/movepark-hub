@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
+import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
@@ -81,7 +82,17 @@ export default function OperatorBookings() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Reservas" description="Gestão das reservas da sua empresa." />
+      <PageHeader
+        title="Reservas"
+        description="Gestão das reservas da sua empresa."
+        actions={
+          <ExportBookingsButton
+            filters={filters}
+            options={{ showSource: hasWl, showCompany: false, valueMode: "parking" }}
+            filePrefix="reservas"
+          />
+        }
+      />
 
       <Card>
         <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:flex-wrap tablet:items-end">
