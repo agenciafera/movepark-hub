@@ -7,7 +7,6 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
 import type { BookingStatus } from "@/types/domain";
@@ -19,6 +18,7 @@ import {
   useUpdateBookingStatus,
 } from "./api";
 import { buildHubTimeline } from "./bookingHistory.logic";
+import { PlateChangeForm, type PlateChangeValues } from "@/features/vehicles/PlateChangeForm";
 import { FlightCheckoutDialog } from "./FlightCheckoutDialog";
 import { awaitingRealCheckout, flightNotice, type OperatorExtension } from "./flightCheckout.logic";
 import { usePayoutReleaseDays } from "@/features/payouts/api";
@@ -87,7 +87,7 @@ export function BookingDetailView({
   const statusMutation = useUpdateBookingStatus();
   const changeVehicle = useChangeBookingVehicle();
   const [confirming, setConfirming] = React.useState(false);
-  const [plate, setPlate] = React.useState("");
+  const [trocandoPlaca, setTrocandoPlaca] = React.useState(false);
   const [flightOpen, setFlightOpen] = React.useState(false);
   const [flightCheckoutOpen, setFlightCheckoutOpen] = React.useState(false);
   const reconcileFees = useReconcileBookingFees();
@@ -197,13 +197,19 @@ export function BookingDetailView({
     });
   }
 
-  async function savePlate() {
-    const lp = plate.trim().toUpperCase();
-    if (!lp) return;
+  // Troca de placa pela equipe com consulta, modelo, cor e motivo (fase 6); o motivo vai para o
+  // histórico e o servidor recusa sem ele.
+  async function savePlate(v: PlateChangeValues) {
     try {
-      await changeVehicle.mutateAsync({ bookingCode: booking!.code, licensePlate: lp });
+      await changeVehicle.mutateAsync({
+        bookingCode: booking!.code,
+        licensePlate: v.plate,
+        model: v.model,
+        color: v.color,
+        reason: v.reason,
+      });
       toast.success("Placa atualizada.");
-      setPlate("");
+      setTrocandoPlaca(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao trocar placa");
     }
@@ -447,23 +453,19 @@ export function BookingDetailView({
                 )}
               </div>
             )}
-            <div className="flex max-w-md items-center gap-2">
-              <Input
-                value={plate}
-                onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                placeholder="Nova placa"
-                className="h-9 flex-1 uppercase"
-                aria-label="Nova placa"
+            {trocandoPlaca ? (
+              <PlateChangeForm
+                onSubmit={savePlate}
+                onCancel={() => setTrocandoPlaca(false)}
+                pending={changeVehicle.isPending}
               />
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={savePlate}
-                disabled={!plate.trim() || changeVehicle.isPending}
-              >
-                Trocar placa
-              </Button>
-            </div>
+            ) : (
+              <div>
+                <Button size="sm" variant="secondary" onClick={() => setTrocandoPlaca(true)}>
+                  Trocar placa
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

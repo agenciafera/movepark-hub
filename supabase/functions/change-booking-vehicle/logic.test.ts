@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { parseChangeVehicleInput, plateChangeAllowed, vehicleChangeOpen } from "./logic.ts";
+import { parseChangeVehicleInput, plateChangeAllowed, staffReasonMissing, vehicleChangeOpen } from "./logic.ts";
 
 // Gate por tier (espelha o seed `fare`): Básica não tem plate_change; Flex/Superflex têm; staff override.
 const BENEFITS = {
@@ -33,6 +33,9 @@ Deno.test("parseChangeVehicleInput: por vehicle_id", () => {
     bookingCode: "MP-2",
     vehicleId: "v1",
     licensePlate: null,
+    model: null,
+    color: null,
+    reason: null,
   });
 });
 
@@ -41,7 +44,23 @@ Deno.test("parseChangeVehicleInput: por placa (normaliza maiúscula/sem espaço)
     bookingCode: "MP-3",
     vehicleId: null,
     licensePlate: "BRA2E19",
+    model: null,
+    color: null,
+    reason: null,
   });
+});
+
+Deno.test("parseChangeVehicleInput: descrição, cor e motivo (fase 6)", () => {
+  const r = parseChangeVehicleInput({
+    booking_code: "MP-4", license_plate: "abc1d23", model: " Fiat Palio ", color: "Preto", reason: " cliente trocou de carro ",
+  }).input!;
+  assertEquals([r.model, r.color, r.reason], ["Fiat Palio", "Preto", "cliente trocou de carro"]);
+});
+
+Deno.test("staffReasonMissing: a equipe precisa dizer o motivo; o cliente não", () => {
+  assertEquals(staffReasonMissing(true, null), true);
+  assertEquals(staffReasonMissing(true, "troca"), false);
+  assertEquals(staffReasonMissing(false, null), false);
 });
 
 Deno.test("vehicleChangeOpen: antes do check-in sim; depois do carro entrar, não", () => {

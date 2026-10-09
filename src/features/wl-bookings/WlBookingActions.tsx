@@ -1,13 +1,11 @@
 import * as React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useWlBookingAction, useWlBookingActions } from "./api";
 import { canMarkArrived } from "./wlBooking.logic";
 import type { WlBookingRow } from "@/types/domain";
+import { PlateChangeForm, type PlateChangeValues } from "@/features/vehicles/PlateChangeForm";
 
 /**
  * Check-in, no-show e troca de placa, gravados no site do parceiro pela Edge `wl-booking-action`.
@@ -25,8 +23,6 @@ export function WlBookingActions({
   const perms = useWlBookingActions(booking.company_id);
   const acao = useWlBookingAction();
   const [trocandoPlaca, setTrocandoPlaca] = React.useState(false);
-  const [placa, setPlaca] = React.useState("");
-  const [motivo, setMotivo] = React.useState("");
 
   const p = perms.data;
   if (!p?.enabled || booking.status !== "confirmed" || (!p.attendance && !p.license_plate))
@@ -46,20 +42,22 @@ export function WlBookingActions({
       },
     );
 
-  const trocarPlaca = () =>
+  // Com marca, modelo e cor da consulta de placa (fase 6): o site grava no pedido e regenera o voucher.
+  const trocarPlaca = (v: PlateChangeValues) =>
     acao.mutate(
       {
         action: "license_plate",
         wlBookingId: booking.id,
-        licensePlate: placa.trim(),
-        reason: motivo.trim(),
+        licensePlate: v.plate,
+        reason: v.reason,
+        brand: v.brand ?? undefined,
+        model: v.model ?? undefined,
+        color: v.color ?? undefined,
       },
       {
         onSuccess: (data) => {
-          onChanged?.({ license_plate: String(data.license_plate ?? placa.trim().toUpperCase()) });
+          onChanged?.({ license_plate: String(data.license_plate ?? v.plate.toUpperCase()) });
           setTrocandoPlaca(false);
-          setPlaca("");
-          setMotivo("");
           toast.success("Placa trocada no site.");
         },
         onError: (e) =>
@@ -77,7 +75,9 @@ export function WlBookingActions({
         <CardTitle>Operação</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <p className="text-body-sm text-muted">O que for marcado aqui fica gravado no site white-label.</p>
+        <p className="text-body-sm text-muted">
+          O que for marcado aqui fica gravado no site white-label.
+        </p>
         {p.attendance ? (
           <div className="flex flex-wrap gap-2">
             {!chegou ? (
@@ -115,39 +115,12 @@ export function WlBookingActions({
 
         {p.license_plate ? (
           trocandoPlaca ? (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="wl-nova-placa">Nova placa</Label>
-              <Input
-                id="wl-nova-placa"
-                value={placa}
-                onChange={(e) => setPlaca(e.target.value)}
-                placeholder="ABC1D23"
-              />
-              <Label htmlFor="wl-motivo">Motivo</Label>
-              <Textarea
-                id="wl-motivo"
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                rows={2}
-              />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={trocarPlaca}
-                  disabled={acao.isPending || !placa.trim() || !motivo.trim()}
-                >
-                  {acao.isPending ? "Salvando..." : "Salvar placa"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setTrocandoPlaca(false)}
-                  disabled={acao.isPending}
-                >
-                  Voltar
-                </Button>
-              </div>
-            </div>
+            <PlateChangeForm
+              idPrefix="wl-troca-placa"
+              onSubmit={trocarPlaca}
+              onCancel={() => setTrocandoPlaca(false)}
+              pending={acao.isPending}
+            />
           ) : (
             <div>
               <Button size="sm" variant="secondary" onClick={() => setTrocandoPlaca(true)}>

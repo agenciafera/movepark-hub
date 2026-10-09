@@ -1,10 +1,10 @@
 # Reservas unificadas: Hub e white-label numa lista só
 
-> **Status:** fases 1 a 5 implementadas em 09/10/2026 (migrations
+> **Status:** fases 1 a 6 implementadas em 09/10/2026 (fase 6: ver § 4.5) (migrations
 > `20261129100000_reservas_unificadas_lista.sql`, `20261129110000_wl_booking_detalhe.sql`,
 > `20261129120000_wl_booking_ficha_completa.sql` e `20261129130000_wl_faturamento_por_origem.sql`,
 > pgTAP `bookings_list_page`, `wl_booking_detail`, `wl_booking_ficha_completa` e
-> `wl_faturamento_por_origem`; legado agenciafera/movepark-backoffice#620); fase 6 em especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
+> `wl_faturamento_por_origem`; legado agenciafera/movepark-backoffice#620). Substitui a direção de tela de `reservas-wl-no-hub.md`
 > (aba separada "Pelo seu site"), que fica como registro da integração de dados (importação,
 > ações no legado, segurança). Decisões de 09/10/2026 em § 9.
 > **Base:** telas do backoffice do white-label enviadas pelo Kallef (lista de pedidos, detalhe,
@@ -172,6 +172,16 @@ A linha do tempo ainda é só o que o Hub fez mais a compra e o comparecimento m
 histórico completo do site (status, pagamento, voucher, trocas de placa feitas lá, quem fez) é dado
 da fase 4 (§ 5, D5).
 
+### 4.5 Como ficou (fase 6, 09/10/2026)
+
+| Funcionalidade | Como ficou |
+|---|---|
+| Exportar | Botão "Exportar" na lista do Operator e do Manager. O arquivo sai da mesma consulta da tela (`bookings_list_page`, de 500 em 500, até 10 mil linhas), então segue os filtros. Coluna Origem só para quem tem white-label; Empresa só no Manager; valor como na tela. CSV no formato do Excel em português (`src/lib/csv.ts`). |
+| Ação em massa | Na lista do Operator, para quem tem `bookings:checkin` ou `bookings:write`: seleciona e marca "Cliente chegou" ou "Não veio". Hub só confirmada; site só pedido pago, com as ações ligadas e, para chegada, a partir do horário de entrada (`planBulkAttendance`). O que não se aplica é pulado e contado por motivo. A seleção é da página na tela. |
+| Histórico | Migration `20261129140500_historico_da_reserva.sql`: check-in, check-out e no-show passam a registrar quem marcou (`booking_modification`, tipo `status_change`, por gatilho, com `clock_timestamp`). RPC `booking_history` dá nome a quem fez; para o parceiro, equipe Movepark e cliente aparecem sem nome. A tela da reserva do Hub junta o histórico na linha do tempo (`buildHubTimeline`), sem repetir o check-in. De carona, a leitura de `booking_modification` por membro passa a exigir `bookings:read`. |
+| Consulta e troca de placa | Formulário único (`PlateChangeForm`) para Hub e site: placa nova, "Consultar" preenche modelo e cor pela Edge `lookup-vehicle-plate` (a mesma do cadastro do cliente), motivo obrigatório. No Hub, a Edge `change-booking-vehicle` aceita modelo, cor e motivo, exige motivo quando é a equipe e grava no histórico a placa de antes e a de depois. No site, marca, modelo e cor vão para o legado pela `wl-booking-action`. |
+| Duplicatas | Feito na fase 4 (aviso e link para o pedido original). O Hub não tem duplicata própria. |
+
 ## 5. Dados que faltam trazer do site
 
 A cópia de hoje (`wl_booking`) traz o essencial. Para a lista e o detalhe acima, a rota
@@ -293,7 +303,7 @@ origem própria.
 | 3 | Detalhe da reserva do site no layout do Hub, com as ações que já funcionam (comparecimento, no-show, troca de placa) (**feita 09/10/2026**, ver § 4.4) |
 | 4 | Dados que faltam (§ 5) na rota do legado e na cópia; voucher, itens, veículo, forma de pagamento (**feita 09/10/2026**, ver § 5.1) |
 | 5 | Faturamento por origem nos dashboards e relatórios (§ 6) (**feita 09/10/2026**, ver § 6.1) |
-| 6 | Funcionalidades do site que o Hub não tem: consulta de placa, ações em massa, exportar, histórico, duplicatas |
+| 6 | Funcionalidades do site que o Hub não tem: consulta de placa, ações em massa, exportar, histórico, duplicatas (**feita 09/10/2026**, ver § 4.5) |
 
 ## 9. Decisões (09/10/2026)
 

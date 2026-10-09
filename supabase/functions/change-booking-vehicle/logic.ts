@@ -27,6 +27,23 @@ export interface ChangeVehicleInput {
   bookingCode: string;
   vehicleId: string | null;
   licensePlate: string | null;
+  /** Descrição do veículo (marca e modelo, como a consulta de placa devolve) e cor. Opcionais. */
+  model: string | null;
+  color: string | null;
+  /** Motivo da troca. Obrigatório quando quem troca é a equipe (ver `staffReasonMissing`). */
+  reason: string | null;
+}
+
+const texto = (v: unknown, max: number): string | null =>
+  typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
+
+/**
+ * Troca de placa pela equipe (operador ou Movepark) exige motivo, como no backoffice do
+ * white-label (fase 6 das reservas unificadas): é o que explica, depois, por que o voucher mudou.
+ * O cliente trocando a própria placa não precisa.
+ */
+export function staffReasonMissing(isStaff: boolean, reason: string | null): boolean {
+  return isStaff && !reason;
 }
 
 export function parseChangeVehicleInput(body: unknown): { input: ChangeVehicleInput | null; error?: string } {
@@ -41,5 +58,14 @@ export function parseChangeVehicleInput(body: unknown): { input: ChangeVehicleIn
   if (!vehicleId && !licensePlate) {
     return { input: null, error: "Informe vehicle_id ou license_plate." };
   }
-  return { input: { bookingCode: code, vehicleId, licensePlate } };
+  return {
+    input: {
+      bookingCode: code,
+      vehicleId,
+      licensePlate,
+      model: texto(b.model, 120),
+      color: texto(b.color, 40),
+      reason: texto(b.reason, 500),
+    },
+  };
 }

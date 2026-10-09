@@ -7,7 +7,8 @@ export type { MyBookingStatus };
 export type MyBookingListItem = {
   id: string;
   code: string;
-  status: "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "expired" | "no_show";
+  status:
+    "pending" | "confirmed" | "checked_in" | "completed" | "cancelled" | "expired" | "no_show";
   check_in_at: string;
   check_out_at: string;
   expires_at: string | null;
@@ -88,8 +89,7 @@ async function fetchMyBookings(profileId: string | undefined): Promise<MyBooking
     // Por isso o balcão só conta quando não houve promoção.
     const ancora = Number(r.price_breakdown?.old_price ?? 0) || 0;
     const cobrado = Number(r.price_breakdown?.subtotal ?? 0) || 0;
-    const savedFromCounter =
-      savedFromPromo > 0 || ancora <= cobrado ? 0 : ancora - cobrado;
+    const savedFromCounter = savedFromPromo > 0 || ancora <= cobrado ? 0 : ancora - cobrado;
 
     return {
       id: r.id,
@@ -148,7 +148,16 @@ export type MyBookingDetail = MyBookingListItem & {
   /** Número do voo informado no checkout da Superflex (opcional). */
   flight_number: string | null;
   /** Extensões por atraso de voo já usadas (a proteção vale uma vez). */
-  fare_extensions: { id: string; kind: string; new_check_out_at: string; requested_check_out_at: string | null; overage_daily_cents: number; overage_cents: number; actual_check_out_at: string | null; overage_charged_cents: number | null }[];
+  fare_extensions: {
+    id: string;
+    kind: string;
+    new_check_out_at: string;
+    requested_check_out_at: string | null;
+    overage_daily_cents: number;
+    overage_cents: number;
+    actual_check_out_at: string | null;
+    overage_charged_cents: number | null;
+  }[];
   /** Acionamentos da garantia de vaga desta reserva. */
   guarantee_claims: { id: string; status: string; opened_at: string }[];
   vehicle: { id: string; license_plate: string; model: string | null; color: string | null } | null;
@@ -233,7 +242,11 @@ export function useBookingDetail(code: string | undefined) {
         fare_benefits: (r.fare_benefits ?? null) as import("@/lib/fares").FareBenefits | null,
         flight_number: r.flight_number ?? null,
         fare_extensions: (r.fare_extensions ?? []) as MyBookingDetail["fare_extensions"],
-        guarantee_claims: (r.guarantee_claims ?? []) as { id: string; status: string; opened_at: string }[],
+        guarantee_claims: (r.guarantee_claims ?? []) as {
+          id: string;
+          status: string;
+          opened_at: string;
+        }[],
         location: {
           name: r.location.name,
           slug: r.location.slug,
@@ -321,7 +334,14 @@ export type CancelBookingResult = {
 export function useChangeBookingVehicle() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { bookingCode: string; vehicleId?: string; licensePlate?: string }) => {
+    mutationFn: async (args: {
+      bookingCode: string;
+      vehicleId?: string;
+      licensePlate?: string;
+      model?: string | null;
+      color?: string | null;
+      reason?: string;
+    }) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Você precisa entrar.");
@@ -337,6 +357,9 @@ export function useChangeBookingVehicle() {
           booking_code: args.bookingCode,
           vehicle_id: args.vehicleId,
           license_plate: args.licensePlate,
+          model: args.model ?? undefined,
+          color: args.color ?? undefined,
+          reason: args.reason,
         }),
       });
       if (!res.ok) {
@@ -485,7 +508,13 @@ export function useCancelMyBooking() {
 export function useExtendBookingFlightDelay() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: { bookingCode: string; newCheckOutAt: string; flightNumber: string; kind?: "delay" | "cancellation"; reason?: string | null }) => {
+    mutationFn: async (args: {
+      bookingCode: string;
+      newCheckOutAt: string;
+      flightNumber: string;
+      kind?: "delay" | "cancellation";
+      reason?: string | null;
+    }) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Você precisa entrar.");
@@ -507,9 +536,19 @@ export function useExtendBookingFlightDelay() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error ?? "Não foi possível estender a reserva.");
+        throw new Error(
+          (err as { error?: string }).error ?? "Não foi possível estender a reserva.",
+        );
       }
-      return (await res.json()) as { booking_id: string; new_check_out_at: string; requested_check_out_at: string; added_days: number; overage_cents: number; overage_daily_cents: number; kind: string };
+      return (await res.json()) as {
+        booking_id: string;
+        new_check_out_at: string;
+        requested_check_out_at: string;
+        added_days: number;
+        overage_cents: number;
+        overage_daily_cents: number;
+        kind: string;
+      };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-bookings"] });
@@ -525,7 +564,9 @@ export function useClaimGuarantee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (bookingCode: string) => {
-      const { data, error } = await supabase.rpc("claim_spot_guarantee", { p_booking_code: bookingCode });
+      const { data, error } = await supabase.rpc("claim_spot_guarantee", {
+        p_booking_code: bookingCode,
+      });
       if (error) throw error;
       return data as { id: string; opened_at: string };
     },

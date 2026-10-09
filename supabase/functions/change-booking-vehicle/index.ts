@@ -6,13 +6,16 @@
 // POST /functions/v1/change-booking-vehicle
 // Authorization: Bearer <JWT>
 // { "booking_code": "MP-XXXX", "vehicle_id": "uuid" }
+//   ou { "booking_code", "license_plate", "model"?, "color"?, "reason"? }  (staff: reason obrigatório)
 // → { ok: true, vehicle_id }
+// Fase 6 das reservas unificadas (09/10/2026): a equipe troca a placa com descrição e cor (da
+// consulta de placa) e motivo, e o histórico guarda a placa de antes e a de depois.
 
 import { notifyBooking } from "../_shared/notify.ts";
 import { tplBookingVehicleChanged } from "../_shared/email.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
-import { parseChangeVehicleInput, plateChangeAllowed, vehicleChangeOpen } from "./logic.ts";
+import { parseChangeVehicleInput, plateChangeAllowed, staffReasonMissing, vehicleChangeOpen } from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 
 const corsHeaders = {
@@ -97,6 +100,10 @@ Deno.serve(async (req: Request) => {
       403,
     );
   }
+  if (staffReasonMissing(isStaff, input.reason)) {
+    return jsonResponse({ error: "Diga o motivo da troca de placa." }, 400);
+  }
+
   if (!vehicleChangeOpen(booking.status, booking.checked_in_at)) {
     return jsonResponse({ error: "Esta reserva não permite troca de veículo." }, 400);
   }
@@ -130,10 +137,17 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (existing) {
       targetVehicleId = existing.id;
+      // Descrição e cor da consulta atualizam o veículo que já existia (o voucher mostra o modelo).
+      if (input.model || input.color) {
+        await admin
+          .from("vehicle")
+          .update({ ...(input.model ? { model: input.model } : {}), ...(input.color ? { color: input.color } : {}) })
+          .eq("id", existing.id);
+      }
     } else {
       const { data: created, error: cErr } = await admin
         .from("vehicle")
-        .insert({ profile_id: booking.profile_id, license_plate: plate })
+        .insert({ profile_id: booking.profile_id, license_plate: plate, model: input.model, color: input.color })
         .select("id")
         .single();
       if (cErr || !created) return jsonResponse({ error: cErr?.message ?? "Falha ao cadastrar veículo." }, 500);
@@ -142,6 +156,12 @@ Deno.serve(async (req: Request) => {
   }
 
   const previousVehicleId = booking.vehicle_id as string | null;
+  // As placas de antes e de depois entram no histórico: só os ids não diziam o que mudou.
+  const { data: placas } = await admin
+    .from("vehicle")
+    .select("id, license_plate")
+    .in("id", [previousVehicleId, targetVehicleId].filter(Boolean) as string[]);
+  const placaDe = (id: string | null) => (placas ?? []).find((v: { id: string }) => v.id === id)?.license_plate ?? null;
   const { error: upErr } = await admin
     .from("booking")
     .update({ vehicle_id: targetVehicleId })
@@ -155,9 +175,12 @@ Deno.serve(async (req: Request) => {
       p_type: "vehicle_change",
       p_actor_id: userId,
       p_actor_role: isStaff ? "staff" : "customer",
-      p_changes: { from: { vehicle_id: previousVehicleId }, to: { vehicle_id: targetVehicleId } },
+      p_changes: {
+        from: { vehicle_id: previousVehicleId, license_plate: placaDe(previousVehicleId) },
+        to: { vehicle_id: targetVehicleId, license_plate: placaDe(targetVehicleId) },
+      },
       p_amount_delta_cents: null,
-      p_reason: null,
+      p_reason: input.reason,
     })
     .then(({ error: logErr }) => {
       if (logErr) console.error("[change-booking-vehicle] log_booking_modification:", logErr.message);
