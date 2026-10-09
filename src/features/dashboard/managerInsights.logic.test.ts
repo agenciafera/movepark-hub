@@ -125,6 +125,17 @@ describe("stayBars / dominantStay / shortStayShare", () => {
 });
 
 describe("networkInsight", () => {
+  it("com venda no site, a concentração fala do Hub e não da rede", () => {
+    const r = networkInsight({
+      revenue: 1000,
+      network: { locations_total: 10, locations_with_revenue: 2 },
+      concentration: { leader: { name: "Abbapark" }, topShare: 81, headCount: 1, withRevenue: 2 } as never,
+      customers: { new: 1, returning: 1 },
+      scope: "hub",
+    });
+    expect(r?.title).toBe("Abbapark sozinha faz 8 de cada 10 reais do Hub");
+  });
+
   const conc = concentration(rows, TOTAL);
   const base = {
     revenue: TOTAL,

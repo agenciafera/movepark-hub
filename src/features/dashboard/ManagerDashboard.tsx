@@ -147,6 +147,7 @@ export default function ManagerDashboard() {
     network,
     concentration: conc,
     customers,
+    scope: temSite ? "hub" : "rede",
   });
 
   const idle = network.locations_total - network.locations_with_revenue;
@@ -387,7 +388,9 @@ export default function ManagerDashboard() {
         <Panel className="flex flex-col">
           <div className="min-w-0">
             <div className="text-title-md text-ink">Concentração</div>
-            <div className="mt-1 text-body-sm text-muted">participação na receita</div>
+            <div className="mt-1 text-body-sm text-muted">
+              participação na receita{temSite ? " do Hub" : ""}
+            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
@@ -449,8 +452,8 @@ export default function ManagerDashboard() {
             {conc.withRevenue === 0
               ? "Nenhuma unidade da rede registrou receita no período."
               : conc.headCount === 1
-                ? "Uma única unidade responde por 80% da receita do período."
-                : `${conc.headCount} unidades respondem por 80% da receita do período.`}
+                ? `Uma única unidade responde por 80% da receita${temSite ? " do Hub" : ""} do período.`
+                : `${conc.headCount} unidades respondem por 80% da receita${temSite ? " do Hub" : ""} do período.`}
           </p>
         </Panel>
       </div>
@@ -464,7 +467,8 @@ export default function ManagerDashboard() {
               {formatBRL(fareTotal)}
             </div>
             <div className="mt-1.5 text-body-sm text-muted">
-              {share(fareTotal, cur?.revenue ?? 0)}% da receita total da rede
+              {share(fareTotal, cur?.revenue ?? 0)}% da receita{" "}
+              {temSite ? "do Hub" : "total da rede"}
             </div>
             <div className="mt-5 flex flex-col gap-0.5">
               {fares.map((f) => (
