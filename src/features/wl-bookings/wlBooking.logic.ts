@@ -66,3 +66,37 @@ export function canMarkArrived(checkInAt: string | null | undefined, now: Date =
   const t = new Date(checkInAt).getTime();
   return !Number.isFinite(t) || t <= now.getTime();
 }
+
+/**
+ * Uma ação do Hub na linha do tempo da reserva do site: o que foi feito, por quem e, se o site
+ * recusou, o motivo. O texto do motivo é o que o site devolveu (já em português).
+ */
+export function wlActionTimelineLabel(a: {
+  action: string;
+  request: Record<string, unknown> | null;
+  result: string;
+  message: string | null;
+  by_name: string | null;
+}): string {
+  const req = a.request ?? {};
+  let texto: string;
+  if (a.action === "attendance") {
+    const st = String(req.status ?? "");
+    texto =
+      st === "compareceu" ? "Chegada registrada"
+      : st === "no_show" ? "Marcada como não compareceu"
+      : "Marcação de comparecimento desfeita";
+  } else if (a.action === "license_plate") {
+    const placa = req.license_plate ? String(req.license_plate).toUpperCase() : null;
+    const motivo = req.reason ? String(req.reason) : null;
+    texto = `Placa trocada${placa ? ` para ${placa}` : ""}${motivo ? ` (${motivo})` : ""}`;
+  } else {
+    texto = a.action;
+  }
+  if (a.by_name) texto += ` por ${a.by_name}`;
+  // Tentativa que não gravou não pode soar como fato consumado.
+  if (a.result !== "ok") texto = `Não gravou: ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`;
+  if (a.result === "refused") texto += `. O site recusou${a.message ? `: ${a.message}` : ""}`;
+  if (a.result === "error") texto += `. Não chegou ao site${a.message ? `: ${a.message}` : ""}`;
+  return texto;
+}

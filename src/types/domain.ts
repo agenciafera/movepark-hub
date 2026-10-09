@@ -980,3 +980,25 @@ export type BookingsPageSummary = {
   };
   wl: { total: number; paid: number; paid_amount: number };
 };
+
+/** Uma ação do Hub numa reserva do site (comparecimento, troca de placa), para a linha do tempo. */
+export type WlBookingActionEntry = {
+  id: string;
+  action: "attendance" | "license_plate";
+  request: Record<string, unknown>;
+  result: "ok" | "refused" | "error";
+  result_code: string | null;
+  message: string | null;
+  created_at: string;
+  /** Quem fez. Para o parceiro, ação da equipe da Movepark vem como "Equipe Movepark". */
+  by_name: string | null;
+};
+
+/** Detalhe da reserva do site (`wl_booking_detail`, migration 20261129110000). */
+export type WlBookingDetailData = WlListRow & {
+  wl_order_id: number;
+  is_duplicate: boolean;
+  utm: Record<string, unknown>;
+  wl_updated_at: string | null;
+  actions: WlBookingActionEntry[];
+};

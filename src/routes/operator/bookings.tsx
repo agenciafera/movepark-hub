@@ -13,13 +13,12 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
-import { SOURCE_OPTIONS, wlListRowToBooking, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
+import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { useHasWl } from "@/features/companies/useHasWl";
 import { useAuth } from "@/auth/context";
-import { WlBookingDetail } from "@/features/wl-bookings/WlBookingDetail";
-import type { BookingStatus, WlBookingRow } from "@/types/domain";
+import type { BookingStatus } from "@/types/domain";
 
 // O estacionamento só vê reserva que virou venda (08/10/2026, `partnerSeesBooking`; no servidor,
 // `p_partner_view`): pendente e expirada não entram no filtro porque não aparecem para ele.
@@ -50,7 +49,6 @@ export default function OperatorBookings() {
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
   const [page, setPage] = React.useState(0);
-  const [aberta, setAberta] = React.useState<WlBookingRow | null>(null);
   const navigate = useNavigate();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const { hasWl } = useHasWl();
@@ -146,16 +144,10 @@ export default function OperatorBookings() {
         showSource={hasWl}
         valueMode="parking"
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
-        onWlRowClick={(w) => setAberta(wlListRowToBooking(w))}
+        onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
       />
 
       <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
-
-      <WlBookingDetail
-        booking={aberta}
-        onClose={() => setAberta(null)}
-        onChanged={(patch) => setAberta((b) => (b ? { ...b, ...patch } : b))}
-      />
     </div>
   );
 }

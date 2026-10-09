@@ -1,8 +1,8 @@
 # Reservas unificadas: Hub e white-label numa lista só
 
-> **Status:** fases 1 e 2 implementadas em 09/10/2026 (migration
-> `20261129100000_reservas_unificadas_lista.sql`, pgTAP `bookings_list_page.test.sql`); fases 3 a 6
-> em especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
+> **Status:** fases 1, 2 e 3 implementadas em 09/10/2026 (migrations
+> `20261129100000_reservas_unificadas_lista.sql` e `20261129110000_wl_booking_detalhe.sql`, pgTAP
+> `bookings_list_page.test.sql` e `wl_booking_detail.test.sql`); fases 4 a 6 em especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
 > (aba separada "Pelo seu site"), que fica como registro da integração de dados (importação,
 > ações no legado, segurança). Decisões de 09/10/2026 em § 9.
 > **Base:** telas do backoffice do white-label enviadas pelo Kallef (lista de pedidos, detalhe,
@@ -149,6 +149,27 @@ gateway, mudança de data, divisão do dinheiro (diárias, comissão, "você rec
 cliente, cupons e descontos do Hub, avaliações. Nada disso existe para a reserva do site: na tela
 dela esses blocos simplesmente não aparecem.
 
+### 4.4 Como ficou o detalhe (fase 3, 09/10/2026)
+
+Rota própria, `/operator/bookings/site/:id` e `/manager/bookings/site/:id` (pelo id do Hub, porque o
+número do pedido se repete entre sites). A tela (`WlBookingDetailView`) segue o layout da reserva do
+Hub: cabeçalho com o status traduzido e a etiqueta White-label, um aviso de que pagamento e
+cancelamento são do site, o card Reserva (cliente, contato, placa, vaga com PCD, passageiros,
+estadia, valor pago no site, comparecimento, status no site, canal e campanha), a linha do tempo e
+o card Operação. Plano, dinheiro destrinchado, comissão, estorno, mudança de data, proteção de voo e
+chamados não aparecem. Pedido marcado como duplicado no site ganha um aviso.
+
+A leitura é a RPC `wl_booking_detail(p_id)`, com o mesmo recorte da lista
+(`wl_visible_company_ids`). Ela é SECURITY DEFINER só para dar nome a quem fez cada ação da linha
+do tempo (`wl_booking_action_log` + `profiles`): o parceiro não lê o perfil de outra pessoa pela
+RLS. Ação da equipe da Movepark aparece para o parceiro como "Equipe Movepark". A leitura direta do
+log passou a seguir a mesma regra da `wl_booking`. Ação recusada pelo site ou que não chegou fica na
+linha do tempo, em vermelho, como "Não gravou: ...", com o motivo devolvido pelo site.
+
+A linha do tempo ainda é só o que o Hub fez mais a compra e o comparecimento marcado no site: o
+histórico completo do site (status, pagamento, voucher, trocas de placa feitas lá, quem fez) é dado
+da fase 4 (§ 5, D5).
+
 ## 5. Dados que faltam trazer do site
 
 A cópia de hoje (`wl_booking`) traz o essencial. Para a lista e o detalhe acima, a rota
@@ -205,8 +226,8 @@ origem própria.
 | Fase | Entrega |
 |---|---|
 | 1 | Regra única de "tem white-label" e correção dos vazamentos do § 2 (**feita 09/10/2026**) |
-| 2 | RPC `bookings_list_page` (Hub + site, paginada) e a lista unificada no Operator e no Manager, com etiqueta e filtro de origem; sai a aba "Pelo seu site" (**feita 09/10/2026**; o detalhe do site abre no diálogo antigo até a fase 3) |
-| 3 | Detalhe da reserva do site no layout do Hub, com as ações que já funcionam (comparecimento, no-show, troca de placa) |
+| 2 | RPC `bookings_list_page` (Hub + site, paginada) e a lista unificada no Operator e no Manager, com etiqueta e filtro de origem; sai a aba "Pelo seu site" (**feita 09/10/2026**) |
+| 3 | Detalhe da reserva do site no layout do Hub, com as ações que já funcionam (comparecimento, no-show, troca de placa) (**feita 09/10/2026**, ver § 4.4) |
 | 4 | Dados que faltam (§ 5) na rota do legado e na cópia; voucher, itens, veículo, forma de pagamento |
 | 5 | Faturamento por origem nos dashboards e relatórios (§ 6) |
 | 6 | Funcionalidades do site que o Hub não tem: consulta de placa, ações em massa, exportar, histórico, duplicatas |

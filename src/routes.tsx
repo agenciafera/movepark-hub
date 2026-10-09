@@ -131,6 +131,8 @@ import ManagerDashboard from "@/routes/manager/dashboard";
 import ManagerBookings from "@/routes/manager/bookings";
 import ManagerBookingDetail from "@/routes/manager/booking-detail";
 import OperatorBookingDetail from "@/routes/operator/booking-detail";
+import OperatorWlBookingDetail from "@/routes/operator/wl-booking-detail";
+import ManagerWlBookingDetail from "@/routes/manager/wl-booking-detail";
 import ManagerCompanies from "@/routes/manager/companies";
 import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
@@ -1575,6 +1577,8 @@ export const routes: RouteRecord[] = [
               { path: "bookings", element: <ManagerBookings /> },
               // Tela da reserva (18/09/2026): substitui o popup, com os valores destrinchados.
               { path: "bookings/:code", element: <ManagerBookingDetail /> },
+              // Reserva do site white-label, no mesmo layout (reservas unificadas, fase 3).
+              { path: "bookings/site/:id", element: <ManagerWlBookingDetail /> },
               { path: "companies", element: <ManagerCompanies /> },
               { path: "partners", element: <ManagerPartners /> },
               { path: "destinations", element: <ManagerDestinations /> },
@@ -1631,6 +1635,7 @@ export const routes: RouteRecord[] = [
               { path: "bookings", element: <OperatorBookings /> },
               // A mesma tela da reserva do Manager, no lugar da ficha lateral (18/09/2026).
               { path: "bookings/:code", element: <OperatorBookingDetail /> },
+              { path: "bookings/site/:id", element: <OperatorWlBookingDetail /> },
               { path: "locations", element: <OperatorLocations /> },
               { path: "locations/:locationId/editar", element: <OperatorLocationEdit /> },
               {

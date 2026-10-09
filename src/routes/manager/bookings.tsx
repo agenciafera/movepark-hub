@@ -19,11 +19,10 @@ import { BookingTable } from "@/features/bookings/BookingTable";
 import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
-import { SOURCE_OPTIONS, wlListRowToBooking, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
+import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { CHANNEL_LABEL, type ChannelFilter, type PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
-import { WlBookingDetail } from "@/features/wl-bookings/WlBookingDetail";
 import { formatBRL } from "@/lib/format";
-import type { BookingStatus, WlBookingRow } from "@/types/domain";
+import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -70,7 +69,6 @@ export default function ManagerBookings() {
   const [channel, setChannel] = React.useState<ChannelFilter | "all">("all");
   const [source, setSource] = React.useState<SourceFilter>("all");
   const [page, setPage] = React.useState(0);
-  const [aberta, setAberta] = React.useState<WlBookingRow | null>(null);
   const navigate = useNavigate();
   const { period, range, scopedLocationIds } = useManagerFilters();
 
@@ -250,16 +248,10 @@ export default function ManagerBookings() {
         showSource
         emptyDescription={temFiltro ? "Nenhuma reserva bate com esses filtros. Limpe os filtros ou mude o período." : undefined}
         onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
-        onWlRowClick={(w) => setAberta(wlListRowToBooking(w))}
+        onWlRowClick={(w) => navigate(`/manager/bookings/site/${w.id}`)}
       />
 
       <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
-
-      <WlBookingDetail
-        booking={aberta}
-        onClose={() => setAberta(null)}
-        onChanged={(patch) => setAberta((b) => (b ? { ...b, ...patch } : b))}
-      />
     </div>
   );
 }

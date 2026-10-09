@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceLabel, canMarkArrived, centsToReais, wlBookingStatusLabel, wlBookingStatusTone } from "./wlBooking.logic";
+import { attendanceLabel, canMarkArrived, centsToReais, wlActionTimelineLabel, wlBookingStatusLabel, wlBookingStatusTone } from "./wlBooking.logic";
 
 describe("wlBooking.logic", () => {
   it("rotula o status vindo do site, com fallback para desconhecido", () => {
@@ -30,5 +30,18 @@ describe("canMarkArrived", () => {
     expect(canMarkArrived("2027-10-02T11:00:00Z", now)).toBe(true);
     expect(canMarkArrived("2027-10-03T11:00:00Z", now)).toBe(false);
     expect(canMarkArrived(null, now)).toBe(true);
+  });
+});
+
+describe("wlActionTimelineLabel", () => {
+  it("comparecimento, com quem fez", () => {
+    expect(wlActionTimelineLabel({ action: "attendance", request: { status: "no_show" }, result: "ok", message: null, by_name: "Bia" }))
+      .toBe("Marcada como não compareceu por Bia");
+    expect(wlActionTimelineLabel({ action: "attendance", request: { status: "pendente" }, result: "ok", message: null, by_name: null }))
+      .toBe("Marcação de comparecimento desfeita");
+  });
+  it("troca de placa e falha de rede", () => {
+    expect(wlActionTimelineLabel({ action: "license_plate", request: { license_plate: "abc1d23" }, result: "error", message: "timeout", by_name: null }))
+      .toBe("Não gravou: placa trocada para ABC1D23. Não chegou ao site: timeout");
   });
 });

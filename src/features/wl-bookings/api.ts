@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { bookingsKeys } from "@/features/bookings/api";
+import type { WlBookingDetailData } from "@/types/domain";
 
 /**
  * Ações nas reservas feitas no site white-label do parceiro. A leitura saiu daqui em 09/10/2026:
@@ -13,6 +14,7 @@ import { bookingsKeys } from "@/features/bookings/api";
 export const wlBookingsKeys = {
   all: ["wl-bookings"] as const,
   actions: (companyId: string) => [...wlBookingsKeys.all, "actions", companyId] as const,
+  detail: (id: string) => [...wlBookingsKeys.all, "detail", id] as const,
 };
 
 // As RPCs não estão em `database.ts`: o `supabase gen types` vem derrubando tabelas e funções
@@ -23,6 +25,22 @@ function rpc(fn: string, args?: Record<string, unknown>) {
     args?: Record<string, unknown>,
   ) => Promise<{ data: unknown; error: { message: string } | null }>;
   return call(fn, args);
+}
+
+/**
+ * Uma reserva do site, para a tela de detalhe (reservas-unificadas-hub-wl.md § 4.2). Null quando
+ * não existe ou quem chama não enxerga a empresa: o servidor recorta pela mesma regra da lista.
+ */
+export function useWlBookingDetail(id: string | undefined) {
+  return useQuery({
+    queryKey: wlBookingsKeys.detail(id ?? ""),
+    enabled: !!id,
+    queryFn: async (): Promise<WlBookingDetailData | null> => {
+      const { data, error } = await rpc("wl_booking_detail", { p_id: id });
+      if (error) throw new Error(error.message);
+      return (data ?? null) as WlBookingDetailData | null;
+    },
+  });
 }
 
 /** O que quem está logado pode fazer nas reservas do site da empresa. A Edge confere de novo. */

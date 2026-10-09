@@ -1,0 +1,163 @@
+{
+  "scenario_id": "manager-reserva-site-detalhe",
+  "start_url": "/manager/bookings/site/00000000-0000-4000-8000-0000000000w1",
+  "task": "Passo 1: verifique que a pagina exibe o texto \"Reserva 271001-0001\". Passo 2: verifique que a pagina exibe o texto \"White-label\". Passo 3: verifique que a pagina exibe o texto \"cancelar ou mudar a data é pelo painel do site\". Passo 4: verifique que a pagina exibe o texto \"Não gravou: chegada registrada por QA Windup\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rpc/wl_booking_detail*",
+      "json": {
+        "id": "00000000-0000-4000-8000-0000000000w1",
+        "company_id": "00000000-0000-4000-8000-0000000000c1",
+        "company_name": "Estacionamento QA",
+        "wl_order_id": 9,
+        "wl_order_number": "271001-0001",
+        "status": "confirmed",
+        "site_status": "confirmed",
+        "wl_status": "complete",
+        "origin": "reserva-online",
+        "attendance_status": "pendente",
+        "attendance_marked_at": null,
+        "customer_name": "Ana Souza",
+        "customer_email": "ana@windup.local",
+        "customer_phone": "11999990000",
+        "license_plate": "ABC1D23",
+        "check_in_at": "2027-10-02T11:00:00Z",
+        "check_out_at": "2027-10-05T12:30:00Z",
+        "passenger_count": 2,
+        "has_pcd": false,
+        "is_duplicate": false,
+        "total_cents": 15050,
+        "paid_total_cents": 15050,
+        "location_id": null,
+        "location_name": "Unidade QA",
+        "location_parking_type_id": null,
+        "parking_type_name": "Vaga Coberta",
+        "category_slug": null,
+        "product_slug": null,
+        "utm": {},
+        "wl_created_at": "2027-09-20T13:00:00Z",
+        "wl_updated_at": null,
+        "synced_at": "2027-09-20T13:10:00Z",
+        "actions": [
+          {
+            "id": "a1",
+            "action": "attendance",
+            "request": {
+              "status": "compareceu"
+            },
+            "result": "refused",
+            "result_code": "before_checkin",
+            "message": "Ainda não chegou o horário de entrada.",
+            "created_at": "2027-09-21T10:00:00Z",
+            "by_name": "QA Windup"
+          }
+        ]
+      }
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "Sao passos numerados: cada um vira uma acao propria do plano.",
+    "Reserva feita no site white-label: a tela abre pelo id da reserva e le tudo da RPC wl_booking_detail.",
+    "Todos os passos sao verificacao de texto visivel na pagina (getByText), sem depender de lista ul/ol: o texto do passo 4 fica na linha do tempo."
+  ]
+}

@@ -5,21 +5,21 @@ import { mockAuth, renderWithProviders } from "@/test/utils";
 import OperatorBookings from "./bookings";
 import { useBookingsPage } from "@/features/bookings/api";
 import { useHasWl } from "@/features/companies/useHasWl";
-import { useWlBookingAction, useWlBookingActions } from "@/features/wl-bookings/api";
 import type { UnifiedBookingRow, WlListRow } from "@/types/domain";
 
 // Quem recorta é o servidor (bookings_list_page, coberto no pgTAP bookings_list_page): só vê
 // reserva do site quem tem white-label, e o estacionamento só vê o que virou venda. Aqui o foco é
-// a tela: uma lista só, etiqueta e filtro de origem apenas para quem tem white-label, e o detalhe
-// do site abrindo com as ações (reservas-unificadas-hub-wl.md § 3).
+// a tela: uma lista só, etiqueta e filtro de origem apenas para quem tem white-label, e a reserva do
+// site abrindo a tela dela (reservas-unificadas-hub-wl.md § 3).
 vi.mock("@/features/bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/bookings/api")>();
   return { ...actual, useBookingsPage: vi.fn() };
 });
 vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: vi.fn() }));
-vi.mock("@/features/wl-bookings/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/wl-bookings/api")>();
-  return { ...actual, useWlBookingActions: vi.fn(), useWlBookingAction: vi.fn() };
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return { ...actual, useNavigate: () => mockNavigate };
 });
 
 const RESERVA_DO_SITE: WlListRow = {
@@ -71,18 +71,12 @@ function setup(opts: {
   hasWl: boolean;
   rows: UnifiedBookingRow[];
   total?: number;
-  actions?: { enabled: boolean; attendance: boolean; license_plate: boolean };
-  mutate?: ReturnType<typeof vi.fn>;
 }) {
   vi.mocked(useHasWl).mockReturnValue({ hasWl: opts.hasWl, isLoading: false });
   vi.mocked(useBookingsPage).mockReturnValue({
     data: { rows: opts.rows, total: opts.total ?? opts.rows.length, summary: undefined },
     isLoading: false,
   } as never);
-  vi.mocked(useWlBookingActions).mockReturnValue({
-    data: opts.actions ?? { enabled: false, attendance: false, license_plate: false },
-  } as never);
-  vi.mocked(useWlBookingAction).mockReturnValue({ mutate: opts.mutate ?? vi.fn(), isPending: false } as never);
   renderWithProviders(<OperatorBookings />, {
     auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: () => true }),
     route: "/operator/bookings",
@@ -146,52 +140,9 @@ describe("OperatorBookings · estacionamento com white-label", () => {
     expect(ultima.page).toBe(1);
   });
 
-  it("abre o detalhe do site só leitura quando as ações estão desligadas", async () => {
+  it("a reserva do site abre a tela de detalhe dela", async () => {
     setup({ hasWl: true, rows: [site()] });
     await userEvent.click(screen.getByText("Ana Souza"));
-    expect(screen.getByRole("dialog")).toHaveTextContent("Pedido 271001-0001");
-    expect(screen.getByRole("dialog")).toHaveTextContent("Para cancelar ou mudar a data, use o painel do site");
-    expect(screen.getByRole("dialog")).toHaveTextContent("11999990000");
-    expect(screen.queryByRole("button", { name: /cancelar|chegou|não veio|trocar placa/i })).not.toBeInTheDocument();
-  });
-
-  it("com as ações ligadas e permissão, marca a chegada no site", async () => {
-    const mutate = vi.fn();
-    setup({
-      hasWl: true,
-      rows: [site("2020-01-01T10:00:00Z")],
-      actions: { enabled: true, attendance: true, license_plate: true },
-      mutate,
-    });
-    await userEvent.click(screen.getByText("Ana Souza"));
-    await userEvent.click(screen.getByRole("button", { name: "Cliente chegou" }));
-    expect(mutate).toHaveBeenCalledWith(
-      { action: "attendance", wlBookingId: "w-1", status: "compareceu" },
-      expect.anything(),
-    );
-    expect(screen.getByRole("button", { name: "Trocar placa" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /cancelar/i })).not.toBeInTheDocument();
-  });
-
-  it("reserva já usada (Concluída na lista) segue aceitando ação, porque o site a vê como paga", async () => {
-    setup({
-      hasWl: true,
-      rows: [{ source: "wl", id: "w-1", wl: { ...RESERVA_DO_SITE, status: "completed", check_in_at: "2020-01-01T10:00:00Z" } }],
-      actions: { enabled: true, attendance: true, license_plate: false },
-    });
-    expect(screen.getByText("Concluída")).toBeInTheDocument();
-    await userEvent.click(screen.getByText("Ana Souza"));
-    expect(screen.getByRole("button", { name: "Não veio" })).toBeEnabled();
-  });
-
-  it("antes do horário de entrada, Cliente chegou fica travado", async () => {
-    setup({
-      hasWl: true,
-      rows: [site("2099-01-01T10:00:00Z")],
-      actions: { enabled: true, attendance: true, license_plate: false },
-    });
-    await userEvent.click(screen.getByText("Ana Souza"));
-    expect(screen.getByRole("button", { name: "Cliente chegou" })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: "Trocar placa" })).not.toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith("/operator/bookings/site/w-1");
   });
 });
