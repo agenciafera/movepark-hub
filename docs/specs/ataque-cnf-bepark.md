@@ -146,7 +146,7 @@ Fonte que se contradiz é fonte que a IA descarta. Em 28 e 29/09:
 
    Atividades: Conteúdo 41 e 51.
 
-   **Resolvido no gerador em 02/10/2026 (Conteúdo 41):** o `destination_price_index` passou a publicar `shuttle_frequency_minutes` ao lado do trajeto (migration `20261128150000`), e a frase dos artefatos (llms.txt, llms-full.txt e gêmeos `.md`) sai de `scripts/traslado.mjs`: "traslado de 10 min até o terminal" na BePark, e "van a cada N min" só quando a ficha declara a frequência. O `bloco-de-fato.mjs` já separava os dois números e não mudou. Cadastrar a frequência da BePark na ficha é o Conteúdo 51.
+   **Resolvido no gerador em 02/10/2026 (Conteúdo 41):** o `destination_price_index` passou a publicar `shuttle_frequency_minutes` ao lado do trajeto (migration `20261128150000`), e a frase dos artefatos (llms.txt, llms-full.txt e gêmeos `.md`) sai de `scripts/traslado.mjs`: "traslado de 10 min até o terminal" na BePark, e "van a cada N min" só quando a ficha declara a frequência. O `bloco-de-fato.mjs` já separava os dois números e não mudou. Cadastrar a frequência da BePark na ficha é o Conteúdo 51, feito em 09/10/2026 (§2.3.4).
 6. **O mapa de Confins não tem o Bandeira Park nem o Estapar.** O Estapar é o antigo Minas Park, reservável pelo Zul+, que declara menos de 1 km do terminal. Os dois foram citados pelo Modo IA. Sem o Estapar, o ranking de distância aponta o Park Confins (2,87 km) como o mais próximo. Atividade: Conteúdo 42.
 
    **Resolvido em 02/10/2026 (Conteúdo 42):** os dois entraram como lote mapeado publicado (migration `20261128160000`), com `google_place_id`, coordenada e endereço da Places API e preço datado:
@@ -246,6 +246,45 @@ cada número, e cita as tarifas da reserva só com link para a ficha (ADR-009).
 Publicado em 07/10/2026, depois do ok do usuário. Analisador
 VERDE, 3.094 palavras. Imagens em `public/images/blog/bepark-confins/` (Higgsfield `soul_2`, revisadas;
 placa da van desfocada).
+
+### 2.3.4 A van da BePark (Conteúdo 51, 09/10/2026)
+
+**A ficha tem os dois números.** `shuttle_frequency_minutes = 20` (migration `20261129150000`), ao lado
+dos 10 minutos de trajeto que ela já tinha. A fonte é o mapa de atendimento que os donos mandaram em
+18/09/2026: transfer gratuito, 24 horas, saída a cada 20 minutos, e a van sai na hora se já estiver
+pronta. O bepark.com.br publica o mesmo desde então (conferido em 09/10: "Saídas a cada 20 minutos" e
+"10 min do terminal"). Com o campo preenchido, a página da unidade mostra "a cada 20 min · ~10 min ao
+terminal", o llms.txt diz "traslado de 10 min até o terminal, com van a cada 20 min", e o bloco de fato
+dos 5 posts de Confins ganhou a frequência, que o `lint:bloco-fato` passa a conferir contra a ficha.
+
+**Um número por fato, superfície a superfície (09/10/2026):**
+
+| Superfície | Trajeto | Frequência |
+| --- | --- | --- |
+| Ficha (página da unidade, llms.txt, bloco de fato) | 10 min | a cada 20 min |
+| bepark.com.br | 10 min | a cada 20 min |
+| FAQs de destino de Confins | cerca de 10 min | a cada 20 min (na FAQ da van ao vivo) |
+| Posts de Confins | 10 min | a cada 20 min |
+| Instagram da BePark e página da Azul | "8 minutos do aeroporto" | não publicam |
+
+O Instagram e a Azul ficam fora do alcance do repositório. Trocar o "8 minutos" por 10 é pedido para a
+BePark, junto do Conteúdo 54.
+
+**A FAQ que mandava chamar a van pelo WhatsApp.**
+`da-para-acompanhar-a-van-do-estacionamento-em-tempo-real-em-confins` dizia, em pt, en e es, que o
+cliente "chama o transfer pelo WhatsApp". Não há WhatsApp da van cadastrado, e pelo mapa de atendimento
+dos donos a van não é chamada: ela sai a cada 20 minutos do ponto fixo (plataforma da Expresso Unir, piso
+inferior). A frase saiu e entraram os dois números da ficha. A FAQ irmã de Viracopos tem a mesma frase e
+não foi mexida, porque o canal do Virapark e do Garageinn não foi conferido.
+
+**O que ficou aberto:**
+
+- **`go2park_whatsapp` segue nulo.** O número da van mora no painel da Go2Park, fora do alcance deste
+  repositório. Enquanto não vier de lá, o bloco Go2Park da ficha fica sem botão, como manda
+  [go2park-transfer-ao-vivo.md](./go2park-transfer-ao-vivo.md). O telefone do balcão (+55 31 99559-0090)
+  não substitui.
+- **Capacidade da van no pico.** As avaliações de 05/09 e 10/09 dizem que a BePark passou de duas vans
+  para uma. Voltar a duas é conversa comercial com a BePark, junto da reunião de alinhamento da Go2Park.
 
 ### 2.4 A BePark nos critérios da pergunta "preço"
 

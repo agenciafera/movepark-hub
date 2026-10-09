@@ -30,7 +30,9 @@ A BePark entrou em 01/09/2026, junto com o cadastro da unidade. Ela é o caso em
 custa menos para ganhar: é a **única** unidade parceira em Confins, um destino que até então só
 tinha lote mapeado, então o diferencial não disputa com vizinho nenhum. `go2park_whatsapp`
 nasceu nulo, como nas outras três, e o bloco fica sem CTA até alguém copiar o número do painel
-da Go2Park.
+da Go2Park. Em 09/10/2026 (Conteúdo 51) a ficha ganhou a frequência da van (a cada 20 minutos,
+ao lado dos 10 de trajeto), mas o número segue nulo nas quatro unidades: ele ainda não saiu do
+painel da Go2Park. Ver [ataque-cnf-bepark.md](./ataque-cnf-bepark.md) § 2.3.4.
 
 ## Modelo
 
@@ -144,7 +146,10 @@ inclusive nas 4 unidades com o contrato hoje ativo. Mesma classe de bug que moti
 
 Fixada em `GO2PARK_COPY`. O bloco descreve só o que o produto entrega segundo a própria Go2Park:
 mapa em tempo real, aviso de proximidade e acesso sem app. Não afirma canal ("você recebe no
-WhatsApp"), porque o canal varia por unidade e não está modelado aqui. Também não afirma que
+WhatsApp"), porque o canal varia por unidade e não está modelado aqui. A regra vale também para
+FAQ e post: a FAQ de destino de Confins dizia que o cliente "chama o transfer pelo WhatsApp", e
+saiu em 09/10/2026, porque a van da BePark sai do ponto fixo a cada 20 minutos e não é chamada. A
+FAQ irmã de Viracopos tem a mesma frase e o canal ali ainda não foi conferido. Também não afirma que
 nenhum concorrente tem o mesmo: é verdade hoje, seria falso no dia em que um vizinho contratar, e
 a diferença já fica visível pelo card ao lado sem o selo.
 
