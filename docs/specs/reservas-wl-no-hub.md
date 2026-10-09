@@ -262,7 +262,12 @@ Migration `20261128234500_wl_booking_operator.sql`, pgTAP `wl_booking_operator.t
   quem chama tem o escopo (hub_admin vê todas; impersonando, a tela passa a empresa). A RLS da
   tabela continua só de hub_admin. O filtro é por **empresa**, e não por unidade, para não esconder
   reserva que veio sem De/Para.
-- **Tela**: aba "Pelo seu site" em `/operator/bookings`, ao lado de "Pela Movepark", com busca por
+> **Substituído em 09/10/2026.** A aba saiu: as reservas do site entram na lista única de Reservas
+> (Operator e Manager), com etiqueta de origem, pela RPC `bookings_list_page`, e a leitura de
+> `wl_booking` passou a ter policy própria (`wl_visible_company_ids`). As RPCs abaixo continuam no
+> banco, sem uso pela tela. Ver [reservas-unificadas-hub-wl.md](./reservas-unificadas-hub-wl.md).
+
+- **Tela (até 09/10/2026)**: aba "Pelo seu site" em `/operator/bookings`, ao lado de "Pela Movepark", com busca por
   número do pedido ou placa, período de entrada e status, e o detalhe só leitura num diálogo.
   **A aba só aparece com o escopo e com pelo menos uma reserva importada**: enquanto a importação
   estiver desligada, e para parceiro sem site, a tela de Reservas fica exatamente como era.

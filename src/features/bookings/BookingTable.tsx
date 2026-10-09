@@ -10,18 +10,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatBRL, formatDateTime, daysBetween } from "@/lib/format";
-import { bookingCustomerName } from "./bookings.logic";
-import { paymentBadge } from "./payment.logic";
-import { channelShortLabel, paymentMethodLabel } from "./bookingList.logic";
-import { bookingParkingAmount, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { Badge } from "@/components/ui/badge";
-import type { BookingWithRelations } from "@/types/domain";
+import { unifiedRowView } from "./unifiedBookingRow.logic";
+import type { BookingWithRelations, UnifiedBookingRow, WlListRow } from "@/types/domain";
 
 type Props = {
-  bookings: BookingWithRelations[] | undefined;
+  /** Lista só do Hub (dashboard). As telas de Reservas mandam `rows`. */
+  bookings?: BookingWithRelations[] | undefined;
+  /** Lista única, Hub + white-label, na ordem do servidor (`useBookingsPage`). */
+  rows?: UnifiedBookingRow[] | undefined;
   isLoading: boolean;
   onRowClick?: (booking: BookingWithRelations) => void;
+  onWlRowClick?: (wl: WlListRow) => void;
   showCompany?: boolean;
+  /** Etiqueta Hub / White-label. Só para quem tem white-label (reservas-unificadas-hub-wl.md § 2). */
+  showSource?: boolean;
   /** Texto do estado vazio quando há filtro ligado (a tela sabe; a tabela não). */
   emptyDescription?: string;
   /** "parking": a coluna Valor mostra as diárias (visão do estacionamento, 08/10/2026). */
@@ -33,7 +36,20 @@ type Props = {
  * nove: empresa e unidade viram "Estacionamento", check-in, check-out e dias viram "Estadia", e
  * entram "Criada em" (com o canal da venda) e "Pagamento" (a forma e o estado do dinheiro).
  */
-export function BookingTable({ bookings, isLoading, onRowClick, showCompany = true, emptyDescription, valueMode = "total" }: Props) {
+export function BookingTable({
+  bookings,
+  rows,
+  isLoading,
+  onRowClick,
+  onWlRowClick,
+  showCompany = true,
+  showSource = false,
+  emptyDescription,
+  valueMode = "total",
+}: Props) {
+  const lista: UnifiedBookingRow[] | undefined =
+    rows ?? bookings?.map((b) => ({ source: "hub" as const, id: b.id, booking: b }));
+
   if (isLoading) {
     return (
       <div className="space-y-2 rounded-md border border-hairline bg-canvas p-4">
@@ -44,7 +60,7 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
     );
   }
 
-  if (!bookings || bookings.length === 0) {
+  if (!lista || lista.length === 0) {
     return (
       <div className="rounded-md border border-hairline bg-canvas">
         <EmptyState
@@ -71,50 +87,65 @@ export function BookingTable({ bookings, isLoading, onRowClick, showCompany = tr
           </TableRow>
         </TableHeader>
         <TableBody>
-          {bookings.map((b) => {
-            const canal = channelShortLabel(b.origin);
-            const metodo = paymentMethodLabel(b.payments);
-            const dinheiro = paymentBadge(b.payments, b.status);
-            const dias = daysBetween(b.check_in_at, b.check_out_at);
+          {lista.map((row) => {
+            const v = unifiedRowView(row, { showSource, valueMode });
+            const dias = v.checkIn && v.checkOut ? daysBetween(v.checkIn, v.checkOut) : null;
+            const clicavel = row.source === "hub" ? !!onRowClick : !!onWlRowClick;
             return (
               <TableRow
-                key={b.id}
-                className={onRowClick ? "cursor-pointer" : undefined}
-                onClick={() => onRowClick?.(b)}
+                key={v.key}
+                className={clicavel ? "cursor-pointer" : undefined}
+                onClick={() => (row.source === "hub" ? onRowClick?.(row.booking) : onWlRowClick?.(row.wl))}
               >
-                <TableCell className="whitespace-nowrap font-mono text-caption text-ink">{b.code}</TableCell>
                 <TableCell className="whitespace-nowrap">
-                  <div className="tabular-nums text-ink">{formatDateTime(b.created_at)}</div>
-                  {canal && <div className="text-caption text-muted">{canal}</div>}
+                  <div className="font-mono text-caption text-ink">{v.code}</div>
+                  {v.sourceLabel && (
+                    <Badge tone={v.source === "wl" ? "active" : "neutral"} className="mt-1">
+                      {v.sourceLabel}
+                    </Badge>
+                  )}
                 </TableCell>
-                <TableCell className="text-ink">{bookingCustomerName(b) ?? "-"}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <div className="tabular-nums text-ink">{formatDateTime(v.createdAt)}</div>
+                  {v.channel && <div className="text-caption text-muted">{v.channel}</div>}
+                </TableCell>
+                <TableCell className="text-ink">{v.customer ?? "-"}</TableCell>
                 <TableCell>
-                  {showCompany && <div className="text-ink">{b.location?.company?.name ?? "-"}</div>}
-                  <div className={showCompany ? "text-caption text-muted" : "text-ink"}>{b.location?.name ?? "-"}</div>
+                  {showCompany && <div className="text-ink">{v.companyName ?? "-"}</div>}
+                  <div className={showCompany ? "text-caption text-muted" : "text-ink"}>{v.unitName ?? "-"}</div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap tabular-nums">
-                  <div className="text-ink">{formatDateTime(b.check_in_at)}</div>
+                  <div className="text-ink">{formatDateTime(v.checkIn)}</div>
                   <div className="text-caption text-muted">
-                    até {formatDateTime(b.check_out_at)} · {dias} {dias === 1 ? "dia" : "dias"}
+                    até {formatDateTime(v.checkOut)}
+                    {dias !== null && ` · ${dias} ${dias === 1 ? "dia" : "dias"}`}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col items-start gap-1">
-                    <span className={metodo ? "text-ink" : "text-muted"}>{metodo ?? "Sem pagamento"}</span>
-                    {dinheiro && (
-                      <Badge tone={dinheiro.tone} className="whitespace-nowrap">
-                        {dinheiro.label}
-                      </Badge>
-                    )}
-                  </div>
+                  {v.payment ? (
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={v.payment.method ? "text-ink" : "text-muted"}>
+                        {v.payment.method ?? "Sem pagamento"}
+                      </span>
+                      {v.payment.badge && (
+                        <Badge tone={v.payment.badge.tone} className="whitespace-nowrap">
+                          {v.payment.badge.label}
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted" title="Pago no site white-label">
+                      No site
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right tabular-nums text-ink">
-                  {formatBRL(valueMode === "parking" ? bookingParkingAmount(b.price_breakdown as PriceBreakdownLike | null, Number(b.total_amount)) : b.total_amount)}
+                  {v.value === null ? "-" : formatBRL(v.value)}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col items-start gap-1">
-                    <StatusBadge status={b.status} />
-                    {b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at && (
+                    <StatusBadge status={v.status} />
+                    {v.flightProtection && (
                       <Badge tone="pending" title="Proteção de voo acionada: confira até quando sai sem custo">
                         Proteção de voo
                       </Badge>

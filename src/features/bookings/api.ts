@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import type { BookingStatus, BookingWithRelations } from "@/types/domain";
-import { CHANNEL_ORIGINS, bookingSearchOr, type ChannelFilter, type PaymentMethodFilter } from "./bookingList.logic";
+import type {
+  BookingStatus,
+  BookingWithRelations,
+  BookingsPageSummary,
+  UnifiedBookingRow,
+  WlListRow,
+} from "@/types/domain";
+import { CHANNEL_ORIGINS, type ChannelFilter, type PaymentMethodFilter } from "./bookingList.logic";
 
 type BookingUpdate = Database["public"]["Tables"]["booking"]["Update"];
 
@@ -27,13 +33,10 @@ export type BookingFilters = {
   paymentMethod?: PaymentMethodFilter;
   /** Canal de venda (agrupa `booking.origin`). */
   channel?: ChannelFilter;
-  /** Teto de linhas (padrão 100). */
-  limit?: number;
 };
 
 export const bookingsKeys = {
   all: ["bookings"] as const,
-  list: (filters: BookingFilters) => [...bookingsKeys.all, "list", filters] as const,
   detail: (id: string) => [...bookingsKeys.all, "detail", id] as const,
   recent: (locationIds?: string[]) => [...bookingsKeys.all, "recent", locationIds] as const,
 };
@@ -41,47 +44,89 @@ export const bookingsKeys = {
 const baseSelect =
   "*, profile:profiles(id, full_name, tax_id), location:location(id, name, slug, timezone, company:company(id, name, slug)), vehicle:vehicle(id, license_plate, model, color), payments:payment(id, status, refunded_at, created_at, paid_at, method, installments), fare_extensions:booking_fare_extension(id, kind, flight_number, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents, overage_note, partner_credit_cents)";
 
-async function fetchBookings(filters: BookingFilters): Promise<BookingWithRelations[]> {
-  // Reserva cancelada carrega `deleted_at` (que também é o "cancelada em" na UI). A lista
-  // do painel (operador e manager) PRECISA mostrar as canceladas, então NÃO filtramos
-  // `deleted_at` aqui: a RLS de `booking` já restringe às reservas da empresa e o filtro de
-  // status resolve o resto. Filtrar deleted_at deixava o filtro "Cancelada" natimorto.
-  // Ver docs/testes/furos-visao-dono.md (F1).
-  const dateField = filters.dateField ?? "check_in_at";
-  // Filtrar pela forma de pagamento exige o embed como inner join; sem filtro ele segue left join,
-  // senão a reserva que nunca teve pagamento sumiria da lista.
-  const pm = filters.paymentMethod;
-  const select = pm === "pix" || pm === "card" ? baseSelect.replace("payments:payment(", "payments:payment!inner(") : baseSelect;
-  let query = supabase
-    .from("booking")
-    .select(select)
-    .order("created_at", { ascending: false })
-    .limit(filters.limit ?? 100);
+/**
+ * Lista única, Hub + white-label (reservas-unificadas-hub-wl.md § 3).
+ *
+ * O servidor (`bookings_list_page`, com a permissão de quem chama) junta as duas origens, aplica
+ * os filtros, ordena pela compra e pagina. A reserva do Hub volta só com o id e é montada aqui com
+ * a mesma consulta de sempre (`baseSelect`: pagamento, dinheiro, proteção de voo), então a linha
+ * do Hub é idêntica à de antes. A do site já vem pronta.
+ */
+export type BookingPageFilters = BookingFilters & {
+  /** Origem: todas, só Hub ou só site. Para quem não tem white-label o servidor nem lê o site. */
+  source?: "all" | "hub" | "wl";
+  /** Visão do estacionamento: só reserva que virou venda (mesma regra de `partnerSeesBooking`). */
+  partnerView?: boolean;
+  page: number;
+  pageSize: number;
+};
 
-  if (filters.status?.length) query = query.in("status", filters.status);
-  if (filters.locationIds?.length) query = query.in("location_id", filters.locationIds);
-  if (filters.from) query = query.gte(dateField, filters.from);
-  if (filters.to) query = query.lte(dateField, filters.to);
-  if (pm === "pix" || pm === "card") query = query.eq("payments.method", pm);
-  if (pm === "none") query = query.is("payments", null);
-  if (filters.channel) query = query.in("origin", CHANNEL_ORIGINS[filters.channel]);
-  const or = filters.search ? bookingSearchOr(filters.search) : null;
-  if (or) query = query.or(or);
+export type BookingsPage = {
+  total: number;
+  rows: UnifiedBookingRow[];
+  summary: BookingsPageSummary;
+};
 
-  const { data, error } = await query;
-  if (error) throw error;
-  let rows = (data ?? []) as unknown as BookingWithRelations[];
+const EMPTY_SUMMARY: BookingsPageSummary = {
+  hub: { total: 0, paid: 0, pix: 0, card: 0, paid_amount: 0, awaiting: 0, lost: 0 },
+  wl: { total: 0, paid: 0, paid_amount: 0 },
+};
 
-  if (filters.companyIds?.length) {
-    rows = rows.filter((r) => filters.companyIds!.includes(r.location?.company?.id ?? ""));
-  }
-  return rows;
+// A RPC não está em `database.ts` (o gen types vem apagando tipos que existem; ver
+// src/features/wl-health/api.ts). O cast fica aqui só.
+function rpc(fn: string, args: Record<string, unknown>) {
+  const call = supabase.rpc.bind(supabase) as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  return call(fn, args);
 }
 
-export function useBookings(filters: BookingFilters) {
+async function fetchBookingsPage(f: BookingPageFilters): Promise<BookingsPage> {
+  const { data, error } = await rpc("bookings_list_page", {
+    p_source: f.source ?? "all",
+    p_statuses: f.status?.length ? f.status : null,
+    p_location_ids: f.locationIds?.length ? f.locationIds : null,
+    p_company_ids: f.companyIds?.length ? f.companyIds : null,
+    p_date_field: f.dateField ?? "check_in_at",
+    p_from: f.from ?? null,
+    p_to: f.to ?? null,
+    p_search: f.search?.trim() || null,
+    p_payment: f.paymentMethod ?? null,
+    p_channel_origins: f.channel ? CHANNEL_ORIGINS[f.channel] : null,
+    p_partner_view: f.partnerView ?? false,
+    p_limit: f.pageSize,
+    p_offset: f.page * f.pageSize,
+  });
+  if (error) throw new Error(error.message);
+  const r = (data ?? {}) as {
+    total?: number;
+    items?: { source: "hub" | "wl"; id: string; wl?: WlListRow }[];
+    summary?: BookingsPageSummary;
+  };
+  const items = r.items ?? [];
+
+  const hubIds = items.filter((i) => i.source === "hub").map((i) => i.id);
+  const hubById = new Map<string, BookingWithRelations>();
+  if (hubIds.length) {
+    const { data: hub, error: hubErr } = await supabase.from("booking").select(baseSelect).in("id", hubIds);
+    if (hubErr) throw hubErr;
+    for (const b of (hub ?? []) as unknown as BookingWithRelations[]) hubById.set(b.id, b);
+  }
+
+  const rows: UnifiedBookingRow[] = [];
+  for (const i of items) {
+    if (i.source === "wl" && i.wl) rows.push({ source: "wl", id: i.id, wl: i.wl });
+    else if (i.source === "hub" && hubById.has(i.id)) rows.push({ source: "hub", id: i.id, booking: hubById.get(i.id)! });
+  }
+  return { total: Number(r.total ?? 0), rows, summary: r.summary ?? EMPTY_SUMMARY };
+}
+
+export function useBookingsPage(filters: BookingPageFilters) {
   return useQuery({
-    queryKey: bookingsKeys.list(filters),
-    queryFn: () => fetchBookings(filters),
+    queryKey: [...bookingsKeys.all, "page", filters] as const,
+    queryFn: () => fetchBookingsPage(filters),
+    placeholderData: (prev) => prev,
   });
 }
 

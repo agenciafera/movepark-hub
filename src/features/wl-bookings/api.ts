@@ -1,29 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { WlBookingRow, WlBookingStatus } from "@/types/domain";
+import { bookingsKeys } from "@/features/bookings/api";
 
 /**
- * Reservas feitas no site white-label do parceiro, para a aba "Pelo seu site" em Reservas.
+ * Ações nas reservas feitas no site white-label do parceiro. A leitura saiu daqui em 09/10/2026:
+ * as reservas do site entram na lista única de Reservas (`useBookingsPage`, RPC
+ * `bookings_list_page`), junto com as do Hub.
  *
- * Só leitura, por RPC SECURITY DEFINER com o gate `wl-bookings:read` no servidor (ADR-005); a
- * aba só espelha. A tabela `wl_booking` não tem leitura direta para o parceiro.
- *
- * Spec: docs/specs/reservas-wl-no-hub.md § 9.
+ * Specs: docs/specs/reservas-wl-no-hub.md § 10 e reservas-unificadas-hub-wl.md § 3.
  */
-
-export type WlBookingFilters = {
-  /** Empresa impersonada pelo admin; o parceiro manda undefined e o servidor recorta. */
-  companyId?: string;
-  status?: WlBookingStatus;
-  search?: string;
-  from?: string;
-  to?: string;
-};
 
 export const wlBookingsKeys = {
   all: ["wl-bookings"] as const,
-  list: (f: WlBookingFilters) => [...wlBookingsKeys.all, "list", f] as const,
-  count: (companyId?: string) => [...wlBookingsKeys.all, "count", companyId ?? "own"] as const,
   actions: (companyId: string) => [...wlBookingsKeys.all, "actions", companyId] as const,
 };
 
@@ -35,41 +23,6 @@ function rpc(fn: string, args?: Record<string, unknown>) {
     args?: Record<string, unknown>,
   ) => Promise<{ data: unknown; error: { message: string } | null }>;
   return call(fn, args);
-}
-
-async function fetchWlBookings(f: WlBookingFilters): Promise<WlBookingRow[]> {
-  const { data, error } = await rpc("operator_wl_bookings", {
-    p_company_id: f.companyId ?? null,
-    p_status: f.status ?? null,
-    p_search: f.search ?? null,
-    p_from: f.from ?? null,
-    p_to: f.to ?? null,
-  });
-  if (error) throw new Error(error.message);
-  return Array.isArray(data) ? (data as WlBookingRow[]) : [];
-}
-
-export function useWlBookings(filters: WlBookingFilters, enabled = true) {
-  return useQuery({
-    queryKey: wlBookingsKeys.list(filters),
-    queryFn: () => fetchWlBookings(filters),
-    enabled,
-  });
-}
-
-/** Quantas reservas do site existem: a aba só aparece quando há alguma. */
-export function useWlBookingsCount(companyId: string | undefined, enabled = true) {
-  return useQuery({
-    queryKey: wlBookingsKeys.count(companyId),
-    enabled,
-    queryFn: async (): Promise<number> => {
-      const { data, error } = await rpc("operator_wl_bookings_count", {
-        p_company_id: companyId ?? null,
-      });
-      if (error) throw new Error(error.message);
-      return typeof data === "number" ? data : Number(data ?? 0);
-    },
-  });
 }
 
 /** O que quem está logado pode fazer nas reservas do site da empresa. A Edge confere de novo. */
@@ -136,6 +89,9 @@ export function useWlBookingAction() {
       if (!res.ok) throw new Error(json.error ?? `Não deu para concluir (HTTP ${res.status}).`);
       return json as Record<string, unknown>;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: wlBookingsKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: wlBookingsKeys.all });
+      qc.invalidateQueries({ queryKey: bookingsKeys.all });
+    },
   });
 }

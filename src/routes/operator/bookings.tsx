@@ -12,17 +12,17 @@ import {
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
-import { useBookings, type BookingFilters } from "@/features/bookings/api";
+import { BookingsPager } from "@/features/bookings/BookingsPager";
+import { SOURCE_OPTIONS, wlListRowToBooking, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
+import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
+import { useHasWl } from "@/features/companies/useHasWl";
 import { useAuth } from "@/auth/context";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useWlBookingsCount } from "@/features/wl-bookings/api";
-import { WlBookingsPanel } from "@/features/wl-bookings/WlBookingsPanel";
-import { partnerSeesBooking } from "@/features/bookings/bookingMoney.logic";
-import type { BookingStatus } from "@/types/domain";
+import { WlBookingDetail } from "@/features/wl-bookings/WlBookingDetail";
+import type { BookingStatus, WlBookingRow } from "@/types/domain";
 
-// O estacionamento só vê reserva que virou venda (08/10/2026, `partnerSeesBooking`): pendente e
-// expirada não entram no filtro porque não aparecem para ele.
+// O estacionamento só vê reserva que virou venda (08/10/2026, `partnerSeesBooking`; no servidor,
+// `p_partner_view`): pendente e expirada não entram no filtro porque não aparecem para ele.
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "confirmed", label: "Confirmada" },
@@ -31,8 +31,14 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "no_show", label: "No-show" },
   { value: "cancelled", label: "Cancelada" },
 ];
-const PARTNER_STATUSES: BookingStatus[] = ["confirmed", "checked_in", "completed", "no_show", "cancelled"];
 
+const PAGE_SIZE = 50;
+
+/**
+ * Reservas do estacionamento: uma lista só, com as do Hub e, para quem tem white-label, as do
+ * site, cada uma com a sua etiqueta (reservas-unificadas-hub-wl.md § 3). Quem não tem white-label
+ * vê a tela como sempre foi: sem etiqueta, sem filtro de origem.
+ */
 export default function OperatorBookings() {
   // A command palette manda o código da reserva em `?q=`. Semear o estado a
   // partir dele é o que faz o resultado da busca abrir já filtrado, já que o
@@ -40,44 +46,52 @@ export default function OperatorBookings() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
+  const [source, setSource] = React.useState<SourceFilter>("all");
   const [from, setFrom] = React.useState("");
   const [to, setTo] = React.useState("");
+  const [page, setPage] = React.useState(0);
+  const [aberta, setAberta] = React.useState<WlBookingRow | null>(null);
   const navigate = useNavigate();
   const { ids: scopedLocationIds } = useScopedLocationIds();
+  const { hasWl } = useHasWl();
+  const { impersonatedCompanyId } = useAuth();
 
-  const filters: BookingFilters = React.useMemo(
+  const filters: BookingPageFilters = React.useMemo(
     () => ({
-      status: status === "all" ? PARTNER_STATUSES : [status],
+      status: status === "all" ? undefined : [status],
       search: search || undefined,
       locationIds: scopedLocationIds,
+      // Admin impersonando: recorta pela empresa também (a reserva do site sem vaga não tem unidade).
+      companyIds: impersonatedCompanyId ? [impersonatedCompanyId] : undefined,
+      source: hasWl ? source : "hub",
+      partnerView: true,
       // filtra por data de check-in (inclui o dia inteiro do "até")
+      dateField: "check_in_at",
       from: from ? `${from}T00:00:00` : undefined,
       to: to ? `${to}T23:59:59` : undefined,
+      page,
+      pageSize: PAGE_SIZE,
     }),
-    [status, search, scopedLocationIds, from, to],
+    [status, search, scopedLocationIds, impersonatedCompanyId, hasWl, source, from, to, page],
   );
 
-  const { data: all, isLoading } = useBookings(filters);
-  const data = React.useMemo(() => all?.filter(partnerSeesBooking), [all]);
+  // Filtro novo volta para a primeira página.
+  const filtroKey = [status, search, source, from, to, impersonatedCompanyId].join("|");
+  React.useEffect(() => setPage(0), [filtroKey]);
 
-  // Reservas do site white-label (reservas-wl-no-hub.md § 9): a aba só aparece para quem tem o
-  // escopo e quando já há reserva importada. Sem site, ou com a importação desligada, a tela fica
-  // exatamente como era. O gate real é do servidor (operator_wl_bookings).
-  const { impersonatedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
-  const scopeCompanyId = impersonatedCompanyId ?? effectiveCompanyIds[0];
-  const canSeeSite = hasScope("wl-bookings:read", scopeCompanyId);
-  const siteCount = useWlBookingsCount(impersonatedCompanyId ?? undefined, canSeeSite);
-  const showSiteTab = canSeeSite && (siteCount.data ?? 0) > 0;
+  const { data, isLoading } = useBookingsPage(filters);
 
-  const hubBookings = (
-    <>
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Reservas" description="Gestão das reservas da sua empresa." />
+
       <Card>
-        <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:items-end">
+        <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:flex-wrap tablet:items-end">
           <div className="flex flex-1 flex-col gap-1.5">
             <Label htmlFor="search">Busca</Label>
             <Input
               id="search"
-              placeholder="Código da reserva"
+              placeholder={hasWl ? "Código, pedido, nome ou placa" : "Código, nome, e-mail ou telefone"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -90,7 +104,7 @@ export default function OperatorBookings() {
             <Label htmlFor="to">até</Label>
             <Input id="to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-40" />
           </div>
-          <div className="flex w-full tablet:w-60 flex-col gap-1.5">
+          <div className="flex w-full tablet:w-48 flex-col gap-1.5">
             <Label htmlFor="booking-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus | "all")}>
               <SelectTrigger id="booking-status">
@@ -105,39 +119,43 @@ export default function OperatorBookings() {
               </SelectContent>
             </Select>
           </div>
+          {hasWl && (
+            <div className="flex w-full tablet:w-40 flex-col gap-1.5">
+              <Label htmlFor="booking-source">Origem</Label>
+              <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
+                <SelectTrigger id="booking-source">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <BookingTable
-        bookings={data}
+        rows={data?.rows}
         isLoading={isLoading}
         showCompany={false}
+        showSource={hasWl}
         valueMode="parking"
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
+        onWlRowClick={(w) => setAberta(wlListRowToBooking(w))}
       />
-    </>
-  );
 
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Reservas" description="Gestão das reservas da sua empresa." />
+      <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
 
-      {showSiteTab ? (
-        <Tabs defaultValue="hub">
-          <TabsList>
-            <TabsTrigger value="hub">Pela Movepark</TabsTrigger>
-            <TabsTrigger value="site">Pelo seu site</TabsTrigger>
-          </TabsList>
-          <TabsContent value="hub" className="flex flex-col gap-6 pt-4">
-            {hubBookings}
-          </TabsContent>
-          <TabsContent value="site" className="pt-4">
-            <WlBookingsPanel companyId={impersonatedCompanyId ?? undefined} />
-          </TabsContent>
-        </Tabs>
-      ) : (
-        hubBookings
-      )}
+      <WlBookingDetail
+        booking={aberta}
+        onClose={() => setAberta(null)}
+        onChanged={(patch) => setAberta((b) => (b ? { ...b, ...patch } : b))}
+      />
     </div>
   );
 }

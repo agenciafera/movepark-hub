@@ -17,15 +17,13 @@ import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { periodLabel } from "@/features/manager-filters/managerFilters.logic";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
-import { useBookings, type BookingFilters } from "@/features/bookings/api";
-import {
-  CHANNEL_LABEL,
-  bookingListSummary,
-  type ChannelFilter,
-  type PaymentMethodFilter,
-} from "@/features/bookings/bookingList.logic";
+import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
+import { BookingsPager } from "@/features/bookings/BookingsPager";
+import { SOURCE_OPTIONS, wlListRowToBooking, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
+import { CHANNEL_LABEL, type ChannelFilter, type PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
+import { WlBookingDetail } from "@/features/wl-bookings/WlBookingDetail";
 import { formatBRL } from "@/lib/format";
-import type { BookingStatus } from "@/types/domain";
+import type { BookingStatus, WlBookingRow } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -50,8 +48,8 @@ const channelOptions: { value: ChannelFilter | "all"; label: string }[] = [
   ...(Object.keys(CHANNEL_LABEL) as ChannelFilter[]).map((k) => ({ value: k, label: CHANNEL_LABEL[k] })),
 ];
 
-/** Teto da lista. Acima disso a tela avisa que mostra só as mais recentes. */
-const LIMIT = 500;
+/** Página da lista. O servidor pagina e devolve o total e o resumo do recorte inteiro. */
+const PAGE_SIZE = 50;
 
 function Numero({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
@@ -70,6 +68,9 @@ export default function ManagerBookings() {
   const [status, setStatus] = React.useState<BookingStatus | "all">("all");
   const [payment, setPayment] = React.useState<PaymentMethodFilter | "all">("all");
   const [channel, setChannel] = React.useState<ChannelFilter | "all">("all");
+  const [source, setSource] = React.useState<SourceFilter>("all");
+  const [page, setPage] = React.useState(0);
+  const [aberta, setAberta] = React.useState<WlBookingRow | null>(null);
   const navigate = useNavigate();
   const { period, range, scopedLocationIds } = useManagerFilters();
 
@@ -78,8 +79,10 @@ export default function ManagerBookings() {
   // O recorte é pela data da COMPRA, não do check-in: todos os presets olham para trás, e a
   // reserva feita hoje para a semana que vem sumia da lista até o dia de chegar (16/09/2026).
   const term = search.trim();
-  const filters: BookingFilters = React.useMemo(
+  // Forma de pagamento e canal são dados só do Hub: com eles ligados o servidor tira o site.
+  const filters: BookingPageFilters = React.useMemo(
     () => ({
+      source,
       status: status === "all" ? undefined : [status],
       search: term || undefined,
       paymentMethod: payment === "all" ? undefined : payment,
@@ -88,20 +91,26 @@ export default function ManagerBookings() {
       from: term ? undefined : range.from.toISOString(),
       to: term ? undefined : range.to.toISOString(),
       dateField: "created_at",
-      limit: LIMIT,
+      page,
+      pageSize: PAGE_SIZE,
     }),
-    [status, term, payment, channel, scopedLocationIds, range],
+    [source, status, term, payment, channel, scopedLocationIds, range, page],
   );
 
-  const { data, isLoading } = useBookings(filters);
-  const resumo = React.useMemo(() => bookingListSummary(data ?? []), [data]);
-  const temFiltro = !!term || status !== "all" || payment !== "all" || channel !== "all";
+  const filtroKey = [source, status, term, payment, channel, range.from.toISOString(), range.to.toISOString()].join("|");
+  React.useEffect(() => setPage(0), [filtroKey]);
+
+  const { data, isLoading } = useBookingsPage(filters);
+  const hub = data?.summary.hub;
+  const wl = data?.summary.wl;
+  const temFiltro = !!term || status !== "all" || payment !== "all" || channel !== "all" || source !== "all";
 
   function limpar() {
     setSearch("");
     setStatus("all");
     setPayment("all");
     setChannel("all");
+    setSource("all");
   }
 
   return (
@@ -117,7 +126,7 @@ export default function ManagerBookings() {
       />
 
       <Card>
-        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto] desktop:items-end">
+        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto] desktop:items-end">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="search">Busca</Label>
             <Input
@@ -173,26 +182,60 @@ export default function ManagerBookings() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="booking-source">Origem</Label>
+            <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
+              <SelectTrigger id="booking-source">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SOURCE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button variant="secondary" onClick={limpar} disabled={!temFiltro}>
             Limpar filtros
           </Button>
         </CardContent>
       </Card>
 
-      {!isLoading && (data?.length ?? 0) > 0 && (
+      {/* Total com a quebra por origem (D4): o site white-label só aparece quando tem reserva no recorte. */}
+      {!isLoading && hub && wl && hub.total + wl.total > 0 && (
         <Card data-testid="resumo-reservas">
           <CardContent className="grid grid-cols-2 gap-6 p-6 tablet:grid-cols-4">
-            <Numero label="Reservas" value={resumo.total} />
+            <Numero
+              label="Reservas"
+              value={hub.total + wl.total}
+              hint={wl.total ? `${hub.total} no Hub, ${wl.total} no white-label` : undefined}
+            />
             <Numero
               label="Pagas"
-              value={resumo.paid}
-              hint={resumo.paid ? `${resumo.pix} no PIX, ${resumo.card} no cartão` : undefined}
+              value={hub.paid + wl.paid}
+              hint={
+                hub.paid || wl.paid
+                  ? [hub.paid ? `${hub.pix} no PIX, ${hub.card} no cartão` : null, wl.paid ? `${wl.paid} no white-label` : null]
+                      .filter(Boolean)
+                      .join("; ")
+                  : undefined
+              }
             />
-            <Numero label="Valor pago" value={formatBRL(resumo.paidAmount)} hint="sem as devolvidas" />
             <Numero
-              label="Não pagaram"
-              value={resumo.lost}
-              hint={resumo.awaiting ? `e ${resumo.awaiting} aguardando pagamento` : "expiradas ou recusadas"}
+              label="Valor pago"
+              value={formatBRL(Number(hub.paid_amount) + Number(wl.paid_amount))}
+              hint={
+                wl.total
+                  ? `${formatBRL(Number(hub.paid_amount))} no Hub, ${formatBRL(Number(wl.paid_amount))} no white-label`
+                  : "sem as devolvidas"
+              }
+            />
+            <Numero
+              label="Não pagaram no Hub"
+              value={hub.lost}
+              hint={hub.awaiting ? `e ${hub.awaiting} aguardando pagamento` : "expiradas ou recusadas"}
             />
           </CardContent>
         </Card>
@@ -201,17 +244,21 @@ export default function ManagerBookings() {
       {/* Cliente chegou e não tinha vaga (garantia). Some sem acionamento aberto. */}
       <GuaranteeClaimsCard />
 
-      {(data?.length ?? 0) >= LIMIT && (
-        <p className="text-body-sm text-muted">
-          Mostrando as {LIMIT} reservas mais recentes. Encurte o período ou use os filtros para ver as outras.
-        </p>
-      )}
-
       <BookingTable
-        bookings={data}
+        rows={data?.rows}
         isLoading={isLoading}
+        showSource
         emptyDescription={temFiltro ? "Nenhuma reserva bate com esses filtros. Limpe os filtros ou mude o período." : undefined}
         onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
+        onWlRowClick={(w) => setAberta(wlListRowToBooking(w))}
+      />
+
+      <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
+
+      <WlBookingDetail
+        booking={aberta}
+        onClose={() => setAberta(null)}
+        onChanged={(patch) => setAberta((b) => (b ? { ...b, ...patch } : b))}
       />
     </div>
   );

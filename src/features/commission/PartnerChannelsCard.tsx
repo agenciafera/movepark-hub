@@ -14,6 +14,7 @@ import {
 import { siteUrl } from "@/lib/site";
 import { usePartnerChannels } from "./api";
 import { trackedLink } from "./rule.logic";
+import { useHasWl } from "@/features/companies/useHasWl";
 
 /**
  * Canais de venda do estacionamento (E0.3.12). Mostra as regras que a Movepark cadastrou para
@@ -22,6 +23,8 @@ import { trackedLink } from "./rule.logic";
  */
 export function PartnerChannelsCard({ companyId }: { companyId: string }) {
   const { data } = usePartnerChannels(companyId);
+  // O selo do site só para quem tem white-label (reservas-unificadas-hub-wl.md § 2).
+  const { hasWl } = useHasWl();
   const [locationId, setLocationId] = React.useState<string>("");
 
   const rules = data?.rules ?? [];
@@ -73,7 +76,7 @@ export function PartnerChannelsCard({ companyId }: { companyId: string }) {
               <span className="text-title-sm text-ink">{r.name}</span>
               <Badge tone="active">comissão de {r.take_rate_bps / 100}%</Badge>
               <Badge tone="neutral">vale por {r.window_days ?? data?.window_days ?? 7} dias depois do clique</Badge>
-              {r.match_white_label && <Badge tone="neutral">vale também no seu site Movepark</Badge>}
+              {r.match_white_label && hasWl && <Badge tone="neutral">vale também no seu site Movepark</Badge>}
             </div>
             {location ? (
               r.utm_sources.map((utm) => {

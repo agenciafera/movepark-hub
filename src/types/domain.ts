@@ -925,3 +925,58 @@ export type WlBookingRow = {
   category_slug: string | null;
   product_slug: string | null;
 };
+
+// ── Lista única de reservas, Hub + white-label (09/10/2026) ─────────────────
+// Formato devolvido por `bookings_list_page` (migration 20261129100000). Ver
+// docs/specs/reservas-unificadas-hub-wl.md § 3.
+
+/** Reserva do site white-label como a lista mostra: status já no vocabulário do Hub (D2). */
+export type WlListRow = {
+  id: string;
+  company_id: string;
+  company_name: string;
+  wl_order_number: string;
+  wl_created_at: string | null;
+  origin: string | null;
+  status: BookingStatus;
+  /** Status cru do site (new, complete, canceled...). */
+  wl_status: string | null;
+  /** Status do site já normalizado (o de `WlBookingRow`), que o detalhe e as ações usam. */
+  site_status: WlBookingStatus;
+  attendance_status: string | null;
+  attendance_marked_at: string | null;
+  location_parking_type_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  license_plate: string | null;
+  check_in_at: string | null;
+  check_out_at: string | null;
+  passenger_count: number | null;
+  has_pcd: boolean;
+  total_cents: number | null;
+  paid_total_cents: number | null;
+  location_id: string | null;
+  location_name: string | null;
+  parking_type_name: string | null;
+  category_slug: string | null;
+  product_slug: string | null;
+  synced_at: string;
+};
+
+export type UnifiedBookingRow =
+  | { source: "hub"; id: string; booking: BookingWithRelations }
+  | { source: "wl"; id: string; wl: WlListRow };
+
+export type BookingsPageSummary = {
+  hub: {
+    total: number;
+    paid: number;
+    pix: number;
+    card: number;
+    paid_amount: number;
+    awaiting: number;
+    lost: number;
+  };
+  wl: { total: number; paid: number; paid_amount: number };
+};

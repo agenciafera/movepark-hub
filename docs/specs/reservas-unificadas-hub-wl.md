@@ -1,6 +1,8 @@
 # Reservas unificadas: Hub e white-label numa lista só
 
-> **Status:** especificação, 09/10/2026. Substitui a direção de tela de `reservas-wl-no-hub.md`
+> **Status:** fases 1 e 2 implementadas em 09/10/2026 (migration
+> `20261129100000_reservas_unificadas_lista.sql`, pgTAP `bookings_list_page.test.sql`); fases 3 a 6
+> em especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
 > (aba separada "Pelo seu site"), que fica como registro da integração de dados (importação,
 > ações no legado, segurança). Decisões de 09/10/2026 em § 9.
 > **Base:** telas do backoffice do white-label enviadas pelo Kallef (lista de pedidos, detalhe,
@@ -52,13 +54,31 @@ Todos passam a usar a regra do § 2.
 As reservas do white-label já estão copiadas no Hub (`wl_booking`, 133 mil, atualizada a cada 15
 minutos pela rota `GET backend/orders` do legado). A lista não consulta o legado em tempo real.
 
-A junção é uma RPC (`bookings_list`) que faz `UNION ALL` entre `booking` e `wl_booking` num formato
+A junção é uma RPC (`bookings_list_page`) que faz `UNION ALL` entre `booking` e `wl_booking` num formato
 comum, com uma coluna `source` (`hub` | `wl`). As duas tabelas continuam separadas, pelo mesmo
 motivo do estudo anterior: 68 funções e 11 triggers leem `booking` (dinheiro, e-mail, WhatsApp,
 cashback, capacidade), e uma reserva do site entrando ali dispararia tudo isso. A união é só de
 leitura e só na tela.
 
 Para empresa sem white-label, a RPC nem consulta `wl_booking`: a lista é exatamente a de hoje.
+
+**Como ficou (09/10/2026).** `bookings_list_page` é `SECURITY INVOKER`: a RLS de quem chama vale
+nas duas tabelas. A parte do site fica presa a `wl_visible_company_ids()` (empresa com
+`wl_domain` em que quem chama é hub_admin ou tem `wl-bookings:read`), que é também a policy de
+leitura de `wl_booking`; a linha de site de uma empresa sem white-label não aparece nem lendo a
+tabela. A RPC filtra, ordena pela data da compra, pagina e devolve o total e o resumo do recorte
+inteiro, separado por origem. A reserva do Hub volta só com o id e o front a monta com o select de
+sempre (`useBookingsPage`), então a linha do Hub é a mesma de antes. O status do site sai traduzido
+por `wl_booking_hub_status` (D2) e o normalizado segue em `site_status`, que é o que o detalhe e as
+ações usam. Filtros só do Hub (forma de pagamento, canal) tiram o site do resultado. A visão do
+estacionamento (`p_partner_view`) é a mesma regra de `partnerSeesBooking`: no Hub, só o que virou
+venda; no site, pedido pago (`confirmed`, `refund_requested`, `refunded`). Tempo medido no banco
+vivo: admin na rede inteira em 30 dias, 353 ms; dono da Garageinn, tudo, 622 ms.
+
+No front, "tem white-label" é `useHasWl()` (`src/features/companies/useHasWl.ts`, regra pura em
+`hasWl.logic.ts`): hub_admin sem impersonar sempre tem; os demais olham `wl_domain` das empresas
+que enxergam. Etiqueta, filtro de origem, tooltip da ocupação, origem no card de comissão e o selo
+"vale também no seu site" passam por ele.
 
 ### 3.2 Formato comum (o que a lista mostra)
 
@@ -184,8 +204,8 @@ origem própria.
 
 | Fase | Entrega |
 |---|---|
-| 1 | Regra única de "tem white-label" e correção dos vazamentos do § 2 |
-| 2 | RPC `bookings_list` (Hub + site, paginada) e a lista unificada no Operator e no Manager, com etiqueta e filtro de origem; sai a aba "Pelo seu site" |
+| 1 | Regra única de "tem white-label" e correção dos vazamentos do § 2 (**feita 09/10/2026**) |
+| 2 | RPC `bookings_list_page` (Hub + site, paginada) e a lista unificada no Operator e no Manager, com etiqueta e filtro de origem; sai a aba "Pelo seu site" (**feita 09/10/2026**; o detalhe do site abre no diálogo antigo até a fase 3) |
 | 3 | Detalhe da reserva do site no layout do Hub, com as ações que já funcionam (comparecimento, no-show, troca de placa) |
 | 4 | Dados que faltam (§ 5) na rota do legado e na cópia; voucher, itens, veículo, forma de pagamento |
 | 5 | Faturamento por origem nos dashboards e relatórios (§ 6) |

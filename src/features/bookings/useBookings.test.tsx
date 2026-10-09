@@ -1,139 +1,107 @@
-import * as React from "react";
 import { describe, expect, it } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { useBookings, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
+import { useBookingsPage, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
 import { supabase } from "@/lib/supabase";
 import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import { vi } from "vitest";
 
 const SUPABASE_URL = "http://localhost:54321";
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
-}
+describe("useBookingsPage (lista única, 09/10/2026)", () => {
+  it("manda os filtros com o nome certo de parâmetro e a página como offset", async () => {
+    const fn = rpc("bookings_list_page", { json: { total: 0, items: [], summary: null } });
+    const { result } = renderMutation(() =>
+      useBookingsPage({
+        source: "wl",
+        status: ["completed"],
+        locationIds: ["loc-1"],
+        companyIds: ["c-1"],
+        dateField: "created_at",
+        from: "2026-10-01T00:00:00Z",
+        search: " ana ",
+        channel: "site",
+        paymentMethod: "pix",
+        partnerView: true,
+        page: 2,
+        pageSize: 50,
+      }),
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fn.ultimoBody).toEqual({
+      p_source: "wl",
+      p_statuses: ["completed"],
+      p_location_ids: ["loc-1"],
+      p_company_ids: ["c-1"],
+      p_date_field: "created_at",
+      p_from: "2026-10-01T00:00:00Z",
+      p_to: null,
+      p_search: "ana",
+      p_payment: "pix",
+      p_channel_origins: ["hub_search", "hub_destino", "hub_direct"],
+      p_partner_view: true,
+      p_limit: 50,
+      p_offset: 100,
+    });
+  });
 
-describe("useBookings", () => {
-  // Regressão do F1 (docs/testes/furos-visao-dono.md): a reserva cancelada carrega
-  // `deleted_at`, então filtrar `deleted_at is null` na lista fazia o filtro "Cancelada"
-  // do painel nunca listar nada. A RLS já restringe por empresa; a lista não pode filtrar
-  // deleted_at.
-  it("não filtra deleted_at na query e devolve a reserva cancelada", async () => {
+  // A reserva do Hub volta só com o id e é montada com o select de sempre; a ordem é a do
+  // servidor (compra mais recente primeiro), não a de chegada da segunda consulta.
+  it("monta a reserva do Hub e mantém a ordem do servidor, misturando as origens", async () => {
+    rpc("bookings_list_page", {
+      json: {
+        total: 3,
+        items: [
+          { source: "hub", id: "b2" },
+          { source: "wl", id: "w1", wl: { id: "w1", wl_order_number: "271001-0001" } },
+          { source: "hub", id: "b1" },
+        ],
+        summary: { hub: { total: 2 }, wl: { total: 1 } },
+      },
+    });
     let capturedUrl = "";
     server.use(
       http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
         capturedUrl = request.url;
         return HttpResponse.json([
-          {
-            id: "b1",
-            code: "MP-CANCEL",
-            status: "cancelled",
-            deleted_at: "2026-07-10T00:00:00Z",
-            total_amount: 29.8,
-            location: null,
-          },
+          { id: "b1", code: "MP-B1" },
+          { id: "b2", code: "MP-B2" },
         ]);
       }),
     );
-
-    const { result } = renderHook(() => useBookings({ status: ["cancelled"] }), { wrapper });
+    const { result } = renderMutation(() => useBookingsPage({ page: 0, pageSize: 50 }));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
+    expect(decodeURIComponent(capturedUrl)).toContain("id=in.(b2,b1)");
+    // Regressão do F1: a lista não filtra deleted_at (a cancelada carrega a data).
     expect(decodeURIComponent(capturedUrl)).not.toContain("deleted_at");
-    expect(result.current.data?.[0]?.code).toBe("MP-CANCEL");
+    const rows = result.current.data!.rows;
+    expect(rows.map((r) => r.source)).toEqual(["hub", "wl", "hub"]);
+    expect(rows[0].source === "hub" && rows[0].booking.code).toBe("MP-B2");
+    expect(rows[1].source === "wl" && rows[1].wl.wl_order_number).toBe("271001-0001");
+    expect(result.current.data!.total).toBe(3);
   });
 
-  // Manager › Reservas recorta pela data da COMPRA (decidido em 16/09/2026): reserva feita
-  // hoje para a semana que vem tem que aparecer hoje. O operador segue por check-in, que é o
-  // que o pátio precisa; por isso o campo é escolha de quem chama, com check-in como padrão.
-  it("dateField=created_at recorta e ordena pela data da compra", async () => {
-    let capturedUrl = "";
+  it("página só com reserva do site não consulta booking", async () => {
+    rpc("bookings_list_page", { json: { total: 1, items: [{ source: "wl", id: "w1", wl: { id: "w1" } }] } });
+    let consultou = false;
     server.use(
-      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
-        capturedUrl = request.url;
+      http.get(`${SUPABASE_URL}/rest/v1/booking`, () => {
+        consultou = true;
         return HttpResponse.json([]);
       }),
     );
-    const { result } = renderHook(
-      () =>
-        useBookings({
-          from: "2026-09-01T00:00:00.000Z",
-          to: "2026-09-16T23:59:59.000Z",
-          dateField: "created_at",
-        }),
-      { wrapper },
-    );
+    const { result } = renderMutation(() => useBookingsPage({ page: 0, pageSize: 50 }));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    const url = decodeURIComponent(capturedUrl);
-    expect(url).toContain("created_at=gte.2026-09-01");
-    expect(url).toContain("created_at=lte.2026-09-16");
-    expect(url).toContain("order=created_at.desc");
-    expect(url).not.toContain("check_in_at=gte");
+    expect(consultou).toBe(false);
+    expect(result.current.data!.summary.wl.total).toBe(0);
   });
 
-  // A ordem é sempre a da compra (05/10/2026): o Operator filtra por check-in, mas a reserva
-  // recém-feita tem que estar no topo, não no meio da lista pela data de chegada.
-  it("sem dateField, o recorte continua pelo check-in e a ordem segue pela compra", async () => {
-    let capturedUrl = "";
-    server.use(
-      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
-        capturedUrl = request.url;
-        return HttpResponse.json([]);
-      }),
-    );
-    const { result } = renderHook(
-      () => useBookings({ from: "2026-09-01T00:00:00.000Z", to: "2026-09-16T23:59:59.000Z" }),
-      { wrapper },
-    );
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    const url = decodeURIComponent(capturedUrl);
-    expect(url).toContain("check_in_at=gte.2026-09-01");
-    expect(url).toContain("order=created_at.desc");
-    expect(url).not.toContain("order=check_in_at");
-  });
-});
-
-describe("useBookings: filtros da lista do Manager (04/10/2026)", () => {
-  async function urlDe(filters: Parameters<typeof useBookings>[0]) {
-    let capturedUrl = "";
-    server.use(
-      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
-        capturedUrl = request.url;
-        return HttpResponse.json([]);
-      }),
-    );
-    const { result } = renderHook(() => useBookings(filters), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    return decodeURIComponent(capturedUrl);
-  }
-
-  it("PIX ou cartão vira inner join no pagamento, filtrado pelo método", async () => {
-    const url = await urlDe({ paymentMethod: "pix" });
-    expect(url).toContain("payments:payment!inner(");
-    expect(url).toContain("payments.method=eq.pix");
-  });
-
-  it("sem pagamento mantém o left join e pede o embed nulo", async () => {
-    const url = await urlDe({ paymentMethod: "none" });
-    expect(url).not.toContain("!inner");
-    expect(url).toContain("payments=is.null");
-  });
-
-  it("sem filtro de pagamento a reserva sem pagamento continua na lista (left join)", async () => {
-    const url = await urlDe({});
-    expect(url).not.toContain("!inner");
-    expect(url).toContain("limit=100");
-  });
-
-  it("canal vira lista de origens e a busca percorre o contato do cliente", async () => {
-    const url = await urlDe({ channel: "site", search: "ana", limit: 500 });
-    expect(url).toContain('origin=in.(hub_search,hub_destino,hub_direct)');
-    expect(url).toContain("customer_name.ilike.%ana%");
-    expect(url).toContain("customer_email.ilike.%ana%");
-    expect(url).toContain("limit=500");
+  it("deixa o erro do servidor chegar", async () => {
+    falha("rpc", "bookings_list_page", 403, "Autenticação necessária.");
+    const { result } = renderMutation(() => useBookingsPage({ page: 0, pageSize: 50 }));
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 

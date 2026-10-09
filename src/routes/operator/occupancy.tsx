@@ -19,6 +19,7 @@ import {
   type CalendarDay,
 } from "@/features/availability/OccupancyCalendar";
 import { useAuth } from "@/auth/context";
+import { useHasWl } from "@/features/companies/useHasWl";
 
 function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -26,6 +27,7 @@ function isoDate(d: Date): string {
 
 export default function OperatorOccupancy() {
   const { effectiveCompanyIds } = useAuth();
+  const { hasWl } = useHasWl();
   const companyId = effectiveCompanyIds[0];
   const { data: locations, isLoading: loadingLocs } = useOperatorLocations(effectiveCompanyIds);
 
@@ -197,6 +199,7 @@ export default function OperatorOccupancy() {
                     data={data}
                     onToggle={(date, blocked) => toggleBlock(row.lptId, date, blocked)}
                     disabled={setBlocked.isPending}
+                    showWl={hasWl}
                   />
                 </CardContent>
               </Card>

@@ -3,39 +3,33 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockAuth, renderWithProviders } from "@/test/utils";
 import OperatorBookings from "./bookings";
-import { useBookings } from "@/features/bookings/api";
-import {
-  useWlBookingAction,
-  useWlBookingActions,
-  useWlBookings,
-  useWlBookingsCount,
-} from "@/features/wl-bookings/api";
-import type { WlBookingRow } from "@/types/domain";
+import { useBookingsPage } from "@/features/bookings/api";
+import { useHasWl } from "@/features/companies/useHasWl";
+import { useWlBookingAction, useWlBookingActions } from "@/features/wl-bookings/api";
+import type { UnifiedBookingRow, WlListRow } from "@/types/domain";
 
-// O gate é do servidor (operator_wl_bookings exige wl-bookings:read, coberto no pgTAP
-// wl_booking_operator). Aqui o foco é a tela: a aba "Pelo seu site" só aparece com escopo e
-// com reserva importada, e sem ela a tela de Reservas fica igual a antes.
+// Quem recorta é o servidor (bookings_list_page, coberto no pgTAP bookings_list_page): só vê
+// reserva do site quem tem white-label, e o estacionamento só vê o que virou venda. Aqui o foco é
+// a tela: uma lista só, etiqueta e filtro de origem apenas para quem tem white-label, e o detalhe
+// do site abrindo com as ações (reservas-unificadas-hub-wl.md § 3).
 vi.mock("@/features/bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/bookings/api")>();
-  return { ...actual, useBookings: vi.fn() };
+  return { ...actual, useBookingsPage: vi.fn() };
 });
+vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: vi.fn() }));
 vi.mock("@/features/wl-bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/wl-bookings/api")>();
-  return {
-    ...actual,
-    useWlBookings: vi.fn(),
-    useWlBookingsCount: vi.fn(),
-    useWlBookingActions: vi.fn(),
-    useWlBookingAction: vi.fn(),
-  };
+  return { ...actual, useWlBookingActions: vi.fn(), useWlBookingAction: vi.fn() };
 });
 
-const RESERVA_DO_SITE: WlBookingRow = {
+const RESERVA_DO_SITE: WlListRow = {
   id: "w-1",
   company_id: "company-1",
+  company_name: "Abbapark",
   wl_order_number: "271001-0001",
   status: "confirmed",
   wl_status: "complete",
+  site_status: "confirmed",
   origin: "reserva-online",
   check_in_at: "2027-10-02T01:00:00Z",
   check_out_at: "2027-10-05T09:30:00Z",
@@ -59,72 +53,117 @@ const RESERVA_DO_SITE: WlBookingRow = {
   product_slug: "vaga-coberta",
 };
 
+const reservaHub = (code: string, origin: string | null = null) =>
+  ({
+    source: "hub",
+    id: code,
+    booking: {
+      id: code, code, status: "confirmed", origin, created_at: "2026-10-08T13:07:00Z",
+      check_in_at: "2026-10-10T08:30:00Z", check_out_at: "2026-10-14T01:00:00Z", total_amount: 136.5,
+      price_breakdown: { days: 4, line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", tier: "superflex", subtotal: 24.9 }] },
+      customer_name: "Cliente " + code, location: { name: "Abbapark" },
+      payments: [{ status: "paid", method: "pix", created_at: "2026-10-08T13:10:00Z" }],
+      fare_extensions: [],
+    },
+  }) as unknown as UnifiedBookingRow;
+
 function setup(opts: {
-  count: number;
-  canSee?: boolean;
+  hasWl: boolean;
+  rows: UnifiedBookingRow[];
+  total?: number;
   actions?: { enabled: boolean; attendance: boolean; license_plate: boolean };
   mutate?: ReturnType<typeof vi.fn>;
-  checkInAt?: string;
 }) {
-  vi.mocked(useBookings).mockReturnValue({ data: [], isLoading: false } as never);
+  vi.mocked(useHasWl).mockReturnValue({ hasWl: opts.hasWl, isLoading: false });
+  vi.mocked(useBookingsPage).mockReturnValue({
+    data: { rows: opts.rows, total: opts.total ?? opts.rows.length, summary: undefined },
+    isLoading: false,
+  } as never);
   vi.mocked(useWlBookingActions).mockReturnValue({
     data: opts.actions ?? { enabled: false, attendance: false, license_plate: false },
   } as never);
   vi.mocked(useWlBookingAction).mockReturnValue({ mutate: opts.mutate ?? vi.fn(), isPending: false } as never);
-  vi.mocked(useWlBookingsCount).mockReturnValue({ data: opts.count } as never);
-  vi.mocked(useWlBookings).mockReturnValue({
-    data: [{ ...RESERVA_DO_SITE, check_in_at: opts.checkInAt ?? RESERVA_DO_SITE.check_in_at }],
-    isLoading: false,
-    error: null,
-  } as never);
-  const auth = mockAuth({
-    effectiveCompanyIds: ["company-1"],
-    hasScope: (scope) => (scope === "wl-bookings:read" ? opts.canSee !== false : true),
+  renderWithProviders(<OperatorBookings />, {
+    auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: () => true }),
+    route: "/operator/bookings",
   });
-  renderWithProviders(<OperatorBookings />, { auth, route: "/operator/bookings" });
 }
 
-describe("OperatorBookings · reservas do site do parceiro", () => {
+const site = (checkInAt?: string): UnifiedBookingRow => ({
+  source: "wl",
+  id: "w-1",
+  wl: { ...RESERVA_DO_SITE, check_in_at: checkInAt ?? RESERVA_DO_SITE.check_in_at },
+});
+
+describe("OperatorBookings · estacionamento sem white-label", () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  it("sem reserva do site, a tela fica como era (sem abas)", () => {
-    setup({ count: 0 });
-    expect(screen.queryByRole("tab", { name: "Pelo seu site" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Busca")).toBeInTheDocument();
+  it("a tela é a de sempre: sem aba, sem etiqueta, sem filtro de origem", () => {
+    setup({ hasWl: false, rows: [reservaHub("MP-PAGA"), reservaHub("MP-VIA-WL", "white_label")] });
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Origem")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hub")).not.toBeInTheDocument();
+    expect(screen.queryByText("White-label")).not.toBeInTheDocument();
+    expect(screen.getByText("MP-VIA-WL")).toBeInTheDocument();
   });
 
-  it("sem o escopo, a aba não aparece mesmo com reserva importada", () => {
-    setup({ count: 3, canSee: false });
-    expect(screen.queryByRole("tab", { name: "Pelo seu site" })).not.toBeInTheDocument();
+  it("pede ao servidor só o Hub e só o que virou venda", () => {
+    setup({ hasWl: false, rows: [] });
+    const f = vi.mocked(useBookingsPage).mock.calls[0][0];
+    expect(f.source).toBe("hub");
+    expect(f.partnerView).toBe(true);
+    expect(f.dateField).toBe("check_in_at");
   });
 
-  it("com escopo e reserva, mostra a aba e abre o detalhe só leitura", async () => {
-    setup({ count: 1 });
-    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
+  it("a coluna mostra as diárias, não o total com a proteção", () => {
+    setup({ hasWl: false, rows: [reservaHub("MP-PAGA")] });
+    expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
+    expect(screen.getByText(/111,60/)).toBeInTheDocument();
+    expect(screen.queryByText(/136,50/)).not.toBeInTheDocument();
+  });
+});
 
-    expect(screen.getByText(/não entra no seu repasse/)).toBeInTheDocument();
+describe("OperatorBookings · estacionamento com white-label", () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it("Hub e site na mesma lista, cada um com a sua etiqueta, e o filtro de origem", () => {
+    setup({ hasWl: true, rows: [site(), reservaHub("MP-PAGA")] });
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
     expect(screen.getByText("271001-0001")).toBeInTheDocument();
-    expect(screen.getAllByText("Paga").length).toBeGreaterThan(0);
+    expect(screen.getByText("MP-PAGA")).toBeInTheDocument();
+    expect(screen.getByText("White-label")).toBeInTheDocument();
+    expect(screen.getByText("Hub")).toBeInTheDocument();
+    expect(screen.getByLabelText("Origem")).toBeInTheDocument();
+    expect(screen.getByText("Reserva online")).toBeInTheDocument();
+    expect(screen.getByText(/150,50/)).toBeInTheDocument();
+  });
 
+  it("pagina pelo servidor", async () => {
+    setup({ hasWl: true, rows: [reservaHub("MP-PAGA")], total: 120 });
+    expect(screen.getByText("1 a 50 de 120")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Próxima" }));
+    const ultima = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
+    expect(ultima.page).toBe(1);
+  });
+
+  it("abre o detalhe do site só leitura quando as ações estão desligadas", async () => {
+    setup({ hasWl: true, rows: [site()] });
     await userEvent.click(screen.getByText("Ana Souza"));
     expect(screen.getByRole("dialog")).toHaveTextContent("Pedido 271001-0001");
-    expect(screen.getByRole("dialog")).toHaveTextContent("Para cancelar ou mudar a data, use o painel do seu site");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Para cancelar ou mudar a data, use o painel do site");
     expect(screen.getByRole("dialog")).toHaveTextContent("11999990000");
-    // Com as ações desligadas: nenhum botão, nem de cancelar (que nunca é pelo Hub).
     expect(screen.queryByRole("button", { name: /cancelar|chegou|não veio|trocar placa/i })).not.toBeInTheDocument();
   });
 
   it("com as ações ligadas e permissão, marca a chegada no site", async () => {
     const mutate = vi.fn();
     setup({
-      count: 1,
+      hasWl: true,
+      rows: [site("2020-01-01T10:00:00Z")],
       actions: { enabled: true, attendance: true, license_plate: true },
       mutate,
-      checkInAt: "2020-01-01T10:00:00Z",
     });
-    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
     await userEvent.click(screen.getByText("Ana Souza"));
-
     await userEvent.click(screen.getByRole("button", { name: "Cliente chegou" }));
     expect(mutate).toHaveBeenCalledWith(
       { action: "attendance", wlBookingId: "w-1", status: "compareceu" },
@@ -134,58 +173,25 @@ describe("OperatorBookings · reservas do site do parceiro", () => {
     expect(screen.queryByRole("button", { name: /cancelar/i })).not.toBeInTheDocument();
   });
 
+  it("reserva já usada (Concluída na lista) segue aceitando ação, porque o site a vê como paga", async () => {
+    setup({
+      hasWl: true,
+      rows: [{ source: "wl", id: "w-1", wl: { ...RESERVA_DO_SITE, status: "completed", check_in_at: "2020-01-01T10:00:00Z" } }],
+      actions: { enabled: true, attendance: true, license_plate: false },
+    });
+    expect(screen.getByText("Concluída")).toBeInTheDocument();
+    await userEvent.click(screen.getByText("Ana Souza"));
+    expect(screen.getByRole("button", { name: "Não veio" })).toBeEnabled();
+  });
+
   it("antes do horário de entrada, Cliente chegou fica travado", async () => {
     setup({
-      count: 1,
+      hasWl: true,
+      rows: [site("2099-01-01T10:00:00Z")],
       actions: { enabled: true, attendance: true, license_plate: false },
-      checkInAt: "2099-01-01T10:00:00Z",
     });
-    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
     await userEvent.click(screen.getByText("Ana Souza"));
     expect(screen.getByRole("button", { name: "Cliente chegou" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Não veio" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Trocar placa" })).not.toBeInTheDocument();
-  });
-
-  it("sem permissão de operar (Financeiro), nenhum botão", async () => {
-    setup({ count: 1, actions: { enabled: true, attendance: false, license_plate: false } });
-    await userEvent.click(screen.getByRole("tab", { name: "Pelo seu site" }));
-    await userEvent.click(screen.getByText("Ana Souza"));
-    expect(screen.queryByRole("button", { name: /chegou|não veio|trocar placa/i })).not.toBeInTheDocument();
-  });
-});
-
-describe("OperatorBookings · só o que virou venda, com o valor das diárias (08/10/2026)", () => {
-  beforeEach(() => vi.restoreAllMocks());
-
-  const reserva = (code: string, status: string, payments: { status: string }[]) => ({
-    id: code, code, status, origin: null, created_at: "2026-10-08T13:07:00Z",
-    check_in_at: "2026-10-10T08:30:00Z", check_out_at: "2026-10-14T01:00:00Z", total_amount: 136.5,
-    price_breakdown: { days: 4, line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", tier: "superflex", subtotal: 24.9 }] },
-    customer_name: "Cliente " + code, location: { name: "Abbapark" }, payments: payments.map((p) => ({ ...p, method: "pix", created_at: "2026-10-08T13:10:00Z" })),
-    fare_extensions: [],
-  });
-
-  it("esconde expirada, recusada e cancelada sem pagamento; a coluna mostra as diárias", () => {
-    vi.mocked(useBookings).mockReturnValue({
-      data: [
-        reserva("MP-PAGA", "confirmed", [{ status: "paid" }]),
-        reserva("MP-EXPIRADA", "expired", []),
-        reserva("MP-RECUSADA", "cancelled", [{ status: "failed" }]),
-      ],
-      isLoading: false,
-    } as never);
-    vi.mocked(useWlBookingsCount).mockReturnValue({ data: 0 } as never);
-    vi.mocked(useWlBookings).mockReturnValue({ data: [], isLoading: false, error: null } as never);
-    renderWithProviders(<OperatorBookings />, { auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: () => true }), route: "/operator/bookings" });
-
-    expect(screen.getByText("MP-PAGA")).toBeInTheDocument();
-    expect(screen.queryByText("MP-EXPIRADA")).not.toBeInTheDocument();
-    expect(screen.queryByText("MP-RECUSADA")).not.toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
-    expect(screen.getByText(/111,60/)).toBeInTheDocument();
-    expect(screen.queryByText(/136,50/)).not.toBeInTheDocument();
-    // O filtro pede ao banco só os status que o estacionamento vê.
-    expect(vi.mocked(useBookings).mock.calls[0][0].status).toEqual(["confirmed", "checked_in", "completed", "no_show", "cancelled"]);
   });
 });

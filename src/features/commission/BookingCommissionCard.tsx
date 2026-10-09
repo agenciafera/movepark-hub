@@ -29,6 +29,7 @@ import {
 } from "./bookingCommission.logic";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { attributionChips, attributionEntries, bookingOriginLabel } from "@/lib/bookingOrigin";
+import { useHasWl } from "@/features/companies/useHasWl";
 
 const HUB = "__hub__";
 
@@ -58,7 +59,10 @@ export function BookingCommissionCard({ booking, companyId, payments, audience, 
   const fixable = manager && canFix && canFixChannel(payments);
   // Origem e atribuição (02/10/2026): de onde a reserva veio (site, Mia, API, white-label) numa
   // linha, os UTMs em chips, e o detalhe inteiro escondido num acordeão, porque pode ser longo.
-  const origem = bookingOriginLabel(booking.origin);
+  // Quem não tem white-label não vê nada dele (reservas-unificadas-hub-wl.md § 2).
+  const { hasWl } = useHasWl();
+  const origemWl = booking.origin === "white_label";
+  const origem = origemWl && !hasWl ? null : bookingOriginLabel(booking.origin);
   const chips = attributionChips(booking);
   const detalhes = manager ? attributionEntries(booking, (iso) => formatDateTime(iso)) : [];
 
@@ -93,8 +97,12 @@ export function BookingCommissionCard({ booking, companyId, payments, audience, 
 
         <div className="flex flex-col gap-2" data-testid="reserva-origem">
           <div className="flex flex-wrap items-center gap-2 text-body-sm">
-            <span className="text-muted">Onde reservou:</span>
-            <span className="text-ink" data-testid="reserva-origem-label">{origem}</span>
+            {origem && (
+              <>
+                <span className="text-muted">Onde reservou:</span>
+                <span className="text-ink" data-testid="reserva-origem-label">{origem}</span>
+              </>
+            )}
             {chips.map((c) => (
               <Badge key={c} tone="neutral">{c}</Badge>
             ))}

@@ -54,12 +54,15 @@ export function OccupancyCalendar({
   data,
   onToggle,
   disabled,
+  showWl = false,
 }: {
   from: string;
   to: string;
   data: Record<string, CalendarDay>;
   onToggle: (date: string, blocked: boolean) => void;
   disabled?: boolean;
+  /** Só quem tem white-label vê a quebra Hub / White-label (reservas-unificadas-hub-wl.md § 2). */
+  showWl?: boolean;
 }) {
   const months = monthsInRange(from, to);
   // Bloquear uma data para de vender naquele dia: pede confirmação. Liberar é direto.
@@ -146,12 +149,16 @@ export function OccupancyCalendar({
                             <span className="text-badge-cancelled-fg">Data bloqueada</span>
                           ) : (
                             <div className="flex flex-col gap-0.5 tabular-nums">
-                              <span>
-                                Hub: <strong>{d.booked}</strong>
-                              </span>
-                              <span>
-                                White-label: <strong>{d.external}</strong>
-                              </span>
+                              {showWl && (
+                                <>
+                                  <span>
+                                    Hub: <strong>{d.booked}</strong>
+                                  </span>
+                                  <span>
+                                    White-label: <strong>{d.external}</strong>
+                                  </span>
+                                </>
+                              )}
                               <span className="border-t border-hairline pt-0.5">
                                 Total: <strong>{d.count}</strong>/{d.capacity} (
                                 {d.capacity > 0 ? Math.round((d.count / d.capacity) * 100) : 0}
