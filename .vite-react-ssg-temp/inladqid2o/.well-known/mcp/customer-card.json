@@ -1,0 +1,685 @@
+{
+  "name": "Movepark Customer",
+  "description": "MCP do Movepark (consumidor autenticado): descoberta, login por OTP (WhatsApp/e-mail) e reserva em nome do usuário final. O pagamento é feito num link de checkout. Endpoint: https://mcp.movepark.co/customer",
+  "url": "https://mcp.movepark.co/customer",
+  "transport": "streamable-http",
+  "contact": "contato@movepark.co",
+  "authentication": {
+    "type": "user-otp",
+    "note": "Login passwordless: request_login_otp dispara o código, verify_login_otp devolve a sessão. As tools de reserva recebem Authorization: Bearer <access_token>. Gerar link de checkout exige, além disso, chave de agente confiável (X-API-Key: mp_...) com o escopo checkout:link. Afirmar identidade sem OTP (assert_verified_identity) exige chave de agente confiável com o escopo identity:assert."
+  },
+  "tools": [
+    {
+      "name": "search_parking",
+      "description": "Busca estacionamentos por destino e período, com preço, distância e disponibilidade.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dest": {
+            "type": "string",
+            "description": "Código do aeroporto (ex.: GRU) ou cidade"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vehicle": {
+            "type": "string",
+            "enum": [
+              "car",
+              "motorcycle"
+            ]
+          },
+          "category": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "max_distance_km": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dest",
+          "from",
+          "to"
+        ]
+      }
+    },
+    {
+      "name": "simulate_price",
+      "description": "Simula o preço de uma reserva por empresa/unidade/tipo de vaga e nº de diárias.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "slug da empresa"
+          },
+          "location": {
+            "type": "string",
+            "description": "slug da unidade"
+          },
+          "parking_type": {
+            "type": "string",
+            "description": "code do tipo de vaga"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        },
+        "required": [
+          "company"
+        ]
+      }
+    },
+    {
+      "name": "get_faq",
+      "description": "Perguntas frequentes globais ou de uma unidade específica.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "search_knowledge",
+      "description": "Busca semântica na base de conhecimento (direções, políticas, avisos e FAQ em prosa) para perguntas abertas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "location_id": {
+            "type": "string"
+          },
+          "destination_id": {
+            "type": "string"
+          },
+          "k": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "list_companies",
+      "description": "Lista os estacionamentos parceiros (empresas) da plataforma.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_locations",
+      "description": "Lista unidades (estacionamentos) públicas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_location_info",
+      "description": "Ficha de uma unidade: contato, horário, tolerância na saída, como chegar, traslado e avisos.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_parking_types",
+      "description": "Tipos de vaga de uma unidade (coberto, descoberto, valet).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location_id"
+        ]
+      }
+    },
+    {
+      "name": "list_destinations",
+      "description": "Destinos (aeroportos/cidades) atendidos, com slug e localização.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_destination",
+      "description": "Detalhe de um destino pelo slug, com seus pontos/terminais.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
+    },
+    {
+      "name": "list_addons",
+      "description": "Serviços adicionais ativos de uma unidade (ex.: Auto Start), com descrição e preço final. Cada um é cobrado uma vez por reserva. Ofereça junto com as tarifas e passe os escolhidos em add_on_service_ids no quote_booking/create_booking: o link de pagamento do agente pula o passo de adicionais do checkout.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "description": "id da unidade (location)"
+          }
+        },
+        "required": [
+          "location_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_fares",
+      "description": "Tarifas da reserva (Básica, Flex, Superflex) com o preço que soma à vaga, o cancelamento grátis, os benefícios incluídos e não incluídos (mesmo texto do site) e o que cada benefício faz. Use para oferecer a tarifa antes de cotar ou reservar; passe fare_tier no quote_booking/create_booking.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string",
+            "description": "id do tipo de vaga (opcional; hoje as tarifas são iguais em todas as unidades)"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "current_datetime",
+      "description": "Data e hora atuais no fuso de São Paulo. Use para resolver datas relativas como 'amanhã' ou 'sexta que vem' sem perguntar ao usuário.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "request_login_otp",
+      "description": "Dispara um código de acesso (OTP) por WhatsApp ou e-mail para o usuário entrar. Passo 1 do login.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Telefone em E.164 (WhatsApp) ou e-mail"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "whatsapp",
+              "email"
+            ],
+            "description": "whatsapp ou email"
+          }
+        },
+        "required": [
+          "identifier",
+          "channel"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "verify_login_otp",
+      "description": "Troca o código recebido por uma sessão. Devolve access_token e refresh_token para o agente agir em nome do usuário. Passo 2 do login.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "O mesmo identificador do passo 1"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "whatsapp",
+              "email"
+            ],
+            "description": "whatsapp ou email"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código de 6 dígitos recebido"
+          }
+        },
+        "required": [
+          "identifier",
+          "channel",
+          "code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "whoami",
+      "description": "Diz se há usuário autenticado no token atual e devolve id/e-mail/telefone. Não exige argumentos.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "assert_verified_identity",
+      "description": "Entra como o dono de um telefone que o canal (WhatsApp) já verificou, sem código. Cria a conta se o telefone ainda não tiver uma. Devolve access_token e refresh_token, como verify_login_otp. Exige chave de agente confiável.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Telefone verificado pelo canal, E.164 com ou sem +, ex.: 5541988149449"
+          }
+        },
+        "required": [
+          "phone"
+        ],
+        "additionalProperties": false
+      },
+      "scope": "identity:assert"
+    },
+    {
+      "name": "quote_booking",
+      "description": "Cota uma reserva sem criá-la: devolve o total exato que create_booking gravaria (diárias com a tolerância da unidade, tarifa, desconto, cupom e adicionais) e recusa pelos mesmos motivos (sem vaga, estadia mínima, antecedência). Não segura a vaga. O checkout ainda pode somar adicionais escolhidos lá e juros do cartão parcelado. Com chave de agente confiável, cota sem login (sem cupom).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string",
+            "description": "id do tipo de vaga (location_parking_type)"
+          },
+          "check_in_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-in ISO-8601"
+          },
+          "check_out_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-out ISO-8601"
+          },
+          "fare_tier": {
+            "type": "string",
+            "enum": [
+              "basica",
+              "flex",
+              "superflex"
+            ],
+            "description": "Tarifa (default basica)"
+          },
+          "add_on_service_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Serviços adicionais (opcional)"
+          },
+          "coupon_code": {
+            "type": "string",
+            "description": "Cupom (opcional)"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "description": "Nº de passageiros (opcional)"
+          },
+          "has_pcd": {
+            "type": "boolean",
+            "description": "Vaga PCD (opcional)"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "check_in_at",
+          "check_out_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_booking",
+      "description": "Cria uma reserva pendente para o usuário logado e segura a vaga. Use os ids vindos de get_parking_types. Confirme os dados com o usuário antes de reservar.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location_parking_type_id": {
+            "type": "string",
+            "description": "id do tipo de vaga (location_parking_type)"
+          },
+          "check_in_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-in ISO-8601"
+          },
+          "check_out_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Check-out ISO-8601"
+          },
+          "fare_tier": {
+            "type": "string",
+            "enum": [
+              "basica",
+              "flex",
+              "superflex"
+            ],
+            "description": "Tarifa (default basica)"
+          },
+          "add_on_service_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Serviços adicionais (opcional)"
+          },
+          "coupon_code": {
+            "type": "string",
+            "description": "Cupom (opcional)"
+          },
+          "passenger_count": {
+            "type": "integer",
+            "description": "Nº de passageiros (opcional)"
+          },
+          "has_pcd": {
+            "type": "boolean",
+            "description": "Vaga PCD (opcional)"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "whatsapp-bot",
+              "webchat-bot"
+            ],
+            "description": "Canal do agente da Movepark (só vale com chave de agente confiável; sem ela a reserva fica como mcp)"
+          }
+        },
+        "required": [
+          "location_parking_type_id",
+          "check_in_at",
+          "check_out_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "set_booking_customer",
+      "description": "Preenche os dados do pagador na reserva (CPF/CNPJ e telefone são exigidos no pagamento). Campos ausentes ficam como estão.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código da reserva (MP-...)"
+          },
+          "tax_id": {
+            "type": "string",
+            "description": "CPF ou CNPJ do pagador"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefone com DDD (E.164)"
+          },
+          "email": {
+            "type": "string",
+            "description": "E-mail do pagador"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "Nome"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Sobrenome"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "add_vehicle",
+      "description": "Cadastra um veículo do usuário pela placa. Devolve o vehicle_id para vincular à reserva.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "license_plate": {
+            "type": "string",
+            "description": "Placa"
+          },
+          "model": {
+            "type": "string",
+            "description": "Modelo (opcional)"
+          },
+          "color": {
+            "type": "string",
+            "description": "Cor (opcional)"
+          },
+          "set_default": {
+            "type": "boolean",
+            "description": "Tornar o veículo padrão (opcional)"
+          }
+        },
+        "required": [
+          "license_plate"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "set_booking_vehicle",
+      "description": "Vincula um veículo já cadastrado (vehicle_id) à reserva.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código da reserva (MP-...)"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "description": "id do veículo (de add_vehicle ou list)"
+          }
+        },
+        "required": [
+          "booking_code",
+          "vehicle_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_my_bookings",
+      "description": "Lista as reservas do usuário logado, cada uma com o último aviso que o Movepark mandou (last_notification: evento, canal e quando), para entender a que mensagem o cliente está respondendo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "máximo (default 10)"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_booking",
+      "description": "Detalhe de uma reserva do usuário pelo código, com o último aviso enviado (last_notification).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código (MP-...)"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_booking_status",
+      "description": "Estado da reserva e do pagamento (para acompanhar a confirmação sem consultar tabelas). Devolve status, pagamento e expiração.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código (MP-...)"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "cancel_booking",
+      "description": "Cancela uma reserva do usuário. Confirme com o usuário antes de cancelar.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código (MP-...)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo (opcional)"
+          }
+        },
+        "required": [
+          "booking_code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_checkout_link",
+      "description": "Gera um link de uso único que abre o checkout já logado. Entregue este link ao usuário para ele pagar (PIX ou cartão) e receber o voucher. Exige chave de agente confiável. Passe o refresh_token que veio de verify_login_otp.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "booking_code": {
+            "type": "string",
+            "description": "Código da reserva (MP-...)"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "O refresh_token da sessão (de verify_login_otp)"
+          }
+        },
+        "required": [
+          "booking_code",
+          "refresh_token"
+        ],
+        "additionalProperties": false
+      },
+      "scope": "checkout:link"
+    },
+    {
+      "name": "search_blog",
+      "description": "Busca guias do blog sobre estacionamento em aeroportos (preço da diária, traslado, vaga coberta, valet, como reservar). Devolve título, resumo e URL, sem o corpo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Termo livre; casa título e resumo"
+          },
+          "destination": {
+            "type": "string",
+            "description": "slug do destino, ex.: aeroporto-de-viracopos"
+          },
+          "category": {
+            "type": "string",
+            "description": "slug da categoria: precos, comparativos, guias, dicas-de-viagem, como-reservar"
+          },
+          "tag": {
+            "type": "string",
+            "description": "slug da tag, ex.: traslado, vaga-coberta, economia"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "máximo de resultados (padrão 5)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "get_blog_post",
+      "description": "Devolve um post do blog por slug, com o texto completo em Markdown.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "slug do post"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
+    }
+  ]
+}

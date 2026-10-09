@@ -1,0 +1,52 @@
+User-agent: *
+Allow: /
+
+# Bots de retrieval — geram tráfego de citação de IA, permitidos
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Bots de treino: liberados em 15/08/2026. A meta é a marca presente também no
+# conhecimento-base dos modelos, não só no retrieval. Decisão reversível aqui.
+User-agent: GPTBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+Sitemap: https://movepark.co/sitemap.xml
+
+# Content Signals — preferências de uso por IA (contentsignals.org)
+Content-Signal: ai-train=yes, search=yes, ai-input=yes

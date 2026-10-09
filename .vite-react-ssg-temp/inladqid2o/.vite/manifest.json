@@ -1,0 +1,12 @@
+{
+  "src/main.tsx": {
+    "file": "main.mjs",
+    "name": "main",
+    "src": "src/main.tsx",
+    "isEntry": true
+  },
+  "style.css": {
+    "file": "assets/style-B_JxYXY2.css",
+    "src": "style.css"
+  }
+}
