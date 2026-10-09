@@ -1,5 +1,5 @@
 -- pgTAP: histórico da reserva do Hub com quem fez (reservas unificadas, fase 6, 09/10/2026).
--- Migration: 20261129140000_historico_da_reserva.sql.
+-- Migration: 20261129140500_historico_da_reserva.sql.
 --
 -- O que este arquivo protege:
 --   1. check-in, check-out e no-show passam a registrar quem marcou (status_change), e mudança que
