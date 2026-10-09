@@ -122,22 +122,16 @@ export function BookingTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {v.payment ? (
-                    <div className="flex flex-col items-start gap-1">
-                      <span className={v.payment.method ? "text-ink" : "text-muted"}>
-                        {v.payment.method ?? "Sem pagamento"}
-                      </span>
-                      {v.payment.badge && (
-                        <Badge tone={v.payment.badge.tone} className="whitespace-nowrap">
-                          {v.payment.badge.label}
-                        </Badge>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-muted" title="Pago no site white-label">
-                      No site
+                  <div className="flex flex-col items-start gap-1">
+                    <span className={v.payment.method ? "text-ink" : "text-muted"}>
+                      {v.payment.method ?? "Sem pagamento"}
                     </span>
-                  )}
+                    {v.payment.badge && (
+                      <Badge tone={v.payment.badge.tone} className="whitespace-nowrap">
+                        {v.payment.badge.label}
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-right tabular-nums text-ink">
                   {v.value === null ? "-" : formatBRL(v.value)}

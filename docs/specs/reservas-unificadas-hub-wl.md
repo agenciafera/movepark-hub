@@ -1,8 +1,10 @@
 # Reservas unificadas: Hub e white-label numa lista só
 
-> **Status:** fases 1, 2 e 3 implementadas em 09/10/2026 (migrations
-> `20261129100000_reservas_unificadas_lista.sql` e `20261129110000_wl_booking_detalhe.sql`, pgTAP
-> `bookings_list_page.test.sql` e `wl_booking_detail.test.sql`); fases 4 a 6 em especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
+> **Status:** fases 1 a 4 implementadas em 09/10/2026 (migrations
+> `20261129100000_reservas_unificadas_lista.sql`, `20261129110000_wl_booking_detalhe.sql` e
+> `20261129120000_wl_booking_ficha_completa.sql`, pgTAP `bookings_list_page`, `wl_booking_detail` e
+> `wl_booking_ficha_completa`; legado agenciafera/movepark-backoffice#620); fases 5 e 6 em
+> especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
 > (aba separada "Pelo seu site"), que fica como registro da integração de dados (importação,
 > ações no legado, segurança). Decisões de 09/10/2026 em § 9.
 > **Base:** telas do backoffice do white-label enviadas pelo Kallef (lista de pedidos, detalhe,
@@ -193,6 +195,29 @@ Os quatro primeiros entram na mesma leitura incremental. Histórico e trocas de 
 pedido: entram numa tabela filha (`wl_booking_event`) ou numa leitura sob demanda ao abrir o
 detalhe (ver D5).
 
+### 5.1 Como ficou (fase 4, 09/10/2026)
+
+**Legado** (agenciafera/movepark-backoffice#620): a linha de `GET backend/orders` ganhou
+`payment_method`, `items` (preço unitário gravado na posição), `vehicle`, `voucher_url` (só pedido
+pago), `is_affiliated` (mesma regra do export), `utm` completo, `duplicate_of`, `transaction_id`,
+`plate_changes` e `history`. As listas saem em uma consulta por página. O histórico leva só a nota
+legível, nunca o `old_value`/`new_value` cru do `property`. Não existe rota pública de voucher por
+`secret_key` no legado: o link é o `voucher_url` gravado no pedido.
+
+**Hub** (migration `20261129120000`): colunas novas em `wl_booking` e a tabela filha
+`wl_booking_event` (histórico e trocas de placa, lista trocada inteira a cada leitura, RLS pela
+mesma regra). Linha sem os campos novos não apaga o que já foi copiado, por isso a migration foi
+antes do deploy do legado. O id do gateway só sai para hub_admin. A lista mostra a forma de
+pagamento do site; o filtro de forma de pagamento continua só do Hub (os códigos variam por site).
+
+**Linha do tempo:** a fonte é o histórico copiado do site, que já anota o que o Hub gravou lá. Do
+log do Hub entram só a tentativa que não gravou e a ação posterior à última cópia
+(`buildWlTimeline`), para nada aparecer duas vezes.
+
+**Releitura:** depois do deploy do legado, o cursor de cada empresa volta para a janela
+(`update wl_booking_sync_state set cursor_updated_since = '1970-01-01 00:00:00', cursor_after_id = 0`)
+e a importação relê os pedidos da janela, preenchendo a ficha das reservas que já existiam.
+
 ## 6. Faturamento por origem
 
 "Receita" hoje quer dizer coisas diferentes em cada tela. Ao juntar as origens, cada indicador
@@ -228,7 +253,7 @@ origem própria.
 | 1 | Regra única de "tem white-label" e correção dos vazamentos do § 2 (**feita 09/10/2026**) |
 | 2 | RPC `bookings_list_page` (Hub + site, paginada) e a lista unificada no Operator e no Manager, com etiqueta e filtro de origem; sai a aba "Pelo seu site" (**feita 09/10/2026**) |
 | 3 | Detalhe da reserva do site no layout do Hub, com as ações que já funcionam (comparecimento, no-show, troca de placa) (**feita 09/10/2026**, ver § 4.4) |
-| 4 | Dados que faltam (§ 5) na rota do legado e na cópia; voucher, itens, veículo, forma de pagamento |
+| 4 | Dados que faltam (§ 5) na rota do legado e na cópia; voucher, itens, veículo, forma de pagamento (**feita 09/10/2026**, ver § 5.1) |
 | 5 | Faturamento por origem nos dashboards e relatórios (§ 6) |
 | 6 | Funcionalidades do site que o Hub não tem: consulta de placa, ações em massa, exportar, histórico, duplicatas |
 

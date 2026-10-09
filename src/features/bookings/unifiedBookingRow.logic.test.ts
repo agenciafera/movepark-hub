@@ -18,12 +18,17 @@ const hub = (origin: string | null) =>
   }) as unknown as UnifiedBookingRow;
 
 describe("unifiedRowView", () => {
-  it("reserva do site: pedido, valor pago em reais, sem forma de pagamento, status do Hub", () => {
+  it("reserva do site: pedido, valor pago em reais, pago no site, status do Hub", () => {
     const v = unifiedRowView({ source: "wl", id: "w-1", wl }, { showSource: true, valueMode: "parking" });
     expect(v).toMatchObject({
       code: "271001-0001", sourceLabel: "White-label", channel: "Reserva online", value: 150.5,
-      payment: null, status: "completed", unitName: "Vaga Coberta",
+      payment: { method: "No site", badge: null }, status: "completed", unitName: "Vaga Coberta",
     });
+  });
+
+  it("com a cópia completa, a reserva do site mostra a forma de pagamento", () => {
+    const v = unifiedRowView({ source: "wl", id: "w-1", wl: { ...wl, payment_method_name: "PIX" } }, { showSource: true, valueMode: "total" });
+    expect(v.payment.method).toBe("PIX");
   });
 
   it("sem white-label não sai etiqueta nem o canal White-label de uma reserva do Hub", () => {

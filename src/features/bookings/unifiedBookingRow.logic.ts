@@ -24,8 +24,7 @@ export type UnifiedRowView = {
   unitName: string | null;
   checkIn: string | null;
   checkOut: string | null;
-  /** Null na reserva do site: a forma de pagamento do legado ainda não vem (§ 5). */
-  payment: { method: string | null; badge: PaymentBadge | null } | null;
+  payment: { method: string | null; badge: PaymentBadge | null };
   value: number | null;
   status: BookingStatus;
   flightProtection: boolean;
@@ -59,7 +58,8 @@ export function unifiedRowView(
       unitName: w.location_name ?? w.parking_type_name,
       checkIn: w.check_in_at,
       checkOut: w.check_out_at,
-      payment: null,
+      // Forma de pagamento do site quando a cópia já trouxe; senão, só que foi pago lá.
+      payment: { method: w.payment_method_name ?? "No site", badge: null },
       // O site guarda em centavos; o valor é o que o cliente pagou lá (D3).
       value: centavos(w.paid_total_cents ?? w.total_cents),
       status: w.status,

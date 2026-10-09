@@ -54,6 +54,10 @@ begin
 end $$;
 
 -- ── 1. desligada ─────────────────────────────────────────────────────────────
+-- Desliga aqui, sem depender do valor do banco: em produção a chave está ligada desde 08/10/2026.
+update public.app_setting
+   set value = (value::jsonb || '{"actions_enabled": false}'::jsonb)::text
+ where key = 'wl_booking_import';
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.owner'))::text, true);
 select is(

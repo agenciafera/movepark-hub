@@ -100,3 +100,43 @@ export function wlActionTimelineLabel(a: {
   if (a.result === "error") texto += `. Não chegou ao site${a.message ? `: ${a.message}` : ""}`;
   return texto;
 }
+
+export type WlTimelineEntry = { at: string | null; text: string; tone: "muted" | "error" };
+
+type TimelineInput = {
+  wl_created_at: string | null;
+  synced_at: string;
+  attendance_status: string | null;
+  attendance_marked_at: string | null;
+  actions: { action: string; request: Record<string, unknown> | null; result: string; message: string | null; by_name: string | null; created_at: string }[];
+  site_events?: { kind: string; occurred_at: string | null; actor: string | null; note: string | null }[];
+};
+
+/**
+ * A linha do tempo da reserva do site (fase 4, 09/10/2026), em ordem cronológica.
+ *
+ * A fonte é o histórico copiado do site, que já registra o que o Hub gravou lá (o legado anota
+ * "Placa alterada ... (Movepark Hub: Fulano)"). Do log de ações do Hub entra só o que o histórico
+ * ainda não tem: tentativa que não gravou e ação posterior à última cópia. Assim nada aparece duas
+ * vezes. Sem histórico copiado (antes da releitura), cai no que havia antes: compra, ações do Hub
+ * e o comparecimento marcado no site.
+ */
+export function buildWlTimeline(b: TimelineInput): WlTimelineEntry[] {
+  const out: WlTimelineEntry[] = [{ at: b.wl_created_at, text: "Comprada no site", tone: "muted" }];
+  const history = (b.site_events ?? []).filter((e) => e.kind === "history" && e.note);
+  const temHistorico = history.length > 0;
+  const copiadoAte = new Date(b.synced_at).getTime();
+
+  for (const e of history) {
+    out.push({ at: e.occurred_at, text: `${e.note}${e.actor ? ` (${e.actor})` : ""}`, tone: "muted" });
+  }
+  for (const a of b.actions) {
+    const depoisDaCopia = new Date(a.created_at).getTime() > copiadoAte;
+    if (temHistorico && a.result === "ok" && !depoisDaCopia) continue;
+    out.push({ at: a.created_at, text: wlActionTimelineLabel(a), tone: a.result === "ok" ? "muted" : "error" });
+  }
+  if (!temHistorico && b.attendance_marked_at && !b.actions.some((a) => a.action === "attendance")) {
+    out.push({ at: b.attendance_marked_at, text: `${attendanceLabel(b.attendance_status)} (marcado no site)`, tone: "muted" });
+  }
+  return out.sort((x, y) => (x.at ? new Date(x.at).getTime() : 0) - (y.at ? new Date(y.at).getTime() : 0));
+}

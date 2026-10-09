@@ -111,4 +111,51 @@ describe("WlBookingDetailView", () => {
     setup({ actions: { enabled: true, attendance: false, license_plate: false } });
     expect(screen.queryByRole("button", { name: /chegou|não veio|trocar placa/i })).not.toBeInTheDocument();
   });
+
+  it("ficha completa: pagamento, veículo, voucher, itens, trocas de placa e o histórico do site na linha do tempo", () => {
+    setup({
+      data: {
+        ...RESERVA,
+        payment_method_name: "PIX",
+        vehicle: { description: "Fiat Uno", color: "Prata" },
+        voucher_url: "https://cdn.ex/v.pdf",
+        is_affiliated: true,
+        items: [
+          { product_slug: "vaga", product_name: "Vaga coberta", is_spot: true, quantity: 1, unit_price: 130 },
+          { product_slug: "seguro", product_name: "Seguro", is_spot: false, quantity: 2, unit_price: 10 },
+        ],
+        synced_at: "2027-09-22T00:00:00Z",
+        site_events: [
+          { id: "e1", kind: "history", occurred_at: "2027-09-20T13:30:00Z", actor: "Maria", note: "Voucher gerado", data: {} },
+          { id: "e2", kind: "plate_change", occurred_at: "2027-09-21T09:00:00Z", actor: "Maria", note: "trocou de carro",
+            data: { old_plate: "AAA1A11", new_plate: "BBB2B22" } },
+        ],
+        gateway_transaction_id: "tran_7",
+      },
+    });
+    expect(screen.getByText("PIX")).toBeInTheDocument();
+    expect(screen.getByText("Fiat Uno · Prata")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Voucher" })).toHaveAttribute("href", "https://cdn.ex/v.pdf");
+    expect(screen.getByText("Sim, comprou como afiliado")).toBeInTheDocument();
+    expect(screen.getByTestId("itens")).toHaveTextContent("Seguro × 2");
+    expect(screen.getByTestId("itens")).toHaveTextContent("20,00");
+    expect(screen.getByTestId("trocas-de-placa")).toHaveTextContent("AAA1A11 para BBB2B22: trocou de carro");
+    const linha = screen.getByTestId("linha-do-tempo");
+    expect(linha).toHaveTextContent("Voucher gerado (Maria)");
+    // A ação do Hub já copiada (a1, ok) sai; a recusada (a2) fica.
+    expect(linha).not.toHaveTextContent("Chegada registrada por Dona Alfa");
+    expect(linha).toHaveTextContent("Não gravou: placa trocada para XYZ9K88");
+    // O parceiro não vê a transação do gateway, mesmo que ela chegue.
+    expect(screen.queryByText("tran_7")).not.toBeInTheDocument();
+  });
+
+  it("a transação do gateway aparece para a equipe Movepark", () => {
+    setup({ data: { ...RESERVA, gateway_transaction_id: "tran_7" }, audience: "manager" });
+    expect(screen.getByText("tran_7")).toBeInTheDocument();
+  });
+
+  it("duplicata aponta o pedido original", () => {
+    setup({ data: { ...RESERVA, is_duplicate: true, duplicate_of_id: "w-0", duplicate_of_order_number: "271001-0000" } });
+    expect(screen.getByRole("link", { name: "271001-0000" })).toHaveAttribute("href", "/operator/bookings/site/w-0");
+  });
 });

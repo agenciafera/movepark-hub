@@ -943,6 +943,8 @@ export type WlListRow = {
   wl_status: string | null;
   /** Status do site já normalizado (o de `WlBookingRow`), que o detalhe e as ações usam. */
   site_status: WlBookingStatus;
+  /** Forma de pagamento no site (fase 4); null enquanto a cópia não trouxe. */
+  payment_method_name?: string | null;
   attendance_status: string | null;
   attendance_marked_at: string | null;
   location_parking_type_id: string | null;
@@ -1001,4 +1003,35 @@ export type WlBookingDetailData = WlListRow & {
   utm: Record<string, unknown>;
   wl_updated_at: string | null;
   actions: WlBookingActionEntry[];
+  // Ficha completa (fase 4, migration 20261129120000).
+  payment_method_code?: string | null;
+  vehicle?: { brand?: string | null; model?: string | null; color?: string | null; description?: string | null };
+  items?: WlBookingItem[];
+  voucher_url?: string | null;
+  is_affiliated?: boolean;
+  duplicate_of_wl_order_id?: number | null;
+  duplicate_of_id?: string | null;
+  duplicate_of_order_number?: string | null;
+  /** Só a equipe Movepark recebe; para o parceiro vem null. */
+  gateway_transaction_id?: string | null;
+  site_events?: WlBookingSiteEvent[];
+};
+
+/** Item do pedido no site: vaga ou adicional, preço unitário em reais. */
+export type WlBookingItem = {
+  product_slug: string | null;
+  product_name: string | null;
+  is_spot: boolean;
+  quantity: number;
+  unit_price: number;
+};
+
+/** Histórico e trocas de placa copiados do site (`wl_booking_event`). */
+export type WlBookingSiteEvent = {
+  id: string;
+  kind: "history" | "plate_change";
+  occurred_at: string | null;
+  actor: string | null;
+  note: string | null;
+  data: Record<string, unknown>;
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceLabel, canMarkArrived, centsToReais, wlActionTimelineLabel, wlBookingStatusLabel, wlBookingStatusTone } from "./wlBooking.logic";
+import { attendanceLabel, buildWlTimeline, canMarkArrived, centsToReais, wlActionTimelineLabel, wlBookingStatusLabel, wlBookingStatusTone } from "./wlBooking.logic";
 
 describe("wlBooking.logic", () => {
   it("rotula o status vindo do site, com fallback para desconhecido", () => {
@@ -43,5 +43,47 @@ describe("wlActionTimelineLabel", () => {
   it("troca de placa e falha de rede", () => {
     expect(wlActionTimelineLabel({ action: "license_plate", request: { license_plate: "abc1d23" }, result: "error", message: "timeout", by_name: null }))
       .toBe("Não gravou: placa trocada para ABC1D23. Não chegou ao site: timeout");
+  });
+});
+
+describe("buildWlTimeline", () => {
+  const base = {
+    wl_created_at: "2027-10-01T10:00:00Z",
+    synced_at: "2027-10-02T12:00:00Z",
+    attendance_status: "compareceu",
+    attendance_marked_at: "2027-10-02T09:00:00Z",
+  };
+  const ok = { action: "license_plate", request: { license_plate: "BBB2B22" }, result: "ok", message: null, by_name: "Bia", created_at: "2027-10-02T08:00:00Z" };
+  const recusada = { ...ok, result: "refused", message: "Voucher usado.", created_at: "2027-10-02T08:30:00Z" };
+
+  it("com histórico do site: ele é a fonte, e a ação do Hub já copiada não repete", () => {
+    const t = buildWlTimeline({
+      ...base,
+      actions: [ok, recusada],
+      site_events: [
+        { kind: "history", occurred_at: "2027-10-02T08:00:01Z", actor: null, note: "Placa alterada: AAA1A11 → BBB2B22 (Movepark Hub: Bia)" },
+        { kind: "plate_change", occurred_at: "2027-10-02T08:00:01Z", actor: "Bia", note: "x" },
+      ],
+    });
+    expect(t.map((e) => e.text)).toEqual([
+      "Comprada no site",
+      "Placa alterada: AAA1A11 → BBB2B22 (Movepark Hub: Bia)",
+      "Não gravou: placa trocada para BBB2B22 por Bia. O site recusou: Voucher usado.",
+    ]);
+    expect(t[2].tone).toBe("error");
+  });
+
+  it("ação do Hub depois da última cópia entra até o histórico chegar", () => {
+    const t = buildWlTimeline({
+      ...base,
+      actions: [{ ...ok, created_at: "2027-10-02T13:00:00Z" }],
+      site_events: [{ kind: "history", occurred_at: "2027-10-01T10:00:05Z", actor: "Maria", note: "Voucher gerado" }],
+    });
+    expect(t.map((e) => e.text)).toEqual(["Comprada no site", "Voucher gerado (Maria)", "Placa trocada para BBB2B22 por Bia"]);
+  });
+
+  it("sem histórico copiado: compra, ações do Hub e comparecimento do site", () => {
+    const t = buildWlTimeline({ ...base, actions: [], site_events: [] });
+    expect(t.map((e) => e.text)).toEqual(["Comprada no site", "Compareceu (marcado no site)"]);
   });
 });
