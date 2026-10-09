@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attendanceLabel, buildWlTimeline, canMarkArrived, centsToReais, wlActionTimelineLabel, wlBookingStatusLabel, wlBookingStatusTone } from "./wlBooking.logic";
+import { attendanceLabel, buildWlTimeline, canMarkArrived, centsToReais, wlActionTimelineLabel, wlPaymentMethodLabel, wlBookingStatusLabel, wlBookingStatusTone } from "./wlBooking.logic";
 
 describe("wlBooking.logic", () => {
   it("rotula o status vindo do site, com fallback para desconhecido", () => {
@@ -85,5 +85,14 @@ describe("buildWlTimeline", () => {
   it("sem histórico copiado: compra, ações do Hub e comparecimento do site", () => {
     const t = buildWlTimeline({ ...base, actions: [], site_events: [] });
     expect(t.map((e) => e.text)).toEqual(["Comprada no site", "Compareceu (marcado no site)"]);
+  });
+});
+
+describe("wlPaymentMethodLabel", () => {
+  it("tira o nome do gateway", () => {
+    expect(wlPaymentMethodLabel("Cartão de crédito - Pagarme V5")).toBe("Cartão de crédito");
+    expect(wlPaymentMethodLabel("PIX - Pagarme V5")).toBe("PIX");
+    expect(wlPaymentMethodLabel("Movepark Checkout")).toBe("Movepark Checkout");
+    expect(wlPaymentMethodLabel(null)).toBeNull();
   });
 });

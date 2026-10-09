@@ -140,3 +140,12 @@ export function buildWlTimeline(b: TimelineInput): WlTimelineEntry[] {
   }
   return out.sort((x, y) => (x.at ? new Date(x.at).getTime() : 0) - (y.at ? new Date(y.at).getTime() : 0));
 }
+
+/**
+ * Forma de pagamento do site como o parceiro lê: o legado nomeia o meio junto com o gateway
+ * ("Cartão de crédito - Pagarme V5", "PIX - Pagarme V5"), e o gateway não diz nada a quem opera.
+ */
+export function wlPaymentMethodLabel(name: string | null | undefined): string | null {
+  if (!name) return null;
+  return name.split(" - ")[0].trim() || name;
+}

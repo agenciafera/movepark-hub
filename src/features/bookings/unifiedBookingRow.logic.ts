@@ -9,6 +9,7 @@ import { bookingCustomerName } from "./bookings.logic";
 import { paymentBadge, type PaymentBadge } from "./payment.logic";
 import { CHANNEL_ORIGINS, channelShortLabel, paymentMethodLabel } from "./bookingList.logic";
 import { bookingParkingAmount, type PriceBreakdownLike } from "./bookingMoney.logic";
+import { wlPaymentMethodLabel } from "@/features/wl-bookings/wlBooking.logic";
 import type { BookingStatus, UnifiedBookingRow, WlBookingRow, WlListRow } from "@/types/domain";
 
 export type UnifiedRowView = {
@@ -59,7 +60,7 @@ export function unifiedRowView(
       checkIn: w.check_in_at,
       checkOut: w.check_out_at,
       // Forma de pagamento do site quando a cópia já trouxe; senão, só que foi pago lá.
-      payment: { method: w.payment_method_name ?? "No site", badge: null },
+      payment: { method: wlPaymentMethodLabel(w.payment_method_name) ?? "No site", badge: null },
       // O site guarda em centavos; o valor é o que o cliente pagou lá (D3).
       value: centavos(w.paid_total_cents ?? w.total_cents),
       status: w.status,

@@ -17,6 +17,7 @@ import {
   buildWlTimeline,
   centsToReais,
   wlBookingStatusLabel,
+  wlPaymentMethodLabel,
 } from "./wlBooking.logic";
 
 function Campo({ label, value }: { label: string; value: React.ReactNode }) {
@@ -153,7 +154,7 @@ export function WlBookingDetailView({
             <Campo label="Check-out" value={formatDateTime(b.check_out_at)} />
             <Campo label="Valor pago no site" value={valor === null ? "-" : formatBRL(valor)} />
             {b.payment_method_name && (
-              <Campo label="Forma de pagamento" value={b.payment_method_name} />
+              <Campo label="Forma de pagamento" value={wlPaymentMethodLabel(b.payment_method_name)} />
             )}
             <Campo label="Comparecimento" value={attendanceLabel(b.attendance_status)} />
             <Campo label="Status no site" value={wlBookingStatusLabel(b.site_status)} />
