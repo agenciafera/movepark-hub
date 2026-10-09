@@ -41,6 +41,8 @@ describe("ManagerFinanceBilling", () => {
     expect(screen.getByRole("columnheader", { name: "White-label" })).toBeInTheDocument();
     const vira = screen.getByRole("row", { name: /Vira/ });
     expect(within(vira).getByText("sem taxa")).toBeInTheDocument();
+    // Vira só vendeu no site: as colunas do Hub ficam em traço, sem um "0%" que parece taxa.
+    expect(within(vira).queryByText(/0%/)).not.toBeInTheDocument();
     expect(screen.getByTestId("aviso-sem-taxa")).toHaveTextContent("Uma empresa vendeu no white-label sem comissão combinada");
   });
 });

@@ -133,18 +133,28 @@ export default function ManagerFinanceBilling() {
                         {row.companyName}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{row.hubReservations}</TableCell>
+                    {/* Empresa que só vendeu no site: as colunas do Hub ficam em traço, não em
+                        "R$ 0,00 (0%)", que parecia uma comissão zerada. */}
                     <TableCell className="text-right tabular-nums">
-                      {formatBRL(row.hubGross)}
+                      {row.hubReservations || "-"}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatBRL(row.hubCommission)}
-                      <span className="ml-1 text-caption text-muted">
-                        ({row.hubTakeRateBps / 100}%)
-                      </span>
+                      {row.hubReservations ? formatBRL(row.hubGross) : "-"}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatBRL(row.hubPayout)}
+                      {row.hubReservations ? (
+                        <>
+                          {formatBRL(row.hubCommission)}
+                          <span className="ml-1 text-caption text-muted">
+                            ({row.hubTakeRateBps / 100}%)
+                          </span>
+                        </>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.hubReservations ? formatBRL(row.hubPayout) : "-"}
                     </TableCell>
                     {temSite && (
                       <TableCell className="text-right tabular-nums">
