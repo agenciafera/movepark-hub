@@ -16,21 +16,45 @@ import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { formatRangeLabel } from "@/features/manager-filters/managerFilters.logic";
 import { useCompanyFinance } from "@/features/finance/api";
+import { useWlRevenue } from "@/features/finance/wlRevenue";
+import { billingRows, billingTotals } from "@/features/finance/billingByOrigin.logic";
 import { formatBRL } from "@/lib/format";
 
+function Numero({
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="text-right">
+      <div className="text-caption text-muted">{label}</div>
+      <div className={`text-display-sm ${accent ? "text-mp-primary" : "text-ink"}`}>{value}</div>
+      {hint && <div className="text-caption text-muted">{hint}</div>}
+    </div>
+  );
+}
+
+/**
+ * Faturamento da rede (fase 5 das reservas unificadas, 09/10/2026): o Hub e o site white-label lado
+ * a lado por empresa, com o total e a quebra por origem (D4). Comissão do Hub pela `take_rate_bps`;
+ * a do site pela `wl_take_rate_bps` (D4b), editável em Comissões.
+ */
 export default function ManagerFinanceBilling() {
   const { range, scopedLocationIds } = useManagerFilters();
-  const { data, isLoading } = useCompanyFinance(
-    range.from.toISOString(),
-    range.to.toISOString(),
-    scopedLocationIds,
-  );
-  const totalGross = (data ?? []).reduce((acc, r) => acc + r.grossRevenue, 0);
-  // Comissão real por empresa (take_rate_bps), não mais taxa fixa.
-  const totalCommission = (data ?? []).reduce(
-    (acc, r) => acc + (r.grossRevenue * r.takeRateBps) / 10000,
-    0,
-  );
+  const from = range.from.toISOString();
+  const to = range.to.toISOString();
+  const hubQ = useCompanyFinance(from, to, scopedLocationIds);
+  const wlQ = useWlRevenue({ from, to, locationIds: scopedLocationIds });
+  const isLoading = hubQ.isLoading || wlQ.isLoading;
+  const rows = billingRows(hubQ.data ?? [], wlQ.data?.by_company ?? []);
+  const t = billingTotals(rows);
+  const temSite = t.wlGross > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,21 +65,45 @@ export default function ManagerFinanceBilling() {
       />
 
       <Card>
-        <CardContent className="flex flex-wrap items-center justify-end gap-8 p-6">
-          <div className="text-right">
-            <div className="text-caption text-muted">Receita bruta</div>
-            <div className="text-display-sm text-ink">{formatBRL(totalGross)}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-caption text-muted">Comissão Movepark</div>
-            <div className="text-display-sm text-mp-primary">{formatBRL(totalCommission)}</div>
-          </div>
+        <CardContent
+          className="flex flex-wrap items-start justify-end gap-8 p-6"
+          data-testid="faturamento-totais"
+        >
+          <Numero
+            label="Receita bruta"
+            value={formatBRL(t.gross)}
+            hint={
+              temSite
+                ? `${formatBRL(t.hubGross)} no Hub, ${formatBRL(t.wlGross)} no white-label`
+                : undefined
+            }
+          />
+          <Numero
+            label="Comissão Movepark"
+            value={formatBRL(t.commission)}
+            accent
+            hint={
+              temSite
+                ? `${formatBRL(t.hubCommission)} do Hub, ${formatBRL(t.wlCommission)} do white-label`
+                : undefined
+            }
+          />
         </CardContent>
       </Card>
 
+      {t.wlWithoutRate > 0 && (
+        <p className="text-body-sm text-muted" data-testid="aviso-sem-taxa">
+          {t.wlWithoutRate === 1 ? "Uma empresa vendeu" : `${t.wlWithoutRate} empresas venderam`} no
+          white-label sem comissão combinada, e essa venda não entra na comissão.{" "}
+          <Link to="/manager/finance/commissions" className="underline underline-offset-2">
+            Definir em Comissões
+          </Link>
+        </p>
+      )}
+
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
-      ) : (data ?? []).length === 0 ? (
+      ) : rows.length === 0 ? (
         <EmptyState title="Sem movimentação" description="Nenhuma reserva no período escolhido." />
       ) : (
         <div className="overflow-hidden rounded-md border border-hairline bg-canvas">
@@ -64,36 +112,64 @@ export default function ManagerFinanceBilling() {
               <TableRow>
                 <TableHead>Empresa</TableHead>
                 <TableHead className="text-right">Reservas</TableHead>
-                <TableHead className="text-right">Receita bruta</TableHead>
+                <TableHead className="text-right">Receita Hub</TableHead>
                 <TableHead className="text-right">Comissão</TableHead>
                 <TableHead className="text-right">Repasse</TableHead>
+                {temSite && <TableHead className="text-right">White-label</TableHead>}
+                {temSite && <TableHead className="text-right">Comissão white-label</TableHead>}
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.map((row) => {
-                const commission = (row.grossRevenue * row.takeRateBps) / 10000;
+              {rows.map((row) => {
                 return (
                   <TableRow key={row.companyId}>
                     <TableCell className="text-ink">
                       {/* Nome leva à conta do estacionamento (E0.3.7): extrato, saque, estorno. */}
-                      <Link to={`/manager/companies/${row.companyId}/conta`} className="underline-offset-2 hover:underline">
+                      <Link
+                        to={`/manager/companies/${row.companyId}/conta`}
+                        className="underline-offset-2 hover:underline"
+                      >
                         {row.companyName}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{row.reservations}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.hubReservations}</TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatBRL(row.grossRevenue)}
+                      {formatBRL(row.hubGross)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatBRL(commission)}
+                      {formatBRL(row.hubCommission)}
                       <span className="ml-1 text-caption text-muted">
-                        ({row.takeRateBps / 100}%)
+                        ({row.hubTakeRateBps / 100}%)
                       </span>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatBRL(row.grossRevenue - commission)}
+                      {formatBRL(row.hubPayout)}
                     </TableCell>
+                    {temSite && (
+                      <TableCell className="text-right tabular-nums">
+                        {row.wlPaidAmount > 0 ? formatBRL(row.wlPaidAmount) : "-"}
+                        {row.wlPaid > 0 && (
+                          <span className="ml-1 text-caption text-muted">({row.wlPaid})</span>
+                        )}
+                      </TableCell>
+                    )}
+                    {temSite && (
+                      <TableCell className="text-right tabular-nums">
+                        {row.wlCommission != null ? (
+                          <>
+                            {formatBRL(row.wlCommission)}
+                            <span className="ml-1 text-caption text-muted">
+                              ({(row.wlTakeRateBps ?? 0) / 100}%)
+                            </span>
+                          </>
+                        ) : row.wlPaidAmount > 0 ? (
+                          <span className="text-muted">sem taxa</span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge tone="pending">Pendente</Badge>
                     </TableCell>

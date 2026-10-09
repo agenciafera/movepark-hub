@@ -1,10 +1,10 @@
 # Reservas unificadas: Hub e white-label numa lista só
 
-> **Status:** fases 1 a 4 implementadas em 09/10/2026 (migrations
-> `20261129100000_reservas_unificadas_lista.sql`, `20261129110000_wl_booking_detalhe.sql` e
-> `20261129120000_wl_booking_ficha_completa.sql`, pgTAP `bookings_list_page`, `wl_booking_detail` e
-> `wl_booking_ficha_completa`; legado agenciafera/movepark-backoffice#620); fases 5 e 6 em
-> especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
+> **Status:** fases 1 a 5 implementadas em 09/10/2026 (migrations
+> `20261129100000_reservas_unificadas_lista.sql`, `20261129110000_wl_booking_detalhe.sql`,
+> `20261129120000_wl_booking_ficha_completa.sql` e `20261129130000_wl_faturamento_por_origem.sql`,
+> pgTAP `bookings_list_page`, `wl_booking_detail`, `wl_booking_ficha_completa` e
+> `wl_faturamento_por_origem`; legado agenciafera/movepark-backoffice#620); fase 6 em especificação. Substitui a direção de tela de `reservas-wl-no-hub.md`
 > (aba separada "Pelo seu site"), que fica como registro da integração de dados (importação,
 > ações no legado, segurança). Decisões de 09/10/2026 em § 9.
 > **Base:** telas do backoffice do white-label enviadas pelo Kallef (lista de pedidos, detalhe,
@@ -237,6 +237,44 @@ Detalhe do legado a respeitar: a lista do backoffice mostra o valor calculado (`
 o placar do topo usa `paid_total_price` e os relatórios só contam pedido `complete`. A base do Hub
 para o site é `paid_total_price` de pedido pago, que é o que o relatório do legado considera receita.
 
+### 6.1 Como ficou (fase 5, 09/10/2026)
+
+**Servidor** (migration `20261129130000`):
+
+- `company.wl_take_rate_bps` (D4b), nula = não combinada. Fora do grant do `authenticated`, como
+  a do Hub; o hub_admin lê por `manager_company_restricted` e grava por `set_company_wl_take_rate`
+  (só empresa com white-label).
+- `wl_revenue(p_from, p_to, p_location_ids, p_company_ids, p_date_field)`: total, por dia e por
+  empresa, com o recorte de `wl_visible_company_ids`. "Pagas" conta também o reembolsado (o dinheiro
+  entrou) e o valor soma só o pago não devolvido, igual ao Hub em `bookings_list_page`. A comissão
+  é calculada na leitura e só sai para o hub_admin. Medido no banco vivo: 30 dias da rede, 43 ms;
+  um ano, 375 ms (com o predicado de data dentro de um CASE eram 2 s e 9 s, porque o índice não
+  valia).
+- De carona: `set_company_take_rate` devolvia a linha inteira de `company`, com o segredo do WPS.
+  Passou a devolver só `{id, take_rate_bps}`.
+
+**Telas:**
+
+| Tela | O que mudou |
+|---|---|
+| Dashboard do Operator | Receita do período = diárias do Hub + pago no site, com a quebra; gráfico empilhado; o site na Origem das reservas. A meta e o RevPAR medem a soma (a vaga vendida no site ocupa a mesma capacidade). |
+| Relatórios do Operator | Card "Vendido no white-label"; "Você recebe" e "Reservas" passam a dizer "pela Movepark"; gráfico empilhado; CSV ganha as colunas do site. |
+| Dashboard do Manager | Receita da rede com a quebra, comissão do white-label à parte do repasse, gráfico empilhado. Os outros indicadores (ranking, permanência, tarifas, clientes) seguem só do Hub. |
+| Faturamento | Total e comissão com a quebra; por empresa, colunas do site e da comissão do site; aviso de empresa que vendeu no site sem taxa combinada. |
+| Comissões | Coluna "White-label (%)" só para empresa com site; vazio = não combinada. |
+| Atribuição | "Reservas via white-label" virou "Pela API e agentes"; o site do parceiro entra como "No site white-label" (pedidos criados no recorte). |
+
+Tudo o que é de white-label passa por `useHasWl`: quem não tem site não chama a RPC nem vê
+etiqueta, card ou linha. No dashboard do Operator a contagem do site vale para todo papel; o dinheiro
+continua atrás de `finance:read`.
+
+**Herdado e não mexido** (anotado para não se perder): as telas do Hub usam bases diferentes de
+"receita" (diárias no Operator, total com plano no Manager e no Faturamento, pago menos devolvido
+no relatório por canal), a comissão do dashboard e do Faturamento usa a taxa atual da empresa e não
+a congelada na reserva, e os Relatórios do Operator não têm teto de data (entram check-ins futuros).
+O site segue a base de cada tela onde ela existe e o teto dos Relatórios, para as duas origens
+falarem do mesmo recorte.
+
 ## 7. Manager
 
 O Manager vê a lista unificada de toda a rede, com o filtro Origem e as empresas sem white-label
@@ -254,7 +292,7 @@ origem própria.
 | 2 | RPC `bookings_list_page` (Hub + site, paginada) e a lista unificada no Operator e no Manager, com etiqueta e filtro de origem; sai a aba "Pelo seu site" (**feita 09/10/2026**) |
 | 3 | Detalhe da reserva do site no layout do Hub, com as ações que já funcionam (comparecimento, no-show, troca de placa) (**feita 09/10/2026**, ver § 4.4) |
 | 4 | Dados que faltam (§ 5) na rota do legado e na cópia; voucher, itens, veículo, forma de pagamento (**feita 09/10/2026**, ver § 5.1) |
-| 5 | Faturamento por origem nos dashboards e relatórios (§ 6) |
+| 5 | Faturamento por origem nos dashboards e relatórios (§ 6) (**feita 09/10/2026**, ver § 6.1) |
 | 6 | Funcionalidades do site que o Hub não tem: consulta de placa, ações em massa, exportar, histórico, duplicatas |
 
 ## 9. Decisões (09/10/2026)

@@ -80,8 +80,11 @@ const FLOW = {
   })),
 };
 
-function renderDashboard() {
+function renderDashboard(wl?: unknown) {
   server.use(
+    http.post(`${SUPABASE_URL}/rest/v1/rpc/wl_revenue`, () =>
+      HttpResponse.json(wl ?? { total: { created: 0, paid: 0, paid_amount: 0, commission: null }, by_day: [], by_company: [] }),
+    ),
     http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_dashboard_overview`, () =>
       HttpResponse.json(OVERVIEW),
     ),
@@ -154,5 +157,27 @@ describe("ManagerDashboard", () => {
     expect(await screen.findByText("Fluxo de veículos por hora")).toBeInTheDocument();
     expect(screen.getByText("Por destino")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("Viracopos")).toBeInTheDocument());
+  });
+
+  // Fase 5 (D6): receita da rede com a quebra por origem, e a comissão do site à parte.
+  it("soma o site white-label na receita da rede, com a quebra e a comissão do site", async () => {
+    renderDashboard({
+      total: { created: 8, paid: 6, paid_amount: 300, commission: 15 },
+      by_day: [{ day: "2026-07-29", paid: 6, paid_amount: 300 }],
+      by_company: [],
+    });
+    expect(await screen.findByTestId("receita-por-origem")).toHaveTextContent(
+      "R$ 1.440,40 no Hub, R$ 300,00 no white-label",
+    );
+    expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.740,40");
+    expect(screen.getByText("Comissão do white-label")).toBeInTheDocument();
+  });
+
+  it("sem venda no site, nada de white-label na tela", async () => {
+    renderDashboard();
+    expect(await screen.findByText("Receita da rede")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"));
+    expect(screen.queryByTestId("receita-por-origem")).not.toBeInTheDocument();
+    expect(screen.queryByText("Comissão do white-label")).not.toBeInTheDocument();
   });
 });

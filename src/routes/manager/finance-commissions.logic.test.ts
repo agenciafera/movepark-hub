@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { bpsToPctString, isCommissionDirty, parseCommissionPct } from "./finance-commissions.logic";
+import {
+  bpsToPctString,
+  isCommissionDirty,
+  isOptionalCommissionDirty,
+  optionalBpsToPctString,
+  parseCommissionPct,
+  parseOptionalCommissionPct,
+} from "./finance-commissions.logic";
 
 describe("bpsToPctString", () => {
   it("converte basis points em porcentagem", () => {
@@ -38,5 +45,21 @@ describe("isCommissionDirty", () => {
   it("input inválido não conta como salvável", () => {
     expect(isCommissionDirty(1500, "abc")).toBe(false);
     expect(isCommissionDirty(1500, "")).toBe(false);
+  });
+});
+
+describe("comissão do white-label (opcional)", () => {
+  it("vazio é não combinada, zero é zero", () => {
+    expect(parseOptionalCommissionPct("")).toEqual({ bps: null });
+    expect(parseOptionalCommissionPct("0")).toEqual({ bps: 0 });
+    expect(parseOptionalCommissionPct("7,5")).toEqual({ bps: 750 });
+    expect(parseOptionalCommissionPct("120")).toHaveProperty("error");
+  });
+  it("sujo só com mudança real", () => {
+    expect(optionalBpsToPctString(null)).toBe("");
+    expect(isOptionalCommissionDirty(null, "")).toBe(false);
+    expect(isOptionalCommissionDirty(null, "5")).toBe(true);
+    expect(isOptionalCommissionDirty(500, "")).toBe(true);
+    expect(isOptionalCommissionDirty(500, "5")).toBe(false);
   });
 });

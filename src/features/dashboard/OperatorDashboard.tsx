@@ -23,6 +23,9 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { RecipientKycBanner } from "@/features/payouts/RecipientKycBanner";
 import { bookingCustomerName } from "@/features/bookings/bookings.logic";
 import { useRevenueByRange, useStatusFunnelRange } from "@/features/reports/api";
+import { useWlRevenue } from "@/features/finance/wlRevenue";
+import { useHasWl } from "@/features/companies/useHasWl";
+import { mergeDailyByOrigin, originBreakdown } from "./revenueByOrigin.logic";
 import { PeriodPicker } from "@/features/manager-filters/PeriodPicker";
 import {
   DEFAULT_PERIOD,
@@ -246,6 +249,10 @@ export default function OperatorDashboard() {
   const canEditGoal = hasScope("finance:write", companyId);
 
   const summary = useOperatorPeriodSummary(range, compareRange, scopedLocationIds);
+  // Site white-label (fase 5): só para quem tem; quem não tem nem chama, e a tela fica como era.
+  // A contagem vale para todo papel (Origem das reservas); o dinheiro continua atrás de finance:read.
+  const { hasWl } = useHasWl();
+  const wlQ = useWlRevenue({ from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds }, hasWl);
   const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds, true);
   const funnel = useStatusFunnelRange(rangeFrom, rangeTo, scopedLocationIds);
   const upcoming = useUpcomingBookingsCount(days, scopedLocationIds);
@@ -271,29 +278,42 @@ export default function OperatorDashboard() {
 
   const cur = summary.data?.current;
   const daily = React.useMemo(
-    // As diárias, não o total cobrado (08/10/2026): o plano é da Movepark.
-    () => (revenue.data ?? []).map((d) => ({ date: d.date, total: d.parking })),
-    [revenue.data],
+    // As diárias, não o total cobrado (08/10/2026): o plano é da Movepark. Com white-label, o pago
+    // no site soma no mesmo dia (`total`), e o gráfico mostra as duas origens empilhadas.
+    () =>
+      mergeDailyByOrigin(
+        (revenue.data ?? []).map((d) => ({ date: d.date, value: d.parking })),
+        hasWl ? (wlQ.data?.by_day ?? []) : [],
+      ),
+    [revenue.data, wlQ.data, hasWl],
   );
+  const wl = hasWl ? (wlQ.data?.total ?? null) : null;
+  const temSite = !!wl && wl.paid_amount > 0;
+  // A receita do estacionamento é a das duas origens: é ela que a meta e o RevPAR medem (a vaga
+  // vendida no site ocupa a mesma capacidade, ver Ocupação).
+  const hubRevenue = cur?.revenue ?? 0;
+  const totalRevenue = hubRevenue + (wl?.paid_amount ?? 0);
   const conv = conversion(funnel.data ?? []);
   const rows = situations(funnel.data ?? []);
   const best = bestRevenueDay(daily);
   const insight = periodInsight({
-    revenue: cur?.revenue ?? 0,
+    revenue: totalRevenue,
     daily,
     conversion: conv,
     periodDays: days,
   });
-  const progress = goalProgress(cur?.revenue ?? 0, goal.data);
+  const progress = goalProgress(totalRevenue, goal.data);
   const cancel = cancellationRate(funnel.data ?? []);
   const benchmark = cancellationBenchmark(cancel.rate);
   const rating = averageRating(reviews.data ?? []);
   const pending = pendingReviews(reviews.data ?? []);
   const channel = summary.data?.channelMix ?? { site: 0, api: 0 };
-  const channelTotal = channel.site + channel.api;
+  // Pagas no site white-label no mesmo recorte (só para quem tem; senão a barra fica como era).
+  const channelWl = hasWl ? (wl?.paid ?? 0) : 0;
+  const channelTotal = channel.site + channel.api + channelWl;
   const occ7Day = occupancyPerDay(occ7.data ?? { capacityDays: 0, bookedDays: 0, days: 0 });
   const occ7Rate = occupancyRate(occ7.data?.bookedDays ?? 0, occ7.data?.capacityDays ?? 0);
-  const revparValue = revpar(cur?.revenue ?? 0, occPeriod.data?.capacityDays ?? 0);
+  const revparValue = revpar(totalRevenue, occPeriod.data?.capacityDays ?? 0);
   const label = periodLabel(period, range);
 
   const firstName = session?.firstName ?? "";
@@ -359,11 +379,19 @@ export default function OperatorDashboard() {
               <div className="text-body-sm font-medium text-white/90">Receita do período</div>
               <div className="mt-1 text-caption text-white/70">realizado no período</div>
             </div>
-            {summary.isLoading ? (
+            {summary.isLoading || (hasWl && wlQ.isLoading) ? (
               <Skeleton className="mt-5 h-10 w-40 bg-white/20" />
             ) : (
-              <div className="mt-5 text-display-2xl tabular-nums leading-none text-white">
-                {formatBRL(cur?.revenue ?? 0)}
+              <div
+                className="mt-5 text-display-2xl tabular-nums leading-none text-white"
+                data-testid="receita-periodo"
+              >
+                {formatBRL(totalRevenue)}
+              </div>
+            )}
+            {temSite && (
+              <div className="mt-2 text-caption text-white/80" data-testid="receita-por-origem">
+                {originBreakdown(hubRevenue, wl!.paid_amount, formatBRL)}
               </div>
             )}
 
@@ -447,7 +475,8 @@ export default function OperatorDashboard() {
                   Receita diária, <span className="text-mp-primary">{formatRangeLabel(range)}</span>
                 </div>
                 <p className="mt-1.5 text-body-sm text-muted">
-                  Total do período {formatBRL(cur?.revenue ?? 0)}
+                  Total do período {formatBRL(totalRevenue)}
+                  {temSite ? ` (${originBreakdown(hubRevenue, wl!.paid_amount, formatBRL)})` : ""}
                 </p>
               </div>
               {best && (
@@ -464,7 +493,7 @@ export default function OperatorDashboard() {
             </div>
 
             <div className="mt-6 h-[220px] flex-1">
-              {revenue.isLoading ? (
+              {revenue.isLoading || (hasWl && wlQ.isLoading) ? (
                 <Skeleton className="h-full w-full" />
               ) : daily.length === 0 ? (
                 <EmptyState
@@ -505,20 +534,37 @@ export default function OperatorDashboard() {
                       axisLine={false}
                     />
                     <Tooltip
-                      formatter={(v: number) => [formatBRL(v), "Receita"]}
+                      formatter={(v: number, name: string) => [
+                        formatBRL(v),
+                        name === "wl" ? "White-label" : temSite ? "Hub" : "Receita",
+                      ]}
                       labelFormatter={(d: string) =>
                         format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
                       }
                     />
                     <Area
                       type="monotone"
-                      dataKey="total"
+                      dataKey="hub"
+                      stackId="origem"
                       stroke="hsl(var(--mp-primary))"
                       strokeWidth={2.5}
                       fill="url(#op-rev)"
                       dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
                       activeDot={{ r: 5 }}
                     />
+                    {temSite && (
+                      <Area
+                        type="monotone"
+                        dataKey="wl"
+                        stackId="origem"
+                        stroke="hsl(var(--mp-teal))"
+                        strokeWidth={2}
+                        fill="hsl(var(--mp-teal))"
+                        fillOpacity={0.15}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -650,6 +696,12 @@ export default function OperatorDashboard() {
                 className="rounded-full bg-surface-strong"
                 style={{ width: channelTotal ? `${(channel.api / channelTotal) * 100}%` : "0%" }}
               />
+              {hasWl && (
+                <div
+                  className="rounded-full bg-mp-teal"
+                  style={{ width: channelTotal ? `${(channelWl / channelTotal) * 100}%` : "0%" }}
+                />
+              )}
             </div>
             <div className="mt-5 flex items-center justify-between gap-3">
               <span className="inline-flex min-w-0 items-center gap-2.5 text-body-sm text-body">
@@ -669,6 +721,20 @@ export default function OperatorDashboard() {
                 {int(channel.api)}
               </span>
             </div>
+            {hasWl && (
+              <div
+                className="mt-3 flex items-center justify-between gap-3"
+                data-testid="origem-white-label"
+              >
+                <span className="inline-flex min-w-0 items-center gap-2.5 text-body-sm text-body">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mp-teal" aria-hidden />
+                  White-label (seu site)
+                </span>
+                <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+                  {int(channelWl)}
+                </span>
+              </div>
+            )}
           </Panel>
         </div>
 

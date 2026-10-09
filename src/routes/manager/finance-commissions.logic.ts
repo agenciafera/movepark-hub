@@ -25,3 +25,22 @@ export function isCommissionDirty(savedBps: number, input: string): boolean {
   if ("error" in parsed) return false; // input inválido não conta como "sujo salvável"
   return parsed.bps !== savedBps;
 }
+
+/**
+ * Comissão do white-label (D4b): vazio quer dizer "não combinada" (null), não zero. Zero é uma
+ * decisão (a Movepark não cobra) e precisa ser digitado.
+ */
+export function parseOptionalCommissionPct(input: string): { bps: number | null } | { error: string } {
+  if (input.trim() === "") return { bps: null };
+  return parseCommissionPct(input);
+}
+
+export function optionalBpsToPctString(bps: number | null | undefined): string {
+  return bps == null ? "" : bpsToPctString(bps);
+}
+
+export function isOptionalCommissionDirty(savedBps: number | null | undefined, input: string): boolean {
+  const parsed = parseOptionalCommissionPct(input);
+  if ("error" in parsed) return false;
+  return parsed.bps !== (savedBps ?? null);
+}

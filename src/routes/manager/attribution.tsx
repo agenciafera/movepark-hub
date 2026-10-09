@@ -14,6 +14,7 @@ import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { formatRangeLabel } from "@/features/manager-filters/managerFilters.logic";
 import { useBookingAttribution, useExternalExitClicks } from "@/features/attribution/api";
+import { useWlRevenue } from "@/features/finance/wlRevenue";
 import { formatDateTime } from "@/lib/format";
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
@@ -25,7 +26,17 @@ export default function ManagerAttribution() {
     range.to.toISOString(),
     scopedLocationIds,
   );
-  const totals = data?.totals ?? { hub: 0, external: 0, total: 0 };
+  const hubTotals = data?.totals ?? { hub: 0, external: 0, total: 0 };
+  // O site white-label do parceiro é origem própria (reservas-unificadas-hub-wl.md § 7): pedidos
+  // criados no site no mesmo recorte, pela data da compra como o resto da página.
+  const wlQ = useWlRevenue({
+    from: range.from.toISOString(),
+    to: range.to.toISOString(),
+    locationIds: scopedLocationIds,
+    dateField: "created_at",
+  });
+  const site = wlQ.data?.total.created ?? 0;
+  const total = hubTotals.total + site;
 
   // A outra ponta: quem saiu para reservar no parceiro. Mesmo período e mesmo recorte de unidade
   // da barra de filtros, senão as duas metades da página falariam de conjuntos diferentes.
@@ -43,30 +54,37 @@ export default function ManagerAttribution() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Atribuição"
-        description={`De onde vieram as reservas criadas em ${formatRangeLabel(range)}: canal Hub (venda direta) x white-label, e a origem/UTM de cada uma.`}
+        description={`De onde vieram as reservas criadas em ${formatRangeLabel(range)}: venda direta no Hub, API e agentes, e o site white-label de cada estacionamento, com a origem/UTM das do Hub.`}
         actions={<ManagerFilterBar showCompare={false} />}
       />
 
-      {/* KPIs hub × white-label */}
-      <div className="grid gap-4 tablet:grid-cols-3">
+      {/* KPIs por origem. "Pela API e agentes" era "via white-label" até 09/10/2026, mas conta reserva
+          criada por chave de API (bots, parceiros); o white-label de verdade é o site do parceiro. */}
+      <div className="grid gap-4 tablet:grid-cols-4">
         <Kpi
           label="Reservas no Hub (venda direta)"
-          value={totals.hub}
-          sub={`${pct(totals.hub, totals.total)}% do total`}
+          value={hubTotals.hub}
+          sub={`${pct(hubTotals.hub, total)}% do total`}
           loading={isLoading}
           strong
         />
         <Kpi
-          label="Reservas via white-label"
-          value={totals.external}
-          sub={`${pct(totals.external, totals.total)}% do total`}
+          label="Pela API e agentes"
+          value={hubTotals.external}
+          sub={`${pct(hubTotals.external, total)}% do total`}
           loading={isLoading}
         />
         <Kpi
+          label="No site white-label"
+          value={site}
+          sub={`${pct(site, total)}% do total`}
+          loading={wlQ.isLoading}
+        />
+        <Kpi
           label="Total no período"
-          value={totals.total}
+          value={total}
           sub="todas as reservas"
-          loading={isLoading}
+          loading={isLoading || wlQ.isLoading}
         />
       </div>
 
@@ -143,9 +161,9 @@ export default function ManagerAttribution() {
           <div>
             <h3 className="font-medium text-body text-ink">Saída para unidade externa</h3>
             <p className="mt-1 text-body-sm text-muted">
-              Cliques em &ldquo;Reservar no site do estacionamento&rdquo;. Nessas unidades a
-              reserva fecha no parceiro, então o Hub não vê quantas viraram venda. Esse número
-              só sai do relatório do estacionamento.
+              Cliques em &ldquo;Reservar no site do estacionamento&rdquo;. Nessas unidades a reserva
+              fecha no parceiro, então o Hub não vê quantas viraram venda. Esse número só sai do
+              relatório do estacionamento.
             </p>
           </div>
 
@@ -192,9 +210,7 @@ export default function ManagerAttribution() {
                   {(exitClicks.data ?? []).map((r) => (
                     <TableRow key={`${r.company_slug}-${r.location_slug}-${r.parking_type_code}`}>
                       <TableCell className="text-ink">{r.company_name}</TableCell>
-                      <TableCell className="text-muted">
-                        {r.parking_type_name}
-                      </TableCell>
+                      <TableCell className="text-muted">{r.parking_type_name}</TableCell>
                       <TableCell className="text-right tabular-nums">{r.clicks}</TableCell>
                       <TableCell className="text-right tabular-nums text-muted">
                         {r.sessions}

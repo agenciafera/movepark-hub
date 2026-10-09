@@ -29,6 +29,8 @@ import { FARE_TIER_LABEL } from "@/lib/fares";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useManagerOverview, useManagerDailyFlow, todayIsoDate } from "./api";
+import { useWlRevenue } from "@/features/finance/wlRevenue";
+import { mergeDailyByOrigin, originBreakdown } from "./revenueByOrigin.logic";
 import { bestRevenueDay } from "./operatorInsights.logic";
 import { flowTotals, hourLabel } from "./dashboardMetrics.logic";
 import {
@@ -101,6 +103,13 @@ export default function ManagerDashboard() {
     range.to.toISOString(),
     scopedLocationIds,
   );
+  // Site white-label (fase 5, D6): mesma regra do resto, total com a quebra por origem.
+  const wlQ = useWlRevenue({
+    from: range.from.toISOString(),
+    to: range.to.toISOString(),
+    locationIds: scopedLocationIds,
+  });
+  const wl = wlQ.data?.total ?? { created: 0, paid: 0, paid_amount: 0, commission: null };
   const flow = useManagerDailyFlow(flowDate, scopedLocationIds);
   const recent = useRecentBookings(20, scopedLocationIds);
 
@@ -110,9 +119,15 @@ export default function ManagerDashboard() {
   const label = periodLabel(period, range);
 
   const daily = React.useMemo(
-    () => (revenue.data ?? []).map((d) => ({ date: d.date, total: d.total })),
-    [revenue.data],
+    () =>
+      mergeDailyByOrigin(
+        (revenue.data ?? []).map((d) => ({ date: d.date, value: d.total })),
+        wlQ.data?.by_day ?? [],
+      ),
+    [revenue.data, wlQ.data],
   );
+  const temSite = wl.paid_amount > 0;
+  const receitaTotal = (cur?.revenue ?? 0) + wl.paid_amount;
   const best = bestRevenueDay(daily);
 
   const ranking = rankLocations(overview.data?.top_locations ?? [], cur?.revenue ?? 0);
@@ -176,16 +191,26 @@ export default function ManagerDashboard() {
             <div className="text-body-sm font-medium text-white/90">Receita da rede</div>
             <div className="mt-1 text-caption text-white/70">realizado no período</div>
           </div>
-          {overview.isLoading ? (
+          {overview.isLoading || wlQ.isLoading ? (
             <Skeleton className="mt-5 h-10 w-44 bg-white/20" />
           ) : (
-            <div className="mt-5 whitespace-nowrap text-display-2xl tabular-nums leading-none text-white">
-              {formatBRL(cur?.revenue ?? 0)}
+            <div
+              className="mt-5 whitespace-nowrap text-display-2xl tabular-nums leading-none text-white"
+              data-testid="receita-rede"
+            >
+              {formatBRL(receitaTotal)}
+            </div>
+          )}
+          {temSite && (
+            <div className="mt-2 text-caption text-white/80" data-testid="receita-por-origem">
+              {originBreakdown(cur?.revenue ?? 0, wl.paid_amount, formatBRL)}
             </div>
           )}
           <div className="mt-2 text-caption text-white/80">
-            {int(cur?.bookings)} {cur?.bookings === 1 ? "reserva paga" : "reservas pagas"} ·{" "}
-            {int(cur?.vehicle_days)} {cur?.vehicle_days === 1 ? "diária" : "diárias"}
+            {int(cur?.bookings)} {cur?.bookings === 1 ? "reserva paga" : "reservas pagas"}
+            {temSite ? " no Hub" : ""} · {int(cur?.vehicle_days)}{" "}
+            {cur?.vehicle_days === 1 ? "diária" : "diárias"}
+            {temSite ? ` · ${int(wl.paid)} no white-label` : ""}
           </div>
 
           <div className="mt-auto space-y-2 pt-6">
@@ -201,6 +226,15 @@ export default function ManagerDashboard() {
                 {formatBRL(money.commission)}
               </span>
             </div>
+            {/* O dinheiro do site cai na conta do parceiro: aqui só a comissão combinada (D4b). */}
+            {temSite && wl.commission != null && (
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-caption text-white/75">Comissão do white-label</span>
+                <span className="text-body-sm font-bold tabular-nums text-white">
+                  {formatBRL(wl.commission)}
+                </span>
+              </div>
+            )}
           </div>
         </section>
 
@@ -252,7 +286,10 @@ export default function ManagerDashboard() {
                 <span className="text-mp-primary">{formatRangeLabel(range)}</span>
               </div>
               <p className="mt-1.5 text-body-sm text-muted">
-                Total do período {formatBRL(cur?.revenue ?? 0)}
+                Total do período {formatBRL(receitaTotal)}
+                {temSite
+                  ? ` (${originBreakdown(cur?.revenue ?? 0, wl.paid_amount, formatBRL)})`
+                  : ""}
               </p>
             </div>
             {best && (
@@ -269,7 +306,7 @@ export default function ManagerDashboard() {
           </div>
 
           <div className="mt-6 h-[220px] flex-1">
-            {revenue.isLoading ? (
+            {revenue.isLoading || wlQ.isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : daily.length === 0 ? (
               <EmptyState
@@ -310,20 +347,37 @@ export default function ManagerDashboard() {
                     axisLine={false}
                   />
                   <Tooltip
-                    formatter={(v: number) => [formatBRL(v), "Receita"]}
+                    formatter={(v: number, name: string) => [
+                      formatBRL(v),
+                      name === "wl" ? "White-label" : temSite ? "Hub" : "Receita",
+                    ]}
                     labelFormatter={(d: string) =>
                       format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
                     }
                   />
                   <Area
                     type="monotone"
-                    dataKey="total"
+                    dataKey="hub"
+                    stackId="origem"
                     stroke="hsl(var(--mp-primary))"
                     strokeWidth={2.5}
                     fill="url(#mgr-rev)"
                     dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
                     activeDot={{ r: 5 }}
                   />
+                  {temSite && (
+                    <Area
+                      type="monotone"
+                      dataKey="wl"
+                      stackId="origem"
+                      stroke="hsl(var(--mp-teal))"
+                      strokeWidth={2}
+                      fill="hsl(var(--mp-teal))"
+                      fillOpacity={0.15}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -794,7 +848,6 @@ export default function ManagerDashboard() {
           />
         </div>
       </Panel>
-
     </div>
   );
 }

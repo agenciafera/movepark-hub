@@ -41,6 +41,15 @@ vi.mock("@/features/attribution/api", () => ({
   }),
 }));
 
+// Site white-label (fase 5): por padrão zero, para os testes antigos seguirem iguais.
+const wlCreated = { value: 0 };
+vi.mock("@/features/finance/wlRevenue", () => ({
+  useWlRevenue: () => ({
+    data: { total: { created: wlCreated.value, paid: 0, paid_amount: 0, commission: null }, by_day: [], by_company: [] },
+    isLoading: false,
+  }),
+}));
+
 import ManagerAttribution from "./attribution";
 
 describe("ManagerAttribution", () => {
@@ -80,5 +89,18 @@ describe("ManagerAttribution", () => {
     // A ressalva é parte da métrica, não enfeite.
     renderWithProviders(<ManagerAttribution />);
     expect(screen.getByText(/não vê quantas viraram venda/)).toBeInTheDocument();
+  });
+
+  it("API e agentes deixam de se chamar white-label, e o site do parceiro entra como origem própria", () => {
+    wlCreated.value = 10;
+    renderWithProviders(<ManagerAttribution />);
+    expect(screen.queryByText("Reservas via white-label")).not.toBeInTheDocument();
+    expect(screen.getByText("Pela API e agentes")).toBeInTheDocument();
+    expect(screen.getByText("No site white-label")).toBeInTheDocument();
+    // 30 Hub + 10 API + 10 site = 50: Hub 60%, API e site 20% cada.
+    expect(screen.getByText("50")).toBeInTheDocument();
+    expect(screen.getByText("60% do total")).toBeInTheDocument();
+    expect(screen.getAllByText("20% do total")).toHaveLength(2);
+    wlCreated.value = 0;
   });
 });

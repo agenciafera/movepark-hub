@@ -32,8 +32,9 @@ select set_eq(
   $$ select c.column_name::text from information_schema.columns c
       where c.table_schema = 'public' and c.table_name = 'company'
         and not has_column_privilege('authenticated', 'public.company', c.column_name, 'select') $$,
-  array['wps_webhook_secret', 'contract_accepted_ip', 'wl_tenant_key', 'take_rate_bps'],
-  'usuário logado não lê só as quatro colunas restritas (coluna nova sem grant cai aqui e reprova)'
+  -- wl_take_rate_bps (09/10/2026): comissão sobre o site white-label, restrita como a do Hub.
+  array['wps_webhook_secret', 'contract_accepted_ip', 'wl_tenant_key', 'take_rate_bps', 'wl_take_rate_bps'],
+  'usuário logado não lê só as colunas restritas (coluna nova sem grant cai aqui e reprova)'
 );
 select ok(
   has_table_privilege('authenticated', 'public.company', 'update')
