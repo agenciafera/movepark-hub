@@ -133,7 +133,7 @@ A integração falhava calada; agora cada peça deixa rastro e há quem reclame.
 
 ## Segurança (08/10/2026)
 
-Migration **`20261129090000_company_colunas_e_wl_seguranca.sql`**.
+Migration **`20261129090500_company_colunas_e_wl_seguranca.sql`**.
 
 - **Domínio do legado restrito.** O Bearer do legado é um só para os 14 tenants. O banco aceita em
   `wl_domain` e `wl_public_domain` só hostname puro (sem esquema, porta, usuário@, caminho nem IP),

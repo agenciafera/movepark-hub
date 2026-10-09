@@ -5,7 +5,7 @@ import type { Database } from "@/types/database";
 import type { Company } from "@/types/domain";
 
 /**
- * Colunas de `company` que um usuário logado lê pelo PostgREST (migration 20261129090000).
+ * Colunas de `company` que um usuário logado lê pelo PostgREST (migration 20261129090500).
  *
  * `select("*")` não funciona mais: o privilégio é por coluna, e quatro colunas ficam de fora de
  * todo usuário (segredo do WPS, IP do aceite do contrato, tenant do WL e comissão). O hub_admin as

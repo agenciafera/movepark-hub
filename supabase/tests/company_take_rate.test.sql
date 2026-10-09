@@ -43,7 +43,7 @@ select lives_ok(
   format($q$ select public.set_company_take_rate(%L::uuid, 1200) $q$, current_setting('test.company')),
   'hub_admin altera a comissão'
 );
--- Desde 20261129090000 a coluna não é legível pelo PostgREST: o Manager lê pela RPC de admin.
+-- Desde 20261129090500 a coluna não é legível pelo PostgREST: o Manager lê pela RPC de admin.
 select is(
   (select take_rate_bps from public.manager_company_restricted(array[current_setting('test.company')::uuid])),
   1200,

@@ -1,5 +1,5 @@
 -- pgTAP: privilégio por coluna em `company` e segurança da integração white-label (08/10/2026).
--- Migration: 20261129090000_company_colunas_e_wl_seguranca.sql.
+-- Migration: 20261129090500_company_colunas_e_wl_seguranca.sql.
 --
 -- O que este arquivo protege:
 --   1. a chave pública (anon) lê só o que a vitrine usa, e não escreve nada;

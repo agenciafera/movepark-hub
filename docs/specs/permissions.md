@@ -182,7 +182,7 @@ A policy `catalog_read_company` libera a linha de toda empresa ativa para anon e
 (a vitrine precisa do nome e do slug). Até 08/10/2026 isso liberava também **todas as colunas**:
 pela chave pública lia-se o IP de aceite do contrato, a comissão, o tenant do WL e a configuração
 de repasse. RLS escolhe linha, não coluna; por isso o corte é de privilégio
-(`20261129090000_company_colunas_e_wl_seguranca.sql`):
+(`20261129090500_company_colunas_e_wl_seguranca.sql`):
 
 | Papel | Lê | Escreve |
 |---|---|---|

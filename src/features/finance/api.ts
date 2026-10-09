@@ -22,7 +22,7 @@ export function useCompanyFinance(fromIso: string, toIso: string, locationIds?: 
     queryFn: async (): Promise<CompanyFinance[]> => {
       let q = supabase
         .from("booking")
-        // `take_rate_bps` não é legível pelo PostgREST (migration 20261129090000): vem da RPC de admin.
+        // `take_rate_bps` não é legível pelo PostgREST (migration 20261129090500): vem da RPC de admin.
         .select("total_amount, location:location(company:company(id, name))")
         .gte("check_in_at", fromIso)
         .lt("check_in_at", toIso)
