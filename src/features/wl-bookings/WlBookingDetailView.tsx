@@ -80,6 +80,7 @@ export function WlBookingDetailView({
     .join(" · ");
   const veiculo = [b.vehicle?.description, b.vehicle?.color].filter(Boolean).join(" · ");
   const itens = b.items ?? [];
+  const somaItens = itens.reduce((acc, it) => acc + it.unit_price * it.quantity, 0);
   const trocas = (b.site_events ?? []).filter((e) => e.kind === "plate_change");
   const linha = buildWlTimeline(b);
 
@@ -154,7 +155,10 @@ export function WlBookingDetailView({
             <Campo label="Check-out" value={formatDateTime(b.check_out_at)} />
             <Campo label="Valor pago no site" value={valor === null ? "-" : formatBRL(valor)} />
             {b.payment_method_name && (
-              <Campo label="Forma de pagamento" value={wlPaymentMethodLabel(b.payment_method_name)} />
+              <Campo
+                label="Forma de pagamento"
+                value={wlPaymentMethodLabel(b.payment_method_name)}
+              />
             )}
             <Campo label="Comparecimento" value={attendanceLabel(b.attendance_status)} />
             <Campo label="Status no site" value={wlBookingStatusLabel(b.site_status)} />
@@ -210,6 +214,24 @@ export function WlBookingDetailView({
                 </li>
               ))}
             </ul>
+            {/* Os itens guardam o preço de tabela; o que o cliente pagou já vem com cupom e promoção do site. */}
+            {valor !== null && Math.abs(somaItens - valor) >= 0.01 && (
+              <dl
+                className="mt-2 space-y-1 border-t border-hairline pt-2 text-body-sm"
+                data-testid="itens-desconto"
+              >
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">
+                    {somaItens > valor ? "Desconto no site" : "Acréscimo no site"}
+                  </dt>
+                  <dd className="tabular-nums text-ink">{formatBRL(valor - somaItens)}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Pago no site</dt>
+                  <dd className="tabular-nums text-ink">{formatBRL(valor)}</dd>
+                </div>
+              </dl>
+            )}
           </CardContent>
         </Card>
       )}

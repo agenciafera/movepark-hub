@@ -139,6 +139,8 @@ describe("WlBookingDetailView", () => {
     expect(screen.getByText("Sim, comprou como afiliado")).toBeInTheDocument();
     expect(screen.getByTestId("itens")).toHaveTextContent("Seguro × 2");
     expect(screen.getByTestId("itens")).toHaveTextContent("20,00");
+    // Itens somam 150 (tabela) e o cliente pagou 150,50: a diferença aparece, sem número que não fecha.
+    expect(screen.getByTestId("itens-desconto")).toHaveTextContent("Acréscimo no site");
     expect(screen.getByTestId("trocas-de-placa")).toHaveTextContent("AAA1A11 para BBB2B22: trocou de carro");
     const linha = screen.getByTestId("linha-do-tempo");
     expect(linha).toHaveTextContent("Voucher gerado (Maria)");
