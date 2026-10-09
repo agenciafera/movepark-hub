@@ -36,6 +36,9 @@ bun.lockb
 yarn.lock
 pnpm-lock.yaml
 dist/
+# Pasta temporária do vite-react-ssg durante o build. Foi commitada por engano em 06/10/2026 e o
+# `eslint .` do CI passou a reprovar o job quality por causa dela.
+.vite-react-ssg-temp/
 build/
 *.log
 
