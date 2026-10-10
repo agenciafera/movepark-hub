@@ -7,7 +7,7 @@ const estado = { hasWl: false };
 vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: () => ({ hasWl: estado.hasWl, isLoading: false }) }));
 vi.mock("@/features/finance/wlRevenue", () => ({
   useWlRevenue: (_args: unknown, enabled = true) => ({
-    data: enabled ? { total: { created: 3, paid: 2, paid_amount: 250, commission: null }, by_day: [], by_company: [] } : undefined,
+    data: enabled ? { total: { created: 3, paid: 2, paid_amount: 250 }, by_day: [], by_company: [] } : undefined,
     isLoading: false,
   }),
 }));

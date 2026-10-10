@@ -2,12 +2,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  useCompanies,
-  useSetCompanyTakeRate,
-  useSetCompanyWlTakeRate,
-} from "@/features/companies/api";
-import { companyHasWl } from "@/features/companies/hasWl.logic";
+import { useCompanies, useSetCompanyTakeRate } from "@/features/companies/api";
 import {
   Table,
   TableBody,
@@ -25,19 +20,12 @@ import { ChannelReportCard } from "@/features/commission/ChannelReportCard";
 import {
   bpsToPctString,
   isCommissionDirty,
-  isOptionalCommissionDirty,
-  optionalBpsToPctString,
   parseCommissionPct,
-  parseOptionalCommissionPct,
 } from "./finance-commissions.logic";
 
 export default function ManagerFinanceCommissions() {
   const { data, isLoading } = useCompanies();
   const setTakeRate = useSetCompanyTakeRate();
-  const setWlTakeRate = useSetCompanyWlTakeRate();
-  // Rascunho da comissão do white-label, separado do Hub (D4b). Chave: id da empresa.
-  const [wlDrafts, setWlDrafts] = React.useState<Record<string, string>>({});
-  const algumComSite = (data ?? []).some(companyHasWl);
   const [drafts, setDrafts] = React.useState<Record<string, string>>({});
   const [savingId, setSavingId] = React.useState<string | null>(null);
 
@@ -65,33 +53,6 @@ export default function ManagerFinanceCommissions() {
     }
   }
 
-  async function saveWl(companyId: string, savedBps: number | null | undefined) {
-    const raw = wlDrafts[companyId] ?? optionalBpsToPctString(savedBps);
-    const parsed = parseOptionalCommissionPct(raw);
-    if ("error" in parsed) {
-      toast.error(parsed.error);
-      return;
-    }
-    setSavingId(`${companyId}:wl`);
-    try {
-      await setWlTakeRate.mutateAsync({ companyId, wlTakeRateBps: parsed.bps });
-      toast.success(
-        parsed.bps == null
-          ? "Comissão do white-label removida."
-          : "Comissão do white-label atualizada.",
-      );
-      setWlDrafts((d) => {
-        const next = { ...d };
-        delete next[companyId];
-        return next;
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar a comissão.");
-    } finally {
-      setSavingId(null);
-    }
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -104,10 +65,7 @@ export default function ManagerFinanceCommissions() {
       <div>
         <h2 className="text-title-md text-ink">Comissão padrão por empresa</h2>
         <p className="text-body-sm text-muted">
-          Vale para toda venda que não casa com nenhuma regra acima, como a busca no site da
-          Movepark.
-          {algumComSite &&
-            " A coluna White-label é a comissão sobre o que o site próprio do estacionamento vende; vazia, a venda do site não entra na comissão."}
+          Vale para toda venda que não casa com nenhuma regra acima, como a busca no site da Movepark.
         </p>
       </div>
 
@@ -128,10 +86,6 @@ export default function ManagerFinanceCommissions() {
                   <TableHead>Empresa</TableHead>
                   <TableHead className="w-44 text-right">Comissão (%)</TableHead>
                   <TableHead className="w-32" />
-                  {algumComSite && (
-                    <TableHead className="w-44 text-right">White-label (%)</TableHead>
-                  )}
-                  {algumComSite && <TableHead className="w-32" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,10 +105,11 @@ export default function ManagerFinanceCommissions() {
                             max={100}
                             step="0.1"
                             value={value}
-                            onChange={(e) => setDrafts((d) => ({ ...d, [c.id]: e.target.value }))}
+                            onChange={(e) =>
+                              setDrafts((d) => ({ ...d, [c.id]: e.target.value }))
+                            }
                             onKeyDown={(e) => {
-                              if (e.key === "Enter" && dirty && !saving)
-                                save(c.id, c.take_rate_bps);
+                              if (e.key === "Enter" && dirty && !saving) save(c.id, c.take_rate_bps);
                             }}
                             className="h-9 max-w-24 text-right tabular-nums"
                             aria-label={`Comissão de ${c.name} em porcentagem`}
@@ -172,59 +127,6 @@ export default function ManagerFinanceCommissions() {
                           {saving ? "Salvando…" : "Salvar"}
                         </Button>
                       </TableCell>
-                      {algumComSite &&
-                        (companyHasWl(c) ? (
-                          (() => {
-                            const wlValue =
-                              wlDrafts[c.id] ?? optionalBpsToPctString(c.wl_take_rate_bps);
-                            const wlDirty = isOptionalCommissionDirty(c.wl_take_rate_bps, wlValue);
-                            const wlSaving = savingId === `${c.id}:wl`;
-                            return (
-                              <>
-                                <TableCell className="text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <Input
-                                      type="number"
-                                      inputMode="decimal"
-                                      min={0}
-                                      max={100}
-                                      step="0.1"
-                                      placeholder="não combinada"
-                                      value={wlValue}
-                                      onChange={(e) =>
-                                        setWlDrafts((d) => ({ ...d, [c.id]: e.target.value }))
-                                      }
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" && wlDirty && !wlSaving)
-                                          saveWl(c.id, c.wl_take_rate_bps);
-                                      }}
-                                      className="h-9 max-w-32 text-right tabular-nums"
-                                      aria-label={`Comissão do white-label de ${c.name} em porcentagem`}
-                                    />
-                                    <span className="text-body-sm text-muted">%</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={!wlDirty || wlSaving}
-                                    onClick={() => saveWl(c.id, c.wl_take_rate_bps)}
-                                  >
-                                    {wlSaving ? "Salvando…" : "Salvar"}
-                                  </Button>
-                                </TableCell>
-                              </>
-                            );
-                          })()
-                        ) : (
-                          <>
-                            <TableCell className="text-right text-caption text-muted">
-                              sem site
-                            </TableCell>
-                            <TableCell />
-                          </>
-                        ))}
                     </TableRow>
                   );
                 })}

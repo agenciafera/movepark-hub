@@ -20,16 +20,11 @@ export const COMPANY_COLUMNS =
   "payout_auto_day, payout_auto_enabled";
 
 /** Empresa como o Manager a vê: com os campos restritos e só a PRESENÇA do segredo do WPS. */
-export type ManagedCompany = Company & {
-  has_wps_webhook_secret?: boolean;
-  /** Comissão sobre o site white-label (D4b, migration 20261129130000). Nula = não combinada. */
-  wl_take_rate_bps?: number | null;
-};
+export type ManagedCompany = Company & { has_wps_webhook_secret?: boolean };
 
 type RestrictedRow = {
   id: string;
   take_rate_bps: number;
-  wl_take_rate_bps: number | null;
   wl_tenant_key: string | null;
   has_wps_webhook_secret: boolean;
   contract_accepted_ip: string | null;
@@ -57,7 +52,6 @@ export async function withRestricted<T extends { id: string }>(rows: T[]): Promi
       ? {
           ...r,
           take_rate_bps: x.take_rate_bps,
-          wl_take_rate_bps: x.wl_take_rate_bps,
           wl_tenant_key: x.wl_tenant_key,
           has_wps_webhook_secret: x.has_wps_webhook_secret,
           contract_accepted_ip: x.contract_accepted_ip,
@@ -163,28 +157,3 @@ export function useSetCompanyTakeRate() {
   });
 }
 
-/**
- * Comissão da Movepark sobre o que o site white-label vende (D4b), via `set_company_wl_take_rate`
- * (só hub_admin, só empresa com white-label). `null` volta para "não combinada".
- */
-export function useSetCompanyWlTakeRate() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ companyId, wlTakeRateBps }: { companyId: string; wlTakeRateBps: number | null }) => {
-      const call = supabase.rpc.bind(supabase) as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: unknown; error: { message: string } | null }>;
-      const { data, error } = await call("set_company_wl_take_rate", {
-        p_company_id: companyId,
-        p_wl_take_rate_bps: wlTakeRateBps,
-      });
-      if (error) throw new Error(error.message);
-      return data as { id: string; wl_take_rate_bps: number | null };
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: companiesKeys.all });
-      qc.invalidateQueries({ queryKey: ["finance"] });
-    },
-  });
-}

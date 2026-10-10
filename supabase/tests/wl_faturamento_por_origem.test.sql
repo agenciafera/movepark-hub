@@ -1,16 +1,16 @@
 -- pgTAP: faturamento separado por origem (reservas unificadas, fase 5, 09/10/2026).
--- Migration: 20261129130000_wl_faturamento_por_origem.sql. Spec: reservas-unificadas-hub-wl.md § 6.
+-- Migrations: 20261129130000_wl_faturamento_por_origem.sql e 20261129153000_wl_sem_comissao.sql.
+-- Spec: reservas-unificadas-hub-wl.md § 6.
 --
 -- O que este arquivo protege:
 --   1. `wl_revenue` soma o pago no site no recorte (pago não devolvido), por dia e por empresa;
---   2. a comissão do site sai só para o hub_admin e só com taxa combinada;
+--   2. a venda do site não tem comissão no Hub (D4b revista): não sai campo de comissão nem taxa;
 --   3. empresa sem white-label e outra empresa recebem zero;
---   4. o parceiro não lê `wl_take_rate_bps`, e só o hub_admin grava, só em empresa com site;
---   5. `set_company_take_rate` não devolve mais a linha inteira (o segredo do WPS);
---   6. a anon key não executa nada disso.
+--   4. `set_company_take_rate` não devolve mais a linha inteira (o segredo do WPS);
+--   5. a anon key não executa.
 
 begin;
-select plan(15);
+select plan(11);
 
 do $$
 declare
@@ -27,8 +27,8 @@ begin
     (v_owner_a,'company_operator'), (v_owner_b,'company_operator'), (v_admin,'hub_admin')
     on conflict (id) do update set role = excluded.role;
 
-  insert into public.company(name, slug, wl_domain, wl_tenant_key, wl_take_rate_bps, wps_webhook_secret)
-    values ('WFO Com Site', 'wfo-com-site', 'wfo-app.movepark.co', 'wfo', 1000, 'segredo-wfo') returning id into v_a;
+  insert into public.company(name, slug, wl_domain, wl_tenant_key, wps_webhook_secret)
+    values ('WFO Com Site', 'wfo-com-site', 'wfo-app.movepark.co', 'wfo', 'segredo-wfo') returning id into v_a;
   insert into public.company(name, slug) values ('WFO Só Hub', 'wfo-so-hub') returning id into v_b;
   insert into public.profile_company(profile_id, company_id, role) values (v_owner_a, v_a, 'owner'), (v_owner_b, v_b, 'owner');
 
@@ -58,30 +58,25 @@ select is((select (r->'total'->>'paid_amount')::numeric from _r), 350.00, 'soma 
 select is((select (r->'total'->>'paid')::int from _r), 3, 'pagas contam o reembolsado (o dinheiro entrou)');
 select is((select (r->'total'->>'created')::int from _r), 4, 'criadas no recorte, qualquer status');
 select is((select jsonb_array_length(r->'by_day') from _r), 3, 'um ponto por dia de check-in');
-select ok((select r->'total'->'commission' = 'null'::jsonb from _r), 'o parceiro não recebe a comissão');
-select ok((select r->'by_company'->0->'wl_take_rate_bps' = 'null'::jsonb from _r), 'nem a taxa');
+select ok((select not (r->'total' ? 'commission') and not (r->'by_company'->0 ? 'wl_take_rate_bps') from _r),
+  'a venda do site não tem comissão: nem campo de comissão nem de taxa');
 select is(
   (select (public.wl_revenue('2027-10-01 00:00+00', '2027-10-03 00:00+00', p_date_field => 'created_at') -> 'total' ->> 'paid_amount')::numeric),
   350.00, 'recorta pela data da compra quando pedido');
-select throws_ok($q$ select wl_take_rate_bps from public.company limit 1 $q$, '42501', null, 'o parceiro não lê a coluna');
 
 -- ── 3. sem white-label ───────────────────────────────────────────────────────
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.owner_b'))::text, true);
 select is(
   (select (public.wl_revenue('2027-11-01 00:00+00', '2027-12-01 00:00+00') -> 'total' ->> 'paid_amount')::numeric),
   0::numeric, 'empresa sem white-label recebe zero, mesmo com linha de site no banco');
-select throws_ok(
-  format($q$ select public.set_company_wl_take_rate(%L::uuid, 500) $q$, current_setting('test.a')),
-  '42501', null, 'parceiro não grava a comissão do site');
 
 -- ── 2. hub_admin ─────────────────────────────────────────────────────────────
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.admin'))::text, true);
 select is(
-  (select (public.wl_revenue('2027-11-01 00:00+00', '2027-12-01 00:00+00', p_company_ids => array[current_setting('test.a')::uuid]) -> 'total' ->> 'commission')::numeric),
-  35.00, 'comissão do site para a equipe: 350 × 10%');
-select is(
-  (select public.set_company_wl_take_rate(current_setting('test.a')::uuid, 1200) ->> 'wl_take_rate_bps'),
-  '1200', 'hub_admin grava a comissão do site');
+  (select (public.wl_revenue('2027-11-01 00:00+00', '2027-12-01 00:00+00', p_company_ids => array[current_setting('test.a')::uuid]) -> 'total' ->> 'paid_amount')::numeric),
+  350.00, 'a equipe vê o faturamento do site da empresa');
+select ok(not exists (select 1 from information_schema.columns where table_name = 'company' and column_name = 'wl_take_rate_bps'),
+  'a coluna de comissão do site não existe mais');
 select ok(
   not (public.set_company_take_rate(current_setting('test.a')::uuid, 1500) ? 'wps_webhook_secret'),
   'set_company_take_rate não devolve o segredo do WPS');
@@ -90,8 +85,6 @@ reset role;
 -- ── 6. anon ──────────────────────────────────────────────────────────────────
 select ok(not has_function_privilege('anon', 'public.wl_revenue(timestamptz, timestamptz, uuid[], uuid[], text)', 'execute'),
   'anon não executa wl_revenue');
-select ok(not has_function_privilege('anon', 'public.set_company_wl_take_rate(uuid, integer)', 'execute'),
-  'anon não executa set_company_wl_take_rate');
 
 select * from finish();
 rollback;

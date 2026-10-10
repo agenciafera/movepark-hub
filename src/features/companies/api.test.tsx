@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { falha, renderMutation, rpc } from "@/test/msw/supabase";
-import { useSetCompanyTakeRate, useSetCompanyWlTakeRate } from "./api";
+import { useSetCompanyTakeRate } from "./api";
 
 /**
  * Contrato de rede da comissão da Movepark (ADR-004). O `take_rate_bps` é por empresa
@@ -62,34 +62,5 @@ describe("useSetCompanyTakeRate", () => {
     await expect(
       result.current.mutateAsync({ companyId: "c1", takeRateBps: 1500 }),
     ).rejects.toThrow();
-  });
-});
-
-/**
- * Comissão sobre o site white-label (D4b, fase 5). Mesma unidade (basis points), mas aqui `null`
- * também é valor: quer dizer "não combinada", e a venda do site não entra na comissão. Um guard
- * que trocasse null por zero diria que a Movepark combinou não cobrar.
- */
-describe("useSetCompanyWlTakeRate", () => {
-  it("manda a empresa e a taxa em basis points", async () => {
-    const espiao = rpc("set_company_wl_take_rate", { json: { id: "c1", wl_take_rate_bps: 750 } });
-    const { result } = renderMutation(() => useSetCompanyWlTakeRate());
-    await result.current.mutateAsync({ companyId: "c1", wlTakeRateBps: 750 });
-    expect(espiao.ultimoBody).toEqual({ p_company_id: "c1", p_wl_take_rate_bps: 750 });
-  });
-
-  it("null chega como null, não como zero", async () => {
-    const espiao = rpc("set_company_wl_take_rate", { json: { id: "c1", wl_take_rate_bps: null } });
-    const { result } = renderMutation(() => useSetCompanyWlTakeRate());
-    await result.current.mutateAsync({ companyId: "c1", wlTakeRateBps: null });
-    expect((espiao.ultimoBody as { p_wl_take_rate_bps: number | null }).p_wl_take_rate_bps).toBeNull();
-  });
-
-  it("propaga a recusa do servidor", async () => {
-    falha("rpc", "set_company_wl_take_rate", 400, "Empresa não encontrada ou sem white-label.");
-    const { result } = renderMutation(() => useSetCompanyWlTakeRate());
-    await expect(result.current.mutateAsync({ companyId: "c1", wlTakeRateBps: 500 })).rejects.toThrow(
-      "Empresa não encontrada ou sem white-label.",
-    );
   });
 });

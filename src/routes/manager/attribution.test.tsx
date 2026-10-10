@@ -45,7 +45,7 @@ vi.mock("@/features/attribution/api", () => ({
 const wlCreated = { value: 0 };
 vi.mock("@/features/finance/wlRevenue", () => ({
   useWlRevenue: () => ({
-    data: { total: { created: wlCreated.value, paid: 0, paid_amount: 0, commission: null }, by_day: [], by_company: [] },
+    data: { total: { created: wlCreated.value, paid: 0, paid_amount: 0 }, by_day: [], by_company: [] },
     isLoading: false,
   }),
 }));

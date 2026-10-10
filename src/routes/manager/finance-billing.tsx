@@ -42,8 +42,8 @@ function Numero({
 
 /**
  * Faturamento da rede (fase 5 das reservas unificadas, 09/10/2026): o Hub e o site white-label lado
- * a lado por empresa, com o total e a quebra por origem (D4). Comissão do Hub pela `take_rate_bps`;
- * a do site pela `wl_take_rate_bps` (D4b), editável em Comissões.
+ * a lado por empresa, com o total e a quebra por origem (D4). Comissão só do Hub, pela
+ * `take_rate_bps`: a venda do site não tem comissão no Hub (D4b revista em 09/10/2026).
  */
 export default function ManagerFinanceBilling() {
   const { range, scopedLocationIds } = useManagerFilters();
@@ -82,24 +82,11 @@ export default function ManagerFinanceBilling() {
             label="Comissão Movepark"
             value={formatBRL(t.commission)}
             accent
-            hint={
-              temSite
-                ? `${formatBRL(t.hubCommission)} do Hub, ${formatBRL(t.wlCommission)} do white-label`
-                : undefined
-            }
+            hint={temSite ? "só da venda pelo Hub" : undefined}
           />
         </CardContent>
       </Card>
 
-      {t.wlWithoutRate > 0 && (
-        <p className="text-body-sm text-muted" data-testid="aviso-sem-taxa">
-          {t.wlWithoutRate === 1 ? "Uma empresa vendeu" : `${t.wlWithoutRate} empresas venderam`} no
-          white-label sem comissão combinada, e essa venda não entra na comissão.{" "}
-          <Link to="/manager/finance/commissions" className="underline underline-offset-2">
-            Definir em Comissões
-          </Link>
-        </p>
-      )}
 
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
@@ -116,7 +103,6 @@ export default function ManagerFinanceBilling() {
                 <TableHead className="text-right">Comissão</TableHead>
                 <TableHead className="text-right">Repasse</TableHead>
                 {temSite && <TableHead className="text-right">White-label</TableHead>}
-                {temSite && <TableHead className="text-right">Comissão white-label</TableHead>}
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -161,22 +147,6 @@ export default function ManagerFinanceBilling() {
                         {row.wlPaidAmount > 0 ? formatBRL(row.wlPaidAmount) : "-"}
                         {row.wlPaid > 0 && (
                           <span className="ml-1 text-caption text-muted">({row.wlPaid})</span>
-                        )}
-                      </TableCell>
-                    )}
-                    {temSite && (
-                      <TableCell className="text-right tabular-nums">
-                        {row.wlCommission != null ? (
-                          <>
-                            {formatBRL(row.wlCommission)}
-                            <span className="ml-1 text-caption text-muted">
-                              ({(row.wlTakeRateBps ?? 0) / 100}%)
-                            </span>
-                          </>
-                        ) : row.wlPaidAmount > 0 ? (
-                          <span className="text-muted">sem taxa</span>
-                        ) : (
-                          "-"
                         )}
                       </TableCell>
                     )}

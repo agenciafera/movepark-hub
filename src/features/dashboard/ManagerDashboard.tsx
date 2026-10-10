@@ -109,7 +109,7 @@ export default function ManagerDashboard() {
     to: range.to.toISOString(),
     locationIds: scopedLocationIds,
   });
-  const wl = wlQ.data?.total ?? { created: 0, paid: 0, paid_amount: 0, commission: null };
+  const wl = wlQ.data?.total ?? { created: 0, paid: 0, paid_amount: 0 };
   const flow = useManagerDailyFlow(flowDate, scopedLocationIds);
   const recent = useRecentBookings(20, scopedLocationIds);
 
@@ -227,15 +227,6 @@ export default function ManagerDashboard() {
                 {formatBRL(money.commission)}
               </span>
             </div>
-            {/* O dinheiro do site cai na conta do parceiro: aqui só a comissão combinada (D4b). */}
-            {temSite && wl.commission != null && (
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-caption text-white/75">Comissão do white-label</span>
-                <span className="text-body-sm font-bold tabular-nums text-white">
-                  {formatBRL(wl.commission)}
-                </span>
-              </div>
-            )}
           </div>
         </section>
 

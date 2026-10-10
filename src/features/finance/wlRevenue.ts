@@ -5,12 +5,12 @@ import { supabase } from "@/lib/supabase";
  * Faturamento do site white-label no recorte (reservas-unificadas-hub-wl.md § 6, fase 5).
  *
  * Uma RPC só (`wl_revenue`, migration 20261129130000) para dashboards, Relatórios, Faturamento e
- * Atribuição. Base: o pago no site (`paid_total_price`), a mesma do relatório do legado. A
- * comissão (`wl_take_rate_bps`) vem só para a equipe Movepark; para o parceiro sai nula. Para quem
+ * Atribuição. Base: o pago no site (`paid_total_price`), a mesma do relatório do legado. Não há
+ * comissão: a venda do site não tem comissão no Hub (D4b revista em 09/10/2026). Para quem
  * não tem white-label o servidor devolve zero, e a tela nem chama (`enabled`).
  */
 export type WlRevenue = {
-  total: { created: number; paid: number; paid_amount: number; commission: number | null };
+  total: { created: number; paid: number; paid_amount: number };
   by_day: { day: string; paid: number; paid_amount: number }[];
   by_company: {
     company_id: string;
@@ -18,8 +18,6 @@ export type WlRevenue = {
     created: number;
     paid: number;
     paid_amount: number;
-    wl_take_rate_bps: number | null;
-    commission: number | null;
   }[];
 };
 
@@ -32,7 +30,7 @@ export type WlRevenueArgs = {
 };
 
 export const EMPTY_WL_REVENUE: WlRevenue = {
-  total: { created: 0, paid: 0, paid_amount: 0, commission: null },
+  total: { created: 0, paid: 0, paid_amount: 0 },
   by_day: [],
   by_company: [],
 };
@@ -56,7 +54,6 @@ export function normalizeWlRevenue(raw: unknown): WlRevenue {
       created: n(t.created),
       paid: n(t.paid),
       paid_amount: n(t.paid_amount),
-      commission: t.commission == null ? null : n(t.commission),
     },
     by_day: ((r.by_day ?? []) as Record<string, unknown>[]).map((d) => ({
       day: String(d.day),
@@ -69,8 +66,6 @@ export function normalizeWlRevenue(raw: unknown): WlRevenue {
       created: n(c.created),
       paid: n(c.paid),
       paid_amount: n(c.paid_amount),
-      wl_take_rate_bps: c.wl_take_rate_bps == null ? null : n(c.wl_take_rate_bps),
-      commission: c.commission == null ? null : n(c.commission),
     })),
   };
 }

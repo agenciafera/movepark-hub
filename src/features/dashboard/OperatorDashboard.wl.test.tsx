@@ -9,7 +9,7 @@ vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: () => ({ hasWl: esta
 vi.mock("@/features/finance/wlRevenue", () => ({
   useWlRevenue: (_args: unknown, enabled = true) => ({
     data: enabled
-      ? { total: { created: 5, paid: 4, paid_amount: 480, commission: null }, by_day: [{ day: "2026-07-29", paid: 4, paid_amount: 480 }], by_company: [] }
+      ? { total: { created: 5, paid: 4, paid_amount: 480 }, by_day: [{ day: "2026-07-29", paid: 4, paid_amount: 480 }], by_company: [] }
       : undefined,
     isLoading: false,
   }),

@@ -238,7 +238,7 @@ passa a dizer de onde vem e qual base usa:
 | Receita (bruta) | `booking.total_amount` das pagas | `paid_total_price` dos pedidos pagos (`complete`), a mesma base dos relatórios do legado |
 | Diárias (Operator) | `price_breakdown` sem o plano | `paid_total_price` (o site não separa plano) |
 | "Você recebe" | dinheiro real do split | **não se aplica**: o dinheiro do site cai na conta Pagar.me do próprio parceiro, com o split configurado lá |
-| Comissão da Movepark | pacote congelado por reserva | `paid_total_price × company.wl_take_rate_bps` (D4b), só no Manager |
+| Comissão da Movepark | pacote congelado por reserva | **não existe no Hub** (D4b revista): a parte da Movepark já está no split da Pagar.me do próprio site |
 
 Telas afetadas: dashboard do Operator, Relatórios do Operator, dashboard do Manager, Faturamento e
 Comissões do Manager. Para empresa sem white-label, nenhuma muda.
@@ -251,15 +251,15 @@ para o site é `paid_total_price` de pedido pago, que é o que o relatório do l
 
 **Servidor** (migration `20261129130000`):
 
-- `company.wl_take_rate_bps` (D4b), nula = não combinada. Fora do grant do `authenticated`, como
-  a do Hub; o hub_admin lê por `manager_company_restricted` e grava por `set_company_wl_take_rate`
-  (só empresa com white-label).
+- ~~`company.wl_take_rate_bps` e `set_company_wl_take_rate`~~: criados e removidos no mesmo dia
+  (migration `20261129153000_wl_sem_comissao.sql`), quando a D4b foi revista. Nenhuma empresa
+  chegou a ter taxa gravada.
 - `wl_revenue(p_from, p_to, p_location_ids, p_company_ids, p_date_field)`: total, por dia e por
   empresa, com o recorte de `wl_visible_company_ids`. "Pagas" conta também o reembolsado (o dinheiro
-  entrou) e o valor soma só o pago não devolvido, igual ao Hub em `bookings_list_page`. A comissão
-  é calculada na leitura e só sai para o hub_admin. Medido no banco vivo: 30 dias da rede, 43 ms;
-  um ano, 375 ms (com o predicado de data dentro de um CASE eram 2 s e 9 s, porque o índice não
-  valia).
+  entrou) e o valor soma só o pago não devolvido, igual ao Hub em `bookings_list_page`. Sem
+  comissão (D4b revista); desde `20261129153000` é SECURITY INVOKER, com a empresa filtrada
+  explicitamente para o índice valer. Medido no banco vivo: 30 dias da rede, 43 ms; um ano, 310 ms
+  (com o predicado de data dentro de um CASE eram 2 s e 9 s, e só com a RLS, 400 ms e 2,6 s).
 - De carona: `set_company_take_rate` devolvia a linha inteira de `company`, com o segredo do WPS.
   Passou a devolver só `{id, take_rate_bps}`.
 
@@ -269,9 +269,9 @@ para o site é `paid_total_price` de pedido pago, que é o que o relatório do l
 |---|---|
 | Dashboard do Operator | Receita do período = diárias do Hub + pago no site, com a quebra; gráfico empilhado; o site na Origem das reservas. A meta e o RevPAR medem a soma (a vaga vendida no site ocupa a mesma capacidade). |
 | Relatórios do Operator | Card "Vendido no white-label"; "Você recebe" e "Reservas" passam a dizer "pela Movepark"; gráfico empilhado; CSV ganha as colunas do site. |
-| Dashboard do Manager | Receita da rede com a quebra, comissão do white-label à parte do repasse, gráfico empilhado. Os outros indicadores (ranking, permanência, tarifas, clientes) seguem só do Hub. |
-| Faturamento | Total e comissão com a quebra; por empresa, colunas do site e da comissão do site; aviso de empresa que vendeu no site sem taxa combinada. |
-| Comissões | Coluna "White-label (%)" só para empresa com site; vazio = não combinada. |
+| Dashboard do Manager | Receita da rede com a quebra e gráfico empilhado; comissão e repasse só do Hub. Os outros indicadores (ranking, permanência, tarifas, clientes) seguem só do Hub. |
+| Faturamento | Receita com a quebra; comissão só do Hub; por empresa, a coluna do que o site vendeu. |
+| Comissões | Sem mudança: só a comissão do Hub. |
 | Atribuição | "Reservas via white-label" virou "Pela API e agentes"; o site do parceiro entra como "No site white-label" (pedidos criados no recorte). |
 
 Tudo o que é de white-label passa por `useHasWl`: quem não tem site não chama a RPC nem vê
@@ -313,11 +313,9 @@ origem própria.
 | D2 | Status do site na lista | **Traduzido para o vocabulário do Hub**: pago → Confirmada; pago com comparecimento → Concluída; no-show → Não compareceu; pendente → Pendente; cancelado, expirado e reembolsado iguais. O status cru do site fica no detalhe |
 | D3 | Valor da reserva do site para o parceiro | o pago no site (`paid_total_price`). Sem "você recebe": o dinheiro cai direto na conta do parceiro |
 | D4 | Faturamento | **Total com a quebra Hub / White-label** e filtro de origem, nos dois painéis |
-| D4b | Comissão da Movepark sobre o site | **Existe e aparece no Manager.** Cálculo: **percentual próprio de white-label por empresa** (`company.wl_take_rate_bps`, separado do `take_rate_bps` do Hub), aplicado sobre o valor pago no site, editável no Manager. Fica de fora das telas do parceiro, como a comissão do Hub hoje |
+| D4b | Comissão da Movepark sobre o site | **Revista em 09/10/2026: não existe no Hub.** A parte da Movepark sobre a venda do site já está no split da Pagar.me de cada tenant (recebedor "fera"/"Agencia Fera": 15% na Abbapark e na Nationpark, 9% na Virapark, 5% na BePark, mais quando o cliente é afiliado), o estacionamento conhece esses valores, e não precisa ser calculada nem mostrada a ninguém. Comissão no Hub é só da venda pelo Hub. (A primeira decisão, um percentual próprio por empresa editável no Manager, foi implementada e removida no mesmo dia.) |
 | D5 | Histórico e trocas de placa do site | **copiar para o Hub** (adotado como recomendado): quando o backoffice antigo for desligado, o histórico precisa já estar aqui |
 | D6 | Dashboard da rede no Manager | **mesma regra do D4**: total com a quebra por origem (adotado como recomendado) |
 
-Consequência do D4b no § 6: a linha "Comissão da Movepark" do white-label deixa de ser "não existe"
-e passa a ser `paid_total_price × wl_take_rate_bps` por pedido pago, calculada na hora da leitura
-(não congelada por reserva, porque a reserva do site não passa pelo motor de comissão do Hub). Se
-um dia a taxa mudar, o histórico recalcula: se for preciso congelar, a coluna vai para `wl_booking`.
+Consequência do D4b revista no § 6: a linha "Comissão da Movepark" do white-label continua "não
+existe". O faturamento do site aparece (separado por origem), a comissão não.

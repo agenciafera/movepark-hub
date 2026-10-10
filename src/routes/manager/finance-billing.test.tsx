@@ -3,8 +3,8 @@ import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test/utils";
 
 // Faturamento por origem (fase 5): o Hub e o site white-label lado a lado, total com a quebra (D4)
-// e a comissão do site pela taxa própria (D4b). A conta mora em billingByOrigin.logic (testada à
-// parte); aqui, que a tela mostra a quebra e avisa de venda no site sem taxa combinada.
+// sem comissão do site (D4b revista). A conta mora em billingByOrigin.logic (testada à
+// parte); aqui, que a tela mostra a quebra e que a comissão é só do Hub.
 const wl = { by_company: [] as unknown[] };
 vi.mock("@/features/finance/api", () => ({
   useCompanyFinance: () => ({
@@ -27,22 +27,22 @@ describe("ManagerFinanceBilling", () => {
     expect(screen.queryByRole("columnheader", { name: "White-label" })).not.toBeInTheDocument();
   });
 
-  it("com venda no site: total com a quebra, colunas do site e aviso de quem não tem taxa", () => {
+  it("com venda no site: receita com a quebra, coluna do site, e comissão só do Hub", () => {
     wl.by_company = [
-      { company_id: "a", company_name: "Abba", created: 5, paid: 4, paid_amount: 1000, wl_take_rate_bps: 500, commission: 50 },
-      { company_id: "v", company_name: "Vira", created: 3, paid: 3, paid_amount: 900, wl_take_rate_bps: null, commission: null },
+      { company_id: "a", company_name: "Abba", created: 5, paid: 4, paid_amount: 1000 },
+      { company_id: "v", company_name: "Vira", created: 3, paid: 3, paid_amount: 900 },
     ];
     renderWithProviders(<ManagerFinanceBilling />);
     const totais = screen.getByTestId("faturamento-totais");
     expect(totais).toHaveTextContent("R$ 2.100,00");
     expect(totais).toHaveTextContent("R$ 200,00 no Hub, R$ 1.900,00 no white-label");
-    // Comissão: 30 do Hub (15% de 200) + 50 do site.
-    expect(totais).toHaveTextContent("R$ 80,00");
+    // Comissão só do Hub: 15% de 200. A venda do site não tem comissão no Hub.
+    expect(totais).toHaveTextContent("R$ 30,00");
+    expect(totais).toHaveTextContent("só da venda pelo Hub");
+    expect(screen.queryByRole("columnheader", { name: "Comissão white-label" })).not.toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "White-label" })).toBeInTheDocument();
     const vira = screen.getByRole("row", { name: /Vira/ });
-    expect(within(vira).getByText("sem taxa")).toBeInTheDocument();
     // Vira só vendeu no site: as colunas do Hub ficam em traço, sem um "0%" que parece taxa.
     expect(within(vira).queryByText(/0%/)).not.toBeInTheDocument();
-    expect(screen.getByTestId("aviso-sem-taxa")).toHaveTextContent("Uma empresa vendeu no white-label sem comissão combinada");
   });
 });

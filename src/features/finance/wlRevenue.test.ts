@@ -4,15 +4,15 @@ import { renderMutation, rpc } from "@/test/msw/supabase";
 import { normalizeWlRevenue, useWlRevenue } from "./wlRevenue";
 
 describe("normalizeWlRevenue", () => {
-  it("converte o numeric do Postgres e mantém a comissão nula quando não vem", () => {
+  it("converte o numeric do Postgres", () => {
     const r = normalizeWlRevenue({
-      total: { created: 4, paid: 3, paid_amount: "350.000", commission: null },
+      total: { created: 4, paid: 3, paid_amount: "350.000" },
       by_day: [{ day: "2027-11-10", paid: 1, paid_amount: "150.0" }],
-      by_company: [{ company_id: "c1", company_name: "A", created: 4, paid: 3, paid_amount: "350", wl_take_rate_bps: null, commission: null }],
+      by_company: [{ company_id: "c1", company_name: "A", created: 4, paid: 3, paid_amount: "350" }],
     });
-    expect(r.total).toEqual({ created: 4, paid: 3, paid_amount: 350, commission: null });
+    expect(r.total).toEqual({ created: 4, paid: 3, paid_amount: 350 });
     expect(r.by_day[0].paid_amount).toBe(150);
-    expect(r.by_company[0].wl_take_rate_bps).toBeNull();
+    expect(r.by_company[0].paid_amount).toBe(350);
   });
 
   it("resposta vazia vira zero", () => {
