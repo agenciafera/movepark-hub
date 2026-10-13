@@ -137,7 +137,7 @@ Três leituras:
    `movepark.co` (o Semrush mostra 21% de sobreposição entre os dois perfis). Daqui pra frente,
    compra para parceiro só com motivo comercial explícito; o padrão é apontar para a ficha do
    parceiro dentro do `movepark.co`, que soma para a página do aeroporto. **Atualizado em
-   13/10/2026 (seção 4.3):** a verba passou a ser meio a meio entre Movepark e Virapark, e todo
+   13/10/2026 (seção 4.3):** a verba passou a ser dividida entre Movepark e Virapark, e todo
    artigo pago pela Virapark também leva link para o `movepark.co`.
 
 ### 2.5 O que o print traz e que não deve guiar decisão
@@ -312,7 +312,7 @@ Valem para todo pedido a partir de outubro de 2026. Pedido fora da regra não en
 | Tráfego | Orgânico real e estável nos últimos 6 meses, no próprio Semrush |
 | Nicho | Viagem e turismo, milhas, automotivo, finanças pessoais, negócios e **portal regional** (Guarulhos, Campinas, BH, Curitiba, Florianópolis, Porto Alegre) |
 | Site que fica de fora | Publica "artigo patrocinado" de qualquer assunto, tem dezenas de links de saída por post, ou cai na lista de exclusão da seção 4.2 (Conteúdo 63) |
-| Verba | Meio a meio entre os projetos Movepark e Virapark no WhitePress, e **todo artigo leva link para o `movepark.co`**, inclusive os da Virapark (seção 4.3) |
+| Verba | Cerca de R$ 4.000 por mês, dividida entre os projetos Movepark e Virapark no WhitePress (perto de metade cada), e **todo artigo leva link para o `movepark.co`**, inclusive os da Virapark (seção 4.3) |
 | Destino do link | Maioria para `/estacionamentos/<aeroporto>` (Guarulhos primeiro), uma parte para post-pilar dono do termo ([canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md), [canonicalizacao-vcp-cnf.md](./canonicalizacao-vcp-cnf.md)), pouco para a home. No artigo da Virapark, o link da Movepark vai para a página do aeroporto (seção 4.3) |
 | Âncora | Maioria marca ou URL ("Movepark", "movepark.co"), uma parte parcial ("estacionamento perto do aeroporto de Guarulhos"), **exata quase nunca** |
 | Ritmo | Constante, todo mês, nunca em rajada. A quantidade sai do orçamento: no custo histórico de cerca de R$ 510 por link, R$ 3.000 por mês compram de 4 a 6 links de AS 30 ou mais (site melhor custa mais, e está certo) |
@@ -325,8 +325,8 @@ conquistado (seção 5.4), e a compra é complemento.
 
 **Gate:** o orçamento mensal do WhitePress não está nesta spec. A Conteúdo 66 só fecha com ele
 definido pelo Diego. Referência: o gasto histórico foi de cerca de R$ 18.900 no projeto Movepark,
-concentrado num único mês. A divisão entre Movepark e Virapark já está decidida (seção 4.3); o
-valor total por mês, não. Outubro foi montado com R$ 2.978,50 por metade.
+concentrado num único mês. **Resolvido em 13/10/2026 (seção 4.3):** cerca de R$ 4.000 por mês, em
+média, dividido entre Movepark e Virapark.
 
 ### 4.1 A lista do WhitePress de 06/10/2026
 
@@ -364,10 +364,9 @@ do Paraná, e o WhitePress precisa ser consultado sobre portais das duas cidades
 | Mês | Site | Preço | AS | Tráfego Semrush | Destino do link |
 |---|---|---|---|---|---|
 | Outubro (C67) | `viagensecaminhos.com` | R$ 1.610,00 | 54 | 795 mil | `/estacionamentos/aeroporto-guarulhos` |
-| Outubro (C67) | `rotadeferias.com.br` | R$ 885,50 | 34 | 26 mil | `/estacionamentos/aeroporto-guarulhos` |
+| Outubro (C67, Virapark) | `rotadeferias.com.br` (era de Guarulhos até 13/10) | R$ 885,50 | 34 | 26 mil | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` |
 | Outubro (C67) | `mochileiros.com` | R$ 483,00 | 33 | 31 mil | post dono do termo de GRU (`canonicalizacao-gru-cwb.md`) |
 | Outubro (C67, Virapark) | `campinas.com.br` (veio de dezembro em 13/10) | R$ 1.046,50 | 32 | 27 mil | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` |
-| Outubro (C67, Virapark) | `maladeaventuras.com` (era reserva) | R$ 1.932,00 | 38 | | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` |
 | Novembro (C68) | `em.com.br` (Estado de Minas) | R$ 3.220,00 | 61 | 521 mil | `/estacionamentos/aeroporto-confins` |
 | Novembro (C68) | `odiariodemogi.net.br` (Alto Tietê) | R$ 1.606,55 | 33 | 10 mil (Ahrefs 23 mil) | `/estacionamentos/aeroporto-guarulhos` |
 | Dezembro (C69) | `sampi.net.br` (era reserva; a confirmar na C69) | R$ 3.059,00 | 52 | | `/estacionamentos/aeroporto-viracopos` |
@@ -380,42 +379,43 @@ do Paraná, e o WhitePress precisa ser consultado sobre portais das duas cidades
 
 | Praça | Links | Investimento |
 |---|---|---|
-| Guarulhos | 4 | R$ 4.585,05 |
+| Guarulhos | 3 | R$ 3.699,55 |
 | Confins | 2 | R$ 5.957,00 |
 | Curitiba | 2 | R$ 4.169,90 |
-| Viracopos | 4 | R$ 7.470,40 |
-| **Total** | **12** | **R$ 22.182,35** |
+| Viracopos | 4 | R$ 6.423,90 |
+| **Total** | **11** | **R$ 20.250,35** |
 
-Guarulhos leva 4 links porque é o maior mercado e a página com menos domínios (17); Viracopos
-passou a levar 4 em 13/10/2026 porque a metade Virapark da verba vai para lá (seção 4.3). Confins
-custa mais porque os dois portais de BH da lista são caros; se a pauta da Conteúdo 56 sair no
-Estado de Minas sem custo, a compra do `em.com.br` cai e Confins fica em R$ 2.737. Por mês:
-outubro R$ 5.957,00 (metade de cada projeto), novembro R$ 4.826,55, dezembro R$ 6.423,90 (com o
-`sampi.net.br` ainda a confirmar) e janeiro R$ 4.974,90, média de R$ 1.849 por link e AS médio
-de 42. Os totais de 06/10, antes da divisão, eram 10 links e R$ 17.191,35.
+Guarulhos leva 3 links e Viracopos 4 desde 13/10/2026, quando a verba passou a ser dividida com a
+Virapark e a metade dela foi para Viracopos (seção 4.3). Confins custa mais porque os dois
+portais de BH da lista são caros; se a pauta da Conteúdo 56 sair no Estado de Minas sem custo, a
+compra do `em.com.br` cai e Confins fica em R$ 2.737. Por mês: outubro R$ 4.025,00, novembro
+R$ 4.826,55, dezembro R$ 6.423,90 (com o `sampi.net.br` ainda a confirmar) e janeiro R$ 4.974,90,
+média de R$ 1.841 por link e AS médio de 43. **Com o orçamento de R$ 4.000 por mês (seção 4.3),
+novembro, dezembro e janeiro passam do teto** e precisam ser enxugados quando cada lote abrir. Os
+totais de 06/10, antes da divisão, eram 10 links e R$ 17.191,35.
 
 **Reservas por praça** (troca um item mantendo a praça): Guarulhos, `turistaprofissional.com`
 (viagem, R$ 2.415, AS 46) e `diariodoturismo.com.br` (trade de turismo, R$ 1.760, AS 36, já
-linka para a ficha do Ponce Park, seção 4.2); Viracopos, nenhuma: as duas reservas
-(`sampi.net.br` e `maladeaventuras.com`) entraram no plano em 13/10/2026; Confins,
-`patoshoje.com.br` (interior de MG, R$ 1.607, AS 41, conferir a cidade antes); Curitiba,
-`turistaprofissional.com` se não for usado em Guarulhos.
+linka para a ficha do Ponce Park, seção 4.2); Viracopos, `maladeaventuras.com` (viagem, R$ 1.932,
+AS 38), que entrou e saiu do lote de outubro em 13/10; Confins, `patoshoje.com.br` (interior de
+MG, R$ 1.607, AS 41, conferir a cidade antes); Curitiba, `turistaprofissional.com` se não for usado
+em Guarulhos.
 
 **Fora do foco, para registro:** `gazetaweb.com` (Maceió, R$ 483, AS 45), `guiafloripa.com.br`
 (R$ 467, AS 37) e `sul21.com.br` (Porto Alegre, R$ 322, AS 36) são o melhor custo por AS da lista,
 mas apontariam para aeroporto fora das quatro praças.
 
 **Atividades (todas com o Diego):** uma por compra.
-[Conteúdo 75](https://app.clickup.com/t/17tn9e9hy61) a [77](https://app.clickup.com/t/17tn9e9hy73),
-[86](https://app.clickup.com/t/17tn9e9mk9g) e [87](https://app.clickup.com/t/17tn9e9mk9j) em
-outubro, [81](https://app.clickup.com/t/17tn9e9hy92) e [82](https://app.clickup.com/t/17tn9e9hy93) em
+[Conteúdo 75](https://app.clickup.com/t/17tn9e9hy61) a [77](https://app.clickup.com/t/17tn9e9hy73) e
+[86](https://app.clickup.com/t/17tn9e9mk9g) em outubro, [81](https://app.clickup.com/t/17tn9e9hy92) e [82](https://app.clickup.com/t/17tn9e9hy93) em
 novembro, [83](https://app.clickup.com/t/17tn9e9hy96), [84](https://app.clickup.com/t/17tn9e9hy99) e
 [78](https://app.clickup.com/t/17tn9e9hy7t) em dezembro, [79](https://app.clickup.com/t/17tn9e9hy8p) e
 [80](https://app.clickup.com/t/17tn9e9hy90) em janeiro, e a [85](https://app.clickup.com/t/17tn9e9hy9a)
 para pedir ao WhitePress portais de Guarulhos e Curitiba. As 78 a 80 nasceram para Maceió,
 Florianópolis e Porto Alegre e foram reaproveitadas quando o foco ficou nas quatro praças. A 83
 era o `campinas.com.br` em dezembro; em 13/10/2026 ele foi para outubro (86) e a 83 passou a ser
-o `sampi.net.br`.
+o `sampi.net.br`. No mesmo dia a 76 (`rotadeferias.com.br`) passou de Guarulhos para a metade
+Virapark, e a [87](https://app.clickup.com/t/17tn9e9mk9j) (`maladeaventuras.com`) virou reserva.
 
 **Antes de cada pedido** (a planilha não traz): AS conferido no Semrush no dia; o link sai
 dofollow ou com `rel="sponsored"`; o artigo fica no ar por quanto tempo; quantos links de saída
@@ -456,40 +456,45 @@ Antes de cada pedido, o domínio passa por três filtros. A evidência de cada u
 - **`diariodoturismo.com.br` (reserva de Guarulhos):** já linka a ficha do Ponce Park. Se a reserva
   for usada, a decisão cabe na Conteúdo 66; o `turistaprofissional.com` não tem esse conflito.
 
-### 4.3 A verba meio a meio com a Virapark (13/10/2026)
+### 4.3 Orçamento e verba dividida com a Virapark (13/10/2026)
 
 Decisão do Diego em 13/10/2026, que vale para todo lote daqui em diante:
 
-1. **Metade da verba de compra é do projeto Virapark e metade do projeto Movepark.** Cada pedido
-   sai pelo projeto dele no WhitePress, para o gasto de cada metade ficar separado.
-2. **Todo artigo leva link para o `movepark.co`**, inclusive os pagos pela Virapark. O artigo da
+1. **Orçamento de cerca de R$ 4.000 por mês, em média,** somando os dois projetos.
+2. **Metade da verba de compra é do projeto Virapark e metade do projeto Movepark.** A divisão é
+   aproximada, porque os preços dos sites não fecham valores iguais. Cada pedido sai pelo projeto
+   dele no WhitePress, para o gasto de cada metade ficar separado.
+3. **Todo artigo leva link para o `movepark.co`**, inclusive os pagos pela Virapark. O artigo da
    Virapark tem dois links: `virapark.com.br`, com âncora "Virapark", e a página do aeroporto no
    `movepark.co`, com âncora de marca. Só entra oferta que aceite dois links dofollow no artigo.
-3. **A metade Virapark vai para Viracopos**, a praça da Virapark. O link da Movepark nesses artigos
+4. **A metade Virapark vai para Viracopos**, a praça da Virapark. O link da Movepark nesses artigos
    aponta para `/estacionamentos/aeroporto-viracopos`, e não para a ficha da Virapark: o
    `virapark.com.br` já cobre o parceiro, e a página do aeroporto é a que vende.
 
 Isso atualiza a leitura 3 da seção 2.4: a compra da Virapark tem motivo comercial declarado e
 sempre soma para o `movepark.co`.
 
-**Outubro ([Conteúdo 67](https://app.clickup.com/t/17tn9e9gfh9)), R$ 5.957,00:**
+**Outubro ([Conteúdo 67](https://app.clickup.com/t/17tn9e9gfh9)), R$ 4.025,00:**
 
 | Metade | Site | Preço | AS | Links | Atividade |
 |---|---|---|---|---|---|
 | Movepark | `viagensecaminhos.com` | R$ 1.610,00 | 54 | `/estacionamentos/aeroporto-guarulhos` | [C75](https://app.clickup.com/t/17tn9e9hy61) |
-| Movepark | `rotadeferias.com.br` | R$ 885,50 | 34 | `/estacionamentos/aeroporto-guarulhos` | [C76](https://app.clickup.com/t/17tn9e9hy6w) |
 | Movepark | `mochileiros.com` | R$ 483,00 | 33 | `/blog/como-estacionar-barato-no-aeroporto-de-guarulhos/` | [C77](https://app.clickup.com/t/17tn9e9hy73) |
 | Virapark | `campinas.com.br` | R$ 1.046,50 | 32 | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` | [C86](https://app.clickup.com/t/17tn9e9mk9g) |
-| Virapark | `maladeaventuras.com` | R$ 1.932,00 | 38 | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` | [C87](https://app.clickup.com/t/17tn9e9mk9j) |
+| Virapark | `rotadeferias.com.br` | R$ 885,50 | 34 | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` | [C76](https://app.clickup.com/t/17tn9e9hy6w) |
 
-Cada metade fecha em R$ 2.978,50. A metade Movepark é o lote de Guarulhos combinado em 06/10, sem
-mudança; a metade Virapark entrou em 13/10. O saldo do WhitePress em 13/10/2026 era R$ 4.457,17,
-então falta depositar cerca de R$ 1.500.
+R$ 2.093,00 da Movepark e R$ 1.932,00 da Virapark. Cabe no orçamento de R$ 4.000 e no saldo do
+WhitePress em 13/10/2026 (R$ 4.457,17), sem depósito. Em relação ao combinado em 06/10 (três links
+de Guarulhos, R$ 2.978,50), o `rotadeferias.com.br` passou para a Virapark e o `campinas.com.br`
+veio de dezembro. O `maladeaventuras.com` chegou a entrar e voltou a ser reserva
+([Conteúdo 87](https://app.clickup.com/t/17tn9e9mk9j)).
 
-**De novembro a janeiro,** a divisão é feita quando cada lote abrir (Conteúdo 68, 69 e o de
-janeiro). A referência: Guarulhos, Confins e Curitiba com a metade Movepark, Viracopos com a metade
-Virapark. Como Viracopos ficou sem reserva na lista de 06/10, a metade Virapark dos próximos meses
-precisa de site novo de Campinas ou de viagem; vale pedir ao WhitePress junto da Conteúdo 85.
+**De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
+(Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
+R$ 6.423,90 e R$ 4.974,90) e precisam ser enxugados. A referência: Guarulhos, Confins e Curitiba
+com a metade Movepark, Viracopos com a metade Virapark. A metade Virapark dos próximos meses tem o
+`carpemundi.com.br`, o `sampi.net.br` (a confirmar) e o `maladeaventuras.com` (reserva) como
+opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da Conteúdo 85.
 
 ## 5. O plano
 
