@@ -48,7 +48,7 @@ const FILTROS = {
   de: "",
   ate: "",
   unidade: "all",
-  pagina: "0",
+  pagina: "1",
 };
 
 /**
@@ -66,7 +66,8 @@ export default function OperatorBookings() {
   const from = f.de;
   const to = f.ate;
   const unidade = f.unidade;
-  const page = Math.max(0, Number(f.pagina) || 0);
+  // Na URL a página conta a partir de 1, como quem lê; na consulta, a partir de 0.
+  const page = Math.max(0, (Number(f.pagina) || 1) - 1);
   const temFiltro = hasActiveFilters(f, FILTROS, ["pagina"]);
   const navigate = useNavigate();
   const { ids: scopedLocationIds } = useScopedLocationIds();
@@ -252,7 +253,7 @@ export default function OperatorBookings() {
         page={page}
         pageSize={PAGE_SIZE}
         total={data?.total ?? 0}
-        onPage={(p) => set({ pagina: String(p) })}
+        onPage={(p) => set({ pagina: String(p + 1) })}
       />
     </div>
   );

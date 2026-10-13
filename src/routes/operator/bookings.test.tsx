@@ -186,8 +186,9 @@ describe("OperatorBookings · filtros no endereço (13/10/2026)", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it("filtros e página vêm da URL: sobrevivem ao F5", () => {
-    setup({ hasWl: true, rows: [], route: "/operator/bookings?status=cancelled&origem=wl&pagina=2&q=ana" });
+    setup({ hasWl: true, rows: [], route: "/operator/bookings?status=cancelled&origem=wl&pagina=3&q=ana" });
     const f = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
+    // pagina=3 na URL é a terceira página (índice 2 na consulta).
     expect(f).toMatchObject({ status: ["cancelled"], source: "wl", page: 2, search: "ana" });
     expect(screen.getByLabelText("Busca")).toHaveValue("ana");
   });

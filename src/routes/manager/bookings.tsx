@@ -71,7 +71,7 @@ const FILTROS = {
   canal: "all",
   origem: "all",
   estacionamento: "all",
-  pagina: "0",
+  pagina: "1",
 };
 
 /** Página da lista. O servidor pagina e devolve o total e o resumo do recorte inteiro. */
@@ -97,7 +97,8 @@ export default function ManagerBookings() {
   const channel = f.canal as ChannelFilter | "all";
   const source = f.origem as SourceFilter;
   const companyId = f.estacionamento;
-  const page = Math.max(0, Number(f.pagina) || 0);
+  // Na URL a página conta a partir de 1, como quem lê; na consulta, a partir de 0.
+  const page = Math.max(0, (Number(f.pagina) || 1) - 1);
   const companies = useCompanies();
   const navigate = useNavigate();
   const { period, range, scopedLocationIds } = useManagerFilters();
@@ -315,7 +316,7 @@ export default function ManagerBookings() {
         page={page}
         pageSize={PAGE_SIZE}
         total={data?.total ?? 0}
-        onPage={(p) => set({ pagina: String(p) })}
+        onPage={(p) => set({ pagina: String(p + 1) })}
       />
     </div>
   );
