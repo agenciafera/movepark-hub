@@ -1,0 +1,92 @@
+# Disavow de movepark.co (Conteudo 63), montado em 13/10/2026
+# Criterio (docs/specs/plano-autoridade-backlinks.md, secao 2.7): so rede claramente spam.
+# Nenhum parceiro, nenhum site editorial e nenhum link nofollow entra aqui.
+# Evidencia por dominio: semrush-dominios-revisados.csv e gsc-paginas-origem.csv, nesta pasta.
+
+# Rede 1: pagina que vende PBN e link (o pico de ago/set de 2026)
+# Titulo "Boost your Google rankings with Premium PBN & Link Building" e ancora
+# "High Quality Dofollow Backlinks DA 50 PA 40 Premium PBN Network Service <dominio> ...
+# Buy Backlinks Online Cheap" ou "Reliable Manual Outreach Backlinks for <dominio>".
+# Follow, Cloudflare nos EUA, primeira vez vistos entre jun e set de 2026.
+domain:adcreativevideo.com
+domain:agentbetting.online
+domain:aloysionunes.com
+domain:bazerdaily.com
+domain:bestnz-poker-casinoslot.com
+domain:betwinnermirror.com
+domain:breachviews.com
+domain:canadapsilocybin.com
+domain:casinooftheking.com
+domain:casinoonlinecrazytime.online
+domain:casinopopular.online
+domain:cgpa2percentag.com
+domain:cindylaup.com
+domain:clifflisting.com
+domain:cmocheatsheets.com
+domain:coruzants.com
+domain:domraider.eu.com
+domain:exotichealths.com
+domain:expresskitchendesigns.com
+domain:fastlifesite.com
+domain:ggmap.us.com
+domain:hostprinter.com
+domain:hotonlinegaming.com
+domain:juaralaundry.com
+domain:kkinsider.com
+domain:lydiaroyrealestate.com
+domain:marinasone.com
+domain:masihnyata.com
+domain:mervi.shop
+domain:missburrg.com
+domain:mylisthero.com
+domain:mymarketpost.com
+domain:nelpa.shop
+domain:nimpa.shop
+domain:nivira.shop
+domain:onlineshoppingidea.com
+domain:onlyhealthydeals.com
+domain:phanerosart.com
+domain:plumeriamarketing.com
+domain:plurio.shop
+domain:primenewsartical.com
+domain:quotesblom.com
+domain:rjcentinc.com
+domain:sahammurah.com
+domain:sidarma88gacor.shop
+domain:smartstimer.com
+domain:soulvocable.com
+domain:southfwb.com
+domain:theforbestimes.com
+domain:top5casino.online
+domain:wecelebrities.com
+
+# Rede 2: "Where to buy aged domains and backlinks"
+# Pagina gerada sem conteudo, ancora = o dominio puro (aeromixparkestacionamento.com,
+# movepark.com.br, movepark.co). Sub-redes repetidas: 118.139.x (Singapura),
+# 184.168.115.60 e 103.224.212.142. Vista desde fev/2026.
+domain:bestwebstats.com
+domain:domain.com.lc
+domain:findinfo.in
+domain:getonline.co.in
+domain:getwebsiteworth.com
+domain:indians.cc
+domain:jobsapp.info
+domain:linksnatcher.com
+domain:pudhe.com
+domain:sergechel.info
+domain:wallpapers.pro
+domain:way2check.cv
+domain:websiterace.com
+domain:wonvision.com
+domain:ycm.info
+
+# Rede 3: spam de comentario e de forum que o Google lista no Search Console
+# Todos para a URL antiga movepark.com.br/estacionamento/ponce-park-guarulhos/,
+# em site sem relacao com viagem (forum coreano, blog de lorem ipsum, URL sem sentido).
+domain:estilistica.com.br
+domain:hanwooltm.co.kr
+domain:hoyeongkim.cafe24.com
+domain:right-ear.com
+domain:stannadanuzice.com
+domain:wholehousecleaningservices.com
+domain:widenewsgap.org

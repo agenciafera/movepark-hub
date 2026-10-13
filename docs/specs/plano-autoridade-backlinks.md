@@ -13,6 +13,9 @@
 > - Semrush, painel de SEO e visão geral de backlinks de `movepark.co`, retrato de 29/09/2026 (print enviado pelo Diego em 30/09).
 > - WhitePress, painel do anunciante dos projetos Movepark e Virapark, enviado pelo Diego em 01/10/2026.
 > - Search Console de 31/08 a 14/09/2026 ([dados/gsc-baseline-2026-09-14](./dados/gsc-baseline-2026-09-14/)).
+> - Auditoria de 13/10/2026 (Conteúdo 63): Backlink Audit do Semrush, relatório de Links do Search
+>   Console e lista de compras do painel do WhitePress
+>   ([dados/backlinks-auditoria-2026-10-13](./dados/backlinks-auditoria-2026-10-13/)). Seção 2.7.
 
 ## 1. O diagnóstico em uma frase
 
@@ -51,6 +54,11 @@ qualquer limpeza, era preciso saber se esse pico foi compra nossa.
 **Respondido em 01/10/2026 pelo histórico do WhitePress (seção 2.4): não foi.** Em agosto de 2026
 saiu uma única publicação paga, e em setembro nenhuma. As centenas de domínios novos do pico vieram
 de fora, por rede de spam ou SEO negativo, e são o alvo da auditoria da Conteúdo 63.
+
+**Auditado em 13/10/2026 (seção 2.7):** o pico é uma rede automática que vende PBN e link e usa
+`aeromixparkestacionamento.com`, `movepark.com.br` e `movepark.co` como isca na âncora. O template só
+troca o nome do domínio, padrão de spam em massa, e o Google não lista nenhum desses domínios no
+Search Console.
 
 ### 2.2 A autoridade está nas páginas erradas
 
@@ -115,7 +123,8 @@ fora do worker. Os `*-app.movepark.co` respondem 302 para `/backend/auth` e os p
 | Movepark | 33 | 4 | R$ 16.964,86 + R$ 1.954,72 = **R$ 18.919,58** | 4 em nov/2025 (cerca de R$ 3.000) e 1 em ago/2026; nos outros meses, nada |
 | Virapark | 18 (+1 pendente) | 3 | R$ 12.770,75 + R$ 2.392,00 = **R$ 15.162,75** | 9 entre out/2025 e mar/2026 e 1 em ago/2026 |
 
-Saldo na conta em 01/10/2026: R$ 2.457,17.
+Saldo na conta em 01/10/2026: R$ 2.457,17; em 13/10/2026, R$ 4.457,17. A lista de pedidos do
+painel, lida em 13/10, data a única publicação recente (`guiadoviajante.com.br`) em 24/09/2026.
 
 Três leituras:
 
@@ -172,6 +181,107 @@ site (02/10, 100 páginas): saúde 82%, 13 erros, 204 avisos.
 **Como medir sem o plano pago.** A auditoria completa e a linha de base de AS ≥ 20 por mês saem de
 fonte própria; ver a seção 5.5.
 
+### 2.7 A auditoria de 13/10/2026 (Conteúdo 63)
+
+Fontes: Backlink Audit do Semrush (no plano gratuito, os resumos e a busca por domínio), relatório de
+Links do Search Console e o painel do anunciante do WhitePress. Arquivos em
+[dados/backlinks-auditoria-2026-10-13](./dados/backlinks-auditoria-2026-10-13/).
+
+**O Google conta outra coisa.** O Search Console lista **60 domínios** (455 links externos) para o
+`movepark.co`; o Semrush conta 851. Nenhum domínio das redes de spam abaixo aparece no Search
+Console. O pico infla a contagem do Semrush e fica fora da do Google. E não mexeu o Authority Score
+porque os domínios dele têm AS de 2 a 6.
+
+**A origem do pico de agosto e setembro.** Não foi compra nossa: a única publicação do WhitePress no
+período é a do `guiadoviajante.com.br`, publicada em 24/09/2026. O template troca só o nome do
+domínio na âncora, padrão de spam em massa, e se divide em três redes:
+
+| Rede | Domínios | Assinatura | Desde | Decisão |
+|---|---|---|---|---|
+| 1. Venda de PBN e link | 51 entre os 100 maiores; as âncoras do template somam cerca de 216 | Título "Boost your Google rankings with Premium PBN & Link Building", âncora "High Quality Dofollow Backlinks DA 50 PA 40 Premium PBN Network Service *domínio* ... Buy Backlinks Online Cheap" ou "Reliable Manual Outreach Backlinks for *domínio*". Follow, Cloudflare nos EUA, cassino e `.shop`/`.online` | jun a set/2026: **é o pico** | Disavow |
+| 2. "Aged domains" | 15 | Título "Where to buy aged domains and backlinks", âncora com o domínio puro. Sub-redes repetidas: 118.139.x (Singapura), 184.168.115.60 e 103.224.212.142 | fev/2026 | Disavow |
+| 3. Página de estatística | 19 | "seo domain research", "Website Stats", "Domain Report", "URL Shared", quase tudo no IP 195.20.19.178 | out/2025 | Fora: é `nofollow` e não passa nada |
+
+As três miram os mesmos nomes: `aeromixparkestacionamento.com`, `movepark.com.br` e `movepark.co`.
+O `aeromixparkestacionamento.com` é domínio nosso (está na mesma conta do Cloudflare) e faz 301 para
+`/estacionamentos/aeroporto-viracopos/`. É dele a âncora mais usada do perfil (135 domínios), e
+Viracopos continua entre as posições 12 e 25, então a rede não derrubou a página. Detalhe: o 301 dele
+leva **dois saltos** (o destino tem barra no fim e o site tira a barra). Dá para resolver como foi
+feito com o `movepark.com.br` na Conteúdo 60.
+
+**O spam que o Google enxerga.** Dos 60 domínios do Search Console, 13 são comentário ou fórum, todos
+para a URL antiga `movepark.com.br/estacionamento/ponce-park-guarulhos/` (fórum coreano, blog de
+lorem ipsum, site do governo da Nigéria). No Semrush, os dois do mesmo padrão que aparecem
+(`abc1.com.br` e `fismat.com.br`, ambos `nofollow`) são de out/2025 a abr/2026. Sete têm link sem `nofollow` ou não
+deu para conferir, e entraram no disavow. Nos outros seis o link é `ugc`/`nofollow` ou já saiu. A
+origem não aparece; a âncora é de cabeça de Guarulhos ("estacionamento perto aeroporto Guarulhos"),
+padrão de pacote barato de link.
+
+**Disavow enviado em 13/10/2026, às 14:14.** 73 domínios (51 da rede 1, 15 da rede 2, 7 de comentário
+e fórum), no arquivo [`disavow.txt`](./dados/backlinks-auditoria-2026-10-13/disavow.txt), com o
+motivo de cada grupo. A ferramenta não aceita propriedade de domínio, então foi criada a propriedade
+por prefixo **`https://movepark.co/`** no Search Console, verificada sozinha pelo DNS da propriedade
+de domínio. Ficou de fora: parceiro (inclusive o `virapark.com.br`, que o Semrush marca com TS 42),
+site editorial, toda compra do WhitePress e link `nofollow`. A expectativa é de efeito perto de zero
+no ranking, porque o Google já não lista esses domínios; o disavow é um seguro barato contra uma
+revisão manual que leia âncora de venda de link. Para mudar a lista, use "Substituir" na mesma página:
+o arquivo novo apaga o anterior. Limite conhecido: o plano gratuito do Semrush lista os 100 maiores
+domínios, então cerca de 160 da rede 1 não aparecem por nome. Se algum deles entrar no Search
+Console, entra no arquivo.
+
+**As 37 compras do WhitePress, uma a uma.** A lista do painel (projeto Movepark) soma exatamente
+R$ 18.919,58: 33 publicações e 4 inserções. Planilha com URL, destino, status e AS em
+[`whitepress-compras.csv`](./dados/backlinks-auditoria-2026-10-13/whitepress-compras.csv).
+
+| Situação em 13/10/2026 | Compras | Valor |
+|---|---|---|
+| No ar, com link dofollow | 33 | R$ 17.206,36 |
+| Perdidas: o `egobrazil.ig.com.br` virou `egobrazil.com.br` e o post sumiu; o `atendimentoaocliente.app.br` responde 404 | 2 | R$ 966,00 |
+| Sem como conferir daqui: o `dropsdejogos.uai.com.br` está "Indisponível no Brasil" e o `agendaculturalporto.org` exige desafio do Cloudflare. O Google lista as duas | 2 | R$ 747,22 |
+
+Para onde vão os 33 links no ar, já depois do 301:
+
+| Destino final | Links |
+|---|---|
+| `/estacionamentos/aeroporto-viracopos` | 9 |
+| `/estacionamentos/aeroporto-curitiba/nationpark` | 5 |
+| `/estacionamentos/aeroporto-guarulhos` | 5 |
+| `/estacionamentos/aeroporto-guarulhos/ponce-park` (lote sem contrato) | 4 |
+| `/estacionamentos/aeroporto-curitiba` | 4 |
+| Fichas de Viracopos (GarageInn 2, Virapark 1) | 3 |
+| Home, `/precos` e `virapark.movepark.co` | 3 |
+
+Três leituras:
+
+1. **Nenhum link comprado cai em 404.** Sete posts apontam para URL antiga (`/estacionamento/...`,
+   `/estacionamentos/campinas`) e todos chegam numa página viva com um 301 só.
+2. **Guarulhos, o maior mercado, recebeu 5 dos 33**, e outros 4 foram para a ficha do Ponce Park. A
+   Conteúdo 64 (link interno da ficha para a página de Guarulhos) recupera parte disso.
+3. **A compra mais recente é a pior.** O `guiadoviajante.com.br` (24/09/2026, R$ 805) tem AS 8 e cerca
+   de 10 visitas orgânicas por mês no Semrush; o `webcitizen.com.br` (3 compras) tem AS 20 e o mesmo
+   tráfego. Pela regra da seção 4, nenhum dos dois entraria hoje. Os portais em subdomínio de
+   `ig`, `uol`, `r7` e `uai` mostram o AS da raiz (72 a 98), não o da seção que publica, como a seção
+   4.1 já alertava.
+
+O AS de hoje saiu da ficha de cada portal no próprio WhitePress (Semrush, setembro de 2026) para 12 dos
+25 portais. Os outros 13 ficaram sem número: o `agenciainforma.app.br` saiu da base do WhitePress, e no
+meio das consultas o WhitePress pediu verificação de conta por e-mail (ver pendências).
+
+**De onde vem a autoridade da ficha do Ponce Park.** O Search Console lista 27 sites linkando para
+ela: 10 editoriais de viagem fora do WhitePress (o `carpemundi.com.br` com 10 posts), 13 de spam de
+comentário e fórum, 3 de parceiro e agência e 1 inserção do WhitePress. Boa parte do "316 + 83" que o
+Semrush atribui à ficha (seção 2.2) é spam, então a força real que a Conteúdo 64 pode escoar para
+Guarulhos é menor do que o número sugere.
+
+**Pendências.**
+
+- **AS de 13 portais comprados.** O WhitePress mandou um e-mail de verificação de conta depois da
+  sequência de consultas; quem tiver acesso ao e-mail da conta confirma, e os 13 dá para ler à mão na
+  ficha de cada portal.
+- **Rede 1 completa.** Só no plano pago do Semrush. A revisão de 30 dias (Conteúdo 73) reconfere pelo
+  Search Console.
+- **Os dois saltos do `aeromixparkestacionamento.com`.** Regra na zona do Cloudflare, fora do repo.
+
 ## 3. A tese
 
 1. **Parar de somar volume.** Link de rede estrangeira com AS 0 a 10 não move o Authority Score e
@@ -193,7 +303,7 @@ Valem para todo pedido a partir de outubro de 2026. Pedido fora da regra não en
 | Autoridade | AS do Semrush a partir de 30 (ou DR equivalente), conferido no dia do pedido |
 | Tráfego | Orgânico real e estável nos últimos 6 meses, no próprio Semrush |
 | Nicho | Viagem e turismo, milhas, automotivo, finanças pessoais, negócios e **portal regional** (Guarulhos, Campinas, BH, Curitiba, Florianópolis, Porto Alegre) |
-| Site que fica de fora | Publica "artigo patrocinado" de qualquer assunto, tem dezenas de links de saída por post, ou já aparece na lista de domínios tóxicos da Conteúdo 63 |
+| Site que fica de fora | Publica "artigo patrocinado" de qualquer assunto, tem dezenas de links de saída por post, ou cai na lista de exclusão da seção 4.2 (Conteúdo 63) |
 | Destino do link | Maioria para `/estacionamentos/<aeroporto>` (Guarulhos primeiro), uma parte para post-pilar dono do termo ([canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md), [canonicalizacao-vcp-cnf.md](./canonicalizacao-vcp-cnf.md)), pouco para a home |
 | Âncora | Maioria marca ou URL ("Movepark", "movepark.co"), uma parte parcial ("estacionamento perto do aeroporto de Guarulhos"), **exata quase nunca** |
 | Ritmo | Constante, todo mês, nunca em rajada. A quantidade sai do orçamento: no custo histórico de cerca de R$ 510 por link, R$ 3.000 por mês compram de 4 a 6 links de AS 30 ou mais (site melhor custa mais, e está certo) |
@@ -293,7 +403,41 @@ Florianópolis e Porto Alegre e foram reaproveitadas quando o foco ficou nas qua
 **Antes de cada pedido** (a planilha não traz): AS conferido no Semrush no dia; o link sai
 dofollow ou com `rel="sponsored"`; o artigo fica no ar por quanto tempo; quantos links de saída
 o post tem; o site publica patrocinado de qualquer assunto (busca por "patrocinado" no próprio
-site); o domínio não está na lista tóxica da Conteúdo 63.
+site); o domínio não cai na lista de exclusão da seção 4.2.
+
+### 4.2 A lista de exclusão (Conteúdo 63, 13/10/2026)
+
+Antes de cada pedido, o domínio passa por três filtros. A evidência de cada um está em
+[dados/backlinks-auditoria-2026-10-13](./dados/backlinks-auditoria-2026-10-13/).
+
+1. **Spam: nunca.** Os 73 domínios do [`disavow.txt`](./dados/backlinks-auditoria-2026-10-13/disavow.txt),
+   os 19 de estatística da rede 3 (classe `estatistica_nofollow` em `semrush-dominios-revisados.csv`)
+   e os sites de spam de comentário marcados em `gsc-dominios.csv`.
+2. **Já comprado e fraco: nunca de novo.** `guiadoviajante.com.br` (AS 8, cerca de 10 visitas por mês),
+   `webcitizen.com.br` (AS 20, mesmo tráfego), `cartaodevisita.r7.com` (vitrine de anúncio),
+   `followthecolours.com.br` (DA inflado, seção 4.1), `agendaculturalporto.org` (fora do Brasil),
+   `dropsdejogos.uai.com.br` (indisponível no Brasil), `1news.correiobraziliense.com.br` (o próprio
+   WhitePress marca a publicação como não indexada) e os portais `*.app.br` de nome genérico
+   (`agenciainforma`, `atendimentoaocliente`, e os que o projeto Virapark usou: `techblog`,
+   `revistadicas`, `snaptik`, `metaverso`). Dos dois que o projeto Movepark comprou, um post sumiu e o
+   outro portal saiu da base do WhitePress.
+3. **Já linka para o `movepark.co`: a compra nova pesa menos.** Pela regra da seção 4.1, domínio novo
+   vale mais que um segundo link do mesmo site. Já linkam: `ig.com.br` (qualquer subdomínio),
+   `uol.com.br`, `r7.com`, `uai.com.br`, `sul21.com.br`, `gazetaweb.com`, `guiafloripa.com.br`,
+   `mamrio.org.br`, `futebolinterior.com.br`, `aguabrancaemfoco.com.br`, `gazetadasemana.com.br`,
+   `culturaenegocios.com.br`, `oparana.com.br` e, fora do WhitePress, `carpemundi.com.br`,
+   `guarulhostododia.com.br`, `administradores.com.br`, `pousadasincriveis.com`,
+   `quantocustaviajar.com`, `blogvambora.com.br`, `viajoteca.com`, `vivaomundo.com.br`,
+   `somosnoticia.com.br`, `guiaviajarmelhor.com.br`, `diariodoturismo.com.br` e `egobrazil.com.br`.
+
+**Cruzamento com a lista da seção 4.1.** Só dois nomes batem:
+
+- **`carpemundi.com.br` (Conteúdo 78): mantido.** Ele já linka a ficha do Ponce Park em 10 posts, fora
+  do WhitePress. Decisão do Diego em 13/10/2026: a compra segue, porque o link novo vai para
+  `/estacionamentos/aeroporto-viracopos`, página que o carpemundi ainda não linka. É exceção ao filtro
+  3, registrada aqui para não virar precedente silencioso.
+- **`diariodoturismo.com.br` (reserva de Guarulhos):** já linka a ficha do Ponce Park. Se a reserva
+  for usada, a decisão cabe na Conteúdo 66; o `turistaprofissional.com` não tem esse conflito.
 
 ## 5. O plano
 
@@ -311,7 +455,8 @@ site); o domínio não está na lista tóxica da Conteúdo 63.
   [monitoramento-posicao.md](./monitoramento-posicao.md).
 - **[Conteúdo 63](https://app.clickup.com/t/17tn9e9gfgz):** origem do pico de agosto e setembro e auditoria de toxicidade. Disavow **só**
   de rede claramente spam (âncora de venda de link, domínio sem conteúdo, sub-rede repetida), nunca
-  em massa.
+  em massa. **Feito em 13/10/2026** (seção 2.7): pico explicado, disavow de 73 domínios enviado, as 37
+  compras conferidas e a lista de exclusão na seção 4.2.
 
 ### 5.2 Semanas 2 a 4: aproveitar o que já temos
 
