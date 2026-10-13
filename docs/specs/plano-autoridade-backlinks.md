@@ -263,9 +263,11 @@ Três leituras:
    `ig`, `uol`, `r7` e `uai` mostram o AS da raiz (72 a 98), não o da seção que publica, como a seção
    4.1 já alertava.
 
-O AS de hoje saiu da ficha de cada portal no próprio WhitePress (Semrush, setembro de 2026) para 12 dos
-25 portais. Os outros 13 ficaram sem número: o `agenciainforma.app.br` saiu da base do WhitePress, e no
-meio das consultas o WhitePress pediu verificação de conta por e-mail (ver pendências).
+O AS de hoje saiu da ficha de cada portal no próprio WhitePress (Semrush, setembro de 2026) para 15 dos
+25 portais. Fora os já citados, `futebolinterior.com.br` tem AS 51 e 482 mil visitas por mês,
+`guiafloripa.com.br` tem AS 37 e `followthecolours.com.br` tem AS 29 e 2 mil visitas. Os outros 10
+ficaram sem número: o `agenciainforma.app.br` saiu da base do WhitePress, e o WhitePress pediu
+verificação de conta por e-mail duas vezes no meio das consultas (ver pendências).
 
 **De onde vem a autoridade da ficha do Ponce Park.** O Search Console lista 27 sites linkando para
 ela: 10 editoriais de viagem fora do WhitePress (o `carpemundi.com.br` com 10 posts), 13 de spam de
@@ -275,9 +277,13 @@ Guarulhos é menor do que o número sugere.
 
 **Pendências.**
 
-- **AS de 13 portais comprados.** O WhitePress mandou um e-mail de verificação de conta depois da
-  sequência de consultas; quem tiver acesso ao e-mail da conta confirma, e os 13 dá para ler à mão na
-  ficha de cada portal.
+- **AS de 9 portais comprados:** `mamrio.org.br`, `aguabrancaemfoco.com.br`, `gazetadasemana.com.br`,
+  `culturaenegocios.com.br`, `oparana.com.br`, `1news.correiobraziliense.com.br`,
+  `agendaculturalporto.org`, `egobrazil.com.br` e `atendimentoaocliente.app.br`. O WhitePress trava a
+  base de ofertas e pede verificação por e-mail depois de umas quatro fichas seguidas, mesmo com pausa
+  de 10 segundos, e a visão geral de domínio do Semrush esbarrou no aviso de sessões demais na mesma
+  conta. Dá para ler à mão, poucas fichas por dia. Nenhum dos 9 muda decisão: nenhum entra em
+  disavow, e o status do link de cada um já está na planilha.
 - **Rede 1 completa.** Só no plano pago do Semrush. A revisão de 30 dias (Conteúdo 73) reconfere pelo
   Search Console.
 - **Os dois saltos do `aeromixparkestacionamento.com`.** Regra na zona do Cloudflare, fora do repo.
