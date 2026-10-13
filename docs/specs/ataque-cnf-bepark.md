@@ -275,7 +275,8 @@ BePark, junto do Conteúdo 54.
 cliente "chama o transfer pelo WhatsApp". Não há WhatsApp da van cadastrado, e pelo mapa de atendimento
 dos donos a van não é chamada: ela sai a cada 20 minutos do ponto fixo (plataforma da Expresso Unir, piso
 inferior). A frase saiu e entraram os dois números da ficha. A FAQ irmã de Viracopos tem a mesma frase e
-não foi mexida, porque o canal do Virapark e do Garageinn não foi conferido.
+fica como está: no Virapark e no Garageinn a van é chamada pelo serviço da Go2Park (confirmado pelo
+Diego em 13/10/2026).
 
 **O que ficou aberto:**
 

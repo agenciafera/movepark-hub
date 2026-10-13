@@ -149,7 +149,9 @@ mapa em tempo real, aviso de proximidade e acesso sem app. Não afirma canal ("v
 WhatsApp"), porque o canal varia por unidade e não está modelado aqui. A regra vale também para
 FAQ e post: a FAQ de destino de Confins dizia que o cliente "chama o transfer pelo WhatsApp", e
 saiu em 09/10/2026, porque a van da BePark sai do ponto fixo a cada 20 minutos e não é chamada. A
-FAQ irmã de Viracopos tem a mesma frase e o canal ali ainda não foi conferido. Também não afirma que
+FAQ irmã de Viracopos tem a mesma frase e está certa: no Virapark e no Garageinn a van é chamada pelo
+serviço da Go2Park (confirmado pelo Diego em 13/10/2026). É a prova de que o canal varia por unidade,
+mesmo com o mesmo contrato. Também não afirma que
 nenhum concorrente tem o mesmo: é verdade hoje, seria falso no dia em que um vizinho contratar, e
 a diferença já fica visível pelo card ao lado sem o selo.
 
