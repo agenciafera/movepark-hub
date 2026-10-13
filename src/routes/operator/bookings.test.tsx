@@ -23,6 +23,8 @@ vi.mock("@/features/wl-bookings/api", async (importOriginal) => {
   return { ...actual, useWlBookingActions: () => wlPerms, useWlBookingAction: () => ({ mutateAsync: wlMutate }) };
 });
 vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: vi.fn() }));
+const unidades = { data: [] as { id: string; name: string }[] };
+vi.mock("@/features/locations/api", () => ({ useOperatorLocations: () => unidades }));
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-router-dom")>();
@@ -78,6 +80,7 @@ function setup(opts: {
   hasWl: boolean;
   rows: UnifiedBookingRow[];
   total?: number;
+  route?: string;
 }) {
   vi.mocked(useHasWl).mockReturnValue({ hasWl: opts.hasWl, isLoading: false });
   vi.mocked(useBookingsPage).mockReturnValue({
@@ -86,7 +89,7 @@ function setup(opts: {
   } as never);
   renderWithProviders(<OperatorBookings />, {
     auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: () => true }),
-    route: "/operator/bookings",
+    route: opts.route ?? "/operator/bookings",
   });
 }
 
@@ -176,5 +179,39 @@ describe("OperatorBookings · ação em massa sem permissão", () => {
       route: "/operator/bookings",
     });
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("OperatorBookings · filtros no endereço (13/10/2026)", () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it("filtros e página vêm da URL: sobrevivem ao F5", () => {
+    setup({ hasWl: true, rows: [], route: "/operator/bookings?status=cancelled&origem=wl&pagina=2&q=ana" });
+    const f = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
+    expect(f).toMatchObject({ status: ["cancelled"], source: "wl", page: 2, search: "ana" });
+    expect(screen.getByLabelText("Busca")).toHaveValue("ana");
+  });
+
+  it("Limpar filtros volta tudo ao padrão e para a primeira página", async () => {
+    setup({ hasWl: true, rows: [], route: "/operator/bookings?status=cancelled&pagina=2" });
+    await userEvent.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    const f = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
+    expect(f).toMatchObject({ status: undefined, page: 0 });
+    expect(screen.getByRole("button", { name: "Limpar filtros" })).toBeDisabled();
+  });
+
+  it("filtro de unidade só aparece com mais de uma, e recorta pela escolhida", () => {
+    unidades.data = [{ id: "loc-1", name: "Afonso Pena" }, { id: "loc-2", name: "Congonhas" }];
+    setup({ hasWl: false, rows: [], route: "/operator/bookings?unidade=loc-2" });
+    expect(screen.getByLabelText("Unidade")).toBeInTheDocument();
+    expect(vi.mocked(useBookingsPage).mock.calls.at(-1)![0].locationIds).toEqual(["loc-2"]);
+    unidades.data = [];
+  });
+
+  it("com uma unidade só, nada de filtro de unidade", () => {
+    unidades.data = [{ id: "loc-1", name: "Afonso Pena" }];
+    setup({ hasWl: false, rows: [] });
+    expect(screen.queryByLabelText("Unidade")).not.toBeInTheDocument();
+    unidades.data = [];
   });
 });

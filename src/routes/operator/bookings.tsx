@@ -1,5 +1,9 @@
 import * as React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useUrlFilters } from "@/lib/useUrlFilters";
+import { hasActiveFilters } from "@/lib/urlFilters.logic";
+import { useOperatorLocations } from "@/features/locations/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,22 +40,34 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
 
 const PAGE_SIZE = 50;
 
+/** Filtros da lista no endereço, com o valor padrão de cada um (padrão não vai para a URL). */
+const FILTROS = {
+  q: "",
+  status: "all",
+  origem: "all",
+  de: "",
+  ate: "",
+  unidade: "all",
+  pagina: "0",
+};
+
 /**
  * Reservas do estacionamento: uma lista só, com as do Hub e, para quem tem white-label, as do
  * site, cada uma com a sua etiqueta (reservas-unificadas-hub-wl.md § 3). Quem não tem white-label
  * vê a tela como sempre foi: sem etiqueta, sem filtro de origem.
  */
 export default function OperatorBookings() {
-  // A command palette manda o código da reserva em `?q=`. Semear o estado a
-  // partir dele é o que faz o resultado da busca abrir já filtrado, já que o
-  // painel não tem rota de detalhe de reserva.
-  const [searchParams] = useSearchParams();
-  const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
-  const [status, setStatus] = React.useState<BookingStatus | "all">("all");
-  const [source, setSource] = React.useState<SourceFilter>("all");
-  const [from, setFrom] = React.useState("");
-  const [to, setTo] = React.useState("");
-  const [page, setPage] = React.useState(0);
+  // Filtros no endereço (13/10/2026): sobrevivem ao F5 e viajam no link. A command palette manda
+  // o código da reserva em `?q=`, a mesma chave da busca.
+  const { filters: f, set, clear } = useUrlFilters(FILTROS, "pagina");
+  const search = f.q;
+  const status = f.status as BookingStatus | "all";
+  const source = f.origem as SourceFilter;
+  const from = f.de;
+  const to = f.ate;
+  const unidade = f.unidade;
+  const page = Math.max(0, Number(f.pagina) || 0);
+  const temFiltro = hasActiveFilters(f, FILTROS, ["pagina"]);
   const navigate = useNavigate();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const { hasWl } = useHasWl();
@@ -63,13 +79,18 @@ export default function OperatorBookings() {
     hasScope("bookings:checkin", companyId) || hasScope("bookings:write", companyId);
   const wlPerms = useWlBookingActions(hasWl ? companyId : undefined);
   const wlAttendance = !!wlPerms.data?.enabled && !!wlPerms.data?.attendance;
+  // Filtro de unidade só quando a empresa tem mais de uma (com uma, não há o que escolher).
+  const locations = useOperatorLocations(
+    impersonatedCompanyId ? [impersonatedCompanyId] : effectiveCompanyIds,
+  );
+  const unidades = locations.data ?? [];
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
 
   const filters: BookingPageFilters = React.useMemo(
     () => ({
       status: status === "all" ? undefined : [status],
       search: search || undefined,
-      locationIds: scopedLocationIds,
+      locationIds: unidade !== "all" ? [unidade] : scopedLocationIds,
       // Admin impersonando: recorta pela empresa também (a reserva do site sem vaga não tem unidade).
       companyIds: impersonatedCompanyId ? [impersonatedCompanyId] : undefined,
       source: hasWl ? source : "hub",
@@ -81,12 +102,22 @@ export default function OperatorBookings() {
       page,
       pageSize: PAGE_SIZE,
     }),
-    [status, search, scopedLocationIds, impersonatedCompanyId, hasWl, source, from, to, page],
+    [
+      status,
+      search,
+      unidade,
+      scopedLocationIds,
+      impersonatedCompanyId,
+      hasWl,
+      source,
+      from,
+      to,
+      page,
+    ],
   );
 
-  // Filtro novo volta para a primeira página.
-  const filtroKey = [status, search, source, from, to, impersonatedCompanyId].join("|");
-  React.useEffect(() => setPage(0), [filtroKey]);
+  // Filtro novo volta para a primeira página (feito em `set`, ver useUrlFilters).
+  const filtroKey = [status, search, source, from, to, unidade, impersonatedCompanyId].join("|");
   // A seleção é da página que está na tela: muda o recorte ou a página, ela zera.
   React.useEffect(() => setSelected(new Set()), [filtroKey, page]);
 
@@ -117,7 +148,7 @@ export default function OperatorBookings() {
                 hasWl ? "Código, pedido, nome ou placa" : "Código, nome, e-mail ou telefone"
               }
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => set({ q: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -126,7 +157,7 @@ export default function OperatorBookings() {
               id="from"
               type="date"
               value={from}
-              onChange={(e) => setFrom(e.target.value)}
+              onChange={(e) => set({ de: e.target.value })}
               className="w-40"
             />
           </div>
@@ -137,13 +168,13 @@ export default function OperatorBookings() {
               type="date"
               value={to}
               min={from || undefined}
-              onChange={(e) => setTo(e.target.value)}
+              onChange={(e) => set({ ate: e.target.value })}
               className="w-40"
             />
           </div>
           <div className="flex w-full flex-col gap-1.5 tablet:w-48">
             <Label htmlFor="booking-status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus | "all")}>
+            <Select value={status} onValueChange={(v) => set({ status: v })}>
               <SelectTrigger id="booking-status">
                 <SelectValue />
               </SelectTrigger>
@@ -159,7 +190,7 @@ export default function OperatorBookings() {
           {hasWl && (
             <div className="flex w-full flex-col gap-1.5 tablet:w-40">
               <Label htmlFor="booking-source">Origem</Label>
-              <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
+              <Select value={source} onValueChange={(v) => set({ origem: v })}>
                 <SelectTrigger id="booking-source">
                   <SelectValue />
                 </SelectTrigger>
@@ -173,6 +204,27 @@ export default function OperatorBookings() {
               </Select>
             </div>
           )}
+          {unidades.length > 1 && (
+            <div className="flex w-full flex-col gap-1.5 tablet:w-48">
+              <Label htmlFor="booking-unit">Unidade</Label>
+              <Select value={unidade} onValueChange={(v) => set({ unidade: v })}>
+                <SelectTrigger id="booking-unit">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {unidades.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button variant="secondary" onClick={clear} disabled={!temFiltro}>
+            Limpar filtros
+          </Button>
         </CardContent>
       </Card>
 
@@ -196,7 +248,12 @@ export default function OperatorBookings() {
         onSelectedChange={canCheckin ? setSelected : undefined}
       />
 
-      <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
+      <BookingsPager
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={data?.total ?? 0}
+        onPage={(p) => set({ pagina: String(p) })}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,24 @@ import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { periodLabel } from "@/features/manager-filters/managerFilters.logic";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
-import { useBookingsPage, useBookingsSummary, withoutPage, type BookingPageFilters } from "@/features/bookings/api";
+import {
+  useBookingsPage,
+  useBookingsSummary,
+  withoutPage,
+  type BookingPageFilters,
+} from "@/features/bookings/api";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
-import { CHANNEL_LABEL, type ChannelFilter, type PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
+import {
+  CHANNEL_LABEL,
+  type ChannelFilter,
+  type PaymentMethodFilter,
+} from "@/features/bookings/bookingList.logic";
 import { formatBRL } from "@/lib/format";
+import { useUrlFilters } from "@/lib/useUrlFilters";
+import { hasActiveFilters } from "@/lib/urlFilters.logic";
+import { useCompanies } from "@/features/companies/api";
 import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
@@ -45,8 +57,22 @@ const paymentOptions: { value: PaymentMethodFilter | "all"; label: string }[] = 
 
 const channelOptions: { value: ChannelFilter | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
-  ...(Object.keys(CHANNEL_LABEL) as ChannelFilter[]).map((k) => ({ value: k, label: CHANNEL_LABEL[k] })),
+  ...(Object.keys(CHANNEL_LABEL) as ChannelFilter[]).map((k) => ({
+    value: k,
+    label: CHANNEL_LABEL[k],
+  })),
 ];
+
+/** Filtros da lista no endereço, com o valor padrão de cada um (padrão não vai para a URL). */
+const FILTROS = {
+  q: "",
+  status: "all",
+  pagamento: "all",
+  canal: "all",
+  origem: "all",
+  estacionamento: "all",
+  pagina: "0",
+};
 
 /** Página da lista. O servidor pagina e devolve o total e o resumo do recorte inteiro. */
 const PAGE_SIZE = 50;
@@ -62,14 +88,17 @@ function Numero({ label, value, hint }: { label: string; value: React.ReactNode;
 }
 
 export default function ManagerBookings() {
-  // A command palette manda o código da reserva em `?q=` (ver operator/bookings).
-  const [searchParams] = useSearchParams();
-  const [search, setSearch] = React.useState(() => searchParams.get("q") ?? "");
-  const [status, setStatus] = React.useState<BookingStatus | "all">("all");
-  const [payment, setPayment] = React.useState<PaymentMethodFilter | "all">("all");
-  const [channel, setChannel] = React.useState<ChannelFilter | "all">("all");
-  const [source, setSource] = React.useState<SourceFilter>("all");
-  const [page, setPage] = React.useState(0);
+  // Filtros no endereço (13/10/2026): sobrevivem ao F5 e viajam no link. A command palette manda
+  // o código da reserva em `?q=`, a mesma chave da busca.
+  const { filters: f, set, clear } = useUrlFilters(FILTROS, "pagina");
+  const search = f.q;
+  const status = f.status as BookingStatus | "all";
+  const payment = f.pagamento as PaymentMethodFilter | "all";
+  const channel = f.canal as ChannelFilter | "all";
+  const source = f.origem as SourceFilter;
+  const companyId = f.estacionamento;
+  const page = Math.max(0, Number(f.pagina) || 0);
+  const companies = useCompanies();
   const navigate = useNavigate();
   const { period, range, scopedLocationIds } = useManagerFilters();
 
@@ -87,31 +116,25 @@ export default function ManagerBookings() {
       paymentMethod: payment === "all" ? undefined : payment,
       channel: channel === "all" ? undefined : channel,
       locationIds: scopedLocationIds,
+      companyIds: companyId === "all" ? undefined : [companyId],
       from: term ? undefined : range.from.toISOString(),
       to: term ? undefined : range.to.toISOString(),
       dateField: "created_at",
       page,
       pageSize: PAGE_SIZE,
     }),
-    [source, status, term, payment, channel, scopedLocationIds, range, page],
+    [source, status, term, payment, channel, companyId, scopedLocationIds, range, page],
   );
-
-  const filtroKey = [source, status, term, payment, channel, range.from.toISOString(), range.to.toISOString()].join("|");
-  React.useEffect(() => setPage(0), [filtroKey]);
 
   const { data, isLoading } = useBookingsPage(filters);
   // Resumo à parte, sem a página na chave: trocar de página não refaz a conta.
   const resumoQ = useBookingsSummary(withoutPage(filters));
   const hub = resumoQ.data?.hub;
   const wl = resumoQ.data?.wl;
-  const temFiltro = !!term || status !== "all" || payment !== "all" || channel !== "all" || source !== "all";
+  const temFiltro = hasActiveFilters(f, FILTROS, ["pagina"]);
 
   function limpar() {
-    setSearch("");
-    setStatus("all");
-    setPayment("all");
-    setChannel("all");
-    setSource("all");
+    clear();
   }
 
   return (
@@ -136,7 +159,7 @@ export default function ManagerBookings() {
       />
 
       <Card>
-        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto] desktop:items-end">
+        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_auto] desktop:items-end">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="search">Busca</Label>
             <Input
@@ -144,12 +167,28 @@ export default function ManagerBookings() {
               type="search"
               placeholder="Código, nome, e-mail ou telefone"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => set({ q: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="booking-company">Estacionamento</Label>
+            <Select value={companyId} onValueChange={(v) => set({ estacionamento: v })}>
+              <SelectTrigger id="booking-company">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {(companies.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="booking-status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus | "all")}>
+            <Select value={status} onValueChange={(v) => set({ status: v })}>
               <SelectTrigger id="booking-status">
                 <SelectValue />
               </SelectTrigger>
@@ -164,7 +203,7 @@ export default function ManagerBookings() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="booking-payment">Pagamento</Label>
-            <Select value={payment} onValueChange={(v) => setPayment(v as PaymentMethodFilter | "all")}>
+            <Select value={payment} onValueChange={(v) => set({ pagamento: v })}>
               <SelectTrigger id="booking-payment">
                 <SelectValue />
               </SelectTrigger>
@@ -179,7 +218,7 @@ export default function ManagerBookings() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="booking-channel">Canal</Label>
-            <Select value={channel} onValueChange={(v) => setChannel(v as ChannelFilter | "all")}>
+            <Select value={channel} onValueChange={(v) => set({ canal: v })}>
               <SelectTrigger id="booking-channel">
                 <SelectValue />
               </SelectTrigger>
@@ -194,7 +233,7 @@ export default function ManagerBookings() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="booking-source">Origem</Label>
-            <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
+            <Select value={source} onValueChange={(v) => set({ origem: v })}>
               <SelectTrigger id="booking-source">
                 <SelectValue />
               </SelectTrigger>
@@ -227,7 +266,10 @@ export default function ManagerBookings() {
               value={hub.paid + wl.paid}
               hint={
                 hub.paid || wl.paid
-                  ? [hub.paid ? `${hub.pix} no PIX, ${hub.card} no cartão` : null, wl.paid ? `${wl.paid} no white-label` : null]
+                  ? [
+                      hub.paid ? `${hub.pix} no PIX, ${hub.card} no cartão` : null,
+                      wl.paid ? `${wl.paid} no white-label` : null,
+                    ]
                       .filter(Boolean)
                       .join("; ")
                   : undefined
@@ -245,7 +287,9 @@ export default function ManagerBookings() {
             <Numero
               label="Não pagaram no Hub"
               value={hub.lost}
-              hint={hub.awaiting ? `e ${hub.awaiting} aguardando pagamento` : "expiradas ou recusadas"}
+              hint={
+                hub.awaiting ? `e ${hub.awaiting} aguardando pagamento` : "expiradas ou recusadas"
+              }
             />
           </CardContent>
         </Card>
@@ -258,12 +302,21 @@ export default function ManagerBookings() {
         rows={data?.rows}
         isLoading={isLoading}
         showSource
-        emptyDescription={temFiltro ? "Nenhuma reserva bate com esses filtros. Limpe os filtros ou mude o período." : undefined}
+        emptyDescription={
+          temFiltro
+            ? "Nenhuma reserva bate com esses filtros. Limpe os filtros ou mude o período."
+            : undefined
+        }
         onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
         onWlRowClick={(w) => navigate(`/manager/bookings/site/${w.id}`)}
       />
 
-      <BookingsPager page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
+      <BookingsPager
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={data?.total ?? 0}
+        onPage={(p) => set({ pagina: String(p) })}
+      />
     </div>
   );
 }
