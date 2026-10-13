@@ -17,7 +17,7 @@ import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { periodLabel } from "@/features/manager-filters/managerFilters.logic";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { GuaranteeClaimsCard } from "@/features/guarantee/GuaranteeClaimsCard";
-import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
+import { useBookingsPage, useBookingsSummary, withoutPage, type BookingPageFilters } from "@/features/bookings/api";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
@@ -100,8 +100,10 @@ export default function ManagerBookings() {
   React.useEffect(() => setPage(0), [filtroKey]);
 
   const { data, isLoading } = useBookingsPage(filters);
-  const hub = data?.summary.hub;
-  const wl = data?.summary.wl;
+  // Resumo à parte, sem a página na chave: trocar de página não refaz a conta.
+  const resumoQ = useBookingsSummary(withoutPage(filters));
+  const hub = resumoQ.data?.hub;
+  const wl = resumoQ.data?.wl;
   const temFiltro = !!term || status !== "all" || payment !== "all" || channel !== "all" || source !== "all";
 
   function limpar() {

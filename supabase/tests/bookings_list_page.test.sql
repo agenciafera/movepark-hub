@@ -12,7 +12,7 @@
 --   7. a anon key não executa.
 
 begin;
-select plan(17);
+select plan(20);
 
 do $$
 declare
@@ -109,6 +109,9 @@ select is(
 select is(
   (select public.bookings_list_page(p_search => 'xyz-9k88') -> 'items' -> 0 -> 'wl' ->> 'wl_order_number'),
   'BLP-0002', 'busca acha a placa do site com hífen');
+select ok(
+  (select public.bookings_list_page(p_date_field => 'created_at', p_with_summary => false) -> 'summary' = 'null'::jsonb),
+  'sem resumo quando a página não pede (o resumo não muda entre páginas)');
 select is(
   (select (public.bookings_list_page(p_source => 'hub') ->> 'total')::int), 2,
   'filtro de origem Hub');
@@ -134,12 +137,17 @@ select is(
   'e o resumo do site sai zerado');
 select is((select count(*)::int from public.wl_booking), 0,
   'e nem lendo a tabela direto');
+-- Busca (13/10/2026): a busca no site roda sem RLS por desempenho, mas recorta ela mesma.
+select is((select cardinality(public.wl_booking_search_ids('BLP', 'BLP'))), 0,
+  'a busca rápida do site não acha pedido de outra empresa');
 reset role;
 
 -- ── 7. anon ──────────────────────────────────────────────────────────────────
+select ok(not has_function_privilege('anon', 'public.wl_booking_search_ids(text, text)', 'execute'),
+  'a anon key não executa a busca do site');
 select ok(
   not has_function_privilege('anon',
-    'public.bookings_list_page(text, text[], uuid[], uuid[], text, timestamptz, timestamptz, text, text, text[], boolean, integer, integer)',
+    'public.bookings_list_page(text, text[], uuid[], uuid[], text, timestamptz, timestamptz, text, text, text[], boolean, integer, integer, boolean)',
     'execute'),
   'a anon key não executa');
 

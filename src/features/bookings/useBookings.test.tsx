@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { fetchBookingsForExport, useBookingsPage, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
+import { fetchBookingsForExport, useBookingsPage, useBookingsSummary, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
 import { supabase } from "@/lib/supabase";
 import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import { vi } from "vitest";
@@ -43,6 +43,7 @@ describe("useBookingsPage (lista única, 09/10/2026)", () => {
       p_partner_view: true,
       p_limit: 50,
       p_offset: 100,
+      p_with_summary: false,
     });
   });
 
@@ -102,6 +103,18 @@ describe("useBookingsPage (lista única, 09/10/2026)", () => {
     falha("rpc", "bookings_list_page", 403, "Autenticação necessária.");
     const { result } = renderMutation(() => useBookingsPage({ page: 0, pageSize: 50 }));
     await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe("useBookingsSummary (desempenho, 13/10/2026)", () => {
+  it("pede o resumo uma vez, com uma linha só, e a chave não depende da página", async () => {
+    const fn = rpc("bookings_list_page", {
+      json: { total: 3, items: [], summary: { hub: { total: 1 }, wl: { total: 2, paid: 1, paid_amount: 10 } } },
+    });
+    const { result } = renderMutation(() => useBookingsSummary({ dateField: "created_at" }));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fn.ultimoBody).toMatchObject({ p_with_summary: true, p_limit: 1, p_offset: 0 });
+    expect(result.current.data?.wl.total).toBe(2);
   });
 });
 

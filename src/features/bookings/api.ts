@@ -83,7 +83,7 @@ function rpc(fn: string, args: Record<string, unknown>) {
   return call(fn, args);
 }
 
-async function fetchBookingsPage(f: BookingPageFilters): Promise<BookingsPage> {
+async function fetchBookingsPage(f: BookingPageFilters, withSummary = false): Promise<BookingsPage> {
   const { data, error } = await rpc("bookings_list_page", {
     p_source: f.source ?? "all",
     p_statuses: f.status?.length ? f.status : null,
@@ -98,6 +98,8 @@ async function fetchBookingsPage(f: BookingPageFilters): Promise<BookingsPage> {
     p_partner_view: f.partnerView ?? false,
     p_limit: f.pageSize,
     p_offset: f.page * f.pageSize,
+    // O resumo do recorte não muda de uma página para outra: só `useBookingsSummary` o pede.
+    p_with_summary: withSummary,
   });
   if (error) throw new Error(error.message);
   const r = (data ?? {}) as {
@@ -167,6 +169,26 @@ export function useBookingsPage(filters: BookingPageFilters) {
   return useQuery({
     queryKey: [...bookingsKeys.all, "page", filters] as const,
     queryFn: () => fetchBookingsPage(filters),
+    placeholderData: (prev) => prev,
+  });
+}
+
+/** Os filtros do recorte, sem a página (chave do resumo, que não muda entre páginas). */
+export function withoutPage(f: BookingPageFilters): Omit<BookingPageFilters, "page" | "pageSize"> {
+  const r: Partial<BookingPageFilters> = { ...f };
+  delete r.page;
+  delete r.pageSize;
+  return r as Omit<BookingPageFilters, "page" | "pageSize">;
+}
+
+/**
+ * Resumo do recorte (números por origem), uma vez por conjunto de filtros: a chave não leva a
+ * página, então trocar de página não refaz a conta (13/10/2026, desempenho da lista única).
+ */
+export function useBookingsSummary(filters: Omit<BookingPageFilters, "page" | "pageSize">) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "summary", filters] as const,
+    queryFn: async () => (await fetchBookingsPage({ ...filters, page: 0, pageSize: 1 }, true)).summary,
     placeholderData: (prev) => prev,
   });
 }

@@ -77,6 +77,18 @@ estacionamento (`p_partner_view`) é a mesma regra de `partnerSeesBooking`: no H
 venda; no site, pedido pago (`confirmed`, `refund_requested`, `refunded`). Tempo medido no banco
 vivo: admin na rede inteira em 30 dias, 353 ms; dono da Garageinn, tudo, 622 ms.
 
+**Desempenho (13/10/2026, migration `20261129160000_lista_reservas_desempenho.sql`).** A lista
+ficava lenta porque o lado do site (133 mil pedidos) era recalculado inteiro a cada página. Cinco
+causas, medidas no banco vivo como usuário logado (não como dono do banco, que não passa pela RLS):
+a linha da página procurada dentro do recorte sem índice; o recorte carregando os jsonb da ficha; o
+filtro de data dentro de um CASE; a tradução de status por uma função com `SET search_path`, que o
+planner não embute (1,2 s nas 133 mil linhas); e a busca, que com a RLS no caminho não podia usar
+índice. Agora: linha da página pela chave, colunas enxutas, data direto na coluna, status escrito
+na consulta, busca por índice trigram numa função própria (`wl_booking_search_ids`, que recorta ela
+mesma pelas empresas visíveis e devolve só ids) e o resumo à parte (`p_with_summary`; no front,
+`useBookingsSummary`, sem a página na chave). Resultado: Manager 30 dias de ~500 ms para 60 ms, troca
+de página 50 ms, 90 dias de 1,1 s para 118 ms, busca de 1 s para 115 ms, placa de 1,4 s para 8 ms.
+
 No front, "tem white-label" é `useHasWl()` (`src/features/companies/useHasWl.ts`, regra pura em
 `hasWl.logic.ts`): hub_admin sem impersonar sempre tem; os demais olham `wl_domain` das empresas
 que enxergam. Etiqueta, filtro de origem, tooltip da ocupação, origem no card de comissão e o selo
