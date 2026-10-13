@@ -33,21 +33,21 @@ Três regras guiam tudo abaixo:
 
 Uma regra só, usada em todo lugar: **a empresa tem white-label quando `company.wl_domain` está
 preenchido.** O parceiro já consegue ler essa coluna (está em `COMPANY_COLUMNS`). O front ganha um
-helper único (`useCompanyHasWl(companyId)` ou equivalente no `useAuth`) e todo elemento ligado ao
+helper único (`useHasWl()`, em `src/features/companies/useHasWl.ts`) e todo elemento ligado ao
 white-label passa por ele. No servidor, as RPCs que devolvem reservas do site conferem o mesmo.
 
-Hoje isso não é cumprido em todos os lugares. O que vaza ou pode vazar para quem não tem
-white-label, medido em 09/10/2026:
+O que vazava para quem não tem white-label, medido em 09/10/2026 (todos corrigidos na fase 1, no
+mesmo dia):
 
 | Onde | O que aparece | Situação |
 |---|---|---|
-| Ocupação (`OccupancyCalendar.tsx:149`) | tooltip "Hub: N / White-label: 0" em todo dia | **vaza hoje para todo parceiro** |
-| Lista de reservas (`BookingTable.tsx:79,90`) | rótulo "White-label" quando `booking.origin='white_label'` | sem trava; não dispara porque não há reserva com essa origem |
-| Comissão da reserva (`BookingCommissionCard.tsx`) | "Onde reservou: Site white-label do estacionamento" | sem trava; idem |
-| Canais de venda (`PartnerChannelsCard.tsx:76`) | selo "vale também no seu site Movepark" | depende de regra com `match_white_label`, que não exige `wl_domain` |
-| Escopo `wl-bookings:read` | dado aos 4 papéis de **toda** empresa | não distingue quem tem white-label; a trava real é o dado |
+| Ocupação (`OccupancyCalendar.tsx:149`) | tooltip "Hub: N / White-label: 0" em todo dia | corrigido: só com `useHasWl` |
+| Lista de reservas (`BookingTable.tsx:79,90`) | rótulo "White-label" quando `booking.origin='white_label'` | corrigido: o canal "White-label" só aparece com `useHasWl` |
+| Comissão da reserva (`BookingCommissionCard.tsx`) | "Onde reservou: Site white-label do estacionamento" | corrigido: a linha some sem white-label |
+| Canais de venda (`PartnerChannelsCard.tsx:76`) | selo "vale também no seu site Movepark" | corrigido: o selo exige `useHasWl` |
+| Escopo `wl-bookings:read` | dado aos 4 papéis de **toda** empresa | a leitura de `wl_booking` passou a exigir também `wl_domain` (`wl_visible_company_ids`) |
 
-Todos passam a usar a regra do § 2.
+Todos usam a regra do § 2.
 
 ## 3. Passo 1: a lista unificada
 
@@ -331,3 +331,37 @@ origem própria.
 
 Consequência do D4b revista no § 6: a linha "Comissão da Movepark" do white-label continua "não
 existe". O faturamento do site aparece (separado por origem), a comissão não.
+
+## 10. O que ficou de fora (revisão de 13/10/2026)
+
+Revisão depois das fases 1 a 6. Nada abaixo trava o uso; é o que o § 4 pedia e não entrou.
+
+**Lista**
+- Filtros do backoffice do site ainda sem par no Hub: comparecimento, PCD, forma de pagamento do
+  site (o filtro de pagamento atual é só do Hub e tira o site), produtos (adicionais), afiliado e
+  UTM, "com troca de placa".
+- Busca pela placa anterior (`plate_change`) e pelo modelo do veículo.
+- Indicadores no topo da lista do Operator (o Manager já tem o resumo por origem).
+- "Limpar comparecimento" em massa (a ação em massa faz "chegou" e "não veio"; desfazer é um a um,
+  no detalhe).
+
+**Detalhe**
+- Botão de voucher na reserva do Hub (no Manager/Operator) e "gerar novo voucher" na reserva do site
+  (exige rota nova no legado).
+- Dados do pagamento e `extra_data` do site para a equipe (o § 4.2 deixava como "se trouxermos").
+
+**Dados**
+- 32 pedidos do site sem unidade/vaga (pedido sem nenhum produto no site) e 257 sem itens: limitação
+  do próprio pedido no legado, não da cópia.
+- Histórico do site que muda sem mexer no pedido não move o cursor da importação (nota manual
+  isolada); só chega na próxima alteração do pedido.
+
+**Legado (§ 6 de `reservas-wl-no-hub.md`), fora do escopo da integração mas aberto**
+- `GET account/order/transaction/{id}` e `PATCH webhook/orderconfirmation/callback` continuam sem
+  autenticação. O primeiro é usado pela tela de pós-pagamento do site (`movepark-nextjs`); fechar
+  exige mudar o site junto.
+- Token global do backend: decisão de 08/10/2026 de não rotacionar.
+
+**Limpeza**
+- `operator_wl_bookings` e `operator_wl_bookings_count` (aba "Pelo seu site", removida na fase 2)
+  seguem no banco sem uso pela tela.
