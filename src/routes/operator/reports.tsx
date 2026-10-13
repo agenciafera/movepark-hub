@@ -240,10 +240,10 @@ export default function OperatorReports() {
                             dataKey="wl"
                             name="White-label"
                             stackId="origem"
-                            stroke="hsl(var(--mp-teal))"
+                            stroke="hsl(var(--mp-navy))"
                             strokeWidth={2}
                             fill="hsl(var(--mp-teal))"
-                            fillOpacity={0.15}
+                            fillOpacity={0.45}
                           />
                         )}
                       </AreaChart>

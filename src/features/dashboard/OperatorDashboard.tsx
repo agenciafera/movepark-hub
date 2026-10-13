@@ -557,10 +557,10 @@ export default function OperatorDashboard() {
                         type="monotone"
                         dataKey="wl"
                         stackId="origem"
-                        stroke="hsl(var(--mp-teal))"
+                        stroke="hsl(var(--mp-navy))"
                         strokeWidth={2}
                         fill="hsl(var(--mp-teal))"
-                        fillOpacity={0.15}
+                        fillOpacity={0.45}
                         dot={false}
                         activeDot={{ r: 4 }}
                       />
