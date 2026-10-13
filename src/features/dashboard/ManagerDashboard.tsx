@@ -405,7 +405,7 @@ export default function ManagerDashboard() {
             )}
           </div>
 
-          <div className="mt-6 h-[220px] flex-1">
+          <div className="mt-6 h-[220px] min-h-[220px] flex-1">
             {revenue.isLoading || wlQ.isLoading ? (
               <Skeleton className="h-full w-full" />
             ) : daily.length === 0 ? (
