@@ -15,6 +15,8 @@ import { Monogram, Wordmark } from "./Brand";
 import { useCompany } from "@/features/companies/api";
 import { useNetworkSize } from "@/features/locations/api";
 import { CompanySwitcher } from "./CompanySwitcher";
+import { OperatorCompanySwitcher } from "./OperatorCompanySwitcher";
+import { useCompanySwitch } from "@/features/companies/useCompanySwitch";
 
 /** Uma linha de menu que é link. Serve para item solto e para subitem. */
 function NavRow({
@@ -190,8 +192,8 @@ export function Sidebar({
   const contextName = company.data?.name ?? (variant === "manager" ? "Rede completa" : "Sua conta");
   // No manager sem impersonar, a linha de baixo é o tamanho da rede. Impersonando
   // ou no operator, o nome da empresa já diz tudo e a linha some: "Trocar unidade"
-  // esteve aqui e era promessa vazia, porque o painel do parceiro não troca de
-  // empresa ativa.
+  // esteve aqui e era promessa vazia. A troca de empresa do parceiro com mais de
+  // uma mora no `OperatorCompanySwitcher`, que só aparece quando há o que trocar.
   const contextDetail =
     variant === "manager" && !impersonatedCompanyId
       ? network.data
@@ -216,6 +218,8 @@ export function Sidebar({
       : 0;
 
   const impersonating = !!impersonatedCompanyId && session?.role === "hub_admin";
+  // Parceiro em mais de uma empresa: o bloco de contexto vira o seletor (13/10/2026).
+  const companySwitch = useCompanySwitch();
 
   return (
     <aside className="hidden h-full w-[76px] shrink-0 flex-col gap-6 overflow-y-auto bg-mp-navy px-3 py-6 tablet:flex tablet:rounded-lg desktop:w-72 desktop:px-4">
@@ -230,9 +234,12 @@ export function Sidebar({
       </div>
 
       {/* Contexto: de quem é a conta que está na tela. No manager ele também
-          troca de conta, que é o que o bloco sugere ao nomear a conta. */}
+          troca de conta, que é o que o bloco sugere ao nomear a conta. No
+          parceiro, só troca quando ele tem mais de uma empresa. */}
       {variant === "manager" ? (
         <CompanySwitcher name={contextName} detail={contextDetail} />
+      ) : companySwitch.enabled ? (
+        <OperatorCompanySwitcher name={contextName} />
       ) : (
         <div className="hidden items-center gap-3 rounded-md bg-white/[0.06] p-3 desktop:flex">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-mp-primary/25 text-white/80">

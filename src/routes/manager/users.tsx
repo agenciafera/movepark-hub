@@ -111,7 +111,15 @@ export default function ManagerUsers() {
         companyId: selectedCompany,
         role: selectedRole,
       });
-      toast.success("Empresa vinculada");
+      // Conta de cliente vinculada a uma empresa não entrava no painel do parceiro: a rota
+      // pede o papel de plataforma "Operador", e ele ficava "Cliente" até alguém trocar na
+      // mão (13/10/2026). O convite da equipe (`invite-company-member`) já promove assim.
+      if (linkingUser.role === "customer") {
+        await updateRole.mutateAsync({ id: linkingUser.id, role: "company_operator" });
+        toast.success("Empresa vinculada. Essa pessoa já entra no painel do parceiro.");
+      } else {
+        toast.success("Empresa vinculada");
+      }
       setLinkingUser(null);
       setSelectedCompany("");
       setSelectedRole("owner");

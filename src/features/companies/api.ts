@@ -88,6 +88,28 @@ export function useCompanies(enabled = true) {
   });
 }
 
+/**
+ * As empresas do próprio usuário, pelo id, para o seletor do painel do parceiro (13/10/2026).
+ * `useCompanies` não serve aqui: para quem não é hub_admin ele traz toda empresa ativa que a
+ * vitrine libera, e não só as dele.
+ */
+export function useMyCompanies(ids: string[], enabled = true) {
+  return useQuery({
+    queryKey: [...companiesKeys.all, "mine", ids] as const,
+    enabled: enabled && ids.length > 0,
+    queryFn: async (): Promise<Pick<Company, "id" | "name">[]> => {
+      const { data, error } = await supabase
+        .from("company")
+        .select("id, name")
+        .in("id", ids)
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 export function useCompany(id: string | undefined) {
   const isAdmin = useAuth().session?.role === "hub_admin";
   return useQuery({

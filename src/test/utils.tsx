@@ -35,6 +35,8 @@ export function mockAuth(overrides?: Partial<AuthContextValue>): AuthContextValu
     impersonatedCompanyId: null,
     effectiveRole: null,
     effectiveCompanyIds: [],
+    scopedCompanyId: null,
+    switchCompany: vi.fn(),
     companyRoleFor: () => null,
     isCompanyOwner: false,
     // Default permissivo: o contexto fake autoriza tudo; testes de permissão sobrescrevem.

@@ -207,6 +207,46 @@ hub_admin) e envia o magic link (`tplTeamInvite`). O Manager também escolhe o p
 usuário a uma empresa. Guarda de **último dono** atualizada: rebaixar o único dono para **qualquer**
 papel não-Dono é bloqueado.
 
+Vincular pelo Manager (**Usuários › Vincular empresa**) uma conta que ainda é **Cliente** a promove
+a **Operador** no mesmo clique (13/10/2026), como o convite já fazia. Antes ela ganhava o vínculo e
+continuava barrada no `/operator`, que pede o papel de plataforma `company_operator`. Quem já é
+Operador ou hub_admin não tem o papel tocado.
+
+## Usuário em mais de uma empresa (13/10/2026)
+
+O vínculo é por **empresa** (`profile_company`, chave `profile_id + company_id`) e não por unidade:
+quem é membro de uma empresa enxerga todas as unidades dela, e a mesma pessoa pode ser membro de
+várias, com um papel em cada. O servidor já respeitava isso, porque cada RPC checa o escopo na
+empresa da operação.
+
+O painel do parceiro não respeitava. Ele não tinha como trocar de empresa: as listas juntavam as
+duas (a RLS devolve tudo o que a pessoa enxerga) enquanto o nome no menu e o `hasScope` seguiam só
+a primeira, sem ordem definida. Quem era Dono numa e Operação na outra podia ver o menu do papel
+errado.
+
+**A regra:** o painel mostra **uma empresa de cada vez**.
+
+| Situação | Empresa em escopo no painel |
+|---|---|
+| Uma empresa só | Ela. Sem seletor, porque não há o que escolher |
+| Mais de uma | A **ativa**: a escolhida no aparelho, ou a mais antiga no vínculo se nada foi escolhido ou se o vínculo com a escolhida caiu |
+| hub_admin | Não tem empresa ativa. Ele troca de conta por impersonation (seletor do Manager) |
+
+- **Onde troca:** o bloco de contexto da sidebar vira seletor no desktop, e o menu do avatar ganha a
+  seção "Empresa" (é o caminho no tablet e no celular, onde a sidebar some ou vira só ícone). Cada
+  item mostra o papel da pessoa naquela empresa. Trocar volta ao início do painel, porque a tela
+  aberta podia ser de uma unidade ou reserva da empresa anterior.
+- **Onde fica a escolha:** `localStorage` (`mp:active-company-id`), como a impersonation. É
+  conveniência de aparelho, não autorização: a regra está em `resolveActiveCompanyId`
+  (`src/auth/activeCompany.ts`), que descarta empresa da qual a pessoa não é membro.
+- **Como o painel recorta:** `effectiveCompanyIds` passa a ser só a ativa, o que cobre as telas que
+  já filtravam por empresa. As que confiavam só na RLS usam `scopedCompanyId` (impersonada ou
+  ativa): `useScopedLocationIds` (dashboard e relatórios), o `p_company_ids` da lista de reservas e
+  a busca rápida (⌘K), que esconde resultado de outra empresa.
+- **Empresa sem unidade:** `useScopedLocationIds` devolve um id que não casa com nada
+  (`NO_LOCATION_ID`) em vez de lista vazia. Os hooks de relatório leem lista vazia como "sem
+  filtro", e a tela mostraria as outras empresas (ou a rede inteira, para o hub_admin impersonando).
+
 ## Compatibilidade
 
 A E1.6 fez backfill de `owner` por padrão, então os vínculos existentes seguem com acesso total; só
@@ -269,10 +309,14 @@ pública só do publicado e não excluído, com `is_hub_admin()` como segunda co
 
 - Migrations: `20260712000000_company_role_add_values.sql`, `20260713000000_permission_scopes.sql`,
   `20260714000000_regate_operator_rpcs.sql`.
-- Front: `src/auth/AuthProvider.tsx` (`hasScope`, `companyScopes`), `src/auth/RequireScope.tsx`,
-  `src/components/shared/Sidebar.{tsx,logic.ts}`, `src/features/team/{api,team.logic}.ts`,
-  `src/routes/operator/users.tsx`, `src/routes/manager/users.tsx`.
+- Front: `src/auth/AuthProvider.tsx` (`hasScope`, `companyScopes`, empresa ativa),
+  `src/auth/activeCompany.ts`, `src/auth/useScopedLocationIds.ts`, `src/auth/RequireScope.tsx`,
+  `src/components/shared/Sidebar.{tsx,logic.ts}`, `src/components/shared/OperatorCompanySwitcher.tsx`,
+  `src/components/shared/Topbar.tsx`, `src/features/companies/useCompanySwitch.ts`,
+  `src/features/team/{api,team.logic}.ts`, `src/routes/operator/users.tsx`,
+  `src/routes/manager/users.tsx`.
 - Edge: `supabase/functions/invite-company-member/`.
 - Testes: `supabase/tests/permissions.test.sql`, `operator_rpc_scope.test.sql`, `team.logic.test.ts`,
   `Sidebar.logic.test.ts`, `RequireScope.test.tsx`, `operator/users.test.tsx`,
-  `invite-company-member/logic.test.ts`.
+  `invite-company-member/logic.test.ts`, `activeCompany.test.ts`, `Sidebar.test.tsx` e
+  `Topbar.test.tsx` (seletor de empresa), `manager/users.test.tsx` (vínculo promove cliente).

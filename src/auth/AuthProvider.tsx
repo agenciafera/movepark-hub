@@ -5,8 +5,11 @@ import { storedPhoneToE164 } from "@/lib/identifiers";
 import type { CompanyRole, Session, UserRole } from "@/types/domain";
 import { AuthContext, type AuthContextValue } from "./context";
 import { recordLoginChannel } from "./loginChannel";
+import { resolveActiveCompanyId } from "./activeCompany";
 
 const IMPERSONATION_KEY = "mp:impersonated-company-id";
+/** Empresa ativa do operador com mais de uma (13/10/2026). Fica no aparelho, como a impersonation. */
+const ACTIVE_COMPANY_KEY = "mp:active-company-id";
 
 async function loadSession(): Promise<Session | null> {
   const { data: auth } = await supabase.auth.getUser();
@@ -19,7 +22,12 @@ async function loadSession(): Promise<Session | null> {
         .select("id, full_name, first_name, last_name, role")
         .eq("id", auth.user.id)
         .maybeSingle(),
-      supabase.from("profile_company").select("company_id, role").eq("profile_id", auth.user.id),
+      // Ordem do vínculo: quem tem mais de uma empresa começa pela primeira que recebeu.
+      supabase
+        .from("profile_company")
+        .select("company_id, role")
+        .eq("profile_id", auth.user.id)
+        .order("created_at"),
       // Presets fixos papel→escopo (ADR-005). Tabela pequena, leitura pública p/ authenticated.
       supabase.from("company_role_scope").select("role, scope"),
       // Testador enxerga rascunho no site (16/09/2026). `is_tester` ainda não está em
@@ -54,15 +62,24 @@ async function loadSession(): Promise<Session | null> {
   };
 }
 
-function readStoredImpersonation(): string | null {
+function readStored(key: string): string | null {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(IMPERSONATION_KEY);
+  return window.localStorage.getItem(key);
+}
+
+function writeStored(key: string, value: string | null) {
+  if (typeof window === "undefined") return;
+  if (value) window.localStorage.setItem(key, value);
+  else window.localStorage.removeItem(key);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [impersonatedCompanyId, setImpersonatedCompanyIdState] = React.useState<string | null>(
-    readStoredImpersonation,
+    () => readStored(IMPERSONATION_KEY),
+  );
+  const [storedActiveCompanyId, setStoredActiveCompanyId] = React.useState<string | null>(() =>
+    readStored(ACTIVE_COMPANY_KEY),
   );
 
   const { data: session, isLoading } = useQuery({
@@ -88,11 +105,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ? "company_operator"
       : session.role;
 
-  const effectiveCompanyIds: string[] = !session
-    ? []
-    : effectiveImpersonation
-      ? [effectiveImpersonation]
-      : session.companyIds;
+  // Operador em mais de uma empresa (13/10/2026): o painel mostra uma de cada vez.
+  const activeCompanyId = resolveActiveCompanyId(
+    session?.companyIds ?? [],
+    storedActiveCompanyId,
+    canImpersonate,
+  );
+
+  const effectiveCompanyIds = React.useMemo<string[]>(
+    () =>
+      !session
+        ? []
+        : effectiveImpersonation
+          ? [effectiveImpersonation]
+          : activeCompanyId
+            ? [activeCompanyId]
+            : session.companyIds,
+    [session, effectiveImpersonation, activeCompanyId],
+  );
+
+  const scopedCompanyId = effectiveImpersonation ?? activeCompanyId;
 
   const companyRoleFor = React.useCallback(
     (companyId: string): CompanyRole | null => {
@@ -107,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isCompanyOwner = effectiveCompanyIds.some((id) => companyRoleFor(id) === "owner");
 
   // Tem ESTE escopo na empresa em escopo ativo? (ADR-005). hub_admin (direto ou impersonando) →
-  // sempre true. Sem companyId explícito, usa a primeira empresa efetiva.
+  // sempre true. Sem companyId explícito, usa a empresa em escopo (a ativa, para quem tem mais de uma).
   const hasScope = React.useCallback(
     (scope: string, companyId?: string): boolean => {
       if (!session) return false;
@@ -120,12 +152,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   function setImpersonatedCompanyId(id: string | null) {
-    if (typeof window !== "undefined") {
-      if (id) window.localStorage.setItem(IMPERSONATION_KEY, id);
-      else window.localStorage.removeItem(IMPERSONATION_KEY);
-    }
+    writeStored(IMPERSONATION_KEY, id);
     setImpersonatedCompanyIdState(id);
     // Limpa cache de queries escopadas
+    queryClient.invalidateQueries();
+  }
+
+  function setActiveCompanyId(id: string | null) {
+    writeStored(ACTIVE_COMPANY_KEY, id);
+    setStoredActiveCompanyId(id);
     queryClient.invalidateQueries();
   }
 
@@ -136,9 +171,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       impersonatedCompanyId: effectiveImpersonation,
       effectiveRole,
       effectiveCompanyIds,
+      scopedCompanyId,
       companyRoleFor,
       isCompanyOwner,
       hasScope,
+      switchCompany(companyId) {
+        if (!session?.companyIds.includes(companyId)) return;
+        setActiveCompanyId(companyId);
+      },
       async signInWithGoogle(redirectTo) {
         const callback = `${window.location.origin}/auth/callback${
           redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ""
@@ -189,6 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       async signOut() {
         setImpersonatedCompanyId(null);
+        setActiveCompanyId(null);
         await supabase.auth.signOut();
         queryClient.clear();
       },
@@ -201,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [session, isLoading, effectiveImpersonation, effectiveRole, canImpersonate, companyRoleFor, isCompanyOwner, hasScope],
+    [session, isLoading, effectiveImpersonation, scopedCompanyId, effectiveRole, canImpersonate, companyRoleFor, isCompanyOwner, hasScope],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

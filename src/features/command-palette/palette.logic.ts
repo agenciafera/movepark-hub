@@ -42,16 +42,28 @@ export function kindLabel(kind: SearchHit["kind"]): string {
   return KIND_LABEL[kind];
 }
 
-/** Só os resultados que o painel atual sabe abrir, agrupados por tipo e na ordem fixa. */
-export function groupHits(hits: SearchHit[], variant: PaletteVariant) {
+/**
+ * Só os resultados que o painel atual sabe abrir, agrupados por tipo e na ordem fixa.
+ *
+ * `companyId` é a empresa em escopo no painel do parceiro (impersonation ou a ativa de quem tem
+ * mais de uma). A busca devolve tudo o que a pessoa enxerga, e um resultado de outra empresa
+ * abriria uma tela que mostra só a ativa, onde ele não aparece.
+ */
+export function groupHits(
+  hits: SearchHit[],
+  variant: PaletteVariant,
+  companyId: string | null = null,
+) {
   const ordem: SearchHit["kind"][] = ["booking", "location", "coupon"];
+  const daEmpresa = (h: SearchHit) =>
+    variant !== "operator" || !companyId || h.company_id === companyId;
 
   return ordem
     .map((kind) => ({
       kind,
       label: kindLabel(kind),
       hits: hits
-        .filter((h) => h.kind === kind)
+        .filter((h) => h.kind === kind && daEmpresa(h))
         .map((h) => ({ hit: h, url: hitUrl(h, variant) }))
         .filter((r): r is { hit: SearchHit; url: string } => r.url !== null),
     }))

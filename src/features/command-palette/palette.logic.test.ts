@@ -72,6 +72,28 @@ describe("groupHits", () => {
   it("lista vazia devolve nenhum grupo", () => {
     expect(groupHits([], "operator")).toEqual([]);
   });
+
+  // Operador com mais de uma empresa (13/10/2026): a busca devolve as duas, a tela mostra uma.
+  it("no parceiro com empresa em escopo, esconde o resultado de outra empresa", () => {
+    const hits = [
+      hit({ id: "b1", company_id: "empresa-1" }),
+      hit({ id: "b2", company_id: "empresa-2" }),
+    ];
+
+    const grupos = groupHits(hits, "operator", "empresa-2");
+
+    expect(grupos[0].hits.map((r) => r.hit.id)).toEqual(["b2"]);
+  });
+
+  it("sem empresa em escopo, ou no manager, não recorta", () => {
+    const hits = [
+      hit({ id: "b1", company_id: "empresa-1" }),
+      hit({ id: "b2", company_id: "empresa-2" }),
+    ];
+
+    expect(groupHits(hits, "operator")[0].hits).toHaveLength(2);
+    expect(groupHits(hits, "manager", "empresa-2")[0].hits).toHaveLength(2);
+  });
 });
 
 describe("navCommands", () => {

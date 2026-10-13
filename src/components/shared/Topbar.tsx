@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Bell, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
+import { Bell, Check, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
 import { useAuth } from "@/auth/context";
 import { postLogoutPath } from "@/auth/postLoginRedirect";
+import { useCompanySwitch } from "@/features/companies/useCompanySwitch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,9 @@ export function Topbar({
 }) {
   const { session, effectiveRole, signOut } = useAuth();
   const navigate = useNavigate();
+  // Parceiro em mais de uma empresa (13/10/2026). No desktop a sidebar também troca; no tablet e
+  // no celular ela some ou vira só ícone, e o menu do avatar é o caminho que sobra.
+  const companySwitch = useCompanySwitch();
 
   // O rótulo do atalho segue o teclado de quem está olhando. `navigator.platform`
   // é depreciado mas continua sendo o teste que funciona nos navegadores atuais;
@@ -83,6 +87,30 @@ export function Topbar({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>{session?.fullName ?? session?.email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {companySwitch.enabled && (
+            <>
+              <DropdownMenuLabel className="text-caption-sm font-normal text-muted-soft">
+                Empresa
+              </DropdownMenuLabel>
+              {companySwitch.options.map((c) => {
+                const active = c.id === companySwitch.activeId;
+                return (
+                  <DropdownMenuItem key={c.id} onClick={() => companySwitch.select(c.id)}>
+                    <span className="min-w-0 flex-1">
+                      <span className={active ? "block truncate font-medium" : "block truncate"}>
+                        {c.name}
+                      </span>
+                      {c.roleLabel && (
+                        <span className="block text-caption text-muted">{c.roleLabel}</span>
+                      )}
+                    </span>
+                    {active && <Check className="h-3.5 w-3.5 shrink-0" aria-label="Empresa ativa" />}
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem onClick={() => void handleSignOut()}>
             <SignOut className="h-4 w-4" /> Sair
           </DropdownMenuItem>

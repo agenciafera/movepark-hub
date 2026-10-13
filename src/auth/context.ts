@@ -8,8 +8,22 @@ export type AuthContextValue = {
   impersonatedCompanyId: string | null;
   /** Papel "efetivo" pra fins de UI/rota — fica company_operator se houver impersonation. */
   effectiveRole: UserRole | null;
-  /** IDs das empresas em escopo ativo (próprio operador ou alvo da impersonation). */
+  /**
+   * IDs das empresas em escopo ativo: as do próprio operador, só a ATIVA quando ele tem mais de
+   * uma, ou o alvo da impersonation.
+   */
   effectiveCompanyIds: string[];
+  /**
+   * Empresa que o front precisa recortar por conta própria, porque a RLS devolve mais do que ela:
+   * a impersonada (hub_admin) ou a ativa (operador com mais de uma empresa). `null` quando a RLS
+   * já basta: operador de uma empresa só, ou o Manager vendo a rede toda.
+   */
+  scopedCompanyId: string | null;
+  /**
+   * Troca a empresa ativa do operador que tem mais de uma (13/10/2026). Empresa da qual ele não é
+   * membro é ignorada.
+   */
+  switchCompany: (companyId: string) => void;
   /**
    * Papel do usuário DENTRO de uma empresa (E1.6). hub_admin e impersonation
    * contam como `owner` (acesso total). `null` se não for membro.
@@ -19,8 +33,8 @@ export type AuthContextValue = {
   isCompanyOwner: boolean;
   /**
    * Tem o ESCOPO na empresa em escopo ativo (ADR-005)? hub_admin → sempre true.
-   * `companyId` opcional; sem ele, usa a primeira empresa efetiva. É o gate único de
-   * permissão no front (rotas via RequireScope, seções e ações).
+   * `companyId` opcional; sem ele, usa a empresa em escopo (a ativa, para quem tem mais de
+   * uma). É o gate único de permissão no front (rotas via RequireScope, seções e ações).
    */
   hasScope: (scope: string, companyId?: string) => boolean;
   signInWithGoogle: (redirectTo?: string) => Promise<void>;

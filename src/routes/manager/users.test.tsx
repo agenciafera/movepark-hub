@@ -89,6 +89,7 @@ describe("Manager · Usuários", () => {
   it("Vincular empresa: o seletor tem busca e o vínculo sai com a empresa escolhida", async () => {
     montaTela(1, [linha(1)]);
     const upsert = tabela("profile_company", "post", { json: [] });
+    rpc("admin_set_user_role", { status: 204 });
     expect(await screen.findByText("Pessoa 1")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Vincular empresa" }));
@@ -101,5 +102,43 @@ describe("Manager · Usuários", () => {
     await waitFor(() =>
       expect(upsert.ultimoBody).toMatchObject({ profile_id: linha(1).id, company_id: "c1" }),
     );
+  });
+
+  /**
+   * Regressão (13/10/2026): a conta de cliente ganhava o vínculo e continuava barrada no
+   * `/operator`, que pede o papel de plataforma "Operador". O vínculo agora promove, como o
+   * convite da equipe já fazia.
+   */
+  it("vincular um cliente promove a conta a Operador", async () => {
+    montaTela(1, [linha(1, { role: "customer" })]);
+    tabela("profile_company", "post", { json: [] });
+    const promove = rpc("admin_set_user_role", { status: 204 });
+    expect(await screen.findByText("Pessoa 1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vincular empresa" }));
+    await userEvent.click(await screen.findByRole("combobox", { name: /Empresa/ }));
+    await userEvent.click(await screen.findByText("Aeropark"));
+    await userEvent.click(screen.getByRole("button", { name: "Vincular" }));
+
+    await waitFor(() =>
+      expect(promove.ultimoBody).toEqual({ p_user_id: linha(1).id, p_role: "company_operator" }),
+    );
+  });
+
+  it("vincular quem já é Operador a mais uma empresa não mexe no papel", async () => {
+    montaTela(1, [
+      linha(1, { role: "company_operator", companies: [{ id: "c1", name: "Agência Fera" }] }),
+    ]);
+    const upsert = tabela("profile_company", "post", { json: [] });
+    const promove = rpc("admin_set_user_role", { status: 204 });
+    expect(await screen.findByText("Pessoa 1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Vincular empresa" }));
+    await userEvent.click(await screen.findByRole("combobox", { name: /Empresa/ }));
+    await userEvent.click(await screen.findByRole("option", { name: "Aeropark" }));
+    await userEvent.click(screen.getByRole("button", { name: "Vincular" }));
+
+    await waitFor(() => expect(upsert.ultimoBody).toMatchObject({ company_id: "c2" }));
+    expect(promove.chamadas).toHaveLength(0);
   });
 });

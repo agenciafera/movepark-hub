@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { mockAuth, renderWithProviders } from "@/test/utils";
+import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import { Sidebar } from "./Sidebar";
 
 const SUPABASE_URL = "http://localhost:54321";
@@ -115,5 +115,82 @@ describe("Sidebar: item com subitens", () => {
     const pai = await screen.findByRole("button", { name: "Automação" });
     expect(pai.tagName).toBe("BUTTON");
     expect(pai).not.toHaveAttribute("href");
+  });
+});
+
+/**
+ * Parceiro membro de mais de uma empresa (13/10/2026). O bloco de contexto vira seletor; com uma
+ * empresa só ele fica parado, porque não há o que trocar.
+ */
+describe("Sidebar: parceiro com mais de uma empresa", () => {
+  function mockCompanies() {
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/company`, ({ request }) => {
+        const url = new URL(request.url);
+        // useCompany pede uma (id=eq.), o seletor pede as dele (id=in.).
+        if (url.searchParams.get("id")?.startsWith("eq.c1")) {
+          return HttpResponse.json([{ id: "c1", name: "Abbapark" }]);
+        }
+        return HttpResponse.json([
+          { id: "c1", name: "Abbapark" },
+          { id: "c2", name: "Nationpark" },
+        ]);
+      }),
+    );
+  }
+
+  const sessao = (companyIds: string[]) =>
+    mockSession("company_operator", {
+      companyIds,
+      companyRoles: { c1: "owner", c2: "operator" },
+    });
+
+  it("lista as empresas com o papel em cada uma e troca para a escolhida", async () => {
+    mockCompanies();
+    const switchCompany = vi.fn();
+    renderWithProviders(<Sidebar variant="operator" brandTitle="Operação" />, {
+      auth: mockAuth({
+        session: sessao(["c1", "c2"]),
+        effectiveCompanyIds: ["c1"],
+        scopedCompanyId: "c1",
+        switchCompany,
+      }),
+      route: "/operator",
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Trocar de empresa" }));
+    expect(await screen.findByText("Suas empresas")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Nationpark/ })).toHaveTextContent("Operação");
+    expect(screen.getByRole("button", { name: /Abbapark.*Dono/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Nationpark/ }));
+    expect(switchCompany).toHaveBeenCalledWith("c2");
+  });
+
+  it("com uma empresa só, não oferece troca", async () => {
+    mockCompanies();
+    renderWithProviders(<Sidebar variant="operator" brandTitle="Operação" />, {
+      auth: mockAuth({ session: sessao(["c1"]), effectiveCompanyIds: ["c1"] }),
+      route: "/operator",
+    });
+    expect(await screen.findByText("Abbapark")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Trocar de empresa" })).not.toBeInTheDocument();
+  });
+
+  it("hub_admin vinculado a empresas não ganha o seletor do parceiro", async () => {
+    mockCompanies();
+    renderWithProviders(<Sidebar variant="operator" brandTitle="Operação" />, {
+      auth: mockAuth({
+        session: mockSession("hub_admin", { companyIds: ["c1", "c2"] }),
+        effectiveCompanyIds: ["c1"],
+        impersonatedCompanyId: "c1",
+      }),
+      route: "/operator",
+    });
+    expect(await screen.findByText("Abbapark")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Trocar de empresa" })).not.toBeInTheDocument();
   });
 });

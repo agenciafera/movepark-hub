@@ -23,9 +23,9 @@ type Props = {
  * (impersonation). Aqui o mesmo caminho fica a um clique de qualquer tela, que é
  * o que o bloco sugere ao mostrar "de quem é a conta na tela".
  *
- * Só existe pro Manager: no painel do parceiro não há mecanismo de trocar a
- * empresa ativa, e um gatilho que não leva a lugar nenhum é pior que texto
- * parado.
+ * Só existe pro Manager. O parceiro com mais de uma empresa troca entre as dele
+ * pelo `OperatorCompanySwitcher`, que é outro mecanismo (empresa ativa, não
+ * impersonation).
  */
 export function CompanySwitcher({ name, detail }: Props) {
   const [open, setOpen] = React.useState(false);

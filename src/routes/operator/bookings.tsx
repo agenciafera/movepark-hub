@@ -22,7 +22,6 @@ import { BulkAttendanceBar } from "@/features/bookings/BulkAttendanceBar";
 import { useWlBookingActions } from "@/features/wl-bookings/api";
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
-import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { useHasWl } from "@/features/companies/useHasWl";
 import { useAuth } from "@/auth/context";
 import type { BookingStatus } from "@/types/domain";
@@ -70,10 +69,9 @@ export default function OperatorBookings() {
   const page = Math.max(0, (Number(f.pagina) || 1) - 1);
   const temFiltro = hasActiveFilters(f, FILTROS, ["pagina"]);
   const navigate = useNavigate();
-  const { ids: scopedLocationIds } = useScopedLocationIds();
   const { hasWl } = useHasWl();
-  const { impersonatedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
-  const companyId = impersonatedCompanyId ?? effectiveCompanyIds[0];
+  const { scopedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
+  const companyId = effectiveCompanyIds[0];
   // Ação em massa (fase 6): quem pode marcar chegada no Hub (bookings:checkin ou :write). No site,
   // vale o que o servidor diz para quem está logado (chave de ações + permissão).
   const canCheckin =
@@ -81,9 +79,7 @@ export default function OperatorBookings() {
   const wlPerms = useWlBookingActions(hasWl ? companyId : undefined);
   const wlAttendance = !!wlPerms.data?.enabled && !!wlPerms.data?.attendance;
   // Filtro de unidade só quando a empresa tem mais de uma (com uma, não há o que escolher).
-  const locations = useOperatorLocations(
-    impersonatedCompanyId ? [impersonatedCompanyId] : effectiveCompanyIds,
-  );
+  const locations = useOperatorLocations(effectiveCompanyIds);
   const unidades = locations.data ?? [];
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
 
@@ -91,9 +87,10 @@ export default function OperatorBookings() {
     () => ({
       status: status === "all" ? undefined : [status],
       search: search || undefined,
-      locationIds: unidade !== "all" ? [unidade] : scopedLocationIds,
-      // Admin impersonando: recorta pela empresa também (a reserva do site sem vaga não tem unidade).
-      companyIds: impersonatedCompanyId ? [impersonatedCompanyId] : undefined,
+      locationIds: unidade !== "all" ? [unidade] : undefined,
+      // Admin impersonando, ou operador com mais de uma empresa: recorta pela empresa em escopo.
+      // Pela empresa e não pelas unidades dela, porque a reserva do site sem vaga não tem unidade.
+      companyIds: scopedCompanyId ? [scopedCompanyId] : undefined,
       source: hasWl ? source : "hub",
       partnerView: true,
       // filtra por data de check-in (inclui o dia inteiro do "até")
@@ -107,8 +104,7 @@ export default function OperatorBookings() {
       status,
       search,
       unidade,
-      scopedLocationIds,
-      impersonatedCompanyId,
+      scopedCompanyId,
       hasWl,
       source,
       from,
@@ -118,7 +114,7 @@ export default function OperatorBookings() {
   );
 
   // Filtro novo volta para a primeira página (feito em `set`, ver useUrlFilters).
-  const filtroKey = [status, search, source, from, to, unidade, impersonatedCompanyId].join("|");
+  const filtroKey = [status, search, source, from, to, unidade, scopedCompanyId].join("|");
   // A seleção é da página que está na tela: muda o recorte ou a página, ela zera.
   React.useEffect(() => setSelected(new Set()), [filtroKey, page]);
 

@@ -33,7 +33,7 @@ export function CommandPalette({
   onOpenChange: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const { hasScope } = useAuth();
+  const { hasScope, scopedCompanyId } = useAuth();
   const [term, setTerm] = React.useState("");
 
   const { data: hits = [], isFetching } = useAdminSearch(term);
@@ -50,7 +50,10 @@ export function CommandPalette({
     if (alvo.length < MIN_TERM) return todos;
     return todos.filter((c) => c.label.toLowerCase().includes(alvo));
   }, [sections, term]);
-  const grupos = React.useMemo(() => groupHits(hits, variant), [hits, variant]);
+  const grupos = React.useMemo(
+    () => groupHits(hits, variant, scopedCompanyId),
+    [hits, variant, scopedCompanyId],
+  );
 
   // Cada abertura começa limpa: reaproveitar o termo anterior faz a palette
   // abrir mostrando resultado de outra busca.
