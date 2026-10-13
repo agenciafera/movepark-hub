@@ -44,6 +44,8 @@ describe("useBookingsPage (lista única, 09/10/2026)", () => {
       p_limit: 50,
       p_offset: 100,
       p_with_summary: false,
+      p_attendance: null,
+      p_pcd: null,
     });
   });
 

@@ -168,7 +168,7 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 
 > **Exceção de leitura com escopo no servidor: `wl-bookings:read` (08/10/2026).** As reservas do
 > site white-label (`wl_booking`) não têm RLS de membro: o único caminho do parceiro é a RPC
-> `operator_wl_bookings`, que exige o escopo. É dado do cliente do parceiro vindo de outro sistema
+> `bookings_list_page` (recorte de `wl_visible_company_ids`, que exige o escopo; a antiga `operator_wl_bookings` saiu em 13/10/2026). É dado do cliente do parceiro vindo de outro sistema
 > (contrato v2, Anexo A), e o escopo deixa explícito quem o lê. Não é atribuível a chave de API.
 > Ver `reservas-wl-no-hub.md` § 9.
 

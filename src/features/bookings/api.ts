@@ -34,6 +34,10 @@ export type BookingFilters = {
   paymentMethod?: PaymentMethodFilter;
   /** Canal de venda (agrupa `booking.origin`). */
   channel?: ChannelFilter;
+  /** Comparecimento, nas duas origens (13/10/2026): chegou, não veio ou ainda pendente. */
+  attendance?: "compareceu" | "no_show" | "pendente";
+  /** Só reservas com (true) ou sem (false) PCD. */
+  pcd?: boolean;
 };
 
 export const bookingsKeys = {
@@ -100,6 +104,8 @@ async function fetchBookingsPage(f: BookingPageFilters, withSummary = false): Pr
     p_offset: f.page * f.pageSize,
     // O resumo do recorte não muda de uma página para outra: só `useBookingsSummary` o pede.
     p_with_summary: withSummary,
+    p_attendance: f.attendance ?? null,
+    p_pcd: f.pcd ?? null,
   });
   if (error) throw new Error(error.message);
   const r = (data ?? {}) as {

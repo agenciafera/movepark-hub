@@ -12,7 +12,7 @@
 --   7. a anon key não executa.
 
 begin;
-select plan(20);
+select plan(24);
 
 do $$
 declare
@@ -63,6 +63,11 @@ begin
       'created_at', '2027-10-01 06:30:00', 'updated_at', '2027-10-01 06:30:00')
   ), '2027-10-01 11:00:00', 3);
 
+  -- Troca de placa no site: BLP-0002 já foi OLD1A23 (busca pela placa anterior, 13/10/2026).
+  insert into public.wl_booking_event(wl_booking_id, company_id, kind, wl_event_id, occurred_at, actor, note, data)
+    select w.id, v_a, 'plate_change', 1, now(), 'Maria', 'troca', jsonb_build_object('old_plate', 'OLD1A23', 'new_plate', 'XYZ9K88')
+      from public.wl_booking w where w.company_id = v_a and w.wl_order_number = 'BLP-0002';
+
   -- Uma linha de site na empresa SEM white-label (não deveria existir; se existir, não aparece).
   insert into public.wl_booking(company_id, wl_order_id, wl_order_number, status, check_in_at, check_out_at, wl_created_at)
     values (v_b, 9, 'INTRUSA', 'confirmed', '2027-11-10 10:00+00', '2027-11-12 10:00+00', '2027-10-01 12:00+00');
@@ -104,8 +109,20 @@ select is(
 
 -- ── 5. filtros ───────────────────────────────────────────────────────────────
 select is(
-  (select (public.bookings_list_page(p_payment => 'none') -> 'summary' -> 'wl' ->> 'total')::int), 0,
-  'filtro de forma de pagamento (dado só do Hub) tira o site');
+  (select (public.bookings_list_page(p_payment => 'pix') -> 'summary' -> 'wl' ->> 'total')::int), 0,
+  'forma de pagamento vale também para o site: nenhum pedido do site foi em PIX');
+select is(
+  (select (public.bookings_list_page(p_payment => 'none') -> 'summary' -> 'wl' ->> 'total')::int), 3,
+  'e o pedido do site sem forma de pagamento entra em "sem pagamento"');
+select is(
+  (select (public.bookings_list_page(p_attendance => 'compareceu') ->> 'total')::int), 1,
+  'filtro de comparecimento acha o pedido do site em que o cliente chegou');
+select is(
+  (select (public.bookings_list_page(p_pcd => true) ->> 'total')::int), 0,
+  'filtro de PCD');
+select is(
+  (select public.bookings_list_page(p_search => 'old-1a23') -> 'items' -> 0 -> 'wl' ->> 'wl_order_number'),
+  'BLP-0002', 'busca acha a placa anterior, a que saiu numa troca');
 select is(
   (select public.bookings_list_page(p_search => 'xyz-9k88') -> 'items' -> 0 -> 'wl' ->> 'wl_order_number'),
   'BLP-0002', 'busca acha a placa do site com hífen');
@@ -147,7 +164,7 @@ select ok(not has_function_privilege('anon', 'public.wl_booking_search_ids(text,
   'a anon key não executa a busca do site');
 select ok(
   not has_function_privilege('anon',
-    'public.bookings_list_page(text, text[], uuid[], uuid[], text, timestamptz, timestamptz, text, text, text[], boolean, integer, integer, boolean)',
+    'public.bookings_list_page(text, text[], uuid[], uuid[], text, timestamptz, timestamptz, text, text, text[], boolean, integer, integer, boolean, text, boolean)',
     'execute'),
   'a anon key não executa');
 

@@ -215,4 +215,13 @@ describe("OperatorBookings · filtros no endereço (13/10/2026)", () => {
     expect(screen.queryByLabelText("Unidade")).not.toBeInTheDocument();
     unidades.data = [];
   });
+
+  it("pagamento, comparecimento e PCD vêm da URL e vão para a consulta (13/10/2026)", () => {
+    setup({ hasWl: true, rows: [], route: "/operator/bookings?pagamento=pix&comparecimento=compareceu&pcd=sim" });
+    expect(vi.mocked(useBookingsPage).mock.calls.at(-1)![0]).toMatchObject({
+      paymentMethod: "pix",
+      attendance: "compareceu",
+      pcd: true,
+    });
+  });
 });

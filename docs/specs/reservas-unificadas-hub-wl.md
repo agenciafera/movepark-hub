@@ -337,10 +337,10 @@ existe". O faturamento do site aparece (separado por origem), a comissão não.
 Revisão depois das fases 1 a 6. Nada abaixo trava o uso; é o que o § 4 pedia e não entrou.
 
 **Lista**
-- Filtros do backoffice do site ainda sem par no Hub: comparecimento, PCD, forma de pagamento do
-  site (o filtro de pagamento atual é só do Hub e tira o site), produtos (adicionais), afiliado e
-  UTM, "com troca de placa".
-- Busca pela placa anterior (`plate_change`) e pelo modelo do veículo.
+- ~~Comparecimento, PCD, forma de pagamento do site, busca pela placa anterior e pelo modelo~~:
+  feitos em 13/10/2026 (migration `20261129170000_lista_reservas_mais_filtros.sql`, nas duas
+  origens e nos dois painéis). Ainda sem par: produtos (adicionais), afiliado e UTM, "com troca de
+  placa".
 - Indicadores no topo da lista do Operator (o Manager já tem o resumo por origem).
 - "Limpar comparecimento" em massa (a ação em massa faz "chegou" e "não veio"; desfazer é um a um,
   no detalhe).
@@ -363,5 +363,6 @@ Revisão depois das fases 1 a 6. Nada abaixo trava o uso; é o que o § 4 pedia 
 - Token global do backend: decisão de 08/10/2026 de não rotacionar.
 
 **Limpeza**
-- `operator_wl_bookings` e `operator_wl_bookings_count` (aba "Pelo seu site", removida na fase 2)
-  seguem no banco sem uso pela tela.
+- ~~`operator_wl_bookings` e `operator_wl_bookings_count`~~: removidas em 13/10/2026 (migration
+  `20261129180000_remove_aba_pelo_seu_site.sql`); o teste delas passou a cobrir o mesmo recorte pela
+  lista única.

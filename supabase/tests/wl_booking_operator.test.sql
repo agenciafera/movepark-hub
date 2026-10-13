@@ -1,5 +1,7 @@
 -- pgTAP: reservas do site white-label no painel do parceiro (fase 2, 08/10/2026).
--- Migration: 20261128234500_wl_booking_operator.sql. Spec: reservas-wl-no-hub.md § 9.
+-- Migrations: 20261128234500_wl_booking_operator.sql (escopo) e 20261129180000 (as RPCs da aba
+-- "Pelo seu site" saíram; a leitura é a lista única, `bookings_list_page` com p_source = 'wl').
+-- Spec: reservas-wl-no-hub.md § 9 e reservas-unificadas-hub-wl.md § 3.
 --
 -- O que este arquivo protege:
 --   1. o escopo wl-bookings:read existe, é de empresa, não vai para chave de API, e os quatro
@@ -10,7 +12,7 @@
 --      do admin impersonando funcionam no servidor.
 
 begin;
-select plan(13);
+select plan(12);
 
 do $$
 declare
@@ -78,39 +80,38 @@ select is(
 -- ── 2. o membro vê só a própria empresa ──────────────────────────────────────
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.owner'))::text, true);
-select is(jsonb_array_length(public.operator_wl_bookings()), 2, 'o Dono vê as duas reservas do site dele');
+select is((public.bookings_list_page(p_source => 'wl') ->> 'total')::int, 2, 'o Dono vê as duas reservas do site dele');
 select ok(
-  not exists (select 1 from jsonb_array_elements(public.operator_wl_bookings()) e
-               where e->>'company_id' <> current_setting('test.a')),
+  not exists (select 1 from jsonb_array_elements(public.bookings_list_page(p_source => 'wl') -> 'items') e
+               where e->'wl'->>'company_id' <> current_setting('test.a')),
   'e nenhuma de outra empresa');
-select is(public.operator_wl_bookings_count(), 2, 'a contagem da aba bate');
 
 -- ── 4. filtros ───────────────────────────────────────────────────────────────
-select is(jsonb_array_length(public.operator_wl_bookings(p_status => 'cancelled')), 1, 'filtra por status');
-select is(public.operator_wl_bookings(p_search => 'abc-1d23') -> 0 ->> 'wl_order_number', 'A-0001',
+select is((public.bookings_list_page(p_source => 'wl', p_statuses => array['cancelled']) ->> 'total')::int, 1, 'filtra por status');
+select is(public.bookings_list_page(p_search => 'abc-1d23') -> 'items' -> 0 -> 'wl' ->> 'wl_order_number', 'A-0001',
   'busca por placa ignora hífen e caixa');
-select is(public.operator_wl_bookings(p_search => '0002') -> 0 ->> 'wl_order_number', 'A-0002',
+select is(public.bookings_list_page(p_search => 'A-0002') -> 'items' -> 0 -> 'wl' ->> 'wl_order_number', 'A-0002',
   'busca pelo número do pedido');
-select is(jsonb_array_length(public.operator_wl_bookings(p_from => '2027-12-01T00:00:00Z')), 1,
+select is((public.bookings_list_page(p_source => 'wl', p_from => '2027-12-01T00:00:00Z') ->> 'total')::int, 1,
   'filtra pela data de entrada');
 
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.finance'))::text, true);
-select is(jsonb_array_length(public.operator_wl_bookings()), 2, 'o Financeiro vê sem operar');
+select is((public.bookings_list_page(p_source => 'wl') ->> 'total')::int, 2, 'o Financeiro vê sem operar');
 
 -- ── 3. quem não é membro ─────────────────────────────────────────────────────
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.stranger'))::text, true);
-select is(public.operator_wl_bookings(), '[]'::jsonb, 'quem não é membro não vê nada');
+select is((public.bookings_list_page(p_source => 'wl') ->> 'total')::int, 0, 'quem não é membro não vê nada');
 
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.admin'))::text, true);
 select is(
-  public.operator_wl_bookings(p_company_id => current_setting('test.b')::uuid) -> 0 ->> 'wl_order_number',
+  public.bookings_list_page(p_source => 'wl', p_company_ids => array[current_setting('test.b')::uuid]) -> 'items' -> 0 -> 'wl' ->> 'wl_order_number',
   'B-0001', 'o admin impersonando vê só a empresa pedida');
 reset role;
 
 select ok(
-  not has_function_privilege('anon', 'public.operator_wl_bookings(uuid, text, text, timestamptz, timestamptz, integer)', 'execute')
-  and not has_function_privilege('anon', 'public.operator_wl_bookings_count(uuid)', 'execute'),
-  'a anon key não executa');
+  not exists (select 1 from pg_proc where proname in ('operator_wl_bookings', 'operator_wl_bookings_count')
+               and pronamespace = 'public'::regnamespace),
+  'as RPCs da aba antiga não existem mais');
 
 select * from finish();
 rollback;

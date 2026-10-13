@@ -4,6 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useUrlFilters } from "@/lib/useUrlFilters";
 import { hasActiveFilters } from "@/lib/urlFilters.logic";
 import { useOperatorLocations } from "@/features/locations/api";
+import {
+  ATTENDANCE_OPTIONS,
+  PAYMENT_OPTIONS,
+  PCD_OPTIONS,
+  attendanceParam,
+  pcdParam,
+} from "@/features/bookings/bookingFilterOptions";
+import type { PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,6 +55,9 @@ const FILTROS = {
   de: "",
   ate: "",
   unidade: "all",
+  pagamento: "all",
+  comparecimento: "all",
+  pcd: "all",
   pagina: "1",
 };
 
@@ -93,6 +104,9 @@ export default function OperatorBookings() {
       companyIds: scopedCompanyId ? [scopedCompanyId] : undefined,
       source: hasWl ? source : "hub",
       partnerView: true,
+      paymentMethod: f.pagamento === "all" ? undefined : (f.pagamento as PaymentMethodFilter),
+      attendance: attendanceParam(f.comparecimento),
+      pcd: pcdParam(f.pcd),
       // filtra por data de check-in (inclui o dia inteiro do "até")
       dateField: "check_in_at",
       from: from ? `${from}T00:00:00` : undefined,
@@ -104,6 +118,9 @@ export default function OperatorBookings() {
       status,
       search,
       unidade,
+      f.pagamento,
+      f.comparecimento,
+      f.pcd,
       scopedCompanyId,
       hasWl,
       source,
@@ -114,7 +131,18 @@ export default function OperatorBookings() {
   );
 
   // Filtro novo volta para a primeira página (feito em `set`, ver useUrlFilters).
-  const filtroKey = [status, search, source, from, to, unidade, scopedCompanyId].join("|");
+  const filtroKey = [
+    status,
+    search,
+    source,
+    from,
+    to,
+    unidade,
+    f.pagamento,
+    f.comparecimento,
+    f.pcd,
+    scopedCompanyId,
+  ].join("|");
   // A seleção é da página que está na tela: muda o recorte ou a página, ela zera.
   React.useEffect(() => setSelected(new Set()), [filtroKey, page]);
 
@@ -201,6 +229,51 @@ export default function OperatorBookings() {
               </Select>
             </div>
           )}
+          <div className="flex w-full flex-col gap-1.5 tablet:w-44">
+            <Label htmlFor="booking-payment">Pagamento</Label>
+            <Select value={f.pagamento} onValueChange={(v) => set({ pagamento: v })}>
+              <SelectTrigger id="booking-payment">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex w-full flex-col gap-1.5 tablet:w-44">
+            <Label htmlFor="booking-attendance">Comparecimento</Label>
+            <Select value={f.comparecimento} onValueChange={(v) => set({ comparecimento: v })}>
+              <SelectTrigger id="booking-attendance">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ATTENDANCE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex w-full flex-col gap-1.5 tablet:w-44">
+            <Label htmlFor="booking-pcd">PCD</Label>
+            <Select value={f.pcd} onValueChange={(v) => set({ pcd: v })}>
+              <SelectTrigger id="booking-pcd">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PCD_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {unidades.length > 1 && (
             <div className="flex w-full flex-col gap-1.5 tablet:w-48">
               <Label htmlFor="booking-unit">Unidade</Label>

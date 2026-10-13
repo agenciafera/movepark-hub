@@ -35,6 +35,13 @@ import { formatBRL } from "@/lib/format";
 import { useUrlFilters } from "@/lib/useUrlFilters";
 import { hasActiveFilters } from "@/lib/urlFilters.logic";
 import { useCompanies } from "@/features/companies/api";
+import {
+  ATTENDANCE_OPTIONS,
+  PAYMENT_OPTIONS,
+  PCD_OPTIONS,
+  attendanceParam,
+  pcdParam,
+} from "@/features/bookings/bookingFilterOptions";
 import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
@@ -46,13 +53,6 @@ const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
   { value: "cancelled", label: "Cancelada" },
   { value: "expired", label: "Expirada" },
   { value: "no_show", label: "Não compareceu" },
-];
-
-const paymentOptions: { value: PaymentMethodFilter | "all"; label: string }[] = [
-  { value: "all", label: "Todas" },
-  { value: "pix", label: "PIX" },
-  { value: "card", label: "Cartão de crédito" },
-  { value: "none", label: "Sem pagamento" },
 ];
 
 const channelOptions: { value: ChannelFilter | "all"; label: string }[] = [
@@ -71,6 +71,8 @@ const FILTROS = {
   canal: "all",
   origem: "all",
   estacionamento: "all",
+  comparecimento: "all",
+  pcd: "all",
   pagina: "1",
 };
 
@@ -118,13 +120,27 @@ export default function ManagerBookings() {
       channel: channel === "all" ? undefined : channel,
       locationIds: scopedLocationIds,
       companyIds: companyId === "all" ? undefined : [companyId],
+      attendance: attendanceParam(f.comparecimento),
+      pcd: pcdParam(f.pcd),
       from: term ? undefined : range.from.toISOString(),
       to: term ? undefined : range.to.toISOString(),
       dateField: "created_at",
       page,
       pageSize: PAGE_SIZE,
     }),
-    [source, status, term, payment, channel, companyId, scopedLocationIds, range, page],
+    [
+      source,
+      status,
+      term,
+      payment,
+      channel,
+      companyId,
+      f.comparecimento,
+      f.pcd,
+      scopedLocationIds,
+      range,
+      page,
+    ],
   );
 
   const { data, isLoading } = useBookingsPage(filters);
@@ -160,13 +176,13 @@ export default function ManagerBookings() {
       />
 
       <Card>
-        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_auto] desktop:items-end">
-          <div className="flex flex-col gap-1.5">
+        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-4 desktop:items-end">
+          <div className="flex flex-col gap-1.5 desktop:col-span-2">
             <Label htmlFor="search">Busca</Label>
             <Input
               id="search"
               type="search"
-              placeholder="Código, nome, e-mail ou telefone"
+              placeholder="Código, nome, telefone, placa ou modelo"
               value={search}
               onChange={(e) => set({ q: e.target.value })}
             />
@@ -209,7 +225,7 @@ export default function ManagerBookings() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {paymentOptions.map((o) => (
+                {PAYMENT_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
                   </SelectItem>
@@ -225,6 +241,36 @@ export default function ManagerBookings() {
               </SelectTrigger>
               <SelectContent>
                 {channelOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="booking-attendance">Comparecimento</Label>
+            <Select value={f.comparecimento} onValueChange={(v) => set({ comparecimento: v })}>
+              <SelectTrigger id="booking-attendance">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ATTENDANCE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="booking-pcd">PCD</Label>
+            <Select value={f.pcd} onValueChange={(v) => set({ pcd: v })}>
+              <SelectTrigger id="booking-pcd">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PCD_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
                   </SelectItem>

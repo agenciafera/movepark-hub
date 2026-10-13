@@ -885,7 +885,8 @@ export type WlHealthReport = {
 };
 
 // ── Reservas feitas no site white-label do parceiro (08/10/2026) ────────────
-// Linha de `operator_wl_bookings()` (migration 20261128234500). Só leitura: o dinheiro não passa
+// Reserva do site como o detalhe e as ações a usam (a RPC `operator_wl_bookings`, de onde o tipo
+// nasceu, saiu em 13/10/2026; hoje a linha vem de `wl_booking_detail`/`bookings_list_page`). Só leitura: o dinheiro não passa
 // pelo Hub e a reserva é operada no site do parceiro. Ver docs/specs/reservas-wl-no-hub.md.
 
 export type WlBookingStatus =
