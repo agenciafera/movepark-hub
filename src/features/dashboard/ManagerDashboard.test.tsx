@@ -80,7 +80,7 @@ const FLOW = {
   })),
 };
 
-function renderDashboard(wl?: unknown) {
+function renderDashboard(wl?: unknown, route = "/manager") {
   server.use(
     http.post(`${SUPABASE_URL}/rest/v1/rpc/wl_revenue`, () =>
       HttpResponse.json(wl ?? { total: { created: 0, paid: 0, paid_amount: 0 }, by_day: [], by_company: [] }),
@@ -92,7 +92,7 @@ function renderDashboard(wl?: unknown) {
   );
   return renderWithProviders(<ManagerDashboard />, {
     auth: mockAuth({ session: mockSession("hub_admin"), effectiveRole: "hub_admin" }),
-    route: "/manager",
+    route,
   });
 }
 
@@ -180,5 +180,31 @@ describe("ManagerDashboard", () => {
     await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"));
     expect(screen.queryByTestId("receita-por-origem")).not.toBeInTheDocument();
     expect(screen.queryByText("Comissão do white-label")).not.toBeInTheDocument();
+  });
+
+  // Filtro de origem (13/10/2026), no endereço como na lista de Reservas.
+  const SITE = {
+    total: { created: 8, paid: 6, paid_amount: 300 },
+    by_day: [{ day: "2026-07-29", paid: 6, paid_amount: 300 }],
+    by_company: [{ company_id: "c1", company_name: "Virapark", created: 8, paid: 6, paid_amount: 300 }],
+  };
+
+  it("origem Hub: receita só do Hub, sem quebra nem nada do site", async () => {
+    renderDashboard(SITE, "/manager?origem=hub");
+    expect(await screen.findByText("Receita do Hub")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"));
+    expect(screen.queryByTestId("receita-por-origem")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("site-por-estacionamento")).not.toBeInTheDocument();
+  });
+
+  it("origem White-label: receita do site, venda por estacionamento, e os painéis só do Hub saem", async () => {
+    renderDashboard(SITE, "/manager?origem=wl");
+    expect(await screen.findByText("Receita do white-label")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 300,00"));
+    expect(screen.getByTestId("site-por-estacionamento")).toHaveTextContent("Virapark");
+    expect(screen.getByTestId("aviso-so-hub")).toBeInTheDocument();
+    expect(screen.queryByText("A repassar aos parceiros")).not.toBeInTheDocument();
+    expect(screen.queryByText("Concentração")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reservas recentes")).not.toBeInTheDocument();
   });
 });
