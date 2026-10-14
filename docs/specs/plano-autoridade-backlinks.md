@@ -520,7 +520,20 @@ o pedido exige, e uma parcial para `/estacionamentos/aeroporto-viracopos`. Prazo
 [`/estacionamento-aeroporto-viracopos-checklist-para-ir-de-carro-e-embarcar-sem-correria/`](https://rotadeferias.com.br/estacionamento-aeroporto-viracopos-checklist-para-ir-de-carro-e-embarcar-sem-correria/):
 `index, follow`, H1 e intertítulos como enviados, tabela no lugar e os dois links sem `rel`, ou seja,
 dofollow. Ficaram de fora a meta description e o `alt` da imagem do corpo, que o portal publicou
-vazio; o nome do arquivo, com a frase-chave, se manteve.
+vazio; o nome do arquivo, com a frase-chave, se manteve. Pedimos as duas correções por comentário e o portal corrigiu no mesmo dia.
+
+**Quatro de cinco no ar e aprovados (14/10/2026).** O Diego aprovou no WhitePress as publicações do
+`rotadeferias.com.br`, do [`mochileiros.com`](https://www.mochileiros.com/blog/estacionamento-aeroporto-guarulhos-mochilao),
+do [`campinas.com.br`](https://campinas.com.br/turismo/2026/10/estacionamento-do-aeroporto-de-viracopos-nas-ferias-quanto-custa-e-como-se-planejar/)
+e do [`obutecodanet.ig.com.br`](https://obutecodanet.ig.com.br/estacionamento-aeroporto-viracopos-vale-mais-parar-dentro-do-aeroporto-ou-fora-com-van/).
+Nos quatro, a página é indexável e os links para o `movepark.co` (e para a Virapark, quando é o caso)
+estão no corpo, sem `rel` de nofollow ou sponsored. O `mochileiros.com` saiu como enviado, com a meta
+description e os `alt`. O `campinas.com.br` trocou o H1 para "Estacionamento do aeroporto de Viracopos
+nas férias", publicou as imagens sem `alt` e usou o primeiro parágrafo como meta description. O
+`obutecodanet.ig.com.br` foi o que mais mexeu: publicou os H2 como parágrafo em negrito, tirou a imagem
+do corpo, renomeou a foto principal para `image-300.jpg` sem `alt` e não pôs meta description. O link,
+que é o que a compra paga, ficou certo nos quatro. O `viagensecaminhos.com` seguia "Em andamento", com
+prazo em 19/10/2026. O registro de cada um está na planilha de controle.
 
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
 (Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
