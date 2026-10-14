@@ -506,8 +506,21 @@ compras auditadas na seção 2.7, e não aparece mais no formulário de artigo.
 A âncora exata ficou só no `mochileiros.com`, por decisão do Diego em 13/10/2026: uma exata no lote
 mantém o perfil de âncoras natural. O `campinas.com.br` é a exceção à âncora de marca do item 3,
 porque aceita qualquer âncora. Os quatro pedidos ficaram "Em andamento", com prazo do publicador em
-19/10/2026. Na mesma lista segue parado o pedido 1720083 da Virapark (`obutecodanet.ig.com.br`), "À
-espera do conteúdo" desde 22/09/2026, sem artigo vinculado.
+19/10/2026.
+
+**Quinto artigo, sem custo novo.** O pedido 1720083 da Virapark (`obutecodanet.ig.com.br`, R$ 424,35)
+estava pago e "À espera do conteúdo" desde 22/09/2026, sem artigo. O painel não oferece cancelamento,
+então o Diego decidiu aproveitá-lo: em 14/10/2026 ele recebeu artigo próprio sobre estacionar dentro ou
+fora do aeroporto de Viracopos, com a tarifa oficial conferida no site do aeroporto no mesmo dia
+(edifício garagem R$ 83,00 a diária, bolsão F R$ 31,00). Links: "www.virapark.com.br", a âncora que
+o pedido exige, e uma parcial para `/estacionamentos/aeroporto-viracopos`. Prazo do publicador:
+19/10/2026.
+
+**Primeira publicação conferida (14/10/2026).** O `rotadeferias.com.br` publicou no mesmo dia, em
+[`/estacionamento-aeroporto-viracopos-checklist-para-ir-de-carro-e-embarcar-sem-correria/`](https://rotadeferias.com.br/estacionamento-aeroporto-viracopos-checklist-para-ir-de-carro-e-embarcar-sem-correria/):
+`index, follow`, H1 e intertítulos como enviados, tabela no lugar e os dois links sem `rel`, ou seja,
+dofollow. Ficaram de fora a meta description e o `alt` da imagem do corpo, que o portal publicou
+vazio; o nome do arquivo, com a frase-chave, se manteve.
 
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
 (Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
