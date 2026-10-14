@@ -107,6 +107,11 @@ A integração falhava calada; agora cada peça deixa rastro e há quem reclame.
   5 minutos (concessão): outra execução do cron não pega a mesma linha, e a linha volta sozinha se
   a Edge morrer. O `release` só sai quando nenhum `reserve` do mesmo `external_id` está pendente
   (senão o WL ignoraria o release e a vaga ficaria presa). `last_status` passa a guardar o HTTP.
+- **Release sempre com datas (14/10/2026):** o WL exige `start_date` e decrementa exatamente os
+  dias informados. Na troca de data, `wl_enqueue_dates_changed` roda com a reserva já nas datas
+  novas, então o `release` do id antigo copia `start_date`/`end_date` do `reserve` daquele mesmo
+  id (o que o WL contou). Antes ia sem data, voltava 422 e a vaga antiga ficava presa no site.
+  Migration `20261129190000`.
 - **Reenvio:** `failed` continua terminal para o cron, mas `wl_delivery_retry(id)` (hub_admin)
   devolve a linha à fila. Botão "Reenviar" na tela.
 - **Frescor da reconciliação:** `wl_sync_state` (uma linha por vaga): `reconciled_at` é carimbado
