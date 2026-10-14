@@ -123,7 +123,8 @@ fora do worker. Os `*-app.movepark.co` respondem 302 para `/backend/auth` e os p
 | Movepark | 33 | 4 | R$ 16.964,86 + R$ 1.954,72 = **R$ 18.919,58** | 4 em nov/2025 (cerca de R$ 3.000) e 1 em ago/2026; nos outros meses, nada |
 | Virapark | 18 (+1 pendente) | 3 | R$ 12.770,75 + R$ 2.392,00 = **R$ 15.162,75** | 9 entre out/2025 e mar/2026 e 1 em ago/2026 |
 
-Saldo na conta em 01/10/2026: R$ 2.457,17; em 13/10/2026, R$ 4.457,17. A lista de pedidos do
+Saldo na conta em 01/10/2026: R$ 2.457,17; em 13/10/2026, R$ 4.457,17; em 14/10/2026, depois dos
+quatro pedidos de outubro (seção 4.3), R$ 432,17. A lista de pedidos do
 painel, lida em 13/10, data a única publicação recente (`guiadoviajante.com.br`) em 24/09/2026.
 
 Três leituras:
@@ -365,7 +366,7 @@ do Paraná, e o WhitePress precisa ser consultado sobre portais das duas cidades
 |---|---|---|---|---|---|
 | Outubro (C67) | `viagensecaminhos.com` | R$ 1.610,00 | 54 | 795 mil | `/estacionamentos/aeroporto-guarulhos` |
 | Outubro (C67, Virapark) | `rotadeferias.com.br` (era de Guarulhos até 13/10) | R$ 885,50 | 34 | 26 mil | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` |
-| Outubro (C67) | `mochileiros.com` | R$ 483,00 | 33 | 31 mil | post dono do termo de GRU (`canonicalizacao-gru-cwb.md`) |
+| Outubro (C67) | `mochileiros.com` | R$ 483,00 | 33 | 31 mil | `/estacionamentos/aeroporto-guarulhos` (âncora exata) e o post dono do termo de GRU (`canonicalizacao-gru-cwb.md`) |
 | Outubro (C67, Virapark) | `campinas.com.br` (veio de dezembro em 13/10) | R$ 1.046,50 | 32 | 27 mil | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` |
 | Novembro (C68) | `em.com.br` (Estado de Minas) | R$ 3.220,00 | 61 | 521 mil | `/estacionamentos/aeroporto-confins` |
 | Novembro (C68) | `odiariodemogi.net.br` (Alto Tietê) | R$ 1.606,55 | 33 | 10 mil (Ahrefs 23 mil) | `/estacionamentos/aeroporto-guarulhos` |
@@ -479,7 +480,7 @@ sempre soma para o `movepark.co`.
 | Metade | Site | Preço | AS | Links | Atividade |
 |---|---|---|---|---|---|
 | Movepark | `viagensecaminhos.com` | R$ 1.610,00 | 54 | `/estacionamentos/aeroporto-guarulhos` | [C75](https://app.clickup.com/t/17tn9e9hy61) |
-| Movepark | `mochileiros.com` | R$ 483,00 | 33 | `/blog/como-estacionar-barato-no-aeroporto-de-guarulhos/` | [C77](https://app.clickup.com/t/17tn9e9hy73) |
+| Movepark | `mochileiros.com` | R$ 483,00 | 33 | `/estacionamentos/aeroporto-guarulhos` e `/blog/como-estacionar-barato-no-aeroporto-de-guarulhos/` | [C77](https://app.clickup.com/t/17tn9e9hy73) |
 | Virapark | `campinas.com.br` | R$ 1.046,50 | 32 | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` | [C86](https://app.clickup.com/t/17tn9e9mk9g) |
 | Virapark | `rotadeferias.com.br` | R$ 885,50 | 34 | `virapark.com.br` e `/estacionamentos/aeroporto-viracopos` | [C76](https://app.clickup.com/t/17tn9e9hy6w) |
 
@@ -488,6 +489,25 @@ WhitePress em 13/10/2026 (R$ 4.457,17), sem depósito. Em relação ao combinado
 de Guarulhos, R$ 2.978,50), o `rotadeferias.com.br` passou para a Virapark e o `campinas.com.br`
 veio de dezembro. O `maladeaventuras.com` chegou a entrar e voltou a ser reserva
 ([Conteúdo 87](https://app.clickup.com/t/17tn9e9mk9j)).
+
+**Pedido em 14/10/2026.** Os quatro saíram com artigo próprio, escrito pela Movepark e revisado
+antes da compra. Texto, meta title, meta description, slug sugerido, âncoras e imagens estão em
+[`docs/imprensa/whitepress-2026-10/`](../imprensa/whitepress-2026-10/). A Movepark compra pelo
+projeto **204794** do WhitePress (`https://movepark.co`); o 132436 é o projeto antigo, das 37
+compras auditadas na seção 2.7, e não aparece mais no formulário de artigo.
+
+| Site | Pedido | Rascunho | Frase-chave | Âncora para o `movepark.co` |
+|---|---|---|---|---|
+| `viagensecaminhos.com` | 1887783 | 1736178 | estacionamento aeroporto Guarulhos | "Movepark" (o portal só aceita marca, genérica, imagem ou URL) |
+| `mochileiros.com` | 1887784 | 1736182 | estacionamento aeroporto Guarulhos | exata, "estacionamento aeroporto Guarulhos", mais uma parcial para o post |
+| `campinas.com.br` | 1887785 | 1736191 | estacionamento aeroporto Viracopos | parcial, "estacionamentos perto do aeroporto de Viracopos" |
+| `rotadeferias.com.br` | 1887786 | 1736193 | estacionamento aeroporto Viracopos | "Movepark" (o portal só aceita marca, genérica, imagem ou URL) |
+
+A âncora exata ficou só no `mochileiros.com`, por decisão do Diego em 13/10/2026: uma exata no lote
+mantém o perfil de âncoras natural. O `campinas.com.br` é a exceção à âncora de marca do item 3,
+porque aceita qualquer âncora. Os quatro pedidos ficaram "Em andamento", com prazo do publicador em
+19/10/2026. Na mesma lista segue parado o pedido 1720083 da Virapark (`obutecodanet.ig.com.br`), "À
+espera do conteúdo" desde 22/09/2026, sem artigo vinculado.
 
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
 (Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
@@ -525,7 +545,7 @@ opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da C
 ### 5.3 Meses 2 a 5: compra qualificada
 
 - **[Conteúdo 66](https://app.clickup.com/t/17tn9e9gfh8):** regras da seção 4 aplicadas no WhitePress, orçamento e planilha de controle.
-- **[Conteúdo 67](https://app.clickup.com/t/17tn9e9gfh9):** lote de outubro, Guarulhos (metade Movepark) e Viracopos (metade Virapark), seção 4.3.
+- **[Conteúdo 67](https://app.clickup.com/t/17tn9e9gfh9):** lote de outubro, Guarulhos (metade Movepark) e Viracopos (metade Virapark), seção 4.3. Pedido em 14/10/2026 (R$ 4.025,00).
 - **[Conteúdo 68](https://app.clickup.com/t/17tn9e9gfha):** lote de novembro, Guarulhos e Confins (junto do Ataque CNF).
 - **[Conteúdo 69](https://app.clickup.com/t/17tn9e9gfhb):** lote de dezembro, Curitiba e Viracopos.
 - **Janeiro (Conteúdo 79 e 80):** Curitiba e Confins, fechando dois links por praça (seção 4.1).
