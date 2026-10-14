@@ -38,6 +38,14 @@ export type BookingFilters = {
   attendance?: "compareceu" | "no_show" | "pendente";
   /** Só reservas com (true) ou sem (false) PCD. */
   pcd?: boolean;
+  /** Adicional (14/10/2026): `any` = qualquer um, `none` = nenhum, senão o nome do adicional. */
+  addOn?: string;
+  /** Afiliado: só o site tem; `true` deixa só reserva do site. */
+  affiliated?: boolean;
+  /** Fonte da campanha (`utm_source`), sem diferença de caixa. */
+  utmSource?: string;
+  /** Com (true) ou sem (false) troca de placa registrada. */
+  plateChanged?: boolean;
 };
 
 export const bookingsKeys = {
@@ -87,7 +95,10 @@ function rpc(fn: string, args: Record<string, unknown>) {
   return call(fn, args);
 }
 
-async function fetchBookingsPage(f: BookingPageFilters, withSummary = false): Promise<BookingsPage> {
+async function fetchBookingsPage(
+  f: BookingPageFilters,
+  withSummary = false,
+): Promise<BookingsPage> {
   const { data, error } = await rpc("bookings_list_page", {
     p_source: f.source ?? "all",
     p_statuses: f.status?.length ? f.status : null,
@@ -106,6 +117,10 @@ async function fetchBookingsPage(f: BookingPageFilters, withSummary = false): Pr
     p_with_summary: withSummary,
     p_attendance: f.attendance ?? null,
     p_pcd: f.pcd ?? null,
+    p_add_on: f.addOn ?? null,
+    p_affiliated: f.affiliated ?? null,
+    p_utm_source: f.utmSource ?? null,
+    p_plate_changed: f.plateChanged ?? null,
   });
   if (error) throw new Error(error.message);
   const r = (data ?? {}) as {
@@ -194,7 +209,8 @@ export function withoutPage(f: BookingPageFilters): Omit<BookingPageFilters, "pa
 export function useBookingsSummary(filters: Omit<BookingPageFilters, "page" | "pageSize">) {
   return useQuery({
     queryKey: [...bookingsKeys.all, "summary", filters] as const,
-    queryFn: async () => (await fetchBookingsPage({ ...filters, page: 0, pageSize: 1 }, true)).summary,
+    queryFn: async () =>
+      (await fetchBookingsPage({ ...filters, page: 0, pageSize: 1 }, true)).summary,
     placeholderData: (prev) => prev,
   });
 }
@@ -445,5 +461,26 @@ export function useReconcileBookingFees() {
       return body;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all }),
+  });
+}
+
+export type BookingFilterOptions = { add_ons: string[]; utm_sources: string[] };
+
+/**
+ * Opções dos selects de adicional e de fonte da campanha, do que quem chama enxerga no último ano
+ * (`bookings_filter_options`). Mudam devagar: ficam 10 minutos sem refazer a conta.
+ */
+export function useBookingFilterOptions(companyIds?: string[]) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "filter-options", companyIds ?? null] as const,
+    queryFn: async (): Promise<BookingFilterOptions> => {
+      const { data, error } = await rpc("bookings_filter_options", {
+        p_company_ids: companyIds?.length ? companyIds : null,
+      });
+      if (error) throw new Error(error.message);
+      const r = (data ?? {}) as Partial<BookingFilterOptions>;
+      return { add_ons: r.add_ons ?? [], utm_sources: r.utm_sources ?? [] };
+    },
+    staleTime: 10 * 60 * 1000,
   });
 }

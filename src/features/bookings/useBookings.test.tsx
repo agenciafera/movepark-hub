@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { fetchBookingsForExport, useBookingsPage, useBookingsSummary, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
+import { fetchBookingsForExport, useBookingFilterOptions, useBookingsPage, useBookingsSummary, useReconcileBookingFees, useRecordFlightCheckout } from "./api";
 import { supabase } from "@/lib/supabase";
 import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import { vi } from "vitest";
@@ -46,6 +46,31 @@ describe("useBookingsPage (lista única, 09/10/2026)", () => {
       p_with_summary: false,
       p_attendance: null,
       p_pcd: null,
+      p_add_on: null,
+      p_affiliated: null,
+      p_utm_source: null,
+      p_plate_changed: null,
+    });
+  });
+
+  it("filtros de adicional, afiliado, campanha e troca de placa (14/10/2026) vão com o nome certo", async () => {
+    const fn = rpc("bookings_list_page", { json: { total: 0, items: [], summary: null } });
+    const { result } = renderMutation(() =>
+      useBookingsPage({
+        addOn: "Capa Protetora",
+        affiliated: false,
+        utmSource: "google",
+        plateChanged: true,
+        page: 0,
+        pageSize: 50,
+      }),
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fn.ultimoBody).toMatchObject({
+      p_add_on: "Capa Protetora",
+      p_affiliated: false,
+      p_utm_source: "google",
+      p_plate_changed: true,
     });
   });
 
@@ -178,5 +203,15 @@ describe("useRecordFlightCheckout", () => {
     falha("rpc", "operator_record_flight_checkout", 400, "A saída real desta reserva já foi registrada.");
     const { result } = renderMutation(() => useRecordFlightCheckout());
     await expect(result.current.mutateAsync({ bookingId: "b1", actualCheckOutAt: "2026-12-14T13:00:00Z", chargedCents: 0, note: "x" })).rejects.toThrow(/já foi registrada/);
+  });
+});
+
+describe("useBookingFilterOptions (14/10/2026)", () => {
+  it("pede as opções no recorte da empresa e devolve listas vazias quando o servidor não traz", async () => {
+    const fn = rpc("bookings_filter_options", { json: { add_ons: ["Capa"] } });
+    const { result } = renderMutation(() => useBookingFilterOptions(["c-1"]));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fn.ultimoBody).toEqual({ p_company_ids: ["c-1"] });
+    expect(result.current.data).toEqual({ add_ons: ["Capa"], utm_sources: [] });
   });
 });

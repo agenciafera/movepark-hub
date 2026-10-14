@@ -39,9 +39,12 @@ import {
   ATTENDANCE_OPTIONS,
   PAYMENT_OPTIONS,
   PCD_OPTIONS,
+  addOnParam,
   attendanceParam,
   pcdParam,
+  yesNoParam,
 } from "@/features/bookings/bookingFilterOptions";
+import { ExtraBookingFilters } from "@/features/bookings/ExtraBookingFilters";
 import type { BookingStatus } from "@/types/domain";
 
 const statusOptions: { value: BookingStatus | "all"; label: string }[] = [
@@ -73,6 +76,10 @@ const FILTROS = {
   estacionamento: "all",
   comparecimento: "all",
   pcd: "all",
+  adicional: "all",
+  campanha: "all",
+  placa: "all",
+  afiliado: "all",
   pagina: "1",
 };
 
@@ -122,6 +129,10 @@ export default function ManagerBookings() {
       companyIds: companyId === "all" ? undefined : [companyId],
       attendance: attendanceParam(f.comparecimento),
       pcd: pcdParam(f.pcd),
+      addOn: addOnParam(f.adicional),
+      utmSource: f.campanha === "all" ? undefined : f.campanha,
+      plateChanged: yesNoParam(f.placa),
+      affiliated: yesNoParam(f.afiliado),
       from: term ? undefined : range.from.toISOString(),
       to: term ? undefined : range.to.toISOString(),
       dateField: "created_at",
@@ -137,6 +148,10 @@ export default function ManagerBookings() {
       companyId,
       f.comparecimento,
       f.pcd,
+      f.adicional,
+      f.campanha,
+      f.placa,
+      f.afiliado,
       scopedLocationIds,
       range,
       page,
@@ -293,6 +308,12 @@ export default function ManagerBookings() {
               </SelectContent>
             </Select>
           </div>
+          <ExtraBookingFilters
+            values={f}
+            onChange={set}
+            showAffiliate
+            companyIds={companyId === "all" ? undefined : [companyId]}
+          />
           <Button variant="secondary" onClick={limpar} disabled={!temFiltro}>
             Limpar filtros
           </Button>

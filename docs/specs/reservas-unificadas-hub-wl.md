@@ -115,7 +115,9 @@ que enxergam. Etiqueta, filtro de origem, tooltip da ocupação, origem no card 
 
 Os filtros de hoje continuam. Para quem tem white-label entra **Origem: Todas / Hub / White-label**.
 Os filtros que só fazem sentido para um lado (ex.: Comparecimento, Com troca de placa, Afiliado do
-legado) aparecem para quem tem white-label e se aplicam onde o dado existe.
+legado) aparecem para quem tem white-label e se aplicam onde o dado existe. Desde 14/10/2026,
+adicional, campanha (UTM) e troca de placa existem nas duas origens e aparecem para todos;
+afiliado continua só para quem tem white-label (§ 10).
 
 ### 3.4 Abrir uma reserva
 
@@ -339,8 +341,12 @@ Revisão depois das fases 1 a 6. Nada abaixo trava o uso; é o que o § 4 pedia 
 **Lista**
 - ~~Comparecimento, PCD, forma de pagamento do site, busca pela placa anterior e pelo modelo~~:
   feitos em 13/10/2026 (migration `20261129170000_lista_reservas_mais_filtros.sql`, nas duas
-  origens e nos dois painéis). Ainda sem par: produtos (adicionais), afiliado e UTM, "com troca de
-  placa".
+  origens e nos dois painéis).
+- ~~Adicional, campanha (UTM), troca de placa e afiliado~~: feitos em 14/10/2026 (migration
+  `20261129210000_lista_reservas_filtros_extras.sql`), nos dois painéis. Adicional, campanha e troca
+  de placa valem nas duas origens; afiliado só existe no site, aparece só para quem tem white-label,
+  e "sim" tira o Hub da lista. As opções de adicional e de campanha vêm do servidor
+  (`bookings_filter_options`, último ano, as 40 fontes que mais venderam).
 - Indicadores no topo da lista do Operator (o Manager já tem o resumo por origem).
 - "Limpar comparecimento" em massa (a ação em massa faz "chegou" e "não veio"; desfazer é um a um,
   no detalhe).

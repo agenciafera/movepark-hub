@@ -8,9 +8,12 @@ import {
   ATTENDANCE_OPTIONS,
   PAYMENT_OPTIONS,
   PCD_OPTIONS,
+  addOnParam,
   attendanceParam,
   pcdParam,
+  yesNoParam,
 } from "@/features/bookings/bookingFilterOptions";
+import { ExtraBookingFilters } from "@/features/bookings/ExtraBookingFilters";
 import type { PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,6 +61,10 @@ const FILTROS = {
   pagamento: "all",
   comparecimento: "all",
   pcd: "all",
+  adicional: "all",
+  campanha: "all",
+  placa: "all",
+  afiliado: "all",
   pagina: "1",
 };
 
@@ -107,6 +114,11 @@ export default function OperatorBookings() {
       paymentMethod: f.pagamento === "all" ? undefined : (f.pagamento as PaymentMethodFilter),
       attendance: attendanceParam(f.comparecimento),
       pcd: pcdParam(f.pcd),
+      addOn: addOnParam(f.adicional),
+      utmSource: f.campanha === "all" ? undefined : f.campanha,
+      plateChanged: yesNoParam(f.placa),
+      // Afiliado só existe no site: sem white-label o filtro nem aparece.
+      affiliated: hasWl ? yesNoParam(f.afiliado) : undefined,
       // filtra por data de check-in (inclui o dia inteiro do "até")
       dateField: "check_in_at",
       from: from ? `${from}T00:00:00` : undefined,
@@ -121,6 +133,10 @@ export default function OperatorBookings() {
       f.pagamento,
       f.comparecimento,
       f.pcd,
+      f.adicional,
+      f.campanha,
+      f.placa,
+      f.afiliado,
       scopedCompanyId,
       hasWl,
       source,
@@ -141,6 +157,10 @@ export default function OperatorBookings() {
     f.pagamento,
     f.comparecimento,
     f.pcd,
+    f.adicional,
+    f.campanha,
+    f.placa,
+    f.afiliado,
     scopedCompanyId,
   ].join("|");
   // A seleção é da página que está na tela: muda o recorte ou a página, ela zera.
@@ -292,6 +312,13 @@ export default function OperatorBookings() {
               </Select>
             </div>
           )}
+          <ExtraBookingFilters
+            values={f}
+            onChange={set}
+            showAffiliate={hasWl}
+            companyIds={scopedCompanyId ? [scopedCompanyId] : undefined}
+            itemClassName="flex w-full flex-col gap-1.5 tablet:w-48"
+          />
           <Button variant="secondary" onClick={clear} disabled={!temFiltro}>
             Limpar filtros
           </Button>

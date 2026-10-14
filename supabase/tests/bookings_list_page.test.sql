@@ -164,7 +164,7 @@ select ok(not has_function_privilege('anon', 'public.wl_booking_search_ids(text,
   'a anon key não executa a busca do site');
 select ok(
   not has_function_privilege('anon',
-    'public.bookings_list_page(text, text[], uuid[], uuid[], text, timestamptz, timestamptz, text, text, text[], boolean, integer, integer, boolean, text, boolean)',
+    'public.bookings_list_page(text, text[], uuid[], uuid[], text, timestamptz, timestamptz, text, text, text[], boolean, integer, integer, boolean, text, boolean, text, boolean, text, boolean)',
     'execute'),
   'a anon key não executa');
 
