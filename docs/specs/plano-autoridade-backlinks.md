@@ -318,7 +318,7 @@ Valem para todo pedido a partir de outubro de 2026. Pedido fora da regra não en
 | Âncora | Maioria marca ou URL ("Movepark", "movepark.co"), uma parte parcial ("estacionamento perto do aeroporto de Guarulhos"), **exata quase nunca** |
 | Ritmo | Constante, todo mês, nunca em rajada. A quantidade sai do orçamento: no custo histórico de cerca de R$ 510 por link, R$ 3.000 por mês compram de 4 a 6 links de AS 30 ou mais (site melhor custa mais, e está certo) |
 | Conteúdo do artigo | Útil por si só, sem promessa de transação que a unidade não entrega (ADR-009) e sem travessão |
-| Registro | Todo link comprado entra na planilha de controle (Conteúdo 66): site, AS no dia, URL de destino, âncora, preço, data e se ainda está no ar |
+| Registro | Todo link comprado entra na planilha de controle (Conteúdo 66), [`dados/backlinks-controle.csv`](./dados/backlinks-controle.csv): pedido, projeto, site, AS no dia, preço, URL publicada, destino, âncora, dofollow, se ainda está no ar e a data da conferência. Criada em 14/10/2026 com as 37 compras auditadas na seção 2.7 e os cinco pedidos de outubro |
 
 **Risco a conhecer:** para o Google, link pago tem que levar `rel="sponsored"`. Site com público
 real e âncora natural reduzem o risco, mas não zeram. Por isso o peso do plano está em link
