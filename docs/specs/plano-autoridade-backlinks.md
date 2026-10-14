@@ -438,7 +438,10 @@ Antes de cada pedido, o domínio passa por três filtros. A evidência de cada u
    WhitePress marca a publicação como não indexada) e os portais `*.app.br` de nome genérico
    (`agenciainforma`, `atendimentoaocliente`, e os que o projeto Virapark usou: `techblog`,
    `revistadicas`, `snaptik`, `metaverso`). Dos dois que o projeto Movepark comprou, um post sumiu e o
-   outro portal saiu da base do WhitePress.
+   outro portal saiu da base do WhitePress. **`obutecodanet.ig.com.br`** entrou na lista em 14/10/2026,
+   por decisão do Diego: no artigo de outubro o portal publicou os H2 como negrito, tirou a imagem do
+   corpo, trocou o nome e o `alt` da foto principal e não pôs meta description (seção 4.3). Além
+   disso, ele já tinha seis posts pagos pela Movepark e pela Virapark desde dez/2023, e este foi o sétimo.
 3. **Já linka para o `movepark.co`: a compra nova pesa menos.** Pela regra da seção 4.1, domínio novo
    vale mais que um segundo link do mesmo site. Já linkam: `ig.com.br` (qualquer subdomínio),
    `uol.com.br`, `r7.com`, `uai.com.br`, `sul21.com.br`, `gazetaweb.com`, `guiafloripa.com.br`,
@@ -532,7 +535,8 @@ description e os `alt`. O `campinas.com.br` trocou o H1 para "Estacionamento do 
 nas férias", publicou as imagens sem `alt` e usou o primeiro parágrafo como meta description. O
 `obutecodanet.ig.com.br` foi o que mais mexeu: publicou os H2 como parágrafo em negrito, tirou a imagem
 do corpo, renomeou a foto principal para `image-300.jpg` sem `alt` e não pôs meta description. O link,
-que é o que a compra paga, ficou certo nos quatro. O `viagensecaminhos.com` seguia "Em andamento", com
+que é o que a compra paga, ficou certo nos quatro. Decisão do Diego: não pedir correção ao
+`obutecodanet.ig.com.br` e não comprar mais nele (entrou na lista de exclusão, seção 4.2). O `viagensecaminhos.com` seguia "Em andamento", com
 prazo em 19/10/2026. O registro de cada um está na planilha de controle.
 
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
