@@ -15,7 +15,11 @@ vi.mock("./api", () => ({
   useUpdateBookingStatus: () => ({ mutate: updateMutate, isPending: false }),
   useBookingHistory: () => ({ data: state.history ?? [] }),
 }));
-vi.mock("./customerApi", () => ({ useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }) }));
+const voucherPdf = vi.hoisted(() => vi.fn());
+vi.mock("./customerApi", () => ({
+  useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useVoucherPdf: () => ({ mutateAsync: voucherPdf, isPending: false }),
+}));
 vi.mock("@/features/payouts/api", () => ({ usePayoutReleaseDays: () => ({ data: 30 }) }));
 
 import { BookingDetailView } from "./BookingDetailView";
@@ -129,6 +133,26 @@ describe("BookingDetailView", () => {
     state.booking = booking("completed", [pago]);
     abre();
     expect(screen.queryByRole("button", { name: "Cancelar reserva" })).not.toBeInTheDocument();
+  });
+
+  it("gera o voucher na hora, no Manager e no Operator, e abre o PDF; reserva pendente não tem voucher", async () => {
+    voucherPdf.mockResolvedValue({ url: "https://x/v.pdf", code: "MP-7E2482" });
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    state.trail = trailPago;
+    state.booking = booking("confirmed", [pago]);
+    const { unmount } = abre("operator");
+    fireEvent.click(screen.getByTestId("gerar-voucher"));
+    await vi.waitFor(() => expect(open).toHaveBeenCalledWith("https://x/v.pdf", "_blank"));
+    expect(voucherPdf).toHaveBeenCalledWith("MP-7E2482");
+    unmount();
+    state.booking = booking("completed", [pago]);
+    const m = abre("manager");
+    expect(screen.getByTestId("gerar-voucher")).toBeInTheDocument();
+    m.unmount();
+    state.booking = booking("pending", []);
+    abre("manager");
+    expect(screen.queryByTestId("gerar-voucher")).not.toBeInTheDocument();
+    open.mockRestore();
   });
 
   it("avisa quando a janela de estorno do gateway já venceu (PIX pago há mais de 90 dias)", () => {

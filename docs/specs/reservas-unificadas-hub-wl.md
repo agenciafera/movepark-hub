@@ -144,7 +144,7 @@ Comparação ponto a ponto entre o backoffice do white-label (telas enviadas e c
 | Funcionalidade | White-label | Hub hoje | Proposta |
 |---|---|---|---|
 | Voucher: baixar | PDF por pedido pago | só na conta do cliente | botão Voucher no detalhe (Hub: Edge `voucher-pdf`; site: `voucher_url` do legado) |
-| Voucher: gerar novo | sim | não | site: chamar o legado (rota nova); Hub: o PDF já é gerado sob demanda |
+| Voucher: gerar novo | sim | sim (14/10/2026) | Hub: botão "Gerar voucher" no detalhe (Manager e Operator), que gera o PDF na hora com os dados atuais pela Edge `voucher-pdf`. Site: sem botão no Hub, por decisão de não mexer no legado; a troca de placa pelo Hub já regenera o voucher lá, e nenhuma reserva paga futura do site está sem voucher (medido em 14/10) |
 | Comparecimento / No-show | botões no topo | Hub: check-in, check-out, não compareceu | unificar o vocabulário (D2) |
 | Trocar placa | modal com consulta de placa (marca/modelo/cor), motivo obrigatório, regenera voucher | Hub: troca simples, sem consulta nem motivo | **trazer a consulta de placa e o motivo para o Hub** nos dois tipos |
 | Veículo e passageiros | marca, modelo, cor, passageiros | veículo (placa, modelo, cor) | importar marca/modelo/cor e passageiros do site |
@@ -346,7 +346,7 @@ Revisão depois das fases 1 a 6. Nada abaixo trava o uso; é o que o § 4 pedia 
   no detalhe).
 
 **Detalhe**
-- Botão de voucher na reserva do Hub (no Manager/Operator) e "gerar novo voucher" na reserva do site
+- ~~Botão de voucher na reserva do Hub (no Manager/Operator)~~: feito em 14/10/2026, junto com a correção que deixa o parceiro ler a placa (migration `20261129200000`). "Gerar novo voucher" na reserva do site fica fora: o legado não será alterado
   (exige rota nova no legado).
 - Dados do pagamento e `extra_data` do site para a equipe (o § 4.2 deixava como "se trouxermos").
 

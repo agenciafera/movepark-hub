@@ -22,7 +22,8 @@ import { PlateChangeForm, type PlateChangeValues } from "@/features/vehicles/Pla
 import { FlightCheckoutDialog } from "./FlightCheckoutDialog";
 import { awaitingRealCheckout, flightNotice, type OperatorExtension } from "./flightCheckout.logic";
 import { usePayoutReleaseDays } from "@/features/payouts/api";
-import { useChangeBookingVehicle } from "./customerApi";
+import { useChangeBookingVehicle, useVoucherPdf } from "./customerApi";
+import { canDownloadVoucher } from "./voucher.logic";
 import { BookingMoneyCard } from "./BookingMoneyCard";
 import { BookingStateBanner } from "./BookingStateBanner";
 import { bookingStateSummary } from "./bookingState.logic";
@@ -86,6 +87,7 @@ export function BookingDetailView({
   const cancelMutation = useCancelBookingStaff();
   const statusMutation = useUpdateBookingStatus();
   const changeVehicle = useChangeBookingVehicle();
+  const voucherPdf = useVoucherPdf();
   const [confirming, setConfirming] = React.useState(false);
   const [trocandoPlaca, setTrocandoPlaca] = React.useState(false);
   const [flightOpen, setFlightOpen] = React.useState(false);
@@ -215,6 +217,16 @@ export function BookingDetailView({
     }
   }
 
+  // O PDF sai na hora com os dados atuais (placa, datas): gerar de novo é o mesmo clique.
+  async function openVoucher() {
+    try {
+      const { url } = await voucherPdf.mutateAsync(booking!.code);
+      window.open(url, "_blank");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar o voucher");
+    }
+  }
+
   function handleCancel() {
     cancelMutation.mutate(booking!.code, {
       onSuccess: (r) => {
@@ -246,6 +258,17 @@ export function BookingDetailView({
               <Badge tone={dinheiro.tone} data-testid="badge-pagamento">
                 {dinheiro.label}
               </Badge>
+            )}
+            {canDownloadVoucher(booking.status) && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={openVoucher}
+                disabled={voucherPdf.isPending}
+                data-testid="gerar-voucher"
+              >
+                {voucherPdf.isPending ? "Gerando..." : "Gerar voucher"}
+              </Button>
             )}
           </div>
         }
