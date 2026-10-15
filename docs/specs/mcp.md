@@ -248,6 +248,20 @@ confirmada com o e-mail de qualquer pessoa, e o atacante entrou assim (por exemp
 novo recebe o template "Confirm signup", que já manda o código, e o `verifyOtp`
 confirma o e-mail no mesmo passo.
 
+**E nenhuma senha nova é gravada** (gatilho `block_new_password` em
+`auth.users`, migration `20261129230000_block_new_passwords.sql`). Só a
+confirmação de e-mail ainda deixava o pré-sequestro: alguém cadastra o e-mail de
+um cliente com uma senha dele, a conta fica pendente, e quando o cliente entra
+pelo código a senha plantada passa a valer. O gatilho grava senha vazia (a
+convenção do GoTrue para conta sem senha) em toda conta nova e em toda troca de
+senha. As senhas que já existiam foram **preservadas por decisão**: o gatilho só
+apaga quando o valor muda, senão o GoTrue, que regrava a linha inteira no login,
+apagaria todas no primeiro acesso. Medido antes em `auth.mfa_amr_claims`: nenhum
+cliente real entra por senha (as sessões "password" eram do atacante, de contas de
+teste e a sessão interna que o GoTrue abre ao criar conta pelo código e não entrega
+a ninguém). Conferido em staging pelo GoTrue: conta confirmada com a senha certa
+recebe `invalid_credentials`, e cliente novo segue entrando pelo código.
+
 **Em aberto, e não é remoção simples:** `verify_login_otp` devolve
 `refresh_token` sem vínculo com quem pediu o código, o que deixa um conector
 malicioso sair com credencial de longa duração se convencer o usuário a colar o

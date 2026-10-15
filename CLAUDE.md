@@ -422,6 +422,7 @@ onSuccess: () => qc.invalidateQueries({ queryKey: bookingsKeys.all })
 - Proteja rotas com `<RequireRole roles={[...]} />` na árvore de `routes.tsx`, nunca com checagem ad-hoc dentro da página.
 - **Impersonation:** `hub_admin` pode "entrar" como `company_operator` de uma `company`. Use **`effectiveRole`** e **`effectiveCompanyIds`** do `useAuth()` para qualquer lógica/escopo de dados — não use `session.role` cru.
 - Auth é **passwordless para todos os papéis** (consumidor, manager e operator): a tela única `/login` (`src/routes/login.tsx`) oferece e-mail OTP, WhatsApp OTP e Google. `/entrar` e `/signup` são rotas legadas que redirecionam pra `/login`. **Não há login por senha** (sem `signInWithPassword`); o password grant do Supabase Auth deve ficar **desligado**. O WhatsApp OTP passa pela Edge Function `send-whatsapp-otp` (Send SMS Hook).
+  - **Como isso é garantido (desde 15/10/2026, depois do ataque de 14/10):** o GoTrue não tem chave que desligue só a senha, então (1) a confirmação de e-mail fica **ligada** (`mailer_autoconfirm = false`; ligada, o `/auth/v1/signup` com senha criava conta confirmada com o e-mail de qualquer pessoa) e (2) o gatilho `block_new_password` em `auth.users` grava senha vazia em toda conta nova e toda troca de senha, o que fecha o pré-sequestro de conta. Senhas antigas foram preservadas por decisão. **Não remova o gatilho nem religue a autoconfirmação.** O login por código do MCP tem freio por identificador (`otp_verify_allowed`). Ver [`docs/specs/mcp.md`](docs/specs/mcp.md).
 
 ### Rotas
 
