@@ -332,3 +332,56 @@ describe("preço pesquisado e leia também na ficha do lote", () => {
     expect(links).toContain("/blog/estacionamento-coberto-em-viracopos/");
   });
 });
+
+/**
+ * Conteúdo 64: a ficha do Ponce Park herda os links externos da URL antiga do WordPress e
+ * passa essa autoridade para a página de Guarulhos com o termo de cabeça na âncora. Antes,
+ * o destino só aparecia na trilha e no rodapé, com "Guarulhos (GRU)" como texto do link.
+ */
+describe("link contextual para o destino (Conteúdo 64)", () => {
+  const gru = () =>
+    dest({
+      code: "GRU",
+      name: "Aeroporto Internacional de São Paulo/Guarulhos",
+      short_name: "Guarulhos (GRU)",
+      slug: "aeroporto-internacional-de-sao-paulo-guarulhos",
+      public_slug: "aeroporto-guarulhos",
+      city: "Guarulhos",
+      state: "SP",
+    });
+
+  it("o Ponce Park linka Guarulhos no corpo, com o termo de cabeça na âncora", () => {
+    loaderData.mockReturnValue({
+      destination: gru(),
+      prospect: prospect({
+        name: "Ponce Park",
+        slug: "ponce-park-guarulhos",
+        public_slug: "ponce-park",
+      }),
+    });
+
+    render();
+
+    const link = screen.getByRole("link", { name: "estacionamento no aeroporto de Guarulhos" });
+    expect(link).toHaveAttribute("href", "/estacionamentos/aeroporto-guarulhos");
+    // Corpo da ficha, não a trilha: link de navegação não é o link contextual que a atividade pede.
+    expect(link.closest("nav")).toBeNull();
+    expect(link.closest("header")).not.toBeNull();
+    // A frase fala das outras opções e não promete reserva neste lote (ADR-010).
+    expect(link.closest("p")).toHaveTextContent(
+      "Para reservar online, veja as outras opções de estacionamento no aeroporto de Guarulhos.",
+    );
+  });
+
+  it("os outros lotes mapeados não ganham o link", () => {
+    loaderData.mockReturnValue({
+      destination: gru(),
+      prospect: prospect({ name: "Bandeira Park", public_slug: "bandeira-park" }),
+    });
+
+    render();
+
+    expect(screen.queryByRole("link", { name: /estacionamento no aeroporto de/i })).toBeNull();
+    expect(screen.queryByText(/Para reservar online, veja as outras opções/)).toBeNull();
+  });
+});

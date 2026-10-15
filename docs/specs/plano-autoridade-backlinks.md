@@ -569,6 +569,16 @@ opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da C
 
 - **[Conteúdo 64](https://app.clickup.com/t/17tn9e9gfh2):** link interno contextual da ficha do Ponce Park, da home e da página de Viracopos
   para `/estacionamentos/aeroporto-guarulhos`, com âncora de cabeça.
+  **Feito em 15/10/2026, só a ficha do Ponce Park.** A home e a página de Viracopos ficaram de
+  fora por decisão do Diego e seguem sem link para Guarulhos. Antes, a ficha linkava o destino
+  só pela trilha e pelo rodapé ("Ver estacionamentos com reserva no Guarulhos (GRU)"), sem o
+  termo de cabeça na âncora. Agora o topo do corpo traz "Para reservar online, veja as outras
+  opções de estacionamento no aeroporto de Guarulhos", e o link é o trecho "estacionamento no
+  aeroporto de Guarulhos". A frase fala das outras opções e não promete nada do lote (ADR-009 e ADR-010). O template da
+  ficha serve cerca de 150 lotes mapeados, e o link sai só para o par destino e lote listado
+  em `ancoraParaODestino` (`src/features/destinations/loteMapeado.logic.ts`): os outros lotes
+  não têm link externo chegando na ficha e não mudaram. Lote novo entra na lista quando o
+  Search Console mostrar link externo apontando para ele.
 - **[Conteúdo 65](https://app.clickup.com/t/17tn9e9gfh4):** os erros da auditoria do Semrush e as 38 ideias do On Page SEO Checker nas 7
   páginas que ele analisou.
 

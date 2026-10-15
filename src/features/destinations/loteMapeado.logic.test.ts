@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ancoraParaODestino,
   comecaComEstacionamento,
   nomeDoLoteParaTitulo,
   tituloLoteMapeado,
@@ -52,5 +53,23 @@ describe("tituloLoteMapeado", () => {
     expect(tituloLoteMapeado("Talentos Park", "Recife")).toBe(
       "Estacionamento Talentos Park, em Recife | Movepark",
     );
+  });
+});
+
+describe("ancoraParaODestino (Conteúdo 64)", () => {
+  it("dá ao Ponce Park a âncora com o termo de cabeça de Guarulhos", () => {
+    expect(ancoraParaODestino("aeroporto-guarulhos", "ponce-park")).toBe(
+      "estacionamento no aeroporto de Guarulhos",
+    );
+  });
+
+  // O mesmo slug em outro destino é outro lote, sem a autoridade da URL antiga.
+  it("casa pelo par destino e lote, não só pelo slug do lote", () => {
+    expect(ancoraParaODestino("aeroporto-viracopos", "ponce-park")).toBeNull();
+  });
+
+  it("deixa de fora os lotes sem link externo, inclusive os de Guarulhos", () => {
+    expect(ancoraParaODestino("aeroporto-guarulhos", "bandeira-park")).toBeNull();
+    expect(ancoraParaODestino("aeroporto-viracopos", "bandeira-park")).toBeNull();
   });
 });

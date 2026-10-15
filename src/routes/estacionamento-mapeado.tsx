@@ -12,7 +12,11 @@ import { GoogleReviewsBlock } from "@/features/reviews/GoogleReviewsBlock";
 import { Button } from "@/components/ui/button";
 import type { FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
-import { nomeDoLoteParaTitulo, tituloLoteMapeado } from "@/features/destinations/loteMapeado.logic";
+import {
+  ancoraParaODestino,
+  nomeDoLoteParaTitulo,
+  tituloLoteMapeado,
+} from "@/features/destinations/loteMapeado.logic";
 import { precoPesquisado, postsDoLote } from "@/features/destinations/loteMapeadoPreco.logic";
 import { buildMetaDescription } from "@/lib/seo";
 import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
@@ -77,6 +81,7 @@ export default function EstacionamentoMapeadoPage() {
   // canonical apontando pra URL que redireciona é loop que derruba a indexação.
   const canonical = `${SITE_URL}${caminhoFicha(destinoSlug, prospect.public_slug ?? prospect.slug)}`;
   const distancia = prospect.distance_km == null ? null : formatDistance(prospect.distance_km);
+  const ancoraDestino = ancoraParaODestino(destinoSlug, prospect.public_slug ?? prospect.slug);
 
   const title = tituloLoteMapeado(prospect.name, destination.city);
   // A única página do site que não promete preço, e por escolha: lote mapeado não tem tabela
@@ -173,6 +178,22 @@ export default function EstacionamentoMapeadoPage() {
             Mapeamos este estacionamento perto do {destinationLabel}. Ainda não dá para reservar
             pela Movepark.
           </p>
+          {/* Link contextual de autoridade (Conteúdo 64): a ficha que recebe link externo
+              escoa para a página do destino com o termo de cabeça na âncora. Fica no topo do
+              corpo, e não no rodapé, porque link editorial pesa mais que link de navegação.
+              A frase fala das OUTRAS opções: este lote não tem reserva (ADR-010). */}
+          {ancoraDestino && (
+            <p className="text-pretty text-body-md text-muted">
+              Para reservar online, veja as outras opções de{" "}
+              <Link
+                to={caminhoDestino(destinoSlug)}
+                className="text-mp-primary underline underline-offset-2"
+              >
+                {ancoraDestino}
+              </Link>
+              .
+            </p>
+          )}
         </header>
 
         <section className="mt-8 flex flex-col gap-2">
