@@ -46,6 +46,75 @@ export function otpVerifyParams(
 }
 
 /**
+ * Chave dos freios de OTP (`otp_request_allowed` e `otp_verify_allowed`), antes do hash.
+ *
+ * Tem que dar a mesma chave para o mesmo dono: o GoTrue trata `+55 41 98814-9449` e
+ * `5541988149449` como o mesmo telefone, e se o freio não fizer o mesmo, o atacante troca a
+ * formatação a cada tentativa e nunca encosta no limite. Telefone vira só dígitos; e-mail vira
+ * minúsculo. Lança em canal/identificador inválido.
+ */
+export function otpLimiterKey(channel: unknown, identifier: unknown): string {
+  if (!isOtpChannel(channel)) {
+    throw new Error("Canal inválido. Use 'whatsapp' ou 'email'.");
+  }
+  const id = typeof identifier === "string" ? identifier.trim() : "";
+  const chave = channel === "whatsapp" ? id.replace(/\D/g, "") : id.toLowerCase();
+  if (!chave) throw new Error("Identificador (telefone ou e-mail) obrigatório.");
+  return chave;
+}
+
+export interface VerifyLoginDeps {
+  hash: (s: string) => Promise<string>;
+  /** `otp_verify_allowed`: registra a tentativa e diz se ela cabe na janela. */
+  permitido: (identifierHash: string) => Promise<boolean>;
+  /** `supabase.auth.verifyOtp`. */
+  verificar: (params: Record<string, unknown>) => Promise<{
+    data: {
+      session: { access_token: string; refresh_token: string; expires_at?: number; token_type: string } | null;
+      user: { id: string } | null;
+    };
+    error: { message: string } | null;
+  }>;
+}
+
+/**
+ * `verify_login_otp`: troca o código por sessão, com freio por identificador.
+ *
+ * O freio vem ANTES do GoTrue e conta toda tentativa, certa ou errada. Ele é por identificador
+ * porque a verificação sai desta Edge: o limite por IP do GoTrue vê o IP da Edge, não o de quem
+ * chamou, e foi assim que 1.708 tentativas passaram em 14/10/2026. Entrada malformada é recusada
+ * antes, sem gastar tentativa.
+ */
+export async function verifyLoginOtp(
+  a: Record<string, unknown>,
+  deps: VerifyLoginDeps,
+): Promise<{
+  access_token: string;
+  refresh_token: string;
+  expires_at: number | undefined;
+  token_type: string;
+  user: { id: string | null };
+}> {
+  const params = otpVerifyParams(a.channel, a.identifier, a.code);
+  const chave = await deps.hash(otpLimiterKey(a.channel, a.identifier));
+  if (!(await deps.permitido(chave))) {
+    throw new Error("Muitas tentativas de código. Espere alguns minutos e peça um código novo.");
+  }
+
+  const { data, error } = await deps.verificar(params);
+  if (error) throw new Error(error.message);
+  const s = data.session;
+  if (!s) throw new Error("Código verificado, mas nenhuma sessão foi criada.");
+  return {
+    access_token: s.access_token,
+    refresh_token: s.refresh_token,
+    expires_at: s.expires_at,
+    token_type: s.token_type,
+    user: { id: data.user?.id ?? null },
+  };
+}
+
+/**
  * Telefone afirmado pelo chamador confiável, no formato do `auth.users`: só dígitos, sem `+`.
  *
  * Aceita `+5541988149449` e `5541988149449`. Número do Brasil exige DDD e o nono dígito

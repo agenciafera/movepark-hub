@@ -13,7 +13,9 @@
 // Ver docs/specs/mcp.md. server-card: /.well-known/mcp/server-card.json (+ partner/customer).
 
 // @ts-expect-error - Deno remote import
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Versão fixa: em 15/10/2026 o `@2` resolvia para 2.118.0, cujo build `denonext` do auth-js
+// o esm.sh ainda não servia (404), e o deploy desta Edge falhava no empacotamento.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.0";
 import {
   initializeResult,
   isJsonRpcRequest,
@@ -46,9 +48,11 @@ import {
   CUSTOMER_TXN_NAMES,
   erroDeSessao,
   normalizeAssertedPhone,
+  otpLimiterKey,
   otpRequestParams,
   temSessao,
   otpVerifyParams,
+  verifyLoginOtp,
 } from "./customer.logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 
@@ -460,7 +464,7 @@ async function callCustomer(
         auth: { persistSession: false },
       });
       const { data: permitido } = await admin.rpc("otp_request_allowed", {
-        p_identifier_hash: await sha256Hex(String(a.identifier ?? "").trim().toLowerCase()),
+        p_identifier_hash: await sha256Hex(otpLimiterKey(a.channel, a.identifier)),
         p_ip: ip,
       });
       if (permitido === false) {
@@ -474,18 +478,25 @@ async function callCustomer(
       return { status: "sent", channel: a.channel };
     }
     case "verify_login_otp": {
+      // Freio por identificador antes do GoTrue (ver verifyLoginOtp e a migration
+      // 20261129220000_otp_verify_throttle.sql).
+      const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
+        auth: { persistSession: false },
+      });
       const sb = anonClient();
-      const { data, error } = await sb.auth.verifyOtp(otpVerifyParams(a.channel, a.identifier, a.code));
-      if (error) throw new Error(error.message);
-      const s = data.session;
-      if (!s) throw new Error("Código verificado, mas nenhuma sessão foi criada.");
-      return {
-        access_token: s.access_token,
-        refresh_token: s.refresh_token,
-        expires_at: s.expires_at,
-        token_type: s.token_type,
-        user: { id: data.user?.id ?? null },
-      };
+      return verifyLoginOtp(a, {
+        hash: sha256Hex,
+        permitido: async (identifierHash) => {
+          const { data, error } = await admin.rpc("otp_verify_allowed", {
+            p_identifier_hash: identifierHash,
+            p_ip: ip,
+          });
+          // Falha do freio fecha a porta: sem ele, a verificação volta a aceitar força bruta.
+          if (error) throw new Error("Não foi possível validar o código agora. Tente de novo em instantes.");
+          return data === true;
+        },
+        verificar: (params) => sb.auth.verifyOtp(params as Parameters<typeof sb.auth.verifyOtp>[0]),
+      });
     }
     case "assert_verified_identity":
       // O gate de escopo (isToolCallable) já exigiu a chave com `identity:assert`.

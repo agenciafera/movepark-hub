@@ -10,8 +10,10 @@ import {
   CUSTOMER_TXN_NAMES,
   CUSTOMER_TXN_TOOLS,
   isOtpChannel,
+  otpLimiterKey,
   otpRequestParams,
   otpVerifyParams,
+  verifyLoginOtp,
 } from "./customer.logic.ts";
 
 Deno.test("isOtpChannel: só whatsapp e email", () => {
@@ -64,6 +66,102 @@ Deno.test("otpVerifyParams: email verifica com type email", () => {
 
 Deno.test("otpVerifyParams: código ausente lança", () => {
   assertThrows(() => otpVerifyParams("email", "a@b.com", ""), Error, "Código");
+});
+
+// ── Freio da verificação do código ──────────────────────────────────────────
+// Ataque de 14/10/2026: 1.708 tentativas de código por `verify_login_otp`, nenhuma
+// barrada. A verificação sai da Edge, então o limite por IP do GoTrue enxerga o IP
+// da Edge e não o do atacante. O freio tem que ser por identificador.
+
+Deno.test("otpLimiterKey: telefone em formatos diferentes vira a mesma chave", () => {
+  const k = otpLimiterKey("whatsapp", "+55 (41) 98814-9449");
+  assertEquals(k, "5541988149449");
+  assertEquals(otpLimiterKey("whatsapp", "5541988149449"), k);
+  assertEquals(otpLimiterKey("whatsapp", "+5541988149449"), k);
+});
+
+Deno.test("otpLimiterKey: e-mail ignora caixa e espaço", () => {
+  assertEquals(otpLimiterKey("email", "  Contato@Exemplo.COM "), "contato@exemplo.com");
+});
+
+Deno.test("otpLimiterKey: canal inválido e identificador sem conteúdo lançam", () => {
+  assertThrows(() => otpLimiterKey("sms", "x"), Error, "Canal inválido");
+  assertThrows(() => otpLimiterKey("whatsapp", "(  )"), Error, "obrigatório");
+});
+
+type Chamadas = { permitido: string[]; verificar: Record<string, unknown>[] };
+
+function depsFalsas(opts: { permitido: boolean; erro?: string }) {
+  const chamadas: Chamadas = { permitido: [], verificar: [] };
+  const deps = {
+    hash: (s: string) => Promise.resolve(`h(${s})`),
+    permitido: (h: string) => {
+      chamadas.permitido.push(h);
+      return Promise.resolve(opts.permitido);
+    },
+    verificar: (p: Record<string, unknown>) => {
+      chamadas.verificar.push(p);
+      if (opts.erro) return Promise.resolve({ data: { session: null, user: null }, error: { message: opts.erro } });
+      return Promise.resolve({
+        data: {
+          session: { access_token: "at", refresh_token: "rt", expires_at: 1, token_type: "bearer" },
+          user: { id: "u1" },
+        },
+        error: null,
+      });
+    },
+  };
+  return { deps, chamadas };
+}
+
+Deno.test("verifyLoginOtp: freio recusa e o código nem chega ao GoTrue", async () => {
+  const { deps, chamadas } = depsFalsas({ permitido: false });
+  let erro: unknown;
+  try {
+    await verifyLoginOtp({ channel: "email", identifier: "a@b.com", code: "123456" }, deps);
+  } catch (e) {
+    erro = e;
+  }
+  assertEquals(erro instanceof Error && erro.message.includes("Muitas tentativas"), true);
+  assertEquals(chamadas.verificar.length, 0);
+});
+
+Deno.test("verifyLoginOtp: conta a tentativa pela chave normalizada antes de verificar", async () => {
+  const { deps, chamadas } = depsFalsas({ permitido: true });
+  const r = await verifyLoginOtp({ channel: "whatsapp", identifier: "+55 41 98814-9449", code: "123456" }, deps);
+  assertEquals(chamadas.permitido, ["h(5541988149449)"]);
+  assertEquals(chamadas.verificar, [{ phone: "+55 41 98814-9449", token: "123456", type: "sms" }]);
+  assertEquals(r, {
+    access_token: "at",
+    refresh_token: "rt",
+    expires_at: 1,
+    token_type: "bearer",
+    user: { id: "u1" },
+  });
+});
+
+Deno.test("verifyLoginOtp: código errado devolve o erro do GoTrue e a tentativa já foi contada", async () => {
+  const { deps, chamadas } = depsFalsas({ permitido: true, erro: "Token has expired or is invalid" });
+  let erro: unknown;
+  try {
+    await verifyLoginOtp({ channel: "email", identifier: "a@b.com", code: "000000" }, deps);
+  } catch (e) {
+    erro = e;
+  }
+  assertEquals(erro instanceof Error && erro.message, "Token has expired or is invalid");
+  assertEquals(chamadas.permitido.length, 1);
+});
+
+Deno.test("verifyLoginOtp: entrada inválida não gasta tentativa", async () => {
+  const { deps, chamadas } = depsFalsas({ permitido: true });
+  let erro: unknown;
+  try {
+    await verifyLoginOtp({ channel: "email", identifier: "a@b.com", code: "" }, deps);
+  } catch (e) {
+    erro = e;
+  }
+  assertEquals(erro instanceof Error, true);
+  assertEquals(chamadas.permitido.length, 0);
 });
 
 Deno.test("CUSTOMER_AUTH_TOOLS: nomes esperados e schema fechado", () => {

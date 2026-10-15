@@ -199,6 +199,55 @@ Conferido em produção, na URL crua: o 21º disparo do mesmo IP para alvos
 distintos é recusado. `otp_request_log` também responde "quantos OTP saíram hoje
 e para quantos identificadores distintos", que antes não tinha resposta.
 
+#### Freio de verificação do código (15/10/2026)
+
+O freio acima segura o **disparo**. A **verificação** (`verify_login_otp`) ficou
+sem freio, e foi por ela que veio o ataque de 14/10/2026: 1.708 tentativas de
+código em 50 minutos, todas erradas, nenhuma barrada. O limite do GoTrue não
+segurou porque é por IP, e esta verificação sai da Edge: o GoTrue enxerga o IP da
+Edge, que muda a cada chamada. As 1.214 tentativas que o mesmo atacante fez
+direto em `/auth/v1/verify`, com o IP dele, levaram 429.
+
+| Camada | O que ela cobre na verificação |
+|---|---|
+| GoTrue | limite por IP; pela Edge, vê o IP da Edge, então não conta nada |
+| Worker (`api-worker.ts`) | 60/min por IP em `mcp.movepark.co`; o ataque ficou em ~34/min |
+| `otp_verify_allowed` (banco) | **5 tentativas por identificador a cada 15 minutos** |
+
+O freio é por **identificador** porque é o que o atacante não troca: ele quer
+entrar numa conta específica. Com código de 6 dígitos, dá 5 chances em 1 milhão
+por janela. Detalhes que importam:
+
+- **Toda tentativa conta, certa ou errada, e a recusada também é registrada.**
+  Parar um instante não zera a janela.
+- **Trava por identificador** (`pg_advisory_xact_lock`) antes da contagem: sem
+  ela, cem chamadas em paralelo contam zero ao mesmo tempo e todas passam.
+- **Chave normalizada** (`otpLimiterKey`): telefone vira só dígitos, e-mail vira
+  minúsculo. O GoTrue trata `+55 41 98814-9449` e `5541988149449` como o mesmo
+  telefone; sem normalizar, trocar a formatação furaria o freio. O freio de
+  disparo passou a usar a mesma chave.
+- **IP fica só no registro.** Quem chega por `mcp.movepark.co` passa pelo Worker e
+  aparece com o IP de saída da Cloudflare (`2a06:98c0:3600::103`). Limitar por ele
+  travaria todos esses chamadores juntos.
+- **Se o freio falhar, a verificação recusa.** Sem ele, a porta volta a aceitar
+  força bruta.
+- Efeito colateral aceito: quem errar 5 vezes de propósito trava o login **pelo
+  MCP** daquele e-mail ou telefone por 15 minutos. O login do site não passa por
+  aqui e segue funcionando.
+
+Migration `20261129220000_otp_verify_throttle.sql`; teste pgTAP
+`supabase/tests/otp_verify_throttle.test.sql`; lógica testável em
+`customer.logic.ts` (`verifyLoginOtp`). Conferido em produção em 15/10/2026: 5
+tentativas chegam ao GoTrue e a 6ª é recusada, inclusive com o mesmo e-mail em
+maiúsculas.
+
+**Na mesma data, `mailer_autoconfirm` foi desligado no Auth** (`enable_confirmations
+= true` no `config.toml`). Ligado, o `/auth/v1/signup` com senha criava conta já
+confirmada com o e-mail de qualquer pessoa, e o atacante entrou assim (por exemplo,
+`attacker@movepark.co`, com 124 logins). O login por código não muda: o cliente
+novo recebe o template "Confirm signup", que já manda o código, e o `verifyOtp`
+confirma o e-mail no mesmo passo.
+
 **Em aberto, e não é remoção simples:** `verify_login_otp` devolve
 `refresh_token` sem vínculo com quem pediu o código, o que deixa um conector
 malicioso sair com credencial de longa duração se convencer o usuário a colar o
