@@ -91,6 +91,18 @@ Deno.test("anexo leva a mensagem e a parte, e nada mais", () => {
   assertEquals(corpo.parte, 2);
 });
 
+// Sem estar na lista, a tela pedia a transcricao e a Edge devolvia 400: o audio ficava
+// em "Nao consegui transcrever" para sempre, mesmo com o BeastBots sabendo transcrever.
+Deno.test("transcrever passa, levando so' a mensagem e a parte", () => {
+  assertEquals(acaoValida("transcrever"), true);
+  const corpo = corpoParaOBeastBots("transcrever", "uid", "Kallef", {
+    threadId: "t", messageId: "m1", parte: 2, texto: "ignorado", assumidaPor: "outro",
+  } as never);
+  assertEquals(Object.keys(corpo).sort().join(","), "acao,agentId,messageId,parte,threadId");
+  assertEquals(corpo.messageId, "m1");
+  assertEquals(corpo.parte, 2);
+});
+
 Deno.test("listar leva busca e cursor ao BeastBots", () => {
   // Regressao de 27/08: o portao montava o corpo campo a campo e nao copiava
   // `busca` nem `cursor`. A lista respondia 200 e devolvia sempre a primeira

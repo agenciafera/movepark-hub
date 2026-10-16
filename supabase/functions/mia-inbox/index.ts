@@ -3,7 +3,7 @@
 //
 // POST /functions/v1/mia-inbox
 // Authorization: Bearer <JWT hub_admin>
-// { acao: "listar" | "abrir" | "marcar" | "assumir" | "devolver" | "responder", ... }
+// { acao: "listar" | "abrir" | "marcar" | "assumir" | "devolver" | "responder" | "anexo" | "transcrever", ... }
 //
 // ## Por que existe
 //
@@ -54,6 +54,8 @@ const ACOES = [
   "devolver",
   "responder",
   "anexo",
+  // A transcrição de um áudio que chegou sem ela (16/10/2026). Ver caixa-de-entrada-conversas.md.
+  "transcrever",
 ] as const;
 export type AcaoDaCaixa = (typeof ACOES)[number];
 
@@ -131,7 +133,8 @@ export function corpoParaOBeastBots(
     */
     base.assumidaPorNome = nome;
   }
-  if (acao === "anexo") {
+  // Os dois apontam um anexo de uma mensagem: o BeastBots confere se ela é desta conversa.
+  if (acao === "anexo" || acao === "transcrever") {
     base.messageId = typeof entrada.messageId === "string" ? entrada.messageId : "";
     base.parte = Number(entrada.parte ?? -1);
   }

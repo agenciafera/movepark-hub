@@ -1,4 +1,4 @@
-import { rotuloDoTelefone, semMarcacao, quandoCompleto } from "./inbox.logic";
+import { marcaDoAnexo, rotuloDoTelefone, semMarcacao, quandoCompleto } from "./inbox.logic";
 import { buscarAnexo, type AnexoDaFala } from "./api";
 
 /**
@@ -152,7 +152,7 @@ export function textoParaImagem(f: FalaComImagens): string {
   if (texto) partes.push(texto);
   for (const a of f.anexos ?? []) {
     if (desenhadas.has(a.parte)) continue;
-    partes.push(a.nome ? `<${a.tipo}: ${a.nome}>` : `<${a.tipo}>`);
+    partes.push(marcaDoAnexo(a));
   }
   return partes.join("\n");
 }

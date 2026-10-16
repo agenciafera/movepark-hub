@@ -116,12 +116,13 @@ export function filtrar(
 export function textoDaFala(bruto: string): string {
   const t = paraExibicao((bruto ?? "").trim());
 
-  const anexo = t.match(/^\\?\[(Image|Audio|Video|Document|Sticker)\b/i);
+  // `Voice` é a nota de voz gravada no próprio WhatsApp: `\[Voice message]`.
+  const anexo = t.match(/^\\?\[(Image|Audio|Voice|Video|Document|Sticker)\b/i);
   if (anexo) {
     const tipo = anexo[1].toLowerCase();
     const nome =
       tipo === "image" ? "imagem"
-      : tipo === "audio" ? "áudio"
+      : tipo === "audio" || tipo === "voice" ? "áudio"
       : tipo === "video" ? "vídeo"
       : tipo === "sticker" ? "figurinha"
       : "documento";
@@ -211,12 +212,64 @@ export function conversaEmTexto(
       const partes: string[] = [];
       const texto = semMarcacao(f.texto);
       if (texto) partes.push(texto);
-      for (const a of f.anexos ?? []) {
-        partes.push(a.nome ? `<${a.tipo}: ${a.nome}>` : `<${a.tipo}>`);
-      }
+      for (const a of f.anexos ?? []) partes.push(marcaDoAnexo(a));
       return `[${quandoCompleto(f.em)}] ${quem}: ${partes.join(" ")}`.trimEnd();
     })
     .join("\n");
+}
+
+/**
+ * Como um anexo aparece quando a conversa vira texto: `<imagem>`, `<arquivo: voucher.pdf>`.
+ *
+ * O áudio leva o que foi falado: `<audio: "quero vaga coberta">`. Sem isso a cópia diria
+ * só que existiu um áudio, e quem a recebe (um colega, um modelo) não saberia o que o
+ * cliente pediu.
+ */
+export function marcaDoAnexo(a: AnexoDaFala): string {
+  const falado = a.tipo === "audio" ? a.transcricao?.trim() : undefined;
+  if (falado) return `<${a.tipo}: "${falado}">`;
+  return a.nome ? `<${a.tipo}: ${a.nome}>` : `<${a.tipo}>`;
+}
+
+/** O texto que o BeastBots grava quando o áudio não tem fala (silêncio, ruído). */
+export const AUDIO_SEM_FALA = "(áudio sem fala)";
+
+/**
+ * Quanto tempo a tela espera a transcrição da chegada antes de pedir a sua.
+ *
+ * A chegada transcreve em paralelo com a resposta da Mia, e as duas terminam juntas,
+ * em segundos. Pedir antes disso faria duas transcrições do mesmo áudio.
+ */
+export const ESPERA_DA_TRANSCRICAO_MS = 60_000;
+
+export type EstadoDaTranscricao =
+  | { tipo: "pronta"; texto: string }
+  /** Áudio recém-chegado: a transcrição da chegada ainda está correndo. */
+  | { tipo: "aguardando"; ateMs: number }
+  /** A chegada não transcreveu: a tela pede ao BeastBots. */
+  | { tipo: "pedir" }
+  /** Não é áudio, ou o backend ainda não sabe transcrever. */
+  | { tipo: "nenhuma" };
+
+/**
+ * O que a tela faz com a transcrição de um anexo.
+ *
+ * `undefined` e `null` são coisas diferentes de propósito: `null` é "o servidor sabe
+ * transcrever e ainda não transcreveu"; `undefined` é um backend que nem conhece o
+ * campo, e pedir a ele seria um erro garantido na tela.
+ */
+export function estadoDaTranscricao(
+  a: AnexoDaFala,
+  em: string | undefined,
+  agora = Date.now(),
+): EstadoDaTranscricao {
+  if (a.tipo !== "audio" || a.transcricao === undefined) return { tipo: "nenhuma" };
+  if (a.transcricao && a.transcricao.trim()) return { tipo: "pronta", texto: a.transcricao.trim() };
+
+  const chegou = em ? new Date(em).getTime() : NaN;
+  const ateMs = chegou + ESPERA_DA_TRANSCRICAO_MS;
+  if (Number.isFinite(ateMs) && agora < ateMs) return { tipo: "aguardando", ateMs };
+  return { tipo: "pedir" };
 }
 
 /** Data e hora por extenso, como o WhatsApp escreve na exportação. */

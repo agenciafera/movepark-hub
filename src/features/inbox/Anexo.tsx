@@ -1,10 +1,12 @@
 import * as React from "react";
 import { DownloadSimple, FileArrowDown, FilePdf } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { useAnexo, type AnexoDaFala } from "./api";
+import { useAnexo, useTranscricao, type AnexoDaFala } from "./api";
+import { AUDIO_SEM_FALA, estadoDaTranscricao } from "./inbox.logic";
 
 /**
- * Um anexo da conversa: imagem, figurinha, áudio, vídeo ou arquivo.
+ * Um anexo da conversa: imagem, figurinha, áudio, vídeo ou arquivo. O áudio vem com a
+ * transcrição logo abaixo.
  *
  * ## Por que carrega sozinho
  *
@@ -20,6 +22,112 @@ import { useAnexo, type AnexoDaFala } from "./api";
  * mídia de um cliente, que é o tipo de coisa que vaza depois.
  */
 export function Anexo({
+  threadId,
+  messageId,
+  anexo,
+  em,
+}: {
+  threadId: string | null;
+  messageId: string;
+  anexo: AnexoDaFala;
+  /** Quando a fala chegou: decide se a transcrição ainda está a caminho. */
+  em?: string;
+}) {
+  const midia = <MidiaDoAnexo threadId={threadId} messageId={messageId} anexo={anexo} />;
+  if (anexo.tipo !== "audio") return midia;
+
+  /*
+    No áudio, o texto fica logo abaixo do player e aparece sem clique.
+
+    Os bytes do áudio continuam por demanda (são centenas de KB), mas a transcrição é
+    texto curto e já veio com a conversa. Quem atende lê o que o cliente disse sem
+    precisar ouvir; o player fica para quando o tom importa.
+  */
+  return (
+    <div className="flex max-w-full flex-col gap-1.5">
+      {midia}
+      <TranscricaoDoAudio threadId={threadId} messageId={messageId} anexo={anexo} em={em} />
+    </div>
+  );
+}
+
+/**
+ * O que o cliente falou no áudio.
+ *
+ * Três origens, nesta ordem: a transcrição gravada na chegada (vem com a conversa), a
+ * espera enquanto a da chegada ainda corre, e o pedido ao BeastBots quando ela não veio.
+ * A regra de qual é qual mora em `estadoDaTranscricao`, que tem teste.
+ */
+function TranscricaoDoAudio({
+  threadId,
+  messageId,
+  anexo,
+  em,
+}: {
+  threadId: string | null;
+  messageId: string;
+  anexo: AnexoDaFala;
+  em?: string;
+}) {
+  const [agora, setAgora] = React.useState(() => Date.now());
+  const estado = estadoDaTranscricao(anexo, em, agora);
+
+  /*
+    Acaba a espera, a tela reavalia sozinha.
+
+    O polling da conversa traz a transcrição da chegada quando ela fica pronta, mas não
+    re-renderiza se nada mudou. Sem este relógio, um áudio cuja transcrição falhou ficaria
+    em "Transcrevendo…" para sempre, sem nunca chegar a pedir.
+  */
+  const ateMs = estado.tipo === "aguardando" ? estado.ateMs : null;
+  React.useEffect(() => {
+    if (ateMs == null) return;
+    const id = window.setTimeout(() => setAgora(Date.now()), Math.max(0, ateMs - Date.now()) + 50);
+    return () => window.clearTimeout(id);
+  }, [ateMs]);
+
+  const pedida = useTranscricao(threadId, messageId, anexo.parte, estado.tipo === "pedir");
+
+  if (estado.tipo === "nenhuma") return null;
+
+  const texto = estado.tipo === "pronta" ? estado.texto : pedida.data?.transcricao;
+  if (texto) {
+    return (
+      <div className="max-w-md border-l-2 border-neutral-200 pl-3">
+        <p className="text-caption text-muted">Transcrição</p>
+        {texto === AUDIO_SEM_FALA ? (
+          <p className="text-body-sm italic text-muted">Áudio sem fala</p>
+        ) : (
+          <p className="whitespace-pre-wrap break-words text-body-sm text-body">{texto}</p>
+        )}
+      </div>
+    );
+  }
+
+  if (estado.tipo === "aguardando" || pedida.isFetching) {
+    return <p className="text-body-sm text-muted">Transcrevendo…</p>;
+  }
+
+  if (pedida.isError) {
+    return (
+      <p className="flex flex-wrap items-center gap-2 text-body-sm text-red-700">
+        Não consegui transcrever este áudio.
+        <button
+          type="button"
+          onClick={() => void pedida.refetch()}
+          className="text-mp-indigo hover:underline"
+        >
+          Tentar de novo
+        </button>
+      </p>
+    );
+  }
+
+  return null;
+}
+
+/** A mídia em si: o player, a imagem ou o arquivo, com o botão de baixar. */
+function MidiaDoAnexo({
   threadId,
   messageId,
   anexo,

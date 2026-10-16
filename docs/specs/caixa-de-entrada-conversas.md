@@ -134,6 +134,52 @@ Imagem, áudio, arquivo e figurinha chegam como data URI, gravados pelo adaptado
 momento em que a mensagem entra. A tela pede cada um **por demanda** (`acao: "anexo"`),
 porque carregar tudo junto arrastaria a conversa inteira em base64.
 
+> **O tipo vem com parâmetro.** O Mastra grava o tipo como o WhatsApp manda:
+> `data:audio/ogg; codecs=opus;base64,...`. A leitura do `/inbox` aceitava só
+> `data:<tipo>;base64,` e descartava o anexo em silêncio, então o player nunca apareceu.
+> `lerDataUri` (beast-bots, `transcricao.ts`) aceita o parâmetro, e o verbo `anexo`
+> devolve o `data:` sem ele, que é o que o `<audio>` do navegador aceita sem discussão.
+
+## Áudio: ouvir e ler (16/10/2026)
+
+Até 16/10 o canal do Mastra só guardava imagem e PDF; o áudio virava o texto
+`[Attached file: file (audio/ogg; codecs=opus)]`, sem o arquivo. **75 áudios** chegaram
+assim entre 27/08 e 16/10, de 67 conversas, e a Mia respondeu "não consigo ouvir" a
+todos. Esses estão perdidos: o arquivo nunca foi salvo. A fala continua na tela pelo
+marcador, como "(áudio)", porque o filtro de marcador só age quando o anexo existe.
+
+Desde o commit `3ffcd49` do beast-bots o áudio vai ao modelo e fica gravado na mensagem.
+Em cima disso:
+
+- **Transcrição na chegada.** O `handler-canal.ts` transcreve o áudio com o Gemini (o
+  modelo padrão da plataforma, sem raciocínio) **em paralelo** com o turno da Mia, para
+  não somar tempo dentro do `waitUntil` do Cloudflare, e grava o texto depois que o
+  turno termina, porque é dentro dele que a fala vira linha no banco. A fala é achada
+  pelo `wamid`.
+- **Onde fica:** `content.metadata.inbox_transcricoes`, por posição da parte do áudio
+  (`{ "2": "quero vaga coberta" }`), no mesmo lugar do `inbox_enviado_por_nome`.
+  **Nunca** como parte de texto: a metadata não vai ao modelo, e uma parte de texto faria
+  a Mia receber a mesma fala duas vezes no histórico.
+- **Silêncio não vira fala.** Medido com 3 s de silêncio: com a instrução comum o modelo
+  devolveu "Ainda bem". A instrução abre pelo caso sem fala, e o resultado gravado é
+  `(áudio sem fala)`, que a tela mostra como "Áudio sem fala".
+- **Conversa assumida.** O caminho de pausa (`assumida.ts`) gravava só o texto do
+  cliente, e o áudio mandado com a conversa assumida sumia, que é justamente a hora em
+  que uma pessoa precisa ouvi-lo. Agora ele grava os anexos que o modelo lê (os mesmos
+  tipos de `midiaParaOModelo`, porque o histórico volta ao modelo quando a conversa é
+  devolvida), já com a transcrição.
+- **Reserva no painel.** Se a transcrição da chegada falhar (Gemini fora, turno cortado
+  pelo prazo), a tela espera 60 s a partir da fala e então pede pelo verbo
+  `transcrever` do `/inbox`, que transcreve, grava na mensagem e devolve. Transcrição
+  já gravada volta sem chamar o modelo. O verbo está na lista fechada da Edge
+  `mia-inbox` e leva só `messageId` e `parte`.
+- **Na tela:** a ficha do áudio traz `transcricao` (texto, ou `null` enquanto não há),
+  então o texto aparece logo abaixo do player, sem clique; os bytes do áudio continuam
+  por demanda. `undefined` é backend antigo, e a tela não pede nada a ele.
+- **Busca e cópia:** a busca procura também no texto transcrito (contra os valores, não
+  as chaves, senão "2" casaria com toda conversa com áudio). O "Copiar conversa" leva
+  `<audio: "texto falado">`.
+
 ## Levar a conversa embora: texto, não link
 
 **Copiar conversa** é um botão só, com os dois formatos no menu: **Copiar em texto** e
@@ -194,6 +240,7 @@ compartilhou toda.
 | Portão | `supabase/functions/mia-inbox/`, `supabase/functions/conversa-publica/` |
 | Rota e SQL | beast-bots: `platform/channels/inbox-route.ts`, `inbox-sql.ts` |
 | Pausa do agente | beast-bots: `platform/channels/handler-canal.ts`, `assumida.ts` |
+| Transcrição do áudio | beast-bots: `platform/channels/transcricao.ts`; tela: `Anexo.tsx` + `estadoDaTranscricao` |
 
 ## Riscos que já morderam
 

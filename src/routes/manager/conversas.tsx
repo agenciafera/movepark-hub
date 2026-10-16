@@ -523,7 +523,7 @@ export default function ManagerConversas() {
                           className={`flex flex-col gap-1 ${f.papel === "cliente" ? "items-start" : "items-end"}`}
                         >
                           {(f.anexos ?? []).map((a) => (
-                            <Anexo key={a.parte} threadId={aberta} messageId={f.id} anexo={a} />
+                            <Anexo key={a.parte} threadId={aberta} messageId={f.id} anexo={a} em={f.em} />
                           ))}
                         </div>
                       ) : null}

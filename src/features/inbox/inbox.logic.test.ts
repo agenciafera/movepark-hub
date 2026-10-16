@@ -14,7 +14,11 @@ import {
   ordenarPorPrioridade,
   slaEstourado,
   minutosEsperando,
+  marcaDoAnexo,
+  estadoDaTranscricao,
+  ESPERA_DA_TRANSCRICAO_MS,
 } from "./inbox.logic";
+import type { AnexoDaFala } from "./api";
 
 const linha = (over: Partial<ConversaDaLista> = {}): ConversaDaLista => ({
   id: "movepark-hub:whatsapp:whatsapp:456:5541988149449",
@@ -188,7 +192,12 @@ describe("marcador de anexo com nome de arquivo", () => {
     expect(textoDaFala("[Image: foto.jpg]")).toBe("(imagem)");
   });
 
-  it("nao engole texto que so parece marcador", () => {
+  it("a nota de voz do WhatsApp também vira (áudio)", () => {
+    expect(textoDaFala("\\[Voice message]")).toBe("(áudio)");
+    expect(textoDaFala("\\[Audio message]")).toBe("(áudio)");
+  });
+
+    it("nao engole texto que so parece marcador", () => {
     expect(textoDaFala("[não é anexo] e segue o texto")).toBe("[não é anexo] e segue o texto");
   });
 });
@@ -305,5 +314,67 @@ describe("prioridade na fila", () => {
     expect(slaEstourado(base({ prioridade: sf, ultima_em: "2026-09-23T12:10:00Z" }), agora)).toBe(false);
     expect(slaEstourado(base({ prioridade: sf, ultimo_papel: "agente" }), agora)).toBe(false);
     expect(slaEstourado(base({}), agora)).toBe(false);
+  });
+});
+
+describe("transcrição do áudio", () => {
+  const audio = (over: Partial<AnexoDaFala> = {}): AnexoDaFala => ({
+    parte: 2,
+    mime: "audio/ogg",
+    tipo: "audio",
+    nome: "",
+    bytes: 30_000,
+    transcricao: null,
+    ...over,
+  });
+  const chegou = "2026-10-16T13:00:00.000Z";
+  const t0 = new Date(chegou).getTime();
+
+  it("transcrição gravada aparece direto", () => {
+    expect(estadoDaTranscricao(audio({ transcricao: " quero vaga " }), chegou, t0)).toEqual({
+      tipo: "pronta",
+      texto: "quero vaga",
+    });
+  });
+
+  it("áudio recém-chegado espera a transcrição da chegada, sem pedir outra", () => {
+    // Pedir já faria duas transcrições do mesmo áudio: a da chegada termina em segundos.
+    expect(estadoDaTranscricao(audio(), chegou, t0 + 5_000)).toEqual({
+      tipo: "aguardando",
+      ateMs: t0 + ESPERA_DA_TRANSCRICAO_MS,
+    });
+  });
+
+  it("passada a espera sem texto, a tela pede a transcrição", () => {
+    expect(estadoDaTranscricao(audio(), chegou, t0 + ESPERA_DA_TRANSCRICAO_MS)).toEqual({ tipo: "pedir" });
+  });
+
+  it("sem horário da fala, pede logo em vez de esperar para sempre", () => {
+    expect(estadoDaTranscricao(audio(), undefined, t0)).toEqual({ tipo: "pedir" });
+  });
+
+  it("backend que não conhece o campo não recebe pedido", () => {
+    // `undefined` é BeastBots anterior a 16/10: pedir daria erro garantido na tela.
+    expect(estadoDaTranscricao(audio({ transcricao: undefined }), chegou, t0 + 999_999)).toEqual({ tipo: "nenhuma" });
+  });
+
+  it("imagem não tem transcrição", () => {
+    expect(estadoDaTranscricao(audio({ tipo: "imagem", mime: "image/jpeg" }), chegou, t0)).toEqual({ tipo: "nenhuma" });
+  });
+
+  it("na cópia, o áudio leva o que foi falado", () => {
+    expect(marcaDoAnexo(audio({ transcricao: "quero vaga coberta" }))).toBe('<audio: "quero vaga coberta">');
+    expect(marcaDoAnexo(audio())).toBe("<audio>");
+    expect(marcaDoAnexo(audio({ tipo: "arquivo", mime: "application/pdf", nome: "voucher.pdf" }))).toBe(
+      "<arquivo: voucher.pdf>",
+    );
+  });
+
+  it("a conversa copiada em texto leva a transcrição", () => {
+    const texto = conversaEmTexto(
+      [{ papel: "cliente", autor: "", texto: "", em: chegou, anexos: [audio({ transcricao: "placa ABC1234" })] }],
+      "5541988149449",
+    );
+    expect(texto).toContain('(41) 98814-9449: <audio: "placa ABC1234">');
   });
 });

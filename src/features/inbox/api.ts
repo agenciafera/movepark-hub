@@ -46,6 +46,13 @@ export type AnexoDaFala = {
   tipo: "imagem" | "audio" | "video" | "figurinha" | "arquivo";
   nome: string;
   bytes: number;
+  /**
+   * Só em áudio: o que o cliente falou, ou `null` enquanto ninguém transcreveu.
+   *
+   * O BeastBots transcreve na chegada e grava na mensagem, então em geral o texto já vem
+   * com a conversa. Ausente (`undefined`) é backend anterior a 16/10/2026.
+   */
+  transcricao?: string | null;
 };
 
 export type FalaDaConversa = {
@@ -71,6 +78,7 @@ export const inboxKeys = {
   lista: (busca: string) => [...inboxKeys.all, "lista", busca] as const,
   conversa: (id: string) => [...inboxKeys.all, "conversa", id] as const,
   anexo: (msg: string, parte: number) => [...inboxKeys.all, "anexo", msg, parte] as const,
+  transcricao: (msg: string, parte: number) => [...inboxKeys.all, "transcricao", msg, parte] as const,
 };
 
 /** A mensagem de erro da Edge é mais útil que "FunctionsHttpError". */
@@ -227,5 +235,32 @@ export function useAnexo(threadId: string | null, messageId: string, parte: numb
     staleTime: Infinity,
     gcTime: 10 * 60_000,
     queryFn: () => buscarAnexo(threadId!, messageId, parte),
+  });
+}
+
+/**
+ * A transcrição de um áudio que chegou sem ela.
+ *
+ * A chegada transcreve sozinha, mas pode falhar (Gemini fora, turno cortado pelo prazo do
+ * Cloudflare). Nesse caso a tela pede aqui, o BeastBots transcreve e grava na mensagem, e
+ * a próxima abertura da conversa já traz o texto. Transcrição já gravada volta sem chamar
+ * o modelo, então pedir duas vezes não custa duas transcrições.
+ */
+export function useTranscricao(
+  threadId: string | null,
+  messageId: string,
+  parte: number,
+  ligado: boolean,
+) {
+  return useQuery({
+    queryKey: inboxKeys.transcricao(messageId, parte),
+    enabled: ligado && !!threadId && !!messageId,
+    staleTime: Infinity,
+    retry: 1,
+    queryFn: () =>
+      chamar<{ transcricao: string }>(
+        { acao: "transcrever", threadId, messageId, parte },
+        "Não consegui transcrever este áudio.",
+      ),
   });
 }
