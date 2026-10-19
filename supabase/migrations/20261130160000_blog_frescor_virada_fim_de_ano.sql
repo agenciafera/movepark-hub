@@ -29,7 +29,7 @@
 
 -- aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas (en): 4 trecho(s) do corpo, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(i.body_md,
     $t$It does, and it runs three types: uncovered, covered and valet. In August 2026 a week came to R$ 132.30 uncovered, R$ 188.30 covered and R$ 475.20 for valet, all at the same address, 2.7 km from the terminal.$t$,
     $t$It does, and it runs three types: uncovered, covered and valet. In October 2026 a week came to R$ 139.30 uncovered, R$ 195.30 covered and R$ 593.90 for valet, all at the same address, 2.7 km from the terminal.$t$),
     $t$Fifty-six reais. In August 2026 seven days came to R$ 132.30 for an uncovered spot and R$ 188.30 for a covered one, which is 42% more. Over thirty days the gap widens to R$ 240.00, from R$ 537.00 to R$ 777.00.$t$,
@@ -44,7 +44,7 @@ where p.id = i.blog_post_id and p.slug = 'aeropark-descubra-se-o-estacionamento-
 
 -- aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas (es): 4 trecho(s) do corpo, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(i.body_md,
     $t$Sí, y trabaja con tres tipos: descubierta, cubierta y valet. En agosto de 2026 la semana salía R$ 132,30 en la descubierta, R$ 188,30 en la cubierta y R$ 475,20 en valet, todos en la misma dirección, a 2,7 km de la terminal.$t$,
     $t$Sí, y trabaja con tres tipos: descubierta, cubierta y valet. En octubre de 2026 la semana salía R$ 139,30 en la descubierta, R$ 195,30 en la cubierta y R$ 593,90 en valet, todos en la misma dirección, a 2,7 km de la terminal.$t$),
     $t$Cincuenta y seis reales. En agosto de 2026 siete días salían R$ 132,30 en plaza descubierta y R$ 188,30 en cubierta, un 42% más. En treinta días la diferencia sube a R$ 240,00, de R$ 537,00 a R$ 777,00.$t$,
@@ -75,7 +75,7 @@ where slug = 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-
 
 -- aeroporto-de-congonhas-informacoes-completas (en): 1 trecho(s) do corpo
 update public.blog_post_i18n i
-set body_md = replace(body_md,
+set body_md = replace(i.body_md,
     $t$It is worth it for anyone already on the south side who is travelling for a few days. In August 2026 a single day at a partner lot cost R$ 32.90, and the nearest address was 700 metres from the terminal.$t$,
     $t$It is worth it for anyone already on the south side who is travelling for a few days. In October 2026 a single day at a partner lot cost R$ 42.90, and the nearest address was 700 metres from the terminal.$t$)
 from public.blog_post p
@@ -83,7 +83,7 @@ where p.id = i.blog_post_id and p.slug = 'aeroporto-de-congonhas-informacoes-com
 
 -- aeroporto-de-congonhas-informacoes-completas (es): 1 trecho(s) do corpo
 update public.blog_post_i18n i
-set body_md = replace(body_md,
+set body_md = replace(i.body_md,
     $t$Conviene para quien ya está en la zona sur y viaja pocos días. En agosto de 2026 el día suelto en un predio asociado costaba R$ 32,90, y la dirección más cercana quedaba a 700 metros de la terminal.$t$,
     $t$Conviene para quien ya está en la zona sur y viaja pocos días. En octubre de 2026 el día suelto en un predio asociado costaba R$ 42,90, y la dirección más cercana quedaba a 700 metros de la terminal.$t$)
 from public.blog_post p
@@ -605,7 +605,7 @@ where slug = 'estacionamento-barato-aeroporto-congonhas';
 
 -- estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade (en): 8 trecho(s) do corpo, excerpt
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$The online table tends to sit below the counter one: on 17 September 2026, seven days in an uncovered spot came to R$ 93.17 online, against R$ 111.80 at the counter.$t$,
     $t$The online table tends to sit below the counter one: on 19 October 2026, seven days in an uncovered spot came to R$ 139.30 online, against R$ 167.16 at the counter.$t$),
     $t$Both sides charge by length of stay, so the honest comparison is by period, not by full daily rate. Figures from 17 September 2026.
@@ -665,7 +665,7 @@ where p.id = i.blog_post_id and p.slug = 'estacionamento-gru-airport-guia-comple
 
 -- estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade (es): 8 trecho(s) do corpo, excerpt
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$La tabla en línea suele quedar por debajo de la de mostrador: el 17 de septiembre de 2026, siete días en plaza descubierta salían R$ 93,17 en la tabla en línea, contra R$ 111,80 en el mostrador.$t$,
     $t$La tabla en línea suele quedar por debajo de la de mostrador: el 19 de octubre de 2026, siete días en plaza descubierta salían R$ 139,30 en la tabla en línea, contra R$ 167,16 en el mostrador.$t$),
     $t$Los dos lados cobran por franja de permanencia, así que la comparación honesta es por período, y no por diaria completa. Valores del 17 de septiembre de 2026.
@@ -895,7 +895,7 @@ where slug = 'estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes';
 
 -- estacionamento-terminal-1-aeroporto-guarulhos (en): 13 trecho(s) do corpo, excerpt, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$Parking at Terminal 1 of Guarulhos Airport has the lowest rate in the complex and no covered option. T1 is served only by the Standard sector, which charges R$ 31.00 for the first hour and R$ 480.00 in the 11-to-17-day band. Anyone who wants a covered spot has to go to another terminal or to an outside lot, where a covered spot comes to R$ 183.30 in the same band. All checked on 17 September 2026.
 
 | Quick answer | On 17/09/2026 |
@@ -1029,7 +1029,7 @@ where p.id = i.blog_post_id and p.slug = 'estacionamento-terminal-1-aeroporto-gu
 
 -- estacionamento-terminal-1-aeroporto-guarulhos (es): 13 trecho(s) do corpo, excerpt, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$El estacionamiento en la Terminal 1 del Aeropuerto de Guarulhos tiene la tarifa más baja del complejo y ninguna opción cubierta. La T1 está atendida solo por el sector Standard, que cobra R$ 31,00 la primera hora y R$ 480,00 en la franja de 11 a 17 días. Quien quiere plaza cubierta tiene que ir a otra terminal o a un predio de afuera, donde la cubierta sale R$ 183,30 en la misma franja. Todo verificado el 17 de septiembre de 2026.
 
 | Respuesta rápida | Al 17/09/2026 |
@@ -1295,7 +1295,7 @@ where slug = 'estacionamento-terminal-1-aeroporto-guarulhos';
 
 -- estacionamento-terminal-2-aeroporto-guarulhos (en): 15 trecho(s) do corpo, excerpt, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$Parking at Terminal 2 of Guarulhos Airport is the only one that appears in both official tables. T2 is served by the Standard sector, the cheapest, and also by Premium and the multi-storey car park. The difference between the two reaches R$ 130.00 on a fifteen-day trip. Outside the complex, the partner lots charged R$ 152.70 in the same band, 2.65 km and 4.87 km from T2. All checked on 17 September 2026.
 
 | Quick answer | On 17/09/2026 |
@@ -1412,7 +1412,7 @@ where p.id = i.blog_post_id and p.slug = 'estacionamento-terminal-2-aeroporto-gu
 
 -- estacionamento-terminal-2-aeroporto-guarulhos (es): 15 trecho(s) do corpo, excerpt, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$El estacionamiento en la Terminal 2 del Aeropuerto de Guarulhos es el único que aparece en las dos tablas del oficial. La T2 está atendida por el sector Standard, el más barato, y también por el Premium y el edificio cochera. La diferencia entre los dos llega a R$ 130,00 en un viaje de quince días. Fuera del complejo, los predios asociados cobraban R$ 152,70 en la misma franja, a 2,65 km y 4,87 km de la T2. Todo verificado el 17 de septiembre de 2026.
 
 | Respuesta rápida | Al 17/09/2026 |
@@ -1644,7 +1644,7 @@ where slug = 'estacionamento-terminal-2-aeroporto-guarulhos';
 
 -- estacionamento-terminal-3-aeroporto-guarulhos (en): 12 trecho(s) do corpo, excerpt, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$Parking at Terminal 3 of Guarulhos Airport has one detail that changes the sum. T3 is not served by the Standard sector, the cheapest of the official ones. Inside there are only Premium, the multi-storey car park and Flex, which start at R$ 38.00 for the first hour and R$ 107.00 for a day. Outside the complex, the two partner lots charged R$ 18.49 a day, 3.06 km and 5.00 km from T3. All checked on 17 September 2026.
 
 | Quick answer | On 17/09/2026 |
@@ -1759,7 +1759,7 @@ where p.id = i.blog_post_id and p.slug = 'estacionamento-terminal-3-aeroporto-gu
 
 -- estacionamento-terminal-3-aeroporto-guarulhos (es): 12 trecho(s) do corpo, excerpt, meta_description
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$El estacionamiento en la Terminal 3 del Aeropuerto de Guarulhos tiene un detalle que cambia la cuenta. La T3 no está atendida por el sector Standard, el más barato del oficial. Ahí adentro solo existen Premium, edificio cochera y Flex, que parten de R$ 38,00 en la primera hora y R$ 107,00 en la diaria. Fuera del complejo, los dos predios asociados cobraban R$ 18,49 la diaria, a 3,06 km y 5,00 km de la T3. Todo verificado el 17 de septiembre de 2026.
 
 | Respuesta rápida | Al 17/09/2026 |
@@ -1987,7 +1987,7 @@ where slug = 'estacionamento-terminal-3-aeroporto-guarulhos';
 
 -- guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024 (en): 7 trecho(s) do corpo, excerpt
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$São Paulo/Guarulhos International Airport, code GRU, has two Movepark partner lots, with distance measured to the terminal and rates coming from the booking engine. The comparison below is from the query of 17 September 2026.
 
 | Lot | Distance from Terminal 1 | Stated transfer | Minimum stay | 7 days, uncovered | 7 days, covered |
@@ -2028,7 +2028,7 @@ where p.id = i.blog_post_id and p.slug = 'guia-atualizado-5-melhores-opcoes-de-e
 
 -- guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024 (es): 7 trecho(s) do corpo, excerpt
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$El Aeropuerto Internacional de São Paulo/Guarulhos, código GRU, tiene dos predios asociados de Movepark, con distancia medida hasta la terminal y tarifa proveniente del motor de reservas. La comparación de abajo es de la consulta del 17 de septiembre de 2026.
 
 | Predio | Distancia de la Terminal 1 | Traslado declarado | Estadía mínima | 7 días, descubierta | 7 días, cubierta |
@@ -2352,7 +2352,7 @@ where slug = 'preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui';
 
 -- top-3-estacionamentos-do-aeroporto-de-congonhas (en): 12 trecho(s) do corpo, excerpt
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$The three car parks at Congonhas Airport worth comparing are Aerovalet, Plenty Park and the official one. The first two sit less than a kilometre from the terminal, a rare distance at a Brazilian airport and short enough to make a van unnecessary. A week in a covered spot came to R$ 188.30 at Plenty Park and R$ 199.29 at Aerovalet, according to the tables collected on 10 August and 11 September 2026. Below are the three side by side and the sum that decides.$t$,
     $t$The three car parks at Congonhas Airport worth comparing are Aerovalet, Plenty Park and the official one. The first two sit less than a kilometre from the terminal, a rare distance at a Brazilian airport and short enough to make a van unnecessary. A week in a covered spot came to R$ 265.30 at Plenty Park and R$ 279.30 at Aerovalet, according to the table of 19 October 2026. Below are the three side by side and the sum that decides.$t$),
     $t$| Lot | Distance from terminal | Minimum stay | 1 day | 7 days | 30 days |
@@ -2405,7 +2405,7 @@ where p.id = i.blog_post_id and p.slug = 'top-3-estacionamentos-do-aeroporto-de-
 
 -- top-3-estacionamentos-do-aeroporto-de-congonhas (es): 12 trecho(s) do corpo, excerpt
 update public.blog_post_i18n i
-set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(body_md,
+set body_md = replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(i.body_md,
     $t$Los tres estacionamientos del Aeropuerto de Congonhas que vale la pena comparar son Aerovalet, Plenty Park y el estacionamiento oficial. Los dos primeros quedan a menos de un kilómetro de la terminal, una distancia rara en un aeropuerto brasileño y tan corta que hace innecesaria la combi. La semana en plaza cubierta salía R$ 188,30 en Plenty Park y R$ 199,29 en Aerovalet, según las tablas relevadas el 10 de agosto y el 11 de septiembre de 2026. Abajo están los tres lado a lado y la cuenta que decide.$t$,
     $t$Los tres estacionamientos del Aeropuerto de Congonhas que vale la pena comparar son Aerovalet, Plenty Park y el estacionamiento oficial. Los dos primeros quedan a menos de un kilómetro de la terminal, una distancia rara en un aeropuerto brasileño y tan corta que hace innecesaria la combi. La semana en plaza cubierta salía R$ 265,30 en Plenty Park y R$ 279,30 en Aerovalet, según la tabla del 19 de octubre de 2026. Abajo están los tres lado a lado y la cuenta que decide.$t$),
     $t$| Predio | Distancia de la terminal | Estadía mínima | 1 día | 7 días | 30 días |
