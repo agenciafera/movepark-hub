@@ -175,6 +175,12 @@ parágrafos que mudaram. O gerador conferiu que a sequência reproduz o texto re
 que uma segunda passada não muda nada. A trava do fim aborta se sobrar, em qualquer idioma, valor
 ou data que sumiu do texto revisado.
 
+Com 348 KB, a migration não cabe inline no `apply_migration` do MCP. O banco leu o arquivo do
+commit fixo por `pg_net` (o repo é público, então `raw.githubusercontent.com/<sha>/...` responde
+sem token), e o `apply_migration` só fez `execute` do conteúdo depois de o md5 bater com o do repo.
+Conferência depois de aplicar: os 31 corpos e os metadados lidos de volta pela API são idênticos,
+byte a byte, ao texto revisado.
+
 ### Passo 3: o carimbo
 
 O `blog_post` dispara o rebuild sozinho e `site_rebuild_health()` estava `ok` em 19/10. A linha
