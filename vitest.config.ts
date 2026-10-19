@@ -89,10 +89,16 @@ export default defineConfig({
        * Ao subir a cobertura de verdade, suba o número aqui à mão.
        *
        * Medido em 30/07/2026: linhas 47.93%, branches 74.09%.
+       *
+       * Remedido em 19/10/2026: linhas 64.12%, branches 57.43%. O job ficou vermelho de
+       * 26/09 a 19/10 sem nenhum PR piorar a cobertura: a queda de branches veio do Vitest 4
+       * (c5d77c2d, 25/09), que conta branches de outro jeito (o último run verde é de 24/09).
+       * Pela regra acima, o piso desceu para o novo medido menos folga; o de linhas subiu,
+       * porque o medido passou do antigo em 18 pontos.
        */
       thresholds: {
-        lines: 46,
-        branches: 72,
+        lines: 62,
+        branches: 55,
       },
     },
   },

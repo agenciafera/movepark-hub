@@ -3203,8 +3203,8 @@
         "button type=button text=Buscar vaga",
         "a",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in10 out · 22:00",
-        "button type=button text=Check-out15 out · 08:00",
+        "button type=button text=Check-in20 out · 22:00",
+        "button type=button text=Check-out25 out · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -3217,12 +3217,12 @@
         "a text=Virapark",
         "a text=Virapark",
         "a text=Ver a tabela completa, com todos os parc",
-        "a text=Bandeira Park",
         "a text=KM64 Estacionamento",
-        "a text=Yellow Parking",
-        "a text=BR Parking",
         "a text=Estacionamento Oficial de Viracopos (Est",
         "a text=Viracopos Aeroparking",
+        "a text=Bandeira Park",
+        "a text=Yellow Parking",
+        "a text=BR Parking",
         "a text=Eco22 - Estacionamento Aeroporto Viracop",
         "a text=Aero Viracopos - Estacionamento Aeroport",
         "a text=Pórtico - Estacionamento Aeroporto Virac",
@@ -3247,8 +3247,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-07-29T12:30:32.373Z",
-      "last_seen": "2026-10-09T18:57:47.424Z",
-      "seen_count": 326,
+      "last_seen": "2026-10-19T18:00:52.739Z",
+      "seen_count": 328,
       "stale": false
     },
     "sig:2644ef779c146a8c": {
@@ -8072,8 +8072,8 @@
         "a",
         "button id=radix-:rb: type=button text=Destinos",
         "button type=button text=OndeAeroporto, cidade ou bairro",
-        "button type=button text=Check-in10 out · 22:00",
-        "button type=button text=Check-out15 out · 08:00",
+        "button type=button text=Check-in20 out · 22:00",
+        "button type=button text=Check-out25 out · 08:00",
         "button type=button text=Veículo Carro",
         "select text=Carro Moto",
         "button type=submit text=Buscar",
@@ -8086,12 +8086,12 @@
         "a text=Virapark",
         "a text=Virapark",
         "a text=Ver a tabela completa, com todos os parc",
-        "a text=Bandeira Park",
         "a text=KM64 Estacionamento",
-        "a text=Yellow Parking",
-        "a text=BR Parking",
         "a text=Estacionamento Oficial de Viracopos (Est",
         "a text=Viracopos Aeroparking",
+        "a text=Bandeira Park",
+        "a text=Yellow Parking",
+        "a text=BR Parking",
         "a text=Eco22 - Estacionamento Aeroporto Viracop",
         "a text=Aero Viracopos - Estacionamento Aeroport",
         "a text=Pórtico - Estacionamento Aeroporto Virac",
@@ -8116,8 +8116,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-08-14T15:36:08.458Z",
-      "last_seen": "2026-10-09T18:59:15.881Z",
-      "seen_count": 115,
+      "last_seen": "2026-10-19T18:00:52.780Z",
+      "seen_count": 117,
       "stale": false
     },
     "sig:e20504b3ccb82733": {
@@ -13450,7 +13450,7 @@
         "selector": "main h1"
       },
       "to": "sig:c969f052cf00cbe2",
-      "seen_count": 3
+      "seen_count": 4
     },
     {
       "from": "sig:eb1cb13a1fa9ce8c",
@@ -13487,6 +13487,15 @@
       },
       "to": "sig:ec1c271b1242bb10",
       "seen_count": 2
+    },
+    {
+      "from": "sig:eb1cb13a1fa9ce8c",
+      "action": {
+        "type": "wait_for",
+        "selector": "main a[href='/estacionamentos/aeroporto-viracopos/precos']"
+      },
+      "to": "sig:c969f052cf00cbe2",
+      "seen_count": 1
     }
   ],
   "assist_seen": {

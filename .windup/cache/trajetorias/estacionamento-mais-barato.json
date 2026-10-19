@@ -4,7 +4,7 @@
     "scenario_id": "estacionamento-mais-barato",
     "start_url": "/estacionamentos/aeroporto-viracopos/mais-barato",
     "start_sig": "sig:c969f052cf00cbe2",
-    "scenario_sig": "0470e91dd995a5e9"
+    "scenario_sig": "7de20e5ccf2c77ec"
   },
   "plan": {
     "plan_version": "0.1",
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Main page heading level 1"
+          "description": "heading level 1 starting with Qual é o estacionamento mais barato"
         },
         "expect": {
           "text_contains": {
@@ -30,13 +30,13 @@
         "id": "a2",
         "type": "wait_for",
         "target": {
-          "selector": "main h2",
-          "description": "Section heading Menor preço por duração"
+          "selector": "main article h2",
+          "description": "section heading Menor preço com reserva pela Movepark"
         },
         "expect": {
           "text_contains": {
-            "selector": "main h2",
-            "text": "Menor preço por duração"
+            "selector": "main article h2",
+            "text": "Menor preço com reserva pela Movepark"
           }
         },
         "timeout_ms": 5000
@@ -45,31 +45,31 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "main a",
-          "description": "Link Comparar preços em Viracopos"
+          "selector": "main a[href='/estacionamentos/aeroporto-viracopos/precos']",
+          "description": "link Comparar preços em Viracopos"
         },
         "expect": {
           "text_contains": {
             "selector": "body",
             "text": "Comparar preços em Viracopos"
           },
-          "selector": "main a"
+          "selector": "main a[href='/estacionamentos/aeroporto-viracopos/precos']"
         },
         "timeout_ms": 5000
       }
     ],
-    "task": "Verifique que a pagina exibe um titulo que comeca com Qual e o estacionamento mais barato, uma secao com o texto Menor preco por duracao e um link com o texto Comparar precos em Viracopos.",
+    "task": "Verifique que a pagina exibe um titulo que comeca com Qual e o estacionamento mais barato, uma secao com o texto Menor preco com reserva pela Movepark e um link com o texto Comparar precos em Viracopos.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-09-26T17:49:29.860Z"
+      "at": "2026-10-19T18:00:38.686Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-09-26T17:49:30.766Z",
+    "created_at": "2026-10-19T18:00:39.754Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }
