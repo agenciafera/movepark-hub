@@ -51,9 +51,12 @@ select set_eq(
     'knowledge_source_queue',-- fila de ingestão da base
     'otp_request_log',       -- freio de disparo de OTP; o identificador vai em SHA-256
     'partner_contract_version', -- texto e hash do contrato do parceiro; lido só por RPC (partner_contract_current)
-    'identity_assertion'     -- prova de identidade do agente (OTP de terceiro); só Edge, pelas RPCs identity_assertion_*
+    'identity_assertion',    -- prova de identidade do agente (OTP de terceiro); só Edge, pelas RPCs identity_assertion_*
+    'otp_verify_log',        -- freio da VERIFICAÇÃO do código de login (14/10/2026)
+    'blog_post_redirect',    -- mapa de slug antigo do blog; lido só pela RPC url_legacy_map
+    'payment_charge_lock'    -- trava de cobrança por reserva (MP-07DAE9); só Edge de cobrança
   ],
-  'as tabelas fail-closed são exatamente estas dez'
+  'as tabelas fail-closed são exatamente estas treze'
 );
 
 -- ── nenhuma escrita passa com predicado trivial ──────────────────────────────

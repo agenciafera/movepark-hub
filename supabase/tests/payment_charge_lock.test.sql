@@ -20,10 +20,15 @@ select ok(
   'cliente não solta a trava'
 );
 
--- Duas reservas próprias do teste.
+-- Cliente e duas reservas próprios do teste (o banco limpo do CI não tem perfil no seed).
+insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at) values
+  ('00000000-0000-4000-8000-00000000c1a1', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'lock-cliente@ex.com', now(), now());
+insert into public.profiles(id, role) values ('00000000-0000-4000-8000-00000000c1a1', 'customer')
+  on conflict (id) do nothing;
 insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at)
-select v.id, v.code, (select id from public.profiles order by created_at limit 1),
-       (select id from public.location order by created_at limit 1),
+select v.id, v.code, '00000000-0000-4000-8000-00000000c1a1'::uuid,
+       (select id from public.location where deleted_at is null order by created_at limit 1),
        now() + interval '10 day', now() + interval '12 day'
   from (values ('00000000-0000-4000-8000-00000000c101'::uuid, 'QA-LOCK-1'),
                ('00000000-0000-4000-8000-00000000c102'::uuid, 'QA-LOCK-2')) as v(id, code);

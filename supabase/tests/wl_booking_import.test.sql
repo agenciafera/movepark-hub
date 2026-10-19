@@ -163,6 +163,12 @@ end;
 -- ── 6. saúde ─────────────────────────────────────────────────────────────────
 update public.app_setting set value = '{"enabled": true, "lookback_months": 12, "page_limit": 200}'
  where key = 'wl_booking_import';
+-- As páginas gravadas acima deram à empresa uma leitura boa agora há pouco. "Sem leitura boa"
+-- é a última leitura ter ficado velha. Sem envelhecer, o caso só passava quando havia empresa
+-- real atrasada no banco (19/10/2026: no banco limpo do CI e no vivo em dia, falhava).
+update public.wl_booking_sync_state
+   set last_ok_at = now() - interval '1 day'
+ where company_id = current_setting('test.company')::uuid;
 select ok(
   (public.wl_integration_health() -> 'motivos') ? 'importacao_parada',
   'ligada, empresa sem leitura boa acusa importacao_parada');
