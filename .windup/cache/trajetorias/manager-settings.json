@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "manager-settings",
     "start_url": "/manager/settings",
-    "start_sig": "sig:deb61410f48cc824",
+    "start_sig": "sig:73f211e374e4affe",
     "scenario_sig": "dcfb01c5655eab5c"
   },
   "plan": {
@@ -16,7 +16,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Heading 'Configurações' na página principal"
+          "description": "Heading 'Configurações' on settings page"
         },
         "expect": {
           "text_contains": {
@@ -31,7 +31,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main p",
-          "description": "Parágrafo 'Ajustes globais da plataforma'"
+          "description": "Subtitle paragraph 'Ajustes globais da plataforma'"
         },
         "expect": {
           "text_contains": {
@@ -45,30 +45,40 @@
         "id": "a3",
         "type": "click",
         "target": {
-          "selector": "[id=\"radix-:r6:-trigger-partners\"]",
-          "description": "Aba 'Parceiros' no painel de configurações"
+          "selector": "button[id$='-trigger-partners']",
+          "description": "Tab 'Parceiros' in settings tablist"
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a4",
+        "type": "wait_for",
+        "target": {
+          "selector": "main [role='tabpanel']",
+          "description": "Parceiros tab panel content"
         },
         "expect": {
           "text_contains": {
-            "selector": "main",
+            "selector": "main [role='tabpanel']",
             "text": "E-mails de parceiros"
-          }
+          },
+          "selector": "main [role='tabpanel']"
         },
-        "timeout_ms": 10000
+        "timeout_ms": 5000
       }
     ],
     "task": "Passo 1: verifique que a pagina exibe o texto \"Configurações\". Passo 2: verifique que a pagina exibe o texto \"Ajustes globais da plataforma\". Passo 3: verifique que a pagina exibe o texto \"E-mails de parceiros\".",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-08-01T16:31:35.224Z"
+      "at": "2026-10-19T19:15:32.376Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-08-01T16:31:37.632Z",
+    "created_at": "2026-10-19T19:15:34.173Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 1
+    "plan_generation": 2
   }
 }

@@ -3,7 +3,7 @@
   "key": {
     "scenario_id": "sobre",
     "start_url": "/sobre",
-    "start_sig": "sig:c969f052cf00cbe2",
+    "start_sig": "sig:abfa3687f853177c",
     "scenario_sig": "89eaa58edc3e6abc"
   },
   "plan": {
@@ -15,8 +15,8 @@
         "id": "a1",
         "type": "wait_for",
         "target": {
-          "selector": "button[id=\"radix-:rb:\"]",
-          "description": "Destinos button in the site header"
+          "selector": "header",
+          "description": "Site header containing the Destinos button"
         },
         "expect": {
           "text_contains": {
@@ -31,7 +31,7 @@
         "type": "wait_for",
         "target": {
           "selector": "main h1",
-          "description": "Main page heading with Reserva fácil text"
+          "description": "Main page h1 heading"
         },
         "expect": {
           "text_contains": {
@@ -45,15 +45,15 @@
         "id": "a3",
         "type": "wait_for",
         "target": {
-          "selector": "footer a[href=\"/seja-parceiro\"]",
-          "description": "Seja parceiro link in the site footer"
+          "selector": "footer",
+          "description": "Site footer containing Seja parceiro link"
         },
         "expect": {
           "text_contains": {
             "selector": "footer",
             "text": "Seja parceiro"
           },
-          "selector": "footer a[href=\"/seja-parceiro\"]"
+          "selector": "footer"
         },
         "timeout_ms": 5000
       }
@@ -61,15 +61,15 @@
     "task": "Verifique que o cabecalho exibe o texto Destinos, que a pagina exibe o texto Reserva fácil. Viagem tranquila., e que o rodape exibe o texto Seja parceiro.",
     "generated_by": {
       "model": "claude-code/claude-sonnet-4-6",
-      "at": "2026-09-26T18:11:45.938Z"
+      "at": "2026-10-19T19:16:10.385Z"
     }
   },
   "status": "active",
   "stats": {
-    "created_at": "2026-09-26T18:11:46.441Z",
+    "created_at": "2026-10-19T19:16:11.162Z",
     "last_replayed_at": null,
     "replay_count": 0,
     "replay_failures": 0,
-    "plan_generation": 2
+    "plan_generation": 3
   }
 }
