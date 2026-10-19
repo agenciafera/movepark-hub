@@ -2516,22 +2516,22 @@ declare
   sobra text;
 begin
   select string_agg(x.alvo, ', ') into sobra from (
-    select 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?132\.30(?![0-9])|R\$ ?188\.30(?![0-9])|R\$ ?475\.20(?![0-9])|R\$ ?240\.00(?![0-9])|R\$ ?777\.00(?![0-9]))'
     union all
-    select 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?132,30(?![0-9])|R\$ ?188,30(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?240,00(?![0-9])|R\$ ?777,00(?![0-9]))'
     union all
     select 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas' as alvo from public.blog_post where slug = 'aeropark-descubra-se-o-estacionamento-aeroporto-gru-oferece-vagas-cobertas'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?132,30(?![0-9])|R\$ ?188,30(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?240,00(?![0-9])|R\$ ?777,00(?![0-9])|R\$ ?18,49(?![0-9]))'
     union all
-    select 'aeroporto-de-congonhas-informacoes-completas (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'aeroporto-de-congonhas-informacoes-completas (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'aeroporto-de-congonhas-informacoes-completas' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?32\.90(?![0-9]))'
     union all
-    select 'aeroporto-de-congonhas-informacoes-completas (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'aeroporto-de-congonhas-informacoes-completas (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'aeroporto-de-congonhas-informacoes-completas' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?32,90(?![0-9]))'
     union all
@@ -2550,11 +2550,11 @@ begin
     select 'estacionamento-barato-aeroporto-congonhas' as alvo from public.blog_post where slug = 'estacionamento-barato-aeroporto-congonhas'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?17,06(?![0-9])|R\$ ?29,90(?![0-9])|R\$ ?32,90(?![0-9])|R\$ ?89,70(?![0-9])|R\$ ?24,66(?![0-9])|R\$ ?369,90(?![0-9])|R\$ ?511,90(?![0-9])|R\$ ?26,90(?![0-9])|R\$ ?188,30(?![0-9])|R\$ ?202,30(?![0-9])|R\$ ?28,90(?![0-9]))'
     union all
-    select 'estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?93\.17(?![0-9])|R\$ ?111\.80(?![0-9])|R\$ ?366\.83(?![0-9])|R\$ ?152\.70(?![0-9])|R\$ ?327\.30(?![0-9])|R\$ ?239\.40(?![0-9])|R\$ ?265\.60(?![0-9])|R\$ ?7\.98(?![0-9])|R\$ ?690\.00(?![0-9]))'
     union all
-    select 'estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-gru-airport-guia-completo-para-parar-seu-carro-com-tranquilidade' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?93,17(?![0-9])|R\$ ?111,80(?![0-9])|R\$ ?366,83(?![0-9])|R\$ ?152,70(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?265,60(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?690,00(?![0-9]))'
     union all
@@ -2564,44 +2564,44 @@ begin
     select 'estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes' as alvo from public.blog_post where slug = 'estacionamento-proximo-do-aeroporto-guarulhos-as-melhores-opcoes'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?0,00(?![0-9])|R\$ ?7,95(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?3,00(?![0-9])|R\$ ?36,98(?![0-9])|R\$ ?33,80(?![0-9])|R\$ ?3,18(?![0-9])|R\$ ?55,47(?![0-9])|R\$ ?50,70(?![0-9])|R\$ ?4,77(?![0-9])|R\$ ?92,45(?![0-9])|R\$ ?84,50(?![0-9])|R\$ ?110,94(?![0-9])|R\$ ?101,40(?![0-9])|R\$ ?9,54(?![0-9])|R\$ ?152,70(?![0-9])|R\$ ?17,77(?![0-9])|R\$ ?327,30(?![0-9])|17\/09\/2026)'
     union all
-    select 'estacionamento-terminal-1-aeroporto-guarulhos (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-terminal-1-aeroporto-guarulhos (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-terminal-1-aeroporto-guarulhos' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?183\.30(?![0-9])|R\$ ?152\.70(?![0-9])|R\$ ?7\.98(?![0-9])|R\$ ?22\.19(?![0-9])|R\$ ?93\.17(?![0-9])|R\$ ?111\.79(?![0-9])|R\$ ?475\.20(?![0-9])|R\$ ?554\.40(?![0-9])|R\$ ?239\.40(?![0-9])|R\$ ?287\.40(?![0-9])|R\$ ?633\.60(?![0-9])|R\$ ?366\.83(?![0-9])|R\$ ?327\.30(?![0-9])|R\$ ?265\.60(?![0-9])|R\$ ?426\.70(?![0-9])|R\$ ?402\.60(?![0-9])|R\$ ?359\.10(?![0-9])|R\$ ?84\.50(?![0-9])|R\$ ?275\.50(?![0-9]))'
     union all
-    select 'estacionamento-terminal-1-aeroporto-guarulhos (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-terminal-1-aeroporto-guarulhos (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-terminal-1-aeroporto-guarulhos' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?183,30(?![0-9])|R\$ ?152,70(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?366,83(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?265,60(?![0-9])|R\$ ?426,70(?![0-9])|R\$ ?402,60(?![0-9])|R\$ ?359,10(?![0-9])|R\$ ?84,50(?![0-9])|R\$ ?275,50(?![0-9]))'
     union all
     select 'estacionamento-terminal-1-aeroporto-guarulhos' as alvo from public.blog_post where slug = 'estacionamento-terminal-1-aeroporto-guarulhos'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?183,30(?![0-9])|R\$ ?152,70(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?366,83(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?265,60(?![0-9])|R\$ ?426,70(?![0-9])|R\$ ?402,60(?![0-9])|R\$ ?359,10(?![0-9])|R\$ ?84,50(?![0-9])|R\$ ?275,50(?![0-9]))'
     union all
-    select 'estacionamento-terminal-2-aeroporto-guarulhos (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-terminal-2-aeroporto-guarulhos (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-terminal-2-aeroporto-guarulhos' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?152\.70(?![0-9])|R\$ ?22\.19(?![0-9])|R\$ ?93\.17(?![0-9])|R\$ ?111\.79(?![0-9])|R\$ ?475\.20(?![0-9])|R\$ ?183\.30(?![0-9])|R\$ ?554\.40(?![0-9])|R\$ ?239\.40(?![0-9])|R\$ ?287\.40(?![0-9])|R\$ ?633\.60(?![0-9])|R\$ ?366\.83(?![0-9])|R\$ ?327\.30(?![0-9])|R\$ ?265\.60(?![0-9])|R\$ ?457\.30(?![0-9])|R\$ ?7\.98(?![0-9])|R\$ ?359\.10(?![0-9])|R\$ ?426\.70(?![0-9])|R\$ ?402\.60(?![0-9])|R\$ ?84\.50(?![0-9]))'
     union all
-    select 'estacionamento-terminal-2-aeroporto-guarulhos (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-terminal-2-aeroporto-guarulhos (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-terminal-2-aeroporto-guarulhos' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?152,70(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?183,30(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?366,83(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?265,60(?![0-9])|R\$ ?457,30(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?359,10(?![0-9])|R\$ ?426,70(?![0-9])|R\$ ?402,60(?![0-9])|R\$ ?84,50(?![0-9]))'
     union all
     select 'estacionamento-terminal-2-aeroporto-guarulhos' as alvo from public.blog_post where slug = 'estacionamento-terminal-2-aeroporto-guarulhos'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?152,70(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?183,30(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?366,83(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?265,60(?![0-9])|R\$ ?457,30(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?359,10(?![0-9])|R\$ ?426,70(?![0-9])|R\$ ?402,60(?![0-9])|R\$ ?84,50(?![0-9]))'
     union all
-    select 'estacionamento-terminal-3-aeroporto-guarulhos (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-terminal-3-aeroporto-guarulhos (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-terminal-3-aeroporto-guarulhos' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?152\.70(?![0-9])|R\$ ?22\.19(?![0-9])|R\$ ?93\.17(?![0-9])|R\$ ?111\.79(?![0-9])|R\$ ?475\.20(?![0-9])|R\$ ?183\.30(?![0-9])|R\$ ?554\.40(?![0-9])|R\$ ?239\.40(?![0-9])|R\$ ?287\.40(?![0-9])|R\$ ?633\.60(?![0-9])|R\$ ?471\.83(?![0-9])|R\$ ?457\.30(?![0-9])|R\$ ?450\.60(?![0-9])|R\$ ?450\.00(?![0-9])|R\$ ?55\.60(?![0-9])|R\$ ?327\.30(?![0-9])|R\$ ?7\.98(?![0-9])|R\$ ?84\.50(?![0-9])|R\$ ?183\.24(?![0-9]))'
     union all
-    select 'estacionamento-terminal-3-aeroporto-guarulhos (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'estacionamento-terminal-3-aeroporto-guarulhos (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'estacionamento-terminal-3-aeroporto-guarulhos' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?152,70(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?183,30(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?471,83(?![0-9])|R\$ ?457,30(?![0-9])|R\$ ?450,60(?![0-9])|R\$ ?450,00(?![0-9])|R\$ ?55,60(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?84,50(?![0-9])|R\$ ?183,24(?![0-9]))'
     union all
     select 'estacionamento-terminal-3-aeroporto-guarulhos' as alvo from public.blog_post where slug = 'estacionamento-terminal-3-aeroporto-guarulhos'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?152,70(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?183,30(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?471,83(?![0-9])|R\$ ?457,30(?![0-9])|R\$ ?450,60(?![0-9])|R\$ ?450,00(?![0-9])|R\$ ?55,60(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?84,50(?![0-9])|R\$ ?183,24(?![0-9]))'
     union all
-    select 'guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024 (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024 (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?93\.17(?![0-9])|R\$ ?111\.79(?![0-9])|R\$ ?239\.40(?![0-9])|R\$ ?18\.62(?![0-9])|R\$ ?18\.63(?![0-9])|R\$ ?3\.18(?![0-9])|R\$ ?7\.95(?![0-9]))'
     union all
-    select 'guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024 (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024 (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'guia-atualizado-5-melhores-opcoes-de-estacionamento-no-aeroporto-guarulhos-em-2024' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?18,62(?![0-9])|R\$ ?18,63(?![0-9])|R\$ ?3,18(?![0-9])|R\$ ?7,95(?![0-9]))'
     union all
@@ -2614,11 +2614,11 @@ begin
     select 'preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui' as alvo from public.blog_post where slug = 'preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui'
       and (coalesce(body_md, '') || ' ' || coalesce(excerpt, '') || ' ' || coalesce(meta_description, '')) ~ '(R\$ ?93,17(?![0-9])|R\$ ?111,79(?![0-9])|R\$ ?239,40(?![0-9])|R\$ ?287,40(?![0-9])|R\$ ?13,31(?![0-9])|R\$ ?7,98(?![0-9])|R\$ ?457,30(?![0-9])|R\$ ?152,70(?![0-9])|R\$ ?22,19(?![0-9])|R\$ ?183,30(?![0-9])|R\$ ?475,20(?![0-9])|R\$ ?554,40(?![0-9])|R\$ ?633,60(?![0-9])|R\$ ?33,80(?![0-9])|R\$ ?36,98(?![0-9])|R\$ ?10,18(?![0-9])|R\$ ?15,97(?![0-9])|R\$ ?12,22(?![0-9])|R\$ ?9,58(?![0-9])|R\$ ?67,89(?![0-9])|R\$ ?36,96(?![0-9])|R\$ ?21,12(?![0-9])|R\$ ?110,94(?![0-9])|R\$ ?159,72(?![0-9])|R\$ ?132,34(?![0-9])|R\$ ?173,06(?![0-9])|R\$ ?143,64(?![0-9])|R\$ ?111,80(?![0-9])|R\$ ?18,63(?![0-9])|R\$ ?134,15(?![0-9])|R\$ ?22,36(?![0-9])|R\$ ?594,00(?![0-9])|R\$ ?118,80(?![0-9])|R\$ ?47,88(?![0-9])|R\$ ?287,28(?![0-9])|R\$ ?327,30(?![0-9])|R\$ ?296,70(?![0-9])|R\$ ?74,40(?![0-9])|R\$ ?18,62(?![0-9])|R\$ ?97,01(?![0-9])|R\$ ?363,41(?![0-9])|R\$ ?371,10(?![0-9])|R\$ ?346,20(?![0-9])|11\/09\/2026|11 de setembro de 2026)'
     union all
-    select 'top-3-estacionamentos-do-aeroporto-de-congonhas (en)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'top-3-estacionamentos-do-aeroporto-de-congonhas (en)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'top-3-estacionamentos-do-aeroporto-de-congonhas' and i.locale = 'en'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?188\.30(?![0-9])|R\$ ?199\.29(?![0-9])|R\$ ?32\.54(?![0-9])|R\$ ?511\.80(?![0-9])|R\$ ?777\.00(?![0-9])|R\$ ?28\.47(?![0-9])|R\$ ?21\.77(?![0-9])|R\$ ?17\.06(?![0-9])|R\$ ?29\.90(?![0-9])|R\$ ?26\.90(?![0-9])|R\$ ?25\.90(?![0-9])|R\$ ?10\.99(?![0-9])|R\$ ?89\.70(?![0-9])|R\$ ?43\.97(?![0-9])|R\$ ?266\.00(?![0-9])|R\$ ?77\.70(?![0-9])|11 September 2026|10 August 2026)'
     union all
-    select 'top-3-estacionamentos-do-aeroporto-de-congonhas (es)' from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
+    select 'top-3-estacionamentos-do-aeroporto-de-congonhas (es)' as alvo from public.blog_post_i18n i join public.blog_post p on p.id = i.blog_post_id
       where p.slug = 'top-3-estacionamentos-do-aeroporto-de-congonhas' and i.locale = 'es'
       and (coalesce(i.body_md, '') || ' ' || coalesce(i.excerpt, '') || ' ' || coalesce(i.meta_description, '')) ~ '(R\$ ?188,30(?![0-9])|R\$ ?199,29(?![0-9])|R\$ ?32,54(?![0-9])|R\$ ?511,80(?![0-9])|R\$ ?777,00(?![0-9])|R\$ ?28,47(?![0-9])|R\$ ?21,77(?![0-9])|R\$ ?17,06(?![0-9])|R\$ ?29,90(?![0-9])|R\$ ?26,90(?![0-9])|R\$ ?25,90(?![0-9])|R\$ ?10,99(?![0-9])|R\$ ?89,70(?![0-9])|R\$ ?43,97(?![0-9])|R\$ ?266,00(?![0-9])|R\$ ?77,70(?![0-9])|11 de septiembre de 2026|10 de agosto de 2026)'
     union all
