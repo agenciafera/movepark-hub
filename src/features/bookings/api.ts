@@ -379,6 +379,9 @@ export type GatewayTrailPayment = {
   refund_partner_cents: number;
   refund_partner_balance_cents: number | null;
   refund_split: unknown;
+  /** Estorno avulso pelo Manager: a reserva ficou como estava. */
+  refund_keeps_booking?: boolean;
+  refund_requested_by_email?: string | null;
   split:
     | {
         role?: string;
@@ -426,6 +429,44 @@ export function useBookingGatewayTrail(bookingId: string | undefined, enabled = 
       const { data, error } = await rpc("booking_gateway_trail", { p_booking_id: bookingId! });
       if (error) throw new Error(error.message);
       return data;
+    },
+  });
+}
+
+const REFUND_PAYMENT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refund-payment`;
+
+/**
+ * Estorna UM pagamento sem cancelar a reserva (hub_admin, Edge `refund-payment`, 19/10/2026).
+ * O motivo é obrigatório e fica no pagamento e no rastro, com quem pediu.
+ */
+export function useRefundPayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      paymentId: string;
+      reason: string;
+    }): Promise<{ ok: boolean; status: string; refund_pending: boolean }> => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada. Entre novamente.");
+      const res = await fetch(REFUND_PAYMENT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ payment_id: args.paymentId, reason: args.reason }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
+      return body;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: bookingsKeys.all });
+      qc.invalidateQueries({ queryKey: ["payout-recipients"] });
+      qc.invalidateQueries({ queryKey: ["payout-accounts"] });
     },
   });
 }

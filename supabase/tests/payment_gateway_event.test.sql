@@ -2,7 +2,7 @@
 -- pagamentos com os ids do gateway e os eventos da reserva. Transação com rollback.
 
 begin;
-select plan(7);
+select plan(9);
 
 select has_table('public', 'payment_gateway_event', 'payment_gateway_event existe');
 select has_function('public', 'booking_gateway_trail', array['uuid'], 'booking_gateway_trail(uuid) existe');
@@ -23,6 +23,8 @@ begin
     values (bk,'MP-TRAIL',cust,loc,now() + interval '2 days',now() + interval '3 days','confirmed',18);
   insert into public.payment(id, booking_id, provider, method, kind, amount, status, paid_at, provider_payment_id, provider_charge_id)
     values (pay, bk,'pagarme','pix','booking',18,'paid',now(),'or_x','ch_x');
+  -- Estorno avulso pedido pelo Manager (19/10/2026): a marca e quem pediu.
+  update public.payment set refund_keeps_booking = true, refund_requested_by = adm where id = pay;
   insert into public.payment_gateway_event(payment_id, booking_id, kind, http_status, request, response, created_at)
     values (pay, bk, 'charge_created', 200, '{"amount":1800}', '{"id":"or_x","charges":[{"id":"ch_x"}]}', now() - interval '1 minute'),
            (pay, bk, 'webhook:charge.paid', 200, null, '{"type":"charge.paid"}', now());
@@ -42,6 +44,8 @@ select set_config('request.jwt.claims', json_build_object('sub', current_setting
 select is(jsonb_array_length(public.booking_gateway_trail(current_setting('test.bk')::uuid) -> 'events'), 2, 'hub_admin vê os dois eventos');
 select is(public.booking_gateway_trail(current_setting('test.bk')::uuid) -> 'payments' -> 0 ->> 'provider_charge_id', 'ch_x', 'o pagamento traz o charge do gateway');
 select is(public.booking_gateway_trail(current_setting('test.bk')::uuid) -> 'events' -> 0 ->> 'kind', 'webhook:charge.paid', 'eventos do mais novo para o mais velho');
+select is(public.booking_gateway_trail(current_setting('test.bk')::uuid) -> 'payments' -> 0 ->> 'refund_keeps_booking', 'true', 'estorno avulso aparece como reserva mantida');
+select is(public.booking_gateway_trail(current_setting('test.bk')::uuid) -> 'payments' -> 0 ->> 'refund_requested_by_email', 'tr-adm@ex.com', 'e com quem pediu');
 reset role;
 
 select * from finish();

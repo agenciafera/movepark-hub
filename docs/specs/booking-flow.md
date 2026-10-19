@@ -434,6 +434,15 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   **"Estorno"** foi **removido** do Manager (`BookingModal`) e do Operator (`BookingDrawer`), assim
   como a Edge `refund-booking`; `paymentState()` agora só alimenta o **badge** de estado
   (Estornado / em processamento).
+- **Exceção, estorno avulso pelo Manager (19/10/2026, decisão do Kallef):** a equipe (hub_admin)
+  estorna UM pagamento sem cancelar a reserva, no rastro do gateway da reserva (botão
+  "Estornar"). Caso de uso: cobrança em dobro (MP-07DAE9), cortesia, ajuste de valor. A Edge
+  `refund-payment` usa a mesma contabilidade do cancelamento (`executeRefund`: híbrido ou 100%
+  master com a perna do parceiro virando dívida, fila manual quando o gateway recusa), exige
+  motivo, grava `payment.refund_keeps_booking` e `refund_requested_by` ANTES de chamar o gateway
+  (o webhook e o reconcile-refunds leem a marca e não cancelam) e deixa o rastro `refund` com o
+  motivo e quem pediu. O relatório e o razão do parceiro enxergam o estorno pelos mesmos campos do
+  cancelamento (`refunded_at`, `refunded_amount`, `refund_*`). Parceiro e cliente não têm o botão.
 - **Webhook decide pelo TIPO do evento (não pelo `data.status`):** `webhookIntentFromType()` mapeia
   `charge.refunded`/`order.refunded` → refund (mesmo com `data.status:"paid"`, o caso PIX que
   falhava), `*.canceled` → cancela booking + libera capacidade, `partially_refunded` → registra o

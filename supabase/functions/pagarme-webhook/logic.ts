@@ -133,6 +133,8 @@ export interface MatchedPayment {
   date_change_check_out_at: string | null;
   status: string | null;
   paid_at: string | null;
+  /** Estorno avulso pelo Manager: o estorno deste pagamento não cancela a reserva. */
+  refund_keeps_booking?: boolean | null;
 }
 
 /** Buscas precisas por identificador único da cobrança. Sem busca por booking/recência. */

@@ -592,6 +592,8 @@ export interface DebtMail {
   /** Dívida total da empresa depois desta. */
   totalDebtCents: number;
   reason: string | null;
+  /** Estorno avulso pelo Manager (19/10/2026): devolveu um pagamento e a reserva continuou. */
+  bookingKept?: boolean;
 }
 
 /**
@@ -600,9 +602,15 @@ export interface DebtMail {
  */
 export function tplPartnerDebtCreated(d: DebtMail): { subject: string; html: string } {
   return {
-    subject: `Reserva ${d.bookingCode} cancelada: ${cents(d.debtCents)} serão abatidos das próximas vendas`,
+    subject: d.bookingKept
+      ? `Estorno na reserva ${d.bookingCode}: ${cents(d.debtCents)} serão abatidos das próximas vendas`
+      : `Reserva ${d.bookingCode} cancelada: ${cents(d.debtCents)} serão abatidos das próximas vendas`,
     html: shell("Um estorno vai ser abatido", `
-      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(d.contactName))}. A reserva <strong>${escapeHtml(d.bookingCode)}</strong> de <strong>${escapeHtml(d.companyName)}</strong> foi cancelada${d.reason ? ` (${escapeHtml(d.reason)})` : ""} e a Movepark devolveu o valor ao cliente.</p>
+      <p style="margin:0 0 14px">Olá, ${escapeHtml(firstName(d.contactName))}. ${
+        d.bookingKept
+          ? `A Movepark devolveu ao cliente um pagamento da reserva <strong>${escapeHtml(d.bookingCode)}</strong> de <strong>${escapeHtml(d.companyName)}</strong>${d.reason ? ` (${escapeHtml(d.reason)})` : ""}. A reserva continua de pé.`
+          : `A reserva <strong>${escapeHtml(d.bookingCode)}</strong> de <strong>${escapeHtml(d.companyName)}</strong> foi cancelada${d.reason ? ` (${escapeHtml(d.reason)})` : ""} e a Movepark devolveu o valor ao cliente.`
+      }</p>
       <p style="margin:0 0 14px">Como a sua parte dessa venda já tinha saído do saldo, <strong>${cents(d.debtCents)}</strong> ficam como abatimento: as próximas vendas cobrem esse valor antes de liberar saque. Você não precisa fazer nada.</p>
       <p style="margin:0 0 22px">Total a abater hoje: <strong>${cents(d.totalDebtCents)}</strong>.</p>
       <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/operator/finance`, "Ver o extrato")}</p>

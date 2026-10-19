@@ -9,6 +9,7 @@ export interface DebtEmailRow {
   amount: number | string;
   refunded_amount: number | string | null;
   refund_reason: string | null;
+  refund_keeps_booking?: boolean | null;
   gateway_fee_cents: number | null;
   split: unknown;
   booking: { code: string; location: { company_id: string } | null } | null;
@@ -89,6 +90,7 @@ export async function sendDebtEmail(admin: any, row: DebtEmailRow): Promise<bool
       debtCents,
       totalDebtCents: Math.max(0, Number(total ?? debtCents) || debtCents),
       reason: row.refund_reason,
+      bookingKept: row.refund_keeps_booking === true,
     });
     const r = await sendPartnerEmail(admin, { companyId, from, to: contato.to, subject: mail.subject, html: mail.html });
     if (r.ok) return true;
@@ -110,7 +112,7 @@ export const SWEEP_LIMIT = 20;
 export async function sweepDebtEmails(admin: any): Promise<{ checked: number; sent: number }> {
   const { data, error } = await admin
     .from("payment")
-    .select("id, amount, refunded_amount, refund_reason, gateway_fee_cents, split, booking:booking_id(code, location:location_id(company_id))")
+    .select("id, amount, refunded_amount, refund_reason, refund_keeps_booking, gateway_fee_cents, split, booking:booking_id(code, location:location_id(company_id))")
     .eq("provider", "pagarme")
     .eq("kind", "booking")
     .is("refund_absorbed_by_master", true)

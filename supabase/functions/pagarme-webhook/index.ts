@@ -350,7 +350,7 @@ Deno.serve(async (req: Request) => {
   // "mais recente do booking": uma reserva pode ter várias cobranças e o chute aplicaria no errado.
   // Ver resolvePayment e 86ajnet8w.
   const paymentCols =
-    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status, paid_at";
+    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status, paid_at, refund_keeps_booking";
   const findBy = async (col: string, val: string) => {
     const { data } = await admin
       .from("payment")
@@ -669,7 +669,7 @@ Deno.serve(async (req: Request) => {
       .eq("id", payment.booking_id)
       .maybeSingle();
     const otherLive = await countOtherLiveBookingPayments(admin, payment.booking_id, payment.id);
-    if (bk && refundShouldCancelBooking(bk.status, { refundedKind: payment.kind, otherLiveBookingPayments: otherLive })) {
+    if (bk && refundShouldCancelBooking(bk.status, { refundedKind: payment.kind, otherLiveBookingPayments: otherLive, keepBooking: payment.refund_keeps_booking })) {
       const { error: cancelErr } = await admin.rpc("cancel_booking_with_release", {
         p_booking_id: payment.booking_id,
         p_reason: "estorno total confirmado pelo gateway",
@@ -693,7 +693,7 @@ Deno.serve(async (req: Request) => {
       .eq("id", payment.booking_id)
       .maybeSingle();
     const otherLive = await countOtherLiveBookingPayments(admin, payment.booking_id, payment.id);
-    if (bk && refundShouldCancelBooking(bk.status, { refundedKind: payment.kind, otherLiveBookingPayments: otherLive })) {
+    if (bk && refundShouldCancelBooking(bk.status, { refundedKind: payment.kind, otherLiveBookingPayments: otherLive, keepBooking: payment.refund_keeps_booking })) {
       const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
         p_booking_id: payment.booking_id,
         p_reason: "cancelamento confirmado pelo gateway",

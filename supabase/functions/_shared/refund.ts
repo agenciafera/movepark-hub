@@ -3,6 +3,8 @@
 //   `confirmed`/`pending` → cancela + libera a vaga (via cancel_booking_with_release).
 //   `checked_in`/`completed`/`no_show`/`cancelled` → o estorno reflete só no payment (NÃO cancela).
 //   Ex.: reembolso de cortesia numa reserva já usada não deve "cancelar" o histórico.
+// Estorno avulso pelo Manager (`refund-payment`, 19/10/2026) nunca cancela: a marca
+// `payment.refund_keeps_booking` é gravada antes de chamar o gateway.
 // E só se o pagamento estornado era o que pagava a reserva e nenhum outro segue pago:
 //   - adicional (upgrade de Tarifa, troca de data) devolve só o adicional, a reserva continua paga;
 //   - cobrança em dobro (MP-07DAE9, 17/10/2026): estornar a cópia não pode cancelar a reserva que
@@ -15,6 +17,8 @@ export interface RefundBookingContext {
   refundedKind?: string | null;
   /** Quantos OUTROS pagamentos da reserva, do tipo `booking`, seguem `paid`/`authorized`. */
   otherLiveBookingPayments?: number;
+  /** Estorno avulso pelo Manager (`payment.refund_keeps_booking`): a reserva fica como está. */
+  keepBooking?: boolean | null;
 }
 
 export function refundShouldCancelBooking(
@@ -22,6 +26,7 @@ export function refundShouldCancelBooking(
   ctx: RefundBookingContext = {},
 ): boolean {
   if (bookingStatus !== "confirmed" && bookingStatus !== "pending") return false;
+  if (ctx.keepBooking) return false;
   if (ctx.refundedKind && ctx.refundedKind !== "booking") return false;
   if ((ctx.otherLiveBookingPayments ?? 0) > 0) return false;
   return true;

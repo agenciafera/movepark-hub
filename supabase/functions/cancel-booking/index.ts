@@ -117,14 +117,31 @@ Deno.serve(async (req: Request) => {
   }
   if (!actor) return jsonResponse({ error: "Sem permissão para cancelar esta reserva." }, 403);
 
-  // Último payment do booking.
-  const { data: payment } = await admin
+  // O pagamento que sustenta a reserva: o mais recente ainda pago e sem estorno; sem nenhum, o
+  // último (pendente, recusado). Com o estorno avulso (19/10/2026) a reserva pode ter um pagamento
+  // estornado MAIS NOVO que o que vale (a cópia da cobrança em dobro), e pegar só "o último" faria
+  // o cancelamento achar que já devolveu tudo.
+  const PAYMENT_COLS =
+    "id, provider, provider_payment_id, provider_charge_id, amount, method, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents";
+  const { data: vivo } = await admin
     .from("payment")
-    .select("id, provider, provider_payment_id, provider_charge_id, amount, method, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents")
+    .select(PAYMENT_COLS)
     .eq("booking_id", booking.id)
+    .eq("kind", "booking")
+    .in("status", ["paid", "authorized"])
+    .is("refunded_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  const { data: payment } = vivo
+    ? { data: vivo }
+    : await admin
+        .from("payment")
+        .select(PAYMENT_COLS)
+        .eq("booking_id", booking.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
   const decision = refundDecision({
     actor,

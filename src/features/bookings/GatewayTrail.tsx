@@ -3,7 +3,10 @@ import { Copy } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 import { useBookingGatewayTrail, type GatewayTrailEvent, type GatewayTrailPayment } from "./api";
+import { RefundPaymentDialog } from "./RefundPaymentDialog";
+import { canRefundPayment, isLastLiveBookingPayment } from "./refundPayment.logic";
 
 const brl = (cents: number) => formatBRL(cents / 100);
 
@@ -53,6 +56,7 @@ function Id({ label, value }: { label: string; value: string | null }) {
  */
 export function GatewayTrail({ bookingId }: { bookingId: string }) {
   const { data, isLoading, isError } = useBookingGatewayTrail(bookingId);
+  const [estornar, setEstornar] = React.useState<GatewayTrailPayment | null>(null);
   if (isLoading) return <Skeleton className="h-16 w-full" />;
   if (isError || !data) return null;
   // Resposta fora do formato (RPC antiga, stub de teste) não derruba a tela da reserva.
@@ -64,7 +68,7 @@ export function GatewayTrail({ bookingId }: { bookingId: string }) {
   return (
     <div className="space-y-3" data-testid="gateway-trail">
       {payments.map((p) => (
-        <PaymentCard key={p.id} p={p} />
+        <PaymentCard key={p.id} p={p} onRefund={canRefundPayment(p) ? () => setEstornar(p) : undefined} />
       ))}
       {events.length > 0 && (
         <ol className="space-y-1">
@@ -73,11 +77,21 @@ export function GatewayTrail({ bookingId }: { bookingId: string }) {
           ))}
         </ol>
       )}
+      {estornar && (
+        <RefundPaymentDialog
+          payment={estornar}
+          lastLivePayment={isLastLiveBookingPayment(payments, estornar)}
+          open
+          onOpenChange={(open) => {
+            if (!open) setEstornar(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function PaymentCard({ p }: { p: GatewayTrailPayment }) {
+function PaymentCard({ p, onRefund }: { p: GatewayTrailPayment; onRefund?: () => void }) {
   const partner = p.split?.find((r) => r.role === "partner") ?? null;
   const movepark = p.split?.find((r) => r.role === "movepark") ?? null;
   return (
@@ -90,6 +104,11 @@ function PaymentCard({ p }: { p: GatewayTrailPayment }) {
         </span>
         <Id label="order" value={p.provider_payment_id} />
         <Id label="charge" value={p.provider_charge_id} />
+        {onRefund && (
+          <Button size="sm" variant="outline" className="ml-auto" onClick={onRefund}>
+            Estornar
+          </Button>
+        )}
       </div>
       <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-caption text-muted">
         <span>criado {formatDateTime(p.created_at)}</span>
@@ -110,6 +129,8 @@ function PaymentCard({ p }: { p: GatewayTrailPayment }) {
         <div className="mt-1 text-caption text-error" data-testid="trail-refund">
           estorno {formatBRL(Number(p.refunded_amount ?? 0))} em {formatDateTime(p.refunded_at)}
           {p.refund_reason ? ` · ${p.refund_reason}` : ""}
+          {p.refund_keeps_booking ? " · reserva mantida" : ""}
+          {p.refund_requested_by_email ? ` · por ${p.refund_requested_by_email}` : ""}
           {p.refund_partner_cents > 0
             ? ` · gateway debitou ${brl(p.refund_partner_cents)} do parceiro`
             : p.refund_absorbed_by_master

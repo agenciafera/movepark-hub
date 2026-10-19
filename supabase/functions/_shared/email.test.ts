@@ -333,3 +333,14 @@ Deno.test("tplDuplicatePaymentTeam: lista as cobranças e diz que a reserva segu
   assertStringIncludes(t.html, "não a cancela");
   assert(!t.html.includes("—"), "sem travessão");
 });
+
+// Estorno avulso (19/10/2026): o parceiro não pode ler "foi cancelada" quando a reserva continuou.
+Deno.test("tplPartnerDebtCreated: estorno com a reserva mantida não fala em cancelamento", () => {
+  const m = tplPartnerDebtCreated({
+    contactName: "Pedro Araujo", companyName: "Abbapark", bookingCode: "MP-07DAE9",
+    debtCents: 17576, totalDebtCents: 17576, reason: "estorno avulso (reserva mantida): cobrança em dobro", bookingKept: true,
+  });
+  assertEquals(m.subject.startsWith("Estorno na reserva MP-07DAE9"), true);
+  assertStringIncludes(m.html, "A reserva continua de pé.");
+  assert(!m.html.includes("foi cancelada"), "não diz que foi cancelada");
+});

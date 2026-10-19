@@ -60,3 +60,15 @@ Deno.test("countOtherLiveBookingPayments: erro de leitura nunca libera o cancela
   const { admin } = fakeAdmin({ count: null, error: { message: "timeout" } });
   assertEquals(await countOtherLiveBookingPayments(admin, "bk1", "pay2"), 1);
 });
+
+// Estorno avulso pelo Manager (19/10/2026): mesmo sendo o único pagamento, a reserva fica.
+Deno.test("refundShouldCancelBooking: estorno avulso marcado para manter a reserva não cancela", () => {
+  assertEquals(
+    refundShouldCancelBooking("confirmed", { refundedKind: "booking", otherLiveBookingPayments: 0, keepBooking: true }),
+    false,
+  );
+  assertEquals(
+    refundShouldCancelBooking("confirmed", { refundedKind: "booking", otherLiveBookingPayments: 0, keepBooking: false }),
+    true,
+  );
+});

@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
   // "Estorno pendente": pago, com refunded_at setado (estorno iniciado) antes do corte da janela.
   const { data: payments, error } = await admin
     .from("payment")
-    .select("id, provider_payment_id, booking_id, kind")
+    .select("id, provider_payment_id, booking_id, kind, refund_keeps_booking")
     .eq("provider", "pagarme")
     .eq("status", "paid")
     .not("refunded_at", "is", null)
@@ -74,6 +74,7 @@ Deno.serve(async (req: Request) => {
       const action = decideReconcileAction(charge.status, bk?.status, {
         refundedKind: p.kind,
         otherLiveBookingPayments: otherLive,
+        keepBooking: p.refund_keeps_booking,
       });
       if (!action.markRefunded) continue;
 
