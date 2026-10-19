@@ -208,7 +208,24 @@ export function Step4Payment({
   );
   const chosen = options.find((o) => o.option.installments === installments) ?? options[0];
 
+  // Trava de envio (MP-07DAE9, 17/10/2026): o botão só ficava desabilitado quando a cobrança
+  // começava, e antes dela vêm CPF, aceite e tokenização (alguns segundos). Dois cliques nessa
+  // janela viraram duas cobranças. A ref barra o segundo clique na hora; o estado desabilita o botão.
+  const enviando = React.useRef(false);
+  const [paying, setPaying] = React.useState(false);
+  function comecaEnvio(): boolean {
+    if (enviando.current) return false;
+    enviando.current = true;
+    setPaying(true);
+    return true;
+  }
+  function terminaEnvio() {
+    enviando.current = false;
+    setPaying(false);
+  }
+
   async function initPix() {
+    if (!comecaEnvio()) return;
     try {
       if (!(await persistTaxId())) return;
       await garantirAceite();
@@ -221,11 +238,14 @@ export function Step4Payment({
         message: err instanceof Error ? err.message.slice(0, 300) : "erro",
       });
       toast.error(err instanceof Error ? err.message : "Erro ao gerar PIX");
+    } finally {
+      terminaEnvio();
     }
   }
 
   async function payCard(e: React.FormEvent) {
     e.preventDefault();
+    if (!comecaEnvio()) return;
     // Rastro do checkout: cada tentativa e onde ela morreu vão para a reserva no Manager.
     const savedCard = cardChoice !== "new";
     const ctx = {
@@ -298,6 +318,8 @@ export function Step4Payment({
       const ev = cardFailureEvent(stage, err, ctx);
       logCheckoutEvent(bookingCode, ev.kind, ev.httpStatus, ev.detail);
       toast.error(err instanceof Error ? err.message : "Pagamento recusado");
+    } finally {
+      terminaEnvio();
     }
   }
 
@@ -309,7 +331,7 @@ export function Step4Payment({
 
   const waitingForConfirmation = paymentStatus === "pending";
   const cardEnabled = policy?.enabled ?? false;
-  const busy = card.isPending || waitingForConfirmation;
+  const busy = paying || card.isPending || waitingForConfirmation;
 
   return (
     <div className="space-y-6">
@@ -386,8 +408,8 @@ export function Step4Payment({
                 <p className="text-body-md text-body">
                   Gere o código PIX, pague no app do seu banco e a confirmação chega automaticamente.
                 </p>
-                <Button onClick={initPix} disabled={pix.isPending}>
-                  {pix.isPending ? "Gerando…" : "Gerar PIX"}
+                <Button onClick={initPix} disabled={paying || pix.isPending}>
+                  {paying || pix.isPending ? "Gerando…" : "Gerar PIX"}
                 </Button>
               </div>
             )}
@@ -603,7 +625,7 @@ export function Step4Payment({
               </div>
 
               <Button type="submit" className="w-full" disabled={busy}>
-                {card.isPending ? "Processando…" : waitingForConfirmation ? "Confirmando…" : "Pagar com cartão"}
+                {paying || card.isPending ? "Processando…" : waitingForConfirmation ? "Confirmando…" : "Pagar com cartão"}
               </Button>
             </form>
           )}

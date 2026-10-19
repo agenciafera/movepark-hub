@@ -21,6 +21,8 @@ const KIND_LABEL: Record<string, string> = {
   payables: "Recebíveis apurados",
   withdrawal: "Saque",
   chargeback: "Chargeback",
+  pix_voided: "PIX aberto anulado (pago no cartão)",
+  duplicate_payment: "Cobrança em dobro: devolver a cópia",
 };
 
 function kindLabel(kind: string): string {

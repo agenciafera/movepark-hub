@@ -229,6 +229,65 @@ describe("Step4Payment", () => {
     );
   });
 
+  // Regressão MP-07DAE9 (17/10/2026): dois cliques com 3 s de intervalo, durante a tokenização,
+  // viraram duas cobranças aprovadas. O segundo clique não pode nem começar outro envio.
+  it("clique duplo no cartão tokeniza e cobra uma vez só", async () => {
+    const user = userEvent.setup();
+    let liberaToken!: (v: { token: string; brand: string; last4: string }) => void;
+    vi.mocked(tokenizeCard).mockImplementationOnce(
+      () => new Promise((resolve) => (liberaToken = resolve)),
+    );
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+    await preencheCartao("12/30");
+
+    const botao = screen.getByRole("button", { name: /Pagar com cartão/i });
+    fireEvent.click(botao);
+    await waitFor(() => expect(tokenizeCard).toHaveBeenCalledTimes(1));
+    // Tokenização ainda em andamento: o botão já trava e um segundo envio não passa.
+    expect(screen.getByRole("button", { name: /Processando/i })).toBeDisabled();
+    fireEvent.submit(botao.closest("form")!);
+    liberaToken({ token: "token_1", brand: "visa", last4: "1111" });
+
+    await waitFor(() => expect(cardMutate).toHaveBeenCalledTimes(1));
+    expect(tokenizeCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("clique duplo em Gerar PIX gera um PIX só", async () => {
+    let liberaAceite!: (v: unknown) => void;
+    acceptMutate.mockImplementationOnce(() => new Promise((resolve) => (liberaAceite = resolve)));
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        termsAccepted={false}
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    const botao = screen.getByRole("button", { name: /Gerar PIX/i });
+    fireEvent.click(botao);
+    fireEvent.click(botao);
+    await waitFor(() => expect(acceptMutate).toHaveBeenCalled());
+    liberaAceite({ ok: true, version: 1 });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Copiar código PIX/i })).toBeInTheDocument(),
+    );
+    expect(acceptMutate).toHaveBeenCalledTimes(1);
+  });
+
   it("cartão salvo já vem selecionado e paga sem redigitar nada", async () => {
     savedCards.data = [{ id: "pm_1", brand: "Visa", last4: "0466" }];
     try {

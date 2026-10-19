@@ -447,6 +447,24 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   **Eventos a assinar no painel Pagar.me** (nomes reais da conta): `charge.paid`, `charge.refunded`
   (estorno total) e `charge.partial_canceled` (estorno parcial). Esta conta emite `charge.*` (não há
   `order.*` nem `charge.canceled`); o full refund/void é o próprio `charge.refunded`.
+- **Estorno de um pagamento entre vários não cancela a reserva (19/10/2026, MP-07DAE9):** a regra
+  `refundShouldCancelBooking` só cancela quando o pagamento estornado (ou cancelado no gateway) é o
+  da reserva (`kind = booking`) **e** nenhum outro pagamento `booking` da mesma reserva segue
+  `paid`/`authorized` (`countOtherLiveBookingPayments`). Estorno de adicional (upgrade de Tarifa,
+  troca de data) e estorno da cópia de uma cobrança em dobro refletem só no `payment`. Vale para
+  `charge.refunded`, `charge.canceled` e para o `reconcile-refunds`. Na dúvida (erro de leitura), não
+  cancela.
+- **Uma cobrança por reserva de cada vez (19/10/2026, MP-07DAE9):** em 17/10 dois cliques no cartão
+  viraram duas cobranças aprovadas de R$ 219,70, porque a guarda "já existe pagamento aprovado?" da
+  `create-card-charge` era consulta seguida de cobrança. Agora `create-card-charge` e
+  `create-pix-charge` reivindicam a trava `payment_charge_lock` (RPC `payment_charge_lock_claim`,
+  prazo de 120 s, token) **antes** dessa guarda e soltam no fim; a segunda chamada simultânea recebe
+  409 `charge_in_progress`. O checkout trava o botão no primeiro clique (antes de CPF, aceite e
+  tokenização). Cartão aprovado **anula os PIX pendentes** da reserva (`voidOpenPixCharges`, rastro
+  `pix_voided`), para o cliente não pagar o QR que deixou aberto. Se mesmo assim a reserva ficar com
+  dois pagamentos aprovados, `alertIfDuplicatePayment` grava `duplicate_payment` no rastro da
+  reserva e manda e-mail para `app_setting.support_inbox`; a devolução da cópia é manual, no painel
+  da Pagar.me, e não cancela a reserva (regra acima).
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
   `cancel_booking_with_release` (noop se já `cancelled` ou `expired`), chamada **tanto** pela Edge
   **quanto** pelo webhook: a vaga nunca é liberada em dobro (`release_booking_capacity` não é

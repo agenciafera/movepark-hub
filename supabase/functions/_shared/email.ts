@@ -435,6 +435,34 @@ export function tplSupportTicketTeam(t: {
   };
 }
 
+/**
+ * Cobrança em dobro (19/10/2026, depois da MP-07DAE9): a reserva ficou com mais de um pagamento
+ * aprovado. Vai para a caixa da equipe (`app_setting.support_inbox`); quem devolve a cópia é gente,
+ * no painel da Pagar.me. O estorno da cópia não cancela a reserva (regra em _shared/refund.ts).
+ */
+export function tplDuplicatePaymentTeam(d: {
+  bookingCode: string;
+  charges: { chargeId: string | null; method: string; amount: number; paidAt: string | null }[];
+}): { subject: string; html: string } {
+  const linhas = d.charges
+    .map((c) =>
+      row(
+        escapeHtml(c.chargeId ?? "sem id"),
+        `${c.method === "card" ? "cartão" : c.method === "pix" ? "PIX" : c.method}, ${formatBRL(c.amount)}` +
+          (c.paidAt ? `, pago em ${formatBRDateTime(c.paidAt)}` : ""),
+      ),
+    )
+    .join("");
+  return {
+    subject: `Cobrança em dobro na reserva ${d.bookingCode}`,
+    html: shell(`Cobrança em dobro na ${escapeHtml(d.bookingCode)}`, `
+      <p>A reserva tem ${d.charges.length} pagamentos aprovados. Devolva a cópia no painel da Pagar.me e avise o cliente.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">${linhas}</table>
+      <p style="color:${BRAND.muted};font-size:13px">A reserva continua confirmada pelo pagamento que ficar: o estorno da cópia não a cancela.</p>
+      <p style="margin-top:16px">${button(`${siteUrl()}/manager/bookings/${d.bookingCode}`, "Abrir a reserva")}</p>`),
+  };
+}
+
 /** Confirmação ao cliente quando o WhatsApp não saiu (sem telefone ou envio falhou). */
 export function tplSupportTicketCustomer(firstName: string, bookingCode: string, ticketCode: string, bookingUrl: string): { subject: string; html: string } {
   return {

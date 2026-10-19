@@ -63,3 +63,18 @@ Deno.test("constantes de operação: corte de 15 min e teto de 100 por execuçã
   assertEquals(CUTOFF_MINUTES, 15);
   assertEquals(BATCH_LIMIT, 100);
 });
+
+// Regressão MP-07DAE9 (17/10/2026): o poll segue a mesma regra do webhook.
+Deno.test("decideReconcileAction: estorno da cópia de cobrança em dobro marca, NÃO cancela", () => {
+  assertEquals(
+    decideReconcileAction("refunded", "confirmed", { refundedKind: "booking", otherLiveBookingPayments: 1 }),
+    { markRefunded: true, cancelBooking: false },
+  );
+});
+
+Deno.test("decideReconcileAction: estorno de adicional marca, NÃO cancela", () => {
+  assertEquals(
+    decideReconcileAction("refunded", "confirmed", { refundedKind: "fare_upgrade", otherLiveBookingPayments: 0 }),
+    { markRefunded: true, cancelBooking: false },
+  );
+});

@@ -34,6 +34,9 @@ import {
 } from "../_shared/payments/commission.ts";
 import { chargeFailureDetail } from "../_shared/payments/pagarme.ts";
 import { normalizeBrand } from "../_shared/payments/card-brand.ts";
+import { CHARGE_IN_PROGRESS_MESSAGE, claimChargeLock } from "../_shared/payments/charge-lock.ts";
+import { voidOpenPixCharges } from "../_shared/payments/open-pix.ts";
+import { alertIfDuplicatePayment } from "../_shared/payments/duplicate.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,7 +65,12 @@ function platformFundedCents(priceBreakdown: unknown): number {
   return Math.max(0, Math.round(Number(c.discount ?? 0) * 100));
 }
 
-Deno.serve(async (req: Request) => {
+/** Onde o handler pendura a trava de cobrança, para o `finally` do Deno.serve soltar. */
+interface LockSlot {
+  release?: () => Promise<void>;
+}
+
+async function handle(req: Request, lock: LockSlot): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
@@ -140,6 +148,15 @@ Deno.serve(async (req: Request) => {
   if (!termsCount) {
     return await recusar(422, "É necessário aceitar os Termos de Uso antes de pagar.");
   }
+
+  // 1a'. Trava de cobrança (MP-07DAE9, 17/10/2026): dois cliques viraram duas cobranças porque a
+  // checagem abaixo é consulta seguida de cobrança. Com a trava, a checagem e a cobrança acontecem
+  // uma reserva por vez; a segunda chamada simultânea é recusada aqui.
+  const trava = await claimChargeLock(admin, booking.id);
+  if (!trava.acquired) {
+    return await recusar(409, CHARGE_IN_PROGRESS_MESSAGE, { code: "charge_in_progress" });
+  }
+  lock.release = trava.release;
 
   // 1b. Idempotência: não cobrar de novo se já há pagamento aprovado/autorizado.
   const { data: paid } = await admin
@@ -478,6 +495,13 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // 9d. Cartão aprovado: anula o PIX que o cliente gerou antes e deixou aberto, para ele não pagar a
+  // mesma reserva duas vezes, e confere se a reserva ficou com mais de um pagamento (alerta a equipe).
+  if (result.status === "paid" || result.status === "authorized") {
+    await voidOpenPixCharges(admin, gateway, booking.id);
+    await alertIfDuplicatePayment(admin, booking.id, paymentId);
+  }
+
   // 10. Salvar o cartão (opt-in) — só token+brand+last4 (nunca PAN).
   let savedCard = false;
   if (input.saveCard && input.cardToken) {
@@ -508,4 +532,13 @@ Deno.serve(async (req: Request) => {
     },
     201,
   );
+}
+
+Deno.serve(async (req: Request) => {
+  const lock: LockSlot = {};
+  try {
+    return await handle(req, lock);
+  } finally {
+    await lock.release?.();
+  }
 });

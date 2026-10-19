@@ -25,6 +25,7 @@ import { buildPixItems, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import { CHARGE_IN_PROGRESS_MESSAGE, claimChargeLock } from "../_shared/payments/charge-lock.ts";
 import {
   type BookingCommissionColumns,
   columnsFromRpc,
@@ -59,7 +60,12 @@ function platformFundedCents(priceBreakdown: unknown): number {
   return Math.max(0, Math.round(Number(c.discount ?? 0) * 100));
 }
 
-Deno.serve(async (req: Request) => {
+/** Onde o handler pendura a trava de cobrança, para o `finally` do Deno.serve soltar. */
+interface LockSlot {
+  release?: () => Promise<void>;
+}
+
+async function handle(req: Request, lock: LockSlot): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
@@ -120,6 +126,14 @@ Deno.serve(async (req: Request) => {
   if (!termsCount) {
     return jsonResponse({ error: "É necessário aceitar os Termos de Uso antes de pagar." }, 422);
   }
+
+  // Trava de cobrança (MP-07DAE9): a mesma do cartão. Não sai PIX novo enquanto um cartão desta
+  // reserva está sendo cobrado, nem dois PIX de um clique duplo.
+  const trava = await claimChargeLock(admin, booking.id);
+  if (!trava.acquired) {
+    return jsonResponse({ error: CHARGE_IN_PROGRESS_MESSAGE, code: "charge_in_progress" }, 409);
+  }
+  lock.release = trava.release;
 
   // 2. Empresa do lote + take_rate + recebedor do parceiro
   const { data: location } = await admin
@@ -391,4 +405,13 @@ Deno.serve(async (req: Request) => {
     },
     201,
   );
+}
+
+Deno.serve(async (req: Request) => {
+  const lock: LockSlot = {};
+  try {
+    return await handle(req, lock);
+  } finally {
+    await lock.release?.();
+  }
 });

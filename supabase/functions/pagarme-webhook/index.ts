@@ -24,7 +24,7 @@ import {
 } from "../_shared/kyc-link.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { notifyBookingConfirmed, sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
-import { refundShouldCancelBooking } from "../_shared/refund.ts";
+import { countOtherLiveBookingPayments, refundShouldCancelBooking } from "../_shared/refund.ts";
 import {
   cardEventAction,
   decidePaymentStatus,
@@ -41,6 +41,7 @@ import {
 } from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
+import { alertIfDuplicatePayment } from "../_shared/payments/duplicate.ts";
 import { chargebackDebtCents } from "../_shared/payments/commission.ts";
 import { normalizeBrand } from "../_shared/payments/card-brand.ts";
 import { notifyBooking } from "../_shared/notify.ts";
@@ -496,6 +497,12 @@ Deno.serve(async (req: Request) => {
     });
     const outcome = (cr as { outcome?: string; charge_id?: string } | null)?.outcome;
 
+    // Cobrança em dobro (MP-07DAE9): se a reserva já tinha outro pagamento aprovado, deixa rastro
+    // e avisa a equipe. Não estorna sozinho.
+    if ((payment.kind ?? "booking") === "booking") {
+      await runAfterResponse(alertIfDuplicatePayment(admin, payment.booking_id, payment.id));
+    }
+
     if (outcome === "needs_refund") {
       // Pago sem vaga (confirmação tardia após expirar): estorna automático — nunca captura sem
       // entregar. O evento `charge.refunded` posterior fecha o ciclo no payment.
@@ -655,12 +662,14 @@ Deno.serve(async (req: Request) => {
 
     // Cancela a reserva se ainda confirmada/pendente (regra única em refundShouldCancelBooking).
     // A RPC é idempotente e libera a vaga uma vez; erro é logado, nunca 500 (evita retry infinito).
+    // Estorno de adicional ou da cópia de uma cobrança em dobro não cancela: a reserva segue paga.
     const { data: bk } = await admin
       .from("booking")
       .select("status")
       .eq("id", payment.booking_id)
       .maybeSingle();
-    if (bk && refundShouldCancelBooking(bk.status)) {
+    const otherLive = await countOtherLiveBookingPayments(admin, payment.booking_id, payment.id);
+    if (bk && refundShouldCancelBooking(bk.status, { refundedKind: payment.kind, otherLiveBookingPayments: otherLive })) {
       const { error: cancelErr } = await admin.rpc("cancel_booking_with_release", {
         p_booking_id: payment.booking_id,
         p_reason: "estorno total confirmado pelo gateway",
@@ -675,12 +684,22 @@ Deno.serve(async (req: Request) => {
   // booking + libera capacidade. RPC idempotente (noop se já cancelado). Erro é logado e a
   // reconciliação (cron) cobre o straggler — não devolvemos 500 (a RPC recusa reserva terminal
   // por design, o que causaria retry infinito).
+  // Mesma regra do estorno: o PIX aberto que o checkout anula depois que o cartão aprovou chega
+  // aqui como `canceled`, e cancelar a reserva por ele derrubaria uma reserva paga.
   if (status === "canceled") {
-    const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
-      p_booking_id: payment.booking_id,
-      p_reason: "cancelamento confirmado pelo gateway",
-    });
-    if (rpcErr) console.error("[pagarme-webhook] cancel_booking_with_release falhou:", rpcErr.message);
+    const { data: bk } = await admin
+      .from("booking")
+      .select("status")
+      .eq("id", payment.booking_id)
+      .maybeSingle();
+    const otherLive = await countOtherLiveBookingPayments(admin, payment.booking_id, payment.id);
+    if (bk && refundShouldCancelBooking(bk.status, { refundedKind: payment.kind, otherLiveBookingPayments: otherLive })) {
+      const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
+        p_booking_id: payment.booking_id,
+        p_reason: "cancelamento confirmado pelo gateway",
+      });
+      if (rpcErr) console.error("[pagarme-webhook] cancel_booking_with_release falhou:", rpcErr.message);
+    }
   }
 
   await markProcessed(admin, ev.eventId);

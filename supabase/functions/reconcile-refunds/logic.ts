@@ -2,7 +2,7 @@
 // pagamento. A rede de segurança do estorno (poll) só age quando o webhook (push) não chegou, então
 // vale ter a decisão isolada e coberta.
 
-import { refundShouldCancelBooking } from "../_shared/refund.ts";
+import { type RefundBookingContext, refundShouldCancelBooking } from "../_shared/refund.ts";
 
 /** Só reavalia estornos iniciados há mais de N min (dá tempo do fluxo assíncrono do PIX + webhook). */
 export const CUTOFF_MINUTES = 15;
@@ -37,9 +37,10 @@ export interface ReconcileAction {
 export function decideReconcileAction(
   chargeStatus: string | null | undefined,
   bookingStatus: string | null | undefined,
+  ctx: RefundBookingContext = {},
 ): ReconcileAction {
   if (chargeStatus !== "refunded") {
     return { markRefunded: false, cancelBooking: false };
   }
-  return { markRefunded: true, cancelBooking: refundShouldCancelBooking(bookingStatus) };
+  return { markRefunded: true, cancelBooking: refundShouldCancelBooking(bookingStatus, ctx) };
 }

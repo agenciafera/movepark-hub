@@ -5,6 +5,7 @@ import {
   pdfAttachment,
   siteUrl,
   tplApprovalInvite,
+  tplDuplicatePaymentTeam,
   tplBookingConfirmation,
   tplLeadAlert,
   tplLeadReceived,
@@ -314,4 +315,21 @@ Deno.test("saque automático: assunto de repasse mensal e taxa por conta da Move
   assertStringIncludes(caiu.html, "por conta da Movepark");
   const falhou = tplWithdrawalFailed({ ...base, failureReason: "conta inválida" });
   assertStringIncludes(falhou.html, "O repasse automático");
+});
+
+Deno.test("tplDuplicatePaymentTeam: lista as cobranças e diz que a reserva segue confirmada", () => {
+  const t = tplDuplicatePaymentTeam({
+    bookingCode: "MP-07DAE9",
+    charges: [
+      { chargeId: "ch_kmY2OjpF2sdBZ7Lw", method: "card", amount: 219.7, paidAt: "2026-10-17T12:58:45Z" },
+      { chargeId: "ch_yjbZvXwFlEFDQaMd", method: "card", amount: 219.7, paidAt: "2026-10-17T12:58:44Z" },
+    ],
+  });
+  assertEquals(t.subject, "Cobrança em dobro na reserva MP-07DAE9");
+  assertStringIncludes(t.html, "ch_kmY2OjpF2sdBZ7Lw");
+  assertStringIncludes(t.html, "ch_yjbZvXwFlEFDQaMd");
+  assertStringIncludes(t.html, "cartão, R$");
+  assertStringIncludes(t.html, "/manager/bookings/MP-07DAE9");
+  assertStringIncludes(t.html, "não a cancela");
+  assert(!t.html.includes("—"), "sem travessão");
 });

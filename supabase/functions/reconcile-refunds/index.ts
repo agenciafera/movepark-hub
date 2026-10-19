@@ -11,6 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chargeStatusToPaymentStatus, getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { BATCH_LIMIT, decideReconcileAction, refundCutoffIso } from "./logic.ts";
+import { countOtherLiveBookingPayments } from "../_shared/refund.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -45,7 +46,7 @@ Deno.serve(async (req: Request) => {
   // "Estorno pendente": pago, com refunded_at setado (estorno iniciado) antes do corte da janela.
   const { data: payments, error } = await admin
     .from("payment")
-    .select("id, provider_payment_id, booking_id")
+    .select("id, provider_payment_id, booking_id, kind")
     .eq("provider", "pagarme")
     .eq("status", "paid")
     .not("refunded_at", "is", null)
@@ -66,7 +67,14 @@ Deno.serve(async (req: Request) => {
         .eq("id", p.booking_id)
         .maybeSingle();
 
-      const action = decideReconcileAction(charge.status, bk?.status);
+      // Só conta os outros pagamentos quando o gateway confirmou o estorno (poupa leitura no poll).
+      const otherLive = charge.status === "refunded"
+        ? await countOtherLiveBookingPayments(admin, p.booking_id, p.id)
+        : 0;
+      const action = decideReconcileAction(charge.status, bk?.status, {
+        refundedKind: p.kind,
+        otherLiveBookingPayments: otherLive,
+      });
       if (!action.markRefunded) continue;
 
       await admin
