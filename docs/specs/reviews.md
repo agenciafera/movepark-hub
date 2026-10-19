@@ -75,6 +75,10 @@ tudo acima acende sozinho, sem deploy.
   `confirmed`/`checked_in` com `check_out_at < now()` como `completed`.
 - Edge **`review-request`** (chamada por cron via pg_net) envia e-mail (`tplReviewRequest`, SES)
   para reservas `completed` sem review e com `review_request_sent_at` nulo; carimba o envio.
+  O destinatário é o e-mail do **snapshot da reserva** (`customer_email`, ADR-006), com o da conta
+  só de reforço, e só para estadias que terminaram nos últimos 14 dias. Até 19/10/2026 ela lia só
+  o e-mail da conta: quem entrou pelo WhatsApp (conta sem e-mail) nunca recebia, e 11 das 17
+  reservas concluídas ficaram sem pedido.
   Link → `/bookings/:code` (CTA "Avaliar"). **One-time op:** segredo Vault `review_request_key`
   (service-role JWT) p/ o cron chamar a edge.
 - Submissão: RPC **`submit_review`** (`SECURITY DEFINER`) valida reserva própria `completed`,

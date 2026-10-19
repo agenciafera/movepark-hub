@@ -10,8 +10,10 @@ import {
   CUSTOMER_TXN_NAMES,
   CUSTOMER_TXN_TOOLS,
   isOtpChannel,
+  otpGateDecision,
   otpLimiterKey,
   otpRequestParams,
+  otpSendErrorMessage,
   otpVerifyParams,
   verifyLoginOtp,
 } from "./customer.logic.ts";
@@ -362,4 +364,26 @@ Deno.test("buildCreateBookingBody: canal entra como origin só para o agente con
   assertEquals(buildCreateBookingBody(a, true).origin, "whatsapp-bot");
   assertEquals(buildCreateBookingBody(a).origin, "mcp");
   assertEquals("channel" in buildCreateBookingBody(a, true), false);
+});
+
+// Regressão 18/10/2026: a Mia pediu o código do mesmo cliente duas vezes ao mesmo tempo e o
+// segundo pedido quebrava o GoTrue com 500. O portão devolve `recent` e o MCP não chama de novo.
+Deno.test("otpGateDecision: pedido repetido não dispara outro código e não vira erro", () => {
+  const d = otpGateDecision("recent", "whatsapp");
+  assertEquals(d.send, false);
+  if (!d.send) assertEquals(d.result.status, "already_requested");
+});
+
+Deno.test("otpGateDecision: send dispara; blocked recusa; portão fora do ar segue como antes", () => {
+  assertEquals(otpGateDecision("send", "whatsapp"), { send: true });
+  assertThrows(() => otpGateDecision("blocked", "whatsapp"), Error, "Muitas tentativas");
+  assertEquals(otpGateDecision(null, "whatsapp"), { send: true });
+});
+
+Deno.test("otpSendErrorMessage: o 429 do GoTrue vira espera de 1 minuto em português", () => {
+  assertEquals(
+    otpSendErrorMessage({ status: 429, message: "For security purposes, you can only request this after 41 seconds." }),
+    "Um código foi enviado há pouco. Espere 1 minuto para pedir outro.",
+  );
+  assertEquals(otpSendErrorMessage({ message: "boom" }), "boom");
 });

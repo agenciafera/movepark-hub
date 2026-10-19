@@ -288,6 +288,31 @@ describe("Step4Payment", () => {
     expect(acceptMutate).toHaveBeenCalledTimes(1);
   });
 
+  // Regressão 10/10/2026: CVV fora do formato só era recusado pela Pagar.me, com mensagem genérica.
+  it("CVV com tamanho errado para a bandeira não vai ao gateway", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+    await preencheCartao("12/30");
+    fireEvent.change(screen.getByLabelText("CVV"), { target: { value: "1234" } });
+    fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Confira o CVV: são 3 dígitos no verso do cartão (4 na frente, no Amex)."),
+    );
+    expect(tokenizeCard).not.toHaveBeenCalled();
+    expect(cardMutate).not.toHaveBeenCalled();
+  });
+
   it("cartão salvo já vem selecionado e paga sem redigitar nada", async () => {
     savedCards.data = [{ id: "pm_1", brand: "Visa", last4: "0466" }];
     try {

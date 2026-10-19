@@ -55,4 +55,4 @@ export async function claimChargeLock(
 
 /** Mensagem para quem tenta cobrar com outra cobrança da mesma reserva em andamento. */
 export const CHARGE_IN_PROGRESS_MESSAGE =
-  "Já tem um pagamento desta reserva em andamento. Aguarde alguns segundos antes de tentar de novo.";
+  "Seu pagamento já está em andamento. Espere alguns segundos antes de tentar de novo.";

@@ -48,7 +48,9 @@ import {
   CUSTOMER_TXN_NAMES,
   erroDeSessao,
   normalizeAssertedPhone,
+  otpGateDecision,
   otpLimiterKey,
+  otpSendErrorMessage,
   otpRequestParams,
   temSessao,
   otpVerifyParams,
@@ -463,18 +465,20 @@ async function callCustomer(
       const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
         auth: { persistSession: false },
       });
-      const { data: permitido } = await admin.rpc("otp_request_allowed", {
+      // `otp_request_gate` (20261130110000): serializa pedidos do mesmo contato e, se já houve
+      // um nos últimos 30 s, não chama o GoTrue de novo; fora isso aplica o freio de custo.
+      const { data: gate, error: gateErr } = await admin.rpc("otp_request_gate", {
         p_identifier_hash: await sha256Hex(otpLimiterKey(a.channel, a.identifier)),
         p_ip: ip,
       });
-      if (permitido === false) {
-        throw new Error("Muitas tentativas de login. Espere alguns minutos e tente de novo.");
-      }
+      if (gateErr) console.error("[mcp] otp_request_gate falhou:", gateErr.message);
+      const decisao = otpGateDecision(gate, a.channel);
+      if (!decisao.send) return decisao.result;
 
       const sb = anonClient();
       // otpRequestParams valida o canal e monta o payload (phone+channel / email).
       const { error } = await sb.auth.signInWithOtp(params);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(otpSendErrorMessage(error));
       return { status: "sent", channel: a.channel };
     }
     case "verify_login_otp": {

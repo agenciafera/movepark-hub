@@ -260,6 +260,29 @@ A fila é lida no painel só por `hub_admin` (RLS). Pedido despachado é podado 
 - **Mudança feita durante o build entra no build seguinte.** O corte é tirado antes do POST
   justamente para não carimbar como publicado o que o Cloudflare não chegou a ler.
 
+## O disparo saiu, mas o build não terminou (15 a 19/10/2026)
+
+O site ficou quatro dias sem publicar com a checagem diária verde. A empresa BePark foi desligada
+no Manager em 15/10; a ficha dela deixou de ser gerada, e uma FAQ de destino e sete posts do blog
+continuaram linkando para ela. O `check-internal-links.mjs` reprovou todo build seguinte (push de
+16/10, disparo de conteúdo de 18/10, push de 19/10). O último deploy era de 15/10 14:11 UTC.
+`site_rebuild_health()` só olha a fila e o disparo, e os dois estavam normais.
+
+Duas mudanças:
+
+- O build grava `dist/version.json` (`scripts/write-version.mjs`) com o commit
+  (`WORKERS_CI_COMMIT_SHA`) e a hora. Ele fica em `https://movepark.co/version.json`.
+- O `site-rebuild-health.yml` passou a rodar duas vezes por dia e a ler esse arquivo. Fica vermelho
+  e abre issue com `deploy_atrasado` quando a `main` tem commit de mais de 2 h que não está no ar,
+  com `build_falhando` quando o último disparo de conteúdo tem mais de 2 h e nenhum build terminou
+  depois dele, e com `sem_versao` quando o arquivo não responde.
+
+**Desligar empresa quebra o build quando há conteúdo linkando para a ficha dela.** Antes de
+desligar, procure links para `/estacionamentos/<destino>/<lote>` em `faq.body_md`, `blog_post` e
+`blog_post_i18n`, ou mude a unidade para checkout externo, que mantém a ficha no ar (foi o que se
+fez com a BePark em 19/10). O diagnóstico é rodar `bun run build` localmente: o último script que
+falha diz o porquê.
+
 ## Testes
 
 `supabase/tests/pricing_mirror.test.sql` cobre o lado do espelho (seis casos): a porta aberta e

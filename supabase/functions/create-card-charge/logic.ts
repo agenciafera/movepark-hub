@@ -118,3 +118,15 @@ export function parseBillingAddress(v: unknown): { address: BillingAddress | nul
     address: { zip_code: zip, line_1: line1.slice(0, 200), ...(line2 ? { line_2: line2.slice(0, 100) } : {}), city: city.slice(0, 80), state, country: "BR" },
   };
 }
+
+/** O que dizer ao cliente quando o adquirente recusa um dado do cartão que ele digitou. */
+export function cardFieldMessage(field: "cvv" | "expiry" | "holder"): string {
+  switch (field) {
+    case "cvv":
+      return "O código de segurança (CVV) não confere. Confira os 3 dígitos no verso do cartão (4 na frente, no Amex).";
+    case "expiry":
+      return "A validade do cartão não confere. Confira o mês e o ano (MM/AA).";
+    case "holder":
+      return "Confira o nome impresso no cartão.";
+  }
+}

@@ -20,10 +20,17 @@ name: Saúde da publicação automática
 # quando a publicação está parada, o que deixa o X vermelho no commit e na aba Actions.
 # Quem recebe vem da variável de repositório SITE_REBUILD_ASSIGNEES (logins separados por
 # vírgula), com o Diego como padrão.
+#
+# Emenda de 19/10/2026: o site ficou de 15 a 19/10 sem publicar e esta checagem seguiu verde.
+# Ela só perguntava se o disparo tinha saído; o Workers Builds recebia o disparo e falhava (um
+# link interno morto reprovava o build), a cada push e a cada edição de conteúdo. Agora ela
+# também lê `movepark.co/version.json` (gravado pelo build) e reclama quando o que está no ar
+# ficou para trás da `main` ou do último disparo de conteúdo. Roda duas vezes por dia.
 
 on:
   schedule:
     - cron: "0 12 * * *" # 09:00 em Brasília
+    - cron: "0 21 * * *" # 18:00 em Brasília
   workflow_dispatch:
 
 permissions:
@@ -54,6 +61,7 @@ jobs:
           echo "motivo=$(echo "$h" | jq -r '.motivo // "-"')" >> "$GITHUB_OUTPUT"
           echo "pendentes=$(echo "$h" | jq -r '.pendentes')"  >> "$GITHUB_OUTPUT"
           echo "horas=$(echo "$h" | jq -r '.horas_esperando')" >> "$GITHUB_OUTPUT"
+          echo "ultimo_disparo=$(echo "$h" | jq -r '.ultimo_build // empty')" >> "$GITHUB_OUTPUT"
           {
             echo "### Publicação automática do site"
             echo '```json'
@@ -61,11 +69,59 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Confere se o site no ar acompanha a main e o conteúdo
+        id: deploy
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OK_FILA: ${{ steps.health.outputs.ok }}
+          MOTIVO_FILA: ${{ steps.health.outputs.motivo }}
+          ULTIMO_DISPARO: ${{ steps.health.outputs.ultimo_disparo }}
+        run: |
+          set -euo pipefail
+          # Folga para o build terminar: o Workers Builds leva uns 5 minutos.
+          folga=$((2 * 3600))
+          agora=$(date -u +%s)
+          site=$(curl -fsSL "https://movepark.co/version.json?t=$agora" || echo '{}')
+          no_ar=$(echo "$site" | jq -r '.commit // empty')
+          built_at=$(echo "$site" | jq -r '.built_at // empty')
+          head_sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          head_data=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .commit.committer.date)
+          motivo=""
+          if [ -z "$built_at" ]; then
+            motivo="sem_versao"
+          else
+            built_s=$(date -u -d "$built_at" +%s)
+            head_s=$(date -u -d "$head_data" +%s)
+            if [ "$no_ar" != "$head_sha" ] && [ $((agora - head_s)) -gt $folga ]; then
+              motivo="deploy_atrasado"
+            fi
+            if [ -n "$ULTIMO_DISPARO" ] && [ "$ULTIMO_DISPARO" != "null" ]; then
+              disparo_s=$(date -u -d "$ULTIMO_DISPARO" +%s)
+              if [ $((disparo_s - built_s)) -gt 600 ] && [ $((agora - disparo_s)) -gt $folga ]; then
+                motivo="build_falhando"
+              fi
+            fi
+          fi
+          ok=true
+          final="${MOTIVO_FILA:--}"
+          if [ "$OK_FILA" = "false" ]; then ok=false; fi
+          if [ -n "$motivo" ]; then ok=false; final="$motivo"; fi
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+          echo "motivo=$final" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Site no ar"
+            echo "- commit no ar: \`${no_ar:-?}\` (build em ${built_at:-?})"
+            echo "- main: \`$head_sha\` ($head_data)"
+            echo "- último disparo de conteúdo: ${ULTIMO_DISPARO:-?}"
+            echo "- resultado: ${motivo:-ok}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Abre ou atualiza a issue quando a publicação está parada
-        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.deploy.outputs.ok == 'false' }}
         uses: actions/github-script@v7
         env:
-          MOTIVO: ${{ steps.health.outputs.motivo }}
+          MOTIVO: ${{ steps.deploy.outputs.motivo }}
           PENDENTES: ${{ steps.health.outputs.pendentes }}
           HORAS: ${{ steps.health.outputs.horas }}
           ASSIGNEES: ${{ vars.SITE_REBUILD_ASSIGNEES || 'diegoguedesgomes' }}
@@ -85,6 +141,15 @@ jobs:
                 "Confira `net._http_response` para o último disparo.",
               fila_grande:
                 "A fila acumulou mais pedidos que o limite sem publicar. Provável disparo falhando em silêncio.",
+              build_falhando:
+                "O disparo de conteúdo saiu, mas nenhum build terminou depois dele: o Workers Builds está falhando. " +
+                "Rode `bun run build` localmente para ver onde quebra (em 15/10/2026 foi um link interno para a ficha de uma empresa desligada) " +
+                "e confira o log em Workers & Pages › movepark-hub › Deployments.",
+              deploy_atrasado:
+                "O último commit da `main` tem mais de 2 horas e o site no ar ainda é de um build anterior. O build do push falhou. " +
+                "Rode `bun run build` localmente e confira o log em Workers & Pages › movepark-hub › Deployments.",
+              sem_versao:
+                "`https://movepark.co/version.json` não respondeu. Ou o build no ar é anterior a 19/10/2026, ou o deploy está quebrado.",
             };
             const motivo = process.env.MOTIVO;
             const body = [
@@ -128,14 +193,14 @@ jobs:
             }
 
       - name: Falha o run enquanto a publicação estiver parada
-        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.deploy.outputs.ok == 'false' }}
         run: |
           # Vem DEPOIS da issue de propósito: o registro fica feito e só então o run fica vermelho.
-          echo "::error title=Publicação automática parada::motivo=${{ steps.health.outputs.motivo }}, ${{ steps.health.outputs.pendentes }} pedidos na fila há ${{ steps.health.outputs.horas }} h"
+          echo "::error title=Publicação automática parada::motivo=${{ steps.deploy.outputs.motivo }}, ${{ steps.health.outputs.pendentes }} pedidos na fila há ${{ steps.health.outputs.horas }} h"
           exit 1
 
       - name: Fecha a issue quando a publicação volta
-        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'true' }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.deploy.outputs.ok == 'true' }}
         uses: actions/github-script@v7
         with:
           script: |

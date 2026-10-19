@@ -46,3 +46,15 @@ export function normalizeBrand(raw: string | null | undefined): CardBrand {
 export function brandLabel(raw: string | null | undefined): string {
   return BRAND_LABEL[normalizeBrand(raw)];
 }
+
+/**
+ * CVV do tamanho certo para a bandeira: 4 dígitos no Amex, 3 nos outros. O "cartão" sem bandeira
+ * reconhecida aceita 3 ou 4 e deixa o gateway decidir. Em 10/10/2026 a Pagar.me recusou três vezes
+ * um CVV em formato inválido (BePark, R$ 245) e o cliente desistiu sem saber o que estava errado.
+ */
+export function isCvvValid(cvv: string, brand: CardBrand): boolean {
+  if (!/^\d+$/.test(cvv)) return false;
+  if (brand === "amex") return cvv.length === 4;
+  if (brand === "card") return cvv.length === 3 || cvv.length === 4;
+  return cvv.length === 3;
+}

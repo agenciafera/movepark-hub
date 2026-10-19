@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { brandLabel, detectBrand, normalizeBrand } from "./card-brand";
+import { brandLabel, detectBrand, isCvvValid, normalizeBrand } from "./card-brand";
 import { cardNumberMask } from "./masks";
 
 describe("detectBrand", () => {
@@ -43,5 +43,20 @@ describe("cardNumberMask", () => {
     expect(cardNumberMask("4111 11")).toBe("4111 11");
     expect(cardNumberMask("378282246310005")).toBe("3782 822463 10005");
     expect(cardNumberMask("abc4111")).toBe("4111");
+  });
+});
+
+describe("isCvvValid", () => {
+  it("3 dígitos nas bandeiras comuns, 4 no Amex", () => {
+    expect(isCvvValid("123", "mastercard")).toBe(true);
+    expect(isCvvValid("1234", "mastercard")).toBe(false);
+    expect(isCvvValid("12", "visa")).toBe(false);
+    expect(isCvvValid("1234", "amex")).toBe(true);
+    expect(isCvvValid("123", "amex")).toBe(false);
+  });
+  it("só dígitos; bandeira desconhecida aceita 3 ou 4", () => {
+    expect(isCvvValid("12a", "visa")).toBe(false);
+    expect(isCvvValid("123", "card")).toBe(true);
+    expect(isCvvValid("1234", "card")).toBe(true);
   });
 });

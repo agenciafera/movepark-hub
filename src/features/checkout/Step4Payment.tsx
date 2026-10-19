@@ -29,7 +29,7 @@ import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { cardFailureEvent, logCheckoutEvent, type CardFailureStage } from "./checkoutTrail";
 import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
-import { brandLabel, detectBrand } from "@/lib/card-brand";
+import { brandLabel, detectBrand, isCvvValid } from "@/lib/card-brand";
 import { CardBrandMark } from "@/components/shared/CardBrandMark";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
@@ -272,6 +272,10 @@ export function Step4Payment({
         const validade = parseValidade(cardExpiry, new Date());
         if (!validade) {
           falhaLocal("Validade inválida (use MM/AA).");
+          return;
+        }
+        if (!isCvvValid(cardCvv, detectBrand(onlyDigits(cardNumber)))) {
+          falhaLocal("Confira o CVV: são 3 dígitos no verso do cartão (4 na frente, no Amex).");
           return;
         }
         // Endereço antes de tokenizar: sem ele o antifraude recusa, e o token é de uso único.
@@ -527,7 +531,7 @@ export function Step4Payment({
                         placeholder="123"
                         maxLength={4}
                         value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value)}
+                        onChange={(e) => setCardCvv(onlyDigits(e.target.value))}
                         required
                       />
                     </div>

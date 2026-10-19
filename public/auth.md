@@ -43,7 +43,9 @@ The consumer surface is publicly readable, with no authentication needed to:
 The customer surface (`/customer`) lets an agent reserve for an end user. The user logs in with a
 one-time code, so the agent never handles a password:
 
-1. `request_login_otp({ identifier, channel })` sends a code by WhatsApp or email.
+1. `request_login_otp({ identifier, channel })` sends a code by WhatsApp or email. A repeated call
+   for the same contact within 30 seconds returns `{ status: "already_requested" }` instead of a
+   second code: wait for the first one.
 2. `verify_login_otp({ identifier, channel, code })` returns `access_token` and `refresh_token`.
 3. Send `Authorization: Bearer <access_token>` on the booking tools (`create_booking`,
    `set_booking_customer`, `add_vehicle`, `set_booking_vehicle`, `get_booking_status`,

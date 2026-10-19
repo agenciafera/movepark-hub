@@ -2,6 +2,7 @@ import { assertEquals } from "jsr:@std/assert";
 import {
   buildBalanceResult,
   chargeFailureDetail,
+  invalidCardField,
   buildCardOrderBody,
   buildChargeResult,
   buildCreateRecipientBody,
@@ -668,4 +669,14 @@ Deno.test("buildRefundResult: transação de cancelamento falhada dentro do 200 
   const ok = buildRefundResult(200, { id: "ch_2", status: "refunded", amount: 1800, last_transaction: { operation_type: "cancel", status: "refunded" } });
   assertEquals(ok.status, "refunded");
   assertEquals(ok.failureMessages, undefined);
+});
+
+// Regressão MP-2356FD (10/10/2026): "invalid_parameter | cvv | Formato inválido." virava
+// "tente em alguns minutos" e o cliente desistia.
+Deno.test("invalidCardField: aponta o dado do cartão que o adquirente recusou", () => {
+  assertEquals(invalidCardField(["invalid_parameter | cvv | Formato inválido."]), "cvv");
+  assertEquals(invalidCardField(["invalid_parameter | card.exp_year | inválido"]), "expiry");
+  assertEquals(invalidCardField(["invalid_parameter | holder_name | inválido"]), "holder");
+  assertEquals(invalidCardField(["The item Code is required."]), null);
+  assertEquals(invalidCardField(["At least one customer phone number is required"]), null);
 });

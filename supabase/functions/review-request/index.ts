@@ -10,7 +10,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, siteUrl, getEmailConfig, tplReviewRequest } from "../_shared/email.ts";
-import { pendingReviewRequests } from "./pending.ts";
+import { pendingReviewRequests, reviewRecipient, reviewWindowStartIso } from "./pending.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,13 +61,14 @@ Deno.serve(async (req: Request) => {
   const { data: rows, error } = await admin
     .from("booking")
     .select(
-      `id, code, profile_id,
+      `id, code, profile_id, customer_email, customer_first_name,
        location:location!inner(name),
-       profile:profiles!inner(first_name),
+       profile:profiles(first_name),
        review:review(id)`,
     )
     .eq("status", "completed")
     .is("review_request_sent_at", null)
+    .gte("check_out_at", reviewWindowStartIso(Date.now()))
     .limit(limit);
 
   if (error) return json({ error: error.message }, 500);
@@ -80,12 +81,18 @@ Deno.serve(async (req: Request) => {
   for (const b of pending) {
     // deno-lint-ignore no-explicit-any
     const row = b as any;
-    const { data: u } = await admin.auth.admin.getUserById(row.profile_id);
-    const email = u?.user?.email;
-    if (!email || !cfg.from) continue;
+    // Snapshot da reserva primeiro; a conta só entra quando a reserva não guardou e-mail.
+    let authEmail: string | null = null;
+    if (!String(row.customer_email ?? "").trim() && row.profile_id) {
+      const { data: u } = await admin.auth.admin.getUserById(row.profile_id);
+      authEmail = u?.user?.email ?? null;
+    }
+    const to = reviewRecipient(row, authEmail);
+    if (!to || !cfg.from) continue;
+    const email = to.email;
 
     const tpl = tplReviewRequest(
-      row.profile?.first_name ?? "cliente",
+      to.firstName,
       row.location?.name ?? "seu estacionamento",
       `${siteUrl()}/bookings/${row.code}`,
     );

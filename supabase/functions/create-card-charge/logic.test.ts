@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { buildCardItems, extractCardId, parseBillingAddress, parseCardInput, reaisToCents } from "./logic.ts";
+import { buildCardItems, cardFieldMessage, extractCardId, parseBillingAddress, parseCardInput, reaisToCents } from "./logic.ts";
 
 Deno.test("reaisToCents arredonda corretamente", () => {
   assertEquals(reaisToCents(159.5), 15950);
@@ -89,4 +89,12 @@ Deno.test("parseCardInput: cartão novo exige endereço de cobrança; cartão sa
   assertEquals(com.input?.billingAddress?.zip_code, "80020310");
   const salvo = parseCardInput({ booking_code: "MP-1", installments: 1, payment_method_id: "pm_1" });
   assertEquals(salvo.input?.billingAddress, null);
+});
+
+Deno.test("cardFieldMessage: diz ao cliente o que corrigir", () => {
+  assertEquals(
+    cardFieldMessage("cvv"),
+    "O código de segurança (CVV) não confere. Confira os 3 dígitos no verso do cartão (4 na frente, no Amex).",
+  );
+  assertEquals(cardFieldMessage("expiry"), "A validade do cartão não confere. Confira o mês e o ano (MM/AA).");
 });

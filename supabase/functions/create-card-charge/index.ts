@@ -22,7 +22,7 @@ import {
 } from "../_shared/payments/index.ts";
 import { appliedFeeCreditCents, debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
-import { buildCardItems, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
+import { buildCardItems, cardFieldMessage, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
@@ -32,7 +32,7 @@ import {
   commissionForCharge,
   needsCommissionFreeze,
 } from "../_shared/payments/commission.ts";
-import { chargeFailureDetail } from "../_shared/payments/pagarme.ts";
+import { chargeFailureDetail, invalidCardField } from "../_shared/payments/pagarme.ts";
 import { normalizeBrand } from "../_shared/payments/card-brand.ts";
 import { CHARGE_IN_PROGRESS_MESSAGE, claimChargeLock } from "../_shared/payments/charge-lock.ts";
 import { voidOpenPixCharges } from "../_shared/payments/open-pix.ts";
@@ -408,6 +408,10 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
           : `cartão recusado pelo emissor${detalhe.code ? ` (${detalhe.code})` : ""}`,
     });
     if (detalhe.integrationError) {
+      // Dado do cartão recusado (CVV, validade, nome): o cliente corrige e paga. Antes caía na
+      // mensagem genérica abaixo e o cliente desistia (MP-2356FD, R$ 245, 10/10/2026).
+      const campo = invalidCardField(detalhe.messages);
+      if (campo) return jsonResponse({ error: cardFieldMessage(campo), code: "card_data_invalid" }, 402);
       console.error("[%s] pedido recusado pelo adquirente:", EDGE_NAME, detalhe.code, detalhe.messages);
       return jsonResponse({ error: "Não conseguimos processar o pagamento agora. Tente de novo em alguns minutos." }, 502);
     }

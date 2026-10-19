@@ -578,6 +578,19 @@ export function chargeFailureDetail(raw: unknown): { code: string | null; messag
   return { code, messages, integrationError, antifraudReproved };
 }
 
+/**
+ * Qual dado do cartão o adquirente recusou, quando o erro de integração aponta um campo do cartão
+ * (ex.: "invalid_parameter | cvv | Formato inválido.", MP-2356FD, 10/10/2026). É erro do que o
+ * cliente digitou, não nosso: a tela tem que dizer o que corrigir, não "tente em alguns minutos".
+ */
+export function invalidCardField(messages: string[]): "cvv" | "expiry" | "holder" | null {
+  const texto = messages.join(" ").toLowerCase();
+  if (/\bcvv\b|security_code/.test(texto)) return "cvv";
+  if (/exp_(month|year)/.test(texto)) return "expiry";
+  if (/holder_name/.test(texto)) return "holder";
+  return null;
+}
+
 /** Normaliza a resposta de `POST /transfers`. Id vem numérico na v5. */
 export function buildTransferResult(httpStatus: number, body: unknown): TransferResult {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;

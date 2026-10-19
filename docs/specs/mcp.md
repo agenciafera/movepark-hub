@@ -199,6 +199,17 @@ Conferido em produção, na URL crua: o 21º disparo do mesmo IP para alvos
 distintos é recusado. `otp_request_log` também responde "quantos OTP saíram hoje
 e para quantos identificadores distintos", que antes não tinha resposta.
 
+**Pedido repetido (19/10/2026).** Em 18/10 a Mia pediu o código do mesmo cliente
+novo duas vezes ao mesmo tempo: o GoTrue criou a conta na primeira chamada e
+quebrou a segunda com 500 (`users_phone_key` duplicada). O MCP agora passa por
+`otp_request_gate` (migration `20261130110000`), que serializa os pedidos do
+mesmo identificador com advisory lock e, se já houve pedido nos últimos 30 s,
+devolve `recent` sem chamar o GoTrue. A tool responde
+`{ status: "already_requested", channel, message }` (não é erro) e o agente
+segue esperando o código do primeiro pedido. O 429 do GoTrue (60 s entre
+códigos) chega ao agente em português. Fora da janela, vale o freio de custo
+acima (`otp_request_allowed`).
+
 #### Freio de verificação do código (15/10/2026)
 
 O freio acima segura o **disparo**. A **verificação** (`verify_login_otp`) ficou

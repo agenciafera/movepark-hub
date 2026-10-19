@@ -63,6 +63,42 @@ export function otpLimiterKey(channel: unknown, identifier: unknown): string {
   return chave;
 }
 
+/**
+ * O que fazer com o pedido de código, dado o portão do banco (`otp_request_gate`).
+ *
+ * `recent`: já houve pedido deste contato nos últimos 30 s (a Mia chamou duas vezes ao mesmo
+ * tempo em 18/10/2026 e o segundo pedido quebrava o GoTrue com 500). Não chama o GoTrue de novo e
+ * responde sem erro, para o agente não dizer ao cliente que deu problema.
+ */
+export function otpGateDecision(
+  gate: unknown,
+  channel: unknown,
+): { send: true } | { send: false; result: Record<string, unknown> } {
+  if (gate === "recent") {
+    return {
+      send: false,
+      result: {
+        status: "already_requested",
+        channel,
+        message: "Já pedimos um código para este contato há poucos segundos. Confira a mensagem; se não chegar, peça outro em 1 minuto.",
+      },
+    };
+  }
+  if (gate === "blocked") {
+    throw new Error("Muitas tentativas de login. Espere alguns minutos e tente de novo.");
+  }
+  return { send: true };
+}
+
+/** Erro do GoTrue no disparo, em português. O 429 dele é a espera de 60 s entre códigos. */
+export function otpSendErrorMessage(error: { message?: string; status?: number } | null | undefined): string {
+  const msg = String(error?.message ?? "");
+  if (error?.status === 429 || /only request this after/i.test(msg)) {
+    return "Um código foi enviado há pouco. Espere 1 minuto para pedir outro.";
+  }
+  return msg || "Não foi possível enviar o código agora. Tente de novo em instantes.";
+}
+
 export interface VerifyLoginDeps {
   hash: (s: string) => Promise<string>;
   /** `otp_verify_allowed`: registra a tentativa e diz se ela cabe na janela. */
