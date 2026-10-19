@@ -1,6 +1,6 @@
 # Rotina mensal de frescor das páginas de cabeça
 
-**Status:** primeira rodada executada em 17/09/2026
+**Status:** primeira rodada executada em 17/09/2026; rodada extra em 19/10/2026, puxada pela virada de fim de ano de GRU e CGH
 **Atividade:** [Conteúdo 38, rotina mensal de carimbo e valores](https://app.clickup.com/t/86ak6hdhe)
 **Depende de:** [plano-conteudo-aeroportos.md](./plano-conteudo-aeroportos.md) (Defesa), [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md), [baseline-search-console.md](./baseline-search-console.md)
 
@@ -103,6 +103,100 @@ tinha sido absorvida por uma de 1 clique.
 
 Por isso a decisão foi **medir e devolver**: as quatro praças acima são de outras pessoas, e a
 eleição do vencedor é delas. O que esta rodada entrega é o número que decide, não o redirect.
+
+## O que a rodada de 19/10/2026 encontrou
+
+Rodada fora do calendário, puxada pela virada de fim de ano (Marés 12): Aeropark e Aerovalet
+viraram em 19/10/2026, em GRU e CGH, e a Plenty Park em 16/10/2026, em CGH, com vigência até
+31/01/2027. As FAQs das duas praças já tinham sido trocadas no mesmo dia (`20261130140000` e
+`20261130150000`). Os posts ficaram para cá porque são retrato datado: a virada não os torna
+falsos, só velhos. Esta rodada fez só os passos 1 a 3; GSC e consolidação ficam para a mensal de
+novembro.
+
+### Passo 1: quem revisou tabela
+
+`destination_price_freshness` em 19/10/2026: Guarulhos às 17h56 e Congonhas às 18h05, as duas
+depois do espelho do WL. Os posts citavam três datas de motor velhas: 11/09 e 17/09 (GRU), 05/09,
+10/08 e 11/09 (CGH), e um deles ainda trazia preço de agosto.
+
+### Passo 2: 15 posts, 31 corpos, 305 trechos
+
+Uma varredura por regex com os valores antigos em todo `blog_post` publicado achou os 14 posts da
+atividade e mais dois. Um entrou na rodada (`aeroporto-de-congonhas-informacoes-completas`, com a
+diária de agosto). O outro ficou de fora de propósito (ver "O que ficou aberto").
+
+| Praça | Posts | Com tradução en/es |
+| --- | --- | --- |
+| GRU | preço, barato, proximidade, segurança, GRU Airport, guia de 5 opções, Aeropark coberta, Terminal 1, 2 e 3 | GRU Airport, guia de 5, Aeropark, T1, T2, T3 |
+| CGH | preço, barato, deixar o carro, top 3, informações completas | top 3, informações completas |
+
+**Toda cifra saiu do `simulate_price`.** Uma calculadora consultou o RPC ao vivo para 1 a 31
+diárias, nas oito vagas das duas praças, com o balcão (`old_price`). Diferença, percentual e
+degrau foram calculados sobre essa saída, e um verificador conferiu que todo R$ novo nos textos é
+preço, valor por dia ou balcão do motor, valor do oficial, ou a diferença entre dois deles. O bloco
+"Os pátios do ... em números" é a saída de `bun run lint:bloco-fato -- --print GRU`, colada sem
+mexer.
+
+**O que mudou de sentido, e não só de número:**
+
+- **GRU: as tabelas deixaram de ser iguais.** De 11/09 a 19/10, Aeropark e Aerovalet cobravam o
+  mesmo de sete diárias em diante, e uma dúzia de frases dependia disso ("empata", "a proximidade
+  sai de graça", "Aerovalet ou Aeropark: R$ X"). Agora o Aerovalet sai mais barato em todas as
+  durações, nos dois tipos de vaga, e a proximidade do Aeropark tem preço: R$ 14,00 a mais em 7
+  diárias e R$ 90,00 em 30, na descoberta. As linhas "Aerovalet ou Aeropark" foram separadas.
+- **GRU: o degrau mudou de lugar.** "Na véspera do degrau, um dia a mais sai mais barato" vale em
+  12→13 e 17→18 na Aerovalet (as duas vagas) e só em 17→18 na coberta do Aeropark. Na descoberta
+  do Aeropark não existe mais (13 diárias custam R$ 6,90 a mais que 12). O de 6→7 sumiu. A
+  atividade dizia que os degraus de 12/13 e 17/18 continuavam; vale só na Aerovalet.
+- **GRU: o oficial voltou a ganhar no mês.** Em 30 diárias, o Standard (R$ 505,00, tabela de
+  17/09/2026) fica abaixo de três das quatro vagas dos parceiros. Só a descoberta da Aerovalet
+  (R$ 447,00) segue abaixo, por R$ 58,00. Na quinzena a economia caiu de 68% para 50,3% (Aerovalet)
+  e 40,9% (Aeropark). Nos posts do T1 e do T2, o caso "estadia de um mês" saiu da seção "quando o
+  oficial não compensa" e entrou "viagem de quinze dias" no lugar.
+- **GRU: o valet passou do Premium.** Em 15 diárias, o valet (R$ 692,90) custa R$ 82,90 a mais que
+  o Premium do T2/T3. O post do T3 dizia que "até o valet do parceiro sai mais barato que o oficial
+  daqui"; a frase se inverteu.
+- **CGH: os parceiros deixaram de ser os baratos.** Aerovalet de R$ 32,90 para R$ 42,90 a diária e
+  Plenty de R$ 29,90 para R$ 39,90. A Plenty fica mais barata de 3 a 12 e de 15 a 17 diárias, e de
+  18 em diante os dois cobram o mesmo (R$ 1.077,00 em 30). "O Aerovalet tem o menor custo por dia
+  da região" caiu. No post "barato", o Aerovalet saiu do top 5 e nenhum parceiro lidera faixa: o
+  número aponta para o pacote do oficial (3 a 10 diárias, com vaga promocional), o The Parking e o
+  pacote do Express Parking. O texto diz isso como é. O que o parceiro entrega de fato (vaga
+  coberta, 24 horas, distância) continua dito.
+
+**O que não mudou:** a tarifa do oficial (GRU, tabela do operador de 17/09/2026; CGH, Estapar de
+05/09/2026) e os preços de lote sem contrato ficaram com a data deles, inclusive onde eram iguais
+aos da tabela velha dos parceiros (Bandeira Park e MultiPark em GRU). Comparação de datas
+diferentes vem com as duas datas escritas, e as frases "conferido na mesma data" viraram a data do
+oficial por extenso.
+
+**Gravação:** migration `20261130160000_blog_frescor_virada_fim_de_ano.sql`, com `replace()` só nos
+parágrafos que mudaram. O gerador conferiu que a sequência reproduz o texto revisado byte a byte e
+que uma segunda passada não muda nada. A trava do fim aborta se sobrar, em qualquer idioma, valor
+ou data que sumiu do texto revisado.
+
+### Passo 3: o carimbo
+
+O `blog_post` dispara o rebuild sozinho e `site_rebuild_health()` estava `ok` em 19/10. A linha
+`Preços conferidos no motor de reservas em 19/10/2026` passa a sair nos posts com preço no build
+seguinte.
+
+### O que ficou aberto
+
+- **O post de preço de Curitiba compara com Guarulhos** ("a semana descoberta custava R$ 118,30
+  em Curitiba e R$ 93,17 em Guarulhos", em 17/09/2026). Ficou de fora porque Nation e Abba viram em
+  26/10, e refazer o lado de GRU agora deixaria a comparação com duas datas por uma semana. Entra
+  na rodada da virada de Curitiba.
+- **O preço de terceiros relido em 09/10** (`20261129140000`) não foi levado aos posts. Em CGH a
+  MultiPark passou de R$ 40,00 para R$ 39,00, por exemplo. O post segue certo com a data de 05/09,
+  mas a página do destino mostra o número de 09/10. É trabalho da mensal de novembro.
+- **Fato de ficha divergente no post `aeropark-descubra-...-vagas-cobertas`**, achado na revisão e
+  fora do escopo de preço: o FAQ diz "a 2,7 km do terminal" (a ficha mede 1,88 km), e o corpo diz
+  van "a cada 10 minutos" e "a 15 minutos do GRU" (a ficha declara 30 e 10). O post não é dona, então
+  o `lint:bloco-fato` não o confere.
+- **`blog_post_i18n` não tem trigger de rebuild.** Trocar só a tradução não publica sozinho. Aqui
+  não fez diferença porque o pt mudou junto, mas a regra do `CLAUDE.md` pede o trigger em toda
+  tabela pré-renderizada.
 
 ## O procedimento, para a próxima rodada
 
