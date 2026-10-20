@@ -89,25 +89,40 @@ Deno.serve(async (req: Request) => {
         saidas: (r.saidas ?? []) as DigestItem[],
         novas: (r.novas ?? []) as DigestItem[],
       });
-      const envio = await sendPartnerEmail(admin, {
-        companyId: r.company_id,
-        from,
-        to: para,
-        subject: mail.subject,
-        html: mail.html,
-      });
-      if (envio.ok || envio.silenced) {
+      // Um e-mail por pessoa: se um endereço falhar, quem já recebeu não recebe de novo na
+      // passada das 6h30 (o dia fica marcado como enviado com pelo menos um entregue).
+      let entregues = 0;
+      let silenciada = false;
+      let ultimoErro: string | undefined;
+      for (const destino of para) {
+        const envio = await sendPartnerEmail(admin, {
+          companyId: r.company_id,
+          from,
+          to: destino,
+          subject: mail.subject,
+          html: mail.html,
+        });
+        if (envio.silenced) {
+          silenciada = true;
+          break;
+        }
+        if (envio.ok) entregues++;
+        else ultimoErro = envio.error;
+      }
+      if (entregues > 0 || silenciada) {
         await admin
           .from("partner_digest_log")
-          .update({ sent_at: envio.ok ? new Date().toISOString() : null, recipients: envio.ok ? para.length : 0 })
+          .update({ sent_at: entregues > 0 ? new Date().toISOString() : null, recipients: entregues })
           .eq("company_id", r.company_id)
           .eq("digest_date", day);
-        resumo.sent = envio.ok;
-        if (envio.silenced) resumo.skipped = "empresa silenciosa";
+        resumo.sent = entregues > 0;
+        resumo.recipients = entregues;
+        if (silenciada) resumo.skipped = "empresa silenciosa";
+        if (ultimoErro) console.error("[partner-daily-digest] algum destinatário falhou:", r.company_name, ultimoErro);
       } else {
-        // Falhou o envio: solta a linha para a passada das 6h30 tentar de novo.
+        // Ninguém recebeu: solta a linha para a passada das 6h30 tentar de novo.
         await admin.from("partner_digest_log").delete().eq("company_id", r.company_id).eq("digest_date", day);
-        console.error("[partner-daily-digest] envio falhou:", r.company_name, envio.error);
+        console.error("[partner-daily-digest] envio falhou:", r.company_name, ultimoErro);
         resumo.skipped = "envio falhou";
       }
     } catch (e) {

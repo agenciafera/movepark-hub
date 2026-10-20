@@ -95,6 +95,17 @@ interface SendArgs {
 
 /** Envia um e-mail via SMTP. Nunca lança; retorna {ok}. */
 export async function sendEmail({ from, to, subject, html, replyTo, attachments }: SendArgs): Promise<{ ok: boolean; error?: string }> {
+  // Vários destinatários num envio só: o denomailer 1.6 junta com ";" no cabeçalho e o SES
+  // recusa ("554 Illegal semicolon, not in group", 20/10/2026). Um envio por destinatário.
+  const destinos = (Array.isArray(to) ? to : [to]).map((d) => d.trim()).filter(Boolean);
+  if (destinos.length > 1) {
+    let erro: string | undefined;
+    for (const d of destinos) {
+      const r = await sendEmail({ from, to: d, subject, html, replyTo, attachments });
+      if (!r.ok && !erro) erro = r.error;
+    }
+    return erro ? { ok: false, error: erro } : { ok: true };
+  }
   const hostname = env("SES_SMTP_HOST");
   const port = Number(env("SES_SMTP_PORT") ?? "465");
   const username = env("SES_SMTP_USER");
@@ -119,7 +130,7 @@ export async function sendEmail({ from, to, subject, html, replyTo, attachments 
     // dot-stuffing do SMTP coma o ponto do domínio em links longos (magic link → NXDOMAIN).
     await client.send({
       from,
-      to: Array.isArray(to) ? to : [to],
+      to: destinos,
       replyTo,
       subject,
       mimeContent: [
