@@ -6,6 +6,7 @@ import {
   siteUrl,
   tplApprovalInvite,
   tplDuplicatePaymentTeam,
+  tplPartnerDailyDigest,
   tplBookingConfirmation,
   tplLeadAlert,
   tplLeadReceived,
@@ -343,4 +344,61 @@ Deno.test("tplPartnerDebtCreated: estorno com a reserva mantida não fala em can
   assertEquals(m.subject.startsWith("Estorno na reserva MP-07DAE9"), true);
   assertStringIncludes(m.html, "A reserva continua de pé.");
   assert(!m.html.includes("foi cancelada"), "não diz que foi cancelada");
+});
+
+// Resumo diário do parceiro (20/10/2026).
+Deno.test("tplPartnerDailyDigest: entradas, saídas e novas com hora local, placa e detalhes de atendimento", () => {
+  const base = {
+    timezone: "America/Sao_Paulo", location_name: "Aeroporto Afonso Pena", veiculo: "Onix prata",
+    vaga: "Vaga Descoberta", passageiros: null, pcd: false, protecao_voo: false, voo: null, adicionais: [],
+  };
+  const t = tplPartnerDailyDigest({
+    companyName: "Abbapark & Cia",
+    dayIso: "2026-10-20",
+    entradas: [{
+      ...base, code: "MP-AAA111", check_in_at: "2026-10-20T13:00:00Z", check_out_at: "2026-10-23T21:00:00Z",
+      cliente: "Ana Souza", placa: "RSM1A23", passageiros: 2, pcd: true, protecao_voo: true, voo: "G3 1234", adicionais: ["Lavagem"],
+    }],
+    saidas: [{ ...base, code: "MP-BBB222", check_in_at: "2026-10-16T11:00:00Z", check_out_at: "2026-10-21T01:00:00Z", cliente: "Bruno Lima", placa: "XYZ9K87" }],
+    novas: [],
+  });
+  assertEquals(t.subject, "Abbapark & Cia, movimento de hoje: 1 entrada e 1 saída");
+  assertStringIncludes(t.html, "Abbapark &amp; Cia");
+  assertStringIncludes(t.html, "10:00 · Ana Souza");
+  assertStringIncludes(t.html, "RSM1A23 · Onix prata · Vaga Descoberta");
+  assertStringIncludes(t.html, "2 passageiros · PCD · voo G3 1234 · Superflex com proteção de voo · adicionais: Lavagem");
+  assertStringIncludes(t.html, "Sai em 23/10 às 18:00 · MP-AAA111");
+  // saída às 22h de Brasília do dia 20 (01h UTC do dia 21)
+  assertStringIncludes(t.html, "22:00 · Bruno Lima");
+  assertStringIncludes(t.html, "Entrou em 16/10 às 08:00 · MP-BBB222");
+  assertStringIncludes(t.html, "Entram hoje (1)");
+  assert(!t.html.includes("Reservas novas"), "seção vazia não aparece");
+  assertStringIncludes(t.html, "/operator/bookings");
+  assert(!t.html.includes("—"), "sem travessão");
+});
+
+Deno.test("tplPartnerDailyDigest: só reservas novas; duas unidades mostram o nome da unidade", () => {
+  const item = {
+    code: "MP-CCC333", check_in_at: "2026-10-25T12:00:00Z", check_out_at: "2026-10-27T12:00:00Z", timezone: "America/Sao_Paulo",
+    cliente: null, placa: null, veiculo: null, vaga: "Vaga Coberta", passageiros: null, pcd: null, protecao_voo: null, voo: null, adicionais: null,
+  };
+  const t = tplPartnerDailyDigest({
+    companyName: "Parque", dayIso: "2026-10-20", entradas: [], saidas: [],
+    novas: [{ ...item, location_name: "Unidade A" }, { ...item, code: "MP-DDD444", location_name: "Unidade B" }],
+  });
+  assertEquals(t.subject, "Parque, movimento de hoje: 2 reservas novas");
+  assertStringIncludes(t.html, "Cliente · entra 25/10 às 09:00");
+  assertStringIncludes(t.html, "placa não informada · Vaga Coberta · Unidade A");
+});
+
+Deno.test("tplPartnerDailyDigest: fuso inválido na unidade cai para Brasília em vez de quebrar", () => {
+  const t = tplPartnerDailyDigest({
+    companyName: "Parque", dayIso: "2026-10-20", saidas: [], novas: [],
+    entradas: [{
+      code: "MP-EEE555", check_in_at: "2026-10-20T13:00:00Z", check_out_at: "2026-10-21T13:00:00Z", timezone: "Fuso/Errado",
+      location_name: null, cliente: "Ana", placa: "AAA1B23", veiculo: null, vaga: null, passageiros: null, pcd: null,
+      protecao_voo: null, voo: null, adicionais: null,
+    }],
+  });
+  assertStringIncludes(t.html, "10:00 · Ana");
 });

@@ -618,6 +618,130 @@ export function tplPartnerDebtCreated(d: DebtMail): { subject: string; html: str
   };
 }
 
+/** Uma reserva no resumo diário do parceiro (vem de `public.partner_daily_digest`). */
+export interface DigestItem {
+  code: string;
+  check_in_at: string;
+  check_out_at: string;
+  timezone: string | null;
+  location_name: string | null;
+  cliente: string | null;
+  placa: string | null;
+  veiculo: string | null;
+  vaga: string | null;
+  passageiros: number | null;
+  pcd: boolean | null;
+  protecao_voo: boolean | null;
+  voo: string | null;
+  adicionais: string[] | null;
+}
+
+function quandoLocal(iso: string, tz: string | null, comDia: boolean): string {
+  // Fuso inválido na unidade não pode derrubar o resumo: cai para Brasília.
+  let fuso = tz || "America/Sao_Paulo";
+  try {
+    new Intl.DateTimeFormat("pt-BR", { timeZone: fuso });
+  } catch {
+    fuso = "America/Sao_Paulo";
+  }
+  const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+  if (!comDia) return hora;
+  const dia = new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, day: "2-digit", month: "2-digit" }).format(new Date(iso));
+  return `${dia} às ${hora}`;
+}
+
+function contagem(n: number, um: string, varios: string): string {
+  return `${n} ${n === 1 ? um : varios}`;
+}
+
+function juntaComE(partes: string[]): string {
+  return partes.length <= 1 ? partes.join("") : `${partes.slice(0, -1).join(", ")} e ${partes[partes.length - 1]}`;
+}
+
+/** Placa, veículo e vaga numa linha; detalhes de atendimento em outra. */
+function linhasDaReserva(i: DigestItem, mostrarUnidade: boolean): { carro: string; detalhes: string } {
+  const carro = [i.placa ?? "placa não informada", i.veiculo, i.vaga, mostrarUnidade ? i.location_name : null]
+    .filter(Boolean)
+    .join(" · ");
+  const detalhes = [
+    i.passageiros ? contagem(i.passageiros, "passageiro", "passageiros") : null,
+    i.pcd ? "PCD" : null,
+    i.voo ? `voo ${i.voo}` : null,
+    i.protecao_voo ? "Superflex com proteção de voo" : null,
+    i.adicionais && i.adicionais.length > 0 ? `adicionais: ${i.adicionais.join(", ")}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return { carro, detalhes };
+}
+
+function blocoDaReserva(titulo: string, i: DigestItem, rodape: string, mostrarUnidade: boolean): string {
+  const { carro, detalhes } = linhasDaReserva(i, mostrarUnidade);
+  return `<div style="padding:12px 0;border-bottom:1px solid ${BRAND.hairline}">
+      <p style="margin:0;font-weight:600">${escapeHtml(titulo)}</p>
+      <p style="margin:2px 0 0">${escapeHtml(carro)}</p>
+      ${detalhes ? `<p style="margin:2px 0 0;color:${BRAND.muted};font-size:14px">${escapeHtml(detalhes)}</p>` : ""}
+      <p style="margin:2px 0 0;color:${BRAND.muted};font-size:14px">${escapeHtml(rodape)}</p>
+    </div>`;
+}
+
+function secao(titulo: string, blocos: string[]): string {
+  if (blocos.length === 0) return "";
+  return `<h2 style="margin:24px 0 4px;font-size:16px">${escapeHtml(titulo)}</h2>${blocos.join("")}`;
+}
+
+/**
+ * Resumo diário do parceiro (20/10/2026): quem entra e quem sai hoje e as reservas novas desde o
+ * resumo anterior, todas vendidas pela Movepark. Sai às 6h de Brasília, só nos dias com movimento,
+ * para a equipe com `bookings:read`. Ver docs/specs/resumo-diario-parceiro.md.
+ */
+export function tplPartnerDailyDigest(d: {
+  companyName: string;
+  dayIso: string;
+  entradas: DigestItem[];
+  saidas: DigestItem[];
+  novas: DigestItem[];
+}): { subject: string; html: string } {
+  const todas = [...d.entradas, ...d.saidas, ...d.novas];
+  const unidades = new Set(todas.map((i) => i.location_name ?? ""));
+  const mostrarUnidade = unidades.size > 1;
+  const nome = (i: DigestItem) => i.cliente ?? "Cliente";
+
+  const partes = [
+    d.entradas.length ? contagem(d.entradas.length, "entrada", "entradas") : null,
+    d.saidas.length ? contagem(d.saidas.length, "saída", "saídas") : null,
+    d.novas.length ? contagem(d.novas.length, "reserva nova", "reservas novas") : null,
+  ].filter((p): p is string => Boolean(p));
+
+  const dia = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "UTC", weekday: "long", day: "numeric", month: "long",
+  }).format(new Date(`${d.dayIso}T12:00:00Z`));
+
+  const entradas = d.entradas.map((i) =>
+    blocoDaReserva(`${quandoLocal(i.check_in_at, i.timezone, false)} · ${nome(i)}`, i,
+      `Sai em ${quandoLocal(i.check_out_at, i.timezone, true)} · ${i.code}`, mostrarUnidade));
+  const saidas = d.saidas.map((i) =>
+    blocoDaReserva(`${quandoLocal(i.check_out_at, i.timezone, false)} · ${nome(i)}`, i,
+      `Entrou em ${quandoLocal(i.check_in_at, i.timezone, true)} · ${i.code}`, mostrarUnidade));
+  const novas = d.novas.map((i) =>
+    blocoDaReserva(`${nome(i)} · entra ${quandoLocal(i.check_in_at, i.timezone, true)}`, i,
+      `Sai em ${quandoLocal(i.check_out_at, i.timezone, true)} · ${i.code}`, mostrarUnidade));
+
+  const subject = `${d.companyName}, movimento de hoje: ${juntaComE(partes)}`;
+  return {
+    subject,
+    html: shell("Movimento de hoje", `
+      <p style="margin:0 0 4px">Bom dia, equipe ${escapeHtml(d.companyName)}. Estas são as reservas feitas pela Movepark que movimentam o pátio hoje, ${escapeHtml(dia)}.</p>
+      ${secao(`Entram hoje (${d.entradas.length})`, entradas)}
+      ${secao(`Saem hoje (${d.saidas.length})`, saidas)}
+      ${secao(`Reservas novas (${d.novas.length})`, novas)}
+      <p style="margin:24px 0 0">Na chegada, o cliente mostra o voucher com o código da reserva. A reserva completa fica no painel.</p>
+      <p style="margin:16px 0 0;text-align:center">${button(`${siteUrl()}/operator/bookings`, "Abrir as reservas")}</p>
+      <p style="margin:24px 0 0;color:${BRAND.muted};font-size:13px">Você recebe este resumo porque faz parte da equipe ${escapeHtml(d.companyName)} na Movepark. Ele só chega nos dias com movimento.</p>`,
+      { preheader: escapeHtml(juntaComE(partes)) }),
+  };
+}
+
 export function tplReviewRequest(
   contactName: string,
   locationName: string,

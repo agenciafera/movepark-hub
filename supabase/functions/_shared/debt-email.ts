@@ -42,7 +42,7 @@ export function debtFromPayment(p: Pick<DebtEmailRow, "amount" | "refunded_amoun
 }
 
 // deno-lint-ignore no-explicit-any
-async function partnerContact(admin: any, companyId: string) {
+export async function partnerContact(admin: any, companyId: string) {
   const { data: company } = await admin.from("company").select("name").eq("id", companyId).maybeSingle();
   const { data: account } = await admin
     .from("company_payout_account").select("kyc_details").eq("company_id", companyId).is("deleted_at", null).maybeSingle();
