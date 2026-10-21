@@ -1,7 +1,8 @@
 # Fila de publicação do Instagram (E3.6)
 
-> **Status:** desenhado em 21/10/2026, a implementar. Decidido pelo Kallef em conversa; as escolhas
-> estão na seção "Decisões".
+> **Status:** implementado em 21/10/2026. Decidido pelo Kallef em conversa; as escolhas estão na
+> seção "Decisões". Falta o primeiro post real, que depende de um humano aprovar o rascunho em
+> `/manager/social` e ligar a publicação automática (`social_dispatch_enabled`).
 > **Atividade:** [E3.6 - Instagram derivado do blogpost](https://app.clickup.com/t/86akb7zcx).
 > Absorve [Automatizar publicações no Instagram via API da Meta](https://app.clickup.com/t/86akccy01)
 > e [Automatizar geração de 4 posts sociais](https://app.clickup.com/t/86ak6q0xd).
