@@ -6,13 +6,9 @@
 // cria N containers antes do publish: falhar no sétimo deixa seis containers
 // órfãos pendurados na conta por 24h.
 
-export const LIMITES = {
-  legenda: 2200,
-  hashtags: 30,
-  mencoes: 20,
-  slides: 10,
-  alt: 1000,
-} as const;
+import { LIMITES } from "../_shared/instagram-validate.ts";
+
+export { LIMITES };
 
 export interface Imagem {
   url: string;
