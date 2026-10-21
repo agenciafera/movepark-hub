@@ -17,7 +17,13 @@
 //   - toda escrita depois da pega é condicionada ao estado em que a rodada deixou o post
 //     (`publishing`), então uma mudança concorrente não é pisada;
 //   - nova tentativa com `ig_container_id` consulta a Meta antes: container PUBLISHED é
-//     reconciliado pela legenda e nunca publicado de novo;
+//     reconciliado pela legenda e nunca publicado de novo, e status ilegível não publica;
+//   - `media_publish` com erro lê o container uma vez: a Meta às vezes publica e responde 5xx, e
+//     PUBLISHED vira reconciliação, não `failed`;
+//   - a pega exige `scheduled_at <= agora` e devolve a linha; a publicação sai dessa linha, então
+//     um reagendamento ou uma correção no meio do caminho não publica cedo nem com conteúdo velho;
+//   - na reconciliação, `published_at` é o horário da mídia na Meta, para o post contar no dia de
+//     São Paulo em que foi ao ar;
 //   - falha ao gravar o rastro é logada e nunca derruba a rodada.
 //
 // Toda chamada à Graph API vira linha em `social_post_event`, sem o token.
@@ -45,7 +51,7 @@ import {
   publicar,
   statusDoContainer,
 } from "../_shared/instagram.ts";
-import { atrasados, escolher, jaPublicado, parados, type PostFila, resumoDoErro } from "./logic.ts";
+import { atrasados, escolher, instanteDaMeta, jaPublicado, parados, type PostFila, textoDaFalha } from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -68,6 +74,8 @@ export interface RodadaDeps {
   cfg: IgConfig;
   /** O instante da rodada. Nos testes é fixo; na Edge é `new Date()`. */
   agora: Date;
+  /** O relógio das escritas feitas durante a rodada (`published_at`). Na Edge é `new Date()`. */
+  relogio?: () => Date;
   /** Cliente HTTP da Graph API. Nos testes é o de mentira; na Edge é o `fetch`. */
   fetcher?: typeof fetch;
 }
@@ -81,6 +89,7 @@ interface Ctx {
   admin: Admin;
   cfg: IgConfig;
   fetcher?: typeof fetch;
+  relogio: () => Date;
 }
 
 /** Tira o token de um texto antes de ele ir para o log ou para o banco. */
@@ -155,19 +164,23 @@ async function escrever(ctx: Ctx, id: string, de: string, campos: Record<string,
   return true;
 }
 
-async function marcarFalha(ctx: Ctx, id: string, msg: string): Promise<void> {
+/** `resposta` é o que a Meta devolveu, cru: fica no evento. O Manager lê só o texto em `last_error`. */
+async function marcarFalha(ctx: Ctx, id: string, msg: string, resposta?: unknown): Promise<void> {
   if (await escrever(ctx, id, "publishing", { status: "failed", last_error: msg })) {
-    await registrar(ctx, id, "failed", { note: msg });
+    await registrar(ctx, id, "failed", { note: msg, ...(resposta === undefined ? {} : { response: resposta }) });
   }
 }
 
-/** O post saiu na Meta. Marca `published`; o evento de quem chama só vale se a escrita valeu. */
-const marcarPublicado = (ctx: Ctx, id: string, mediaId: string, permalink: string | null) =>
+/**
+ * O post saiu na Meta. Marca `published`; o evento de quem chama só vale se a escrita valeu.
+ * `publicadoEm` é o instante real da publicação (a reconciliação o lê da mídia); sem ele, é agora.
+ */
+const marcarPublicado = (ctx: Ctx, id: string, mediaId: string, permalink: string | null, publicadoEm?: string) =>
   escrever(ctx, id, "publishing", {
     status: "published",
     ig_media_id: mediaId,
     ig_permalink: permalink,
-    published_at: new Date().toISOString(),
+    published_at: publicadoEm ?? ctx.relogio().toISOString(),
     last_error: null,
   });
 
@@ -196,7 +209,9 @@ async function reconciliar(ctx: Ctx, p: PostCompleto, statusConhecido?: string):
       "O envio aparece como publicado na Meta, mas o post não foi achado no perfil. Confira no Instagram antes de reagendar.",
     );
   }
-  if (!(await marcarPublicado(ctx, p.id, midia.id, midia.permalink))) {
+  // O dia em São Paulo do post é o de quando ele foi ao ar, não o de quando a rodada o achou.
+  const publicadoEm = instanteDaMeta(midia.timestamp, ctx.relogio());
+  if (!(await marcarPublicado(ctx, p.id, midia.id, midia.permalink, publicadoEm))) {
     return { ok: false, erro: "O post mudou de estado durante a reconciliação e ficou como está." };
   }
   await registrar(ctx, p.id, "reconciled", {
@@ -211,7 +226,7 @@ class NadaPublicado extends Error {}
 
 export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   const { admin, cfg, agora } = deps;
-  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher };
+  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()) };
 
   const { data: chave, error: eChave } = await admin
     .from("app_setting")
@@ -264,40 +279,45 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   // 3. Quem sai agora.
   const escolha = escolher(posts, agora);
   if (!("id" in escolha)) return ok({ acao: escolha.motivo, ligada });
-  const post = posts.find((p) => p.id === escolha.id)!;
+  const lido = posts.find((p) => p.id === escolha.id)!;
 
   // 4. Chave desligada: registra o que faria, uma vez, e não toca em mais nada.
   if (!ligada) {
     const { count, error } = await admin
       .from("social_post_event")
       .select("id", { count: "exact", head: true })
-      .eq("social_post_id", post.id)
+      .eq("social_post_id", lido.id)
       .eq("kind", "dry_run");
     if (error) {
       // Sem saber se já existe, não grava outro: o dry_run é uma vez por post.
       console.error("social-dispatch: não contei os dry_run", limpar(cfg, String(error.message)));
     } else if (!count) {
-      await registrar(ctx, post.id, "dry_run", {
+      await registrar(ctx, lido.id, "dry_run", {
         note: "Publicaria agora. A publicação automática está desligada.",
-        request: { slides: post.slides.length, caracteres: post.caption.length, scheduled_at: post.scheduled_at },
+        request: { slides: lido.slides.length, caracteres: lido.caption.length, scheduled_at: lido.scheduled_at },
       });
     }
-    return ok({ acao: "dry_run", post: post.id });
+    return ok({ acao: "dry_run", post: lido.id });
   }
 
-  // 5. Pega o post. Se outra rodada pegou antes, a linha não volta.
+  // 5. Pega o post. Se outra rodada pegou antes, ou se um reagendamento empurrou a hora para o
+  // futuro entre a leitura e agora, a linha não volta e a rodada para aqui.
   const { data: pego, error: ePega } = await admin
     .from("social_post")
-    .update({ status: "publishing", attempts: post.attempts + 1 })
-    .eq("id", post.id)
+    .update({ status: "publishing", attempts: lido.attempts + 1 })
+    .eq("id", lido.id)
     .eq("status", "approved")
+    .lte("scheduled_at", agora.toISOString())
     .is("deleted_at", null)
-    .select("id");
+    .select("id, scheduled_at, caption, slides, ig_container_id, attempts");
   if (ePega) {
     console.error("social-dispatch: a pega do post falhou", limpar(cfg, String(ePega.message)));
     return erroDeBanco("Não consegui pegar o post para publicar.");
   }
-  if (!pego?.length) return ok({ acao: "outra_rodada", post: post.id });
+  if (!pego?.length) return ok({ acao: "outra_rodada", post: lido.id });
+  // Daqui em diante vale a linha que a pega devolveu, não a lida antes: legenda, slides e container
+  // são os de agora, então uma correção que chegou no meio não publica conteúdo velho.
+  const post = { ...lido, ...pego[0] } as PostCompleto;
 
   if (post.ig_container_id) {
     const st = await statusDoContainer(cfg, post.ig_container_id, opcoes(ctx, post.id));
@@ -338,8 +358,17 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
     return falhou(post.id, msg);
   }
   if (!res.ok) {
-    const msg = resumoDoErro(res.etapa, res.resposta);
-    await marcarFalha(ctx, post.id, msg);
+    // A Meta às vezes publica e responde 5xx ou estoura o tempo. Antes de dar o post por falho,
+    // olha o container uma vez: PUBLISHED é post no ar, e reconcilia em vez de falhar.
+    if (res.etapa === "media_publish" && res.containerId) {
+      const st = await statusDoContainer(cfg, res.containerId, opcoes(ctx, post.id));
+      if (jaPublicado(st)) {
+        const r = await reconciliar(ctx, { ...post, ig_container_id: res.containerId }, st);
+        return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
+      }
+    }
+    const msg = textoDaFalha(res.etapa, res.resposta);
+    await marcarFalha(ctx, post.id, msg, res.resposta);
     return falhou(post.id, msg);
   }
 

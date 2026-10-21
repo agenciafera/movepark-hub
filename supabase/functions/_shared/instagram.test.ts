@@ -96,7 +96,27 @@ Deno.test("acharMidiaPorLegenda acha pela legenda, ignorando espaço nas pontas"
   const { fetcher } = fetchFalso([
     { body: { data: [{ id: "m9", caption: "Outra" }, { id: "m1", caption: "Legenda certa\n", permalink: "https://www.instagram.com/p/abc/" }] } },
   ]);
-  assertEquals(await acharMidiaPorLegenda(CFG, "Legenda certa", { fetcher }), { id: "m1", permalink: "https://www.instagram.com/p/abc/" });
+  assertEquals(await acharMidiaPorLegenda(CFG, "Legenda certa", { fetcher }), {
+    id: "m1",
+    permalink: "https://www.instagram.com/p/abc/",
+    timestamp: null,
+  });
+});
+
+Deno.test("acharMidiaPorLegenda devolve o timestamp da mídia, que é quando ela foi ao ar", async () => {
+  const { fetcher, chamadas } = fetchFalso([
+    {
+      body: {
+        data: [{ id: "m1", caption: "Legenda certa", permalink: "https://www.instagram.com/p/abc/", timestamp: "2026-10-29T02:55:00+0000" }],
+      },
+    },
+  ]);
+  assertEquals(await acharMidiaPorLegenda(CFG, "Legenda certa", { fetcher }), {
+    id: "m1",
+    permalink: "https://www.instagram.com/p/abc/",
+    timestamp: "2026-10-29T02:55:00+0000",
+  });
+  assertEquals(new URL(chamadas[0].url).searchParams.get("fields"), "id,caption,permalink,timestamp");
 });
 
 Deno.test("igConfigFromEnv devolve nulo sem token", () => {

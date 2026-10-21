@@ -184,16 +184,23 @@ export async function lerPermalink(cfg: IgConfig, mediaId: string, opts: Opcoes 
   return typeof r.body.permalink === "string" ? r.body.permalink : null;
 }
 
-/** Procura, nos últimos posts da conta, a mídia com esta legenda. Usado para não publicar duas vezes. */
+/**
+ * Procura, nos últimos posts da conta, a mídia com esta legenda. Usado para não publicar duas vezes.
+ * `timestamp` é o instante em que a mídia foi ao ar, no formato da Meta ("2026-10-29T02:55:00+0000").
+ */
 export async function acharMidiaPorLegenda(
   cfg: IgConfig,
   caption: string,
   opts: Opcoes = {},
-): Promise<{ id: string; permalink: string | null } | null> {
+): Promise<{ id: string; permalink: string | null; timestamp: string | null } | null> {
   const r = await graph(cfg, `${cfg.igUserId}/media`, "GET", { fields: "id,caption,permalink,timestamp", limit: "10" }, opts, "consulta");
   const lista = Array.isArray(r.body.data) ? (r.body.data as Array<Record<string, unknown>>) : [];
   const alvo = caption.trim();
   const achada = lista.find((m) => String(m.caption ?? "").trim() === alvo);
   if (!achada) return null;
-  return { id: String(achada.id), permalink: typeof achada.permalink === "string" ? achada.permalink : null };
+  return {
+    id: String(achada.id),
+    permalink: typeof achada.permalink === "string" ? achada.permalink : null,
+    timestamp: typeof achada.timestamp === "string" ? achada.timestamp : null,
+  };
 }

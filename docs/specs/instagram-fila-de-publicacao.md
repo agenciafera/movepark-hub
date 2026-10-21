@@ -241,14 +241,35 @@ para a publicação manual com `dryRun`.
    `published` no mesmo dia (fuso de São Paulo), não publica: a regra da skill é um por dia.
 5. **Chave desligada:** grava um evento `dry_run` ("publicaria agora", com o payload sem token)
    uma vez por post, e não muda o estado.
-6. **Chave ligada:** `update … set status = 'publishing', attempts = attempts + 1 where id = … and
-   status = 'approved'`. Se a linha não voltou, outra rodada pegou o post e esta para aqui.
-   - Se o post já tem `ig_container_id`, consulta o container antes de criar outro. Se ele está
-     `PUBLISHED`, não publica de novo: procura a mídia pela legenda nos últimos posts da conta,
-     grava `ig_media_id` e `ig_permalink`, e registra o evento `reconciled`.
-   - Senão: cria os containers (grava `ig_container_id` assim que o pai existe), espera `FINISHED`,
-     publica, lê o `permalink` e marca `published`.
-   - Qualquer erro: `failed`, `last_error` e o evento com a resposta da Meta.
+6. **Chave ligada:** pega o post com `update … set status = 'publishing', attempts = attempts + 1
+   where id = … and status = 'approved' and scheduled_at <= now() and deleted_at is null`,
+   devolvendo a linha. Se a linha não voltou, outra rodada pegou o post, ou um reagendamento
+   empurrou a hora para o futuro entre a leitura e a pega, e esta rodada para aqui. Dali em
+   diante a rodada publica a linha que a pega devolveu (legenda, slides e container de agora),
+   nunca a lida antes. Toda escrita depois da pega exige o estado em que a rodada deixou o post
+   (`status = 'publishing'`), então uma mudança concorrente não é pisada, e o evento que
+   acompanha a escrita só é gravado se ela valeu.
+   - Se o post já tem `ig_container_id`, consulta o container antes de criar outro:
+     - `PUBLISHED`: não publica de novo. Procura a mídia pela legenda nos últimos posts da conta,
+       grava `ig_media_id`, `ig_permalink` e `published_at` (o `timestamp` da mídia na Meta, para
+       o post contar no dia de São Paulo em que foi ao ar e não no da reconciliação; sem
+       timestamp, vale o relógio da rodada) e registra o evento `reconciled`.
+     - status que não pôde ser lido: `failed`, sem publicar. O envio antigo pode já estar no ar, e
+       seguir adiante o publicaria de novo.
+     - qualquer outro status conhecido (`FINISHED`, `EXPIRED`, `ERROR`): cria um container novo.
+   - Senão: cria os containers e grava o `ig_container_id` do pai **antes do `media_publish`**.
+     Se essa gravação falhar, nada é publicado e o post vai para `failed`. Depois espera
+     `FINISHED`, publica, lê o `permalink` e marca `published`.
+   - `media_publish` com erro ou tempo esgotado: a Meta às vezes publica e responde erro. A
+     rodada lê o container uma vez. Se está `PUBLISHED`, reconcilia como acima (o post está no ar
+     e não vira `failed`). Se não, marca `failed` com um texto que termina em "Confira no
+     Instagram antes de reagendar."
+   - Qualquer outro erro: `failed`, `last_error` e o evento. O `last_error` é o que o Manager
+     mostra: prefixo em português pela etapa e a mensagem da Meta, com até 500 caracteres (por
+     exemplo, "Falhou ao enviar o slide 1 à Meta: Invalid image url."). A resposta crua da Meta
+     fica no evento.
+   - Reagendar um post `failed` mantém o `ig_container_id`. É isso que deixa a nova tentativa
+     conferir a Meta antes de criar outro envio.
 
 A lógica de decisão (o que sai, um por dia, atraso, reconciliação) fica numa função pura em
 `social-dispatch/logic.ts`, testada sem rede.
@@ -301,7 +322,7 @@ contrato `harmonizar-paginas`, que é do consumer.
 | Camada | O quê |
 |---|---|
 | `deno test` `_shared/instagram-validate.test.ts` | cada bloqueio e cada aviso da tabela da seção 2, incluindo JPEG falso e proporção errada |
-| `deno test` `social-dispatch/index.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run` |
+| `deno test` `social-dispatch/index.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run`, pega condicionada ao status e à hora, publicação da linha devolvida pela pega, `media_publish` ambíguo reconciliado pelo container, `published_at` vindo da Meta e uma trava em várias rodadas com uma Meta que guarda estado (um `media_publish` por post) |
 | `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status |
 | pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
 | Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, legenda com destaque dos 125 caracteres, aba certa por estado |

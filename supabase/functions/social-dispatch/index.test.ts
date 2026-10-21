@@ -2,7 +2,17 @@
 import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import type { IgConfig } from "../_shared/instagram.ts";
 import { handler, rodada } from "./index.ts";
-import { atrasados, diaEmSaoPaulo, escolher, jaPublicado, parados, type PostFila, resumoDoErro } from "./logic.ts";
+import {
+  atrasados,
+  diaEmSaoPaulo,
+  escolher,
+  instanteDaMeta,
+  jaPublicado,
+  parados,
+  type PostFila,
+  resumoDoErro,
+  textoDaFalha,
+} from "./logic.ts";
 
 const AGORA = new Date("2026-10-28T15:05:00Z"); // 12:05 em São Paulo
 const p = (over: Partial<PostFila>): PostFila => ({
@@ -68,18 +78,72 @@ Deno.test("resumo do erro cabe em 500 caracteres", () => {
   assertEquals(resumoDoErro("media_publish", { msg: "x".repeat(1000) }).length, 500);
 });
 
+Deno.test("textoDaFalha: prefixo em português por etapa e a mensagem da Meta, sem JSON cru", () => {
+  const meta = (message: string) => ({ error: { message, code: 100 } });
+  assertEquals(textoDaFalha("container do slide 1", meta("Invalid image url")), "Falhou ao enviar o slide 1 à Meta: Invalid image url.");
+  assertEquals(textoDaFalha("container do slide 12", meta("Ruim.")), "Falhou ao enviar o slide 12 à Meta: Ruim.");
+  assertEquals(textoDaFalha("container do carrossel", meta("Bad children")), "Falhou ao montar o carrossel na Meta: Bad children.");
+  assertEquals(textoDaFalha("container", meta("Bad image")), "Falhou ao enviar a imagem à Meta: Bad image.");
+  assertEquals(textoDaFalha("sem imagem", null), "O post não tem imagem para publicar.");
+  // Erro de rede vem como { erro } do cliente da Graph API.
+  assertEquals(textoDaFalha("container do slide 2", { erro: "error sending request" }), "Falhou ao enviar o slide 2 à Meta: error sending request.");
+  // Sem mensagem: o prefixo sozinho, nunca o JSON.
+  assertEquals(textoDaFalha("container", { foo: "bar" }), "Falhou ao enviar a imagem à Meta.");
+  assertEquals(textoDaFalha("container", null), "Falhou ao enviar a imagem à Meta.");
+  assertEquals(textoDaFalha("etapa nova", meta("x")), "Falhou na publicação (etapa nova): x.");
+  assertEquals(textoDaFalha("container", meta("linha 1\n   linha 2")), "Falhou ao enviar a imagem à Meta: linha 1 linha 2.");
+});
+
+Deno.test("textoDaFalha: container que não ficou pronto diz o que a Meta respondeu", () => {
+  const etapa = "container não ficou pronto";
+  assertEquals(textoDaFalha(etapa, { pronto: false, status: "TIMEOUT" }), "A Meta demorou demais para processar as imagens.");
+  assertEquals(textoDaFalha(etapa, { pronto: false, status: "ERROR", detalhe: "Erro 2207026" }), "A Meta recusou as imagens (ERROR): Erro 2207026.");
+  assertEquals(textoDaFalha(etapa, { pronto: false, status: "EXPIRED" }), "A Meta recusou as imagens (EXPIRED).");
+});
+
+Deno.test("textoDaFalha: media_publish termina pedindo para conferir no Instagram, mesmo com texto longo", () => {
+  const fim = " Confira no Instagram antes de reagendar.";
+  assertEquals(
+    textoDaFalha("media_publish", { error: { message: "Service unavailable" } }),
+    `Falhou ao publicar na Meta: Service unavailable.${fim}`,
+  );
+  assertEquals(textoDaFalha("media_publish", {}), `Falhou ao publicar na Meta.${fim}`);
+  const longo = textoDaFalha("media_publish", { error: { message: "x".repeat(2000) } });
+  assertEquals(longo.length <= 500, true);
+  assertEquals(longo.endsWith(fim), true);
+  assertEquals(longo.startsWith("Falhou ao publicar na Meta: xxx"), true);
+  const outro = textoDaFalha("container do slide 1", { error: { message: "y".repeat(2000) } });
+  assertEquals(outro.length <= 500, true);
+});
+
+Deno.test("instanteDaMeta lê o formato da Meta (+0000), aceita offset e cai no agora quando não serve", () => {
+  const agora = new Date("2026-10-29T03:10:00Z");
+  assertEquals(instanteDaMeta("2026-10-29T02:55:00+0000", agora), "2026-10-29T02:55:00.000Z");
+  assertEquals(instanteDaMeta("2026-10-28T23:55:00-0300", agora), "2026-10-29T02:55:00.000Z");
+  assertEquals(instanteDaMeta("2026-10-29T02:55:00+00:00", agora), "2026-10-29T02:55:00.000Z");
+  for (const ruim of [null, undefined, "", "ontem", "2026-13-45T00:00:00+0000"]) {
+    assertEquals(instanteDaMeta(ruim, agora), agora.toISOString(), String(ruim));
+  }
+  // Relógio da Meta à frente do nosso: nunca registra publicação no futuro.
+  assertEquals(instanteDaMeta("2026-10-29T03:30:00+0000", agora), agora.toISOString());
+  // O dia em São Paulo é o do instante real da publicação, não o da reconciliação.
+  assertEquals(diaEmSaoPaulo(new Date(instanteDaMeta("2026-10-29T02:55:00+0000", agora))), "2026-10-28");
+  assertEquals(diaEmSaoPaulo(agora), "2026-10-29");
+});
+
 // ── A rodada, com um banco e uma Graph API de mentira ─────────────────────────────────────
 // O banco de mentira guarda linhas de verdade e aplica os filtros de verdade (eq, in, is, gte).
 // Assim a pega condicionada ao status se comporta como no Postgres: se a linha mudou, o update
 // não acha nada. O fetcher de mentira responde pelo roteiro e nunca sai para a rede.
 
 type Linha = Record<string, unknown>;
-type Filtro = ["eq" | "in" | "is" | "gte", string, unknown];
+type Filtro = ["eq" | "in" | "is" | "gte" | "lte", string, unknown];
 interface ChamadaDb {
   tabela: string;
   op: "select" | "update" | "insert";
   payload?: Linha;
   filtros: Filtro[];
+  colunas?: string;
   afetadas?: number;
 }
 interface ChamadaGraph {
@@ -145,7 +209,8 @@ function banco(
     if (op === "eq") return x === v;
     if (op === "in") return (v as unknown[]).includes(x);
     if (op === "is") return v === null ? x === null || x === undefined : x === v;
-    return x !== null && x !== undefined && Date.parse(String(x)) >= Date.parse(String(v));
+    if (x === null || x === undefined) return false;
+    return op === "gte" ? Date.parse(String(x)) >= Date.parse(String(v)) : Date.parse(String(x)) <= Date.parse(String(v));
   };
 
   const from = (tabela: string) => {
@@ -187,7 +252,8 @@ function banco(
     };
     // deno-lint-ignore no-explicit-any
     const b: any = {
-      select: (_campos?: string, o?: { count?: string; head?: boolean }) => {
+      select: (campos?: string, o?: { count?: string; head?: boolean }) => {
+        c.colunas = campos;
         if (c.op === "select") {
           contar = o?.count === "exact";
           cabeca = !!o?.head;
@@ -200,6 +266,7 @@ function banco(
       in: (col: string, v: unknown) => (c.filtros.push(["in", col, v]), b),
       is: (col: string, v: unknown) => (c.filtros.push(["is", col, v]), b),
       gte: (col: string, v: unknown) => (c.filtros.push(["gte", col, v]), b),
+      lte: (col: string, v: unknown) => (c.filtros.push(["lte", col, v]), b),
       maybeSingle: () => executa("maybeSingle"),
       single: () => executa("single"),
       then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => executa("lista").then(res, rej),
@@ -263,7 +330,7 @@ function roteiroFeliz(c: ChamadaGraph): Rota {
 }
 
 const rodar = (db: ReturnType<typeof banco>, g: ReturnType<typeof graphFalso>, agora = AGORA) =>
-  rodada({ admin: db.cliente, cfg: CFG, agora, fetcher: g.fetcher });
+  rodada({ admin: db.cliente, cfg: CFG, agora, relogio: () => agora, fetcher: g.fetcher });
 
 async function capturandoErros<T>(fn: () => Promise<T>): Promise<{ r: T; logs: string[] }> {
   const original = console.error;
@@ -346,6 +413,7 @@ Deno.test("chave ligada: pega o post, guarda o container antes de publicar e fec
   assertEquals(pega.payload, { status: "publishing", attempts: 1 });
   assertEquals(db.tocouEm(pega, "status", "approved"), true);
   assertEquals(db.tocouEm(pega, "id", ID), true);
+  assertEquals(pega.filtros.some(([op, col, v]) => op === "lte" && col === "scheduled_at" && v === AGORA.toISOString()), true);
   assertEquals(pega.afetadas, 1);
   const iPega = linha.findIndex((p) => p.tipo === "db" && p.db === pega);
   const iPrimeiraMeta = linha.findIndex((p) => p.tipo === "graph");
@@ -374,7 +442,7 @@ Deno.test("chave ligada: pega o post, guarda o container antes de publicar e fec
   assertEquals(l.ig_permalink, "https://www.instagram.com/p/ABC123/");
   assertEquals(l.ig_container_id, "container-pai");
   assertEquals(l.last_error, null);
-  assertEquals(typeof l.published_at, "string");
+  assertEquals(l.published_at, AGORA.toISOString(), "o relógio da rodada");
   const final = db.de("social_post", "update").find((c) => c.payload?.status === "published")!;
   assertEquals(db.tocouEm(final, "status", "publishing"), true);
   assertEquals(final.afetadas, 1);
@@ -602,15 +670,15 @@ Deno.test("erro da Meta no container: failed com last_error em português, event
   assertEquals(r.body.post, ID);
   const l = db.linhaDo();
   assertEquals(l.status, "failed");
-  assertStringIncludes(String(l.last_error), "container do slide 1");
-  assertStringIncludes(String(l.last_error), "Invalid image url");
-  assertEquals(String(l.last_error).length <= 500, true);
+  assertEquals(l.last_error, "Falhou ao enviar o slide 1 à Meta: Invalid image url.");
+  assertEquals(String(l.last_error).includes("{"), false, "o Manager não mostra JSON cru");
   assertEquals(r.body.erro, l.last_error);
   const falha = db.de("social_post", "update").find((c) => c.payload?.status === "failed")!;
   assertEquals(db.tocouEm(falha, "status", "publishing"), true);
   assertEquals(db.tocouEm(falha, "id", ID), true);
   assertEquals(db.eventos("failed").length, 1);
   assertEquals(db.eventos("failed")[0].note, l.last_error);
+  assertEquals(db.eventos("failed")[0].response, { error: { message: "Invalid image url", code: 100 } }, "a resposta crua fica no evento");
   assertEquals(g.quais("POST", `${IG}/media_publish`).length, 0);
   semToken(db.tabelas.social_post_event, db.tabelas.social_post, r);
 });
@@ -627,7 +695,10 @@ Deno.test("erro no media_publish: failed, mas o container fica salvo para a nova
   assertEquals(r.body.acao, "falhou");
   assertEquals(db.linhaDo().status, "failed");
   assertEquals(db.linhaDo().ig_container_id, "container-pai");
-  assertStringIncludes(String(db.linhaDo().last_error), "media_publish");
+  assertEquals(
+    db.linhaDo().last_error,
+    "Falhou ao publicar na Meta: Service unavailable. Confira no Instagram antes de reagendar.",
+  );
   assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1, "uma tentativa só, sem laço");
 });
 
@@ -783,6 +854,307 @@ Deno.test("evento que estoura exceção (não só erro) também não derruba a r
   const { r } = await capturandoErros(() => rodar(db, g));
   assertEquals(r.body.acao, "publicado");
   assertEquals(db.linhaDo().status, "published");
+});
+
+// ── media_publish ambíguo: a Meta às vezes publica e responde erro ────────────────────────
+
+/** Roteiro em que o media_publish responde 500. `aoErrar` diz o que aconteceu de verdade na Meta. */
+function roteiroAmbiguo(
+  estado: { publicou: boolean },
+  opts: { aoErrar: "publicado" | "nao_publicado" | "ilegivel"; midia?: Linha[] },
+) {
+  return (c: ChamadaGraph): Rota => {
+    if (c.metodo === "POST" && c.caminho === `${IG}/media_publish`) {
+      estado.publicou = true;
+      return { status: 500, body: { error: { message: "Service unavailable" } } };
+    }
+    if (c.metodo === "GET" && c.caminho === "container-pai") {
+      if (estado.publicou && opts.aoErrar === "ilegivel") return { status: 500, body: { error: { message: "fora do ar" } } };
+      return { body: { status_code: estado.publicou && opts.aoErrar === "publicado" ? "PUBLISHED" : "FINISHED" } };
+    }
+    if (c.metodo === "GET" && c.caminho === `${IG}/media`) return { body: { data: opts.midia ?? [] } };
+    return roteiroFeliz(c);
+  };
+}
+
+const FIM_CONFIRA = "Confira no Instagram antes de reagendar.";
+
+Deno.test("media_publish responde 500 mas o container está PUBLISHED: reconcilia e media_publish roda uma vez só", async () => {
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroAmbiguo({ publicou: false }, {
+    aoErrar: "publicado",
+    midia: [{ id: "m-amb", caption: LEGENDA, permalink: "https://www.instagram.com/p/AMB/", timestamp: "2026-10-28T15:04:50+0000" }],
+  }));
+  const r = await rodar(db, g);
+  assertEquals(r.status, 200);
+  assertEquals(r.body, { ok: true, acao: "reconciliado", post: ID });
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1, "o media_publish não roda de novo");
+  assertEquals(g.quais("GET", "container-pai").length, 2, "a espera do container e uma leitura depois do erro");
+  const l = db.linhaDo();
+  assertEquals(l.status, "published");
+  assertEquals(l.ig_media_id, "m-amb");
+  assertEquals(l.ig_permalink, "https://www.instagram.com/p/AMB/");
+  assertEquals(l.ig_container_id, "container-pai");
+  assertEquals(l.last_error, null);
+  assertEquals(db.eventos("reconciled").length, 1);
+  assertEquals(db.eventos("failed").length, 0, "post que está no ar não ganha evento de falha");
+  const final = db.de("social_post", "update").find((c) => c.payload?.status === "published")!;
+  assertEquals(db.tocouEm(final, "status", "publishing"), true);
+  semToken(db.tabelas.social_post_event, db.tabelas.social_post, r);
+});
+
+Deno.test("media_publish responde 500 e o container não está PUBLISHED: failed pedindo para conferir no Instagram", async () => {
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroAmbiguo({ publicou: false }, { aoErrar: "nao_publicado" }));
+  const r = await rodar(db, g);
+  assertEquals(r.status, 502);
+  assertEquals(r.body.acao, "falhou");
+  assertEquals(db.linhaDo().status, "failed");
+  assertEquals(db.linhaDo().last_error, `Falhou ao publicar na Meta: Service unavailable. ${FIM_CONFIRA}`);
+  assertEquals(db.eventos("failed")[0].response, { error: { message: "Service unavailable" } });
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1);
+  assertEquals(g.quais("GET", `${IG}/media`).length, 0, "container fora de PUBLISHED não vai procurar mídia");
+});
+
+Deno.test("media_publish responde 500 e o container não pôde ser lido: failed pedindo para conferir, sem publicar de novo", async () => {
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroAmbiguo({ publicou: false }, { aoErrar: "ilegivel" }));
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "falhou");
+  assertEquals(db.linhaDo().status, "failed");
+  assertEquals(String(db.linhaDo().last_error).endsWith(FIM_CONFIRA), true);
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1);
+});
+
+Deno.test("media_publish responde 500, container PUBLISHED mas a legenda não está no perfil: failed, sem publicar de novo", async () => {
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroAmbiguo({ publicou: false }, { aoErrar: "publicado", midia: [{ id: "m-x", caption: "Outro post" }] }));
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "falhou");
+  assertEquals(db.linhaDo().status, "failed");
+  assertEquals(String(db.linhaDo().last_error).endsWith(FIM_CONFIRA), true);
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1);
+});
+
+// ── published_at da reconciliação vem da Meta ─────────────────────────────────────────────
+
+Deno.test("reconciliação usa o horário da mídia: no ar às 23h55 e achada à 0h10 conta no dia certo, e o do dia seguinte sai", async () => {
+  const agora = new Date("2026-10-29T03:10:00Z"); // 00:10 em São Paulo, já dia 29
+  const parado = postBanco({
+    status: "publishing",
+    ig_container_id: "container-velho",
+    scheduled_at: "2026-10-29T02:50:00Z",
+    updated_at: "2026-10-29T02:40:00Z",
+  });
+  const seguinte = postBanco({ id: "seguinte", scheduled_at: "2026-10-29T15:00:00Z", caption: "Legenda do dia 29" });
+  const db = banco({ social_post: [parado, seguinte], app_setting: chaveLigada("true") });
+  const g = graphFalso((c) => {
+    if (c.metodo === "GET" && c.caminho === "container-velho") return { body: { status_code: "PUBLISHED" } };
+    if (c.metodo === "GET" && c.caminho === `${IG}/media`) {
+      return { body: { data: [{ id: "m-7", caption: LEGENDA, permalink: "https://www.instagram.com/p/GHI789/", timestamp: "2026-10-29T02:55:00+0000" }] } };
+    }
+    return roteiroFeliz(c);
+  });
+  const r1 = await rodar(db, g, agora);
+  assertEquals(r1.body.acao, "reconciliou");
+  const publicadoEm = String(db.linhaDo().published_at);
+  assertEquals(publicadoEm, "2026-10-29T02:55:00.000Z", "o horário da Meta, não o da rodada");
+  assertEquals(diaEmSaoPaulo(new Date(publicadoEm)), "2026-10-28");
+
+  // Se o published_at fosse o da rodada (00:10 de dia 29), o post de dia 29 ficaria bloqueado.
+  const r2 = await rodar(db, g, new Date("2026-10-29T15:05:00Z"));
+  assertEquals(r2.body.acao, "publicado");
+  assertEquals(db.linhaDo("seguinte").status, "published");
+});
+
+Deno.test("mídia sem timestamp: a reconciliação cai no relógio da rodada", async () => {
+  const db = banco({ social_post: [postBanco({ ig_container_id: "container-velho" })], app_setting: chaveLigada("true") });
+  const g = graphFalso((c) => {
+    if (c.caminho === "container-velho") return { body: { status_code: "PUBLISHED" } };
+    if (c.caminho === `${IG}/media`) return { body: { data: [{ id: "m-1", caption: LEGENDA, permalink: "p" }] } };
+    return undefined;
+  });
+  await rodar(db, g);
+  assertEquals(db.linhaDo().published_at, AGORA.toISOString());
+});
+
+// ── a pega confere a hora e a publicação sai da linha que ela devolve ─────────────────────
+
+Deno.test("reagendamento entre a leitura e a pega: a hora passou a ser futura, a pega não acha linha e nada sai cedo", async () => {
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") }, {
+    antes: (c, tabelas) => {
+      if (c.tabela === "social_post" && c.op === "update") tabelas.social_post[0].scheduled_at = "2026-10-30T15:00:00Z";
+    },
+  });
+  const g = graphFalso(roteiroFeliz);
+  const r = await rodar(db, g);
+  assertEquals(r.body, { ok: true, acao: "outra_rodada", post: ID });
+  assertEquals(g.chamadas.length, 0);
+  assertEquals(db.linhaDo().status, "approved");
+  assertEquals(db.linhaDo().attempts, 0);
+  assertEquals(db.linhaDo().scheduled_at, "2026-10-30T15:00:00Z");
+});
+
+Deno.test("a pega devolve a linha: legenda e slides corrigidos depois da leitura são os que saem", async () => {
+  const novaLegenda = "Legenda corrigida depois da leitura. #confins #viagem #movepark";
+  const novoSlide = { url: `${BASE}/novo-01.jpg`, path: "social/o/2/aaaa/novo-01.jpg", alt: "arte nova", texto: null };
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") }, {
+    antes: (c, tabelas) => {
+      if (c.tabela === "social_post" && c.op === "update") {
+        Object.assign(tabelas.social_post[0], { caption: novaLegenda, slides: [novoSlide], kind: "image" });
+      }
+    },
+  });
+  const g = graphFalso((c) => {
+    if (c.metodo === "POST" && c.caminho === `${IG}/media`) return { body: { id: "container-pai" } };
+    return roteiroFeliz(c);
+  });
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "publicado");
+  const [container] = g.quais("POST", `${IG}/media`);
+  assertEquals(container.params.get("image_url"), novoSlide.url, "a imagem da linha devolvida, não a lida antes");
+  assertEquals(container.params.get("caption"), novaLegenda);
+  assertEquals(container.params.get("alt_text"), "arte nova");
+  const [pega] = db.de("social_post", "update");
+  for (const campo of ["caption", "slides", "ig_container_id"]) {
+    assertEquals(String(pega.colunas).includes(campo), true, `a pega devolve ${campo}`);
+  }
+});
+
+Deno.test("a pega devolve a linha: container que apareceu depois da leitura e já está PUBLISHED não é publicado de novo", async () => {
+  const db = banco({ social_post: [postBanco()], app_setting: chaveLigada("true") }, {
+    antes: (c, tabelas) => {
+      if (c.tabela === "social_post" && c.op === "update") tabelas.social_post[0].ig_container_id = "container-velho";
+    },
+  });
+  const g = graphFalso((c) => {
+    if (c.caminho === "container-velho") return { body: { status_code: "PUBLISHED" } };
+    if (c.caminho === `${IG}/media`) return { body: { data: [{ id: "m-3", caption: LEGENDA, permalink: "p", timestamp: "2026-10-28T15:04:00+0000" }] } };
+    return roteiroFeliz(c);
+  });
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "reconciliado");
+  assertEquals(g.quais("POST").length, 0);
+  assertEquals(db.linhaDo().ig_media_id, "m-3");
+});
+
+// ── nunca duas vezes, em várias rodadas, com uma Meta que guarda estado ───────────────────
+
+function metaComEstado() {
+  let seq = 0;
+  const containers = new Map<string, { caption: string; status: string }>();
+  const midias: { id: string; caption: string; permalink: string; timestamp: string }[] = [];
+  const publicacoes = new Map<string, number>();
+  const pendentes: string[] = [];
+  const meta = {
+    modo: "normal" as "normal" | "ambiguo" | "ambiguo_lag",
+    timestamp: "2026-10-27T15:04:30+0000",
+    publicacoes,
+    midias,
+    noAr(containerId: string, timestamp: string) {
+      const c = containers.get(containerId)!;
+      c.status = "PUBLISHED";
+      const m = { id: `midia-${midias.length + 1}`, caption: c.caption, permalink: `https://www.instagram.com/p/M${midias.length + 1}/`, timestamp };
+      midias.push(m);
+      return m;
+    },
+    /** A Meta termina de publicar o que ficou pendente (o atraso que fez o primeiro erro ser ambíguo). */
+    resolverPendentes(timestamp: string) {
+      for (const id of pendentes.splice(0)) meta.noAr(id, timestamp);
+    },
+    roteiro: (c: ChamadaGraph): Rota => {
+      if (c.metodo === "POST" && c.caminho === `${IG}/media`) {
+        if (c.params.get("media_type") === "CAROUSEL") {
+          const id = `container-${++seq}`;
+          containers.set(id, { caption: c.params.get("caption")!, status: "FINISHED" });
+          return { body: { id } };
+        }
+        return { body: { id: `filho-${++seq}` } };
+      }
+      if (c.metodo === "POST" && c.caminho === `${IG}/media_publish`) {
+        const id = c.params.get("creation_id")!;
+        publicacoes.set(id, (publicacoes.get(id) ?? 0) + 1);
+        if (meta.modo === "ambiguo_lag") {
+          pendentes.push(id);
+          return { status: 500, body: { error: { message: "Service unavailable" } } };
+        }
+        const m = meta.noAr(id, meta.timestamp);
+        return meta.modo === "ambiguo" ? { status: 500, body: { error: { message: "Service unavailable" } } } : { body: { id: m.id } };
+      }
+      const container = containers.get(c.caminho);
+      if (c.metodo === "GET" && container) return { body: { status_code: container.status } };
+      if (c.metodo === "GET" && c.caminho === `${IG}/media`) return { body: { data: [...midias].reverse() } };
+      const midia = midias.find((m) => m.id === c.caminho);
+      if (c.metodo === "GET" && midia) return { body: { permalink: midia.permalink } };
+      return undefined;
+    },
+  };
+  return meta;
+}
+
+Deno.test("várias rodadas, Meta com estado e erro ambíguo: media_publish roda uma vez por post e a Meta não duplica nada", async () => {
+  const B = postBanco({ id: "post-b", caption: "Legenda B. #b #b #b", scheduled_at: "2026-10-27T15:00:00Z" });
+  const A = postBanco({ id: "post-a", caption: "Legenda A. #a #a #a", scheduled_at: "2026-10-28T15:00:00Z" });
+  const db = banco({ social_post: [B, A], app_setting: chaveLigada("true") });
+  const meta = metaComEstado();
+  const g = graphFalso(meta.roteiro);
+
+  // R1: o media_publish do B responde 500 e, na hora de conferir, a Meta ainda não terminou. B vira failed.
+  meta.modo = "ambiguo_lag";
+  const r1 = await rodar(db, g, new Date("2026-10-27T15:05:00Z"));
+  assertEquals(r1.body.acao, "falhou");
+  assertEquals(db.linhaDo("post-b").status, "failed");
+  assertEquals(String(db.linhaDo("post-b").last_error).endsWith(FIM_CONFIRA), true);
+  assertEquals(db.linhaDo("post-a").status, "approved", "o A ainda não é a hora dele");
+  const containerB = db.linhaDo("post-b").ig_container_id as string;
+  assertEquals(meta.publicacoes.get(containerB), 1);
+
+  // A Meta termina de publicar o B. Ninguém sabe disso no banco.
+  meta.resolverPendentes("2026-10-27T15:05:20+0000");
+  assertEquals(meta.midias.length, 1);
+
+  // R2: o A tem erro ambíguo com o container já PUBLISHED: reconcilia na hora.
+  meta.modo = "ambiguo";
+  meta.timestamp = "2026-10-28T15:04:50+0000";
+  const r2 = await rodar(db, g, new Date("2026-10-28T15:05:00Z"));
+  assertEquals(r2.body, { ok: true, acao: "reconciliado", post: "post-a" });
+  assertEquals(db.linhaDo("post-a").status, "published");
+  assertEquals(db.linhaDo("post-b").status, "failed", "o B continua parado na falha");
+
+  // Uma pessoa reagenda o B (failed volta para approved, e o container fica guardado) para hoje mais tarde.
+  Object.assign(db.linhaDo("post-b"), { status: "approved", scheduled_at: "2026-10-28T16:00:00Z", last_error: null });
+
+  // R3: já saiu o A hoje (fuso de São Paulo). O B espera e a Meta nem é chamada.
+  const antesR3 = g.chamadas.length;
+  const r3 = await rodar(db, g, new Date("2026-10-28T16:05:00Z"));
+  assertEquals(r3.body.acao, "ja_publicou_hoje");
+  assertEquals(g.chamadas.length, antesR3);
+
+  // A pessoa move o B para amanhã.
+  Object.assign(db.linhaDo("post-b"), { scheduled_at: "2026-10-29T15:00:00Z" });
+
+  // R4: o B é pego, o container antigo está PUBLISHED na Meta: reconcilia pela legenda, sem POST nenhum.
+  const antesR4 = g.chamadas.length;
+  const r4 = await rodar(db, g, new Date("2026-10-29T15:05:00Z"));
+  assertEquals(r4.body, { ok: true, acao: "reconciliado", post: "post-b" });
+  assertEquals(g.chamadas.slice(antesR4).filter((c) => c.metodo === "POST").length, 0);
+  assertEquals(db.linhaDo("post-b").status, "published");
+  assertEquals(db.linhaDo("post-b").published_at, "2026-10-27T15:05:20.000Z", "o horário em que a Meta de fato publicou");
+
+  // R5: nada mais a fazer.
+  const antesR5 = g.chamadas.length;
+  assertEquals((await rodar(db, g, new Date("2026-10-29T15:20:00Z"))).body.acao, "nada");
+  assertEquals(g.chamadas.length, antesR5);
+
+  // A trava: um media_publish por post em todas as rodadas, e uma mídia por post na Meta.
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 2);
+  assertEquals([...meta.publicacoes.values()], [1, 1]);
+  assertEquals(meta.midias.map((m) => m.caption).sort(), ["Legenda A. #a #a #a", "Legenda B. #b #b #b"]);
+  assertEquals(db.linhaDo("post-a").ig_media_id, meta.midias.find((m) => m.caption.startsWith("Legenda A"))!.id);
+  assertEquals(db.linhaDo("post-b").ig_media_id, meta.midias.find((m) => m.caption.startsWith("Legenda B"))!.id);
+  assertEquals(db.eventos("reconciled").length, 2);
+  assertEquals(db.eventos("failed").length, 1);
+  semToken(db.tabelas.social_post_event, db.tabelas.social_post);
 });
 
 // ── (g) autenticação e config, pelo handler ───────────────────────────────────────────────
