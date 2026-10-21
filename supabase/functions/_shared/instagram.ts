@@ -99,13 +99,17 @@ export async function graph(
   return result;
 }
 
-/** O container do carrossel demora para ficar pronto; publicar antes falha. */
+/**
+ * O container do carrossel demora para ficar pronto; publicar antes falha. O padrão é 30 consultas
+ * a cada 2,5 s, cerca de 75 s de espera: um carrossel de 7 a 10 slides leva mais do que os 30 s
+ * que as 12 consultas anteriores davam, e estourar o tempo marca o post como falho sem motivo.
+ */
 export async function esperarContainer(
   cfg: IgConfig,
   id: string,
   opts: Opcoes = {},
 ): Promise<{ pronto: boolean; status: string; detalhe?: unknown }> {
-  const tentativas = opts.tentativas ?? 12;
+  const tentativas = opts.tentativas ?? 30;
   const espera = opts.esperaMs ?? 2500;
   for (let i = 0; i < tentativas; i++) {
     const r = await graph(cfg, id, "GET", { fields: "status_code,status" }, opts, "container_status");

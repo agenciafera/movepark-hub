@@ -51,7 +51,16 @@ import {
   publicar,
   statusDoContainer,
 } from "../_shared/instagram.ts";
-import { atrasados, escolher, instanteDaMeta, jaPublicado, parados, type PostFila, textoDaFalha } from "./logic.ts";
+import {
+  ATRASO_MAXIMO_MS,
+  atrasados,
+  escolher,
+  instanteDaMeta,
+  jaPublicado,
+  parados,
+  type PostFila,
+  textoDaFalha,
+} from "./logic.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -140,9 +149,20 @@ function opcoes(ctx: Ctx, postId: string): Opcoes {
 /**
  * Escreve no post SÓ se ele ainda está em `de`. Devolve se a escrita valeu. Zero linhas quer dizer
  * que outra rodada ou uma pessoa mudou o estado no meio do caminho: o que mudou fica como está.
+ * `agendadoAntesDe` exige também que a hora marcada ainda seja anterior a esse instante: é o que
+ * impede de marcar como atrasado um post que uma pessoa reagendou, ainda como `approved`, entre a
+ * leitura e a escrita.
  */
-async function escrever(ctx: Ctx, id: string, de: string, campos: Record<string, unknown>): Promise<boolean> {
-  const { data, error } = await ctx.admin.from("social_post").update(campos).eq("id", id).eq("status", de).select("id");
+async function escrever(
+  ctx: Ctx,
+  id: string,
+  de: string,
+  campos: Record<string, unknown>,
+  opts: { agendadoAntesDe?: string } = {},
+): Promise<boolean> {
+  let q = ctx.admin.from("social_post").update(campos).eq("id", id).eq("status", de);
+  if (opts.agendadoAntesDe) q = q.lt("scheduled_at", opts.agendadoAntesDe);
+  const { data, error } = await q.select("id");
   if (error) {
     console.error("social-dispatch: escrita no post falhou", {
       social_post_id: id,
@@ -267,9 +287,11 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
     if (ids.length) return ok({ acao: "reconciliou", posts: ids });
   }
 
-  // 2. Atrasados saem da fila.
+  // 2. Atrasados saem da fila. A escrita repete a regra do atraso (hora marcada anterior a agora
+  // menos 6 h): quem reagendou o post, ainda aprovado, entre a leitura e aqui não é marcado.
+  const limiteDoAtraso = new Date(agora.getTime() - ATRASO_MAXIMO_MS).toISOString();
   for (const id of atrasados(posts, agora)) {
-    if (await escrever(ctx, id, "approved", { status: "overdue" })) {
+    if (await escrever(ctx, id, "approved", { status: "overdue" }, { agendadoAntesDe: limiteDoAtraso })) {
       await registrar(ctx, id, "overdue", {
         note: "Passou mais de 6 horas da hora marcada sem publicar. Reagende para voltar à fila.",
       });

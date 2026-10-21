@@ -137,7 +137,7 @@ Deno.test("instanteDaMeta lê o formato da Meta (+0000), aceita offset e cai no 
 // não acha nada. O fetcher de mentira responde pelo roteiro e nunca sai para a rede.
 
 type Linha = Record<string, unknown>;
-type Filtro = ["eq" | "in" | "is" | "gte" | "lte", string, unknown];
+type Filtro = ["eq" | "in" | "is" | "gte" | "lte" | "lt", string, unknown];
 interface ChamadaDb {
   tabela: string;
   op: "select" | "update" | "insert";
@@ -210,7 +210,9 @@ function banco(
     if (op === "in") return (v as unknown[]).includes(x);
     if (op === "is") return v === null ? x === null || x === undefined : x === v;
     if (x === null || x === undefined) return false;
-    return op === "gte" ? Date.parse(String(x)) >= Date.parse(String(v)) : Date.parse(String(x)) <= Date.parse(String(v));
+    const a = Date.parse(String(x));
+    const b = Date.parse(String(v));
+    return op === "gte" ? a >= b : op === "lt" ? a < b : a <= b;
   };
 
   const from = (tabela: string) => {
@@ -267,6 +269,7 @@ function banco(
       is: (col: string, v: unknown) => (c.filtros.push(["is", col, v]), b),
       gte: (col: string, v: unknown) => (c.filtros.push(["gte", col, v]), b),
       lte: (col: string, v: unknown) => (c.filtros.push(["lte", col, v]), b),
+      lt: (col: string, v: unknown) => (c.filtros.push(["lt", col, v]), b),
       maybeSingle: () => executa("maybeSingle"),
       single: () => executa("single"),
       then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => executa("lista").then(res, rej),
@@ -785,6 +788,32 @@ Deno.test("overdue não pisa em post que o humano reagendou entre a leitura e a 
   });
   const { logs } = await capturandoErros(() => rodar(db, graphFalso(roteiroFeliz)));
   assertEquals(db.linhaDo().status, "pending_review");
+  assertEquals(db.eventos("overdue").length, 0);
+  assertEquals(logs.length > 0, true, "a escrita perdida fica no log");
+});
+
+Deno.test("overdue só marca quem continua com a hora marcada mais de 6 h atrás, na própria escrita", async () => {
+  const db = banco({ social_post: [postBanco({ scheduled_at: "2026-10-28T08:00:00Z" })], app_setting: chaveLigada("true") });
+  await rodar(db, graphFalso(roteiroFeliz));
+  const [u] = db.de("social_post", "update");
+  // AGORA é 15:05Z; 6 h antes é 09:05Z. O filtro vai junto com o do status.
+  assertEquals(u.filtros.some(([op, col, v]) => op === "lt" && col === "scheduled_at" && v === "2026-10-28T09:05:00.000Z"), true);
+  assertEquals(db.tocouEm(u, "status", "approved"), true);
+});
+
+Deno.test("overdue não marca post que o humano reagendou para o futuro, ainda aprovado, entre a leitura e a escrita", async () => {
+  // Reagendar um post `approved` só muda a data: o status continua `approved`, então o filtro de
+  // status sozinho deixaria passar e o post reagendado viraria atrasado.
+  const db = banco({ social_post: [postBanco({ scheduled_at: "2026-10-28T08:00:00Z" })], app_setting: chaveLigada("true") }, {
+    antes: (c, tabelas) => {
+      if (c.tabela === "social_post" && c.op === "update") {
+        Object.assign(tabelas.social_post[0], { scheduled_at: "2026-10-30T15:00:00Z" });
+      }
+    },
+  });
+  const { logs } = await capturandoErros(() => rodar(db, graphFalso(roteiroFeliz)));
+  assertEquals(db.linhaDo().status, "approved");
+  assertEquals(db.linhaDo().scheduled_at, "2026-10-30T15:00:00Z");
   assertEquals(db.eventos("overdue").length, 0);
   assertEquals(logs.length > 0, true, "a escrita perdida fica no log");
 });

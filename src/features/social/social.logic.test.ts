@@ -8,6 +8,7 @@ import {
   paraCampoDeData,
   partirGancho,
   podeAprovar,
+  ROTULO_EVENTO,
   sugestaoDeData,
 } from "./social.logic";
 
@@ -112,5 +113,28 @@ describe("dataNoFuturo", () => {
     expect(dataNoFuturo("2026-10-20T12:00", AGORA)).toBe(false);
     expect(dataNoFuturo("", AGORA)).toBe(false);
     expect(dataNoFuturo("2026-10-28", AGORA)).toBe(false);
+  });
+});
+
+describe("ROTULO_EVENTO", () => {
+  it("as chamadas à Meta descrevem o pedido, não o resultado (a linha serve também para o HTTP 500)", () => {
+    expect(ROTULO_EVENTO.container_child).toBe("Envio do slide à Meta");
+    expect(ROTULO_EVENTO.container_parent).toBe("Envio do post à Meta");
+    expect(ROTULO_EVENTO.container_status).toBe("Consulta da situação do envio");
+    expect(ROTULO_EVENTO.media_publish).toBe("Pedido de publicação à Meta");
+    expect(ROTULO_EVENTO.permalink).toBe("Leitura do link do post");
+    for (const k of ["container_child", "container_parent", "container_status", "media_publish", "permalink"]) {
+      expect(ROTULO_EVENTO[k], k).not.toMatch(/criado|publicado|lido\b/i);
+    }
+  });
+
+  it("todo tipo de evento da tabela tem rótulo em português", () => {
+    const tipos = [
+      "draft_received", "caption_edited", "approved", "rejected", "rescheduled", "dry_run",
+      "container_child", "container_parent", "container_status", "media_publish", "permalink",
+      "consulta", "reconciled", "overdue", "failed",
+    ];
+    for (const k of tipos) expect(ROTULO_EVENTO[k], k).toBeTruthy();
+    expect(Object.keys(ROTULO_EVENTO).sort()).toEqual([...tipos].sort());
   });
 });

@@ -1,7 +1,7 @@
 // O cliente da Graph API é o único lugar que fala com a Meta. Os testes usam um fetch falso:
 // conferem a ordem das chamadas, os campos de cada uma e que o token nunca vai para o rastro.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { acharMidiaPorLegenda, type GraphCall, graph, igConfigFromEnv, publicar } from "./instagram.ts";
+import { acharMidiaPorLegenda, esperarContainer, type GraphCall, graph, igConfigFromEnv, publicar } from "./instagram.ts";
 
 const CFG = { token: "TOKEN-SECRETO", igUserId: "17841", versao: "v21.0" };
 
@@ -191,4 +191,22 @@ Deno.test("sem imagem, publicar recusa antes de falar com a Meta", async () => {
   const r = await publicar(CFG, { caption: "x", images: [] }, { ...rapido, fetcher });
   assertEquals(r, { ok: false, etapa: "sem imagem", resposta: null });
   assertEquals(chamadas.length, 0);
+});
+
+Deno.test("esperarContainer: sem tentativas informadas, consulta 30 vezes antes de desistir (carrossel de 10 slides)", async () => {
+  const { fetcher, chamadas } = fetchFalso([{ body: { status_code: "IN_PROGRESS" } }]);
+  const r = await esperarContainer(CFG, "pai", { fetcher, esperaMs: 0 });
+  assertEquals(r, { pronto: false, status: "TIMEOUT" });
+  assertEquals(chamadas.length, 30);
+});
+
+Deno.test("esperarContainer: para na primeira consulta que vem FINISHED, sem gastar o resto", async () => {
+  const { fetcher, chamadas } = fetchFalso([
+    { body: { status_code: "IN_PROGRESS" } },
+    { body: { status_code: "IN_PROGRESS" } },
+    { body: { status_code: "FINISHED" } },
+  ]);
+  const r = await esperarContainer(CFG, "pai", { fetcher, esperaMs: 0 });
+  assertEquals(r, { pronto: true, status: "FINISHED" });
+  assertEquals(chamadas.length, 3);
 });

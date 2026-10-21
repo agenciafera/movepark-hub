@@ -57,6 +57,11 @@ export const TOM_STATUS: Record<
   overdue: "noshow",
 };
 
+/**
+ * Os rótulos do rastro. Os de chamada à Meta descrevem o PEDIDO, e não o resultado: a mesma linha
+ * serve para o sucesso e para o HTTP 500, e o resultado já aparece ao lado (`HTTP 500`). Um rótulo
+ * como "Publicado na Meta" sobre uma resposta de erro afirmaria o que não aconteceu.
+ */
 export const ROTULO_EVENTO: Record<string, string> = {
   draft_received: "Rascunho recebido",
   caption_edited: "Legenda corrigida",
@@ -64,11 +69,11 @@ export const ROTULO_EVENTO: Record<string, string> = {
   rejected: "Recusado",
   rescheduled: "Reagendado",
   dry_run: "Simulação: publicaria agora (publicação automática desligada)",
-  container_child: "Envio do slide criado na Meta",
-  container_parent: "Envio do post criado na Meta",
-  container_status: "Situação do envio na Meta",
-  media_publish: "Publicado na Meta",
-  permalink: "Link do post lido",
+  container_child: "Envio do slide à Meta",
+  container_parent: "Envio do post à Meta",
+  container_status: "Consulta da situação do envio",
+  media_publish: "Pedido de publicação à Meta",
+  permalink: "Leitura do link do post",
   consulta: "Consulta à Meta",
   reconciled: "Conferido: já estava publicado",
   overdue: "Atrasado",
