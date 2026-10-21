@@ -452,7 +452,9 @@ aprovar". Um `hub_admin` confere os slides, a legenda e a data, e aprova. A Edge
 ligada na tela.
 
 - Reenviar o mesmo rascunho (mesma `origem_post` e mesmo `corte`) atualiza o post enquanto ele
-  espera aprovação. Depois de aprovado, o reenvio é recusado: peça para recusar e mande de novo.
+  espera aprovação. Depois de aprovado, o reenvio é recusado: peça para recusar o post na tela e
+  mande de novo, o que funciona se a Meta nunca recebeu nada dele. Recusado depois de uma tentativa
+  de publicação não volta: crie outro corte ou outra origem.
 - `--seco` mostra o que seria enviado sem mandar nada; `--pasta` aponta os JPEGs quando eles não
   estão ao lado do `.md`.
 - Se `publicar_em` traz só a data, o post sai às 12:00 de São Paulo.

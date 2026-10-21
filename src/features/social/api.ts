@@ -63,11 +63,19 @@ function useSocialRpc<T extends Record<string, unknown>>(fn: string) {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: socialKeys.all }),
+    // Recusa por versão velha ("O post mudou desde que você abriu") só se resolve vendo a versão
+    // nova: recarregar a fila faz o diálogo mostrar o que está valendo agora.
+    onError: () => qc.invalidateQueries({ queryKey: socialKeys.all }),
   });
 }
 
+/**
+ * Aprovar vale para a versão que a pessoa viu: `p_expected_updated_at` é o `updated_at` do post
+ * aberto, exatamente como veio do banco (string, sem passar por Date, para não perder os
+ * microssegundos). Se o post mudou depois, a RPC recusa e pede para abrir de novo.
+ */
 export function useApproveSocialPost() {
-  return useSocialRpc<{ p_id: string }>("social_post_approve");
+  return useSocialRpc<{ p_id: string; p_expected_updated_at: string }>("social_post_approve");
 }
 
 export function useRejectSocialPost() {
@@ -112,16 +120,21 @@ export function useUpdateSocialCaption() {
     mutationFn: async ({
       id,
       caption,
+      expected_updated_at,
     }: {
       id: string;
       caption: string;
+      /** O `updated_at` do post aberto: a Edge só grava se a linha ainda estiver nessa versão. */
+      expected_updated_at: string;
     }): Promise<SocialPostValidation> => {
       const { data, error } = await supabase.functions.invoke("social-draft", {
-        body: { action: "update_caption", id, caption },
+        body: { action: "update_caption", id, caption, expected_updated_at },
       });
       if (error) throw new Error(await mensagemDaEdge(error));
       return (data as { validation: SocialPostValidation }).validation;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: socialKeys.all }),
+    // Mesma razão do `useSocialRpc`: o 409 de versão velha pede para ver a versão nova.
+    onError: () => qc.invalidateQueries({ queryKey: socialKeys.all }),
   });
 }

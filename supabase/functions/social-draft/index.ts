@@ -5,16 +5,22 @@
 //   campo "post": JSON do front matter da skill + "caption"; um arquivo por slide, com o nome do
 //   "arquivo" do front matter.
 //   → 200 { ok, id, status, validation, aviso? } | 401 | 409 (rascunho que saiu de pending_review) | 422 { erros }
+//   Reenviar vale em `pending_review` e também em `rejected` sem `ig_container_id` (a Meta nunca
+//   recebeu nada): é o "recusar e mandar de novo" da skill. A linha volta para `pending_review`.
 //   Problema de arquivo ou de formato devolve 422 e não grava nada. Problema de texto fica em
 //   `validation` e trava a aprovação, para a tela mostrar o motivo. O JPEG sobe para
 //   social/<origem>/<corte>/<hash do conteúdo>/<arquivo>, sem sobrescrever (upsert false): bytes
 //   diferentes caem em outro caminho, então a imagem de um post aprovado nunca muda.
-//   O status é conferido na própria escrita (update condicionado a pending_review, ou insert com
-//   unique), nunca só numa leitura antes: duas chamadas ao mesmo tempo não pisam no aprovado.
+//   O status é conferido na própria escrita (update condicionado ao status lido, e ao container nulo
+//   no caso de recusado, ou insert com unique), nunca só numa leitura antes: duas chamadas ao mesmo
+//   tempo não pisam no aprovado.
 //
-// POST JSON { action: "update_caption", id, caption }  (Authorization: Bearer <JWT hub_admin>)
+// POST JSON { action: "update_caption", id, caption, expected_updated_at }  (Authorization: Bearer <JWT hub_admin>)
 //   → 200 { ok, validation, aviso? } | 401 | 403 | 404 | 409 | 422
 //   Corrigir a legenda devolve o post para "pending_review": o texto aprovado deixou de existir.
+//   `expected_updated_at` é o `updated_at` do post que a pessoa abriu (obrigatório, 422 sem ele):
+//   o update só vale se a linha ainda estiver nessa versão, senão 409. Assim a correção nunca
+//   pisa numa legenda que outra pessoa mudou depois.
 //   `aviso` aparece quando o post foi salvo mas o evento do rastro não foi gravado.
 //
 // verify_jwt = false: o script da skill não tem JWT, e a chave basta para criar rascunho, que não
@@ -29,11 +35,14 @@ import {
   draftKey,
   ehUuid,
   lerRascunho,
+  motivoDoReenvioRecusado,
   objetoJaExiste,
   podeCorrigirLegenda,
   podeReenviar,
   rotuloStatus,
+  TEXTO_VERSAO_VELHA,
   urlPublica,
+  versaoValida,
 } from "./logic.ts";
 
 const cors = {
@@ -109,16 +118,14 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
   const chave = draftKey(r.origem, r.corte);
   const { data: existente, error: e1 } = await admin
     .from("social_post")
-    .select("id, status")
+    .select("id, status, ig_container_id")
     .eq("draft_key", chave)
     .maybeSingle();
   if (e1) return json({ error: `Não consegui consultar a fila: ${e1.message}` }, 500);
-  if (existente && !podeReenviar(existente.status)) {
-    return json(
-      { ok: false, erros: [`Este rascunho já está ${rotuloStatus(existente.status)} e não pode ser substituído por um reenvio.`] },
-      409,
-    );
+  if (existente && !podeReenviar(existente.status, existente.ig_container_id ?? null)) {
+    return json({ ok: false, erros: [motivoDoReenvioRecusado(existente.status)] }, 409);
   }
+  const reenvioDeRecusado = existente?.status === "rejected";
 
   // Objeto imutável: o hash do conteúdo está no caminho e o upload nunca sobrescreve. Bytes
   // diferentes vão para outro caminho, então nenhum reenvio (nem o que perde uma corrida) troca a
@@ -169,15 +176,14 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
   };
 
   // O status é conferido na escrita, não numa leitura antes dela: se o rascunho foi aprovado entre
-  // a leitura e aqui, o update não acha linha em pending_review e nada é sobrescrito.
+  // a leitura e aqui, o update não acha linha no status lido e nada é sobrescrito. Recusado só
+  // volta se a Meta nunca recebeu nada dele (container nulo), conferido na mesma escrita.
   let id: string;
   if (existente) {
-    const { data, error } = await admin
-      .from("social_post")
-      .update(linha)
-      .eq("id", existente.id)
-      .eq("status", "pending_review")
-      .select("id");
+    const alvo = admin.from("social_post").update(linha).eq("id", existente.id);
+    const { data, error } = await (reenvioDeRecusado
+      ? alvo.eq("status", "rejected").is("ig_container_id", null)
+      : alvo.eq("status", "pending_review")).select("id");
     if (error) return json({ error: `Não consegui gravar o rascunho: ${error.message}` }, 500);
     if (!data?.length) {
       return json(
@@ -198,7 +204,9 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
   const rastro = await registrar(admin, {
     social_post_id: id,
     kind: "draft_received",
-    note: `${slides.length} slide(s)`,
+    note: reenvioDeRecusado
+      ? `${slides.length} slide(s). Reenviado depois de uma recusa.`
+      : `${slides.length} slide(s)`,
     response: validation,
   });
   return json({ ok: true, id, status: "pending_review", validation, ...(rastro ? {} : { aviso: AVISO_RASTRO }) });
@@ -217,6 +225,10 @@ export async function corrigirLegenda(req: Request, admin: Admin): Promise<Respo
   if (corpo.action !== "update_caption") return json({ error: `Ação desconhecida: ${String(corpo.action)}.` }, 400);
   const caption = typeof corpo.caption === "string" ? corpo.caption.trim() : "";
   if (!caption) return json({ ok: false, erros: ["A legenda está vazia."] }, 422);
+  if (!versaoValida(corpo.expected_updated_at)) {
+    return json({ ok: false, erros: ["Não deu para saber qual versão do post estava aberta. Feche e abra o post de novo."] }, 422);
+  }
+  const versaoAberta = corpo.expected_updated_at;
   if (!ehUuid(corpo.id)) return json({ error: "Post não encontrado." }, 404);
 
   const { data: post, error: e1 } = await admin
@@ -233,21 +245,18 @@ export async function corrigirLegenda(req: Request, admin: Admin): Promise<Respo
 
   const validation = conferirTexto({ caption, slides: post.slides, keyphrase: post.keyphrase, priceDate: post.price_date });
   // Mesma regra da entrada: o status vai na escrita. Se o post foi publicado ou recusado nesse
-  // meio tempo, o update não acha linha e a legenda antiga fica como está.
+  // meio tempo, o update não acha linha e a legenda antiga fica como está. A versão também: se o
+  // post mudou desde que a pessoa o abriu (outra correção, um reenvio), a legenda dela não pisa.
   const { data: atualizado, error: e2 } = await admin
     .from("social_post")
     .update({ caption, validation, status: "pending_review", approved_by: null, approved_at: null })
     .eq("id", post.id)
     .is("deleted_at", null)
     .in("status", ["pending_review", "approved"])
+    .eq("updated_at", versaoAberta)
     .select("id");
   if (e2) return json({ error: `Não consegui gravar a legenda: ${e2.message}` }, 500);
-  if (!atualizado?.length) {
-    return json(
-      { ok: false, erros: ["O post mudou de estado enquanto a legenda era corrigida. Abra o post de novo e tente outra vez."] },
-      409,
-    );
-  }
+  if (!atualizado?.length) return json({ ok: false, erros: [TEXTO_VERSAO_VELHA] }, 409);
 
   const rastro = await registrar(admin, {
     social_post_id: post.id,

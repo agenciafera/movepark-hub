@@ -7,11 +7,14 @@ import {
   draftKey,
   ehUuid,
   lerRascunho,
+  motivoDoReenvioRecusado,
   objetoJaExiste,
   podeCorrigirLegenda,
   podeReenviar,
   rotuloStatus,
+  TEXTO_VERSAO_VELHA,
   urlPublica,
+  versaoValida,
 } from "./logic.ts";
 
 const BOM = {
@@ -125,11 +128,34 @@ Deno.test("id do post precisa ser UUID", () => {
   for (const v of ["x", "", null, undefined, 12, "ca3df28a-fbf9-4aa8-a71c"]) assertEquals(ehUuid(v), false);
 });
 
-Deno.test("só rascunho esperando aprovação é sobrescrito; legenda corrige até aprovado", () => {
+Deno.test("reenvio vale em pending_review e em recusado sem container; legenda corrige até aprovado", () => {
   assertEquals(podeReenviar("pending_review"), true);
-  assertEquals(podeReenviar("approved"), false);
+  assertEquals(podeReenviar("pending_review", "container-antigo"), true);
+  assertEquals(podeReenviar("rejected", null), true);
+  assertEquals(podeReenviar("rejected"), true);
+  assertEquals(podeReenviar("rejected", "container-antigo"), false);
+  for (const status of ["approved", "publishing", "published", "failed", "overdue"]) {
+    assertEquals(podeReenviar(status, null), false, status);
+  }
   assertEquals(podeCorrigirLegenda("approved"), true);
   assertEquals(podeCorrigirLegenda("published"), false);
+});
+
+Deno.test("o texto do 409 de reenvio nunca vaza o status em inglês", () => {
+  assertEquals(
+    motivoDoReenvioRecusado("approved"),
+    "Este rascunho já está aprovado e não pode ser substituído por um reenvio.",
+  );
+  assertStringIncludes(motivoDoReenvioRecusado("rejected"), "tentativa de publicação na Meta");
+  for (const status of ["approved", "rejected", "failed", "published"]) {
+    assertEquals(/[a-z]+_[a-z]+|approved|rejected|failed|published/.test(motivoDoReenvioRecusado(status)), false, status);
+  }
+});
+
+Deno.test("a versão aberta precisa ser um instante válido", () => {
+  assertEquals(versaoValida("2026-10-21T20:11:03.123456+00:00"), true);
+  assertEquals(versaoValida("2026-10-21T20:11:03Z"), true);
+  for (const v of ["", "  ", "ontem", null, undefined, 12, {}]) assertEquals(versaoValida(v), false, String(v));
 });
 
 Deno.test("chave confere só quando configurada e igual", () => {
@@ -208,6 +234,8 @@ const ok = (data: unknown): Resposta => ({ data, error: null });
 const URL_BASE = "https://x.supabase.co";
 const ID_POST = "ca3df28a-fbf9-4aa8-a71c-d30ef256da47";
 const ID_ADMIN = "11111111-1111-4111-8111-111111111111";
+/** O `updated_at` do post que a pessoa abriu, como o PostgREST o devolve (microssegundos e +00:00). */
+const VERSAO = "2026-10-21T20:11:03.123456+00:00";
 
 /** JPEG mínimo: só SOI + SOF0 com altura e largura, o que o `lerJpeg` consome. */
 function jpeg(largura: number, altura: number): Uint8Array {
@@ -371,6 +399,76 @@ Deno.test("submeter reenvio de rascunho em pending_review atualiza a mesma linha
   assertEquals(a.de("social_post_event", "insert").length, 1);
 });
 
+Deno.test("submeter reenvio de rascunho recusado sem container volta para pending_review, limpo, e registra o motivo no rastro", async () => {
+  const a = admin((c) => {
+    if (c.op === "select" && c.tabela === "social_post") return ok({ id: ID_POST, status: "rejected", ig_container_id: null });
+    if (c.op === "update") return ok([{ id: ID_POST }]);
+    return ok(null);
+  });
+  const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  const corpo = await res.json();
+  assertEquals(res.status, 200);
+  assertEquals(corpo.ok, true);
+  assertEquals(corpo.id, ID_POST);
+  assertEquals(corpo.status, "pending_review");
+  assertEquals(a.de("social_post", "insert").length, 0);
+  const [u] = a.de("social_post", "update");
+  const p = u.payload as { status: string; approved_by: null; approved_at: null; last_error: null; deleted_at: null };
+  assertEquals(p.status, "pending_review");
+  assertEquals(p.approved_by, null);
+  assertEquals(p.approved_at, null);
+  assertEquals(p.last_error, null);
+  // A escrita confere, na própria condição, que ainda está recusado e que a Meta nunca recebeu nada.
+  assertEquals(u.filtros.some(([op, col, v]) => op === "eq" && col === "status" && v === "rejected"), true);
+  assertEquals(u.filtros.some(([op, col, v]) => op === "is" && col === "ig_container_id" && v === null), true);
+  assertEquals(u.filtros.some(([, col, v]) => col === "status" && v === "pending_review"), false);
+  const [e] = a.de("social_post_event", "insert");
+  const ev = e.payload as { kind: string; note: string };
+  assertEquals(ev.kind, "draft_received");
+  assertStringIncludes(ev.note, "Reenviado depois de uma recusa");
+});
+
+Deno.test("submeter reenvio de rascunho recusado COM container é 409 e nada sobe nem é gravado", async () => {
+  const a = admin((c) =>
+    c.op === "select" && c.tabela === "social_post" ? ok({ id: ID_POST, status: "rejected", ig_container_id: "17900000000000001" }) : ok(null)
+  );
+  const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  const corpo = await res.json();
+  assertEquals(res.status, 409);
+  assertEquals(a.uploads.length, 0);
+  assertEquals(a.de("social_post", "update").length + a.de("social_post", "insert").length, 0);
+  assertEquals(a.de("social_post_event", "insert").length, 0);
+  assertStringIncludes(corpo.erros[0], "tentativa de publicação na Meta");
+  assertEquals(JSON.stringify(corpo).includes("rejected"), false);
+});
+
+Deno.test("submeter: recusado que ganhou container entre a leitura e a escrita é 409 e a linha fica como estava", async () => {
+  // Lido sem container; o update condicionado a `ig_container_id is null` não acha linha.
+  const a = admin((c) => {
+    if (c.op === "select" && c.tabela === "social_post") return ok({ id: ID_POST, status: "rejected", ig_container_id: null });
+    if (c.op === "update") return ok([]);
+    return ok(null);
+  });
+  const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  assertEquals(res.status, 409);
+  assertEquals(a.de("social_post_event", "insert").length, 0);
+});
+
+Deno.test("submeter: reenvio de pending_review com container antigo continua valendo (a regra nova só abre o recusado)", async () => {
+  const a = admin((c) => {
+    if (c.op === "select" && c.tabela === "social_post") return ok({ id: ID_POST, status: "pending_review", ig_container_id: "17900000000000001" });
+    if (c.op === "update") return ok([{ id: ID_POST }]);
+    return ok(null);
+  });
+  const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  assertEquals(res.status, 200);
+  const [u] = a.de("social_post", "update");
+  assertEquals(u.filtros.some(([, col, v]) => col === "status" && v === "pending_review"), true);
+  assertEquals(u.filtros.some(([op, col]) => op === "is" && col === "ig_container_id"), false);
+  const [e] = a.de("social_post_event", "insert");
+  assertEquals((e.payload as { note: string }).note.includes("recusa"), false);
+});
+
 Deno.test("submeter: unique violada no insert (dois envios ao mesmo tempo) é 409", async () => {
   const a = admin((c) => {
     if (c.op === "insert" && c.tabela === "social_post") return { data: null, error: { code: "23505", message: "duplicate key" } };
@@ -472,21 +570,21 @@ function roteiroLegenda(post: unknown, atualizado: unknown = [{ id: ID_POST }]) 
 
 Deno.test("update_caption sem token é 401", async () => {
   const a = admin(() => ok(null));
-  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }, null), a.cliente);
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }, null), a.cliente);
   assertEquals(res.status, 401);
   assertEquals(a.chamadas.length, 0);
 });
 
 Deno.test("update_caption com token inválido é 401", async () => {
   const a = admin(() => ok(null), { usuario: null });
-  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }), a.cliente);
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }), a.cliente);
   assertEquals(res.status, 401);
   assertEquals(a.chamadas.length, 0);
 });
 
 Deno.test("update_caption de quem não é hub_admin é 403 e não escreve", async () => {
   const a = admin((c) => (c.tabela === "profiles" ? ok({ role: "company_operator" }) : ok(null)), { usuario: { id: ID_ADMIN } });
-  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }), a.cliente);
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }), a.cliente);
   assertEquals(res.status, 403);
   assertEquals(a.de("social_post", "update").length, 0);
   assertEquals(a.de("social_post_event", "insert").length, 0);
@@ -495,7 +593,7 @@ Deno.test("update_caption de quem não é hub_admin é 403 e não escreve", asyn
 Deno.test("update_caption em post aprovado volta para pending_review e registra caption_edited", async () => {
   const a = admin(roteiroLegenda(POST_NA_FILA), { usuario: { id: ID_ADMIN } });
   const res = await corrigirLegenda(
-    legenda({ action: "update_caption", id: ID_POST, caption: "  Legenda nova. #a #b #c  " }),
+    legenda({ action: "update_caption", id: ID_POST, caption: "  Legenda nova. #a #b #c  ", expected_updated_at: VERSAO }),
     a.cliente,
   );
   const corpo = await res.json();
@@ -509,6 +607,8 @@ Deno.test("update_caption em post aprovado volta para pending_review e registra 
   assertEquals(p.approved_by, null);
   assertEquals(p.approved_at, null);
   assertEquals(u.filtros.some(([op, col, v]) => op === "in" && col === "status" && JSON.stringify(v) === '["pending_review","approved"]'), true);
+  // A versão aberta vai na própria escrita, com a string exatamente como veio (microssegundos e fuso).
+  assertEquals(u.filtros.some(([op, col, v]) => op === "eq" && col === "updated_at" && v === VERSAO), true);
   const [e] = a.de("social_post_event", "insert");
   const ev = e.payload as { kind: string; actor: string; request: { antes: string; depois: string } };
   assertEquals(ev.kind, "caption_edited");
@@ -518,7 +618,7 @@ Deno.test("update_caption em post aprovado volta para pending_review e registra 
 
 Deno.test("update_caption em post publicado é 409 em português e não escreve", async () => {
   const a = admin(roteiroLegenda({ ...POST_NA_FILA, status: "published" }), { usuario: { id: ID_ADMIN } });
-  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }), a.cliente);
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }), a.cliente);
   const corpo = await res.json();
   assertEquals(res.status, 409);
   assertEquals(corpo.erros[0], "Não dá para corrigir a legenda: o post está publicado.");
@@ -527,8 +627,44 @@ Deno.test("update_caption em post publicado é 409 em português e não escreve"
 
 Deno.test("update_caption: o post saiu do estado editável entre a leitura e a escrita, 409", async () => {
   const a = admin(roteiroLegenda(POST_NA_FILA, []), { usuario: { id: ID_ADMIN } });
-  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }), a.cliente);
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }), a.cliente);
   assertEquals(res.status, 409);
+  assertEquals(a.de("social_post_event", "insert").length, 0);
+});
+
+Deno.test("update_caption sem a versão aberta é 422 e não lê nem escreve o post", async () => {
+  for (const faltando of [undefined, "", "  ", "ontem", null, 42]) {
+    const a = admin(roteiroLegenda(POST_NA_FILA), { usuario: { id: ID_ADMIN } });
+    const res = await corrigirLegenda(
+      legenda({ action: "update_caption", id: ID_POST, caption: "Legenda nova.", expected_updated_at: faltando }),
+      a.cliente,
+    );
+    const corpo = await res.json();
+    assertEquals(res.status, 422, String(faltando));
+    assertStringIncludes(corpo.erros[0], "qual versão do post estava aberta");
+    assertEquals(a.chamadas.filter((c) => c.tabela === "social_post").length, 0, String(faltando));
+    assertEquals(a.de("social_post_event", "insert").length, 0);
+  }
+  // Sem o campo nenhum (corpo antigo, de uma tela que ainda não conhece a versão).
+  const a = admin(roteiroLegenda(POST_NA_FILA), { usuario: { id: ID_ADMIN } });
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "Legenda nova." }), a.cliente);
+  assertEquals(res.status, 422);
+  assertEquals(a.de("social_post", "update").length, 0);
+});
+
+Deno.test("update_caption: o post mudou desde que a pessoa abriu (versão velha), 409 com o texto da versão e sem rastro", async () => {
+  // Está em estado editável, mas o updated_at já não é o que ela viu: o update não acha linha.
+  const a = admin(roteiroLegenda(POST_NA_FILA, []), { usuario: { id: ID_ADMIN } });
+  const res = await corrigirLegenda(
+    legenda({ action: "update_caption", id: ID_POST, caption: "Legenda nova.", expected_updated_at: "2026-10-20T10:00:00+00:00" }),
+    a.cliente,
+  );
+  const corpo = await res.json();
+  assertEquals(res.status, 409);
+  assertEquals(corpo.erros, ["O post mudou desde que você abriu. Feche e abra de novo para conferir a versão nova."]);
+  assertEquals(corpo.erros[0], TEXTO_VERSAO_VELHA);
+  const [u] = a.de("social_post", "update");
+  assertEquals(u.filtros.some(([op, col, v]) => op === "eq" && col === "updated_at" && v === "2026-10-20T10:00:00+00:00"), true);
   assertEquals(a.de("social_post_event", "insert").length, 0);
 });
 
@@ -537,13 +673,13 @@ Deno.test("update_caption: erro de banco na consulta é 500, e post ausente é 4
     (c) => (c.tabela === "profiles" ? ok({ role: "hub_admin" }) : { data: null, error: { message: "boom" } }),
     { usuario: { id: ID_ADMIN } },
   );
-  assertEquals((await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }), quebrado.cliente)).status, 500);
+  assertEquals((await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }), quebrado.cliente)).status, 500);
 
   const ausente = admin(roteiroLegenda(null), { usuario: { id: ID_ADMIN } });
-  assertEquals((await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x" }), ausente.cliente)).status, 404);
+  assertEquals((await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "x", expected_updated_at: VERSAO }), ausente.cliente)).status, 404);
 
   const semUuid = admin(roteiroLegenda(null), { usuario: { id: ID_ADMIN } });
-  assertEquals((await corrigirLegenda(legenda({ action: "update_caption", id: "x", caption: "x" }), semUuid.cliente)).status, 404);
+  assertEquals((await corrigirLegenda(legenda({ action: "update_caption", id: "x", caption: "x", expected_updated_at: VERSAO }), semUuid.cliente)).status, 404);
   assertEquals(semUuid.de("social_post", "select").length, 0);
 });
 
@@ -558,7 +694,7 @@ Deno.test("update_caption com corpo null ou ação errada é 400 e não estoura"
 
 Deno.test("update_caption com legenda vazia é 422", async () => {
   const a = admin(roteiroLegenda(POST_NA_FILA), { usuario: { id: ID_ADMIN } });
-  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "   " }), a.cliente);
+  const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "   ", expected_updated_at: VERSAO }), a.cliente);
   assertEquals(res.status, 422);
   assertEquals(a.chamadas.filter((c) => c.tabela === "social_post").length, 0);
 });
@@ -572,7 +708,7 @@ Deno.test("update_caption: falha ao gravar o evento mantém o 200 e avisa", asyn
       (c) => (c.tabela === "social_post_event" ? { data: null, error: { code: "42501", message: "sem permissão" } } : base(c)),
       { usuario: { id: ID_ADMIN } },
     );
-    const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "Legenda nova." }), a.cliente);
+    const res = await corrigirLegenda(legenda({ action: "update_caption", id: ID_POST, caption: "Legenda nova.", expected_updated_at: VERSAO }), a.cliente);
     const corpo = await res.json();
     assertEquals(res.status, 200);
     assertEquals(corpo.aviso, "o rastro não foi gravado");

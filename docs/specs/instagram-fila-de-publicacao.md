@@ -73,7 +73,7 @@ skill instagram (Claude)                          Manager (hub_admin)
 | Coluna | Tipo | Observação |
 |---|---|---|
 | `id` | uuid | `gen_random_uuid()` |
-| `draft_key` | text, único | `<origem>:<corte>`, ex. `preco-do-estacionamento-no-aeroporto-de-confins:2`. Reenviar o mesmo rascunho atualiza a linha enquanto ela estiver `pending_review`. A `origem` é obrigatória: é o slug do post do blog, o da página de destino, ou `fato-AAAA-MM-DD-<assunto>` na notícia do momento (as três fontes do Passo 1 da skill) |
+| `draft_key` | text, único | `<origem>:<corte>`, ex. `preco-do-estacionamento-no-aeroporto-de-confins:2`. Reenviar o mesmo rascunho atualiza a linha enquanto ela estiver `pending_review`, ou `rejected` sem `ig_container_id`. A `origem` é obrigatória: é o slug do post do blog, o da página de destino, ou `fato-AAAA-MM-DD-<assunto>` na notícia do momento (as três fontes do Passo 1 da skill) |
 | `status` | enum `social_post_status` | ver a máquina de estados |
 | `kind` | enum `social_post_kind` | `image` ou `carousel`, derivado da quantidade de slides |
 | `caption` | text | legenda completa, com as hashtags na última linha |
@@ -117,6 +117,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 | (nada) | `pending_review` | Edge `social-draft` | rascunho recebido |
 | `pending_review` | `approved` | `hub_admin` | `validation.blockers` vazio e `scheduled_at` no futuro |
 | `pending_review`, `approved`, `overdue`, `failed` | `rejected` | `hub_admin` | com motivo |
+| `rejected` | `pending_review` | Edge `social-draft` | reenvio do mesmo rascunho pela skill, e só com `ig_container_id` nulo (a Meta nunca recebeu nada dele). É o "recusar e mandar de novo" |
 | `approved` | `pending_review` | `hub_admin` | corrigiu a legenda |
 | `approved` | `overdue` | `social-dispatch` | `scheduled_at` mais de 6 h no passado |
 | `approved` | `publishing` | `social-dispatch` | hora chegou e chave ligada |
@@ -127,7 +128,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 - `pending_review → approved` exige `validation.blockers` vazio e `scheduled_at` no futuro.
 - Corrigir a legenda de um post `approved` devolve ele para `pending_review`, porque o texto que
   foi aprovado deixou de existir.
-- `published` e `rejected` são finais. Post publicado não se edita pela plataforma: a API da Meta
+- `published` é final, e `rejected` também para a tela: o único caminho de volta é o reenvio do rascunho pela skill, e só se a Meta nunca recebeu nada dele. Recusado depois de uma tentativa de publicação (`ig_container_id` preenchido) não volta, porque um envio antigo pendurado na Meta arriscaria publicar duas vezes. Post publicado não se edita pela plataforma: a API da Meta
   não altera legenda ([referência](https://developers.facebook.com/docs/instagram-platform/reference/instagram-media)).
 
 ### Acesso
@@ -139,12 +140,13 @@ no schema `public` nasce executável por eles.
 
 | RPC | Faz |
 |---|---|
-| `social_post_approve(id)` | confere bloqueios e data, grava `approved_by/at`, evento `approved` |
+| `social_post_approve(id, updated_at)` | aprova **a versão que a pessoa viu**: se o `updated_at` do post já não é o informado, recusa com "O post mudou desde que você abriu" (legenda corrigida ou rascunho reenviado no meio do caminho). Depois confere bloqueios e data, grava `approved_by/at`, evento `approved`. Migration `20261130230000` |
 | `social_post_reject(id, motivo)` | evento `rejected` com o motivo |
 | `social_post_reschedule(id, quando)` | aceita `pending_review`, `approved`, `overdue` e `failed`; recusa outro post publicado ou agendado no mesmo dia (fuso de São Paulo); `overdue` e `failed` voltam a `approved` |
 
 Corrigir legenda não é RPC: vai pela Edge `social-draft` (ação `update_caption`, JWT de
-`hub_admin`), porque a conferência roda lá.
+`hub_admin`), porque a conferência roda lá. O corpo leva `expected_updated_at` (obrigatório, 422 sem
+ele) e o update só vale se a linha ainda estiver nessa versão; senão, 409 com o mesmo texto da RPC.
 
 ## 2. Entrada: Edge `social-draft`
 
@@ -192,10 +194,13 @@ A Edge:
    idempotente). A URL guardada em `slides[].url` não leva query. Versões antigas de um rascunho
    reenviado ficam órfãs no bucket (sem limpeza automática).
 3. Grava a linha conferindo o status **na própria escrita**: se já existe, `update` condicionado a
-   `status = 'pending_review'`; se não existe, `insert`, e `draft_key` duplicada (23505) é um envio
-   concorrente. Nos dois casos o perdedor recebe 409, e rascunho que saiu de `pending_review` não é
-   sobrescrito por reenvio: a linha fica como estava e a imagem enviada, que foi para um caminho
-   novo, simplesmente não é usada.
+   `status = 'pending_review'` (ou, para um recusado, a `status = 'rejected'` e `ig_container_id is
+   null`); se não existe, `insert`, e `draft_key` duplicada (23505) é um envio concorrente. Nos dois
+   casos o perdedor recebe 409, e rascunho que saiu de `pending_review` não é sobrescrito por
+   reenvio: a linha fica como estava e a imagem enviada, que foi para um caminho novo, simplesmente
+   não é usada. O reenvio de um recusado zera `approved_by/at` e `last_error`, volta a linha para
+   `pending_review` e grava `draft_received` com a nota "Reenviado depois de uma recusa". Recusado
+   com `ig_container_id` é 409.
 4. Grava `validation` e o evento `draft_received`.
 
 ### A conferência no servidor
@@ -228,8 +233,12 @@ padrão do robô de pesquisa de preço: o valor nunca passa por terminal nem por
 
 A chamada à Graph API sai da `publish-instagram` para `supabase/functions/_shared/instagram.ts`
 (criar container de item e de carrossel, esperar `FINISHED`, `media_publish`, ler `permalink`).
-As duas Edges usam o mesmo módulo. A `publish-instagram` continua existindo para `diagnose` e
-para a publicação manual com `dryRun`.
+As duas Edges usam o mesmo módulo. A `publish-instagram` continua existindo **só** para `diagnose`
+e para o ensaio (`dryRun`, que valida e diz o que faria). **Publicar de verdade é só da
+`social-dispatch`:** `publish-instagram` com `dryRun: false` devolve 403 ("Publicação real só pela
+fila (/manager/social).") antes de qualquer chamada à Meta. Aquela rota publicava a legenda e as
+imagens que viessem no corpo, sem aprovação, sem o limite de um por dia, sem a conferência da marca
+e sem rastro, então deixou de ser um caminho de publicação (revisão final, 21/10/2026).
 
 ### Uma rodada
 
@@ -237,7 +246,9 @@ para a publicação manual com `dryRun`.
 2. **Reconciliação primeiro:** post em `publishing` há mais de 15 minutos é tratado como queda no
    meio do caminho (passo 6).
 3. Marca como `overdue` todo `approved` com `scheduled_at` mais de 6 horas no passado, com evento
-   `overdue`. Isso impede que ligar a chave despeje de uma vez uma fila acumulada.
+   `overdue`. Isso impede que ligar a chave despeje de uma vez uma fila acumulada. A escrita
+   repete a regra (`status = 'approved'` e `scheduled_at` anterior a agora menos 6 h), então um
+   post que uma pessoa reagendou, ainda aprovado, entre a leitura e a escrita não é marcado.
 4. Escolhe **um** `approved` com `scheduled_at <= now()`, o mais antigo. Se já existe post
    `published` no mesmo dia (fuso de São Paulo), não publica: a regra da skill é um por dia.
 5. **Chave desligada:** grava um evento `dry_run` ("publicaria agora", com o payload sem token)
@@ -260,7 +271,8 @@ para a publicação manual com `dryRun`.
      - qualquer outro status conhecido (`FINISHED`, `EXPIRED`, `ERROR`): cria um container novo.
    - Senão: cria os containers e grava o `ig_container_id` do pai **antes do `media_publish`**.
      Se essa gravação falhar, nada é publicado e o post vai para `failed`. Depois espera
-     `FINISHED`, publica, lê o `permalink` e marca `published`.
+     `FINISHED` (até 30 consultas a cada 2,5 s, cerca de 75 s, o que cobre um carrossel de 10
+     slides), publica, lê o `permalink` e marca `published`.
    - `media_publish` com erro ou tempo esgotado: a Meta às vezes publica e responde erro. A
      rodada lê o container uma vez. Se está `PUBLISHED`, reconcilia como acima (o post está no ar
      e não vira `failed`). Se não, marca `failed` com um texto que termina em "Confira no
@@ -291,7 +303,8 @@ Manager, ao lado de Blog (`src/components/shared/nav-items.ts`). Dados em
   - bloqueios e avisos da conferência;
   - origem (post do blog, corte, frase-chave, `price_date`);
   - data e hora editáveis;
-  - o rastro completo (`social_post_event`);
+  - o rastro completo (`social_post_event`), com rótulos que descrevem o pedido à Meta ("Pedido de
+    publicação à Meta"), e não o resultado, ao lado do status HTTP;
   - depois de publicado, o link do post no Instagram.
 - **Ações:** Aprovar (travado enquanto houver bloqueio ou data no passado), Recusar (pede motivo),
   Reagendar, Corrigir legenda (reconferida ao salvar) e Tentar de novo (em `failed`).
@@ -324,9 +337,10 @@ contrato `harmonizar-paginas`, que é do consumer.
 |---|---|
 | `deno test` `_shared/instagram-validate.test.ts` | cada bloqueio e cada aviso da tabela da seção 2, incluindo JPEG falso e proporção errada |
 | `deno test` `social-dispatch/index.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run`, pega condicionada ao status e à hora, publicação da linha devolvida pela pega, `media_publish` ambíguo reconciliado pelo container, `published_at` vindo da Meta e uma trava em várias rodadas com uma Meta que guarda estado (um `media_publish` por post) |
-| `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status |
-| pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
-| Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, legenda com destaque dos 125 caracteres, aba certa por estado |
+| `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status, reenvio de recusado (sem container volta para `pending_review`, com container é 409), `update_caption` exigindo e conferindo `expected_updated_at` |
+| `deno test` `publish-instagram/index.test.ts` | `dryRun: false` é 403 e não faz nenhuma chamada de rede; o ensaio e o diagnóstico seguem valendo |
+| pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, aprovar com versão velha ou sem versão recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
+| Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, aprovar e corrigir legenda mandando a versão aberta, editor reabrindo com a legenda de agora, legenda com destaque dos 125 caracteres, aba certa por estado |
 
 ## Ordem de entrega
 

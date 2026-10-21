@@ -98,7 +98,26 @@ export function lerRascunho(
 }
 
 export const draftKey = (origem: string, corte: number | null) => `${origem}:${corte ?? 0}`;
-export const podeReenviar = (status: string) => status === "pending_review";
+/**
+ * Reenvio do mesmo rascunho: vale enquanto ele espera aprovação, e também depois de recusado, desde
+ * que a Meta nunca tenha recebido nada dele (`ig_container_id` nulo). É o caminho de "recusar e
+ * mandar de novo" da skill. Recusado com container já teve tentativa de publicação, e voltar para a
+ * fila com um envio antigo pendurado na Meta arriscaria publicar duas vezes.
+ */
+export const podeReenviar = (status: string, igContainerId: string | null = null) =>
+  status === "pending_review" || (status === "rejected" && !igContainerId);
+
+/** Texto do 409 quando o reenvio não é aceito. O status do banco nunca aparece em inglês. */
+export const motivoDoReenvioRecusado = (status: string): string =>
+  status === "rejected"
+    ? "Este rascunho foi recusado depois de uma tentativa de publicação na Meta e não pode ser reenviado. Use outro corte ou outra origem."
+    : `Este rascunho já está ${rotuloStatus(status)} e não pode ser substituído por um reenvio.`;
+
+/** A versão que a pessoa abriu precisa ser um instante válido, senão o filtro do banco estoura. */
+export const versaoValida = (v: unknown): v is string => typeof v === "string" && v.trim() !== "" && !Number.isNaN(Date.parse(v));
+
+/** Texto do 409 de versão velha: o mesmo da RPC `social_post_approve`. */
+export const TEXTO_VERSAO_VELHA = "O post mudou desde que você abriu. Feche e abra de novo para conferir a versão nova.";
 export const podeCorrigirLegenda = (status: string) => status === "pending_review" || status === "approved";
 /**
  * O caminho é endereçado pelo conteúdo: `social/<origem>/<corte>/<hash>/<arquivo>`.

@@ -9,7 +9,7 @@ import type { SocialPost } from "@/types/domain";
 
 type Leitura<T> = { data: T | undefined; isLoading: boolean; isError: boolean };
 
-const { postsHook, settingsHook, approve, reject, reschedule, updateSettings } = vi.hoisted(() => ({
+const { postsHook, settingsHook, approve, reject, reschedule, corrigirLegenda, updateSettings } = vi.hoisted(() => ({
   postsHook: { current: { data: [], isLoading: false, isError: false } as Leitura<unknown[]> },
   settingsHook: {
     current: { data: {}, isLoading: false, isError: false } as Leitura<Record<string, string>>,
@@ -17,6 +17,7 @@ const { postsHook, settingsHook, approve, reject, reschedule, updateSettings } =
   approve: vi.fn(),
   reject: vi.fn(),
   reschedule: vi.fn(),
+  corrigirLegenda: vi.fn(),
   updateSettings: vi.fn(),
 }));
 
@@ -26,7 +27,7 @@ vi.mock("@/features/social/api", () => ({
   useApproveSocialPost: () => ({ mutateAsync: approve, isPending: false }),
   useRejectSocialPost: () => ({ mutateAsync: reject, isPending: false }),
   useRescheduleSocialPost: () => ({ mutateAsync: reschedule, isPending: false }),
-  useUpdateSocialCaption: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateSocialCaption: () => ({ mutateAsync: corrigirLegenda, isPending: false }),
 }));
 
 vi.mock("@/features/settings/api", () => ({
@@ -40,6 +41,8 @@ import ManagerSocial from "./social";
 import { SocialPostDetail } from "@/features/social/SocialPostDetail";
 
 const FUTURO = new Date(Date.now() + 3 * 86_400_000).toISOString();
+/** O `updated_at` como o PostgREST devolve: microssegundos e +00:00. É a versão que a aprovação carrega. */
+const VERSAO = "2026-10-21T20:11:03.123456+00:00";
 const PASSADO = new Date(Date.now() - 2 * 86_400_000).toISOString();
 const LEGENDA =
   "Estacionar no aeroporto de Confins sai mais barato do que parece quando a viagem passa de uma semana inteira. " +
@@ -77,7 +80,7 @@ function post(over: Partial<SocialPost> = {}): SocialPost {
     attempts: 0,
     last_error: null,
     created_at: FUTURO,
-    updated_at: FUTURO,
+    updated_at: VERSAO,
     deleted_at: null,
     ...over,
   };
@@ -91,6 +94,8 @@ describe("ManagerSocial", () => {
     reject.mockResolvedValue(undefined);
     reschedule.mockReset();
     reschedule.mockResolvedValue(undefined);
+    corrigirLegenda.mockReset();
+    corrigirLegenda.mockResolvedValue({ blockers: [], warnings: [] });
     vi.mocked(toast.error).mockClear();
     updateSettings.mockReset();
     updateSettings.mockResolvedValue(undefined);
@@ -154,7 +159,10 @@ describe("ManagerSocial", () => {
     const aprovar = await screen.findByRole("button", { name: "Aprovar" });
     expect(aprovar).toBeEnabled();
     await userEvent.click(aprovar);
-    await waitFor(() => expect(approve).toHaveBeenCalledWith({ p_id: "p1" }));
+    // Aprova a versão que a pessoa abriu: o updated_at do post aparece na chamada.
+    await waitFor(() =>
+      expect(approve).toHaveBeenCalledWith({ p_id: "p1", p_expected_updated_at: VERSAO }),
+    );
   });
 
   it("trava a aprovação enquanto houver bloqueio e mostra o motivo", async () => {
@@ -336,6 +344,67 @@ describe("ManagerSocial", () => {
       ).toBeInTheDocument();
       expect(screen.queryByRole("tab")).not.toBeInTheDocument();
       expect(screen.queryByText("Nada por aqui")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("corrigir legenda", () => {
+    it("salva mandando a versão do post que está aberto", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
+      await userEvent.click(await screen.findByRole("button", { name: "Corrigir legenda" }));
+      await userEvent.type(screen.getByLabelText("Legenda do post"), " Mais um trecho.");
+      await userEvent.click(screen.getByRole("button", { name: "Salvar legenda" }));
+      await waitFor(() =>
+        expect(corrigirLegenda).toHaveBeenCalledWith({
+          id: "p1",
+          caption: `${LEGENDA} Mais um trecho.`,
+          expected_updated_at: VERSAO,
+        }),
+      );
+    });
+
+    it("o editor abre com a legenda de agora, e não com a do primeiro render do diálogo", async () => {
+      let trocar: (p: SocialPost) => void = () => {};
+      function Harness() {
+        const [atual, setAtual] = React.useState<SocialPost>(post());
+        trocar = setAtual;
+        return <SocialPostDetail post={atual} onClose={() => {}} />;
+      }
+      renderWithProviders(<Harness />);
+
+      // Outra pessoa corrigiu a legenda enquanto o post estava aberto; a fila recarregou.
+      act(() =>
+        trocar(
+          post({
+            caption: "Legenda corrigida por outra pessoa.",
+            updated_at: "2026-10-21T21:00:00.000001+00:00",
+          }),
+        ),
+      );
+      await userEvent.click(await screen.findByRole("button", { name: "Corrigir legenda" }));
+      expect(screen.getByLabelText("Legenda do post")).toHaveValue(
+        "Legenda corrigida por outra pessoa.",
+      );
+
+      // E quem corrige em cima dela manda a versão nova.
+      await userEvent.click(screen.getByRole("button", { name: "Salvar legenda" }));
+      await waitFor(() =>
+        expect(corrigirLegenda).toHaveBeenCalledWith({
+          id: "p1",
+          caption: "Legenda corrigida por outra pessoa.",
+          expected_updated_at: "2026-10-21T21:00:00.000001+00:00",
+        }),
+      );
+    });
+
+    it("cancelar descarta o que foi digitado, e abrir de novo volta à legenda do post", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
+      await userEvent.click(await screen.findByRole("button", { name: "Corrigir legenda" }));
+      await userEvent.type(screen.getByLabelText("Legenda do post"), " rascunho abandonado");
+      await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+      await userEvent.click(screen.getByRole("button", { name: "Corrigir legenda" }));
+      expect(screen.getByLabelText("Legenda do post")).toHaveValue(LEGENDA);
     });
   });
 

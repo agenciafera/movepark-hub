@@ -128,7 +128,11 @@ function Corpo({ post, onClose }: { post: SocialPost; onClose: () => void }) {
                   disabled={corrigir.isPending}
                   onClick={() =>
                     executar(async () => {
-                      await corrigir.mutateAsync({ id: post.id, caption: legenda });
+                      await corrigir.mutateAsync({
+                        id: post.id,
+                        caption: legenda,
+                        expected_updated_at: post.updated_at,
+                      });
                       setEditando(false);
                     }, "Legenda salva e conferida de novo. O post fica aguardando aprovação.")
                   }
@@ -155,7 +159,15 @@ function Corpo({ post, onClose }: { post: SocialPost; onClose: () => void }) {
             </p>
           )}
           {!editando && editavel && (
-            <Button variant="ghost" onClick={() => setEditando(true)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                // O editor abre com a legenda de agora, não com a do primeiro render: se ela mudou
+                // enquanto o post estava aberto, corrigir em cima da velha desfaria a mudança.
+                setLegenda(post.caption);
+                setEditando(true);
+              }}
+            >
               Corrigir legenda
             </Button>
           )}
@@ -226,7 +238,14 @@ function Corpo({ post, onClose }: { post: SocialPost; onClose: () => void }) {
             <Button
               disabled={!aprovacao.ok || aprovar.isPending}
               onClick={() =>
-                executar(() => aprovar.mutateAsync({ p_id: post.id }), "Post aprovado")
+                executar(
+                  () =>
+                    aprovar.mutateAsync({
+                      p_id: post.id,
+                      p_expected_updated_at: post.updated_at,
+                    }),
+                  "Post aprovado",
+                )
               }
             >
               Aprovar

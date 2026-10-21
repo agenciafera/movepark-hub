@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { edge, renderMutation, rpc } from "@/test/msw/supabase";
+import { waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { edge, falha, renderMutation, rpc } from "@/test/msw/supabase";
 import {
   mensagemDaEdge,
   useApproveSocialPost,
@@ -66,11 +67,17 @@ describe("useUpdateSocialCaption", () => {
       json: { ok: true, validation: { blockers: [], warnings: ["Gancho com 130 caracteres."] } },
     });
     const { result } = renderMutation(() => useUpdateSocialCaption());
-    const validation = await result.current.mutateAsync({ id: "post-1", caption: "Nova legenda" });
+    const validation = await result.current.mutateAsync({
+      id: "post-1",
+      caption: "Nova legenda",
+      expected_updated_at: "2026-10-21T20:11:03.123456+00:00",
+    });
+    // A versão aberta vai inteira e sem passar por Date: a Edge compara a string com o banco.
     expect(espiao.ultimoBody).toEqual({
       action: "update_caption",
       id: "post-1",
       caption: "Nova legenda",
+      expected_updated_at: "2026-10-21T20:11:03.123456+00:00",
     });
     expect(validation).toEqual({ blockers: [], warnings: ["Gancho com 130 caracteres."] });
   });
@@ -81,18 +88,65 @@ describe("useUpdateSocialCaption", () => {
       json: { ok: false, erros: ["Falta a data de referência do preço."] },
     });
     const { result } = renderMutation(() => useUpdateSocialCaption());
-    await expect(result.current.mutateAsync({ id: "post-1", caption: "R$ 90" })).rejects.toThrow(
-      "Falta a data de referência do preço.",
-    );
+    await expect(
+      result.current.mutateAsync({
+        id: "post-1",
+        caption: "R$ 90",
+        expected_updated_at: "2026-10-21T20:11:03.123456+00:00",
+      }),
+    ).rejects.toThrow("Falta a data de referência do preço.");
+  });
+
+  it("no 409 de versão velha, mostra o texto da Edge e recarrega a fila para ver a versão nova", async () => {
+    edge("social-draft", {
+      status: 409,
+      json: {
+        ok: false,
+        erros: ["O post mudou desde que você abriu. Feche e abra de novo para conferir a versão nova."],
+      },
+    });
+    const { result, qc } = renderMutation(() => useUpdateSocialCaption());
+    const invalidar = vi.spyOn(qc, "invalidateQueries");
+    await expect(
+      result.current.mutateAsync({
+        id: "post-1",
+        caption: "Legenda",
+        expected_updated_at: "2026-10-20T10:00:00+00:00",
+      }),
+    ).rejects.toThrow("O post mudou desde que você abriu.");
+    await waitFor(() => expect(invalidar).toHaveBeenCalledWith({ queryKey: ["social"] }));
   });
 });
 
 describe("decisões da fila pelas RPCs", () => {
-  it("aprova chamando social_post_approve com o id", async () => {
+  it("aprova chamando social_post_approve com o id e a versão que a pessoa viu", async () => {
     const espiao = rpc("social_post_approve");
     const { result } = renderMutation(() => useApproveSocialPost());
-    await result.current.mutateAsync({ p_id: "post-1" });
-    expect(espiao.ultimoBody).toEqual({ p_id: "post-1" });
+    await result.current.mutateAsync({
+      p_id: "post-1",
+      p_expected_updated_at: "2026-10-21T20:11:03.123456+00:00",
+    });
+    expect(espiao.ultimoBody).toEqual({
+      p_id: "post-1",
+      p_expected_updated_at: "2026-10-21T20:11:03.123456+00:00",
+    });
+  });
+
+  it("aprovação recusada (versão velha) devolve o texto do servidor e recarrega a fila", async () => {
+    falha(
+      "rpc",
+      "social_post_approve",
+      400,
+      "O post mudou desde que você abriu. Feche e abra de novo para conferir a versão nova.",
+    );
+    const { result, qc } = renderMutation(() => useApproveSocialPost());
+    const invalidar = vi.spyOn(qc, "invalidateQueries");
+    await expect(
+      result.current.mutateAsync({ p_id: "post-1", p_expected_updated_at: "2026-10-20T10:00:00+00:00" }),
+    ).rejects.toMatchObject({
+      message: "O post mudou desde que você abriu. Feche e abra de novo para conferir a versão nova.",
+    });
+    await waitFor(() => expect(invalidar).toHaveBeenCalledWith({ queryKey: ["social"] }));
   });
 
   it("recusa chamando social_post_reject com o motivo", async () => {
