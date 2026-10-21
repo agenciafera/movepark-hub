@@ -103,7 +103,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 | Coluna | Tipo |
 |---|---|
 | `id`, `social_post_id` (FK), `created_at` | |
-| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `reconciled`, `overdue`, `failed` |
+| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `consulta`, `reconciled`, `overdue`, `failed` |
 | `http_status` | integer, nulo |
 | `request` / `response` | jsonb, nulo |
 | `note` | text, nulo |
@@ -115,13 +115,13 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 |---|---|---|---|
 | (nada) | `pending_review` | Edge `social-draft` | rascunho recebido |
 | `pending_review` | `approved` | `hub_admin` | `validation.blockers` vazio e `scheduled_at` no futuro |
-| `pending_review`, `approved` | `rejected` | `hub_admin` | com motivo |
+| `pending_review`, `approved`, `overdue`, `failed` | `rejected` | `hub_admin` | com motivo |
 | `approved` | `pending_review` | `hub_admin` | corrigiu a legenda |
 | `approved` | `overdue` | `social-dispatch` | `scheduled_at` mais de 6 h no passado |
 | `approved` | `publishing` | `social-dispatch` | hora chegou e chave ligada |
 | `publishing` | `published` | `social-dispatch` | `media_publish` ok, ou reconciliação achou a mídia |
 | `publishing` | `failed` | `social-dispatch` | erro da Meta ou da rede |
-| `overdue`, `failed` | `approved` | `hub_admin` | reagendou para o futuro (é o "Tentar de novo") |
+| `overdue`, `failed` | `approved` | `hub_admin` | reagendou para o futuro (é o "Tentar de novo"). Reagendar `pending_review` ou `approved` só muda a data |
 
 - `pending_review → approved` exige `validation.blockers` vazio e `scheduled_at` no futuro.
 - Corrigir a legenda de um post `approved` devolve ele para `pending_review`, porque o texto que
@@ -140,7 +140,7 @@ no schema `public` nasce executável por eles.
 |---|---|
 | `social_post_approve(id)` | confere bloqueios e data, grava `approved_by/at`, evento `approved` |
 | `social_post_reject(id, motivo)` | evento `rejected` com o motivo |
-| `social_post_reschedule(id, quando)` | aceita `approved`, `overdue` e `failed`; recusa outro post publicado ou agendado no mesmo dia (fuso de São Paulo); `overdue` e `failed` voltam a `approved` |
+| `social_post_reschedule(id, quando)` | aceita `pending_review`, `approved`, `overdue` e `failed`; recusa outro post publicado ou agendado no mesmo dia (fuso de São Paulo); `overdue` e `failed` voltam a `approved` |
 
 Corrigir legenda não é RPC: vai pela Edge `social-draft` (ação `update_caption`, JWT de
 `hub_admin`), porque a conferência roda lá.
