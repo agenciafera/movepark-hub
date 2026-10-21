@@ -299,6 +299,13 @@ Manager, ao lado de Blog (`src/components/shared/nav-items.ts`). Dados em
   Falhas. A lista ordena por `scheduled_at`.
 - **Detalhe do post:**
   - os slides como vão sair, em ordem, com o alt de cada um;
+  - abas de prévia ao lado dos slides (**Feed**, **Stories** e **Grade do perfil**), para
+    conferir o post como ele aparece no celular antes de aprovar. São **só visuais**: rodam no
+    navegador, usam curtidas e comentários fictícios (determinísticos a partir do id) e não vão
+    para a Meta nem gravam nada. **Stories não são publicados pela fila**; a aba só mostra como
+    o post ficaria repostado. A grade usa até 5 outros posts da fila (publicados, publicando e
+    agendados) em células 3:4 com recorte central, para conferir se o título da capa sobrevive
+    ao corte. Código em `src/features/social/previa/`;
   - a legenda com os primeiros 125 caracteres destacados e a contagem de caracteres;
   - bloqueios e avisos da conferência;
   - origem (post do blog, corte, frase-chave, `price_date`);

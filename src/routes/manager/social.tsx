@@ -153,7 +153,7 @@ export default function ManagerSocial() {
         </Tabs>
       )}
 
-      <SocialPostDetail post={aberto} onClose={() => setAbertoId(null)} />
+      <SocialPostDetail post={aberto} onClose={() => setAbertoId(null)} fila={data} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -31,12 +32,18 @@ import {
   ROTULO_STATUS,
   sugestaoDeData,
 } from "./social.logic";
+import { PreviaFeed } from "./previa/PreviaFeed";
+import { PreviaGrade } from "./previa/PreviaGrade";
+import { PreviaStories } from "./previa/PreviaStories";
 import type { SocialPost } from "@/types/domain";
 
 /**
- * Um post da fila do Instagram: os slides como vão sair, a legenda com o trecho que aparece antes
- * do "mais", a conferência, a agenda, a decisão e o rastro. A imagem não se edita aqui: trocar a
- * arte é refazer o post na skill e reenviar.
+ * Um post da fila do Instagram: os slides como vão sair (e, em abas, a prévia no feed, nos stories
+ * e na grade do perfil), a legenda com o trecho que aparece antes do "mais", a conferência, a
+ * agenda, a decisão e o rastro. A imagem não se edita aqui: trocar a arte é refazer o post na
+ * skill e reenviar. As prévias são só visuais: nada vai para a Meta e nada é gravado.
+ *
+ * `fila` é a fila inteira que a página já carregou; a grade do perfil usa dela os outros posts.
  *
  * O estado do que está sendo digitado (legenda em edição, data, motivo) mora em `Corpo`, que
  * recebe `key={post.id}`: trocar de post zera tudo, e recarregar o mesmo post não apaga o que
@@ -45,15 +52,25 @@ import type { SocialPost } from "@/types/domain";
 export function SocialPostDetail({
   post,
   onClose,
+  fila,
 }: {
   post: SocialPost | null;
   onClose: () => void;
+  fila?: SocialPost[];
 }) {
   if (!post) return null;
-  return <Corpo key={post.id} post={post} onClose={onClose} />;
+  return <Corpo key={post.id} post={post} onClose={onClose} fila={fila} />;
 }
 
-function Corpo({ post, onClose }: { post: SocialPost; onClose: () => void }) {
+function Corpo({
+  post,
+  onClose,
+  fila,
+}: {
+  post: SocialPost;
+  onClose: () => void;
+  fila?: SocialPost[];
+}) {
   const eventos = useSocialPostEvents(post.id);
   const aprovar = useApproveSocialPost();
   const recusar = useRejectSocialPost();
@@ -95,20 +112,39 @@ function Corpo({ post, onClose }: { post: SocialPost; onClose: () => void }) {
           </DialogDescription>
         </DialogHeader>
 
-        <section aria-label="Slides" className="flex gap-3 overflow-x-auto pb-2">
-          {post.slides.map((s, i) => (
-            <figure key={s.path} className="w-40 shrink-0">
-              <img
-                src={s.url}
-                alt={s.alt ?? ""}
-                className="aspect-[4/5] w-full rounded object-cover"
-              />
-              <figcaption className="mt-1 text-xs text-muted">
-                {i + 1}. {s.alt ?? "Sem texto alternativo"}
-              </figcaption>
-            </figure>
-          ))}
-        </section>
+        <Tabs defaultValue="slides">
+          <TabsList aria-label="Como o post aparece" className="max-w-full overflow-x-auto">
+            <TabsTrigger value="slides">Slides</TabsTrigger>
+            <TabsTrigger value="feed">Feed</TabsTrigger>
+            <TabsTrigger value="stories">Stories</TabsTrigger>
+            <TabsTrigger value="grade">Grade do perfil</TabsTrigger>
+          </TabsList>
+          <TabsContent value="slides">
+            <section aria-label="Slides" className="flex gap-3 overflow-x-auto pb-2">
+              {post.slides.map((s, i) => (
+                <figure key={s.path} className="w-40 shrink-0">
+                  <img
+                    src={s.url}
+                    alt={s.alt ?? ""}
+                    className="aspect-[4/5] w-full rounded object-cover"
+                  />
+                  <figcaption className="mt-1 text-xs text-muted">
+                    {i + 1}. {s.alt ?? "Sem texto alternativo"}
+                  </figcaption>
+                </figure>
+              ))}
+            </section>
+          </TabsContent>
+          <TabsContent value="feed">
+            <PreviaFeed post={post} />
+          </TabsContent>
+          <TabsContent value="stories">
+            <PreviaStories post={post} />
+          </TabsContent>
+          <TabsContent value="grade">
+            <PreviaGrade post={post} fila={fila} />
+          </TabsContent>
+        </Tabs>
 
         <section aria-label="Legenda" className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">

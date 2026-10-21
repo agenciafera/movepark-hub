@@ -408,6 +408,63 @@ describe("ManagerSocial", () => {
     });
   });
 
+  describe("prévia no Instagram", () => {
+    async function abrirPrimeiro() {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
+      await screen.findByRole("tab", { name: "Feed" });
+    }
+
+    it("abre nos slides, com as quatro abas, e a prévia só aparece ao trocar de aba", async () => {
+      await abrirPrimeiro();
+      for (const nome of ["Slides", "Feed", "Stories", "Grade do perfil"]) {
+        expect(screen.getByRole("tab", { name: nome })).toBeInTheDocument();
+      }
+      expect(screen.getByRole("tab", { name: "Slides" })).toHaveAttribute("aria-selected", "true");
+      expect(screen.getByRole("region", { name: "Slides" })).toBeInTheDocument();
+      expect(screen.queryByTestId("previa-feed")).not.toBeInTheDocument();
+    });
+
+    it("a aba Feed mostra o post como no feed do Instagram", async () => {
+      await abrirPrimeiro();
+      await userEvent.click(screen.getByRole("tab", { name: "Feed" }));
+      expect(await screen.findByTestId("previa-feed")).toBeInTheDocument();
+      expect(screen.getByText(/Curtido por/)).toBeInTheDocument();
+      expect(screen.getByText("Simulação: curtidas e comentários fictícios.")).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Slides" })).not.toBeInTheDocument();
+    });
+
+    it("a aba Stories mostra a tela de story, sem publicar nada", async () => {
+      await abrirPrimeiro();
+      await userEvent.click(screen.getByRole("tab", { name: "Stories" }));
+      expect(await screen.findByTestId("story-tela")).toBeInTheDocument();
+      expect(
+        screen.getByText("Simulação: stories não são publicados pela fila."),
+      ).toBeInTheDocument();
+      expect(approve).not.toHaveBeenCalled();
+    });
+
+    it("a aba Grade do perfil usa a fila da página: só entram os agendados e publicados", async () => {
+      await abrirPrimeiro();
+      await userEvent.click(screen.getByRole("tab", { name: "Grade do perfil" }));
+      const celulas = await screen.findAllByTestId("celula-grade");
+      expect(celulas).toHaveLength(6);
+      // Este post (p1) + p3 (agendado) + p4 (publicado). p2 (em revisão), p5 (falha) e p6
+      // (atrasado) ficam de fora.
+      expect(celulas.filter((c) => c.querySelector("img"))).toHaveLength(3);
+    });
+
+    it("trocar de aba não mexe no que está sendo editado nem na decisão", async () => {
+      await abrirPrimeiro();
+      await userEvent.click(screen.getByRole("button", { name: "Corrigir legenda" }));
+      await userEvent.type(screen.getByLabelText("Legenda do post"), " extra");
+      await userEvent.click(screen.getByRole("tab", { name: "Feed" }));
+      await userEvent.click(screen.getByRole("tab", { name: "Slides" }));
+      expect(screen.getByLabelText("Legenda do post")).toHaveValue(`${LEGENDA} extra`);
+      expect(screen.getByRole("button", { name: "Aprovar" })).toBeEnabled();
+    });
+  });
+
   describe("troca de post no diálogo", () => {
     it("o post B não herda a legenda em edição nem o motivo digitado no post A", async () => {
       let trocar: (p: SocialPost) => void = () => {};
