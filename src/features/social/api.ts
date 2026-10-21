@@ -79,9 +79,19 @@ export function useRescheduleSocialPost() {
 }
 
 /**
+ * Códigos de máquina que a Edge `social-draft` devolve em inglês (`{ error: "unauthorized" }`
+ * com 401, `{ error: "forbidden" }` com 403). Trocados aqui, para não chegarem crus à tela.
+ */
+const CODIGOS_DA_EDGE = new Map<string, string>([
+  ["unauthorized", "Sua sessão expirou. Entre de novo para continuar."],
+  ["forbidden", "Só a equipe da Movepark pode corrigir a legenda."],
+]);
+
+/**
  * `functions.invoke` devolve só a mensagem genérica ("Edge Function returned a non-2xx status
- * code") e guarda o `Response` em `error.context`. Aqui lemos o corpo da Edge, que já vem em
- * pt-BR: `{ erros: [...] }` (409/422) ou `{ error: "..." }` (401/403/404/500).
+ * code") e guarda o `Response` em `error.context`. Aqui lemos o corpo da Edge: `{ erros: [...] }`
+ * (422) traz a lista de validação em pt-BR; `{ error: "..." }` traz um texto em pt-BR (404, 500),
+ * exceto os códigos de 401 e 403, que passam por `CODIGOS_DA_EDGE`.
  */
 export async function mensagemDaEdge(error: unknown): Promise<string> {
   const ctx = (error as { context?: unknown })?.context;
@@ -91,7 +101,7 @@ export async function mensagemDaEdge(error: unknown): Promise<string> {
       .json()
       .catch(() => null)) as { erros?: string[]; error?: string } | null;
     if (corpo?.erros?.length) return corpo.erros.join(" ");
-    if (corpo?.error) return corpo.error;
+    if (corpo?.error) return CODIGOS_DA_EDGE.get(corpo.error) ?? corpo.error;
   }
   return error instanceof Error ? error.message : "Não deu certo. Tente de novo.";
 }

@@ -1082,6 +1082,7 @@ export type SocialPost = {
   last_error: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 };
 
 export type SocialPostEvent = {

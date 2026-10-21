@@ -29,12 +29,23 @@ describe("mensagemDaEdge", () => {
     );
   });
 
-  it("usa o texto do corpo `error` quando não há lista de erros", async () => {
-    const erro = erroDaEdge(
-      JSON.stringify({ error: "Sem permissão para editar esta publicação." }),
-      403,
+  it("traduz o 401 real da Edge (`unauthorized`) para pt-BR", async () => {
+    const erro = erroDaEdge(JSON.stringify({ error: "unauthorized" }), 401);
+    await expect(mensagemDaEdge(erro)).resolves.toBe(
+      "Sua sessão expirou. Entre de novo para continuar.",
     );
-    await expect(mensagemDaEdge(erro)).resolves.toBe("Sem permissão para editar esta publicação.");
+  });
+
+  it("traduz o 403 real da Edge (`forbidden`) para pt-BR", async () => {
+    const erro = erroDaEdge(JSON.stringify({ error: "forbidden" }), 403);
+    await expect(mensagemDaEdge(erro)).resolves.toBe(
+      "Só a equipe da Movepark pode corrigir a legenda.",
+    );
+  });
+
+  it("passa o texto pt-BR do corpo `error` quando não é código de máquina (404)", async () => {
+    const erro = erroDaEdge(JSON.stringify({ error: "Post não encontrado." }), 404);
+    await expect(mensagemDaEdge(erro)).resolves.toBe("Post não encontrado.");
   });
 
   it("cai na mensagem do erro quando não há Response no contexto", async () => {
