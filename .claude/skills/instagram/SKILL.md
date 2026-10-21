@@ -12,7 +12,11 @@ description: >-
   envolver Instagram da Movepark, mesmo sem a palavra "Instagram": "corta esse
   post pro insta", "faz um carrossel sobre Confins", "escreve a legenda",
   "monta os stories dessa promoção", "que hashtag usar", "cria o post de
-  divulgação do blog", "transforma esse artigo em conteúdo social". Também use
+  divulgação do blog", "transforma esse artigo em conteúdo social". Também cobre
+  a pauta de notícia do momento (obra, greve, feriado, regra da ANAC, novidade
+  de aeroporto no Brasil e em Portugal), com fonte citada e data de validade:
+  "tem novidade em Guarulhos?", "posta sobre o feriado", "faz um post dessa
+  notícia", "o que está acontecendo nos aeroportos essa semana". Use ainda
   ao revisar legenda já escrita, ao planejar o calendário e antes de qualquer
   escrita em social_post. NÃO se aplica a copy de landing page (use
   copy-lp-queiroz), a texto de UI (use revisar-texto) nem ao corpo do blogpost
@@ -47,8 +51,11 @@ nesta ordem de preferência:
 | Fonte | Quando | O que herda |
 |---|---|---|
 | **Blogpost publicado** | Padrão. Todo post vira 3 a 4 conteúdos | Frase-chave, números, FAQ, tabela de preço, CTA |
-| **Página de destino** (`/destinos/<slug>`) | Aeroporto sem post recente | Distância, terminais, lotes listados |
-| **Fato do dia** | Feriado, greve, obra no aeroporto, alta de demanda | Nada. É o único caso que escreve do zero |
+| **Página de destino** (`/estacionamentos/<public_slug>`) | Aeroporto sem post recente | Distância, terminais, lotes listados |
+| **Notícia do momento** | Obra, greve, feriado, regra nova, novidade de aeroporto | A fonte externa, com data. É o único caso que escreve do zero |
+
+A ordem vale para escolher pauta. No dia em que uma notícia com prazo vale, ela
+passa na frente e o corte de blogpost marcado para aquele dia anda um dia.
 
 ### Os quatro cortes de um blogpost
 
@@ -69,6 +76,46 @@ ao algoritmo quatro chances de achar público diferente para o mesmo artigo.
 **Um corte só existe se ele se sustenta sozinho.** Se o slide 1 depende de ler o
 blog para fazer sentido, o corte está errado: refaça. O post é o aprofundamento,
 não o pré-requisito.
+
+### A pauta de notícia
+
+A Movepark atende 26 destinos no Brasil e 3 em Portugal, e o perfil precisa
+mostrar que sabe o que acontece neles hoje. A notícia é a pauta que faz isso, e é
+também a que mais erra em público: um dado velho ou sem fonte sai com a marca
+embaixo. Por isso ela tem trava própria.
+
+**As três portas.** Só vira post a notícia que passa nas três:
+
+1. **Praça:** afeta quem vai de carro até um destino que a Movepark atende (a
+   lista sai do banco), ou quem viaja no país inteiro.
+2. **Decisão:** muda o que a pessoa faz, seja a hora de sair, onde deixar o
+   carro, quanto gasta ou quando reservar.
+3. **Fonte:** tem fonte primária, ou dois veículos independentes, com data.
+
+**Nunca vira pauta:** tragédia (acidente, morte, crime), política, rumor e
+qualquer coisa de concorrente.
+
+**As travas que o analisador cobra** quando o `origem_post` começa com `fato-`:
+
+| Trava | Regra |
+|---|---|
+| Fonte | `fonte_nome`, `fonte_url` e `fonte_data` no front matter, e o nome da fonte escrito na legenda com a data |
+| Validade | `validade` no front matter. Publicar depois dela bloqueia |
+| Idade | Fonte com mais de 7 dias na data de publicar pede reconferência |
+| Crise | `tema: crise` sai no mesmo dia ou no seguinte, senão descarta |
+
+**A notícia termina no destino.** O post fecha no que o fato muda para quem vai
+de carro, e o CTA leva à página do destino afetado (ou ao índice
+`/estacionamentos`, se a notícia é nacional). O ADR-009 pesa mais aqui: alta
+demanda puxa "garanta sua vaga" e "últimas vagas", e as duas estão proibidas.
+
+**A imagem nunca encena o fato.** Foto de IA de fila na greve ou de pista alagada
+é imagem falsa de acontecimento real. Use cena genérica ou o slide tipográfico.
+
+O método completo (temas e validade de cada um, onde procurar, a varredura
+semanal, como citar, o molde da legenda e o front matter) está em
+[`references/noticias.md`](references/noticias.md). Leia antes de escrever o
+primeiro post de notícia.
 
 ## Passo 2: as regras duras
 
@@ -186,7 +233,7 @@ Legenda do Instagram **não tem link clicável**. Então o CTA fecha sempre no l
 da bio, e o link da bio carrega UTM para a atribuição funcionar:
 
 ```
-https://movepark.co/destinos/<slug>?utm_source=instagram&utm_medium=social&utm_campaign=<slug-do-post>
+https://movepark.co/estacionamentos/<public_slug>?utm_source=instagram&utm_medium=social&utm_campaign=<slug-do-post>
 ```
 
 O CTA de cada corte sai do banco em
@@ -410,6 +457,10 @@ Um `.md` com front matter alimenta a análise, a composição dos slides e o
 payload do banco, então nada se perde na passagem. Guarde no scratchpad até
 publicar.
 
+O post de notícia leva cinco campos a mais (`tema`, `fonte_nome`, `fonte_url`,
+`fonte_data`, `validade`) e o `origem_post` no formato `fato-AAAA-MM-DD-<assunto>`.
+O modelo está em [`references/noticias.md`](references/noticias.md).
+
 ```markdown
 ---
 tipo: carrossel
@@ -418,7 +469,7 @@ origem_post: estacionamento-no-aeroporto-de-confins-guia-completo
 destination: aeroporto-de-confins
 keyphrase: estacionamento no aeroporto de Confins
 publicar_em: 2026-09-10
-cta_url: https://movepark.co/destinos/aeroporto-de-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-guia
+cta_url: https://movepark.co/estacionamentos/aeroporto-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-guia
 slides:
   - texto: Estacionar em Confins custa de R$ 45 a R$ 120 a diária
     arquivo: estacionamento-aeroporto-confins-01.jpg
@@ -457,3 +508,5 @@ Antes de dizer que está pronto:
    fosca e sem placa legível.
 10. Todo R$ com data de referência.
 11. Carrossel com no máximo 10 slides.
+12. Post de notícia: passou nas três portas, cita a fonte e a data na legenda,
+    está dentro da `validade` e a fonte foi reaberta no dia de publicar.

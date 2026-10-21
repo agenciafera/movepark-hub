@@ -36,7 +36,13 @@ export default defineConfig({
           // `scripts/**/*.test.mjs`: os geradores de artefato do build (GEO) também são
           // código, e o pedaço puro deles (montar o payload) tem que rodar no mesmo gate.
           // Rodam em node puro depois do build, então o teste importa o .mjs direto.
-          include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
+          // `.claude/skills/**/*.test.mjs`: os analisadores das skills barram o conteúdo antes
+          // de publicar, e regra que barra sem teste deixa de barrar sem ninguém ver.
+          include: [
+            "src/**/*.test.{ts,tsx}",
+            "scripts/**/*.test.mjs",
+            ".claude/skills/**/*.test.mjs",
+          ],
         },
       },
       {

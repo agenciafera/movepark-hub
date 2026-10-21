@@ -15,6 +15,7 @@
  *   node .claude/skills/instagram/scripts/analisar-carrossel.mjs <rascunho.md>
  *   node ... <rascunho.md> --json        # saída para máquina
  *   node ... <rascunho.md> --silencioso  # só o resumo e os problemas
+ *   node ... <rascunho.md> --hoje=2026-10-21  # fixa o "hoje" da validade (teste)
  *
  * Entrada: markdown com o front matter descrito no SKILL.md ("O arquivo de
  * trabalho"). O corpo depois do front matter é a legenda, hashtags inclusive.
@@ -31,6 +32,7 @@ const BANCO = JSON.parse(fs.readFileSync(path.join(AQUI, "hashtags.json"), "utf8
 const args = process.argv.slice(2);
 const arquivo = args.find((a) => !a.startsWith("--"));
 const flag = (n) => args.includes(`--${n}`);
+const valorFlag = (n) => args.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3);
 
 if (!arquivo) {
   console.error("uso: analisar-carrossel.mjs <rascunho.md> [--json] [--silencioso]");
@@ -91,6 +93,14 @@ const G_HASH = "Hashtags";
 const G_CTA = "CTA";
 const G_IMG = "Imagens e alt";
 const G_MARCA = "Marca e ADR";
+const G_NOTICIA = "Notícia";
+
+/** Dia corrido (inteiro) de uma data `AAAA-MM-DD`, com ou sem hora depois. */
+const dia = (s) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s ?? ""));
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86_400_000 : null;
+};
+const HOJE = valorFlag("hoje") ?? new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 // ------------------------------------------------------------------- leitura
 
@@ -118,6 +128,9 @@ for (const campo of ["origem_post", "destination", "keyphrase", "publicar_em"]) 
 
 const slides = Array.isArray(meta.slides) ? meta.slides : [];
 const ehCarrossel = meta.tipo === "carrossel";
+// O prefixo `fato-` é o formato de origem da fila de publicação (draft_key) para
+// a pauta de notícia. Ver ../references/noticias.md.
+const ehNoticia = String(meta.origem_post || "").startsWith("fato-");
 if (ehCarrossel && !slides.length) vermelho(G_ENTRADA, "slides", "Carrossel sem lista de `slides`.");
 
 // ------------------------------------------------------------------- legenda
@@ -246,13 +259,68 @@ if (!meta.cta_url) {
   else if (!/utm_campaign=/.test(url)) laranja(G_CTA, "UTM", "`cta_url` sem `utm_campaign`. Não dá para separar um post do outro.");
   else verde(G_CTA, "UTM", "Completa.");
   if (/movepark\.com\.br|hub\.movepark\.co/.test(url)) vermelho(G_CTA, "Domínio", "A URL usa domínio antigo ou o `hub.`. O canônico do consumidor é `movepark.co`.");
+  if (/movepark\.co\/destinos(\/|\?|$)/.test(url)) laranja(G_CTA, "Caminho", "`/destinos/` é o endereço antigo e passa por um 301. O canônico é `/estacionamentos/<public_slug>`.");
+}
+
+// ------------------------------------------------------------------- notícia
+
+// A notícia é o único conteúdo que escreve do zero, e o que mais erra em
+// público: dado velho ou sem fonte sai com a marca embaixo. Por isso cobra fonte
+// citada, data e prazo de validade, que nenhum outro corte precisa.
+if (ehNoticia) {
+  const TEMAS = ["crise", "operacao", "acesso", "demanda", "regra", "internacional"];
+  if (!meta.tema) laranja(G_NOTICIA, "Tema", `Front matter sem \`tema\`. Use: ${TEMAS.join(", ")}.`);
+  else if (!TEMAS.includes(meta.tema)) laranja(G_NOTICIA, "Tema", `\`${meta.tema}\` não é tema conhecido. Use: ${TEMAS.join(", ")}.`);
+  else verde(G_NOTICIA, "Tema", meta.tema);
+
+  const fonte = meta.fonte_nome ? String(meta.fonte_nome) : "";
+  if (!fonte) vermelho(G_NOTICIA, "Fonte", "Front matter sem `fonte_nome`. Notícia sem fonte não sai.");
+  // Palavra inteira: "ANA" não pode passar por estar dentro de "semana".
+  else if (!` ${norm(legenda)} `.includes(` ${norm(fonte)} `)) vermelho(G_NOTICIA, "Fonte na legenda", `"${fonte}" não aparece na legenda. Quem lê precisa saber quem disse.`);
+  else verde(G_NOTICIA, "Fonte na legenda", fonte);
+
+  if (!meta.fonte_url) vermelho(G_NOTICIA, "Link da fonte", "Front matter sem `fonte_url`. É ele que permite reabrir a fonte no dia de publicar.");
+  else if (!/^https?:\/\/[^\s/]+\.[^\s]+/.test(meta.fonte_url)) vermelho(G_NOTICIA, "Link da fonte", "`fonte_url` não é um endereço http.");
+  else verde(G_NOTICIA, "Link da fonte", String(meta.fonte_url));
+
+  // "em 20/10", "20 de outubro": a data que acompanha a fonte no corpo.
+  const DATA_NA_LEGENDA = /\b\d{1,2}\/\d{1,2}\b|\b\d{1,2}º? de (janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/i;
+  if (!DATA_NA_LEGENDA.test(legenda)) vermelho(G_NOTICIA, "Data na legenda", 'A legenda não traz data junto da fonte ("em 20/10", "20 de outubro").');
+  else verde(G_NOTICIA, "Data na legenda", "Presente.");
+
+  const dFonte = dia(meta.fonte_data);
+  const dValidade = dia(meta.validade);
+  const dPublicar = dia(meta.publicar_em);
+  const dHoje = dia(HOJE);
+
+  if (dValidade === null) {
+    vermelho(G_NOTICIA, "Validade", "Front matter sem `validade` (AAAA-MM-DD). Todo fato tem prazo: a obra termina, a greve acaba.");
+  } else if (dPublicar !== null && dPublicar > dValidade) {
+    vermelho(G_NOTICIA, "Validade", `Agendado para ${meta.publicar_em}, depois da validade (${meta.validade}).`);
+  } else if (dHoje > dValidade) {
+    vermelho(G_NOTICIA, "Validade", `A validade (${meta.validade}) já passou.`);
+  } else {
+    verde(G_NOTICIA, "Validade", `Vale até ${meta.validade}.`);
+  }
+
+  if (dFonte === null) {
+    vermelho(G_NOTICIA, "Data da fonte", "Front matter sem `fonte_data` (AAAA-MM-DD).");
+  } else {
+    const idade = (dPublicar ?? dHoje) - dFonte;
+    if (dFonte > dHoje) vermelho(G_NOTICIA, "Data da fonte", `\`fonte_data\` (${meta.fonte_data}) está no futuro.`);
+    else if (idade < 0) vermelho(G_NOTICIA, "Data da fonte", `Agendado para antes da data da fonte (${meta.fonte_data}).`);
+    else if (meta.tema === "crise" && idade > 1) vermelho(G_NOTICIA, "Crise", `${idade} dias entre a fonte e a publicação. Crise sai no mesmo dia ou no seguinte, senão descarta.`);
+    else if (idade > 7) laranja(G_NOTICIA, "Idade da fonte", `${idade} dias entre a fonte e a publicação. Reabra a fonte e confira se não saiu atualização.`);
+    else verde(G_NOTICIA, "Idade da fonte", `${idade} dia(s) entre a fonte e a publicação.`);
+  }
 }
 
 // ------------------------------------------------------------- imagens e alt
 
 if (slides.length) {
   if (slides.length > 10) vermelho(G_IMG, "Quantidade", `${slides.length} slides. A API publica no máximo 10 por carrossel.`);
-  else if (ehCarrossel && slides.length < 4) laranja(G_IMG, "Quantidade", `${slides.length} slides. Carrossel curto demais raramente segura o arraste.`);
+  else if (ehCarrossel && slides.length < (ehNoticia ? 3 : 4)) laranja(G_IMG, "Quantidade", `${slides.length} slides. Carrossel curto demais raramente segura o arraste.`);
+  else if (ehNoticia && slides.length > 5) laranja(G_IMG, "Quantidade", `${slides.length} slides. Notícia envelhece antes de alguém arrastar até o fim: de 3 a 5.`);
   else verde(G_IMG, "Quantidade", `${slides.length} slides.`);
 
   const naoJpeg = slides.filter((s) => s.arquivo && !/\.jpe?g$/i.test(s.arquivo));
@@ -303,6 +371,8 @@ const PROMESSAS = [
   [/pre[çc]o fixo/i, "preço fixo"],
   [/garanta sua vaga/i, "garanta sua vaga"],
   [/reserva garantida/i, "reserva garantida"],
+  [/[úu]ltimas vagas/i, "últimas vagas"],
+  [/vagas? (acabando|esgotando)/i, "vagas acabando"],
 ];
 const promessas = PROMESSAS.filter(([r]) => r.test(bruto)).map(([, n]) => n);
 if (promessas.length) vermelho(G_MARCA, "Promessa de transação", `${promessas.join(", ")}. ADR-009: a capacidade mora na unidade, não na legenda.`);

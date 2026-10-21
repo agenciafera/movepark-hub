@@ -72,7 +72,7 @@ skill instagram (Claude)                          Manager (hub_admin)
 | Coluna | Tipo | Observação |
 |---|---|---|
 | `id` | uuid | `gen_random_uuid()` |
-| `draft_key` | text, único | `<origem>:<corte>`, ex. `preco-do-estacionamento-no-aeroporto-de-confins:2`. Reenviar o mesmo rascunho atualiza a linha enquanto ela estiver `pending_review`. A `origem` é obrigatória: é o slug do post do blog, o da página de destino, ou `fato-AAAA-MM-DD-<assunto>` no fato do dia (as três fontes do Passo 1 da skill) |
+| `draft_key` | text, único | `<origem>:<corte>`, ex. `preco-do-estacionamento-no-aeroporto-de-confins:2`. Reenviar o mesmo rascunho atualiza a linha enquanto ela estiver `pending_review`. A `origem` é obrigatória: é o slug do post do blog, o da página de destino, ou `fato-AAAA-MM-DD-<assunto>` na notícia do momento (as três fontes do Passo 1 da skill) |
 | `status` | enum `social_post_status` | ver a máquina de estados |
 | `kind` | enum `social_post_kind` | `image` ou `carousel`, derivado da quantidade de slides |
 | `caption` | text | legenda completa, com as hashtags na última linha |
@@ -166,7 +166,7 @@ slide, com o nome igual ao `arquivo` do front matter:
   "destination": "aeroporto-de-confins",
   "keyphrase": "estacionamento no aeroporto de Confins",
   "publicar_em": "2026-10-28T12:00:00-03:00",
-  "cta_url": "https://movepark.co/destinos/aeroporto-de-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-preco",
+  "cta_url": "https://movepark.co/estacionamentos/aeroporto-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-preco",
   "price_date": "2026-10-21",
   "caption": "…",
   "slides": [{ "arquivo": "preco-estacionamento-aeroporto-confins-01.jpg", "alt": "…", "texto": "…" }]
@@ -281,6 +281,7 @@ contrato `harmonizar-paginas`, que é do consumer.
 | # | Gate | Proposta |
 |---|---|---|
 | G1 | Token com permissões a mais | O token de 21/10 saiu com `instagram_manage_contents` (apaga post), `instagram_manage_messages` e outras. Regenerar só com `instagram_basic`, `instagram_content_publish`, `pages_show_list` e `pages_read_engagement`, colado direto no Supabase. Depende de clique humano no Business Manager |
+| G2 | Post de notícia tem prazo (21/10/2026) | A skill passou a produzir a pauta de notícia (`references/noticias.md`), com `tema`, `fonte_nome`, `fonte_url`, `fonte_data` e `validade` no front matter, e o analisador bloqueia publicação depois da `validade`. A fila precisa honrar isso, porque a aprovação pode atrasar o post além do prazo: `social_post` ganha `source_name`, `source_url`, `source_date` e `valid_until` (nulos fora de notícia, obrigatórios por `check` quando a origem começa com `fato-`), a `social-draft` bloqueia sem eles, a `social-dispatch` não publica com `valid_until` no passado (vira `overdue`, com evento) e a tela mostra fonte e validade na hora de aprovar. Decidir antes da Tarefa 1 do plano, que cria a tabela |
 
 ## Testes
 

@@ -98,6 +98,50 @@ reconhecível. A regra do blog vale igual aqui.
 
 ---
 
+## Notícia do momento
+
+Objetivo: mostrar que o perfil sabe o que está acontecendo no aeroporto hoje, e
+levar a pessoa do fato até o destino. Não sai de blogpost. As três portas, a
+validade e o front matter estão em [`noticias.md`](noticias.md).
+
+```
+[GANCHO]      O fato, com a praça e a frase-chave. Até 125 caracteres.
+[O QUE MUDA]  O efeito para quem vai de carro até o aeroporto. Uma ou duas frases.
+[O QUE FAZER] 2 a 4 linhas concretas, uma ação por linha.
+[FONTE]       "Segundo <fonte>, em <dd/mm>." Obrigatório, com o nome igual ao fonte_nome.
+[CTA]         "Compara os lotes no link da bio." apontando para o destino afetado.
+[HASHTAGS]    Praça + intenção + marca.
+```
+
+Esqueleto preenchido. O que está entre `< >` vem da fonte, nunca da cabeça de
+quem escreve:
+
+> Feriado de 20 de novembro cai numa sexta, e o aeroporto de Guarulhos espera
+> movimento de alta temporada.
+>
+> Para quem vai de carro, a fila começa antes do embarque: no acesso e no
+> estacionamento.
+>
+> O que fazer:
+> Sair de casa com folga maior que a de costume
+> Reservar o estacionamento antes do feriado
+> Conferir o terminal do voo antes de sair
+>
+> Segundo a <operadora do aeroporto>, em <dd/mm>, a previsão é de <N>
+> passageiros entre <dia> e <dia>.
+>
+> Compara os lotes no link da bio.
+
+Duas armadilhas próprias deste molde:
+
+- **Escassez inventada.** "Últimas vagas", "vai lotar", "garanta a sua" afirmam
+  algo sobre o estoque da unidade que a legenda não sabe. Fale da demanda, que tem
+  fonte, e nunca da vaga.
+- **Fato velho no presente.** Se a fonte é de semana passada, o verbo no presente
+  afirma que segue valendo. Reconfira a fonte antes de publicar.
+
+---
+
 ## Banco de ganchos
 
 Os quatro formatos que sustentam os primeiros 125 caracteres.
@@ -108,6 +152,7 @@ Os quatro formatos que sustentam os primeiros 125 caracteres.
 | Erro comum | "Quem <ação> em <praça> costuma errar em <ponto>." | "Quem deixa o carro no aeroporto de Confins costuma errar na hora de escolher o traslado." | Corte de objeção |
 | Pergunta digitada | "<pergunta da cauda longa, literal>" | "Quanto custa deixar o carro em Viracopos por uma semana?" | Corte de FAQ |
 | Contexto que decide | "<Situação concreta> muda tudo na escolha do estacionamento." | "Voo às 6h em Congonhas muda tudo na escolha do estacionamento." | Corte de gancho |
+| O fato com a praça | "<Fato> no aeroporto de <praça>: <o que muda para quem vai de carro>." | "Obra no acesso ao aeroporto de Confins: quem vai de carro precisa sair mais cedo." | Notícia do momento |
 
 Puxe a pergunta literal do arquivo de cauda longa em vez de inventar:
 
@@ -129,7 +174,8 @@ Um por post. Nunca empilhe.
 | Gerar compartilhamento | "Manda para quem viaja com você." |
 
 **Proibidos**, porque prometem capacidade que a unidade pode não ter (ADR-009):
-"reserve com cancelamento grátis", "garanta sua vaga", "preço fixo garantido".
+"reserve com cancelamento grátis", "garanta sua vaga", "preço fixo garantido",
+"últimas vagas", "vagas acabando".
 
 ## O que sempre soa a IA
 
