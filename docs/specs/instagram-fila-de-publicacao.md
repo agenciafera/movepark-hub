@@ -287,7 +287,7 @@ contrato `harmonizar-paginas`, que é do consumer.
 | Camada | O quê |
 |---|---|
 | `deno test` `_shared/instagram-validate.test.ts` | cada bloqueio e cada aviso da tabela da seção 2, incluindo JPEG falso e proporção errada |
-| `deno test` `social-dispatch/logic.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run` |
+| `deno test` `social-dispatch/index.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run` |
 | `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado, upsert por `draft_key` |
 | pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
 | Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, legenda com destaque dos 125 caracteres, aba certa por estado |
