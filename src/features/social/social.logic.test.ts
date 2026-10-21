@@ -3,6 +3,7 @@ import {
   abaDoStatus,
   deCampoDeData,
   formatarDia,
+  mensagemDoErro,
   paraCampoDeData,
   partirGancho,
   podeAprovar,
@@ -62,5 +63,23 @@ describe("campo de data", () => {
 describe("formatarDia", () => {
   it("escreve a data no formato brasileiro", () => {
     expect(formatarDia("2026-10-21")).toBe("21/10/2026");
+  });
+});
+
+describe("mensagemDoErro", () => {
+  it("usa o texto de qualquer erro que traga message, inclusive o objeto simples da RPC", () => {
+    expect(mensagemDoErro(new Error("Falhou aqui"))).toBe("Falhou aqui");
+    expect(mensagemDoErro({ message: "Já existe post agendado ou publicado nesse dia." })).toBe(
+      "Já existe post agendado ou publicado nesse dia.",
+    );
+  });
+
+  it("cai no texto padrão quando não há mensagem em texto", () => {
+    expect(mensagemDoErro(undefined)).toBe("Não deu certo. Tente de novo.");
+    expect(mensagemDoErro(null)).toBe("Não deu certo. Tente de novo.");
+    expect(mensagemDoErro("quebrou")).toBe("Não deu certo. Tente de novo.");
+    expect(mensagemDoErro({ message: 42 })).toBe("Não deu certo. Tente de novo.");
+    expect(mensagemDoErro({ message: "  " })).toBe("Não deu certo. Tente de novo.");
+    expect(mensagemDoErro({}, "Não deu para salvar.")).toBe("Não deu para salvar.");
   });
 });

@@ -1,0 +1,192 @@
+{
+  "scenario_id": "manager-social",
+  "start_url": "/manager/social",
+  "task": "Verifique, em tres checagens separadas, que a pagina exibe o titulo \"Instagram\", depois a descricao \"Aprove os posts que chegaram e acompanhe o que vai sair.\", depois a legenda do post \"Confins sem susto na hora de viajar\".",
+  "tags": [
+    "smoke",
+    "leitura",
+    "autenticado"
+  ],
+  "seed": {
+    "localStorage": {
+      "sb-mgaigbezdalbyuqiofcf-auth-token": "{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado\",\"token_type\":\"bearer\",\"expires_in\":999999999,\"expires_at\":4102444800,\"refresh_token\":\"windup-fake-refresh\",\"user\":{\"id\":\"00000000-0000-4000-8000-000000000001\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"qa@windup.local\"}}"
+    }
+  },
+  "network": [
+    {
+      "url": "**/rest/v1/social_post*",
+      "json": [
+        {
+          "id": "sp-1",
+          "draft_key": "confins:1",
+          "status": "pending_review",
+          "kind": "image",
+          "caption": "Confins sem susto na hora de viajar\n\n#confins #movepark #estacionamentoaeroporto",
+          "slides": [
+            {
+              "url": "https://example.com/social/confins-1.jpg",
+              "path": "social/confins/1.jpg",
+              "alt": "Patio do estacionamento em Confins",
+              "texto": null
+            }
+          ],
+          "keyphrase": "estacionamento no aeroporto de Confins",
+          "cut_number": 1,
+          "blog_post_id": null,
+          "destination_id": null,
+          "cta_url": null,
+          "price_date": null,
+          "scheduled_at": "2030-01-15T15:00:00Z",
+          "validation": {
+            "blockers": [],
+            "warnings": []
+          },
+          "approved_by": null,
+          "approved_at": null,
+          "ig_container_id": null,
+          "ig_media_id": null,
+          "ig_permalink": null,
+          "published_at": null,
+          "attempts": 0,
+          "last_error": null,
+          "created_at": "2030-01-10T12:00:00Z",
+          "updated_at": "2030-01-10T12:00:00Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/app_setting*",
+      "json": [
+        {
+          "key": "social_dispatch_enabled",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/blog_post?*",
+      "json": [
+        {
+          "id": "bp-1",
+          "slug": "top-3-estacionamentos-do-aeroporto-qa",
+          "title": "Top 3 estacionamentos do Aeroporto QA",
+          "excerpt": "Comparamos as tres opcoes mais usadas por quem viaja pelo Aeroporto QA.",
+          "body_md": "## Como escolher\n\nO primeiro criterio e a distancia ate o terminal.\n\n- Coberto\n- Descoberto\n",
+          "cover_image_url": null,
+          "meta_title": null,
+          "meta_description": "Guia dos estacionamentos do Aeroporto QA.",
+          "destination_id": "d-1",
+          "author_name": "Movepark",
+          "published_at": "2026-07-01T12:00:00Z",
+          "is_published": true,
+          "legacy_wp_id": 1,
+          "legacy_url": "https://movepark.co/blog/top-3-estacionamentos-do-aeroporto-qa/",
+          "created_at": "2026-07-01T12:00:00Z",
+          "updated_at": "2026-07-01T12:00:00Z",
+          "deleted_at": null,
+          "destination": {
+            "id": "d-1",
+            "name": "Aeroporto QA",
+            "short_name": "QA",
+            "slug": "aeroporto-qa"
+          }
+        }
+      ]
+    },
+    {
+      "url": "**/auth/v1/user*",
+      "json": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "qa@windup.local"
+      }
+    },
+    {
+      "url": "**/auth/v1/token*",
+      "json": {
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDB9.windup-nao-assinado",
+        "token_type": "bearer",
+        "expires_in": 999999999,
+        "refresh_token": "windup-fake-refresh",
+        "user": {
+          "id": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "url": "**/rest/v1/profiles*",
+      "json": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "full_name": "QA Windup",
+          "first_name": "QA",
+          "last_name": "Windup",
+          "role": "hub_admin"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/profile_company*",
+      "json": []
+    },
+    {
+      "url": "**/rest/v1/company_role_scope*",
+      "json": [
+        {
+          "role": "owner",
+          "scope": "occupancy:read"
+        },
+        {
+          "role": "owner",
+          "scope": "addons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "pricing:write"
+        },
+        {
+          "role": "owner",
+          "scope": "coupons:write"
+        },
+        {
+          "role": "owner",
+          "scope": "reviews:read"
+        },
+        {
+          "role": "owner",
+          "scope": "team:read"
+        },
+        {
+          "role": "owner",
+          "scope": "finance:read"
+        },
+        {
+          "role": "owner",
+          "scope": "api-keys:write"
+        },
+        {
+          "role": "owner",
+          "scope": "locations:write"
+        },
+        {
+          "role": "owner",
+          "scope": "bookings:read"
+        }
+      ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
+    },
+    {
+      "url": "**/rpc/**",
+      "json": []
+    }
+  ],
+  "hints": [
+    "Tres verificacoes: o cabecalho da tela, a descricao abaixo dele e a linha do post na aba Para aprovar.",
+    "A fila vem estubada com um post de verdade, entao a ultima checagem prova que a tela renderiza dado, nao estado vazio."
+  ]
+}

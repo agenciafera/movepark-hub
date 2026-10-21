@@ -154,6 +154,7 @@ import ManagerConversas from "@/routes/manager/conversas";
 import ManagerAuditoriaEnderecos from "@/routes/manager/auditoria-enderecos";
 import ManagerWhiteLabel from "@/routes/manager/white-label";
 import ManagerBlog from "@/routes/manager/blog";
+import ManagerSocial from "@/routes/manager/social";
 import ManagerApiInterna from "@/routes/manager/api-interna";
 import ManagerReviews from "@/routes/manager/reviews";
 import ManagerDestaques from "@/routes/manager/destaques";
@@ -1588,6 +1589,8 @@ export const routes: RouteRecord[] = [
               { path: "auditoria-enderecos", element: <ManagerAuditoriaEnderecos /> },
               { path: "white-label", element: <ManagerWhiteLabel /> },
               { path: "blog", element: <ManagerBlog /> },
+              // Fila de publicação do Instagram (E3.6).
+              { path: "social", element: <ManagerSocial /> },
               { path: "api-interna", element: <ManagerApiInterna /> },
               { path: "companies/:id/locations", element: <ManagerLocations /> },
               {

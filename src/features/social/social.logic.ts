@@ -63,7 +63,7 @@ export const ROTULO_EVENTO: Record<string, string> = {
   approved: "Aprovado",
   rejected: "Recusado",
   rescheduled: "Reagendado",
-  dry_run: "Publicaria agora (publicação automática desligada)",
+  dry_run: "Simulação: publicaria agora (publicação automática desligada)",
   container_child: "Envio do slide criado na Meta",
   container_parent: "Envio do post criado na Meta",
   container_status: "Situação do envio na Meta",
@@ -125,4 +125,18 @@ export function formatarQuando(iso: string): string {
 /** AAAA-MM-DD para DD/MM/AAAA, sem passar por Date (que mudaria o dia pelo fuso). */
 export function formatarDia(aaaaMmDd: string): string {
   return `${aaaaMmDd.slice(8, 10)}/${aaaaMmDd.slice(5, 7)}/${aaaaMmDd.slice(0, 4)}`;
+}
+
+/**
+ * O texto de um erro para mostrar na tela. Erro de RPC chega como `PostgrestError` (um objeto
+ * simples, não `Error`) com o texto do `raise exception` do servidor, em pt-BR, em `message`.
+ * Por isso vale qualquer valor com `message` em texto, e não só `instanceof Error`; sem isso,
+ * cai no `padrao`.
+ */
+export function mensagemDoErro(e: unknown, padrao = "Não deu certo. Tente de novo."): string {
+  if (e && typeof e === "object" && "message" in e) {
+    const m = (e as { message?: unknown }).message;
+    if (typeof m === "string" && m.trim()) return m;
+  }
+  return padrao;
 }
