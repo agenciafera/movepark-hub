@@ -287,6 +287,62 @@ Diego em 13/10/2026).
 - **Capacidade da van no pico.** As avaliações de 05/09 e 10/09 dizem que a BePark passou de duas vans
   para uma. Voltar a duas é conversa comercial com a BePark, junto da reunião de alinhamento da Go2Park.
 
+### 2.3.5 O site da BePark com os mesmos números (Conteúdo 54, 21/10/2026)
+
+O bepark.com.br é o repositório `agenciafera/bepark-website` (Vite com `vite-react-ssg`, servido pela
+Vercel, que publica a cada push na `main`). Antes de 21/10 ele tinha o `ParkingFacility` sem `Offer` e
+sem `FAQPage`, o llms.txt dava 404 e a distância não aparecia em lugar nenhum.
+
+**O que mudou no site:**
+
+- **Os números do traslado têm uma fonte só** (`src/config/traslado.ts`): 7,6 km, 10 minutos de van e
+  saída a cada 20 minutos. A distância entrou na faixa de confiança e na seção "Como chegar". Um teste
+  trava os três valores com os da ficha: mudar um lado obriga a mudar o outro.
+- **JSON-LD.** O nó do estacionamento virou `LocalBusiness` e `ParkingFacility`, a mesma dupla da ficha.
+  Sozinho, o `ParkingFacility` é um `CivicStructure` e não aceita `priceRange`, `email` nem oferta.
+  `makesOffer` traz um `Offer` por linha da tabela "Quanto custa por período" (1, 3, 5 a 7, 10 e 12 a 30
+  diárias), com `eligibleQuantity` em dias e sem `availability`. A página virou `FAQPage` com as 5
+  perguntas da seção Dúvidas, lidas da mesma lista que a tela. O `priceRange` passou a ser o da ficha,
+  "R$ 13,33 - R$ 45,00 por diária" (antes era "R$ 6,00 - R$ 400,00", com a hora excedente como piso).
+- **llms.txt** gerado no build, a partir do mesmo `config/` da página, com link para a ficha.
+- **Selo.** Estava no rodapé desde 18/09, sem `nofollow`, mas com UTMs próprias. Passou a usar o link do
+  gerador (`utm_source=bepark&utm_medium=selo&utm_campaign=parceiros`, `rel="noopener"`). As visitas de
+  18/09 a 21/10 ficam no GA4 sob `utm_campaign=selo-parceiro-rodape`. O link sai no HTML pré-renderizado
+  e o destino responde 200.
+
+**Validação em produção (21/10/2026):** o Rich Results Test dá 2 itens válidos, "Empresas locais" e
+"Organização", sem aviso (a primeira rodada acusou só a falta de `image`, opcional, e as fotos do pátio
+entraram em seguida). O teste do Google não lista o `FAQPage`, porque o resultado de FAQ ficou restrito a
+sites de governo e saúde em 2023; o validador do schema.org lê as 5 perguntas e as 5 ofertas com 0 erro e
+0 aviso. O `llms.txt` responde 200, em `text/plain; charset=utf-8`.
+
+**Um número por fato, superfície a superfície (21/10/2026):**
+
+| Superfície | Distância | Trajeto | Frequência | 1 / 7 / 15 / 30 diárias |
+| --- | --- | --- | --- | --- |
+| Ficha da Movepark e llms.txt | 7,6 km | 10 min | a cada 20 min | R$ 45 / 200 / 400 / 400 |
+| bepark.com.br (página, JSON-LD, llms.txt) | 7,6 km | 10 min | a cada 20 min | R$ 45 / 200 / 400 / 400 |
+| Instagram @beparkestacionamento | não publica | **"8 minutos do Aeroporto de Confins"** | não publica | não publica |
+
+O preço foi conferido no motor (`api_simulate_price`) dia a dia, de 1 a 12, 15 e 30 diárias, e bate com
+a regra do site em todos (R$ 45, 90, 135, 180, 200, 200, 200, 245, 290, 335, 380, 400).
+
+**O que ficou aberto:**
+
+- **O "8 minutos" da bio do Instagram.** Fora do alcance do repositório. É pedido para a BePark trocar
+  por 10, o mesmo pedido de 09/10 (§2.3.4).
+- **A ficha diverge do site e do Instagram da BePark em três pontos fora dos quatro números do card:**
+  - **Vagas.** A ficha diz 400 vagas, de um tipo só, coberta (`location_parking_type.capacity = 400`, tipo
+    "Vaga Coberta" e a FAQ da unidade "As vagas do BePark são cobertas?", de 01/09). O site e o Instagram
+    dizem "mais de 350 vagas, cobertas e descobertas", e o produto do checkout mudou de `vaga-coberta`
+    para `vaga-avulsa` em 18/09, porque a reserva não garante a coberta. Se a reserva não garante a
+    coberta, "vaga coberta" na ficha, no llms.txt e nos posts é promessa (ADR-009).
+  - **E-mail.** A ficha publica `bepark@bepark.com.br`; o site, `contato@bepark.com.br`, que ainda espera
+    a confirmação dos donos de que a caixa recebe.
+  - **Tolerância.** A FAQ automática da ficha diz que há 1 hora de tolerância antes de contar diária
+    nova. O site diz que, depois da primeira diária, qualquer minuto começado conta como hora cheia, a
+    R$ 6,00.
+
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
 | Critério | BePark | Referência da praça |

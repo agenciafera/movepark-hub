@@ -150,6 +150,10 @@ exceção consciente ao padrão da skill `harmonizar-paginas`.
 
 - Não há contagem de quantos parceiros instalaram o selo. Hoje isso só aparece
   como tráfego por `utm_source` no analytics, e só para quem preencheu o nome.
+  O primeiro instalado é o do bepark.com.br, no rodapé desde 18/09/2026, com o
+  link do gerador desde 21/10/2026 (`utm_source=bepark`). Antes disso ele usava
+  UTMs próprias (`utm_campaign=selo-parceiro-rodape`). Ver
+  [ataque-cnf-bepark.md](./ataque-cnf-bepark.md) §2.3.5.
 - O passo a passo do Wix foi escrito a partir da interface do editor, e não
   verificado numa conta real. Se o Wix renomear um menu, o texto envelhece sem
   quebrar teste nenhum.
