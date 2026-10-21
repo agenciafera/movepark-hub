@@ -2,12 +2,9 @@
 // Publica um post (imagem única ou carrossel) na conta profissional do Instagram
 // da Movepark (@moveparkestacionamento), pela Content Publishing API da Meta.
 //
-// O fluxo da Meta é sempre de dois passos, e não existe agendamento nativo:
-//   POST /{ig-user-id}/media          -> creation_id (o "container", expira em 24h)
-//   POST /{ig-user-id}/media_publish  -> publica o creation_id
-// No carrossel, cada slide vira um container com is_carousel_item, e um container
-// pai com media_type=CAROUSEL amarra todos. Detalhe em
-// .claude/skills/instagram/references/api-instagram.md
+// A publicação agendada da fila é da `social-dispatch`; esta função fica para o diagnóstico do
+// token e para a publicação manual. As duas usam o mesmo cliente da Graph API
+// (`_shared/instagram.ts`). Detalhe em .claude/skills/instagram/references/api-instagram.md.
 //
 // POST /functions/v1/publish-instagram   (header: x-publish-instagram-key: <PUBLISH_INSTAGRAM_KEY>)
 //   { "action": "diagnose" }
@@ -24,8 +21,7 @@
 //          PUBLISH_INSTAGRAM_KEY
 
 import { autorizado, ehCarrossel, validar, type Imagem } from "./logic.ts";
-
-const VERSAO_PADRAO = "v21.0";
+import { graph, type IgConfig, igConfigFromEnv, publicar } from "../_shared/instagram.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -34,27 +30,13 @@ function json(body: unknown, status = 200) {
   });
 }
 
-interface Config {
-  token: string;
-  igUserId: string;
-  versao: string;
-}
-
-function lerConfig(): Config | null {
-  const token = Deno.env.get("INSTAGRAM_ACCESS_TOKEN");
-  if (!token) return null;
-  return {
-    token,
-    igUserId: Deno.env.get("INSTAGRAM_USER_ID") ?? "",
-    versao: Deno.env.get("INSTAGRAM_API_VERSION") ?? VERSAO_PADRAO,
-  };
-}
+const env = (k: string): string | undefined => Deno.env.get(k);
 
 /**
  * Descobre o id da conta do Instagram a partir das Páginas do token.
  * Poupa um passo manual: com o token em mãos, o INSTAGRAM_USER_ID sai daqui.
  */
-async function descobrirConta(cfg: Config) {
+async function descobrirConta(cfg: IgConfig) {
   const r = await graph(cfg, "me/accounts", "GET", {
     fields: "id,name,instagram_business_account{id,username}",
   });
@@ -70,47 +52,14 @@ async function descobrirConta(cfg: Config) {
   return { ok: r.ok, paginas: paginas.length, contas: comIg, resposta: r.ok ? undefined : r.body };
 }
 
-async function graph(
-  cfg: Config,
-  caminho: string,
-  metodo: "GET" | "POST",
-  campos: Record<string, string> = {},
-): Promise<{ ok: boolean; status: number; body: Record<string, unknown> }> {
-  const url = new URL(`https://graph.facebook.com/${cfg.versao}/${caminho}`);
-  const params = new URLSearchParams({ ...campos, access_token: cfg.token });
-  const init: RequestInit = { method: metodo };
-  if (metodo === "GET") url.search = params.toString();
-  else {
-    init.body = params;
-    init.headers = { "Content-Type": "application/x-www-form-urlencoded" };
-  }
-  const r = await fetch(url, init);
-  const body = await r.json().catch(() => ({}));
-  return { ok: r.ok, status: r.status, body };
-}
-
-/** O container do carrossel demora para ficar pronto; publicar antes falha. */
-async function esperarContainer(cfg: Config, id: string, tentativas = 12) {
-  for (let i = 0; i < tentativas; i++) {
-    const r = await graph(cfg, id, "GET", { fields: "status_code,status" });
-    const status = String(r.body.status_code ?? "");
-    if (status === "FINISHED") return { pronto: true, status };
-    if (status === "ERROR" || status === "EXPIRED") {
-      return { pronto: false, status, detalhe: r.body.status };
-    }
-    await new Promise((r) => setTimeout(r, 2500));
-  }
-  return { pronto: false, status: "TIMEOUT" };
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  if (!autorizado(Deno.env.get("PUBLISH_INSTAGRAM_KEY"), req.headers.get("x-publish-instagram-key"))) {
+  if (!autorizado(env("PUBLISH_INSTAGRAM_KEY"), req.headers.get("x-publish-instagram-key"))) {
     return json({ error: "unauthorized" }, 401);
   }
 
-  const cfg = lerConfig();
+  const cfg = igConfigFromEnv(env);
   if (!cfg) {
     return json({
       error: "falta o token",
@@ -218,51 +167,14 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const containers: string[] = [];
-
-  if (carrossel) {
-    for (const [i, img] of images.entries()) {
-      const r = await graph(cfg, `${cfg.igUserId}/media`, "POST", {
-        image_url: img.url,
-        is_carousel_item: "true",
-        ...(img.alt ? { alt_text: img.alt } : {}),
-      });
-      if (!r.ok || !r.body.id) {
-        return json({ ok: false, etapa: `container do slide ${i + 1}`, resposta: r.body }, 502);
-      }
-      containers.push(String(r.body.id));
-    }
-    const pai = await graph(cfg, `${cfg.igUserId}/media`, "POST", {
-      media_type: "CAROUSEL",
-      children: containers.join(","),
-      caption,
-    });
-    if (!pai.ok || !pai.body.id) {
-      return json({ ok: false, etapa: "container do carrossel", resposta: pai.body, containers }, 502);
-    }
-    const espera = await esperarContainer(cfg, String(pai.body.id));
-    if (!espera.pronto) {
-      return json({ ok: false, etapa: "container não ficou pronto", ...espera }, 502);
-    }
-    const pub = await graph(cfg, `${cfg.igUserId}/media_publish`, "POST", {
-      creation_id: String(pai.body.id),
-    });
-    if (!pub.ok) return json({ ok: false, etapa: "media_publish", resposta: pub.body }, 502);
-    return json({ ok: true, tipo: "carrossel", slides: images.length, media_id: pub.body.id });
+  const res = await publicar(cfg, { caption, images });
+  if (!res.ok) {
+    return json({ ok: false, etapa: res.etapa, resposta: res.resposta, containerId: res.containerId }, 502);
   }
-
-  const unico = images[0];
-  const c = await graph(cfg, `${cfg.igUserId}/media`, "POST", {
-    image_url: unico.url,
-    caption,
-    ...(unico.alt ? { alt_text: unico.alt } : {}),
+  return json({
+    ok: true,
+    tipo: carrossel ? "carrossel" : "post único",
+    slides: images.length,
+    media_id: res.mediaId,
   });
-  if (!c.ok || !c.body.id) return json({ ok: false, etapa: "container", resposta: c.body }, 502);
-  const espera = await esperarContainer(cfg, String(c.body.id));
-  if (!espera.pronto) return json({ ok: false, etapa: "container não ficou pronto", ...espera }, 502);
-  const pub = await graph(cfg, `${cfg.igUserId}/media_publish`, "POST", {
-    creation_id: String(c.body.id),
-  });
-  if (!pub.ok) return json({ ok: false, etapa: "media_publish", resposta: pub.body }, 502);
-  return json({ ok: true, tipo: "post único", media_id: pub.body.id });
 });
