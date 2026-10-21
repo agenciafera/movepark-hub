@@ -7,7 +7,8 @@
 //   → 200 { ok, id, status, validation, aviso? } | 401 | 409 (rascunho que saiu de pending_review) | 422 { erros }
 //   Problema de arquivo ou de formato devolve 422 e não grava nada. Problema de texto fica em
 //   `validation` e trava a aprovação, para a tela mostrar o motivo. O JPEG sobe para
-//   social/<origem>/<corte>/<arquivo>: um corte nunca troca a imagem de outro.
+//   social/<origem>/<corte>/<hash do conteúdo>/<arquivo>, sem sobrescrever (upsert false): bytes
+//   diferentes caem em outro caminho, então a imagem de um post aprovado nunca muda.
 //   O status é conferido na própria escrita (update condicionado a pending_review, ou insert com
 //   unique), nunca só numa leitura antes: duas chamadas ao mesmo tempo não pisam no aprovado.
 //
@@ -28,6 +29,7 @@ import {
   draftKey,
   ehUuid,
   lerRascunho,
+  objetoJaExiste,
   podeCorrigirLegenda,
   podeReenviar,
   rotuloStatus,
@@ -49,9 +51,10 @@ function json(body: unknown, status = 200) {
 
 const env = (k: string): string | undefined => Deno.env.get(k);
 
-async function versaoDe(bytes: Uint8Array): Promise<string> {
+/** Os 8 primeiros bytes do SHA-256 em hex: o endereço do conteúdo no caminho do bucket. */
+async function hashDe(bytes: Uint8Array): Promise<string> {
   const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(bytes)));
-  return [...h.slice(0, 5)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return [...h.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // deno-lint-ignore no-explicit-any
@@ -117,15 +120,20 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
     );
   }
 
+  // Objeto imutável: o hash do conteúdo está no caminho e o upload nunca sobrescreve. Bytes
+  // diferentes vão para outro caminho, então nenhum reenvio (nem o que perde uma corrida) troca a
+  // imagem que um post aprovado já aponta. Caminho ocupado é o mesmo conteúdo: conta como sucesso.
   const slides = [];
   for (const [i, a] of arquivos.entries()) {
-    const caminho = caminhoNoBucket(r.origem, r.corte, a.nome);
+    const caminho = caminhoNoBucket(r.origem, r.corte, await hashDe(a.bytes), a.nome);
     const { error } = await admin.storage
       .from("assets-public")
-      .upload(caminho, a.bytes, { contentType: "image/jpeg", upsert: true, cacheControl: "3600" });
-    if (error) return json({ error: `Não consegui subir ${a.nome}: ${error.message}` }, 500);
+      .upload(caminho, a.bytes, { contentType: "image/jpeg", upsert: false, cacheControl: "31536000" });
+    if (error && !objetoJaExiste(error)) {
+      return json({ error: `Não consegui subir ${a.nome}: ${error.message}` }, 500);
+    }
     const s = r.slides[i];
-    slides.push({ url: urlPublica(supabaseUrl, caminho, await versaoDe(a.bytes)), path: caminho, alt: s.alt, texto: s.texto });
+    slides.push({ url: urlPublica(supabaseUrl, caminho), path: caminho, alt: s.alt, texto: s.texto });
   }
 
   const validation = conferirTexto({ caption: r.caption, slides, keyphrase: r.keyphrase, priceDate: r.priceDate });
@@ -173,7 +181,7 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
     if (error) return json({ error: `Não consegui gravar o rascunho: ${error.message}` }, 500);
     if (!data?.length) {
       return json(
-        { ok: false, erros: ["Este rascunho mudou de estado durante o envio e não foi substituído. Confira o post na fila."] },
+        { ok: false, erros: ["Este rascunho mudou de estado durante o envio. A versão enviada foi descartada e o post na fila ficou como estava."] },
         409,
       );
     }

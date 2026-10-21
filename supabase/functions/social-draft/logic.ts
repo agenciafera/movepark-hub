@@ -101,12 +101,27 @@ export const draftKey = (origem: string, corte: number | null) => `${origem}:${c
 export const podeReenviar = (status: string) => status === "pending_review";
 export const podeCorrigirLegenda = (status: string) => status === "pending_review" || status === "approved";
 /**
- * O corte entra no caminho porque a skill nomeia os arquivos pela palavra-chave e pelo número do
- * slide, e todos os cortes de um blogpost repetem esses nomes. Sem o corte, o rascunho do corte 2
- * (outra `draft_key`, sem 409) sobrescreveria o JPEG do corte 1 já aprovado.
+ * O caminho é endereçado pelo conteúdo: `social/<origem>/<corte>/<hash>/<arquivo>`.
+ *
+ * Dois motivos. O corte entra porque a skill nomeia os arquivos pela palavra-chave e pelo número do
+ * slide, e todos os cortes do mesmo blogpost repetem esses nomes. O hash entra porque o bucket
+ * serve o que estiver no caminho na hora em que a Meta busca a imagem (a query `?v=` é ignorada):
+ * se bytes diferentes pudessem ocupar o mesmo caminho, um reenvio trocaria a imagem de um post já
+ * aprovado. Com o hash, bytes diferentes caem em caminhos diferentes e o objeto nunca muda.
  */
-export const caminhoNoBucket = (origem: string, corte: number | null, arquivo: string) =>
-  `social/${origem}/${corte ?? 0}/${arquivo}`;
+export const caminhoNoBucket = (origem: string, corte: number | null, hash: string, arquivo: string) =>
+  `social/${origem}/${corte ?? 0}/${hash}/${arquivo}`;
+
+/** Upload com `upsert: false` recusa caminho ocupado. Mesmo caminho é mesmo conteúdo, então vale como sucesso. */
+export function objetoJaExiste(erro: unknown): boolean {
+  if (!erro || typeof erro !== "object") return false;
+  const e = erro as { statusCode?: unknown; status?: unknown; message?: unknown };
+  return (
+    String(e.statusCode) === "409" ||
+    String(e.status) === "409" ||
+    (typeof e.message === "string" && /already exists|duplicate/i.test(e.message))
+  );
+}
 
 const ROTULOS_STATUS: Record<string, string> = {
   pending_review: "aguardando aprovação",
@@ -123,9 +138,9 @@ export const rotuloStatus = (status: string): string => ROTULOS_STATUS[status] ?
 
 export const ehUuid = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 
-/** A versão na query evita que o CDN sirva a imagem antiga quando o rascunho é reenviado com o mesmo nome. */
-export function urlPublica(supabaseUrl: string, caminho: string, versao: string): string {
-  return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/assets-public/${caminho}?v=${versao}`;
+/** O caminho já carrega o hash do conteúdo, então a URL não precisa de versão na query. */
+export function urlPublica(supabaseUrl: string, caminho: string): string {
+  return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/assets-public/${caminho}`;
 }
 
 export function chaveConfere(esperada: string | undefined, recebida: string | null): boolean {

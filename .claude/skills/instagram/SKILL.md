@@ -349,7 +349,8 @@ Nome em kebab-case com a palavra-chave e o número do slide, sem acento:
 `estacionamento-aeroporto-guarulhos-01.jpg`. Nome genérico (`slide1.jpg`, hash)
 é proibido: o arquivo vai para o `assets-public` e o nome é sinal de busca.
 
-Path no bucket: `assets-public/social/<slug-do-post>/<arquivo>.jpg`.
+Path no bucket: `assets-public/social/<origem>/<corte>/<hash>/<arquivo>.jpg`. A plataforma monta esse
+caminho no envio (o hash é do conteúdo do JPEG), e a skill só escolhe o nome do arquivo.
 
 ## Passo 8: alt
 

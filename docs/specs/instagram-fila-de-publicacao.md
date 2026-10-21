@@ -179,14 +179,22 @@ A Edge:
    **formato do payload** devolve 422 e não grava nada, porque não há post para mostrar. Os demais
    bloqueios (texto) ficam gravados em `validation` e travam a aprovação, para a tela mostrar o
    motivo.
-2. Sobe os JPEGs para `assets-public/social/<origem>/<corte>/<arquivo>` (`<corte>` é `0` quando o
-   post não tem corte). O corte fica no caminho porque a skill nomeia os arquivos pela palavra-chave
-   e pelo número do slide, e todos os cortes do mesmo blogpost repetem esses nomes: assim um corte
-   nunca troca a imagem de outro, mesmo com `upsert`.
+2. Sobe os JPEGs para `assets-public/social/<origem>/<corte>/<hash>/<arquivo>`, sem sobrescrever
+   (`upsert: false`). `<corte>` é `0` quando o post não tem corte; `<hash>` são os 8 primeiros
+   bytes do SHA-256 do arquivo, em hex; `<arquivo>` segue sendo o nome de busca da skill. Dois
+   motivos: o corte separa cortes diferentes, porque a skill nomeia os arquivos pela palavra-chave
+   e pelo número do slide e todos os cortes do mesmo blogpost repetem esses nomes; o hash torna o
+   objeto **imutável**, porque o bucket serve o que estiver no caminho na hora em que a Meta busca
+   a imagem (a query `?v=` é ignorada). Bytes diferentes caem em outro caminho, então a imagem de
+   um post aprovado nunca muda, nem por reenvio em corrida nem por quem perde a criação
+   concorrente. Caminho já ocupado é o mesmo conteúdo e conta como sucesso (reenvio idêntico é
+   idempotente). A URL guardada em `slides[].url` não leva query. Versões antigas de um rascunho
+   reenviado ficam órfãs no bucket (sem limpeza automática).
 3. Grava a linha conferindo o status **na própria escrita**: se já existe, `update` condicionado a
    `status = 'pending_review'`; se não existe, `insert`, e `draft_key` duplicada (23505) é um envio
    concorrente. Nos dois casos o perdedor recebe 409, e rascunho que saiu de `pending_review` não é
-   sobrescrito por reenvio.
+   sobrescrito por reenvio: a linha fica como estava e a imagem enviada, que foi para um caminho
+   novo, simplesmente não é usada.
 4. Grava `validation` e o evento `draft_received`.
 
 ### A conferência no servidor
@@ -293,7 +301,7 @@ contrato `harmonizar-paginas`, que é do consumer.
 |---|---|
 | `deno test` `_shared/instagram-validate.test.ts` | cada bloqueio e cada aviso da tabela da seção 2, incluindo JPEG falso e proporção errada |
 | `deno test` `social-dispatch/index.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run` |
-| `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado, upsert por `draft_key` |
+| `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status |
 | pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
 | Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, legenda com destaque dos 125 caracteres, aba certa por estado |
 

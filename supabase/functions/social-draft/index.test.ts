@@ -7,6 +7,7 @@ import {
   draftKey,
   ehUuid,
   lerRascunho,
+  objetoJaExiste,
   podeCorrigirLegenda,
   podeReenviar,
   rotuloStatus,
@@ -66,27 +67,35 @@ Deno.test("price_date fora do formato é recusada", () => {
   assertEquals(lerRascunho({ ...BOM, price_date: "21/10/2026" }).ok, false);
 });
 
-Deno.test("chave do rascunho, caminho no bucket e URL com versão", () => {
+Deno.test("chave do rascunho, caminho no bucket com hash e URL sem versão na query", () => {
   assertEquals(draftKey("confins", 2), "confins:2");
   assertEquals(draftKey("confins", null), "confins:0");
-  assertEquals(caminhoNoBucket("confins", 2, "a.jpg"), "social/confins/2/a.jpg");
-  assertEquals(caminhoNoBucket("confins", null, "a.jpg"), "social/confins/0/a.jpg");
+  assertEquals(caminhoNoBucket("confins", 2, "abc123", "a.jpg"), "social/confins/2/abc123/a.jpg");
+  assertEquals(caminhoNoBucket("confins", null, "abc123", "a.jpg"), "social/confins/0/abc123/a.jpg");
   assertEquals(
-    urlPublica("https://x.supabase.co/", "social/confins/2/a.jpg", "abc"),
-    "https://x.supabase.co/storage/v1/object/public/assets-public/social/confins/2/a.jpg?v=abc",
+    urlPublica("https://x.supabase.co/", "social/confins/2/abc123/a.jpg"),
+    "https://x.supabase.co/storage/v1/object/public/assets-public/social/confins/2/abc123/a.jpg",
   );
 });
 
-Deno.test("cortes diferentes com o mesmo nome de arquivo nunca dividem o caminho", () => {
+Deno.test("cortes diferentes e conteúdos diferentes nunca dividem o caminho", () => {
   // A skill nomeia os arquivos pela palavra-chave e pelo slide: todos os cortes repetem o nome.
-  assertEquals(
-    caminhoNoBucket("confins", 1, "preco-01.jpg") === caminhoNoBucket("confins", 2, "preco-01.jpg"),
-    false,
-  );
-  assertEquals(
-    caminhoNoBucket("confins", null, "preco-01.jpg") === caminhoNoBucket("confins", 1, "preco-01.jpg"),
-    false,
-  );
+  const caminho = (corte: number | null, hash: string) => caminhoNoBucket("confins", corte, hash, "preco-01.jpg");
+  assertEquals(caminho(1, "aaaa") === caminho(2, "aaaa"), false);
+  assertEquals(caminho(null, "aaaa") === caminho(1, "aaaa"), false);
+  // Mesmo corte, bytes diferentes: outro caminho, e é isso que protege a imagem do post aprovado.
+  assertEquals(caminho(1, "aaaa") === caminho(1, "bbbb"), false);
+  assertEquals(caminho(1, "aaaa") === caminho(1, "aaaa"), true);
+});
+
+Deno.test("objeto que já existe no bucket é reconhecido pelo erro do storage", () => {
+  assertEquals(objetoJaExiste({ statusCode: "409", error: "Duplicate", message: "The resource already exists" }), true);
+  assertEquals(objetoJaExiste({ status: 409, message: "x" }), true);
+  assertEquals(objetoJaExiste({ message: "The resource already exists" }), true);
+  assertEquals(objetoJaExiste({ statusCode: "500", message: "internal" }), false);
+  assertEquals(objetoJaExiste({ message: "Bucket not found" }), false);
+  assertEquals(objetoJaExiste(null), false);
+  assertEquals(objetoJaExiste(undefined), false);
 });
 
 Deno.test("data que não existe no calendário é recusada, em price_date e em publicar_em", () => {
@@ -144,10 +153,11 @@ type Resposta = { data: unknown; error: { code?: string; message: string } | nul
 
 function admin(
   responder: (c: Chamada) => Resposta,
-  opts: { usuario?: { id: string } | null; erroUpload?: string } = {},
+  opts: { usuario?: { id: string } | null; erroUpload?: { message: string; statusCode?: string } } = {},
 ) {
   const chamadas: Chamada[] = [];
   const uploads: string[] = [];
+  const opcoesDoUpload: Record<string, unknown>[] = [];
   const consulta = (tabela: string) => {
     const c: Chamada = { tabela, op: "select", filtros: [] };
     const executa = (terminal: Chamada["terminal"]) => {
@@ -174,9 +184,10 @@ function admin(
     from: consulta,
     storage: {
       from: (_bucket: string) => ({
-        upload: (caminho: string) => {
+        upload: (caminho: string, _bytes: Uint8Array, opcoes: Record<string, unknown>) => {
           uploads.push(caminho);
-          return Promise.resolve({ error: opts.erroUpload ? { message: opts.erroUpload } : null });
+          opcoesDoUpload.push(opcoes);
+          return Promise.resolve({ error: opts.erroUpload ?? null });
         },
       }),
     },
@@ -190,7 +201,7 @@ function admin(
     },
   };
   const de = (tabela: string, op: Chamada["op"]) => chamadas.filter((c) => c.tabela === tabela && c.op === op);
-  return { cliente, chamadas, uploads, de };
+  return { cliente, chamadas, uploads, opcoesDoUpload, de };
 }
 
 const ok = (data: unknown): Resposta => ({ data, error: null });
@@ -238,7 +249,9 @@ Deno.test("submeter sem a chave é 401 e não toca em nada", async () => {
   assertEquals(a.uploads.length, 0);
 });
 
-Deno.test("submeter novo rascunho: sobe no caminho com o corte, insere e registra o evento", async () => {
+const CAMINHO_COM_HASH = /^social\/teste-fila\/2\/[0-9a-f]{16}\/slide-01\.jpg$/;
+
+Deno.test("submeter novo rascunho: sobe no caminho com corte e hash, sem sobrescrever, e registra o evento", async () => {
   const a = admin((c) => {
     if (c.tabela === "social_post" && c.op === "insert") return ok({ id: ID_POST });
     return ok(null);
@@ -249,11 +262,19 @@ Deno.test("submeter novo rascunho: sobe no caminho com o corte, insere e registr
   assertEquals(corpo.ok, true);
   assertEquals(corpo.id, ID_POST);
   assertEquals(corpo.aviso, undefined);
-  assertEquals(a.uploads, ["social/teste-fila/2/slide-01.jpg"]);
-  const inserido = a.de("social_post", "insert")[0].payload as { draft_key: string; status: string; slides: { path: string }[] };
+  assertEquals(a.uploads.length, 1);
+  assertEquals(CAMINHO_COM_HASH.test(a.uploads[0]), true, a.uploads[0]);
+  assertEquals(a.opcoesDoUpload[0].upsert, false);
+  const inserido = a.de("social_post", "insert")[0].payload as {
+    draft_key: string;
+    status: string;
+    slides: { path: string; url: string }[];
+  };
   assertEquals(inserido.draft_key, "teste-fila:2");
   assertEquals(inserido.status, "pending_review");
-  assertEquals(inserido.slides[0].path, "social/teste-fila/2/slide-01.jpg");
+  assertEquals(inserido.slides[0].path, a.uploads[0]);
+  assertEquals(inserido.slides[0].url, `${URL_BASE}/storage/v1/object/public/assets-public/${a.uploads[0]}`);
+  assertEquals(inserido.slides[0].url.includes("?"), false);
   const evento = a.de("social_post_event", "insert")[0].payload as { kind: string; social_post_id: string };
   assertEquals(evento.kind, "draft_received");
   assertEquals(evento.social_post_id, ID_POST);
@@ -279,10 +300,60 @@ Deno.test("submeter: o update vai condicionado a pending_review e, sem linha de 
     return ok(null);
   });
   const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  const corpo = await res.json();
   assertEquals(res.status, 409);
+  // O texto precisa continuar verdadeiro: a imagem nova foi para outro caminho e a linha não mudou.
+  assertStringIncludes(corpo.erros[0], "A versão enviada foi descartada e o post na fila ficou como estava.");
   const [u] = a.de("social_post", "update");
   assertEquals(u.filtros.some(([, col, v]) => col === "status" && v === "pending_review"), true);
   assertEquals(u.filtros.some(([, col, v]) => col === "id" && v === ID_POST), true);
+  assertEquals(a.de("social_post_event", "insert").length, 0);
+});
+
+Deno.test("reenvio em pending_review com bytes diferentes sobe em outro caminho e nada é sobrescrito", async () => {
+  const pendente = (c: Chamada) => {
+    if (c.op === "select" && c.tabela === "social_post") return ok({ id: ID_POST, status: "pending_review" });
+    if (c.op === "update") return ok([{ id: ID_POST }]);
+    return ok(null);
+  };
+  const primeiro = admin(pendente);
+  await comChave(() => submeter(envio(POST_VALIDO, { arquivo: jpeg(1080, 1350) }), primeiro.cliente, URL_BASE));
+  const segundo = admin(pendente);
+  await comChave(() => submeter(envio(POST_VALIDO, { arquivo: jpeg(1080, 1349) }), segundo.cliente, URL_BASE));
+  const repetido = admin(pendente);
+  await comChave(() => submeter(envio(POST_VALIDO, { arquivo: jpeg(1080, 1350) }), repetido.cliente, URL_BASE));
+
+  assertEquals(primeiro.uploads.length + segundo.uploads.length + repetido.uploads.length, 3);
+  // Bytes diferentes, mesmo corte e mesmo nome: caminhos diferentes. Nada ocupa o lugar do outro.
+  assertEquals(primeiro.uploads[0] === segundo.uploads[0], false);
+  // Mesmos bytes: mesmo caminho, e por isso o reenvio idêntico é idempotente.
+  assertEquals(primeiro.uploads[0], repetido.uploads[0]);
+  for (const a of [primeiro, segundo, repetido]) {
+    assertEquals(a.opcoesDoUpload[0].upsert, false);
+    assertEquals(CAMINHO_COM_HASH.test(a.uploads[0]), true, a.uploads[0]);
+  }
+  // O que o update grava aponta para o caminho novo.
+  const gravado = segundo.de("social_post", "update")[0].payload as { slides: { path: string }[] };
+  assertEquals(gravado.slides[0].path, segundo.uploads[0]);
+});
+
+Deno.test("objeto que já existe no bucket (mesmo conteúdo) conta como sucesso", async () => {
+  const a = admin(
+    (c) => (c.tabela === "social_post" && c.op === "insert" ? ok({ id: ID_POST }) : ok(null)),
+    { erroUpload: { statusCode: "409", message: "The resource already exists" } },
+  );
+  const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  const corpo = await res.json();
+  assertEquals(res.status, 200);
+  assertEquals(corpo.ok, true);
+  assertEquals(a.de("social_post", "insert").length, 1);
+});
+
+Deno.test("falha de upload que não é objeto existente é 500 e nada é gravado", async () => {
+  const a = admin(() => ok(null), { erroUpload: { statusCode: "500", message: "storage fora do ar" } });
+  const res = await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  assertEquals(res.status, 500);
+  assertEquals(a.de("social_post", "insert").length + a.de("social_post", "update").length, 0);
   assertEquals(a.de("social_post_event", "insert").length, 0);
 });
 
