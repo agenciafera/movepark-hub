@@ -1,27 +1,25 @@
 // Edge Function: /publish-instagram
-// Publica um post (imagem única ou carrossel) na conta profissional do Instagram
-// da Movepark (@moveparkestacionamento), pela Content Publishing API da Meta.
-//
-// A publicação agendada da fila é da `social-dispatch`; esta função fica para o diagnóstico do
-// token e para a publicação manual. As duas usam o mesmo cliente da Graph API
+// Diagnóstico do token e ensaio de publicação (dry run) da conta profissional do Instagram da
+// Movepark (@moveparkestacionamento). Esta função NÃO publica: a publicação real sai só pela fila
+// (`/manager/social`), pela Edge `social-dispatch`, que exige aprovação humana, um post por dia,
+// a conferência de marca e grava o rastro. Ambas usam o mesmo cliente da Graph API
 // (`_shared/instagram.ts`). Detalhe em .claude/skills/instagram/references/api-instagram.md.
 //
 // POST /functions/v1/publish-instagram   (header: x-publish-instagram-key: <PUBLISH_INSTAGRAM_KEY>)
 //   { "action": "diagnose" }
 //     → confere token, permissões e a conta ligada. Não escreve nada.
-//   { "action": "publish", "caption": "...", "images": [{url, alt}], "dryRun": true }
+//   { "action": "publish", "caption": "...", "images": [{url, alt}] }          (dryRun é true)
 //     → valida tudo e diz o que faria. NÃO publica.
 //   { "action": "publish", ..., "dryRun": false }
-//     → publica de verdade.
-//
-// dryRun nasce true de propósito, mesmo padrão do marketing_dispatch_enabled:
-// ferramenta de publicação que nasce ligada posta na conta real no primeiro teste.
+//     → 403 `{ ok: false, erros: ["Publicação real só pela fila (/manager/social)."] }`, antes de
+//       qualquer chamada à Meta. Esta rota nunca foi o caminho da publicação: ela não passa pela
+//       aprovação, pelo limite de um por dia, pela conferência da marca nem pelo rastro.
 //
 // Secrets: INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID, INSTAGRAM_API_VERSION (opcional),
 //          PUBLISH_INSTAGRAM_KEY
 
 import { autorizado, ehCarrossel, validar, type Imagem } from "./logic.ts";
-import { graph, type IgConfig, igConfigFromEnv, publicar } from "../_shared/instagram.ts";
+import { graph, type IgConfig, igConfigFromEnv } from "../_shared/instagram.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -31,6 +29,8 @@ function json(body: unknown, status = 200) {
 }
 
 const env = (k: string): string | undefined => Deno.env.get(k);
+
+export const PUBLICACAO_SO_PELA_FILA = "Publicação real só pela fila (/manager/social).";
 
 /**
  * Descobre o id da conta do Instagram a partir das Páginas do token.
@@ -52,11 +52,21 @@ async function descobrirConta(cfg: IgConfig) {
   return { ok: r.ok, paginas: paginas.length, contas: comIg, resposta: r.ok ? undefined : r.body };
 }
 
-Deno.serve(async (req: Request) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   if (!autorizado(env("PUBLISH_INSTAGRAM_KEY"), req.headers.get("x-publish-instagram-key"))) {
     return json({ error: "unauthorized" }, 401);
+  }
+
+  const lido = await req.json().catch(() => null);
+  const corpo = (lido && typeof lido === "object" ? lido : {}) as Record<string, any>;
+  const action = corpo.action ?? "diagnose";
+
+  // Publicar de verdade não é desta rota. A recusa vem antes de ler o token e de qualquer chamada
+  // à Meta ou ao servidor das imagens: nada sai daqui por engano, nem com a chave certa.
+  if (action === "publish" && corpo.dryRun === false) {
+    return json({ ok: false, erros: [PUBLICACAO_SO_PELA_FILA] }, 403);
   }
 
   const cfg = igConfigFromEnv(env);
@@ -67,9 +77,6 @@ Deno.serve(async (req: Request) => {
         "própria função descobre: rode com action diagnose.",
     }, 503);
   }
-
-  const corpo = await req.json().catch(() => ({}));
-  const action = corpo.action ?? "diagnose";
 
   // ---- diagnose: confere o token antes de qualquer escrita ------------------
   if (action === "diagnose") {
@@ -121,8 +128,7 @@ Deno.serve(async (req: Request) => {
 
   if (action !== "publish") return json({ error: `action desconhecida: ${action}` }, 400);
 
-  // Publicar NUNCA usa conta descoberta: o id tem que estar configurado, senão
-  // um token com duas Páginas postaria na errada sem ninguém escolher.
+  // O ensaio também exige o id configurado, para o resumo mostrar a conta que a fila usaria.
   if (!cfg.igUserId) {
     return json({
       error: "INSTAGRAM_USER_ID não configurado",
@@ -130,10 +136,9 @@ Deno.serve(async (req: Request) => {
     }, 503);
   }
 
-  // ---- publish --------------------------------------------------------------
+  // ---- publish (só ensaio) --------------------------------------------------
   const caption: string = corpo.caption ?? "";
   const images: Imagem[] = Array.isArray(corpo.images) ? corpo.images : [];
-  const dryRun = corpo.dryRun !== false; // nasce travado
 
   const erros = validar({ caption, images });
   if (erros.length) return json({ ok: false, erros }, 422);
@@ -151,30 +156,18 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, erros: ["imagem não acessível ou não é JPEG"], inacessiveis }, 422);
   }
 
-  const carrossel = ehCarrossel(images);
-  if (dryRun) {
-    return json({
-      ok: true,
-      dryRun: true,
-      publicaria: {
-        tipo: carrossel ? "carrossel" : "post único",
-        slides: images.length,
-        caracteres: caption.length,
-        hashtags: (caption.match(/#[\p{L}\p{N}_]+/gu) ?? []).length,
-        conta: cfg.igUserId,
-      },
-      aviso: "nada foi publicado. Repita com dryRun: false para publicar de verdade.",
-    });
-  }
-
-  const res = await publicar(cfg, { caption, images });
-  if (!res.ok) {
-    return json({ ok: false, etapa: res.etapa, resposta: res.resposta, containerId: res.containerId }, 502);
-  }
   return json({
     ok: true,
-    tipo: carrossel ? "carrossel" : "post único",
-    slides: images.length,
-    media_id: res.mediaId,
+    dryRun: true,
+    publicaria: {
+      tipo: ehCarrossel(images) ? "carrossel" : "post único",
+      slides: images.length,
+      caracteres: caption.length,
+      hashtags: (caption.match(/#[\p{L}\p{N}_]+/gu) ?? []).length,
+      conta: cfg.igUserId,
+    },
+    aviso: "Nada foi publicado. A publicação real só sai pela fila, em /manager/social.",
   });
-});
+}
+
+if (import.meta.main) Deno.serve(handler);
