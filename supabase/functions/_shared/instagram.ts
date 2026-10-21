@@ -55,6 +55,14 @@ export function igConfigFromEnv(get: (k: string) => string | undefined): IgConfi
   };
 }
 
+/** Tira o token de um texto (cru ou como a query string o codifica) antes de ele ir para resposta ou rastro. */
+function redigir(cfg: IgConfig, texto: string): string {
+  if (!cfg.token) return texto;
+  return texto
+    .replaceAll(cfg.token, "[token]")
+    .replaceAll(new URLSearchParams({ t: cfg.token }).toString().slice(2), "[token]");
+}
+
 export async function graph(
   cfg: IgConfig,
   caminho: string,
@@ -78,9 +86,16 @@ export async function graph(
     const body = await r.json().catch(() => ({}));
     result = { ok: r.ok, status: r.status, body: body as Record<string, unknown> };
   } catch (e) {
-    result = { ok: false, status: 0, body: { erro: String(e) } };
+    // Em GET o token vai na query string, e o texto do erro do runtime pode citar a URL inteira.
+    result = { ok: false, status: 0, body: { erro: redigir(cfg, String(e)) } };
   }
-  await opts.onCall?.({ kind, metodo, caminho, campos, result });
+  // O rastro é de quem chamou. Se ele falhar depois de um media_publish que deu certo, a falha não
+  // pode subir: o chamador perderia o mediaId e a próxima tentativa publicaria de novo.
+  try {
+    await opts.onCall?.({ kind, metodo, caminho, campos, result });
+  } catch (e) {
+    console.error(`instagram: falha ao gravar o rastro de ${kind} (${caminho}): ${redigir(cfg, String(e))}`);
+  }
   return result;
 }
 
@@ -122,6 +137,7 @@ export async function publicar(
   opts: Opcoes & { onContainer?: (id: string) => void | Promise<void> } = {},
 ): Promise<ResultadoPublicacao> {
   const { caption, images } = entrada;
+  if (images.length === 0) return { ok: false, etapa: "sem imagem", resposta: null };
   let containerId: string;
 
   if (images.length > 1) {

@@ -1,7 +1,7 @@
 // O cliente da Graph API é o único lugar que fala com a Meta. Os testes usam um fetch falso:
 // conferem a ordem das chamadas, os campos de cada uma e que o token nunca vai para o rastro.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { acharMidiaPorLegenda, type GraphCall, igConfigFromEnv, publicar } from "./instagram.ts";
+import { acharMidiaPorLegenda, type GraphCall, graph, igConfigFromEnv, publicar } from "./instagram.ts";
 
 const CFG = { token: "TOKEN-SECRETO", igUserId: "17841", versao: "v21.0" };
 
@@ -106,4 +106,69 @@ Deno.test("igConfigFromEnv devolve nulo sem token", () => {
     igUserId: "1",
     versao: "v21.0",
   });
+});
+
+Deno.test("erro de rede que cita a URL com o token não vaza o token nem para o resultado nem para o rastro", async () => {
+  const fetcher = (() => {
+    throw new Error(
+      "error sending request for url (https://graph.facebook.com/v21.0/x?access_token=TOKEN-SECRETO)",
+    );
+  }) as unknown as typeof fetch;
+  const rastro: GraphCall[] = [];
+  const onCall = (c: GraphCall) => void rastro.push(c);
+
+  const r = await graph(CFG, "x", "GET", {}, { fetcher, onCall });
+  assertEquals(r.ok, false);
+  assertEquals(r.status, 0);
+  assertEquals(JSON.stringify(r).includes("TOKEN-SECRETO"), false);
+
+  const p = await publicar(CFG, { caption: "x", images: [{ url: "https://x.co/1.jpg" }] }, { ...rapido, fetcher, onCall });
+  assertEquals(p.ok, false);
+  assertEquals(JSON.stringify(p).includes("TOKEN-SECRETO"), false);
+  assertEquals(rastro.length >= 2, true);
+  assertEquals(JSON.stringify(rastro).includes("TOKEN-SECRETO"), false);
+});
+
+Deno.test("falha ao gravar o rastro não derruba a publicação nem perde o mediaId", async () => {
+  const { fetcher } = fetchFalso([
+    { body: { id: "unico" } },
+    { body: { status_code: "FINISHED" } },
+    { body: { id: "midia" } },
+  ]);
+  const logs: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => void logs.push(args.map(String).join(" "));
+  try {
+    const sincrono = await publicar(CFG, { caption: "x", images: [{ url: "https://x.co/1.jpg" }] }, {
+      ...rapido,
+      fetcher,
+      onCall: () => {
+        throw new Error("banco fora do ar");
+      },
+    });
+    assertEquals(sincrono, { ok: true, mediaId: "midia", containerId: "unico" });
+
+    const { fetcher: f2 } = fetchFalso([
+      { body: { id: "unico" } },
+      { body: { status_code: "FINISHED" } },
+      { body: { id: "midia" } },
+    ]);
+    const assincrono = await publicar(CFG, { caption: "x", images: [{ url: "https://x.co/1.jpg" }] }, {
+      ...rapido,
+      fetcher: f2,
+      onCall: () => Promise.reject(new Error("banco fora do ar")),
+    });
+    assertEquals(assincrono, { ok: true, mediaId: "midia", containerId: "unico" });
+  } finally {
+    console.error = original;
+  }
+  assertEquals(logs.length > 0, true);
+  assertEquals(logs.join("\n").includes("TOKEN-SECRETO"), false);
+});
+
+Deno.test("sem imagem, publicar recusa antes de falar com a Meta", async () => {
+  const { fetcher, chamadas } = fetchFalso([{ body: { id: "nunca" } }]);
+  const r = await publicar(CFG, { caption: "x", images: [] }, { ...rapido, fetcher });
+  assertEquals(r, { ok: false, etapa: "sem imagem", resposta: null });
+  assertEquals(chamadas.length, 0);
 });
