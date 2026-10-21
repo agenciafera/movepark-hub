@@ -34,13 +34,21 @@ const VAZIO: Record<SocialAba, string> = {
  * ligada. Spec: docs/specs/instagram-fila-de-publicacao.md
  */
 export default function ManagerSocial() {
-  const { data, isLoading } = useSocialPosts();
+  const { data, isLoading, isError } = useSocialPosts();
   const settings = useAppSettings();
   const updateSettings = useUpdateAppSettings();
   const [aba, setAba] = React.useState<SocialAba>("para-aprovar");
   const [abertoId, setAbertoId] = React.useState<string | null>(null);
 
   const ligada = settings.data?.social_dispatch_enabled === "true";
+  // Enquanto o estado não foi lido, dizer "desligada" seria afirmar o que não se sabe.
+  const rotuloDoEstado = settings.isLoading
+    ? "Carregando o estado da publicação automática"
+    : settings.isError || !settings.data
+      ? "Não foi possível ler o estado da publicação automática"
+      : ligada
+        ? "Publicação automática ligada"
+        : "Publicação automática desligada";
 
   const porAba = React.useMemo(() => {
     const grupos: Record<SocialAba, SocialPost[]> = {
@@ -83,17 +91,19 @@ export default function ManagerSocial() {
               checked={ligada}
               onCheckedChange={alternar}
               aria-label="Publicação automática"
-              disabled={settings.isLoading || updateSettings.isPending}
+              disabled={!settings.data || settings.isError || updateSettings.isPending}
             />
-            <span>
-              {ligada ? "Publicação automática ligada" : "Publicação automática desligada"}
-            </span>
+            <span>{rotuloDoEstado}</span>
           </div>
         }
       />
 
       {isLoading ? (
         <Skeleton className="h-40 w-full" />
+      ) : isError ? (
+        <p role="alert" className="text-sm text-error">
+          Não deu para carregar a fila. Recarregue a página.
+        </p>
       ) : (
         <Tabs value={aba} onValueChange={(v) => setAba(v as SocialAba)}>
           <TabsList>

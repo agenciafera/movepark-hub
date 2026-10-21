@@ -112,6 +112,25 @@ export function deCampoDeData(valor: string): string {
   return new Date(`${valor}:00-03:00`).toISOString();
 }
 
+/**
+ * A data que o campo traz de início. Se a data do post ainda está no futuro, é ela. Se já passou
+ * (post `failed`, `overdue` ou aprovado e esquecido), reagendar para ela seria recusado pelo
+ * servidor, então a sugestão é amanhã ao meio-dia, hora de São Paulo.
+ */
+export function sugestaoDeData(scheduledAt: string, agora: Date): string {
+  if (Date.parse(scheduledAt) > agora.getTime()) return paraCampoDeData(scheduledAt);
+  const amanha = new Date(agora.getTime() - TRES_HORAS);
+  amanha.setUTCDate(amanha.getUTCDate() + 1);
+  return `${amanha.toISOString().slice(0, 10)}T12:00`;
+}
+
+/** O valor do campo é uma data válida e está depois de `agora`? Campo vazio ou incompleto: não. */
+export function dataNoFuturo(valor: string, agora: Date): boolean {
+  if (!valor) return false;
+  const t = Date.parse(`${valor}:00-03:00`);
+  return Number.isFinite(t) && t > agora.getTime();
+}
+
 const QUANDO = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
   dateStyle: "short",

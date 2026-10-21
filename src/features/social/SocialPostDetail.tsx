@@ -19,16 +19,17 @@ import {
   useUpdateSocialCaption,
 } from "./api";
 import {
+  dataNoFuturo,
   deCampoDeData,
   formatarDia,
   formatarQuando,
   mensagemDoErro,
-  paraCampoDeData,
   partirGancho,
   podeAprovar,
   REAGENDAVEIS,
   ROTULO_EVENTO,
   ROTULO_STATUS,
+  sugestaoDeData,
 } from "./social.logic";
 import type { SocialPost } from "@/types/domain";
 
@@ -36,6 +37,10 @@ import type { SocialPost } from "@/types/domain";
  * Um post da fila do Instagram: os slides como vão sair, a legenda com o trecho que aparece antes
  * do "mais", a conferência, a agenda, a decisão e o rastro. A imagem não se edita aqui: trocar a
  * arte é refazer o post na skill e reenviar.
+ *
+ * O estado do que está sendo digitado (legenda em edição, data, motivo) mora em `Corpo`, que
+ * recebe `key={post.id}`: trocar de post zera tudo, e recarregar o mesmo post não apaga o que
+ * a pessoa estava escrevendo.
  */
 export function SocialPostDetail({
   post,
@@ -44,27 +49,24 @@ export function SocialPostDetail({
   post: SocialPost | null;
   onClose: () => void;
 }) {
-  const eventos = useSocialPostEvents(post?.id ?? null);
+  if (!post) return null;
+  return <Corpo key={post.id} post={post} onClose={onClose} />;
+}
+
+function Corpo({ post, onClose }: { post: SocialPost; onClose: () => void }) {
+  const eventos = useSocialPostEvents(post.id);
   const aprovar = useApproveSocialPost();
   const recusar = useRejectSocialPost();
   const reagendar = useRescheduleSocialPost();
   const corrigir = useUpdateSocialCaption();
-  const [quando, setQuando] = React.useState("");
-  const [legenda, setLegenda] = React.useState("");
+  const [quando, setQuando] = React.useState(() => sugestaoDeData(post.scheduled_at, new Date()));
+  const [legenda, setLegenda] = React.useState(post.caption);
   const [editando, setEditando] = React.useState(false);
   const [motivo, setMotivo] = React.useState("");
 
-  React.useEffect(() => {
-    if (!post) return;
-    setQuando(paraCampoDeData(post.scheduled_at));
-    setLegenda(post.caption);
-    setEditando(false);
-    setMotivo("");
-  }, [post]);
-
-  if (!post) return null;
-
-  const aprovacao = podeAprovar(post, new Date());
+  const agora = new Date();
+  const aprovacao = podeAprovar(post, agora);
+  const dataValida = dataNoFuturo(quando, agora);
   const { gancho, resto } = partirGancho(post.caption);
   const reagendavel = REAGENDAVEIS.includes(post.status);
   const editavel = post.status === "pending_review" || post.status === "approved";
@@ -87,6 +89,7 @@ export function SocialPostDetail({
           </DialogTitle>
           <DialogDescription>
             Origem: {post.draft_key}
+            {post.cut_number !== null ? ` · Corte ${post.cut_number}` : ""}
             {post.keyphrase ? ` · Frase-chave: ${post.keyphrase}` : ""}
             {post.price_date ? ` · Preços conferidos em ${formatarDia(post.price_date)}` : ""}
           </DialogDescription>
@@ -194,11 +197,12 @@ export function SocialPostDetail({
                 type="datetime-local"
                 value={quando}
                 onChange={(e) => setQuando(e.target.value)}
+                aria-describedby={dataValida ? undefined : "social-quando-dica"}
               />
             </div>
             <Button
               variant="secondary"
-              disabled={!quando || reagendar.isPending}
+              disabled={!dataValida || reagendar.isPending}
               onClick={() =>
                 executar(
                   () => reagendar.mutateAsync({ p_id: post.id, p_at: deCampoDeData(quando) }),
@@ -206,8 +210,13 @@ export function SocialPostDetail({
                 )
               }
             >
-              {post.status === "failed" ? "Tentar de novo nessa data" : "Reagendar"}
+              {post.status === "failed" ? "Tentar de novo" : "Reagendar"}
             </Button>
+            {!dataValida && (
+              <p id="social-quando-dica" className="basis-full text-sm text-muted">
+                Escolha uma data no futuro.
+              </p>
+            )}
           </section>
         )}
 
@@ -240,7 +249,7 @@ export function SocialPostDetail({
               disabled={!motivo.trim() || recusar.isPending}
               onClick={() =>
                 executar(async () => {
-                  await recusar.mutateAsync({ p_id: post.id, p_reason: motivo });
+                  await recusar.mutateAsync({ p_id: post.id, p_reason: motivo.trim() });
                   onClose();
                 }, "Post recusado")
               }

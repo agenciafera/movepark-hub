@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   abaDoStatus,
+  dataNoFuturo,
   deCampoDeData,
   formatarDia,
   mensagemDoErro,
   paraCampoDeData,
   partirGancho,
   podeAprovar,
+  sugestaoDeData,
 } from "./social.logic";
 
 const AGORA = new Date("2026-10-21T15:00:00Z");
@@ -81,5 +83,34 @@ describe("mensagemDoErro", () => {
     expect(mensagemDoErro({ message: 42 })).toBe("Não deu certo. Tente de novo.");
     expect(mensagemDoErro({ message: "  " })).toBe("Não deu certo. Tente de novo.");
     expect(mensagemDoErro({}, "Não deu para salvar.")).toBe("Não deu para salvar.");
+  });
+});
+
+describe("sugestaoDeData", () => {
+  it("mantém a data do post enquanto ela ainda está no futuro", () => {
+    expect(sugestaoDeData("2026-10-28T15:00:00.000Z", AGORA)).toBe("2026-10-28T12:00");
+  });
+
+  it("sugere amanhã ao meio-dia de São Paulo quando a data já passou", () => {
+    expect(sugestaoDeData("2026-10-20T15:00:00.000Z", AGORA)).toBe("2026-10-22T12:00");
+    // Igual a agora também não serve: o servidor recusa data que não é posterior.
+    expect(sugestaoDeData(AGORA.toISOString(), AGORA)).toBe("2026-10-22T12:00");
+  });
+
+  it("conta o dia em São Paulo, não em UTC", () => {
+    // 22/10 02:30 UTC ainda é 21/10 23:30 em São Paulo, então amanhã é 22/10.
+    const quaseMeiaNoite = new Date("2026-10-22T02:30:00Z");
+    expect(sugestaoDeData("2026-10-01T12:00:00.000Z", quaseMeiaNoite)).toBe("2026-10-22T12:00");
+    expect(dataNoFuturo("2026-10-22T12:00", quaseMeiaNoite)).toBe(true);
+  });
+});
+
+describe("dataNoFuturo", () => {
+  it("só aceita data completa depois de agora, lida em São Paulo", () => {
+    expect(dataNoFuturo("2026-10-21T12:01", AGORA)).toBe(true);
+    expect(dataNoFuturo("2026-10-21T12:00", AGORA)).toBe(false);
+    expect(dataNoFuturo("2026-10-20T12:00", AGORA)).toBe(false);
+    expect(dataNoFuturo("", AGORA)).toBe(false);
+    expect(dataNoFuturo("2026-10-28", AGORA)).toBe(false);
   });
 });

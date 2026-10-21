@@ -1,36 +1,46 @@
+import * as React from "react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { renderWithProviders } from "@/test/utils";
+import { deCampoDeData } from "@/features/social/social.logic";
 import type { SocialPost } from "@/types/domain";
 
-const { posts, settings, approve, updateSettings } = vi.hoisted(() => ({
-  posts: { current: [] as unknown[] },
-  settings: { current: {} as Record<string, string> },
+type Leitura<T> = { data: T | undefined; isLoading: boolean; isError: boolean };
+
+const { postsHook, settingsHook, approve, reject, reschedule, updateSettings } = vi.hoisted(() => ({
+  postsHook: { current: { data: [], isLoading: false, isError: false } as Leitura<unknown[]> },
+  settingsHook: {
+    current: { data: {}, isLoading: false, isError: false } as Leitura<Record<string, string>>,
+  },
   approve: vi.fn(),
+  reject: vi.fn(),
+  reschedule: vi.fn(),
   updateSettings: vi.fn(),
 }));
 
 vi.mock("@/features/social/api", () => ({
-  useSocialPosts: () => ({ data: posts.current, isLoading: false }),
+  useSocialPosts: () => postsHook.current,
   useSocialPostEvents: () => ({ data: [], isLoading: false }),
   useApproveSocialPost: () => ({ mutateAsync: approve, isPending: false }),
-  useRejectSocialPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useRescheduleSocialPost: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRejectSocialPost: () => ({ mutateAsync: reject, isPending: false }),
+  useRescheduleSocialPost: () => ({ mutateAsync: reschedule, isPending: false }),
   useUpdateSocialCaption: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/features/settings/api", () => ({
-  useAppSettings: () => ({ data: settings.current, isLoading: false }),
+  useAppSettings: () => settingsHook.current,
   useUpdateAppSettings: () => ({ mutateAsync: updateSettings, isPending: false }),
 }));
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import ManagerSocial from "./social";
+import { SocialPostDetail } from "@/features/social/SocialPostDetail";
 
 const FUTURO = new Date(Date.now() + 3 * 86_400_000).toISOString();
+const PASSADO = new Date(Date.now() - 2 * 86_400_000).toISOString();
 const LEGENDA =
   "Estacionar no aeroporto de Confins sai mais barato do que parece quando a viagem passa de uma semana inteira. " +
   "A conta muda pelo traslado.\n\n#confins #estacionamentoaeroporto #movepark";
@@ -77,38 +87,65 @@ describe("ManagerSocial", () => {
   beforeEach(() => {
     approve.mockReset();
     approve.mockResolvedValue(undefined);
+    reject.mockReset();
+    reject.mockResolvedValue(undefined);
+    reschedule.mockReset();
+    reschedule.mockResolvedValue(undefined);
     vi.mocked(toast.error).mockClear();
     updateSettings.mockReset();
     updateSettings.mockResolvedValue(undefined);
-    settings.current = { social_dispatch_enabled: "false" };
-    posts.current = [
-      post(),
-      post({
-        id: "p2",
-        draft_key: "confins:2",
-        caption: "Vaga garantida em Confins.\n\n#confins #movepark #aeroporto",
-        validation: {
-          blockers: ['Promessa de transação na legenda: "vaga garantida" (ADR-009).'],
-          warnings: [],
-        },
-      }),
-      post({ id: "p3", draft_key: "confins:3", status: "approved" }),
-      post({
-        id: "p4",
-        draft_key: "confins:4",
-        status: "published",
-        ig_media_id: "m1",
-        ig_permalink: "https://www.instagram.com/p/x/",
-      }),
-    ];
+    settingsHook.current = {
+      data: { social_dispatch_enabled: "false" },
+      isLoading: false,
+      isError: false,
+    };
+    postsHook.current = {
+      isLoading: false,
+      isError: false,
+      data: [
+        post(),
+        post({
+          id: "p2",
+          draft_key: "confins:2",
+          caption: "Vaga garantida em Confins.\n\n#confins #movepark #aeroporto",
+          validation: {
+            blockers: ['Promessa de transação na legenda: "vaga garantida" (ADR-009).'],
+            warnings: [],
+          },
+        }),
+        post({ id: "p3", draft_key: "confins:3", status: "approved" }),
+        post({
+          id: "p4",
+          draft_key: "confins:4",
+          status: "published",
+          ig_media_id: "m1",
+          ig_permalink: "https://www.instagram.com/p/x/",
+        }),
+        post({
+          id: "p5",
+          draft_key: "confins:5",
+          status: "failed",
+          caption: "A Meta recusou este post de Confins.\n\n#confins #movepark #aeroporto",
+          scheduled_at: PASSADO,
+          last_error: "Erro da Meta",
+        }),
+        post({
+          id: "p6",
+          draft_key: "confins:6",
+          status: "overdue",
+          caption: "Este post de Confins ficou para trás.\n\n#confins #movepark #aeroporto",
+          scheduled_at: PASSADO,
+        }),
+      ],
+    };
   });
 
   it("separa os posts por aba, com a contagem", () => {
     renderWithProviders(<ManagerSocial />);
-    expect(screen.getByRole("tab", { name: "Para aprovar (2)" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Para aprovar (3)" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Agendados (1)" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Publicados (1)" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Falhas (0)" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Falhas (1)" })).toBeInTheDocument();
   });
 
   it("aprova o post limpo", async () => {
@@ -180,5 +217,157 @@ describe("ManagerSocial", () => {
     await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
     await userEvent.click(await screen.findByRole("button", { name: "Aprovar" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Não deu certo. Tente de novo."));
+  });
+
+  describe("reagendar e tentar de novo", () => {
+    const campo = () => screen.getByLabelText("Data e hora (São Paulo)") as HTMLInputElement;
+
+    it("post com falha abre com uma data no futuro, e Tentar de novo reagenda para ela", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByRole("tab", { name: "Falhas (1)" }));
+      await userEvent.click(screen.getByText(/^A Meta recusou este post de Confins/));
+
+      const valor = campo().value;
+      expect(Date.parse(deCampoDeData(valor))).toBeGreaterThan(Date.now());
+      const botao = await screen.findByRole("button", { name: "Tentar de novo" });
+      expect(botao).toBeEnabled();
+      expect(screen.queryByText("Escolha uma data no futuro.")).not.toBeInTheDocument();
+
+      await userEvent.click(botao);
+      await waitFor(() => expect(reschedule).toHaveBeenCalledTimes(1));
+      const { p_id, p_at } = reschedule.mock.calls[0][0];
+      expect(p_id).toBe("p5");
+      expect(p_at).toBe(deCampoDeData(valor));
+      expect(Date.parse(p_at)).toBeGreaterThan(Date.now());
+    });
+
+    it("post atrasado também abre com uma data no futuro e o botão liberado", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Este post de Confins ficou para trás/));
+      const botao = await screen.findByRole("button", { name: "Reagendar" });
+      expect(Date.parse(deCampoDeData(campo().value))).toBeGreaterThan(Date.now());
+      expect(botao).toBeEnabled();
+    });
+
+    it("trava o botão e explica quando a data digitada já passou", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByRole("tab", { name: "Falhas (1)" }));
+      await userEvent.click(screen.getByText(/^A Meta recusou este post de Confins/));
+      const botao = await screen.findByRole("button", { name: "Tentar de novo" });
+
+      fireEvent.change(campo(), { target: { value: "2020-01-01T10:00" } });
+      expect(botao).toBeDisabled();
+      expect(screen.getByText("Escolha uma data no futuro.")).toBeInTheDocument();
+
+      fireEvent.change(campo(), { target: { value: "" } });
+      expect(botao).toBeDisabled();
+
+      const amanha = new Date(Date.now() + 86_400_000 - 3 * 3_600_000).toISOString().slice(0, 16);
+      fireEvent.change(campo(), { target: { value: amanha } });
+      expect(botao).toBeEnabled();
+      expect(screen.queryByText("Escolha uma data no futuro.")).not.toBeInTheDocument();
+      expect(reschedule).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("recusar", () => {
+    it("só libera com um motivo e manda o motivo sem os espaços das pontas", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
+      const recusar = await screen.findByRole("button", { name: "Recusar" });
+      expect(recusar).toBeDisabled();
+
+      await userEvent.type(screen.getByLabelText("Motivo da recusa"), "   ");
+      expect(recusar).toBeDisabled();
+
+      await userEvent.type(screen.getByLabelText("Motivo da recusa"), "Arte fora do padrão  ");
+      expect(recusar).toBeEnabled();
+      await userEvent.click(recusar);
+      await waitFor(() =>
+        expect(reject).toHaveBeenCalledWith({ p_id: "p1", p_reason: "Arte fora do padrão" }),
+      );
+    });
+  });
+
+  describe("origem do post", () => {
+    it("mostra o número do corte quando existe", async () => {
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
+      expect(
+        await screen.findByText(/Origem: confins:1 · Corte 1 · Frase-chave:/),
+      ).toBeInTheDocument();
+    });
+
+    it("não inventa corte quando o post não tem número", async () => {
+      postsHook.current = { ...postsHook.current, data: [post({ cut_number: null })] };
+      renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Estacionar no aeroporto de Confins/));
+      const origem = await screen.findByText(/Origem: confins:1/);
+      expect(origem.textContent).not.toMatch(/Corte/);
+    });
+  });
+
+  describe("estado da publicação automática", () => {
+    it("enquanto carrega, não diz que está desligada e não deixa mexer", () => {
+      settingsHook.current = { data: undefined, isLoading: true, isError: false };
+      renderWithProviders(<ManagerSocial />);
+      expect(screen.getByText("Carregando o estado da publicação automática")).toBeInTheDocument();
+      expect(screen.queryByText(/desligada/)).not.toBeInTheDocument();
+      expect(screen.getByRole("switch", { name: "Publicação automática" })).toBeDisabled();
+    });
+
+    it("se não conseguiu ler, avisa e mantém a chave travada", () => {
+      settingsHook.current = { data: undefined, isLoading: false, isError: true };
+      renderWithProviders(<ManagerSocial />);
+      expect(
+        screen.getByText("Não foi possível ler o estado da publicação automática"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/desligada/)).not.toBeInTheDocument();
+      expect(screen.getByRole("switch", { name: "Publicação automática" })).toBeDisabled();
+    });
+  });
+
+  describe("fila que não carregou", () => {
+    it("mostra o erro em vez de uma fila vazia", () => {
+      postsHook.current = { data: undefined, isLoading: false, isError: true };
+      renderWithProviders(<ManagerSocial />);
+      expect(
+        screen.getByText("Não deu para carregar a fila. Recarregue a página."),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+      expect(screen.queryByText("Nada por aqui")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("troca de post no diálogo", () => {
+    it("o post B não herda a legenda em edição nem o motivo digitado no post A", async () => {
+      let trocar: (p: SocialPost) => void = () => {};
+      function Harness() {
+        const [atual, setAtual] = React.useState<SocialPost>(post());
+        trocar = setAtual;
+        return <SocialPostDetail post={atual} onClose={() => {}} />;
+      }
+      renderWithProviders(<Harness />);
+
+      await userEvent.click(await screen.findByRole("button", { name: "Corrigir legenda" }));
+      await userEvent.type(screen.getByLabelText("Legenda do post"), " texto novo");
+      await userEvent.type(screen.getByLabelText("Motivo da recusa"), "motivo do A");
+      expect(screen.getByLabelText("Legenda do post")).toBeInTheDocument();
+
+      // O mesmo post chegando de novo da consulta (outro objeto, mesmo id) não apaga o que se digita.
+      act(() => trocar(post({ updated_at: new Date().toISOString() })));
+      expect(screen.getByLabelText("Legenda do post")).toHaveValue(`${LEGENDA} texto novo`);
+      expect(screen.getByLabelText("Motivo da recusa")).toHaveValue("motivo do A");
+
+      act(() =>
+        trocar(
+          post({ id: "p9", draft_key: "confins:9", caption: "Legenda do post B em Confins." }),
+        ),
+      );
+
+      expect(screen.queryByLabelText("Legenda do post")).not.toBeInTheDocument();
+      expect(screen.getByText(/Legenda do post B em Confins\./)).toBeInTheDocument();
+      expect(screen.getByLabelText("Motivo da recusa")).toHaveValue("");
+    });
   });
 });
