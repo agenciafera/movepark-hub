@@ -143,6 +143,28 @@ post depois consolidado agora resolve num salto só**. Antes gastava dois 301, u
 outro para o vencedor, em oito casos. O `resolveConsolidado` em `src/worker.ts` faz a resolução
 antes de responder, e o contrato de URL trava isso com teste.
 
+### O acervo despublicado sem registro (09/10 a 21/10/2026)
+
+Entre 06/10 e 09/10/2026 o acervo caiu de 114 para 30 posts publicados, sem migration, commit,
+spec ou atividade que registrasse a decisão. A prova está no manifesto versionado
+`public/blog-slugs.json`, que o build gera a partir do banco: 114 slugs no commit `3e5d6c71`
+(06/10) e 30 no `6140836c` (09/10, 13:11). Às 13:42:02 de 09/10 uma única operação tocou todas as
+linhas de `blog_post`. Os posts responderam **404, e não 301**, por 12 dias, entre eles as quatro
+donas de Confins, a dona de melhor de Viracopos e o post nacional de convênio. A rotina de frescor
+de 19/10 não percebeu, porque varreu só o que estava publicado.
+
+Em 21/10 a migration `20261130200000_blog_republica_acervo_de_outubro.sql` devolveu 60 posts: os
+que estavam no manifesto de 06/10 e saíram, mais `bepark-confins` (publicado em 07/10). Ficaram
+de fora os 26 guias automáticos `guia-completo-aeroporto-*` (e os de centro, terminal, Jardim
+Paulista e Salgado Filho), que estão sendo trocados pelo guia "padrão Viracopos", e os perdedores
+da consolidação, que seguem em 301. O manifesto versionado voltou a ter os 90 publicados.
+
+**Como não repetir.** Despublicar post é decisão de URL, igual a renomear slug: vai em migration,
+com a lista de slugs e o destino de cada um (301 para o vencedor, ou 404 consciente). Um `update`
+sem `where` em `blog_post` derruba o acervo inteiro, e o 404 não avisa ninguém. Para conferir o
+estado, compare `select count(*) from blog_post where is_published and deleted_at is null` com o
+`public/blog-slugs.json` do último commit.
+
 ## Os redirects que a planilha não capturou
 
 O plugin `eps-301-redirects` mantém **40 redirects ativos numa tabela do banco**
