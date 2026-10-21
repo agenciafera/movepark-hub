@@ -344,6 +344,43 @@ Conteúdo 54 fechou sem eles. Ficam registrados para ninguém tomar como achado 
     nova. O site diz que, depois da primeira diária, qualquer minuto começado conta como hora cheia, a
     R$ 6,00.
 
+### 2.3.6 O desconto Azul em Confins (Conteúdo 48, 21/10/2026)
+
+Post novo `desconto-azul-no-estacionamento-de-confins` (categoria guias, destino Confins), dono da
+intenção "desconto Azul" em Confins ("estacionamento aeroporto confins desconto azul", "azul
+diamante", "convenio azul" e "tudoazul" no autocomplete), que nenhum post cobria. Frase-chave
+"desconto Azul no estacionamento de Confins". Mostra a conta das cinco categorias sobre o motor de
+21/10 (na semana, R$ 180,00 a R$ 120,00), a comparação da semana com os vizinhos (o Diamante Unique,
+a R$ 120,00, é a menor semana da região em outubro; o Diamante empata com a descoberta mais barata
+perto do terminal) e em que estadia o desconto compensa. A fonte da condição é a BePark (site de
+07/10 e confirmação de 09/10, §6), com o portal da Azul como conferência dos percentuais.
+
+Decisões de texto: a BePark não tem tipo de vaga na comparação, porque o site dela declara vagas
+cobertas e descobertas e o desconto vale sobre a estadia; a reserva online é descrita (cupom por
+categoria, categoria declarada pelo cliente) sem prometer preço no checkout; e o bloco de fato do
+motor ficou fora, porque ele ainda diz "vaga coberta" e "tolerância de 60 minutos", os pontos que
+seguem divergentes do site da BePark (§2.3.5).
+
+Junto, a FAQ de unidade "O BePark tem desconto para cliente Azul?" (só a condição do balcão) e as
+correções em `bepark-confins` (o desconto vale na reserva pela Movepark, como cupom) e em
+`convenio-de-estacionamento-no-aeroporto` (BePark nomeada em Confins, maior desconto do
+levantamento, e o "R$ 26,90 antecipado" do Estapar fora da linha do oficial). Migrations
+`20261130210000` e `20261130220000`, aplicadas pelo `pg_net` com trava de md5.
+
+Analisador VERDE, 3.349 palavras, com três avisos aceitos (densidade de 0,4% de uma frase-chave de
+seis palavras, frases longas de dado com fonte e data, e transições). Imagens no Higgsfield
+(`soul_2`), revisadas uma a uma; logotipo no polo, emblema na cauda do avião e placas foram
+desfocados ou cobertos. Publicado em 21/10/2026, depois do ok do usuário.
+
+**Achado na execução:** o post estava previsto para linkar as donas de Confins, e elas respondiam
+404 desde 09/10, junto com outros 58 posts despublicados sem registro. A republicação está em
+[blog.md](./blog.md), "O acervo despublicado sem registro".
+
+**Fica para depois:** o post de Viracopos para a Azul diz que "nenhuma das duas unidades parceiras
+trabalha com desconto atrelado a cartão ou a status de viajante", e o post de convênio diz que a
+Garageinn publica condição Azul em Viracopos. Um dos dois está errado, e a correção é da praça de
+Viracopos.
+
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
 | Critério | BePark | Referência da praça |
@@ -435,7 +472,7 @@ Disputar preço para todo mundo é decisão comercial com a BePark, e não é pr
 | [Conteúdo 45: donas de preço, barato e proximidade com os 11 pátios](https://app.clickup.com/t/86akr8ka2) | 05/10 | 07/10 |
 | [Conteúdo 46: dona de "melhor" reescrita, com a BePark no perfil sem imprevisto](https://app.clickup.com/t/86akr8ka7) | 07/10 | 14/10 |
 | [Conteúdo 47: guia da marca BePark](https://app.clickup.com/t/86akr8kae) | 14/10 | 20/10 |
-| [Conteúdo 48: post do desconto Azul em Confins](https://app.clickup.com/t/86akr8kap) | 20/10 | 23/10 |
+| [Conteúdo 48: post do desconto Azul em Confins](https://app.clickup.com/t/86akr8kap) | 20/10 | 23/10, feito em 21/10 (§2.3.6) |
 | [Conteúdo 49: dois reels](https://app.clickup.com/t/86akr8kb5) | 13/10 | 23/10 |
 | **BePark** | | |
 | [Conteúdo 50: venda pela Movepark (bloco C do piloto)](https://app.clickup.com/t/86akr8kjq) | 30/09 | 16/10 |
