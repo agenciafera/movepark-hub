@@ -179,9 +179,14 @@ A Edge:
    **formato do payload** devolve 422 e não grava nada, porque não há post para mostrar. Os demais
    bloqueios (texto) ficam gravados em `validation` e travam a aprovação, para a tela mostrar o
    motivo.
-2. Sobe os JPEGs para `assets-public/social/<origem>/<arquivo>`.
-3. Faz upsert por `draft_key`. Se a linha existente já saiu de `pending_review`, devolve 409:
-   rascunho aprovado não é sobrescrito por reenvio.
+2. Sobe os JPEGs para `assets-public/social/<origem>/<corte>/<arquivo>` (`<corte>` é `0` quando o
+   post não tem corte). O corte fica no caminho porque a skill nomeia os arquivos pela palavra-chave
+   e pelo número do slide, e todos os cortes do mesmo blogpost repetem esses nomes: assim um corte
+   nunca troca a imagem de outro, mesmo com `upsert`.
+3. Grava a linha conferindo o status **na própria escrita**: se já existe, `update` condicionado a
+   `status = 'pending_review'`; se não existe, `insert`, e `draft_key` duplicada (23505) é um envio
+   concorrente. Nos dois casos o perdedor recebe 409, e rascunho que saiu de `pending_review` não é
+   sobrescrito por reenvio.
 4. Grava `validation` e o evento `draft_received`.
 
 ### A conferência no servidor
