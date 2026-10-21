@@ -35,6 +35,7 @@ sozinha na hora marcada, com registro do que saiu.
 | 5 | O disparo | **Nasce desligado** (`app_setting.social_dispatch_enabled = false`), no padrão do `marketing_dispatch_enabled` |
 | 6 | App Review da Meta | **Não é necessário.** Para app que serve só a negócio próprio, o acesso padrão basta ([doc oficial](https://developers.facebook.com/documentation/instagram-platform/app-review), atualizada em 30/06/2026) |
 | 7 | Upload manual de arte no Manager | **Fora desta entrega** |
+| 8 | Marcar as fotos de IA para a Meta (`is_ai_generated`) | **Não marcar** (Kallef, 21/10/2026). O parâmetro não é enviado; se a Meta detectar pelo metadado da imagem e rotular sozinha, o rótulo dela vale |
 
 ### O que mudou em relação ao texto da E3.6
 
@@ -82,7 +83,6 @@ skill instagram (Claude)                          Manager (hub_admin)
 | `destination_id` | uuid, nulo | FK `destination` |
 | `cta_url` | text, nulo | link da bio com UTM |
 | `price_date` | date, nulo | data de referência de todo R$ do post. Obrigatória quando legenda ou slide citam R$ |
-| `is_ai_generated` | boolean | vai para a Meta como `is_ai_generated` (ver gate G1) |
 | `scheduled_at` | timestamptz | hora prevista |
 | `validation` | jsonb | `{ "blockers": [], "warnings": [] }`, escrito **só** pela Edge |
 | `approved_by` / `approved_at` | uuid / timestamptz | |
@@ -168,7 +168,6 @@ slide, com o nome igual ao `arquivo` do front matter:
   "publicar_em": "2026-10-28T12:00:00-03:00",
   "cta_url": "https://movepark.co/destinos/aeroporto-de-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-preco",
   "price_date": "2026-10-21",
-  "is_ai_generated": true,
   "caption": "…",
   "slides": [{ "arquivo": "preco-estacionamento-aeroporto-confins-01.jpg", "alt": "…", "texto": "…" }]
 }
@@ -275,14 +274,13 @@ contrato `harmonizar-paginas`, que é do consumer.
   continua possível.
 - **`references/api-instagram.md`** é corrigido: App Review não é exigido para conta própria, o
   carrossel aceita 20 pela API, a legenda publicada não se edita, a exclusão de mídia existe desde
-  dez/2025 e existe o parâmetro `is_ai_generated`.
+  dez/2025 e existe o parâmetro `is_ai_generated`, que a Movepark não usa (decisão 8).
 
 ## Gates
 
 | # | Gate | Proposta |
 |---|---|---|
-| G1 | Marcar as fotos geradas por IA (`is_ai_generated`) | **Sim, por padrão**, quando o slide usa foto do Higgsfield. O post ganha o selo de IA da Meta. A skill envia `true`, e a tela mostra o valor antes de aprovar |
-| G2 | Token com permissões a mais | O token de 21/10 saiu com `instagram_manage_contents` (apaga post), `instagram_manage_messages` e outras. Regenerar só com `instagram_basic`, `instagram_content_publish`, `pages_show_list` e `pages_read_engagement`, colado direto no Supabase. Depende de clique humano no Business Manager |
+| G1 | Token com permissões a mais | O token de 21/10 saiu com `instagram_manage_contents` (apaga post), `instagram_manage_messages` e outras. Regenerar só com `instagram_basic`, `instagram_content_publish`, `pages_show_list` e `pages_read_engagement`, colado direto no Supabase. Depende de clique humano no Business Manager |
 
 ## Testes
 
