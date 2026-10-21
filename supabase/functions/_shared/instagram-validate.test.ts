@@ -73,6 +73,34 @@ Deno.test("preço conferido há mais de 30 dias avisa", () => {
   assertEquals(r.warnings.some((w) => w.includes("50 dias")), true);
 });
 
+Deno.test("data de preço malformada conta como ausente: bloqueia junto com R$", () => {
+  for (const data of ["20/10/2026", "x", "2026-02-30"]) {
+    const r = conferir({ caption: `${LEGENDA_BOA}\nR$ 45`, priceDate: data, hoje: new Date("2026-10-21T12:00:00-03:00") });
+    assertEquals(r.blockers.some((b) => b.includes("price_date")), true, data);
+  }
+});
+
+Deno.test("data de preço no futuro avisa, sem bloquear", () => {
+  const r = conferir({ caption: `${LEGENDA_BOA}\nR$ 45`, priceDate: "2026-10-25", hoje: new Date("2026-10-21T12:00:00-03:00") });
+  assertEquals(r.blockers, []);
+  assertEquals(r.warnings.some((w) => w.includes("futuro")), true);
+});
+
+Deno.test("data de preço de hoje, conferida de manhã, não vira futuro", () => {
+  const r = conferir({ caption: `${LEGENDA_BOA}\nR$ 45`, priceDate: "2026-10-21", hoje: new Date("2026-10-21T09:00:00-03:00") });
+  assertEquals(r.warnings.some((w) => w.includes("futuro")), false);
+});
+
+Deno.test("uma hashtag usa o singular", () => {
+  const r = conferir({ caption: "Estacionamento no aeroporto de Confins sai mais barato. #confins" });
+  assertEquals(r.warnings, ["A legenda tem 1 hashtag. O ideal é de 3 a 5."]);
+});
+
+Deno.test("a frase de promessa manda tirar o texto, não a unidade", () => {
+  const r = conferir({ caption: `${LEGENDA_BOA}\nVaga garantida com antecedência` });
+  assertEquals(r.blockers.some((b) => b.includes("Tire essa frase do texto (ADR-009).")), true);
+});
+
 Deno.test("frase-chave fora dos primeiros 125 caracteres avisa", () => {
   const r = conferir({ caption: `${"Texto de abertura sem a frase. ".repeat(5)}\n${LEGENDA_BOA}` });
   assertEquals(r.warnings.some((w) => w.includes("125")), true);

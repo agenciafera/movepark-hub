@@ -60,6 +60,14 @@ export function hashtagsDe(caption: string): string[] {
   return caption.match(/#[\p{L}\p{N}_]+/gu) ?? [];
 }
 
+/** Data AAAA-MM-DD que existe de verdade. Devolve null para "20/10/2026", "x" e "2026-02-30". */
+function dataValida(s: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const ms = Date.parse(`${s}T00:00:00Z`);
+  if (Number.isNaN(ms) || new Date(ms).toISOString().slice(0, 10) !== s) return null;
+  return s;
+}
+
 export function conferirTexto(p: PostTexto): Conferencia {
   const blockers: string[] = [];
   const warnings: string[] = [];
@@ -72,10 +80,11 @@ export function conferirTexto(p: PostTexto): Conferencia {
   }
 
   const hashtags = hashtagsDe(caption);
+  const nHashtags = `${hashtags.length} ${hashtags.length === 1 ? "hashtag" : "hashtags"}`;
   if (hashtags.length > LIMITES.hashtags) {
-    blockers.push(`Você usou ${hashtags.length} hashtags. O Instagram aceita até ${LIMITES.hashtags}.`);
+    blockers.push(`A legenda tem ${nHashtags}. O Instagram aceita até ${LIMITES.hashtags}.`);
   } else if (hashtags.length < 3 || hashtags.length > 5) {
-    warnings.push(`Você usou ${hashtags.length} hashtags. O recomendado são de 3 a 5.`);
+    warnings.push(`A legenda tem ${nHashtags}. O ideal é de 3 a 5.`);
   }
 
   const mencoes = caption.match(/@[A-Za-z0-9._]+/g) ?? [];
@@ -110,21 +119,24 @@ export function conferirTexto(p: PostTexto): Conferencia {
     }
     for (const { termo, rotulo } of PROMESSAS) {
       if (termo.test(texto)) {
-        blockers.push(`Promessa de transação ${onde}: "${rotulo}". Só pode ir ao ar com a capacidade declarada na unidade (ADR-009).`);
+        blockers.push(`Promessa de transação ${onde}: "${rotulo}". Tire essa frase do texto (ADR-009).`);
       }
     }
     if (MARCA_ERRADA.test(texto)) blockers.push(`Marca grafada errada ${onde}. O certo é "Movepark".`);
   }
 
   const temPreco = textos.some(({ texto }) => /R\$\s?\d/.test(texto));
-  if (temPreco && !p.priceDate) {
+  // Data malformada conta como ausente: "20/10/2026" não pode passar por data de referência.
+  const dataPreco = p.priceDate ? dataValida(p.priceDate) : null;
+  if (temPreco && !dataPreco) {
     blockers.push("O post cita preço em R$, mas não tem a data em que o preço foi conferido (campo price_date).");
   }
-  if (p.priceDate) {
-    const hoje = p.hoje ?? new Date();
-    const conferido = Date.parse(`${p.priceDate}T12:00:00-03:00`);
-    const dias = Math.floor((hoje.getTime() - conferido) / 86_400_000);
-    if (dias > 30) warnings.push(`O preço foi conferido há ${dias} dias.`);
+  if (dataPreco) {
+    // Dias civis em -03:00: preço conferido hoje de manhã não pode virar "no futuro".
+    const hojeBR = new Date((p.hoje ?? new Date()).getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
+    const dias = Math.round((Date.parse(`${hojeBR}T00:00:00Z`) - Date.parse(`${dataPreco}T00:00:00Z`)) / 86_400_000);
+    if (dias < 0) warnings.push("A data em que o preço foi conferido está no futuro. Confira a data.");
+    else if (dias > 30) warnings.push(`O preço foi conferido há ${dias} dias.`);
   }
 
   if (p.keyphrase && !normaliza(caption.slice(0, 125)).includes(normaliza(p.keyphrase))) {
