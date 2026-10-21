@@ -1036,3 +1036,62 @@ export type WlBookingSiteEvent = {
   note: string | null;
   data: Record<string, unknown>;
 };
+
+// ── Fila do Instagram (E3.6) ────────────────────────────────────────────────────────────
+// Escritos à mão: o `supabase gen types` vem derrubando tabelas e funções (ver
+// features/payouts/api.ts), e a fila não pode depender dele. Espelham a migration
+// 20261130180000_social_post.sql; mudou a tabela, muda aqui.
+
+export type SocialPostStatus =
+  | "pending_review"
+  | "approved"
+  | "publishing"
+  | "published"
+  | "failed"
+  | "rejected"
+  | "overdue";
+
+export type SocialPostKind = "image" | "carousel";
+
+export type SocialPostSlide = { url: string; path: string; alt: string | null; texto: string | null };
+
+export type SocialPostValidation = { blockers: string[]; warnings: string[] };
+
+export type SocialPost = {
+  id: string;
+  draft_key: string;
+  status: SocialPostStatus;
+  kind: SocialPostKind;
+  caption: string;
+  slides: SocialPostSlide[];
+  keyphrase: string | null;
+  cut_number: number | null;
+  blog_post_id: string | null;
+  destination_id: string | null;
+  cta_url: string | null;
+  price_date: string | null;
+  scheduled_at: string;
+  validation: SocialPostValidation;
+  approved_by: string | null;
+  approved_at: string | null;
+  ig_container_id: string | null;
+  ig_media_id: string | null;
+  ig_permalink: string | null;
+  published_at: string | null;
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SocialPostEvent = {
+  id: string;
+  social_post_id: string;
+  kind: string;
+  http_status: number | null;
+  request: Json | null;
+  response: Json | null;
+  note: string | null;
+  actor: string | null;
+  created_at: string;
+};
