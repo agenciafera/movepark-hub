@@ -327,9 +327,10 @@ sites de governo e saúde em 2023; o validador do schema.org lê as 5 perguntas 
 O preço foi conferido no motor (`api_simulate_price`) dia a dia, de 1 a 12, 15 e 30 diárias, e bate com
 a regra do site em todos (R$ 45, 90, 135, 180, 200, 200, 200, 245, 290, 335, 380, 400).
 
-**O que ficou aberto:**
+**O que ficou como está, por decisão (21/10/2026):** o Diego decidiu não atualizar estes pontos, e o
+Conteúdo 54 fechou sem eles. Ficam registrados para ninguém tomar como achado novo.
 
-- **O "8 minutos" da bio do Instagram.** Fora do alcance do repositório. É pedido para a BePark trocar
+- **O "8 minutos" da bio do Instagram.** Fora do alcance do repositório. Seria pedido para a BePark trocar
   por 10, o mesmo pedido de 09/10 (§2.3.4).
 - **A ficha diverge do site e do Instagram da BePark em três pontos fora dos quatro números do card:**
   - **Vagas.** A ficha diz 400 vagas, de um tipo só, coberta (`location_parking_type.capacity = 400`, tipo
