@@ -440,17 +440,31 @@ precisa de justificativa explícita, não de silêncio.
 
 ## Passo 11: publicar
 
-**Hoje é manual**, pelo app ou pelo Meta Business Suite, usando os arquivos e a
-legenda que a skill produziu.
+**O caminho padrão é a fila da plataforma.** Com o analisador sem bloqueio e os JPEGs no lugar:
 
-**Quando a E3.6 entrar**, o rascunho vira linha em `social_post` com status
-`draft`, aparece em `/manager/social` para aprovação e o `pg_cron` publica na
-data agendada. O que muda para quem escreve: nada. O formato de saída desta
-skill já é o payload daquela tabela.
+```bash
+node .claude/skills/instagram/scripts/enviar-rascunho.mjs <rascunho.md>
+```
 
-Detalhe do fluxo de API, incluindo o container que expira em 24h e o motivo de
-não existir agendamento nativo, em
-[`references/api-instagram.md`](references/api-instagram.md).
+O script roda o analisador de novo, sobe os JPEGs e cria o post em `/manager/social` como "Para
+aprovar". Um `hub_admin` confere os slides, a legenda e a data, e aprova. A Edge
+`social-dispatch` publica na hora marcada, um post por dia, quando a publicação automática está
+ligada na tela.
+
+- Reenviar o mesmo rascunho (mesma `origem_post` e mesmo `corte`) atualiza o post enquanto ele
+  espera aprovação. Depois de aprovado, o reenvio é recusado: peça para recusar e mande de novo.
+- `--seco` mostra o que seria enviado sem mandar nada; `--pasta` aponta os JPEGs quando eles não
+  estão ao lado do `.md`.
+- Se `publicar_em` traz só a data, o post sai às 12:00 de São Paulo.
+- **Todo R$ do post exige `price_date` no front matter.** Sem ela a plataforma trava a aprovação.
+- **Post de notícia (`origem_post` com `fato-`)**: a fila ainda não guarda fonte nem validade. O
+  script recusa `publicar_em` depois da `validade`, e a aprovação tem que sair no mesmo dia, com a
+  fonte reaberta antes.
+
+Publicar à mão pelo app continua possível, mas aí nada fica registrado na plataforma.
+
+Detalhe da API em [`references/api-instagram.md`](references/api-instagram.md) e da fila em
+[`docs/specs/instagram-fila-de-publicacao.md`](../../../docs/specs/instagram-fila-de-publicacao.md).
 
 ## O arquivo de trabalho
 
@@ -470,6 +484,7 @@ origem_post: estacionamento-no-aeroporto-de-confins-guia-completo
 destination: aeroporto-de-confins
 keyphrase: estacionamento no aeroporto de Confins
 publicar_em: 2026-09-10
+price_date: 2026-09-08
 cta_url: https://movepark.co/estacionamentos/aeroporto-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-guia
 slides:
   - texto: Estacionar em Confins custa de R$ 45 a R$ 120 a diária
@@ -511,3 +526,4 @@ Antes de dizer que está pronto:
 11. Carrossel com no máximo 10 slides.
 12. Post de notícia: passou nas três portas, cita a fonte e a data na legenda,
     está dentro da `validade` e a fonte foi reaberta no dia de publicar.
+13. Enviado pela fila (`enviar-rascunho.mjs`), com `price_date` quando houver R$.

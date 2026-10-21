@@ -3,7 +3,7 @@
 **Esta é a fonte canônica dos limites da plataforma.** Nenhum número daqui é
 repetido no `SKILL.md`, justamente para não existirem duas versões que
 divergem quando a Meta mudar um deles. Conferido na documentação em
-03/09/2026. O que quebra a marca, e não a publicação, está no `SKILL.md`,
+03/09/2026 e revisto em 21/10/2026. O que quebra a marca, e não a publicação, está no `SKILL.md`,
 Passo 2.
 
 ## Conta e permissão
@@ -14,9 +14,14 @@ Passo 2.
 | Permissões (Instagram Login) | `instagram_business_basic`, `instagram_business_content_publish` |
 | Permissões (Facebook Login) | `instagram_basic`, `instagram_content_publish`, `pages_read_engagement` |
 
-A Movepark já tem app Meta com verificação de negócio aprovada, usada pelo
-WhatsApp Cloud API (`supabase/functions/_shared/whatsapp.ts`). Adicionar a
-permissão de publicação é review incremental, não cadastro novo.
+**App Review não é exigido** para app que só publica na conta da própria empresa: o
+acesso padrão basta (doc oficial de App Review, conferida em 21/10/2026). Só vira
+necessário se um parceiro for publicar na conta dele pela plataforma.
+
+O que está configurado desde 21/10/2026: app **MoveparkInst** (portfólio Clientes
+Agência Fera), usuário do sistema **movepark-instagram** com acesso à Página Movepark
+(`315106352508707`) e conta `17841465371053612` em `INSTAGRAM_USER_ID`. O token fica em
+`INSTAGRAM_ACCESS_TOKEN`; o diagnóstico é a action `diagnose` da Edge `publish-instagram`.
 
 ## O fluxo é sempre de dois passos
 
@@ -38,7 +43,7 @@ Meta só pede que a aplicação respeite o limite de taxa por conta.
 2. Um container pai com `media_type=CAROUSEL` e `children` (array de IDs).
 3. Publica o pai.
 
-Máximo de **10 filhos** pela API. O recorte de todos os slides segue a proporção
+A API aceita até **20 filhos** desde 2026; a skill fixa 10. O recorte de todos os slides segue a proporção
 do **primeiro** slide, então o slide 1 define o enquadramento do carrossel inteiro.
 
 ## Imagem
@@ -85,7 +90,10 @@ limite nunca é o gargalo.
 
 - Não agenda.
 - Não publica em story pela mesma rota de feed.
-- Não edita legenda de post já publicado (só pela rota de update, com limites).
+- Não edita legenda de post já publicado: a rota de update só liga e desliga comentários.
+- Apaga post (desde dez/2025, permissão `instagram_manage_contents`), o que a Movepark não usa.
+- Aceita `is_ai_generated` para declarar foto de IA. A Movepark decidiu não marcar
+  (decisão 8 da spec da fila).
 - Não devolve link clicável em legenda, porque o Instagram não tem isso.
 
 ## Indexação por buscadores
