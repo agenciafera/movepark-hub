@@ -467,7 +467,7 @@ Deno.test("post com container já PUBLISHED é reconciliado pela legenda e media
   const final = db.de("social_post", "update").find((c) => c.payload?.status === "published")!;
   assertEquals(db.tocouEm(final, "status", "publishing"), true);
   assertEquals(db.eventos("reconciled").length, 1);
-  assertStringIncludes(String(db.eventos("reconciled")[0].note), "nada foi publicado de novo");
+  assertStringIncludes(String(db.eventos("reconciled")[0].note), "Nada foi publicado de novo");
   semToken(db.tabelas.social_post_event, r);
 });
 
@@ -497,6 +497,20 @@ Deno.test("container antigo que NÃO foi publicado: cria outro, publica uma vez 
   assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1);
   assertEquals(db.linhaDo().ig_container_id, "container-pai");
   assertEquals(db.linhaDo().status, "published");
+});
+
+Deno.test("container antigo cujo status não foi lido (Meta fora do ar): falha sem publicar, porque pode já estar publicado", async () => {
+  // Se a leitura falhou e o container JÁ estava publicado, seguir adiante publicaria o post de novo.
+  for (const resposta of [{ status: 500, body: { error: { message: "temporariamente indisponível" } } }, { body: {} }]) {
+    const db = banco({ social_post: [postBanco({ ig_container_id: "container-velho" })], app_setting: chaveLigada("true") });
+    const g = graphFalso((c) => (c.metodo === "GET" && c.caminho === "container-velho" ? resposta : roteiroFeliz(c)));
+    const r = await rodar(db, g);
+    assertEquals(r.body.acao, "falhou");
+    assertEquals(g.quais("POST").length, 0, "nem container novo nem media_publish");
+    assertEquals(db.linhaDo().status, "failed");
+    assertStringIncludes(String(db.linhaDo().last_error), "nada foi publicado");
+    assertEquals(db.eventos("failed").length, 1);
+  }
 });
 
 Deno.test("publishing parado há mais de 15 min com container PUBLISHED é reconciliado antes de qualquer coisa nova", async () => {

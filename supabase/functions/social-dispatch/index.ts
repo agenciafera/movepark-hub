@@ -184,11 +184,11 @@ async function reconciliar(ctx: Ctx, p: PostCompleto, statusConhecido?: string):
     return { ok: false, erro: msg };
   };
   if (!p.ig_container_id) {
-    return await falha("A rodada caiu antes de criar o envio na Meta. Reagende para tentar de novo.");
+    return await falha("A publicação parou antes de criar o envio na Meta. Reagende para tentar de novo.");
   }
   const st = statusConhecido ?? (await statusDoContainer(ctx.cfg, p.ig_container_id, opcoes(ctx, p.id)));
   if (!jaPublicado(st)) {
-    return await falha(`A rodada caiu com o envio na Meta em ${st || "estado desconhecido"}. Reagende para tentar de novo.`);
+    return await falha(`A publicação parou com o envio na Meta em ${st || "estado desconhecido"}. Reagende para tentar de novo.`);
   }
   const midia = await acharMidiaPorLegenda(ctx.cfg, p.caption, opcoes(ctx, p.id));
   if (!midia) {
@@ -200,7 +200,7 @@ async function reconciliar(ctx: Ctx, p: PostCompleto, statusConhecido?: string):
     return { ok: false, erro: "O post mudou de estado durante a reconciliação e ficou como está." };
   }
   await registrar(ctx, p.id, "reconciled", {
-    note: "o envio já estava publicado; nada foi publicado de novo",
+    note: "O envio já estava publicado na Meta. Nada foi publicado de novo.",
     response: midia,
   });
   return { ok: true };
@@ -305,6 +305,13 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
       const r = await reconciliar(ctx, post, st);
       return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
     }
+    if (!st) {
+      // Não li o status (a Meta falhou). Seguir adiante publicaria de novo se o envio antigo já
+      // saiu. Só um status conhecido e diferente de PUBLISHED libera um container novo.
+      const msg = "O envio anterior deste post não pôde ser conferido na Meta, então nada foi publicado. Reagende para tentar de novo.";
+      await marcarFalha(ctx, post.id, msg);
+      return falhou(post.id, msg);
+    }
   }
 
   let res;
@@ -318,7 +325,7 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
         // publicaria de novo. Então, se a gravação falha, a rodada para ANTES do media_publish.
         onContainer: async (id) => {
           if (!(await escrever(ctx, post.id, "publishing", { ig_container_id: id }))) {
-            throw new NadaPublicado("não consegui gravar o envio criado na Meta");
+            throw new NadaPublicado("o envio criado na Meta não pôde ser gravado");
           }
         },
       },
@@ -326,7 +333,7 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   } catch (e) {
     const msg = e instanceof NadaPublicado
       ? `Nada foi publicado: ${e.message}. Reagende para tentar de novo.`
-      : `A rodada parou por um erro inesperado (${limpar(cfg, String(e)).slice(0, 200)}). Confira no Instagram antes de reagendar.`;
+      : `A publicação parou por um erro inesperado (${limpar(cfg, String(e)).slice(0, 200)}). Confira no Instagram antes de reagendar.`;
     await marcarFalha(ctx, post.id, msg);
     return falhou(post.id, msg);
   }
@@ -347,7 +354,7 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
         acao: "publicado",
         post: post.id,
         permalink,
-        erro: "A Meta publicou, mas não consegui gravar o estado do post. Confira o post na fila antes de reagendar.",
+        erro: "A Meta publicou, mas o estado do post não foi gravado. Confira o post na fila antes de reagendar.",
       },
     };
   }
