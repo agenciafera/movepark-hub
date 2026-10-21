@@ -103,7 +103,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 | Coluna | Tipo |
 |---|---|
 | `id`, `social_post_id` (FK), `created_at` | |
-| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `reconciled`, `overdue`, `failed` |
+| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `consulta`, `reconciled`, `overdue`, `failed` |
 | `http_status` | integer, nulo |
 | `request` / `response` | jsonb, nulo |
 | `note` | text, nulo |
@@ -115,13 +115,13 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 |---|---|---|---|
 | (nada) | `pending_review` | Edge `social-draft` | rascunho recebido |
 | `pending_review` | `approved` | `hub_admin` | `validation.blockers` vazio e `scheduled_at` no futuro |
-| `pending_review`, `approved` | `rejected` | `hub_admin` | com motivo |
+| `pending_review`, `approved`, `overdue`, `failed` | `rejected` | `hub_admin` | com motivo |
 | `approved` | `pending_review` | `hub_admin` | corrigiu a legenda |
 | `approved` | `overdue` | `social-dispatch` | `scheduled_at` mais de 6 h no passado |
 | `approved` | `publishing` | `social-dispatch` | hora chegou e chave ligada |
 | `publishing` | `published` | `social-dispatch` | `media_publish` ok, ou reconciliação achou a mídia |
 | `publishing` | `failed` | `social-dispatch` | erro da Meta ou da rede |
-| `overdue`, `failed` | `approved` | `hub_admin` | reagendou para o futuro (é o "Tentar de novo") |
+| `overdue`, `failed` | `approved` | `hub_admin` | reagendou para o futuro (é o "Tentar de novo"). Reagendar `pending_review` ou `approved` só muda a data |
 
 - `pending_review → approved` exige `validation.blockers` vazio e `scheduled_at` no futuro.
 - Corrigir a legenda de um post `approved` devolve ele para `pending_review`, porque o texto que
@@ -140,7 +140,7 @@ no schema `public` nasce executável por eles.
 |---|---|
 | `social_post_approve(id)` | confere bloqueios e data, grava `approved_by/at`, evento `approved` |
 | `social_post_reject(id, motivo)` | evento `rejected` com o motivo |
-| `social_post_reschedule(id, quando)` | aceita `approved`, `overdue` e `failed`; recusa outro post publicado ou agendado no mesmo dia (fuso de São Paulo); `overdue` e `failed` voltam a `approved` |
+| `social_post_reschedule(id, quando)` | aceita `pending_review`, `approved`, `overdue` e `failed`; recusa outro post publicado ou agendado no mesmo dia (fuso de São Paulo); `overdue` e `failed` voltam a `approved` |
 
 Corrigir legenda não é RPC: vai pela Edge `social-draft` (ação `update_caption`, JWT de
 `hub_admin`), porque a conferência roda lá.
@@ -179,9 +179,22 @@ A Edge:
    **formato do payload** devolve 422 e não grava nada, porque não há post para mostrar. Os demais
    bloqueios (texto) ficam gravados em `validation` e travam a aprovação, para a tela mostrar o
    motivo.
-2. Sobe os JPEGs para `assets-public/social/<origem>/<arquivo>`.
-3. Faz upsert por `draft_key`. Se a linha existente já saiu de `pending_review`, devolve 409:
-   rascunho aprovado não é sobrescrito por reenvio.
+2. Sobe os JPEGs para `assets-public/social/<origem>/<corte>/<hash>/<arquivo>`, sem sobrescrever
+   (`upsert: false`). `<corte>` é `0` quando o post não tem corte; `<hash>` são os 8 primeiros
+   bytes do SHA-256 do arquivo, em hex; `<arquivo>` segue sendo o nome de busca da skill. Dois
+   motivos: o corte separa cortes diferentes, porque a skill nomeia os arquivos pela palavra-chave
+   e pelo número do slide e todos os cortes do mesmo blogpost repetem esses nomes; o hash torna o
+   objeto **imutável**, porque o bucket serve o que estiver no caminho na hora em que a Meta busca
+   a imagem (a query `?v=` é ignorada). Bytes diferentes caem em outro caminho, então a imagem de
+   um post aprovado nunca muda, nem por reenvio em corrida nem por quem perde a criação
+   concorrente. Caminho já ocupado é o mesmo conteúdo e conta como sucesso (reenvio idêntico é
+   idempotente). A URL guardada em `slides[].url` não leva query. Versões antigas de um rascunho
+   reenviado ficam órfãs no bucket (sem limpeza automática).
+3. Grava a linha conferindo o status **na própria escrita**: se já existe, `update` condicionado a
+   `status = 'pending_review'`; se não existe, `insert`, e `draft_key` duplicada (23505) é um envio
+   concorrente. Nos dois casos o perdedor recebe 409, e rascunho que saiu de `pending_review` não é
+   sobrescrito por reenvio: a linha fica como estava e a imagem enviada, que foi para um caminho
+   novo, simplesmente não é usada.
 4. Grava `validation` e o evento `draft_received`.
 
 ### A conferência no servidor
@@ -289,7 +302,7 @@ contrato `harmonizar-paginas`, que é do consumer.
 |---|---|
 | `deno test` `_shared/instagram-validate.test.ts` | cada bloqueio e cada aviso da tabela da seção 2, incluindo JPEG falso e proporção errada |
 | `deno test` `social-dispatch/index.test.ts` | escolhe o mais antigo, um por dia no fuso de São Paulo, atraso acima de 6 h vira `overdue`, `publishing` parado é reconciliado, container `PUBLISHED` nunca publica de novo, chave desligada só grava `dry_run` |
-| `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado, upsert por `draft_key` |
+| `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status |
 | pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
 | Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, legenda com destaque dos 125 caracteres, aba certa por estado |
 

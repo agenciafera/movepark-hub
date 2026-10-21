@@ -414,6 +414,12 @@ verify_jwt = false
 [functions.publish-instagram]
 verify_jwt = false
 
+[functions.social-draft]
+verify_jwt = false
+
+[functions.social-dispatch]
+verify_jwt = false
+
 [functions.send-whatsapp-otp]
 verify_jwt = false
 
