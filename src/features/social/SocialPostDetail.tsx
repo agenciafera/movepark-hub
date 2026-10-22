@@ -123,12 +123,14 @@ function Corpo({
 
   return (
     <Dialog open onOpenChange={(aberto) => !aberto && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+      {/* O popup é um grid: `minmax(0,1fr)` impede que a faixa de slides o estique, então só ela
+          rola de lado. */}
+      <DialogContent className="max-h-[90vh] max-w-3xl grid-cols-[minmax(0,1fr)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {ROTULO_STATUS[post.status]} · {formatarQuando(post.scheduled_at)}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="break-words">
             Origem: {post.draft_key}
             {post.cut_number !== null ? ` · Corte ${post.cut_number}` : ""}
             {post.keyphrase ? ` · Frase-chave: ${post.keyphrase}` : ""}

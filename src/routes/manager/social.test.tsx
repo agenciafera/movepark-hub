@@ -446,6 +446,17 @@ describe("ManagerSocial", () => {
       expect(screen.queryByTestId("previa-feed")).not.toBeInTheDocument();
     });
 
+    // O popup é um grid, e item de grid cresce até a largura mínima do conteúdo: sem a coluna
+    // `minmax(0,1fr)` a faixa de slides esticava o popup e ele inteiro rolava de lado (21/10/2026).
+    // O happy-dom não calcula layout, então o teste prende as classes que fazem só a faixa rolar.
+    it("só a faixa de slides rola de lado; o popup fica na largura da tela", async () => {
+      await abrirPrimeiro();
+      const popup = screen.getByRole("dialog");
+      expect(popup).toHaveClass("grid-cols-[minmax(0,1fr)]");
+      expect(screen.getByRole("region", { name: "Slides" })).toHaveClass("overflow-x-auto");
+      expect(popup.querySelector("p[id]")).toHaveClass("break-words");
+    });
+
     it("a aba Feed mostra o post como no feed do Instagram", async () => {
       await abrirPrimeiro();
       await userEvent.click(screen.getByRole("tab", { name: "Feed" }));
