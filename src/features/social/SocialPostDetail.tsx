@@ -1,6 +1,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +18,7 @@ import {
   usePublishSocialPostNow,
   useRejectSocialPost,
   useRescheduleSocialPost,
+  useSetSocialPlacements,
   useSocialPostEvents,
   useUpdateSocialCaption,
 } from "./api";
@@ -25,20 +27,25 @@ import {
   deCampoDeData,
   formatarDia,
   formatarQuando,
+  LUGARES_EDITAVEIS,
   mensagemDoErro,
   partirGancho,
   perguntaDePublicarAgora,
+  perguntaDePublicarStories,
   podeAprovar,
   podePublicarAgora,
+  podePublicarStoriesAgora,
   REAGENDAVEIS,
+  rotuloDosLugares,
   ROTULO_EVENTO,
   ROTULO_STATUS,
+  situacaoDosStories,
   sugestaoDeData,
 } from "./social.logic";
 import { PreviaFeed } from "./previa/PreviaFeed";
 import { PreviaGrade } from "./previa/PreviaGrade";
 import { PreviaStories } from "./previa/PreviaStories";
-import type { SocialPost } from "@/types/domain";
+import type { SocialPost, SocialPostPlacement } from "@/types/domain";
 
 /**
  * Um post da fila do Instagram: os slides como vão sair (e, em abas, a prévia no feed, nos stories
@@ -82,6 +89,8 @@ function Corpo({
   const reagendar = useRescheduleSocialPost();
   const corrigir = useUpdateSocialCaption();
   const publicar = usePublishSocialPostNow();
+  const mudarLugares = useSetSocialPlacements();
+  const [lugares, setLugares] = React.useState<SocialPostPlacement[]>(post.placements);
   const [quando, setQuando] = React.useState(() => sugestaoDeData(post.scheduled_at, new Date()));
   const [legenda, setLegenda] = React.useState(post.caption);
   const [editando, setEditando] = React.useState(false);
@@ -93,6 +102,56 @@ function Corpo({
   const { gancho, resto } = partirGancho(post.caption);
   const reagendavel = REAGENDAVEIS.includes(post.status);
   const editavel = post.status === "pending_review" || post.status === "approved";
+  const lugaresEditaveis = LUGARES_EDITAVEIS.includes(post.status);
+  const temStories = post.story_slides.length > 0;
+  const lugaresMudaram = [...lugares].sort().join() !== [...post.placements].sort().join();
+  const situacaoStories = situacaoDosStories(post);
+
+  function marcarLugar(lugar: SocialPostPlacement, marcado: boolean) {
+    setLugares((atual) =>
+      (["feed", "story"] as SocialPostPlacement[]).filter((l) =>
+        l === lugar ? marcado : atual.includes(l),
+      ),
+    );
+  }
+
+  /** Salva onde o post sai. Aprovado volta para aprovação, então a pessoa confirma antes. */
+  async function salvarLugares() {
+    if (
+      post.status === "approved" &&
+      !window.confirm("Mudar onde o post sai devolve ele para aprovação. Continuar?")
+    ) {
+      return;
+    }
+    await executar(
+      () =>
+        mudarLugares.mutateAsync({
+          p_id: post.id,
+          p_placements: lugares,
+          p_expected_updated_at: post.updated_at,
+        }),
+      "Lugares salvos",
+    );
+  }
+
+  /** Post que já saiu no feed: publica só os stories que faltam, na hora. */
+  async function publicarStoriesAgora() {
+    if (!window.confirm(perguntaDePublicarStories(post.story_slides.length))) return;
+    try {
+      const r = await publicar.mutateAsync({
+        p_id: post.id,
+        p_expected_updated_at: post.updated_at,
+      });
+      if (r.acao === "outra_rodada") toast.info("Outra rodada já está publicando estes stories.");
+      else if (r.stories && r.stories.faltam > 0) {
+        toast.success(
+          `${r.stories.publicados} stories publicados. O resto sai na próxima rodada.`,
+        );
+      } else toast.success("Stories publicados no Instagram.");
+    } catch (e) {
+      toast.error(mensagemDoErro(e));
+    }
+  }
 
   async function executar(acao: () => Promise<unknown>, sucesso: string) {
     try {
@@ -261,6 +320,58 @@ function Corpo({
             Ver o post no Instagram
           </a>
         )}
+
+        <section aria-label="Onde sai" className="space-y-2">
+          <h3 className="font-semibold">Onde sai</h3>
+          {lugaresEditaveis ? (
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={lugares.includes("feed")}
+                  onCheckedChange={(v) => marcarLugar("feed", v === true)}
+                />
+                Feed
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={lugares.includes("story")}
+                  disabled={!temStories}
+                  onCheckedChange={(v) => marcarLugar("story", v === true)}
+                />
+                Stories
+              </label>
+              {lugaresMudaram && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={lugares.length === 0 || mudarLugares.isPending}
+                  onClick={salvarLugares}
+                >
+                  Salvar
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm">{rotuloDosLugares(post.placements)}</p>
+          )}
+          {lugaresEditaveis && !temStories && (
+            <p className="text-pretty text-sm text-muted">
+              Este post não tem as imagens dos stories. Para sair nos stories, reenvie pela skill.
+            </p>
+          )}
+          {situacaoStories && (
+            <p
+              className={`text-pretty text-sm ${post.story_status === "failed" ? "text-error" : "text-muted"}`}
+            >
+              {situacaoStories}
+            </p>
+          )}
+          {podePublicarStoriesAgora(post) && (
+            <Button disabled={publicar.isPending} onClick={publicarStoriesAgora}>
+              {publicar.isPending ? "Publicando…" : "Publicar stories agora"}
+            </Button>
+          )}
+        </section>
 
         {reagendavel && (
           <section aria-label="Agenda" className="flex flex-wrap items-end gap-2">

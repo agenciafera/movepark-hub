@@ -7,6 +7,7 @@ import {
   usePublishSocialPostNow,
   useRejectSocialPost,
   useRescheduleSocialPost,
+  useSetSocialPlacements,
   useUpdateSocialCaption,
 } from "./api";
 
@@ -176,6 +177,21 @@ describe("decisões da fila pelas RPCs", () => {
     expect(espiao.ultimoBody).toEqual({ p_id: "post-1", p_reason: "Foto errada" });
   });
 
+  it("muda onde o post sai chamando social_post_set_placements com a versão aberta", async () => {
+    const espiao = rpc("social_post_set_placements");
+    const { result } = renderMutation(() => useSetSocialPlacements());
+    await result.current.mutateAsync({
+      p_id: "post-1",
+      p_placements: ["feed", "story"],
+      p_expected_updated_at: "2026-10-20T10:00:00+00:00",
+    });
+    expect(espiao.ultimoBody).toEqual({
+      p_id: "post-1",
+      p_placements: ["feed", "story"],
+      p_expected_updated_at: "2026-10-20T10:00:00+00:00",
+    });
+  });
+
   it("reagenda chamando social_post_reschedule com a nova data em UTC", async () => {
     const espiao = rpc("social_post_reschedule");
     const { result } = renderMutation(() => useRescheduleSocialPost());
@@ -202,7 +218,7 @@ describe("usePublishSocialPostNow", () => {
     const r = await result.current.mutateAsync({ p_id: "post-1", p_expected_updated_at: VERSAO });
     expect(pedido.ultimoBody).toEqual({ p_id: "post-1", p_expected_updated_at: VERSAO });
     expect(publicacao.ultimoBody).toEqual({ post_id: "post-1" });
-    expect(r).toEqual({ acao: "publicado", permalink: "https://www.instagram.com/p/ABC/" });
+    expect(r).toEqual({ acao: "publicado", permalink: "https://www.instagram.com/p/ABC/", stories: null });
     await waitFor(() => expect(invalidar).toHaveBeenCalledWith({ queryKey: ["social"] }));
   });
 
@@ -212,12 +228,23 @@ describe("usePublishSocialPostNow", () => {
     const { result } = renderMutation(() => usePublishSocialPostNow());
     await expect(
       result.current.mutateAsync({ p_id: "post-1", p_expected_updated_at: VERSAO }),
-    ).resolves.toEqual({ acao: "outra_rodada", permalink: null });
+    ).resolves.toEqual({ acao: "outra_rodada", permalink: null, stories: null });
 
     edge("social-dispatch", { json: { ok: true, acao: "reconciliado", post: "post-1" } });
     await expect(
       result.current.mutateAsync({ p_id: "post-1", p_expected_updated_at: VERSAO }),
-    ).resolves.toEqual({ acao: "reconciliado", permalink: null });
+    ).resolves.toEqual({ acao: "reconciliado", permalink: null, stories: null });
+  });
+
+  it("post já publicado no feed: devolve stories com quantos saíram e quantos faltam", async () => {
+    rpc("social_post_publish_now");
+    edge("social-dispatch", {
+      json: { ok: true, acao: "stories", post: "post-1", stories: { publicados: 4, faltam: 2 } },
+    });
+    const { result } = renderMutation(() => usePublishSocialPostNow());
+    await expect(
+      result.current.mutateAsync({ p_id: "post-1", p_expected_updated_at: VERSAO }),
+    ).resolves.toEqual({ acao: "stories", permalink: null, stories: { publicados: 4, faltam: 2 } });
   });
 
   it("RPC recusada: mostra o texto do servidor, não chama a Edge e recarrega a fila", async () => {

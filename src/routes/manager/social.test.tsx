@@ -18,6 +18,7 @@ const {
   corrigirLegenda,
   updateSettings,
   publishNow,
+  setPlacements,
   publicando,
 } = vi.hoisted(() => ({
   postsHook: { current: { data: [], isLoading: false, isError: false } as Leitura<unknown[]> },
@@ -30,6 +31,7 @@ const {
   corrigirLegenda: vi.fn(),
   updateSettings: vi.fn(),
   publishNow: vi.fn(),
+  setPlacements: vi.fn(),
   publicando: { current: false },
 }));
 
@@ -41,6 +43,7 @@ vi.mock("@/features/social/api", () => ({
   useRescheduleSocialPost: () => ({ mutateAsync: reschedule, isPending: false }),
   useUpdateSocialCaption: () => ({ mutateAsync: corrigirLegenda, isPending: false }),
   usePublishSocialPostNow: () => ({ mutateAsync: publishNow, isPending: publicando.current }),
+  useSetSocialPlacements: () => ({ mutateAsync: setPlacements, isPending: false }),
 }));
 
 vi.mock("@/features/settings/api", () => ({
@@ -95,6 +98,13 @@ function post(over: Partial<SocialPost> = {}): SocialPost {
     created_at: FUTURO,
     updated_at: VERSAO,
     deleted_at: null,
+    placements: ["feed"],
+    story_slides: [],
+    story_status: null,
+    story_items: [],
+    story_error: null,
+    story_published_at: null,
+    story_claimed_at: null,
     ...over,
   };
 }
@@ -115,6 +125,8 @@ describe("ManagerSocial", () => {
       permalink: "https://www.instagram.com/p/x/",
     });
     publicando.current = false;
+    setPlacements.mockReset();
+    setPlacements.mockResolvedValue(undefined);
     vi.mocked(toast.error).mockClear();
     vi.mocked(toast.success).mockClear();
     vi.mocked(toast.info).mockClear();
@@ -471,7 +483,7 @@ describe("ManagerSocial", () => {
       await userEvent.click(screen.getByRole("tab", { name: "Stories" }));
       expect(await screen.findByTestId("story-tela")).toBeInTheDocument();
       expect(
-        screen.getByText("Simulação: stories não são publicados pela fila."),
+        screen.getByText("Este post não vai para os stories. A prévia mostra como ficaria."),
       ).toBeInTheDocument();
       expect(approve).not.toHaveBeenCalled();
     });
@@ -698,6 +710,108 @@ describe("ManagerSocial", () => {
       const travado = screen.getByRole("button", { name: "Publicando…" });
       expect(travado).toBeDisabled();
       expect(botao()).not.toBeInTheDocument();
+    });
+  });
+
+  describe("stories", () => {
+    it("a lista diz onde cada post sai", () => {
+      postsHook.current = { data: [post({ placements: ["feed", "story"], story_slides: [{ url: "u", path: "p" }], story_status: "pending" })], isLoading: false, isError: false };
+      renderWithProviders(<ManagerSocial />);
+      expect(screen.getByText(/Feed e stories/)).toBeInTheDocument();
+    });
+
+    const STORIES = [
+      { url: "https://exemplo.co/1-story.jpg", path: "social/confins/1-story.jpg" },
+      { url: "https://exemplo.co/2-story.jpg", path: "social/confins/2-story.jpg" },
+    ];
+    const abrir = (over: Partial<SocialPost>) =>
+      renderWithProviders(<SocialPostDetail post={post(over)} onClose={() => {}} />);
+    const caixa = (nome: string) => screen.getByRole("checkbox", { name: nome });
+
+    it("mostra onde o post sai, com stories travado e a dica quando faltam as imagens 9:16", async () => {
+      abrir({});
+      const onde = await screen.findByRole("region", { name: "Onde sai" });
+      expect(onde).toBeInTheDocument();
+      expect(caixa("Feed")).toBeChecked();
+      expect(caixa("Stories")).not.toBeChecked();
+      expect(caixa("Stories")).toBeDisabled();
+      expect(screen.getByText(/não tem as imagens dos stories/)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Salvar" })).not.toBeInTheDocument();
+    });
+
+    it("marcar stories e salvar chama a RPC com os lugares e a versão aberta", async () => {
+      abrir({ story_slides: STORIES });
+      await userEvent.click(await screen.findByRole("checkbox", { name: "Stories" }));
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+      expect(setPlacements).toHaveBeenCalledWith({
+        p_id: "p1",
+        p_placements: ["feed", "story"],
+        p_expected_updated_at: VERSAO,
+      });
+      expect(toast.success).toHaveBeenCalledWith("Lugares salvos");
+    });
+
+    it("em post aprovado, avisa que volta para aprovação, e desistir não salva", async () => {
+      const confirmar = vi.fn(() => false);
+      vi.stubGlobal("confirm", confirmar);
+      try {
+        abrir({ status: "approved", story_slides: STORIES });
+        await userEvent.click(await screen.findByRole("checkbox", { name: "Stories" }));
+        await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+        expect(confirmar).toHaveBeenCalledWith("Mudar onde o post sai devolve ele para aprovação. Continuar?");
+        expect(setPlacements).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("tirar os dois lugares não deixa salvar", async () => {
+      abrir({ placements: ["feed", "story"], story_slides: STORIES, story_status: "pending" });
+      await userEvent.click(await screen.findByRole("checkbox", { name: "Feed" }));
+      await userEvent.click(caixa("Stories"));
+      expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+    });
+
+    it("post publicado mostra onde saiu, sem caixas, e a situação dos stories", async () => {
+      abrir({
+        status: "published",
+        placements: ["feed", "story"],
+        story_slides: STORIES,
+        story_status: "published",
+        story_published_at: "2026-10-22T16:04:45Z",
+      });
+      expect(await screen.findByText("Feed e stories")).toBeInTheDocument();
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+      expect(screen.getByText("Stories publicados em 22/10/2026, 13:04.")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Publicar stories agora" })).not.toBeInTheDocument();
+    });
+
+    it("publicado no feed com stories pendentes: o botão confirma e publica só os stories", async () => {
+      const confirmar = vi.fn(() => true);
+      vi.stubGlobal("confirm", confirmar);
+      publishNow.mockResolvedValue({ acao: "stories", permalink: null, stories: { publicados: 2, faltam: 0 } });
+      try {
+        abrir({ status: "published", placements: ["feed", "story"], story_slides: STORIES, story_status: "pending" });
+        await userEvent.click(await screen.findByRole("button", { name: "Publicar stories agora" }));
+        expect(confirmar).toHaveBeenCalledWith("Publicar agora os 2 stories no Instagram? Eles ficam 24 horas no ar.");
+        expect(publishNow).toHaveBeenCalledWith({ p_id: "p1", p_expected_updated_at: VERSAO });
+        expect(toast.success).toHaveBeenCalledWith("Stories publicados no Instagram.");
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("stories que não couberam na chamada: avisa que o resto sai na próxima rodada", async () => {
+      vi.stubGlobal("confirm", vi.fn(() => true));
+      publishNow.mockResolvedValue({ acao: "stories", permalink: null, stories: { publicados: 4, faltam: 2 } });
+      try {
+        abrir({ status: "published", placements: ["feed", "story"], story_slides: STORIES, story_status: "failed", story_error: "Falhou ao enviar o story 2 à Meta." });
+        expect(await screen.findByText("Os stories falharam: Falhou ao enviar o story 2 à Meta.")).toBeInTheDocument();
+        await userEvent.click(screen.getByRole("button", { name: "Publicar stories agora" }));
+        expect(toast.success).toHaveBeenCalledWith("4 stories publicados. O resto sai na próxima rodada.");
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
   });
 });

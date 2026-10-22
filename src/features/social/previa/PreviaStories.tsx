@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ArrowCounterClockwise, Heart, PaperPlaneTilt, X } from "@phosphor-icons/react";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import type { SocialPost } from "@/types/domain";
 import {
   AVATAR,
   FONTE_DO_INSTAGRAM,
@@ -18,14 +19,24 @@ import {
 const TOQUE_LONGO_MS = 250;
 
 /**
- * O post como o Instagram mostra um post repostado nos stories: 9:16, barrinhas de progresso, o
- * slide inteiro sobre a mesma imagem ampliada e desfocada. Avança sozinho a cada `STORY_MS`, o
- * toque na metade direita avança e na esquerda volta, segurar pausa, e o último fica na tela até
- * "Rever". Com movimento reduzido não anda sozinho. Só visual; stories não são publicados pela
- * fila. Spec: docs/specs/instagram-fila-de-publicacao.md
+ * Os stories do post: 9:16, barrinhas de progresso, avança sozinho a cada `STORY_MS`, o toque na
+ * metade direita avança e na esquerda volta, segurar pausa, e o último fica na tela até "Rever".
+ * Com movimento reduzido não anda sozinho. Quando o post vai para os stories, mostra as imagens
+ * 9:16 que vão sair (`story_slides`); senão, monta como ficaria: o slide inteiro sobre a mesma
+ * imagem ampliada e desfocada. Só visual: nada vai para a Meta daqui.
+ * Spec: docs/specs/instagram-fila-de-publicacao.md
  */
-export function PreviaStories({ post }: { post: Pick<PostDaPrevia, "id" | "slides"> }) {
-  const total = post.slides.length;
+export function PreviaStories({
+  post,
+}: {
+  post: Pick<PostDaPrevia, "id" | "slides"> &
+    Partial<Pick<SocialPost, "placements" | "story_slides">>;
+}) {
+  const vaiParaStories = !!post.placements?.includes("story") && !!post.story_slides?.length;
+  const quadros = vaiParaStories
+    ? post.story_slides!.map((s) => ({ url: s.url, path: s.path, alt: null as string | null }))
+    : post.slides;
+  const total = quadros.length;
   const reduzido = usePrefersReducedMotion();
   const [estado, despachar] = React.useReducer(
     (e: StoryEstado, a: StoryAcao) => storyReducer(e, a, total),
@@ -64,7 +75,7 @@ export function PreviaStories({ post }: { post: Pick<PostDaPrevia, "id" | "slide
     despachar({ tipo });
   }
 
-  const slide = post.slides[estado.indice];
+  const slide = quadros[estado.indice];
 
   return (
     <div className="space-y-3">
@@ -77,7 +88,15 @@ export function PreviaStories({ post }: { post: Pick<PostDaPrevia, "id" | "slide
         onPointerCancel={soltar}
         className="relative mx-auto aspect-[9/16] w-[300px] max-w-full select-none overflow-hidden rounded-xl bg-black text-white"
       >
-        {slide && (
+        {slide && vaiParaStories && (
+          <img
+            data-testid="story-imagem"
+            src={slide.url}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+          />
+        )}
+        {slide && !vaiParaStories && (
           <>
             <img
               data-testid="story-fundo"
@@ -111,7 +130,7 @@ export function PreviaStories({ post }: { post: Pick<PostDaPrevia, "id" | "slide
 
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 bg-gradient-to-b from-black/60 to-transparent p-3 pb-6">
           <div aria-hidden="true" className="flex gap-1">
-            {post.slides.map((s, i) => {
+            {quadros.map((s, i) => {
               const largura =
                 i < estado.indice
                   ? 100
@@ -164,8 +183,10 @@ export function PreviaStories({ post }: { post: Pick<PostDaPrevia, "id" | "slide
         )}
       </div>
 
-      <p className="text-center text-xs text-muted">
-        Simulação: stories não são publicados pela fila.
+      <p className="text-pretty text-center text-xs text-muted">
+        {vaiParaStories
+          ? "Os stories saem assim, um por slide, e ficam 24 horas no ar."
+          : "Este post não vai para os stories. A prévia mostra como ficaria."}
       </p>
     </div>
   );

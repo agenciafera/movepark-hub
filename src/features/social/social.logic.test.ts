@@ -11,7 +11,11 @@ import {
   perguntaDePublicarAgora,
   podeAprovar,
   podePublicarAgora,
+  podePublicarStoriesAgora,
+  perguntaDePublicarStories,
   ROTULO_EVENTO,
+  rotuloDosLugares,
+  situacaoDosStories,
   sugestaoDeData,
 } from "./social.logic";
 
@@ -155,6 +159,11 @@ describe("ROTULO_EVENTO", () => {
       "overdue",
       "failed",
       "publish_now",
+      "story_container",
+      "story_publish",
+      "story_published",
+      "story_failed",
+      "placements_edited",
     ];
     for (const k of tipos) expect(ROTULO_EVENTO[k], k).toBeTruthy();
     expect(Object.keys(ROTULO_EVENTO).sort()).toEqual([...tipos].sort());
@@ -204,5 +213,57 @@ describe("jaSaiuPostHoje e a pergunta de publicar agora", () => {
     expect(perguntaDePublicarAgora([post("a", "2026-10-21T10:00:00Z")], "x", AGORA)).toBe(
       `${base} Já saiu um post hoje, e os dois vão disputar alcance.`,
     );
+  });
+});
+
+describe("stories", () => {
+  const base = {
+    status: "approved" as const,
+    placements: ["feed", "story"] as ("feed" | "story")[],
+    story_status: "pending" as const,
+    story_error: null,
+    story_published_at: null,
+  };
+
+  it("rotuloDosLugares diz onde o post sai, em português", () => {
+    expect(rotuloDosLugares(["feed", "story"])).toBe("Feed e stories");
+    expect(rotuloDosLugares(["feed"])).toBe("Só no feed");
+    expect(rotuloDosLugares(["story"])).toBe("Só nos stories");
+  });
+
+  it("publicar stories agora só vale para post publicado com stories pendentes ou com falha", () => {
+    expect(podePublicarStoriesAgora({ ...base, status: "published" })).toBe(true);
+    expect(podePublicarStoriesAgora({ ...base, status: "published", story_status: "failed" })).toBe(true);
+    expect(podePublicarStoriesAgora({ ...base, status: "published", story_status: "published" })).toBe(false);
+    expect(podePublicarStoriesAgora({ ...base, status: "published", story_status: "publishing" })).toBe(false);
+    expect(podePublicarStoriesAgora({ ...base, status: "approved" })).toBe(false);
+    expect(podePublicarStoriesAgora({ ...base, status: "published", placements: ["feed"], story_status: null })).toBe(false);
+  });
+
+  it("situacaoDosStories conta em que pé estão os stories, e nada quando o post não vai para stories", () => {
+    expect(situacaoDosStories({ ...base, placements: ["feed"], story_status: null })).toBeNull();
+    expect(situacaoDosStories(base)).toBe("Os stories saem logo depois do feed.");
+    expect(situacaoDosStories({ ...base, placements: ["story"] })).toBe("Os stories saem na hora marcada.");
+    expect(situacaoDosStories({ ...base, status: "published" })).toBe(
+      "Os stories ainda não saíram. Saem na próxima rodada com a publicação automática ligada, ou pelo botão abaixo.",
+    );
+    expect(situacaoDosStories({ ...base, status: "published", story_status: "publishing" })).toBe("Publicando os stories…");
+    expect(
+      situacaoDosStories({ ...base, status: "published", story_status: "published", story_published_at: "2026-10-22T16:04:45Z" }),
+    ).toBe("Stories publicados em 22/10/2026, 13:04.");
+    expect(
+      situacaoDosStories({ ...base, status: "published", story_status: "failed", story_error: "Falhou ao enviar o story 2 à Meta." }),
+    ).toBe("Os stories falharam: Falhou ao enviar o story 2 à Meta.");
+  });
+
+  it("a confirmação de publicar stories diz quantos e que somem em 24 horas", () => {
+    expect(perguntaDePublicarStories(6)).toBe("Publicar agora os 6 stories no Instagram? Eles ficam 24 horas no ar.");
+    expect(perguntaDePublicarStories(1)).toBe("Publicar agora o story no Instagram? Ele fica 24 horas no ar.");
+  });
+
+  it("o rastro tem rótulo para os eventos dos stories", () => {
+    for (const k of ["story_container", "story_publish", "story_published", "story_failed", "placements_edited"]) {
+      expect(ROTULO_EVENTO[k]).toBeTruthy();
+    }
   });
 });

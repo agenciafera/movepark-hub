@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import type { SocialPost, SocialPostEvent, SocialPostValidation } from "@/types/domain";
+import type { SocialPost, SocialPostEvent, SocialPostPlacement, SocialPostValidation } from "@/types/domain";
 
 /**
  * Fila de publicação do Instagram (E3.6). A tela lê a fila e o rastro, e decide pelas RPCs
@@ -87,6 +87,16 @@ export function useRescheduleSocialPost() {
 }
 
 /**
+ * Onde o post sai (feed, stories ou os dois). Vale para a versão aberta, e um post aprovado volta
+ * para aprovação: quem aprovou viu outros lugares. O servidor recusa stories sem as imagens 9:16.
+ */
+export function useSetSocialPlacements() {
+  return useSocialRpc<{ p_id: string; p_placements: SocialPostPlacement[]; p_expected_updated_at: string }>(
+    "social_post_set_placements",
+  );
+}
+
+/**
  * Códigos de máquina que a Edge `social-draft` devolve em inglês (`{ error: "unauthorized" }`
  * com 401, `{ error: "forbidden" }` com 403). Trocados aqui, para não chegarem crus à tela.
  */
@@ -118,8 +128,11 @@ export async function mensagemDaEdge(error: unknown): Promise<string> {
 
 /** O que a `social-dispatch` responde no modo forçado quando dá certo (200). */
 export type ResultadoPublicarAgora = {
-  acao: "publicado" | "reconciliado" | "outra_rodada";
+  /** `stories`: o post já tinha saído no feed, e só os stories saíram agora. */
+  acao: "publicado" | "reconciliado" | "outra_rodada" | "stories";
   permalink: string | null;
+  /** Os stories desta chamada, quando o post vai para stories. */
+  stories: { publicados: number; faltam: number; erro?: string } | null;
 };
 
 /**
@@ -149,14 +162,18 @@ export function usePublishSocialPostNow() {
         ok?: boolean;
         acao?: string;
         permalink?: string | null;
+        stories?: { publicados: number; faltam: number; erro?: string };
         erro?: string;
         error?: string;
       } | null;
       if (
         r?.ok &&
-        (r.acao === "publicado" || r.acao === "reconciliado" || r.acao === "outra_rodada")
+        (r.acao === "publicado" ||
+          r.acao === "reconciliado" ||
+          r.acao === "outra_rodada" ||
+          r.acao === "stories")
       ) {
-        return { acao: r.acao, permalink: r.permalink ?? null };
+        return { acao: r.acao, permalink: r.permalink ?? null, stories: r.stories ?? null };
       }
       throw new Error(r?.erro ?? r?.error ?? "A publicação não terminou. Confira a fila.");
     },

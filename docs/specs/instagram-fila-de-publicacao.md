@@ -32,12 +32,13 @@ sozinha na hora marcada, com registro do que saiu.
 | 1 | Quem produz o post (texto, foto, slide) | **O Claude, pela skill `instagram`**, com a foto gerada no Higgsfield pelo MCP, que gasta os créditos da assinatura. A plataforma não gera conteúdo |
 | 2 | O que a plataforma faz | **Só o Instagram:** receber o rascunho pronto, guardar, mostrar para aprovação, publicar na hora marcada e registrar o que saiu |
 | 3 | Toda publicação passa por aprovação humana | **Sim.** Nada sai sem um `hub_admin` aprovar |
-| 4 | Formatos | **Foto única e carrossel.** Reel e story ficam fora |
+| 4 | Formatos | **Foto única e carrossel no feed, e stories** (ver decisão 10). Reel fica fora |
 | 5 | O disparo | **Nasce desligado** (`app_setting.social_dispatch_enabled = false`), no padrão do `marketing_dispatch_enabled` |
 | 6 | App Review da Meta | **Não é necessário.** Para app que serve só a negócio próprio, o acesso padrão basta ([doc oficial](https://developers.facebook.com/documentation/instagram-platform/app-review), atualizada em 30/06/2026) |
 | 7 | Upload manual de arte no Manager | **Fora desta entrega** |
 | 8 | Marcar as fotos de IA para a Meta (`is_ai_generated`) | **Não marcar** (Kallef, 21/10/2026). O parâmetro não é enviado; se a Meta detectar pelo metadado da imagem e rotular sozinha, o rótulo dela vale |
 | 9 | "Publicar agora", além do agendamento | **Sim** (Kallef, 21/10/2026). O botão funciona **mesmo com `social_dispatch_enabled` desligada**: a chave segura o agendador automático, e "Publicar agora" é um clique humano, post a post, com confirmação. **Ignora a regra de um post por dia**, mas a confirmação avisa quando já saiu post hoje, porque os dois disputam alcance. Continua valendo: só sai post sem bloqueio da conferência, a aprovação vale só para a versão que a pessoa viu, o mesmo post nunca sai duas vezes, tudo fica no rastro e a `social-dispatch` segue sendo o único código que publica |
+| 10 | Stories (22/10/2026) | **Sim.** O post de Viracopos saiu no feed e não nos stories, porque a fila nunca publicou story (decisão 4 antiga). Decisões do Kallef: **cada slide vira um story 9:16** (o slide 4:5 inteiro no centro, sobre a própria imagem desfocada, gerado pela skill com `render-story.mjs`), um carrossel de 6 vira 6 stories em sequência; **o padrão de post novo é feed e stories**, e o Manager troca post a post ("Onde sai"); os stories de um post já publicado podem sair depois. A API não aceita sticker de link, `alt_text` nem carrossel em story, então cada story é um envio `STORIES` e um `media_publish`, e o CTA continua sendo o link da bio. Os 6 stories de Viracopos saíram em 22/10 às 13:04 |
 
 ### O que mudou em relação ao texto da E3.6
 
@@ -97,6 +98,24 @@ skill instagram (Claude)                          Manager (hub_admin)
 
 Não leva trigger `<tabela>_site_rebuild`: nada daqui sai em página pré-renderizada.
 
+**Stories** (migration `20261130240000`), ao lado do feed e com estado próprio:
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `placements` | text[] | onde o post sai: `{feed}`, `{story}` ou `{feed,story}`. Padrão do banco `{feed}`; a `social-draft` grava `{feed,story}` quando o rascunho não diz nada |
+| `story_slides` | jsonb | as imagens 9:16, em ordem: `[{url, path}]`. De 1 a 10 quando `story` está nos lugares |
+| `story_status` | text | `pending`, `publishing`, `published` ou `failed`; nulo quando o post não vai para stories (`check`) |
+| `story_items` | jsonb | por story: `{container_id, media_id, publicado}`. O `container_id` é gravado **antes** do `media_publish` |
+| `story_error` | text | o motivo em português quando os stories falham |
+| `story_published_at` / `story_claimed_at` | timestamptz | quando saíram / quando uma chamada pegou os stories (para achar chamada que caiu) |
+
+`status` continua sendo o ciclo do post. Com feed nos lugares, ele acompanha o feed, e **falha de
+story nunca mexe no feed**. Só com stories, `published` quer dizer que os stories saíram (com
+`ig_media_id` do primeiro story e sem `ig_permalink`). A RPC `social_post_set_placements(p_id,
+p_placements, p_expected_updated_at)` troca os lugares (hub_admin, versão aberta, só em
+`pending_review`, `approved`, `overdue` e `failed`; recusa story sem as imagens 9:16) e devolve
+post aprovado para aprovação, porque quem aprovou viu outros lugares. Evento `placements_edited`.
+
 ### `social_post_event`
 
 O rastro. Mesmo desenho de `payment_gateway_event`: toda chamada à Graph API grava uma linha,
@@ -105,7 +124,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 | Coluna | Tipo |
 |---|---|
 | `id`, `social_post_id` (FK), `created_at` | |
-| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `consulta`, `reconciled`, `overdue`, `failed`, `publish_now` (o pedido do "Publicar agora", migration `20261130233000`) |
+| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `consulta`, `reconciled`, `overdue`, `failed`, `publish_now` (o pedido do "Publicar agora", migration `20261130233000`), e os dos stories `story_container`, `story_publish`, `story_published`, `story_failed`, `placements_edited` (migration `20261130240000`) |
 | `http_status` | integer, nulo |
 | `request` / `response` | jsonb, nulo |
 | `note` | text, nulo |
@@ -324,6 +343,28 @@ ele vira `overdue` depois de 6 horas). Em nenhum caso sai duas vezes: a pega é 
 é consultado antes. Se a Edge cair depois da pega, o post fica em `publishing` e a rodada seguinte
 do cron o reconcilia em até 30 minutos, com a chave desligada também.
 
+### Stories (22/10/2026)
+
+- **Depois do feed, na mesma chamada.** Com `feed` e `story` nos lugares, os stories saem logo
+  depois do `publicado` ou `reconciliado` do feed. A resposta ganha `stories: { publicados,
+  faltam, erro? }`. Falha de story fica em `story_status = failed` e `story_error`, e o feed
+  continua publicado.
+- **Um story por vez, nunca dois iguais.** A chamada pega os stories (`story_status` de `pending`
+  ou `failed` para `publishing`, condicionado). Para cada imagem: story com `publicado` é pulado;
+  envio de antes é consultado (`PUBLISHED` conta como publicado, `FINISHED` é publicado sem criar
+  outro, erro ou vencido dá lugar a um novo); envio novo é gravado em `story_items` antes do
+  `media_publish`, e sem essa gravação nada é publicado; `media_publish` com erro olha o envio uma
+  vez antes de dar por falho.
+- **Prazo.** A Edge tem 150 s de relógio. A chamada começa story novo até 100 s do início dela e
+  sempre publica pelo menos um; o resto volta para `pending`.
+- **Stories que ficaram para trás.** Na rodada sem feed para sair (e só com a chave ligada), sai o
+  publicado mais antigo com stories `pending`, ou com `publishing` parado há mais de 15 minutos
+  (`proximoComStories`). Resposta `acao: "stories"`. Stories com falha esperam o botão.
+- **Só stories.** Post com `{story}`: depois da pega, os stories são a publicação; saíram, o post
+  fica `published`; falharam, `failed` com o motivo do story.
+- **Publicar agora** em post já publicado com stories `pending` ou `failed`: a RPC os deixa
+  `pending` e a Edge publica só eles (`acao: "stories"`), sem tocar no feed.
+
 ## 4. Tela `/manager/social`
 
 Rota em `src/routes.tsx` sob `RequireRole roles={["hub_admin"]}`, item **Instagram** no menu do
@@ -339,8 +380,9 @@ Manager, ao lado de Blog (`src/components/shared/nav-items.ts`). Dados em
   - abas de prévia ao lado dos slides (**Feed**, **Stories** e **Grade do perfil**), para
     conferir o post como ele aparece no celular antes de aprovar. São **só visuais**: rodam no
     navegador, usam curtidas e comentários fictícios (determinísticos a partir do id) e não vão
-    para a Meta nem gravam nada. **Stories não são publicados pela fila**; a aba só mostra como
-    o post ficaria repostado. A grade usa até 5 outros posts da fila (publicados, publicando e
+    para a Meta nem gravam nada. Quando o post vai para os stories, a aba **Stories** mostra as
+    imagens 9:16 que vão sair; senão, monta como ficaria e diz que o post não vai para os
+    stories. A grade usa até 5 outros posts da fila (publicados, publicando e
     agendados) em células 3:4 com recorte central, para conferir se o título da capa sobrevive
     ao corte. Código em `src/features/social/previa/`;
   - a legenda com os primeiros 125 caracteres destacados e a contagem de caracteres;
@@ -363,6 +405,15 @@ Manager, ao lado de Blog (`src/components/shared/nav-items.ts`). Dados em
   o link aparece com a fila recarregada; `outra_rodada` mostra "Outra rodada já está publicando
   este post."; falha mostra o texto do servidor. A fila recarrega no sucesso e no erro. No rastro, o
   evento aparece como "Publicar agora pedido".
+- **Onde sai** (22/10/2026): caixas **Feed** e **Stories** em `pending_review`, `approved`,
+  `overdue` e `failed`, com "Salvar" quando mudou; em post aprovado pede confirmação ("Mudar onde
+  o post sai devolve ele para aprovação. Continuar?"). Stories fica travado quando o post não tem
+  as imagens 9:16, com a dica de reenviar pela skill. Nos outros estados, só o rótulo ("Feed e
+  stories", "Só no feed", "Só nos stories"), que também aparece na linha da lista. Abaixo, a
+  situação dos stories (pendentes, publicando, publicados em tal hora ou o motivo da falha).
+- **Publicar stories agora**, em post publicado com stories pendentes ou com falha: confirmação
+  ("Publicar agora os N stories no Instagram? Eles ficam 24 horas no ar.") e a mesma RPC e Edge do
+  "Publicar agora". Os que não couberam na chamada saem na próxima rodada, e o aviso diz isso.
 - A imagem **não** se edita na tela: trocar arte é refazer o post na skill e reenviar.
 
 Toda copy da tela passa pela skill `revisar-texto`. A tela segue o shell do Manager, e não o
@@ -375,6 +426,11 @@ contrato `harmonizar-paginas`, que é do consumer.
   front matter traz só a data em `publicar_em`, assume 12:00 de São Paulo.
 - **Passo 11** passa a descrever esse envio como o caminho padrão. A publicação manual pelo app
   continua possível.
+- **`scripts/render-story.mjs`** (22/10/2026) gera o story 1080x1920 de cada slide: o slide 4:5
+  inteiro no centro, sobre a própria imagem desfocada. A partir do HTML do slide, renderiza de
+  novo sem a dica "arraste", que no story engana (arrastar para o lado pula para a próxima conta).
+  O envio procura o story do slide `x.jpg` como `x-story.jpg` e lê `onde: [feed, story]` do front
+  matter (sem o campo, os dois).
 - **`references/api-instagram.md`** é corrigido: App Review não é exigido para conta própria, o
   carrossel aceita 20 pela API, a legenda publicada não se edita, a exclusão de mídia existe desde
   dez/2025 e existe o parâmetro `is_ai_generated`, que a Movepark não usa (decisão 8).
@@ -395,6 +451,8 @@ contrato `harmonizar-paginas`, que é do consumer.
 | `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status, reenvio de recusado (sem container volta para `pending_review`, com container é 409), `update_caption` exigindo e conferindo `expected_updated_at` |
 | `deno test` `publish-instagram/index.test.ts` | `dryRun: false` é 403 e não faz nenhuma chamada de rede; o ensaio e o diagnóstico seguem valendo |
 | pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, aprovar com versão velha ou sem versão recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
+| pgTAP `social_post_stories.test.sql` | lugares válidos e coerência com as imagens e o estado (`check`), `set_placements` só para hub_admin, na versão aberta, recusa story sem imagens, publicado não troca, aprovado volta para aprovação, rastro `placements_edited`; "Publicar agora" em publicado com stories pendentes ou com falha deixa `pending`, e em publicado sem stories pendentes recusa |
+| `deno test` `social-dispatch/index.test.ts`, seção (i) | stories depois do feed com o envio gravado antes do `media_publish`, sem `alt` nem legenda; falha de story não mexe no feed; nova tentativa não publica de novo (envio `PUBLISHED` conta, envio pronto é publicado sem criar outro); `media_publish` ambíguo; chave desligada não publica stories pela rodada; stories de outra chamada em andamento ficam com ela; só stories; prazo deixa o resto `pending`; "Publicar agora" em publicado publica só os stories |
 | pgTAP `social_post_publish_now.test.sql` | "Publicar agora": anon não executa, não-admin 42501, versão velha ou nula recusa, bloqueio recusa, `pending_review` com data futura vira `approved` para agora mesmo com outro post publicado hoje, `failed` com container volta guardando o container e quem aprovou antes, `overdue` volta, publicado/publicando/recusado recusam, evento `publish_now` com quem pediu |
 | `deno test` `social-dispatch/index.test.ts`, seção (h) | modo forçado: não-admin 403, sessão inválida 401, sem `post_id` segue o cron, `post_id` inválido 400, post fora de `approved` para agora 409, 404, publica com a chave desligada (e o cron na mesma fila só faz `dry_run`), publica com post já publicado hoje, pega vazia é `outra_rodada` sem Meta, não toca em atrasado nem parado, `failed` com container reconcilia sem POST, 502 em português, 503, CORS |
 | Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, aprovar e corrigir legenda mandando a versão aberta, editor reabrindo com a legenda de agora, legenda com destaque dos 125 caracteres, aba certa por estado; "Publicar agora" nos estados certos e escondido com bloqueio, desistir não chama nada, confirmar manda a versão aberta, aviso de post já publicado hoje, "Publicando…" travado, toasts de cada resultado |

@@ -1,4 +1,4 @@
-import type { SocialPost, SocialPostStatus } from "@/types/domain";
+import type { SocialPost, SocialPostPlacement, SocialPostStatus } from "@/types/domain";
 
 /**
  * Regras da tela da fila do Instagram (E3.6). O servidor é quem decide (RPC e Edge); aqui é só
@@ -79,6 +79,11 @@ export const ROTULO_EVENTO: Record<string, string> = {
   overdue: "Atrasado",
   failed: "Falhou",
   publish_now: "Publicar agora pedido",
+  story_container: "Envio do story à Meta",
+  story_publish: "Pedido de publicação do story à Meta",
+  story_published: "Stories publicados",
+  story_failed: "Stories falharam",
+  placements_edited: "Lugares alterados",
 };
 
 /** Estados em que a data ainda pode mudar. Em `failed`, reagendar é o "tentar de novo". */
@@ -214,4 +219,63 @@ export function mensagemDoErro(e: unknown, padrao = "Não deu certo. Tente de no
     if (typeof m === "string" && m.trim()) return m;
   }
   return padrao;
+}
+
+// ── Stories (22/10/2026) ─────────────────────────────────────────────────────────────
+
+/** Onde o post sai, numa frase curta. */
+export function rotuloDosLugares(placements: SocialPostPlacement[]): string {
+  const feed = placements.includes("feed");
+  const story = placements.includes("story");
+  if (feed && story) return "Feed e stories";
+  return story ? "Só nos stories" : "Só no feed";
+}
+
+/** Os estados em que dá para mudar onde o post sai: os mesmos do reagendar. */
+export const LUGARES_EDITAVEIS = REAGENDAVEIS;
+
+type PostDeStories = Pick<
+  SocialPost,
+  "status" | "placements" | "story_status" | "story_error" | "story_published_at"
+>;
+
+/**
+ * Post que já saiu no feed e tem stories pendentes ou com falha: o botão publica só os stories.
+ * A RPC `social_post_publish_now` aceita exatamente estes casos.
+ */
+export function podePublicarStoriesAgora(p: Pick<PostDeStories, "status" | "placements" | "story_status">): boolean {
+  return (
+    p.status === "published" &&
+    p.placements.includes("story") &&
+    (p.story_status === "pending" || p.story_status === "failed")
+  );
+}
+
+/** Em que pé estão os stories. Nulo quando o post não vai para stories. */
+export function situacaoDosStories(p: PostDeStories): string | null {
+  if (!p.placements.includes("story") || !p.story_status) return null;
+  switch (p.story_status) {
+    case "published":
+      return p.story_published_at
+        ? `Stories publicados em ${formatarQuando(p.story_published_at)}.`
+        : "Stories publicados.";
+    case "publishing":
+      return "Publicando os stories…";
+    case "failed":
+      return `Os stories falharam: ${p.story_error ?? "sem detalhe"}`;
+    case "pending":
+      if (p.status === "published") {
+        return "Os stories ainda não saíram. Saem na próxima rodada com a publicação automática ligada, ou pelo botão abaixo.";
+      }
+      return p.placements.includes("feed")
+        ? "Os stories saem logo depois do feed."
+        : "Os stories saem na hora marcada.";
+  }
+}
+
+/** A confirmação do "Publicar stories agora". */
+export function perguntaDePublicarStories(n: number): string {
+  return n === 1
+    ? "Publicar agora o story no Instagram? Ele fica 24 horas no ar."
+    : `Publicar agora os ${n} stories no Instagram? Eles ficam 24 horas no ar.`;
 }

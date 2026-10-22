@@ -1057,6 +1057,18 @@ export type SocialPostSlide = { url: string; path: string; alt: string | null; t
 
 export type SocialPostValidation = { blockers: string[]; warnings: string[] };
 
+/** Onde o post sai (E3.6, 22/10/2026): feed, story ou os dois. */
+export type SocialPostPlacement = "feed" | "story";
+
+/** O estado dos stories, separado do feed. Nulo quando o post não vai para stories. */
+export type SocialPostStoryStatus = "pending" | "publishing" | "published" | "failed";
+
+/** Uma imagem 9:16 de story. */
+export type SocialPostStorySlide = { url: string; path: string };
+
+/** Um story publicado ou em andamento: o envio na Meta e a mídia, quando saiu. */
+export type SocialPostStoryItem = { container_id?: string | null; media_id?: string | null; publicado?: boolean };
+
 export type SocialPost = {
   id: string;
   draft_key: string;
@@ -1083,6 +1095,13 @@ export type SocialPost = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  placements: SocialPostPlacement[];
+  story_slides: SocialPostStorySlide[];
+  story_status: SocialPostStoryStatus | null;
+  story_items: SocialPostStoryItem[];
+  story_error: string | null;
+  story_published_at: string | null;
+  story_claimed_at: string | null;
 };
 
 export type SocialPostEvent = {

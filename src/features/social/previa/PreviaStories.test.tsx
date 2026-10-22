@@ -56,10 +56,30 @@ describe("PreviaStories", () => {
     expect(screen.getByText("Enviar mensagem")).toBeInTheDocument();
   });
 
-  it("explica que stories não são publicados pela fila", () => {
+  it("post que não vai para os stories: o selo diz que a prévia é só como ficaria", () => {
     montar();
     expect(
-      screen.getByText("Simulação: stories não são publicados pela fila."),
+      screen.getByText("Este post não vai para os stories. A prévia mostra como ficaria."),
+    ).toBeInTheDocument();
+  });
+
+  it("post que vai para os stories mostra as imagens 9:16 que vão sair, uma barrinha por story", () => {
+    const stories = [
+      { url: "https://exemplo.co/1-story.jpg", path: "social/confins/1-story.jpg" },
+      { url: "https://exemplo.co/2-story.jpg", path: "social/confins/2-story.jpg" },
+    ];
+    render(
+      <PreviaStories
+        post={{ id: "p1", slides: slides(3), placements: ["feed", "story"], story_slides: stories }}
+      />,
+    );
+    const imagem = screen.getByTestId("story-imagem");
+    expect(imagem).toHaveAttribute("src", "https://exemplo.co/1-story.jpg");
+    expect(imagem.className).toContain("object-cover");
+    expect(screen.queryByTestId("story-fundo")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId(/^story-barra-/)).toHaveLength(2);
+    expect(
+      screen.getByText("Os stories saem assim, um por slide, e ficam 24 horas no ar."),
     ).toBeInTheDocument();
   });
 
