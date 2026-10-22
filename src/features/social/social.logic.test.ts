@@ -5,9 +5,12 @@ import {
   deCampoDeData,
   formatarDia,
   mensagemDoErro,
+  jaSaiuPostHoje,
   paraCampoDeData,
   partirGancho,
+  perguntaDePublicarAgora,
   podeAprovar,
+  podePublicarAgora,
   ROTULO_EVENTO,
   sugestaoDeData,
 } from "./social.logic";
@@ -123,18 +126,83 @@ describe("ROTULO_EVENTO", () => {
     expect(ROTULO_EVENTO.container_status).toBe("Consulta da situação do envio");
     expect(ROTULO_EVENTO.media_publish).toBe("Pedido de publicação à Meta");
     expect(ROTULO_EVENTO.permalink).toBe("Leitura do link do post");
-    for (const k of ["container_child", "container_parent", "container_status", "media_publish", "permalink"]) {
+    for (const k of [
+      "container_child",
+      "container_parent",
+      "container_status",
+      "media_publish",
+      "permalink",
+    ]) {
       expect(ROTULO_EVENTO[k], k).not.toMatch(/criado|publicado|lido\b/i);
     }
   });
 
   it("todo tipo de evento da tabela tem rótulo em português", () => {
     const tipos = [
-      "draft_received", "caption_edited", "approved", "rejected", "rescheduled", "dry_run",
-      "container_child", "container_parent", "container_status", "media_publish", "permalink",
-      "consulta", "reconciled", "overdue", "failed",
+      "draft_received",
+      "caption_edited",
+      "approved",
+      "rejected",
+      "rescheduled",
+      "dry_run",
+      "container_child",
+      "container_parent",
+      "container_status",
+      "media_publish",
+      "permalink",
+      "consulta",
+      "reconciled",
+      "overdue",
+      "failed",
+      "publish_now",
     ];
     for (const k of tipos) expect(ROTULO_EVENTO[k], k).toBeTruthy();
     expect(Object.keys(ROTULO_EVENTO).sort()).toEqual([...tipos].sort());
+  });
+
+  it("o pedido de publicar agora tem o rótulo do briefing", () => {
+    expect(ROTULO_EVENTO.publish_now).toBe("Publicar agora pedido");
+  });
+});
+
+describe("podePublicarAgora", () => {
+  const sem = { blockers: [], warnings: ["aviso não trava"] };
+  const com = { blockers: ["Promessa de transação"], warnings: [] };
+
+  it("vale nos estados que a RPC aceita, sem bloqueio da conferência", () => {
+    for (const status of ["pending_review", "approved", "overdue", "failed"] as const) {
+      expect(podePublicarAgora({ status, validation: sem }), status).toBe(true);
+    }
+  });
+
+  it("não vale com bloqueio, nem em post publicado, publicando ou recusado", () => {
+    expect(podePublicarAgora({ status: "pending_review", validation: com })).toBe(false);
+    expect(podePublicarAgora({ status: "approved", validation: com })).toBe(false);
+    for (const status of ["published", "publishing", "rejected"] as const) {
+      expect(podePublicarAgora({ status, validation: sem }), status).toBe(false);
+    }
+  });
+});
+
+describe("jaSaiuPostHoje e a pergunta de publicar agora", () => {
+  // 21/10/2026 às 12h em São Paulo.
+  const post = (id: string, published_at: string | null) => ({ id, published_at });
+
+  it("conta outro post publicado no mesmo dia de São Paulo, e não o próprio post", () => {
+    expect(jaSaiuPostHoje([post("a", "2026-10-21T10:00:00Z")], "x", AGORA)).toBe(true);
+    // 23h30 de 20/10 em São Paulo ainda é ontem, mesmo sendo 21/10 em UTC.
+    expect(jaSaiuPostHoje([post("a", "2026-10-21T02:30:00Z")], "x", AGORA)).toBe(false);
+    expect(jaSaiuPostHoje([post("x", "2026-10-21T10:00:00Z")], "x", AGORA)).toBe(false);
+    expect(jaSaiuPostHoje([post("a", null)], "x", AGORA)).toBe(false);
+    expect(jaSaiuPostHoje(undefined, "x", AGORA)).toBe(false);
+  });
+
+  it("a pergunta diz a conta e, quando já saiu post hoje, avisa da disputa de alcance", () => {
+    const base =
+      "Publicar agora no Instagram? O post vai ao ar em seguida na conta @moveparkestacionamento.";
+    expect(perguntaDePublicarAgora([], "x", AGORA)).toBe(base);
+    expect(perguntaDePublicarAgora([post("a", "2026-10-21T10:00:00Z")], "x", AGORA)).toBe(
+      `${base} Já saiu um post hoje, e os dois vão disputar alcance.`,
+    );
   });
 });

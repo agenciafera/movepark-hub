@@ -9,7 +9,17 @@ import type { SocialPost } from "@/types/domain";
 
 type Leitura<T> = { data: T | undefined; isLoading: boolean; isError: boolean };
 
-const { postsHook, settingsHook, approve, reject, reschedule, corrigirLegenda, updateSettings } = vi.hoisted(() => ({
+const {
+  postsHook,
+  settingsHook,
+  approve,
+  reject,
+  reschedule,
+  corrigirLegenda,
+  updateSettings,
+  publishNow,
+  publicando,
+} = vi.hoisted(() => ({
   postsHook: { current: { data: [], isLoading: false, isError: false } as Leitura<unknown[]> },
   settingsHook: {
     current: { data: {}, isLoading: false, isError: false } as Leitura<Record<string, string>>,
@@ -19,6 +29,8 @@ const { postsHook, settingsHook, approve, reject, reschedule, corrigirLegenda, u
   reschedule: vi.fn(),
   corrigirLegenda: vi.fn(),
   updateSettings: vi.fn(),
+  publishNow: vi.fn(),
+  publicando: { current: false },
 }));
 
 vi.mock("@/features/social/api", () => ({
@@ -28,6 +40,7 @@ vi.mock("@/features/social/api", () => ({
   useRejectSocialPost: () => ({ mutateAsync: reject, isPending: false }),
   useRescheduleSocialPost: () => ({ mutateAsync: reschedule, isPending: false }),
   useUpdateSocialCaption: () => ({ mutateAsync: corrigirLegenda, isPending: false }),
+  usePublishSocialPostNow: () => ({ mutateAsync: publishNow, isPending: publicando.current }),
 }));
 
 vi.mock("@/features/settings/api", () => ({
@@ -35,7 +48,7 @@ vi.mock("@/features/settings/api", () => ({
   useUpdateAppSettings: () => ({ mutateAsync: updateSettings, isPending: false }),
 }));
 
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 import ManagerSocial from "./social";
 import { SocialPostDetail } from "@/features/social/SocialPostDetail";
@@ -96,7 +109,15 @@ describe("ManagerSocial", () => {
     reschedule.mockResolvedValue(undefined);
     corrigirLegenda.mockReset();
     corrigirLegenda.mockResolvedValue({ blockers: [], warnings: [] });
+    publishNow.mockReset();
+    publishNow.mockResolvedValue({
+      acao: "publicado",
+      permalink: "https://www.instagram.com/p/x/",
+    });
+    publicando.current = false;
     vi.mocked(toast.error).mockClear();
+    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.info).mockClear();
     updateSettings.mockReset();
     updateSettings.mockResolvedValue(undefined);
     settingsHook.current = {
@@ -494,6 +515,178 @@ describe("ManagerSocial", () => {
       expect(screen.queryByLabelText("Legenda do post")).not.toBeInTheDocument();
       expect(screen.getByText(/Legenda do post B em Confins\./)).toBeInTheDocument();
       expect(screen.getByLabelText("Motivo da recusa")).toHaveValue("");
+    });
+  });
+
+  describe("publicar agora", () => {
+    const PERGUNTA =
+      "Publicar agora no Instagram? O post vai ao ar em seguida na conta @moveparkestacionamento.";
+    const AVISO = " Já saiu um post hoje, e os dois vão disputar alcance.";
+
+    async function abrir(texto: RegExp, aba?: string) {
+      renderWithProviders(<ManagerSocial />);
+      if (aba) await userEvent.click(screen.getByRole("tab", { name: aba }));
+      await userEvent.click(screen.getByText(texto));
+      await screen.findByRole("tab", { name: "Feed" });
+    }
+
+    const botao = () => screen.queryByRole("button", { name: "Publicar agora" });
+
+    it("aparece para aguardando aprovação, agendado, atrasado e com falha", async () => {
+      const casos: Array<[RegExp, string | undefined]> = [
+        [/^Estacionar no aeroporto de Confins/, undefined],
+        [/^Este post de Confins ficou para trás/, undefined],
+        [/^A Meta recusou este post de Confins/, "Falhas (1)"],
+      ];
+      for (const [texto, aba] of casos) {
+        const { unmount } = renderWithProviders(<ManagerSocial />);
+        if (aba) await userEvent.click(screen.getByRole("tab", { name: aba }));
+        await userEvent.click(screen.getByText(texto));
+        expect(
+          await screen.findByRole("button", { name: "Publicar agora" }),
+          String(texto),
+        ).toBeEnabled();
+        unmount();
+      }
+      // O agendado (p3) tem a mesma legenda do p1: abre pelo diálogo direto.
+      renderWithProviders(
+        <SocialPostDetail post={post({ id: "p3", status: "approved" })} onClose={() => {}} />,
+      );
+      expect(await screen.findByRole("button", { name: "Publicar agora" })).toBeEnabled();
+    });
+
+    it("não aparece com bloqueio da conferência nem em post publicado", async () => {
+      const { unmount } = renderWithProviders(<ManagerSocial />);
+      await userEvent.click(screen.getByText(/^Vaga garantida em Confins/));
+      expect(await screen.findByRole("button", { name: "Aprovar" })).toBeDisabled();
+      expect(botao()).not.toBeInTheDocument();
+      unmount();
+
+      renderWithProviders(
+        <SocialPostDetail
+          post={post({ id: "p4", status: "published", ig_media_id: "m1" })}
+          onClose={() => {}}
+        />,
+      );
+      expect(await screen.findByRole("dialog")).toBeInTheDocument();
+      expect(botao()).not.toBeInTheDocument();
+    });
+
+    it("desistir na confirmação não chama nada", async () => {
+      const confirmar = vi.fn(() => false);
+      vi.stubGlobal("confirm", confirmar);
+      try {
+        await abrir(/^Estacionar no aeroporto de Confins/);
+        await userEvent.click(botao()!);
+        expect(confirmar).toHaveBeenCalledWith(PERGUNTA);
+        expect(publishNow).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("confirmar publica a versão aberta e avisa que saiu", async () => {
+      const confirmar = vi.fn(() => true);
+      vi.stubGlobal("confirm", confirmar);
+      try {
+        await abrir(/^Estacionar no aeroporto de Confins/);
+        await userEvent.click(botao()!);
+        await waitFor(() =>
+          expect(publishNow).toHaveBeenCalledWith({ p_id: "p1", p_expected_updated_at: VERSAO }),
+        );
+        await waitFor(() =>
+          expect(toast.success).toHaveBeenCalledWith("Post publicado no Instagram."),
+        );
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("conferido como já publicado também conta como publicado", async () => {
+      vi.stubGlobal(
+        "confirm",
+        vi.fn(() => true),
+      );
+      publishNow.mockResolvedValue({ acao: "reconciliado", permalink: null });
+      try {
+        await abrir(/^Estacionar no aeroporto de Confins/);
+        await userEvent.click(botao()!);
+        await waitFor(() =>
+          expect(toast.success).toHaveBeenCalledWith("Post publicado no Instagram."),
+        );
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("quando outra rodada pegou o post, avisa em vez de dizer que publicou", async () => {
+      vi.stubGlobal(
+        "confirm",
+        vi.fn(() => true),
+      );
+      publishNow.mockResolvedValue({ acao: "outra_rodada", permalink: null });
+      try {
+        await abrir(/^Estacionar no aeroporto de Confins/);
+        await userEvent.click(botao()!);
+        await waitFor(() =>
+          expect(toast.info).toHaveBeenCalledWith("Outra rodada já está publicando este post."),
+        );
+        expect(toast.success).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("falha da publicação vira toast com o texto do servidor", async () => {
+      vi.stubGlobal(
+        "confirm",
+        vi.fn(() => true),
+      );
+      publishNow.mockRejectedValue(new Error("Falhou ao enviar a imagem à Meta."));
+      try {
+        await abrir(/^Estacionar no aeroporto de Confins/);
+        await userEvent.click(botao()!);
+        await waitFor(() =>
+          expect(toast.error).toHaveBeenCalledWith("Falhou ao enviar a imagem à Meta."),
+        );
+        expect(toast.success).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("a confirmação avisa quando outro post da fila já saiu hoje", async () => {
+      const confirmar = vi.fn(() => false);
+      vi.stubGlobal("confirm", confirmar);
+      postsHook.current = {
+        ...postsHook.current,
+        data: [
+          post(),
+          post({
+            id: "p4",
+            draft_key: "confins:4",
+            status: "published",
+            caption: "Publicado hoje em Confins.\n\n#confins #movepark #aeroporto",
+            ig_media_id: "m1",
+            published_at: new Date().toISOString(),
+          }),
+        ],
+      };
+      try {
+        await abrir(/^Estacionar no aeroporto de Confins/);
+        await userEvent.click(botao()!);
+        expect(confirmar).toHaveBeenCalledWith(PERGUNTA + AVISO);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("enquanto publica, o botão fica travado e diz Publicando…", async () => {
+      publicando.current = true;
+      await abrir(/^Estacionar no aeroporto de Confins/);
+      const travado = screen.getByRole("button", { name: "Publicando…" });
+      expect(travado).toBeDisabled();
+      expect(botao()).not.toBeInTheDocument();
     });
   });
 });

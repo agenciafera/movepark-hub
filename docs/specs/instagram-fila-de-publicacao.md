@@ -37,6 +37,7 @@ sozinha na hora marcada, com registro do que saiu.
 | 6 | App Review da Meta | **Não é necessário.** Para app que serve só a negócio próprio, o acesso padrão basta ([doc oficial](https://developers.facebook.com/documentation/instagram-platform/app-review), atualizada em 30/06/2026) |
 | 7 | Upload manual de arte no Manager | **Fora desta entrega** |
 | 8 | Marcar as fotos de IA para a Meta (`is_ai_generated`) | **Não marcar** (Kallef, 21/10/2026). O parâmetro não é enviado; se a Meta detectar pelo metadado da imagem e rotular sozinha, o rótulo dela vale |
+| 9 | "Publicar agora", além do agendamento | **Sim** (Kallef, 21/10/2026). O botão funciona **mesmo com `social_dispatch_enabled` desligada**: a chave segura o agendador automático, e "Publicar agora" é um clique humano, post a post, com confirmação. **Ignora a regra de um post por dia**, mas a confirmação avisa quando já saiu post hoje, porque os dois disputam alcance. Continua valendo: só sai post sem bloqueio da conferência, a aprovação vale só para a versão que a pessoa viu, o mesmo post nunca sai duas vezes, tudo fica no rastro e a `social-dispatch` segue sendo o único código que publica |
 
 ### O que mudou em relação ao texto da E3.6
 
@@ -104,7 +105,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 | Coluna | Tipo |
 |---|---|
 | `id`, `social_post_id` (FK), `created_at` | |
-| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `consulta`, `reconciled`, `overdue`, `failed` |
+| `kind` | text: `draft_received`, `caption_edited`, `approved`, `rejected`, `rescheduled`, `dry_run`, `container_child`, `container_parent`, `container_status`, `media_publish`, `permalink`, `consulta`, `reconciled`, `overdue`, `failed`, `publish_now` (o pedido do "Publicar agora", migration `20261130233000`) |
 | `http_status` | integer, nulo |
 | `request` / `response` | jsonb, nulo |
 | `note` | text, nulo |
@@ -124,6 +125,7 @@ com sucesso ou com erro, e a tela do post mostra todas. **Nunca grava o `access_
 | `publishing` | `published` | `social-dispatch` | `media_publish` ok, ou reconciliação achou a mídia |
 | `publishing` | `failed` | `social-dispatch` | erro da Meta ou da rede |
 | `overdue`, `failed` | `approved` | `hub_admin` | reagendou para o futuro (é o "Tentar de novo"). Reagendar `pending_review` ou `approved` só muda a data |
+| `pending_review`, `approved`, `overdue`, `failed` | `approved` com `scheduled_at = now()` | `hub_admin` | "Publicar agora": sem bloqueio e na versão que a pessoa viu, sem exigir data futura e sem o um por dia. Logo em seguida a `social-dispatch` (modo forçado) faz `approved → publishing → published/failed` |
 
 - `pending_review → approved` exige `validation.blockers` vazio e `scheduled_at` no futuro.
 - Corrigir a legenda de um post `approved` devolve ele para `pending_review`, porque o texto que
@@ -143,6 +145,7 @@ no schema `public` nasce executável por eles.
 | `social_post_approve(id, updated_at)` | aprova **a versão que a pessoa viu**: se o `updated_at` do post já não é o informado, recusa com "O post mudou desde que você abriu" (legenda corrigida ou rascunho reenviado no meio do caminho). Depois confere bloqueios e data, grava `approved_by/at`, evento `approved`. Migration `20261130230000` |
 | `social_post_reject(id, motivo)` | evento `rejected` com o motivo |
 | `social_post_reschedule(id, quando)` | aceita `pending_review`, `approved`, `overdue` e `failed`; recusa outro post publicado ou agendado no mesmo dia (fuso de São Paulo); `overdue` e `failed` voltam a `approved` |
+| `social_post_publish_now(id, updated_at)` | o pedido do "Publicar agora". Mesma checagem de versão da aprovação ("O post mudou desde que você abriu"), aceita `pending_review`, `approved`, `overdue` e `failed`, recusa bloqueio da conferência e **não** checa `social_post_day_taken` nem data futura. Grava `status = 'approved'`, `scheduled_at = now()`, `last_error = null`; vindo de `pending_review`, `approved_by/at` passam a ser quem pediu e agora, e nos outros estados a aprovação anterior fica (só preenche o que estiver vazio). `ig_container_id` fica, para a Edge consultar a Meta antes de criar outro envio. Evento `publish_now` com `actor` e `request = { status_anterior, de, para }`. **Não publica.** Migration `20261130233000` |
 
 Corrigir legenda não é RPC: vai pela Edge `social-draft` (ação `update_caption`, JWT de
 `hub_admin`), porque a conferência roda lá. O corpo leva `expected_updated_at` (obrigatório, 422 sem
@@ -287,6 +290,36 @@ e sem rastro, então deixou de ser um caminho de publicação (revisão final, 2
 A lógica de decisão (o que sai, um por dia, atraso, reconciliação) fica numa função pura em
 `social-dispatch/logic.ts`, testada sem rede.
 
+### "Publicar agora": o modo forçado (21/10/2026)
+
+O Manager chama a RPC `social_post_publish_now`, que deixa o post `approved` com a hora de agora,
+e depois esta Edge pelo navegador (`supabase.functions.invoke`), com o JWT do `hub_admin` e
+`{ "post_id": "<uuid>" }`. A Edge responde `OPTIONS` e manda os cabeçalhos CORS em toda resposta.
+
+- **Quando é modo forçado:** `Authorization: Bearer <JWT>` **e** `post_id` no corpo. Sem os dois, o
+  pedido segue o caminho do cron, idêntico ao de antes (sem `x-social-dispatch-key` certa, 401).
+- **Quem pode:** `admin.auth.getUser(jwt)` (sessão inválida, incluindo a anon key: 401) e
+  `profiles.role = 'hub_admin'` (senão 403). `post_id` que não é uuid: 400.
+- **O que o modo ignora:** a chave `social_dispatch_enabled` (nem é lida) e o um por dia. Também
+  não toca em nenhum outro post: sem reconciliar `publishing` parado e sem marcar atrasados. Isso
+  continua sendo trabalho da rodada.
+- **O que ele exige:** o post existe (404) e está `approved` com `scheduled_at <= agora`, que é
+  como a RPC o deixa. Qualquer outro estado é 409 com o texto em pt-BR ("Este post já está sendo
+  publicado.", "Só post aprovado sai na hora (este está …)." etc.).
+- **A publicação é a mesma da rodada:** a função `pegarEPublicar` foi extraída da rodada e serve
+  aos dois modos. Pega condicionada (`status = 'approved'`, `scheduled_at <= agora`), consulta do
+  container antigo antes de criar outro (post `failed` que voltou pela RPC guarda o
+  `ig_container_id`), `media_publish` uma vez, reconciliação no erro ambíguo, `permalink`, rastro
+  de cada chamada e escritas condicionadas a `publishing`.
+- **Resposta:** `{ ok, acao: "publicado" | "reconciliado" | "outra_rodada", post, permalink? }`, ou
+  502 `{ ok: false, acao: "falhou", post, erro }`.
+
+Se a chamada à Edge cair no meio (rede), o post fica `approved` com a hora de agora. Com a chave
+desligada o agendador não o publica (só grava o `dry_run`), e o botão continua na tela para tentar
+de novo. Com a chave ligada, a próxima rodada o pega, a menos que já tenha saído post no dia (aí
+ele vira `overdue` depois de 6 horas). Em nenhum caso sai duas vezes: a pega é atômica e o container
+é consultado antes.
+
 ## 4. Tela `/manager/social`
 
 Rota em `src/routes.tsx` sob `RequireRole roles={["hub_admin"]}`, item **Instagram** no menu do
@@ -315,6 +348,17 @@ Manager, ao lado de Blog (`src/components/shared/nav-items.ts`). Dados em
   - depois de publicado, o link do post no Instagram.
 - **Ações:** Aprovar (travado enquanto houver bloqueio ou data no passado), Recusar (pede motivo),
   Reagendar, Corrigir legenda (reconferida ao salvar) e Tentar de novo (em `failed`).
+- **Publicar agora** (21/10/2026), ao lado de Reagendar/Tentar de novo, em `pending_review`,
+  `approved`, `overdue` e `failed`, e só sem bloqueio da conferência. Pede confirmação
+  (`window.confirm`): "Publicar agora no Instagram? O post vai ao ar em seguida na conta
+  @moveparkestacionamento.", com " Já saiu um post hoje, e os dois vão disputar alcance." quando
+  outro post da fila tem `published_at` no dia de hoje em São Paulo (só aviso, no front). Confirmado,
+  `usePublishSocialPostNow` chama a RPC com o `updated_at` do post aberto e depois a
+  `social-dispatch` no modo forçado. Enquanto roda, o botão fica travado com "Publicando…" (pode
+  levar até um minuto e meio). `publicado` e `reconciliado` mostram "Post publicado no Instagram." e
+  o link aparece com a fila recarregada; `outra_rodada` mostra "Outra rodada já está publicando
+  este post."; falha mostra o texto do servidor. A fila recarrega no sucesso e no erro. No rastro, o
+  evento aparece como "Publicar agora pedido".
 - A imagem **não** se edita na tela: trocar arte é refazer o post na skill e reenviar.
 
 Toda copy da tela passa pela skill `revisar-texto`. A tela segue o shell do Manager, e não o
@@ -347,7 +391,10 @@ contrato `harmonizar-paginas`, que é do consumer.
 | `deno test` `social-draft/index.test.ts` | autenticação pelas duas formas, 409 em rascunho já aprovado e na corrida, caminho com corte e hash sem sobrescrever, escrita condicionada ao status, reenvio de recusado (sem container volta para `pending_review`, com container é 409), `update_caption` exigindo e conferindo `expected_updated_at` |
 | `deno test` `publish-instagram/index.test.ts` | `dryRun: false` é 403 e não faz nenhuma chamada de rede; o ensaio e o diagnóstico seguem valendo |
 | pgTAP `social_post.test.sql` | RLS (só `hub_admin` lê, ninguém escreve direto), transições das RPCs, aprovar com bloqueio recusa, aprovar com versão velha ou sem versão recusa, dois posts no mesmo dia recusa, grants revogados de `anon`/`authenticated` |
-| Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, aprovar e corrigir legenda mandando a versão aberta, editor reabrindo com a legenda de agora, legenda com destaque dos 125 caracteres, aba certa por estado |
+| pgTAP `social_post_publish_now.test.sql` | "Publicar agora": anon não executa, não-admin 42501, versão velha ou nula recusa, bloqueio recusa, `pending_review` com data futura vira `approved` para agora mesmo com outro post publicado hoje, `failed` com container volta guardando o container e quem aprovou antes, `overdue` volta, publicado/publicando/recusado recusam, evento `publish_now` com quem pediu |
+| `deno test` `social-dispatch/index.test.ts`, seção (h) | modo forçado: não-admin 403, sessão inválida 401, sem `post_id` segue o cron, `post_id` inválido 400, post fora de `approved` para agora 409, 404, publica com a chave desligada (e o cron na mesma fila só faz `dry_run`), publica com post já publicado hoje, pega vazia é `outra_rodada` sem Meta, não toca em atrasado nem parado, `failed` com container reconcilia sem POST, 502 em português, 503, CORS |
+| Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, aprovar e corrigir legenda mandando a versão aberta, editor reabrindo com a legenda de agora, legenda com destaque dos 125 caracteres, aba certa por estado; "Publicar agora" nos estados certos e escondido com bloqueio, desistir não chama nada, confirmar manda a versão aberta, aviso de post já publicado hoje, "Publicando…" travado, toasts de cada resultado |
+| Vitest `src/features/social/api.test.ts` | `usePublishSocialPostNow`: RPC com a versão e depois a Edge só com `post_id`, RPC recusada não chama a Edge, 502 e 409 viram o texto do servidor, a fila recarrega no sucesso e no erro |
 
 ## Ordem de entrega
 

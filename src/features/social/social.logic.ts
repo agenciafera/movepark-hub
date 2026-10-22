@@ -78,10 +78,61 @@ export const ROTULO_EVENTO: Record<string, string> = {
   reconciled: "Conferido: já estava publicado",
   overdue: "Atrasado",
   failed: "Falhou",
+  publish_now: "Publicar agora pedido",
 };
 
 /** Estados em que a data ainda pode mudar. Em `failed`, reagendar é o "tentar de novo". */
 export const REAGENDAVEIS: SocialPostStatus[] = ["pending_review", "approved", "overdue", "failed"];
+
+/**
+ * "Publicar agora" (21/10/2026): os estados que a RPC `social_post_publish_now` aceita. Com
+ * bloqueio da conferência o botão some, porque o servidor recusa em qualquer estado.
+ */
+export const PUBLICAVEIS_AGORA: SocialPostStatus[] = [
+  "pending_review",
+  "approved",
+  "overdue",
+  "failed",
+];
+
+export function podePublicarAgora(p: Pick<SocialPost, "status" | "validation">): boolean {
+  return PUBLICAVEIS_AGORA.includes(p.status) && p.validation.blockers.length === 0;
+}
+
+const DIA_SP = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * Outro post da fila já saiu hoje, no fuso de São Paulo? O "Publicar agora" ignora o um por dia
+ * (decisão do Kallef), mas a confirmação avisa, porque os dois posts disputam alcance.
+ */
+export function jaSaiuPostHoje(
+  fila: Pick<SocialPost, "id" | "published_at">[] | undefined,
+  postId: string,
+  agora: Date,
+): boolean {
+  const hoje = DIA_SP.format(agora);
+  return (fila ?? []).some(
+    (p) => p.id !== postId && p.published_at && DIA_SP.format(new Date(p.published_at)) === hoje,
+  );
+}
+
+/** O texto da confirmação do "Publicar agora". */
+export function perguntaDePublicarAgora(
+  fila: Pick<SocialPost, "id" | "published_at">[] | undefined,
+  postId: string,
+  agora: Date,
+): string {
+  const pergunta =
+    "Publicar agora no Instagram? O post vai ao ar em seguida na conta @moveparkestacionamento.";
+  return jaSaiuPostHoje(fila, postId, agora)
+    ? `${pergunta} Já saiu um post hoje, e os dois vão disputar alcance.`
+    : pergunta;
+}
 
 /** O Instagram mostra cerca de 125 caracteres antes do "mais". */
 export const LIMITE_GANCHO = 125;

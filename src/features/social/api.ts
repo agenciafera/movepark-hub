@@ -99,7 +99,8 @@ const CODIGOS_DA_EDGE = new Map<string, string>([
  * `functions.invoke` devolve só a mensagem genérica ("Edge Function returned a non-2xx status
  * code") e guarda o `Response` em `error.context`. Aqui lemos o corpo da Edge: `{ erros: [...] }`
  * (422) traz a lista de validação em pt-BR; `{ error: "..." }` traz um texto em pt-BR (404, 500),
- * exceto os códigos de 401 e 403, que passam por `CODIGOS_DA_EDGE`.
+ * exceto os códigos de 401 e 403, que passam por `CODIGOS_DA_EDGE`; `{ erro: "..." }` é o texto
+ * da `social-dispatch` quando a publicação falha (502).
  */
 export async function mensagemDaEdge(error: unknown): Promise<string> {
   const ctx = (error as { context?: unknown })?.context;
@@ -107,11 +108,63 @@ export async function mensagemDaEdge(error: unknown): Promise<string> {
     const corpo = (await ctx
       .clone()
       .json()
-      .catch(() => null)) as { erros?: string[]; error?: string } | null;
+      .catch(() => null)) as { erros?: string[]; error?: string; erro?: string } | null;
     if (corpo?.erros?.length) return corpo.erros.join(" ");
     if (corpo?.error) return CODIGOS_DA_EDGE.get(corpo.error) ?? corpo.error;
+    if (corpo?.erro) return corpo.erro;
   }
   return error instanceof Error ? error.message : "Não deu certo. Tente de novo.";
+}
+
+/** O que a `social-dispatch` responde no modo forçado quando dá certo (200). */
+export type ResultadoPublicarAgora = {
+  acao: "publicado" | "reconciliado" | "outra_rodada";
+  permalink: string | null;
+};
+
+/**
+ * "Publicar agora" (21/10/2026), em duas chamadas:
+ *   1. a RPC `social_post_publish_now` confere hub_admin, a versão aberta (`updated_at`, a mesma
+ *      regra da aprovação) e os bloqueios, e deixa o post aprovado para agora;
+ *   2. a Edge `social-dispatch`, no modo forçado, publica só esse post, com a pega atômica e a
+ *      reconciliação de sempre. Ela ignora a chave de disparo e o um por dia.
+ * Se a 2 cair no meio (rede), o post fica aprovado para agora e o botão continua lá para tentar
+ * de novo: a pega e a consulta do container impedem que ele saia duas vezes. A publicação pode
+ * levar até um minuto e meio (o container da Meta precisa ficar pronto).
+ */
+export function usePublishSocialPostNow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      p_id: string;
+      p_expected_updated_at: string;
+    }): Promise<ResultadoPublicarAgora> => {
+      const { error: erroRpc } = await db.rpc("social_post_publish_now", args);
+      if (erroRpc) throw erroRpc;
+      const { data, error } = await supabase.functions.invoke("social-dispatch", {
+        body: { post_id: args.p_id },
+      });
+      if (error) throw new Error(await mensagemDaEdge(error));
+      const r = data as {
+        ok?: boolean;
+        acao?: string;
+        permalink?: string | null;
+        erro?: string;
+        error?: string;
+      } | null;
+      if (
+        r?.ok &&
+        (r.acao === "publicado" || r.acao === "reconciliado" || r.acao === "outra_rodada")
+      ) {
+        return { acao: r.acao, permalink: r.permalink ?? null };
+      }
+      throw new Error(r?.erro ?? r?.error ?? "A publicação não terminou. Confira a fila.");
+    },
+    // Nos dois casos o estado do post mudou no servidor: a fila recarrega para mostrar o de agora
+    // (o link do post, o erro, ou a versão nova que fez a RPC recusar).
+    onSuccess: () => qc.invalidateQueries({ queryKey: socialKeys.all }),
+    onError: () => qc.invalidateQueries({ queryKey: socialKeys.all }),
+  });
 }
 
 export function useUpdateSocialCaption() {

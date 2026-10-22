@@ -8,6 +8,7 @@ import {
   escolher,
   instanteDaMeta,
   jaPublicado,
+  motivoParaNaoPublicarAgora,
   parados,
   type PostFila,
   resumoDoErro,
@@ -186,21 +187,25 @@ const postBanco = (over: Linha = {}): Linha => ({
 const chaveLigada = (valor: string) => [{ key: "social_dispatch_enabled", value: valor }];
 
 function banco(
-  seed: { social_post?: Linha[]; app_setting?: Linha[] },
+  seed: { social_post?: Linha[]; app_setting?: Linha[]; profiles?: Linha[] },
   opts: {
     erro?: (c: ChamadaDb) => ErroDb | null;
     antes?: (c: ChamadaDb, tabelas: Record<string, Linha[]>) => void;
     rpc?: Record<string, (args: Linha) => unknown>;
     linha?: Passo[];
+    /** JWT de mentira para o id do usuário. Fora daqui, `auth.getUser` responde sessão inválida. */
+    usuarios?: Record<string, string>;
   } = {},
 ) {
   const tabelas: Record<string, Linha[]> = {
     social_post: structuredClone(seed.social_post ?? []),
     social_post_event: [],
     app_setting: structuredClone(seed.app_setting ?? chaveLigada("false")),
+    profiles: structuredClone(seed.profiles ?? []),
   };
   const chamadas: ChamadaDb[] = [];
   const rpcs: { nome: string; args: Linha }[] = [];
+  const jwts: string[] = [];
   const linha = opts.linha ?? [];
   let seq = 0;
 
@@ -279,6 +284,17 @@ function banco(
 
   const cliente = {
     from,
+    auth: {
+      getUser: (jwt?: string) => {
+        jwts.push(String(jwt));
+        const id = jwt ? opts.usuarios?.[jwt] : undefined;
+        return Promise.resolve(
+          id
+            ? { data: { user: { id } }, error: null }
+            : { data: { user: null }, error: { message: "invalid JWT" } },
+        );
+      },
+    },
     rpc: (nome: string, args: Linha) => {
       rpcs.push({ nome, args });
       const f = opts.rpc?.[nome];
@@ -291,7 +307,7 @@ function banco(
   const linhaDo = (id = ID) => tabelas.social_post.find((l) => l.id === id)!;
   const tocouEm = (c: ChamadaDb, col: string, valor: unknown) =>
     c.filtros.some(([op, k, v]) => op === "eq" && k === col && v === valor);
-  return { cliente, tabelas, chamadas, rpcs, de, eventos, linhaDo, tocouEm };
+  return { cliente, tabelas, chamadas, rpcs, jwts, de, eventos, linhaDo, tocouEm };
 }
 
 type Rota = { status?: number; body: unknown } | undefined;
@@ -1253,4 +1269,295 @@ Deno.test("erro ao conferir a chave no banco é 500, não 401 nem liberação", 
   assertEquals(res.status, 500);
   assertEquals(g.chamadas.length, 0);
   assertEquals(db.linhaDo().status, "approved");
+});
+
+// ── (h) Publicar agora: o modo forçado, pelo handler ──────────────────────────────────────
+// O Manager chama a RPC social_post_publish_now (que deixa o post aprovado para agora) e depois
+// esta Edge com o JWT de um hub_admin e { post_id }. Ignora a chave e o um por dia, e publica
+// pelo mesmo caminho da rodada: pega atômica, container antigo consultado, rastro de tudo.
+
+const JWT_ADMIN = "jwt-do-hub-admin";
+const JWT_CLIENTE = "jwt-do-cliente";
+const PERFIS: Linha[] = [
+  { id: "u-admin", role: "hub_admin" },
+  { id: "u-cliente", role: "customer" },
+];
+const USUARIOS = { [JWT_ADMIN]: "u-admin", [JWT_CLIENTE]: "u-cliente" };
+
+/** O post como a RPC o deixa: aprovado, com a hora de agora. */
+const postAgora = (over: Linha = {}) => postBanco({ scheduled_at: "2026-10-28T15:04:59Z", ...over });
+
+const bancoAgora = (posts: Linha[], opts: Parameters<typeof banco>[1] = {}, chave = "false") =>
+  banco(
+    { social_post: posts, app_setting: chaveLigada(chave), profiles: PERFIS },
+    { usuarios: USUARIOS, rpc: rpcCerta, ...opts },
+  );
+
+const reqAgora = (jwt: string | undefined, corpo: unknown = { post_id: ID }) =>
+  new Request(URL_FN, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(jwt === undefined ? {} : { Authorization: `Bearer ${jwt}` }),
+    },
+    body: JSON.stringify(corpo),
+  });
+
+const forcar = (
+  db: ReturnType<typeof banco>,
+  g: ReturnType<typeof graphFalso>,
+  jwt: string | undefined = JWT_ADMIN,
+  corpo?: unknown,
+) => handler(reqAgora(jwt, corpo), { admin: db.cliente, getEnv: ENV_OK, agora: AGORA, fetcher: g.fetcher });
+
+Deno.test("motivoParaNaoPublicarAgora: só aprovado com a hora chegada segue, e cada recusa diz o estado em português", () => {
+  const agora = new Date("2026-10-28T15:05:00Z");
+  assertEquals(motivoParaNaoPublicarAgora({ status: "approved", scheduled_at: "2026-10-28T15:05:00Z" }, agora), null);
+  assertEquals(motivoParaNaoPublicarAgora({ status: "approved", scheduled_at: "2026-10-28T09:00:00Z" }, agora), null);
+  assertEquals(motivoParaNaoPublicarAgora({ status: "published", scheduled_at: "2026-10-28T15:00:00Z" }, agora), "Este post já foi publicado.");
+  assertEquals(motivoParaNaoPublicarAgora({ status: "publishing", scheduled_at: "2026-10-28T15:00:00Z" }, agora), "Este post já está sendo publicado.");
+  assertEquals(
+    motivoParaNaoPublicarAgora({ status: "approved", scheduled_at: "2026-10-28T18:00:00Z" }, agora),
+    "Este post está agendado para mais tarde. Feche e abra de novo para publicar agora.",
+  );
+  const estados: Record<string, string> = {
+    pending_review: "aguardando aprovação",
+    overdue: "atrasado",
+    failed: "com falha",
+    rejected: "recusado",
+  };
+  for (const [status, nome] of Object.entries(estados)) {
+    assertEquals(
+      motivoParaNaoPublicarAgora({ status, scheduled_at: "2026-10-28T15:00:00Z" }, agora),
+      `Só post aprovado sai na hora (este está ${nome}).`,
+    );
+  }
+});
+
+Deno.test("Publicar agora: JWT de quem não é hub_admin é 403, e nada é lido, gravado nem enviado à Meta", async () => {
+  const db = bancoAgora([postAgora()], {}, "true");
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g, JWT_CLIENTE);
+  assertEquals(res.status, 403);
+  assertEquals((await res.json()).error, "Só a equipe da Movepark pode publicar no Instagram.");
+  assertEquals(db.de("social_post").length, 0);
+  assertEquals(db.de("social_post_event").length, 0);
+  assertEquals(db.rpcs.length, 0, "o modo forçado não usa a chave do cron");
+  assertEquals(g.chamadas.length, 0);
+  assertEquals(db.linhaDo().status, "approved");
+});
+
+Deno.test("Publicar agora: sessão inválida (a anon key, por exemplo) é 401 e nada acontece", async () => {
+  const db = bancoAgora([postAgora()], {}, "true");
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g, "anon-key-nao-e-usuario");
+  assertEquals(res.status, 401);
+  assertEquals((await res.json()).error, "Sua sessão expirou. Entre de novo para continuar.");
+  assertEquals(db.jwts, ["anon-key-nao-e-usuario"]);
+  assertEquals(db.chamadas.length, 0);
+  assertEquals(g.chamadas.length, 0);
+});
+
+Deno.test("Publicar agora: sem post_id o pedido segue o caminho do cron, que sem a chave é 401", async () => {
+  for (const corpo of [{}, { force: true }]) {
+    const db = bancoAgora([postAgora()], {}, "true");
+    const g = graphFalso(roteiroFeliz);
+    const res = await forcar(db, g, JWT_ADMIN, corpo);
+    assertEquals(res.status, 401);
+    assertEquals((await res.json()).error, "unauthorized");
+    assertEquals(db.jwts.length, 0, "o usuário nem é conferido");
+    assertEquals(db.rpcs[0]?.nome, "cron_key_matches");
+    assertEquals(g.chamadas.length, 0);
+  }
+});
+
+Deno.test("Publicar agora: post_id que não é um id é 400, depois de conferir o admin", async () => {
+  for (const post_id of ["", "abc", 42, null]) {
+    const db = bancoAgora([postAgora()]);
+    const g = graphFalso(roteiroFeliz);
+    const res = await forcar(db, g, JWT_ADMIN, { post_id });
+    assertEquals(res.status, 400, String(post_id));
+    assertEquals((await res.json()).error, "Faltou dizer qual post publicar.");
+    assertEquals(db.de("social_post").length, 0);
+    assertEquals(g.chamadas.length, 0);
+  }
+});
+
+Deno.test("Publicar agora: post que não está aprovado para agora é 409 em português, sem pega e sem Meta", async () => {
+  const casos: Array<[Linha, string]> = [
+    [{ status: "pending_review" }, "Só post aprovado sai na hora (este está aguardando aprovação)."],
+    [{ status: "failed", scheduled_at: "2026-10-28T09:00:00Z" }, "Só post aprovado sai na hora (este está com falha)."],
+    [{ status: "overdue", scheduled_at: "2026-10-27T09:00:00Z" }, "Só post aprovado sai na hora (este está atrasado)."],
+    [{ status: "publishing" }, "Este post já está sendo publicado."],
+    [{ status: "published", ig_media_id: "m-1", published_at: "2026-10-28T12:00:00Z" }, "Este post já foi publicado."],
+    [{ scheduled_at: "2026-10-29T15:00:00Z" }, "Este post está agendado para mais tarde. Feche e abra de novo para publicar agora."],
+  ];
+  for (const [over, texto] of casos) {
+    const db = bancoAgora([postAgora(over)], {}, "true");
+    const g = graphFalso(roteiroFeliz);
+    const res = await forcar(db, g);
+    assertEquals(res.status, 409, texto);
+    assertEquals(await res.json(), { ok: false, post: ID, error: texto });
+    assertEquals(db.de("social_post", "update").length, 0, texto);
+    assertEquals(db.eventos().length, 0, texto);
+    assertEquals(g.chamadas.length, 0, texto);
+  }
+});
+
+Deno.test("Publicar agora: post que não existe ou foi excluído é 404", async () => {
+  for (const posts of [[], [postAgora({ deleted_at: "2026-10-28T12:00:00Z" })]]) {
+    const db = bancoAgora(posts);
+    const g = graphFalso(roteiroFeliz);
+    const res = await forcar(db, g);
+    assertEquals(res.status, 404);
+    assertEquals((await res.json()).error, "Post não encontrado.");
+    assertEquals(g.chamadas.length, 0);
+  }
+});
+
+Deno.test("Publicar agora com a chave desligada publica, uma vez; o cron, na mesma situação, só faz dry_run", async () => {
+  const db = bancoAgora([postAgora()], {}, "false");
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g);
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { ok: true, acao: "publicado", post: ID, permalink: "https://www.instagram.com/p/ABC123/" });
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1, "media_publish uma única vez");
+  assertEquals(db.de("app_setting").length, 0, "o modo forçado nem lê a chave");
+  const l = db.linhaDo();
+  assertEquals(l.status, "published");
+  assertEquals(l.ig_media_id, "midia-1");
+  assertEquals(l.ig_container_id, "container-pai");
+  // A mesma pega da rodada: condicionada a approved e à hora, no mesmo id.
+  const pega = db.de("social_post", "update").find((c) => c.payload?.status === "publishing")!;
+  assertEquals(db.tocouEm(pega, "status", "approved"), true);
+  assertEquals(pega.filtros.some(([op, col, v]) => op === "lte" && col === "scheduled_at" && v === AGORA.toISOString()), true);
+  assertEquals(pega.afetadas, 1);
+  for (const kind of ["container_child", "container_parent", "container_status", "media_publish", "permalink"]) {
+    assertEquals(db.eventos(kind).length >= 1, true, kind);
+  }
+  semToken(db.tabelas.social_post_event, db.tabelas.social_post);
+
+  // O cron, com a mesma fila e a chave desligada: só o dry_run, sem falar com a Meta.
+  const dbCron = bancoAgora([postAgora()], {}, "false");
+  const gCron = graphFalso(roteiroFeliz);
+  const resCron = await handler(reqPost("chave-certa"), { admin: dbCron.cliente, getEnv: ENV_OK, agora: AGORA, fetcher: gCron.fetcher });
+  assertEquals(await resCron.json(), { ok: true, acao: "dry_run", post: ID });
+  assertEquals(gCron.chamadas.length, 0);
+  assertEquals(dbCron.linhaDo().status, "approved");
+});
+
+Deno.test("Publicar agora com outro post publicado hoje publica mesmo assim (o um por dia é do agendador)", async () => {
+  const hoje = postBanco({
+    id: "post-de-hoje",
+    status: "published",
+    caption: "Outro post",
+    ig_media_id: "m-hoje",
+    published_at: "2026-10-28T13:00:00Z",
+  });
+  // O cron, com a chave ligada, recusa por já ter saído post hoje.
+  const dbCron = bancoAgora([postAgora(), hoje], {}, "true");
+  const gCron = graphFalso(roteiroFeliz);
+  const resCron = await handler(reqPost("chave-certa"), { admin: dbCron.cliente, getEnv: ENV_OK, agora: AGORA, fetcher: gCron.fetcher });
+  assertEquals((await resCron.json()).acao, "ja_publicou_hoje");
+  assertEquals(gCron.chamadas.length, 0);
+
+  const db = bancoAgora([postAgora(), hoje], {}, "true");
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g);
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).acao, "publicado");
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1);
+  assertEquals(db.linhaDo().status, "published");
+  assertEquals(db.linhaDo("post-de-hoje").status, "published", "o de hoje fica como está");
+});
+
+Deno.test("Publicar agora: pega que volta vazia é outra_rodada, sem chamada à Meta", async () => {
+  const db = bancoAgora([postAgora()], {
+    // Entre a leitura e a pega, a rodada do cron pega o mesmo post.
+    antes: (c, tabelas) => {
+      if (c.tabela === "social_post" && c.op === "update") {
+        tabelas.social_post.find((l) => l.id === ID)!.status = "publishing";
+      }
+    },
+  }, "true");
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g);
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { ok: true, acao: "outra_rodada", post: ID });
+  assertEquals(g.chamadas.length, 0, "quem perdeu a pega não toca na Meta");
+  assertEquals(db.de("social_post", "update")[0].afetadas, 0);
+  assertEquals(db.linhaDo().attempts, 0);
+});
+
+Deno.test("Publicar agora não mexe em outros posts: nem marca atrasado nem reconcilia parado", async () => {
+  const velho = postBanco({ id: "velho", caption: "Velho", scheduled_at: "2026-10-28T06:00:00Z" });
+  const parado = postBanco({ id: "parado", caption: "Parado", status: "publishing", ig_container_id: "container-velho", updated_at: "2026-10-28T14:30:00Z" });
+  const db = bancoAgora([postAgora(), velho, parado], {}, "true");
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g);
+  assertEquals((await res.json()).acao, "publicado");
+  assertEquals(db.linhaDo("velho").status, "approved", "o atrasado espera a rodada");
+  assertEquals(db.linhaDo("parado").status, "publishing", "o parado espera a rodada");
+  assertEquals(db.eventos("overdue").length, 0);
+  assertEquals(g.quais("GET", "container-velho").length, 0, "o container do parado nem é consultado");
+  assertEquals(db.de("social_post", "update").every((c) => db.tocouEm(c, "id", ID)), true, "toda escrita é no post pedido");
+});
+
+Deno.test("Publicar agora num post que falhou com container: consulta a Meta antes e, PUBLISHED, reconcilia sem POST", async () => {
+  // A RPC devolveu o post para approved e guardou o ig_container_id da tentativa que falhou.
+  const db = bancoAgora([postAgora({ ig_container_id: "container-velho", attempts: 1 })], {}, "false");
+  const g = graphFalso((c) => {
+    if (c.metodo === "GET" && c.caminho === "container-velho") return { body: { status_code: "PUBLISHED" } };
+    if (c.metodo === "GET" && c.caminho === `${IG}/media`) {
+      return { body: { data: [{ id: "m-9", caption: LEGENDA, permalink: "https://www.instagram.com/p/DEF456/" }] } };
+    }
+    return undefined;
+  });
+  const res = await forcar(db, g);
+  assertEquals(await res.json(), { ok: true, acao: "reconciliado", post: ID });
+  assertEquals(g.quais("POST").length, 0, "nem container novo nem media_publish");
+  assertEquals(g.quais("GET", "container-velho").length, 1);
+  assertEquals(db.linhaDo().status, "published");
+  assertEquals(db.linhaDo().ig_media_id, "m-9");
+  assertEquals(db.eventos("reconciled").length, 1);
+});
+
+Deno.test("Publicar agora: a Meta recusa e a resposta é 502 com o texto em português, e o post vira failed", async () => {
+  const db = bancoAgora([postAgora()]);
+  const g = graphFalso((c) => {
+    if (c.metodo === "POST" && c.caminho === `${IG}/media`) return { status: 400, body: { error: { message: "Invalid image url" } } };
+    return roteiroFeliz(c);
+  });
+  const res = await forcar(db, g);
+  assertEquals(res.status, 502);
+  const corpo = await res.json();
+  assertEquals(corpo.acao, "falhou");
+  assertStringIncludes(corpo.erro, "Falhou ao enviar o slide 1 à Meta");
+  assertEquals(db.linhaDo().status, "failed");
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 0);
+  semToken(corpo, db.tabelas.social_post_event);
+});
+
+Deno.test("Publicar agora: sem os secrets da Meta é 503, depois de conferir o admin", async () => {
+  const db = bancoAgora([postAgora()]);
+  const g = graphFalso(roteiroFeliz);
+  const res = await handler(reqAgora(JWT_ADMIN), { admin: db.cliente, getEnv: () => undefined, agora: AGORA, fetcher: g.fetcher });
+  assertEquals(res.status, 503);
+  assertEquals(db.de("social_post").length, 0);
+  assertEquals(g.chamadas.length, 0);
+});
+
+Deno.test("CORS: OPTIONS responde com os cabeçalhos, e as respostas do POST também os trazem", async () => {
+  const db = bancoAgora([postAgora()]);
+  const pre = await handler(new Request(URL_FN, { method: "OPTIONS" }), { admin: db.cliente, getEnv: ENV_OK, agora: AGORA });
+  assertEquals(pre.status, 200);
+  assertEquals(pre.headers.get("Access-Control-Allow-Origin"), "*");
+  assertStringIncludes(pre.headers.get("Access-Control-Allow-Headers") ?? "", "authorization");
+  assertStringIncludes(pre.headers.get("Access-Control-Allow-Headers") ?? "", "apikey");
+  assertStringIncludes(pre.headers.get("Access-Control-Allow-Methods") ?? "", "POST");
+  assertEquals(db.chamadas.length + db.rpcs.length, 0, "o preflight não chega ao banco");
+
+  const g = graphFalso(roteiroFeliz);
+  const res = await forcar(db, g, JWT_CLIENTE);
+  assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*", "o navegador lê o 403");
 });

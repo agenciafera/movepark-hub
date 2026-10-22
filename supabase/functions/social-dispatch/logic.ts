@@ -135,3 +135,32 @@ export function instanteDaMeta(timestamp: string | null | undefined, agora: Date
   if (Number.isNaN(t) || t > agora.getTime()) return agora.toISOString();
   return new Date(t).toISOString();
 }
+
+/** O nome do estado na frase de recusa do "Publicar agora". */
+const ESTADO_EM_PORTUGUES: Record<string, string> = {
+  pending_review: "aguardando aprovação",
+  overdue: "atrasado",
+  failed: "com falha",
+  rejected: "recusado",
+};
+
+/**
+ * Por que o "Publicar agora" não segue com este post, ou `null` se segue. A RPC
+ * `social_post_publish_now` deixa o post `approved` com a hora de agora, então qualquer outro
+ * estado quer dizer que ele mudou entre a RPC e esta chamada, ou que a Edge foi chamada sem a RPC.
+ * O texto vai para a tela (409).
+ */
+export function motivoParaNaoPublicarAgora(
+  p: Pick<PostFila, "status" | "scheduled_at">,
+  agora: Date,
+): string | null {
+  if (p.status === "published") return "Este post já foi publicado.";
+  if (p.status === "publishing") return "Este post já está sendo publicado.";
+  if (p.status !== "approved") {
+    return `Só post aprovado sai na hora (este está ${ESTADO_EM_PORTUGUES[p.status] ?? p.status}).`;
+  }
+  if (Date.parse(p.scheduled_at) > agora.getTime()) {
+    return "Este post está agendado para mais tarde. Feche e abra de novo para publicar agora.";
+  }
+  return null;
+}

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   useApproveSocialPost,
+  usePublishSocialPostNow,
   useRejectSocialPost,
   useRescheduleSocialPost,
   useSocialPostEvents,
@@ -26,7 +27,9 @@ import {
   formatarQuando,
   mensagemDoErro,
   partirGancho,
+  perguntaDePublicarAgora,
   podeAprovar,
+  podePublicarAgora,
   REAGENDAVEIS,
   ROTULO_EVENTO,
   ROTULO_STATUS,
@@ -40,10 +43,12 @@ import type { SocialPost } from "@/types/domain";
 /**
  * Um post da fila do Instagram: os slides como vão sair (e, em abas, a prévia no feed, nos stories
  * e na grade do perfil), a legenda com o trecho que aparece antes do "mais", a conferência, a
- * agenda, a decisão e o rastro. A imagem não se edita aqui: trocar a arte é refazer o post na
- * skill e reenviar. As prévias são só visuais: nada vai para a Meta e nada é gravado.
+ * agenda (com o "Publicar agora"), a decisão e o rastro. A imagem não se edita aqui: trocar a
+ * arte é refazer o post na skill e reenviar. As prévias são só visuais: nada vai para a Meta e
+ * nada é gravado.
  *
- * `fila` é a fila inteira que a página já carregou; a grade do perfil usa dela os outros posts.
+ * `fila` é a fila inteira que a página já carregou; a grade do perfil usa dela os outros posts, e
+ * a confirmação do "Publicar agora" olha se outro post já saiu hoje.
  *
  * O estado do que está sendo digitado (legenda em edição, data, motivo) mora em `Corpo`, que
  * recebe `key={post.id}`: trocar de post zera tudo, e recarregar o mesmo post não apaga o que
@@ -76,6 +81,7 @@ function Corpo({
   const recusar = useRejectSocialPost();
   const reagendar = useRescheduleSocialPost();
   const corrigir = useUpdateSocialCaption();
+  const publicar = usePublishSocialPostNow();
   const [quando, setQuando] = React.useState(() => sugestaoDeData(post.scheduled_at, new Date()));
   const [legenda, setLegenda] = React.useState(post.caption);
   const [editando, setEditando] = React.useState(false);
@@ -92,6 +98,24 @@ function Corpo({
     try {
       await acao();
       toast.success(sucesso);
+    } catch (e) {
+      toast.error(mensagemDoErro(e));
+    }
+  }
+
+  /**
+   * Publica na hora, fora do agendamento e mesmo com a publicação automática desligada. A versão
+   * é a do post aberto, a mesma regra da aprovação. O link aparece quando a fila recarrega.
+   */
+  async function publicarAgora() {
+    if (!window.confirm(perguntaDePublicarAgora(fila, post.id, new Date()))) return;
+    try {
+      const r = await publicar.mutateAsync({
+        p_id: post.id,
+        p_expected_updated_at: post.updated_at,
+      });
+      if (r.acao === "outra_rodada") toast.info("Outra rodada já está publicando este post.");
+      else toast.success("Post publicado no Instagram.");
     } catch (e) {
       toast.error(mensagemDoErro(e));
     }
@@ -260,6 +284,12 @@ function Corpo({
             >
               {post.status === "failed" ? "Tentar de novo" : "Reagendar"}
             </Button>
+            {podePublicarAgora(post) && (
+              // Pode levar até um minuto e meio: o container da Meta precisa ficar pronto.
+              <Button disabled={publicar.isPending} onClick={publicarAgora}>
+                {publicar.isPending ? "Publicando…" : "Publicar agora"}
+              </Button>
+            )}
             {!dataValida && (
               <p id="social-quando-dica" className="basis-full text-sm text-muted">
                 Escolha uma data no futuro.

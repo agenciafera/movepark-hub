@@ -28,6 +28,13 @@
 //
 // Toda chamada à Graph API vira linha em `social_post_event`, sem o token.
 //
+// "Publicar agora" (modo forçado, 21/10/2026): o Manager chama a RPC `social_post_publish_now`,
+// que deixa o post `approved` com a hora de agora, e depois esta Edge com o JWT de um hub_admin e
+// `{ post_id }`. Nesse modo a Edge não lê a chave de disparo, não aplica o um por dia e não toca em
+// nenhum outro post (sem reconciliar parados, sem marcar atrasados). A publicação em si é a mesma
+// da rodada (`pegarEPublicar`): pega atômica, container antigo consultado antes, reconciliação no
+// erro ambíguo e rastro de cada chamada. Então o "nunca duas vezes" vale igual.
+//
 // POST /functions/v1/social-dispatch  (header x-social-dispatch-key, conferido no Vault por
 // cron_key_matches: o valor não passa por terminal nem por secret de Edge)
 // → 200 { ok, acao, post?, permalink?, posts?, ligada? }
@@ -37,6 +44,15 @@
 // → 500 { ok: false, error }  (banco), 503 (sem secrets da Meta), 401 (chave), 405
 //   Caso raro: `ok: false` com `acao: "publicado"` e 500 quer dizer que a Meta publicou e a rodada
 //   não conseguiu gravar o estado; o `erro` diz o que conferir.
+//
+// POST /functions/v1/social-dispatch  (modo forçado: Authorization: Bearer <JWT> e
+// { "post_id": "<uuid>" }; sem os dois, o pedido segue o caminho do cron acima)
+// → 200 { ok, acao: outra_rodada | reconciliado | publicado, post, permalink? }
+// → 502 { ok: false, acao: "falhou", post, erro }
+// → 409 { ok: false, post, error }  (o post não está aprovado para agora; texto pt-BR)
+// → 404 (post), 400 (post_id), 401 (sessão), 403 (não é hub_admin), 503, 500
+// OPTIONS responde o CORS, porque o Manager chama do navegador.
+//
 // Secrets: INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID, INSTAGRAM_API_VERSION (opcional).
 // Ver docs/specs/instagram-fila-de-publicacao.md, seção 3.
 
@@ -57,14 +73,27 @@ import {
   escolher,
   instanteDaMeta,
   jaPublicado,
+  motivoParaNaoPublicarAgora,
   parados,
   type PostFila,
   textoDaFalha,
 } from "./logic.ts";
 
+// O Manager chama o "Publicar agora" pelo navegador. O cron não precisa disso, e não perde nada.
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** As colunas que a publicação lê do post. */
+const CAMPOS = "id, status, scheduled_at, published_at, updated_at, caption, slides, ig_container_id, attempts";
 
 const env = (k: string): string | undefined => Deno.env.get(k);
 
@@ -244,6 +273,102 @@ async function reconciliar(ctx: Ctx, p: PostCompleto, statusConhecido?: string):
 /** Falha que acontece antes do media_publish, com a certeza de que nada saiu no Instagram. */
 class NadaPublicado extends Error {}
 
+/**
+ * Pega o post e publica: o único caminho de publicação da Edge, usado pela rodada (o post que
+ * `escolher` indicou) e pelo "Publicar agora" (o post que a pessoa clicou). `lido` é o post como
+ * quem chama o leu; daqui em diante vale a linha que a pega devolver.
+ */
+async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date): Promise<Resultado> {
+  // Pega o post. Se outra rodada pegou antes, ou se um reagendamento empurrou a hora para o
+  // futuro entre a leitura e agora, a linha não volta e a rodada para aqui.
+  const { data: pego, error: ePega } = await ctx.admin
+    .from("social_post")
+    .update({ status: "publishing", attempts: lido.attempts + 1 })
+    .eq("id", lido.id)
+    .eq("status", "approved")
+    .lte("scheduled_at", agora.toISOString())
+    .is("deleted_at", null)
+    .select("id, scheduled_at, caption, slides, ig_container_id, attempts");
+  if (ePega) {
+    console.error("social-dispatch: a pega do post falhou", limpar(ctx.cfg, String(ePega.message)));
+    return erroDeBanco("Não consegui pegar o post para publicar.");
+  }
+  if (!pego?.length) return ok({ acao: "outra_rodada", post: lido.id });
+  // Daqui em diante vale a linha que a pega devolveu, não a lida antes: legenda, slides e container
+  // são os de agora, então uma correção que chegou no meio não publica conteúdo velho.
+  const post = { ...lido, ...pego[0] } as PostCompleto;
+
+  if (post.ig_container_id) {
+    const st = await statusDoContainer(ctx.cfg, post.ig_container_id, opcoes(ctx, post.id));
+    if (jaPublicado(st)) {
+      const r = await reconciliar(ctx, post, st);
+      return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
+    }
+    if (!st) {
+      // Não li o status (a Meta falhou). Seguir adiante publicaria de novo se o envio antigo já
+      // saiu. Só um status conhecido e diferente de PUBLISHED libera um container novo.
+      const msg = "O envio anterior deste post não pôde ser conferido na Meta, então nada foi publicado. Reagende para tentar de novo.";
+      await marcarFalha(ctx, post.id, msg);
+      return falhou(post.id, msg);
+    }
+  }
+
+  let res;
+  try {
+    res = await publicar(
+      ctx.cfg,
+      { caption: post.caption, images: post.slides.map((s) => ({ url: s.url, alt: s.alt })) },
+      {
+        ...opcoes(ctx, post.id),
+        // Sem o container gravado, a nova tentativa não teria como saber que ele existe e
+        // publicaria de novo. Então, se a gravação falha, a rodada para ANTES do media_publish.
+        onContainer: async (id) => {
+          if (!(await escrever(ctx, post.id, "publishing", { ig_container_id: id }))) {
+            throw new NadaPublicado("o envio criado na Meta não pôde ser gravado");
+          }
+        },
+      },
+    );
+  } catch (e) {
+    const msg = e instanceof NadaPublicado
+      ? `Nada foi publicado: ${e.message}. Reagende para tentar de novo.`
+      : `A publicação parou por um erro inesperado (${limpar(ctx.cfg, String(e)).slice(0, 200)}). Confira no Instagram antes de reagendar.`;
+    await marcarFalha(ctx, post.id, msg);
+    return falhou(post.id, msg);
+  }
+  if (!res.ok) {
+    // A Meta às vezes publica e responde 5xx ou estoura o tempo. Antes de dar o post por falho,
+    // olha o container uma vez: PUBLISHED é post no ar, e reconcilia em vez de falhar.
+    if (res.etapa === "media_publish" && res.containerId) {
+      const st = await statusDoContainer(ctx.cfg, res.containerId, opcoes(ctx, post.id));
+      if (jaPublicado(st)) {
+        const r = await reconciliar(ctx, { ...post, ig_container_id: res.containerId }, st);
+        return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
+      }
+    }
+    const msg = textoDaFalha(res.etapa, res.resposta);
+    await marcarFalha(ctx, post.id, msg, res.resposta);
+    return falhou(post.id, msg);
+  }
+
+  const permalink = await lerPermalink(ctx.cfg, res.mediaId, opcoes(ctx, post.id));
+  if (!(await marcarPublicado(ctx, post.id, res.mediaId, permalink))) {
+    // Está no Instagram e o banco não sabe. O container já está gravado, então a próxima tentativa
+    // reconcilia pela legenda em vez de publicar de novo.
+    return {
+      status: 500,
+      body: {
+        ok: false,
+        acao: "publicado",
+        post: post.id,
+        permalink,
+        erro: "A Meta publicou, mas o estado do post não foi gravado. Confira o post na fila antes de reagendar.",
+      },
+    };
+  }
+  return ok({ acao: "publicado", post: post.id, permalink });
+}
+
 export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   const { admin, cfg, agora } = deps;
   const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()) };
@@ -260,15 +385,14 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   const ligada = String(chave?.value ?? "").toLowerCase() === "true";
 
   const desde = new Date(agora.getTime() - 36 * 60 * 60 * 1000).toISOString();
-  const campos = "id, status, scheduled_at, published_at, updated_at, caption, slides, ig_container_id, attempts";
   const { data: ativos, error: e1 } = await admin
     .from("social_post")
-    .select(campos)
+    .select(CAMPOS)
     .is("deleted_at", null)
     .in("status", ["approved", "publishing"]);
   const { data: recentes, error: e2 } = await admin
     .from("social_post")
-    .select(campos)
+    .select(CAMPOS)
     .is("deleted_at", null)
     .eq("status", "published")
     .gte("published_at", desde);
@@ -322,94 +446,36 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
     return ok({ acao: "dry_run", post: lido.id });
   }
 
-  // 5. Pega o post. Se outra rodada pegou antes, ou se um reagendamento empurrou a hora para o
-  // futuro entre a leitura e agora, a linha não volta e a rodada para aqui.
-  const { data: pego, error: ePega } = await admin
+  // 5. Pega o post e publica.
+  return await pegarEPublicar(ctx, lido, agora);
+}
+
+/**
+ * "Publicar agora" (E3.6, 21/10/2026): publica UM post, o que a pessoa clicou, fora da rodada. A
+ * RPC `social_post_publish_now` já o deixou `approved` com a hora de agora. Aqui não se lê a chave
+ * de disparo nem se aplica o um por dia (decisões do Kallef), e nenhum outro post é tocado. A
+ * publicação é a mesma da rodada, por `pegarEPublicar`.
+ */
+export async function publicarAgora(deps: RodadaDeps, postId: string): Promise<Resultado> {
+  const { admin, cfg, agora } = deps;
+  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()) };
+
+  const { data: lido, error } = await admin
     .from("social_post")
-    .update({ status: "publishing", attempts: lido.attempts + 1 })
-    .eq("id", lido.id)
-    .eq("status", "approved")
-    .lte("scheduled_at", agora.toISOString())
+    .select(CAMPOS)
+    .eq("id", postId)
     .is("deleted_at", null)
-    .select("id, scheduled_at, caption, slides, ig_container_id, attempts");
-  if (ePega) {
-    console.error("social-dispatch: a pega do post falhou", limpar(cfg, String(ePega.message)));
-    return erroDeBanco("Não consegui pegar o post para publicar.");
+    .maybeSingle();
+  if (error) {
+    console.error("social-dispatch: não li o post do publicar agora", limpar(cfg, String(error.message)));
+    return erroDeBanco("Não consegui ler o post.");
   }
-  if (!pego?.length) return ok({ acao: "outra_rodada", post: lido.id });
-  // Daqui em diante vale a linha que a pega devolveu, não a lida antes: legenda, slides e container
-  // são os de agora, então uma correção que chegou no meio não publica conteúdo velho.
-  const post = { ...lido, ...pego[0] } as PostCompleto;
+  if (!lido) return { status: 404, body: { ok: false, error: "Post não encontrado." } };
 
-  if (post.ig_container_id) {
-    const st = await statusDoContainer(cfg, post.ig_container_id, opcoes(ctx, post.id));
-    if (jaPublicado(st)) {
-      const r = await reconciliar(ctx, post, st);
-      return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
-    }
-    if (!st) {
-      // Não li o status (a Meta falhou). Seguir adiante publicaria de novo se o envio antigo já
-      // saiu. Só um status conhecido e diferente de PUBLISHED libera um container novo.
-      const msg = "O envio anterior deste post não pôde ser conferido na Meta, então nada foi publicado. Reagende para tentar de novo.";
-      await marcarFalha(ctx, post.id, msg);
-      return falhou(post.id, msg);
-    }
-  }
+  const motivo = motivoParaNaoPublicarAgora(lido, agora);
+  if (motivo) return { status: 409, body: { ok: false, post: postId, error: motivo } };
 
-  let res;
-  try {
-    res = await publicar(
-      cfg,
-      { caption: post.caption, images: post.slides.map((s) => ({ url: s.url, alt: s.alt })) },
-      {
-        ...opcoes(ctx, post.id),
-        // Sem o container gravado, a nova tentativa não teria como saber que ele existe e
-        // publicaria de novo. Então, se a gravação falha, a rodada para ANTES do media_publish.
-        onContainer: async (id) => {
-          if (!(await escrever(ctx, post.id, "publishing", { ig_container_id: id }))) {
-            throw new NadaPublicado("o envio criado na Meta não pôde ser gravado");
-          }
-        },
-      },
-    );
-  } catch (e) {
-    const msg = e instanceof NadaPublicado
-      ? `Nada foi publicado: ${e.message}. Reagende para tentar de novo.`
-      : `A publicação parou por um erro inesperado (${limpar(cfg, String(e)).slice(0, 200)}). Confira no Instagram antes de reagendar.`;
-    await marcarFalha(ctx, post.id, msg);
-    return falhou(post.id, msg);
-  }
-  if (!res.ok) {
-    // A Meta às vezes publica e responde 5xx ou estoura o tempo. Antes de dar o post por falho,
-    // olha o container uma vez: PUBLISHED é post no ar, e reconcilia em vez de falhar.
-    if (res.etapa === "media_publish" && res.containerId) {
-      const st = await statusDoContainer(cfg, res.containerId, opcoes(ctx, post.id));
-      if (jaPublicado(st)) {
-        const r = await reconciliar(ctx, { ...post, ig_container_id: res.containerId }, st);
-        return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
-      }
-    }
-    const msg = textoDaFalha(res.etapa, res.resposta);
-    await marcarFalha(ctx, post.id, msg, res.resposta);
-    return falhou(post.id, msg);
-  }
-
-  const permalink = await lerPermalink(cfg, res.mediaId, opcoes(ctx, post.id));
-  if (!(await marcarPublicado(ctx, post.id, res.mediaId, permalink))) {
-    // Está no Instagram e o banco não sabe. O container já está gravado, então a próxima tentativa
-    // reconcilia pela legenda em vez de publicar de novo.
-    return {
-      status: 500,
-      body: {
-        ok: false,
-        acao: "publicado",
-        post: post.id,
-        permalink,
-        erro: "A Meta publicou, mas o estado do post não foi gravado. Confira o post na fila antes de reagendar.",
-      },
-    };
-  }
-  return ok({ acao: "publicado", post: post.id, permalink });
+  return await pegarEPublicar(ctx, lido as PostCompleto, agora);
 }
 
 export interface HandlerDeps {
@@ -419,12 +485,70 @@ export interface HandlerDeps {
   fetcher?: typeof fetch;
 }
 
+/** O token do `Authorization: Bearer`, ou nulo. */
+function bearer(req: Request): string | null {
+  const m = /^Bearer\s+(\S+)$/i.exec(req.headers.get("Authorization")?.trim() ?? "");
+  return m ? m[1] : null;
+}
+
+/** O corpo em JSON quando é um objeto; qualquer outra coisa (vazio, texto, lista) vira nulo. */
+async function lerCorpo(req: Request): Promise<Record<string, unknown> | null> {
+  try {
+    const corpo = await req.json();
+    return corpo && typeof corpo === "object" && !Array.isArray(corpo) ? corpo : null;
+  } catch {
+    return null;
+  }
+}
+
+/** O modo forçado: confere o hub_admin pelo JWT e publica só o post pedido. */
+async function modoForcado(
+  admin: Admin,
+  jwt: string,
+  postId: unknown,
+  getEnv: (k: string) => string | undefined,
+  deps: HandlerDeps,
+): Promise<Response> {
+  const { data: usuario, error: eUsuario } = await admin.auth.getUser(jwt);
+  if (eUsuario || !usuario?.user) return json({ error: "Sua sessão expirou. Entre de novo para continuar." }, 401);
+
+  const { data: perfil, error: ePerfil } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", usuario.user.id)
+    .maybeSingle();
+  if (ePerfil) {
+    console.error("social-dispatch: não li o papel de quem pediu", String(ePerfil.message));
+    return json({ error: "Não consegui conferir seu acesso." }, 500);
+  }
+  if (perfil?.role !== "hub_admin") return json({ error: "Só a equipe da Movepark pode publicar no Instagram." }, 403);
+
+  if (typeof postId !== "string" || !UUID.test(postId)) return json({ error: "Faltou dizer qual post publicar." }, 400);
+
+  const cfg = igConfigFromEnv(getEnv);
+  if (!cfg || !cfg.igUserId) return json({ error: "INSTAGRAM_ACCESS_TOKEN ou INSTAGRAM_USER_ID ausente" }, 503);
+
+  try {
+    const r = await publicarAgora({ admin, cfg, agora: deps.agora ?? new Date(), fetcher: deps.fetcher }, postId);
+    return json(r.body, r.status);
+  } catch (e) {
+    console.error("social-dispatch: o publicar agora estourou", limpar(cfg, String(e)));
+    return json({ ok: false, error: "A publicação parou antes de terminar." }, 500);
+  }
+}
+
 export async function handler(req: Request, deps: HandlerDeps = {}): Promise<Response> {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const getEnv = deps.getEnv ?? env;
   const admin = deps.admin ??
     createClient(getEnv("SUPABASE_URL")!, getEnv("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+
+  // "Publicar agora": JWT de usuário e o post no corpo. Sem os dois, é o cron, como sempre foi.
+  const jwt = bearer(req);
+  const corpo = await lerCorpo(req);
+  if (jwt && corpo && "post_id" in corpo) return await modoForcado(admin, jwt, corpo.post_id, getEnv, deps);
 
   const { data: autorizado, error: eAuth } = await admin.rpc("cron_key_matches", {
     p_name: "social_dispatch_key",
