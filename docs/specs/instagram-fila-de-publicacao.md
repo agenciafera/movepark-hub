@@ -247,7 +247,10 @@ e sem rastro, então deixou de ser um caminho de publicação (revisão final, 2
 
 1. Lê `social_dispatch_enabled`.
 2. **Reconciliação primeiro:** post em `publishing` há mais de 15 minutos é tratado como queda no
-   meio do caminho (passo 6).
+   meio do caminho (passo 6). Vale com a chave ligada ou desligada: o "Publicar agora" publica sem
+   a chave, então um post pode parar em `publishing` com ela desligada, e a RPC recusa
+   `publishing`. Reconciliar só consulta a Meta e grava o desfecho (`published` ou `failed`, que
+   devolve o botão); nunca publica.
 3. Marca como `overdue` todo `approved` com `scheduled_at` mais de 6 horas no passado, com evento
    `overdue`. Isso impede que ligar a chave despeje de uma vez uma fila acumulada. A escrita
    repete a regra (`status = 'approved'` e `scheduled_at` anterior a agora menos 6 h), então um
@@ -318,7 +321,8 @@ Se a chamada à Edge cair no meio (rede), o post fica `approved` com a hora de a
 desligada o agendador não o publica (só grava o `dry_run`), e o botão continua na tela para tentar
 de novo. Com a chave ligada, a próxima rodada o pega, a menos que já tenha saído post no dia (aí
 ele vira `overdue` depois de 6 horas). Em nenhum caso sai duas vezes: a pega é atômica e o container
-é consultado antes.
+é consultado antes. Se a Edge cair depois da pega, o post fica em `publishing` e a rodada seguinte
+do cron o reconcilia em até 30 minutos, com a chave desligada também.
 
 ## 4. Tela `/manager/social`
 

@@ -641,17 +641,34 @@ Deno.test("publishing parado com container que não foi publicado: falha e a Met
   assertEquals(g.quais("POST").length, 0, "FINISHED não é PUBLISHED: não publica de novo às cegas");
 });
 
-Deno.test("publishing recente é de outra rodada: espera, e com a chave desligada o parado nem é tocado", async () => {
+Deno.test("publishing recente é de outra rodada: espera sem falar com a Meta", async () => {
   const vivo = banco({ social_post: [postBanco({ status: "publishing", updated_at: "2026-10-28T15:00:00Z" }), postBanco({ id: "b" })], app_setting: chaveLigada("true") });
   const g1 = graphFalso(roteiroFeliz);
   assertEquals((await rodar(vivo, g1)).body.acao, "em_andamento");
   assertEquals(g1.chamadas.length, 0);
+});
 
-  const desligada = banco({ social_post: [postBanco({ status: "publishing", ig_container_id: "c", updated_at: "2026-10-28T14:30:00Z" })], app_setting: chaveLigada("false") });
-  const g2 = graphFalso(roteiroFeliz);
-  await rodar(desligada, g2);
-  assertEquals(desligada.linhaDo().status, "publishing");
-  assertEquals(g2.chamadas.length, 0);
+// O "Publicar agora" publica com a chave desligada, então um post pode ficar parado em
+// `publishing` sem a chave ligada. A reconciliação só consulta a Meta e nunca publica: se ela
+// esperasse a chave, o post ficaria preso para sempre (a RPC recusa `publishing`).
+Deno.test("parado em publishing é reconciliado mesmo com a chave desligada, sem publicar de novo", async () => {
+  const db = banco({ social_post: [postBanco({ status: "publishing", ig_container_id: "c", updated_at: "2026-10-28T14:30:00Z" })], app_setting: chaveLigada("false") });
+  const g = graphFalso((c) => {
+    if (c.caminho === "c") return { body: { status_code: "PUBLISHED" } };
+    if (c.caminho === `${IG}/media`) return { body: { data: [{ id: "m-9", caption: LEGENDA, permalink: "p" }] } };
+    return undefined;
+  });
+  assertEquals((await rodar(db, g)).body.acao, "reconciliou");
+  assertEquals(db.linhaDo().status, "published");
+  assertEquals(g.quais("POST").length, 0, "reconciliar nunca cria container nem publica");
+});
+
+Deno.test("parado sem envio na Meta vira failed com a chave desligada, e o botão volta a aparecer", async () => {
+  const db = banco({ social_post: [postBanco({ status: "publishing", ig_container_id: null, updated_at: "2026-10-28T14:30:00Z" })], app_setting: chaveLigada("false") });
+  const g = graphFalso(roteiroFeliz);
+  assertEquals((await rodar(db, g)).body.acao, "reconciliou");
+  assertEquals(db.linhaDo().status, "failed");
+  assertEquals(g.chamadas.length, 0, "sem container não há o que consultar");
 });
 
 Deno.test("reconciliar não pisa em post que mudou de estado enquanto a Meta era consultada", async () => {

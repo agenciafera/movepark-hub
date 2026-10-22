@@ -3,12 +3,13 @@
 // É o ÚNICO código que publica na conta real: o resto da fila só prepara, aprova e mostra.
 //
 // Uma rodada:
-//   1. com a chave ligada, reconcilia post parado em `publishing` (rodada que caiu no meio);
+//   1. reconcilia post parado em `publishing` (rodada ou "Publicar agora" que caiu no meio), com a
+//      chave ligada ou não: reconciliar só consulta a Meta e nunca publica;
 //   2. marca `overdue` todo aprovado com mais de 6 h de atraso (com a chave ligada ou não: ligar
 //      depois não despeja a fila acumulada);
 //   3. escolhe UM aprovado cuja hora chegou, um por dia no fuso de São Paulo;
 //   4. chave desligada (`app_setting.social_dispatch_enabled` diferente de 'true'): só grava o
-//      evento `dry_run`, uma vez por post, e não muda o estado nem fala com a Meta;
+//      evento `dry_run`, uma vez por post, e não muda o estado nem publica;
 //   5. chave ligada: pega o post com update condicional (status = 'approved'), consulta o container
 //      antigo antes de criar outro e publica. O mesmo post nunca sai duas vezes.
 //
@@ -402,14 +403,14 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   }
   const posts = [...(ativos ?? []), ...(recentes ?? [])] as PostCompleto[];
 
-  // 1. Rodada que caiu no meio do caminho.
-  if (ligada) {
-    const ids = parados(posts, agora);
-    for (const id of ids) {
-      await reconciliar(ctx, posts.find((x) => x.id === id)!);
-    }
-    if (ids.length) return ok({ acao: "reconciliou", posts: ids });
+  // 1. Rodada que caiu no meio do caminho. Vale com a chave desligada também: o "Publicar agora"
+  // publica sem a chave, então um post pode parar em `publishing` com ela desligada, e a RPC recusa
+  // `publishing`. Reconciliar só consulta a Meta e grava o desfecho; nunca publica.
+  const ids = parados(posts, agora);
+  for (const id of ids) {
+    await reconciliar(ctx, posts.find((x) => x.id === id)!);
   }
+  if (ids.length) return ok({ acao: "reconciliou", posts: ids });
 
   // 2. Atrasados saem da fila. A escrita repete a regra do atraso (hora marcada anterior a agora
   // menos 6 h): quem reagendou o post, ainda aprovado, entre a leitura e aqui não é marcado.
