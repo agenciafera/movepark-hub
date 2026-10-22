@@ -7,6 +7,11 @@ export interface SlideRascunho {
   texto: string | null;
 }
 
+export type Lugar = "feed" | "story";
+
+/** Padrão de post novo (decisão do Kallef, 22/10/2026): feed e stories. */
+export const LUGARES_PADRAO: Lugar[] = ["feed", "story"];
+
 export interface Rascunho {
   origem: string;
   corte: number | null;
@@ -18,6 +23,10 @@ export interface Rascunho {
   priceDate: string | null;
   caption: string;
   slides: SlideRascunho[];
+  /** Onde o post sai, em ordem fixa (feed antes de story). */
+  placements: Lugar[];
+  /** As imagens 9:16 dos stories, uma por story. Vazia quando o post não vai para stories. */
+  stories: { arquivo: string }[];
 }
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -80,6 +89,26 @@ export function lerRascunho(
   });
   if (new Set(slides.map((s) => s.arquivo)).size < slides.length) erros.push("Dois slides usam o mesmo arquivo.");
 
+  // Onde sai. Sem o campo, o padrão: feed e stories.
+  const brutosLugares = m.placements === undefined || m.placements === null ? LUGARES_PADRAO : m.placements;
+  const lista = Array.isArray(brutosLugares) ? brutosLugares.map(String) : [];
+  const placements = (["feed", "story"] as Lugar[]).filter((l) => lista.includes(l));
+  if (lista.some((l) => l !== "feed" && l !== "story")) erros.push("Os lugares aceitos são feed e story.");
+  else if (!placements.length) erros.push("Escolha pelo menos um lugar: feed ou story.");
+
+  const brutosStories = Array.isArray(m.stories) ? m.stories : [];
+  const stories = placements.includes("story")
+    ? brutosStories.map((s) => ({ arquivo: texto(((s && typeof s === "object" ? s : {}) as Record<string, unknown>).arquivo) ?? "" }))
+    : [];
+  if (placements.includes("story")) {
+    if (stories.length < 1 || stories.length > 10) erros.push("Com story, o post precisa de 1 a 10 imagens 9:16 em stories.");
+    stories.forEach((s, i) => {
+      if (!ARQUIVO.test(s.arquivo)) erros.push(`Story ${i + 1}: o arquivo precisa estar em kebab-case e terminar em .jpg.`);
+      else if (slides.some((sl) => sl.arquivo === s.arquivo)) erros.push(`O story ${i + 1} usa o mesmo arquivo de um slide do feed.`);
+    });
+    if (new Set(stories.map((s) => s.arquivo)).size < stories.length) erros.push("Dois stories usam o mesmo arquivo.");
+  }
+
   if (erros.length) return { ok: false, erros };
   return {
     ok: true,
@@ -93,6 +122,8 @@ export function lerRascunho(
       priceDate,
       caption,
       slides,
+      placements,
+      stories,
     },
   };
 }

@@ -77,6 +77,10 @@ que ocupa mais tela no feed.
 `alt_text` vale para **imagem única e item de carrossel**. Reel e story não
 aceitam o campo.
 
+**Story:** JPEG até 8 MB, e a Meta recomenda 9:16 "para não cortar nem sobrar faixa vazia". A
+casa usa 1080 x 1920, gerado pelo `render-story.mjs` a partir do slide. Story some em 24 horas
+e cada um conta no limite de 100 publicações por dia.
+
 `user_tags` pede coordenada x/y de 0.0 a 1.0 em imagem. `location_id` **não
 funciona** em item de carrossel.
 
@@ -89,7 +93,9 @@ limite nunca é o gargalo.
 ## O que a API não faz
 
 - Não agenda.
-- Não publica em story pela mesma rota de feed.
+- Não publica story em carrossel: cada story é um envio próprio (`media_type=STORIES`) e um
+  `media_publish`. A fila faz isso desde 22/10/2026, um story por slide 9:16.
+- Não aceita sticker em story (link, enquete, local). Menção a usuário sem sticker é aceita.
 - Não edita legenda de post já publicado: a rota de update só liga e desliga comentários.
 - Apaga post (desde dez/2025, permissão `instagram_manage_contents`), o que a Movepark não usa.
 - Aceita `is_ai_generated` para declarar foto de IA. A Movepark decidiu não marcar

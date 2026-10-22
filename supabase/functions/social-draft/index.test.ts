@@ -26,11 +26,40 @@ const BOM = {
   cta_url: "https://movepark.co/destinos/aeroporto-de-confins?utm_source=instagram",
   price_date: "2026-10-21",
   caption: "Legenda do post.",
+  placements: ["feed"],
   slides: [
     { arquivo: "preco-estacionamento-aeroporto-confins-01.jpg", alt: "pátio", texto: "R$ 45 a diária" },
     { arquivo: "preco-estacionamento-aeroporto-confins-02.jpg", alt: "van", texto: null },
   ],
 };
+
+Deno.test("onde sai: sem o campo, feed e stories, que é o padrão; com stories, os arquivos 9:16 são lidos", () => {
+  const { placements: _, ...semLugares } = BOM;
+  const padrao = lerRascunho({ ...semLugares, stories: [{ arquivo: "story-01.jpg" }] });
+  assertEquals(padrao.ok && padrao.rascunho.placements, ["feed", "story"]);
+  assertEquals(padrao.ok && padrao.rascunho.stories, [{ arquivo: "story-01.jpg" }]);
+  const soFeed = lerRascunho(BOM);
+  assertEquals(soFeed.ok && soFeed.rascunho.placements, ["feed"]);
+  assertEquals(soFeed.ok && soFeed.rascunho.stories, []);
+});
+
+Deno.test("onde sai: lugar desconhecido, nenhum lugar e stories sem arquivo são recusados", () => {
+  const erros = (m: Record<string, unknown>) => {
+    const r = lerRascunho({ ...BOM, ...m });
+    return r.ok ? [] : r.erros;
+  };
+  assertEquals(erros({ placements: ["reel"] }), ["Os lugares aceitos são feed e story."]);
+  assertEquals(erros({ placements: [] }), ["Escolha pelo menos um lugar: feed ou story."]);
+  assertEquals(erros({ placements: ["feed", "story"] }), ["Com story, o post precisa de 1 a 10 imagens 9:16 em stories."]);
+  assertEquals(erros({ placements: ["story"], stories: [{ arquivo: "Story Um.jpg" }] }), [
+    "Story 1: o arquivo precisa estar em kebab-case e terminar em .jpg.",
+  ]);
+  assertEquals(
+    erros({ placements: ["story"], stories: [{ arquivo: "preco-estacionamento-aeroporto-confins-01.jpg" }] }),
+    ["O story 1 usa o mesmo arquivo de um slide do feed."],
+  );
+});
+
 
 Deno.test("rascunho bom é lido e a data vira ISO em UTC", () => {
   const r = lerRascunho(BOM);
@@ -251,14 +280,21 @@ const POST_VALIDO = {
   corte: 2,
   publicar_em: "2026-10-31T15:00:00Z",
   caption: "Legenda do teste. #a #b #c",
+  placements: ["feed"],
   slides: [{ arquivo: "slide-01.jpg", alt: "slide de teste" }],
 };
 
-function envio(post: unknown, opts: { chave?: string | null; arquivo?: Uint8Array | null } = {}): Request {
+function envio(
+  post: unknown,
+  opts: { chave?: string | null; arquivo?: Uint8Array | null; stories?: Record<string, Uint8Array> } = {},
+): Request {
   const form = new FormData();
   form.set("post", JSON.stringify(post));
   const arquivo = opts.arquivo === undefined ? jpeg(1080, 1350) : opts.arquivo;
   if (arquivo) form.set("slide-01.jpg", new File([arquivo], "slide-01.jpg", { type: "image/jpeg" }));
+  for (const [nome, bytes] of Object.entries(opts.stories ?? {})) {
+    form.set(nome, new File([new Uint8Array(bytes)], nome, { type: "image/jpeg" }));
+  }
   const headers = new Headers();
   if (opts.chave !== null) headers.set("x-social-draft-key", opts.chave ?? "chave-de-teste");
   return new Request(`${URL_BASE}/functions/v1/social-draft`, { method: "POST", headers, body: form });
@@ -714,5 +750,53 @@ Deno.test("update_caption: falha ao gravar o evento mantém o 200 e avisa", asyn
     assertEquals(corpo.aviso, "o rastro não foi gravado");
   } finally {
     console.error = erro;
+  }
+});
+
+// ── stories ─────────────────────────────────────────────────────────────────────────
+
+const POST_COM_STORIES = { ...POST_VALIDO, placements: ["feed", "story"], stories: [{ arquivo: "slide-01-story.jpg" }] };
+
+Deno.test("submeter com stories: sobe a imagem 9:16 no caminho com hash e grava lugares e stories pendentes", async () => {
+  const a = admin((c) => (c.tabela === "social_post" && c.op === "insert" ? ok({ id: ID_POST }) : ok(null)));
+  const res = await comChave(() =>
+    submeter(envio(POST_COM_STORIES, { stories: { "slide-01-story.jpg": jpeg(1080, 1920) } }), a.cliente, URL_BASE)
+  );
+  assertEquals(res.status, 200);
+  assertEquals(a.uploads.length, 2);
+  assertEquals(/^social\/teste-fila\/2\/[0-9a-f]{16}\/slide-01-story\.jpg$/.test(a.uploads[1]), true, a.uploads[1]);
+  const inserido = a.de("social_post", "insert")[0].payload as Record<string, unknown>;
+  assertEquals(inserido.placements, ["feed", "story"]);
+  assertEquals(inserido.story_status, "pending");
+  assertEquals(inserido.story_items, []);
+  assertEquals(inserido.story_slides, [
+    { url: `${URL_BASE}/storage/v1/object/public/assets-public/${a.uploads[1]}`, path: a.uploads[1] },
+  ]);
+});
+
+Deno.test("submeter só feed: sem stories, o estado de story fica nulo", async () => {
+  const a = admin((c) => (c.tabela === "social_post" && c.op === "insert" ? ok({ id: ID_POST }) : ok(null)));
+  await comChave(() => submeter(envio(POST_VALIDO), a.cliente, URL_BASE));
+  const inserido = a.de("social_post", "insert")[0].payload as Record<string, unknown>;
+  assertEquals(inserido.placements, ["feed"]);
+  assertEquals(inserido.story_status, null);
+  assertEquals(inserido.story_slides, []);
+});
+
+Deno.test("submeter com story que não é 9:16, ou faltando, é 422 e nada sobe nem é gravado", async () => {
+  const casos: Record<string, Uint8Array>[] = [{ "slide-01-story.jpg": jpeg(1080, 1350) }, {}];
+  for (const stories of casos) {
+    const a = admin(() => ok(null));
+    const res = await comChave(() => submeter(envio(POST_COM_STORIES, { stories }), a.cliente, URL_BASE));
+    assertEquals(res.status, 422);
+    const corpo = await res.json();
+    assertEquals(
+      corpo.erros[0],
+      Object.keys(stories).length
+        ? "slide-01-story.jpg está em 1080x1350. O story precisa ser vertical 9:16, como 1080x1920."
+        : "Faltou anexar o arquivo slide-01-story.jpg.",
+    );
+    assertEquals(a.uploads.length, 0);
+    assertEquals(a.de("social_post", "insert").length, 0);
   }
 });

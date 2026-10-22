@@ -79,13 +79,14 @@ const LEGENDA_NOTICIA = [
  * não sobe nada) e roda o script. Sempre com --seco, e com a URL apontada para uma porta morta:
  * se uma regressão deixar o envio passar, ele falha na conexão em vez de bater na plataforma.
  */
-function enviar({ meta, slide, legenda, jpeg = true, extra = [] }) {
+function enviar({ meta, slide, legenda, jpeg = true, story = true, extra = [] }) {
   const dir = fs.mkdtempSync(path.join(PASTA, "rascunho-"));
   const frente = Object.entries(meta).map(([k, v]) => `${k}: ${v}`);
   const slides = ["slides:", ...Object.entries(slide).map(([k, v], i) => `${i === 0 ? "  - " : "    "}${k}: ${v}`)];
   const arquivo = path.join(dir, "rascunho.md");
   fs.writeFileSync(arquivo, ["---", ...frente, ...slides, "---", "", legenda, ""].join("\n"));
   if (jpeg) fs.writeFileSync(path.join(dir, slide.arquivo), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+  if (story) fs.writeFileSync(path.join(dir, slide.arquivo.replace(/\.jpg$/, "-story.jpg")), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
   const r = spawnSync(process.execPath, [SCRIPT, arquivo, "--seco", `--hoje=${HOJE}`, ...extra], {
     encoding: "utf8",
     env: { ...process.env, VITE_SUPABASE_URL: "http://127.0.0.1:1", SOCIAL_DRAFT_KEY: "chave-de-teste" },
@@ -109,6 +110,36 @@ describe("enviar-rascunho: modo seco", () => {
       { arquivo: SLIDE_BLOG.arquivo, alt: SLIDE_BLOG.alt, texto: SLIDE_BLOG.texto },
     ]);
     expect(r.stdout).not.toMatch(/Na fila/);
+  });
+
+  it("por padrão sai no feed e nos stories, e o story 9:16 de cada slide vai junto", () => {
+    const r = enviar({ meta: META_BLOG, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG });
+    expect(r.status).toBe(0);
+    const post = JSON.parse(r.stdout);
+    expect(post.placements).toEqual(["feed", "story"]);
+    expect(post.stories).toEqual([{ arquivo: "estacionamento-aeroporto-confins-teste-01-story.jpg" }]);
+  });
+
+  it("onde: [feed] sai só no feed e não procura story", () => {
+    const r = enviar({ meta: { ...META_BLOG, onde: "[feed]" }, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG, story: false });
+    expect(r.status).toBe(0);
+    const post = JSON.parse(r.stdout);
+    expect(post.placements).toEqual(["feed"]);
+    expect(post.stories).toEqual([]);
+  });
+
+  it("story que falta aborta e diz como gerar", () => {
+    const r = enviar({ meta: META_BLOG, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG, story: false });
+    expect(r.status).toBe(1);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toContain("estacionamento-aeroporto-confins-teste-01-story.jpg");
+    expect(r.stderr).toContain("render-story.mjs");
+  });
+
+  it("lugar desconhecido em onde aborta", () => {
+    const r = enviar({ meta: { ...META_BLOG, onde: "[feed, reel]" }, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("reel");
   });
 
   it("data com hora e fuso segue como veio", () => {
@@ -139,12 +170,21 @@ describe("enviar-rascunho: modo seco", () => {
     expect(r.stderr).toContain(SLIDE_BLOG.arquivo);
   });
 
-  it("--pasta procura os JPEGs em outro lugar", () => {
+  it("--pasta procura os JPEGs e os stories em outro lugar", () => {
     const outra = fs.mkdtempSync(path.join(PASTA, "imagens-"));
     fs.writeFileSync(path.join(outra, SLIDE_BLOG.arquivo), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
-    const r = enviar({ meta: META_BLOG, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG, jpeg: false, extra: ["--pasta", outra] });
+    fs.writeFileSync(path.join(outra, SLIDE_BLOG.arquivo.replace(/\.jpg$/, "-story.jpg")), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+    const r = enviar({
+      meta: META_BLOG,
+      slide: SLIDE_BLOG,
+      legenda: LEGENDA_BLOG,
+      jpeg: false,
+      story: false,
+      extra: ["--pasta", outra],
+    });
     expect(r.status).toBe(0);
     expect(JSON.parse(r.stdout).slides).toHaveLength(1);
+    expect(JSON.parse(r.stdout).stories).toHaveLength(1);
   });
 });
 

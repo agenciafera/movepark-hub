@@ -202,3 +202,26 @@ export function conferirImagem(info: ImagemInfo, nome: string): string[] {
   }
   return erros;
 }
+
+/** Story: 9:16 (largura sobre altura 0,5625), com folga de arredondamento. */
+const PROPORCAO_STORY = 9 / 16;
+
+/**
+ * A imagem de um story: JPEG, vertical 9:16 e até 8 MB. A Meta recomenda 9:16 para não cortar
+ * nem sobrar faixa vazia; a skill gera 1080x1920 a partir do slide (render-story.mjs).
+ */
+export function conferirStory(info: ImagemInfo, nome: string): string[] {
+  if (!info.jpeg) return [`${nome} não é JPEG. O Instagram só aceita JPEG.`];
+  const erros: string[] = [];
+  if (info.largura < LIMITES.larguraMin || info.largura > LIMITES.larguraMax) {
+    erros.push(`${nome} tem ${info.largura} px de largura. O Instagram aceita de ${LIMITES.larguraMin} a ${LIMITES.larguraMax}.`);
+  }
+  const proporcao = info.altura ? info.largura / info.altura : 0;
+  if (Math.abs(proporcao - PROPORCAO_STORY) > 0.01) {
+    erros.push(`${nome} está em ${info.largura}x${info.altura}. O story precisa ser vertical 9:16, como 1080x1920.`);
+  }
+  if (info.bytes > LIMITES.bytes) {
+    erros.push(`${nome} tem ${(info.bytes / 1048576).toFixed(1)} MB. O limite é 8 MB.`);
+  }
+  return erros;
+}

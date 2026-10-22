@@ -1,7 +1,7 @@
 // A conferência que o servidor repete antes de um post entrar na fila do Instagram (E3.6).
 // Cada bloqueio aqui é algo que quebraria a publicação na Meta ou a marca da Movepark.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { conferirImagem, conferirTexto, LIMITES, lerJpeg } from "./instagram-validate.ts";
+import { conferirImagem, conferirStory, conferirTexto, LIMITES, lerJpeg } from "./instagram-validate.ts";
 
 const LEGENDA_BOA =
   "Estacionamento no aeroporto de Confins: a diária mais barata nem sempre fecha a semana mais barata.\n\n" +
@@ -135,4 +135,15 @@ Deno.test("1080x1350 passa; largura acima de 1440, 9:16 e acima de 8 MB bloqueia
   assertEquals(conferirImagem(lerJpeg(jpegFalso(1080, 1920)), "c.jpg").some((e) => e.includes("proporção")), true);
   const grande = { jpeg: true, largura: 1080, altura: 1350, bytes: LIMITES.bytes + 1 };
   assertEquals(conferirImagem(grande, "d.jpg").some((e) => e.includes("8 MB")), true);
+});
+
+Deno.test("story: 1080x1920 (9:16) passa; 4:5, não JPEG e acima de 8 MB bloqueiam", () => {
+  assertEquals(conferirStory(lerJpeg(jpegFalso(1080, 1920)), "s.jpg"), []);
+  assertEquals(conferirStory(lerJpeg(jpegFalso(1080, 1350)), "f.jpg"), [
+    "f.jpg está em 1080x1350. O story precisa ser vertical 9:16, como 1080x1920.",
+  ]);
+  assertEquals(conferirStory({ jpeg: false, largura: 0, altura: 0, bytes: 10 }, "s.png")[0].includes("não é JPEG"), true);
+  const grande = { jpeg: true, largura: 1080, altura: 1920, bytes: LIMITES.bytes + 1 };
+  assertEquals(conferirStory(grande, "g.jpg").some((e) => e.includes("8 MB")), true);
+  assertEquals(conferirStory(lerJpeg(jpegFalso(2160, 3840)), "h.jpg").some((e) => e.includes("2160 px")), true);
 });

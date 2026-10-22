@@ -3,7 +3,8 @@
 //
 // POST multipart  (header x-social-draft-key: <SOCIAL_DRAFT_KEY>)
 //   campo "post": JSON do front matter da skill + "caption"; um arquivo por slide, com o nome do
-//   "arquivo" do front matter.
+//   "arquivo" do front matter. "placements" diz onde o post sai (feed, story ou os dois; sem o
+//   campo, os dois) e "stories" lista as imagens 9:16, uma por story, anexadas do mesmo jeito.
 //   → 200 { ok, id, status, validation, aviso? } | 401 | 409 (rascunho que saiu de pending_review) | 422 { erros }
 //   Reenviar vale em `pending_review` e também em `rejected` sem `ig_container_id` (a Meta nunca
 //   recebeu nada): é o "recusar e mandar de novo" da skill. A linha volta para `pending_review`.
@@ -28,7 +29,7 @@
 // Secrets: SOCIAL_DRAFT_KEY. Ver docs/specs/instagram-fila-de-publicacao.md.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { conferirImagem, conferirTexto, lerJpeg } from "../_shared/instagram-validate.ts";
+import { conferirImagem, conferirStory, conferirTexto, lerJpeg } from "../_shared/instagram-validate.ts";
 import {
   caminhoNoBucket,
   chaveConfere,
@@ -113,6 +114,17 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
     erros.push(...conferirImagem(lerJpeg(bytes), s.arquivo));
     arquivos.push({ nome: s.arquivo, bytes });
   }
+  const arquivosDeStory: { nome: string; bytes: Uint8Array }[] = [];
+  for (const s of r.stories) {
+    const f = form.get(s.arquivo);
+    if (!(f instanceof File)) {
+      erros.push(`Faltou anexar o arquivo ${s.arquivo}.`);
+      continue;
+    }
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    erros.push(...conferirStory(lerJpeg(bytes), s.arquivo));
+    arquivosDeStory.push({ nome: s.arquivo, bytes });
+  }
   if (erros.length) return json({ ok: false, erros }, 422);
 
   const chave = draftKey(r.origem, r.corte);
@@ -142,6 +154,19 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
     const s = r.slides[i];
     slides.push({ url: urlPublica(supabaseUrl, caminho), path: caminho, alt: s.alt, texto: s.texto });
   }
+  // As imagens dos stories seguem a mesma regra: caminho com o hash, nunca sobrescritas.
+  const storySlides = [];
+  for (const a of arquivosDeStory) {
+    const caminho = caminhoNoBucket(r.origem, r.corte, await hashDe(a.bytes), a.nome);
+    const { error } = await admin.storage
+      .from("assets-public")
+      .upload(caminho, a.bytes, { contentType: "image/jpeg", upsert: false, cacheControl: "31536000" });
+    if (error && !objetoJaExiste(error)) {
+      return json({ error: `Não consegui subir ${a.nome}: ${error.message}` }, 500);
+    }
+    storySlides.push({ url: urlPublica(supabaseUrl, caminho), path: caminho });
+  }
+  const comStories = r.placements.includes("story");
 
   const validation = conferirTexto({ caption: r.caption, slides, keyphrase: r.keyphrase, priceDate: r.priceDate });
 
@@ -173,6 +198,13 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
     approved_at: null,
     last_error: null,
     deleted_at: null,
+    placements: r.placements,
+    story_slides: storySlides,
+    story_status: comStories ? "pending" : null,
+    story_items: [],
+    story_error: null,
+    story_published_at: null,
+    story_claimed_at: null,
   };
 
   // O status é conferido na escrita, não numa leitura antes dela: se o rascunho foi aprovado entre

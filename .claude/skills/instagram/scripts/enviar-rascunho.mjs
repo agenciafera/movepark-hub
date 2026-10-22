@@ -15,12 +15,17 @@
  *
  * Notícia (origem `fato-...`): a fila ainda não guarda fonte nem validade, então a conferência do
  * prazo é daqui, e a aprovação tem que sair no mesmo dia.
+ *
+ * Onde sai: `onde: [feed, story]` no front matter. Sem o campo, os dois (padrão desde 22/10/2026).
+ * Com story, cada slide `x.jpg` precisa do seu `x-story.jpg` (9:16) na mesma pasta, gerado pelo
+ * render-story.mjs a partir do HTML do slide.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { nomeDoStory } from "./render-story.mjs";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.resolve(AQUI, "../../../..");
@@ -101,6 +106,16 @@ const publicarEm = /^\d{4}-\d{2}-\d{2}$/.test(meta.publicar_em ?? "")
   ? `${meta.publicar_em}T12:00:00-03:00`
   : (meta.publicar_em ?? null);
 const slides = (meta.slides ?? []).map((s) => ({ arquivo: s.arquivo, alt: s.alt ?? null, texto: s.texto ?? null }));
+
+// Onde sai. Sem `onde`, feed e stories.
+const onde = meta.onde === undefined ? ["feed", "story"] : [meta.onde].flat().map((l) => String(l).trim());
+const desconhecidos = onde.filter((l) => l !== "feed" && l !== "story");
+if (desconhecidos.length || !onde.length) {
+  console.error(`onde aceita feed e story (veio: ${onde.join(", ") || "vazio"}).`);
+  process.exit(1);
+}
+const placements = ["feed", "story"].filter((l) => onde.includes(l));
+const stories = placements.includes("story") ? slides.map((s) => ({ arquivo: nomeDoStory(s.arquivo) })) : [];
 const post = {
   origem: meta.origem_post ?? meta.origem,
   corte: meta.corte ? Number(meta.corte) : null,
@@ -112,6 +127,8 @@ const post = {
   price_date: meta.price_date ?? null,
   caption,
   slides,
+  placements,
+  stories,
 };
 
 const form = new FormData();
@@ -120,6 +137,18 @@ for (const s of slides) {
   const p = path.join(pasta, s.arquivo);
   if (!fs.existsSync(p)) {
     console.error(`Não achei ${p}`);
+    process.exit(1);
+  }
+  form.append(s.arquivo, new Blob([fs.readFileSync(p)], { type: "image/jpeg" }), s.arquivo);
+}
+for (const s of stories) {
+  const p = path.join(pasta, s.arquivo);
+  if (!fs.existsSync(p)) {
+    console.error(
+      `Não achei ${p}, o story 9:16 do slide. Gere a partir do HTML do slide:\n` +
+        `  node .claude/skills/instagram/scripts/render-story.mjs <slide.html> ${p}\n` +
+        "Ou ponha onde: [feed] no front matter para sair só no feed.",
+    );
     process.exit(1);
   }
   form.append(s.arquivo, new Blob([fs.readFileSync(p)], { type: "image/jpeg" }), s.arquivo);

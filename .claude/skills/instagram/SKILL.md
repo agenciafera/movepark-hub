@@ -417,8 +417,9 @@ Ruim: `imagem de estacionamento` ou `foto 1`
 
 - **Um corte por dia no máximo**, e a semana do post fica assim: D+0, D+2, D+4, D+7.
 - **Nunca dois posts no mesmo dia.** O segundo canibaliza o alcance do primeiro.
-- Story pode acompanhar o post do dia, com a mesma arte em 9:16 e o sticker de
-  link para a página do destino.
+- **Por padrão o post sai no feed e nos stories** (decisão de 22/10/2026). Cada slide vira um
+  story 9:16, logo depois do feed, na mesma rodada. A API **não aceita sticker de link** em
+  story, então o slide é a mensagem inteira e o CTA continua sendo o link da bio.
 - O limite da API é de 100 posts por 24h, e carrossel conta como 1. Não é
   restrição para esta operação.
 
@@ -446,8 +447,21 @@ precisa de justificativa explícita, não de silêncio.
 node .claude/skills/instagram/scripts/enviar-rascunho.mjs <rascunho.md>
 ```
 
-O script roda o analisador de novo, sobe os JPEGs e cria o post em `/manager/social` como "Para
-aprovar". Um `hub_admin` confere os slides, a legenda e a data, e aprova. A Edge
+**Antes, gere os stories.** Por padrão o post sai no feed e nos stories, e cada slide `x.jpg`
+precisa do seu `x-story.jpg` (1080 x 1920) na mesma pasta. Gere a partir do HTML do slide, que
+renderiza de novo sem a dica "arraste →" (no story, arrastar para o lado pula para a próxima
+conta):
+
+```bash
+node .claude/skills/instagram/scripts/render-story.mjs slide-01.html estacionamento-aeroporto-confins-01-story.jpg
+```
+
+O slide 4:5 entra inteiro no centro, sobre a própria imagem desfocada. Olhe os stories antes de
+enviar, como olha os slides. Para sair só no feed, ponha `onde: [feed]` no front matter; só nos
+stories, `onde: [story]`.
+
+O script roda o analisador de novo, sobe os JPEGs (slides e stories) e cria o post em
+`/manager/social` como "Para aprovar". Um `hub_admin` confere os slides, a legenda e a data, e aprova. A Edge
 `social-dispatch` publica na hora marcada, um post por dia, quando a publicação automática está
 ligada na tela.
 
@@ -487,6 +501,7 @@ destination: aeroporto-de-confins
 keyphrase: estacionamento no aeroporto de Confins
 publicar_em: 2026-09-10
 price_date: 2026-09-08
+onde: [feed, story]
 cta_url: https://movepark.co/estacionamentos/aeroporto-confins?utm_source=instagram&utm_medium=social&utm_campaign=confins-guia
 slides:
   - texto: Estacionar em Confins custa de R$ 45 a R$ 120 a diária
