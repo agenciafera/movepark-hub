@@ -28,7 +28,9 @@ export type GraphKind =
   | "container_status"
   | "media_publish"
   | "permalink"
-  | "consulta";
+  | "consulta"
+  | "story_container"
+  | "story_publish";
 
 export interface GraphCall {
   kind: GraphKind;
@@ -181,6 +183,33 @@ export async function publicar(
   const pub = await graph(cfg, `${cfg.igUserId}/media_publish`, "POST", { creation_id: containerId }, opts, "media_publish");
   if (!pub.ok || !pub.body.id) return { ok: false, etapa: "media_publish", resposta: pub.body, containerId };
   return { ok: true, mediaId: String(pub.body.id), containerId };
+}
+
+/**
+ * Cria o envio de UM story (imagem 9:16). A Meta não aceita legenda, `alt_text`, sticker nem
+ * carrossel em story: cada story é um envio e um media_publish. Quem chama guarda o `containerId`
+ * antes de publicar, para uma nova tentativa consultar o envio em vez de criar outro.
+ */
+export async function criarStory(
+  cfg: IgConfig,
+  imageUrl: string,
+  opts: Opcoes = {},
+): Promise<{ ok: true; containerId: string } | { ok: false; resposta: unknown }> {
+  const r = await graph(cfg, `${cfg.igUserId}/media`, "POST", { media_type: "STORIES", image_url: imageUrl }, opts, "story_container");
+  if (!r.ok || !r.body.id) return { ok: false, resposta: r.body };
+  return { ok: true, containerId: String(r.body.id) };
+}
+
+/** O media_publish de um envio já pronto. `kind` diz no rastro do que é o envio. */
+export async function publicarEnvio(
+  cfg: IgConfig,
+  containerId: string,
+  opts: Opcoes = {},
+  kind: GraphKind = "media_publish",
+): Promise<{ ok: true; mediaId: string } | { ok: false; resposta: unknown }> {
+  const pub = await graph(cfg, `${cfg.igUserId}/media_publish`, "POST", { creation_id: containerId }, opts, kind);
+  if (!pub.ok || !pub.body.id) return { ok: false, resposta: pub.body };
+  return { ok: true, mediaId: String(pub.body.id) };
 }
 
 export async function lerPermalink(cfg: IgConfig, mediaId: string, opts: Opcoes = {}): Promise<string | null> {

@@ -27,6 +27,14 @@
 //     São Paulo em que foi ao ar;
 //   - falha ao gravar o rastro é logada e nunca derruba a rodada.
 //
+// Stories (22/10/2026): `placements` diz onde o post sai (feed, story ou os dois). Com os dois, os
+// stories saem logo depois do feed, um por slide 9:16 (`story_slides`), cada um com um envio
+// STORIES e um media_publish. Eles têm estado próprio (`story_status`): falha de story nunca mexe
+// no feed. O envio de cada story é gravado em `story_items` antes do media_publish, e nova
+// tentativa consulta o envio: story publicado nunca sai de novo. Sem tempo na chamada, o resto fica
+// `pending`, e a rodada sem feed para sair publica os stories que ficaram para trás (só com a chave
+// ligada). Post só de stories: os stories são a publicação, e `published` quer dizer que saíram.
+//
 // Toda chamada à Graph API vira linha em `social_post_event`, sem o token.
 //
 // "Publicar agora" (modo forçado, 21/10/2026): o Manager chama a RPC `social_post_publish_now`,
@@ -38,7 +46,7 @@
 //
 // POST /functions/v1/social-dispatch  (header x-social-dispatch-key, conferido no Vault por
 // cron_key_matches: o valor não passa por terminal nem por secret de Edge)
-// → 200 { ok, acao, post?, permalink?, posts?, ligada? }
+// → 200 { ok, acao, post?, permalink?, posts?, ligada?, stories?: { publicados, faltam, erro? } }
 //   acao: nada | ja_publicou_hoje | em_andamento | reconciliou | dry_run | outra_rodada |
 //         reconciliado | publicado
 // → 502 { ok: false, acao: "falhou", post, erro }  (a Meta recusou ou a reconciliação falhou)
@@ -48,7 +56,8 @@
 //
 // POST /functions/v1/social-dispatch  (modo forçado: Authorization: Bearer <JWT> e
 // { "post_id": "<uuid>" }; sem os dois, o pedido segue o caminho do cron acima)
-// → 200 { ok, acao: outra_rodada | reconciliado | publicado, post, permalink? }
+// → 200 { ok, acao: outra_rodada | reconciliado | publicado | stories, post, permalink?, stories? }
+//   (post já publicado no feed com stories pendentes: acao "stories", sai só o que falta deles)
 // → 502 { ok: false, acao: "falhou", post, erro }
 // → 409 { ok: false, post, error }  (o post não está aprovado para agora; texto pt-BR)
 // → 404 (post), 400 (post_id), 401 (sessão), 403 (não é hub_admin), 503, 500
@@ -60,24 +69,31 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   acharMidiaPorLegenda,
+  criarStory,
+  esperarContainer,
   type GraphCall,
   type IgConfig,
   igConfigFromEnv,
   lerPermalink,
   type Opcoes,
   publicar,
+  publicarEnvio,
   statusDoContainer,
 } from "../_shared/instagram.ts";
 import {
   ATRASO_MAXIMO_MS,
   atrasados,
   escolher,
+  type EtapaDoStory,
   instanteDaMeta,
   jaPublicado,
   motivoParaNaoPublicarAgora,
   parados,
+  PUBLICANDO_PARADO_MS,
   type PostFila,
+  proximoComStories,
   textoDaFalha,
+  textoDaFalhaDoStory,
 } from "./logic.ts";
 
 // O Manager chama o "Publicar agora" pelo navegador. O cron não precisa disso, e não perde nada.
@@ -94,19 +110,43 @@ function json(body: unknown, status = 200) {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** As colunas que a publicação lê do post. */
-const CAMPOS = "id, status, scheduled_at, published_at, updated_at, caption, slides, ig_container_id, attempts";
+const CAMPOS =
+  "id, status, scheduled_at, published_at, updated_at, caption, slides, ig_container_id, attempts, " +
+  "placements, story_slides, story_status, story_items, story_claimed_at";
+
+/**
+ * Até quando uma chamada começa um story novo, contado do início dela. A Edge tem 150 s de
+ * relógio; o feed de um carrossel leva cerca de 50 s e cada story uns 8 s. O que passar fica
+ * `pending` para a próxima rodada. Pelo menos um story sai por chamada, para a fila andar.
+ */
+const PRAZO_STORIES_MS = 100_000;
 
 const env = (k: string): string | undefined => Deno.env.get(k);
 
 // deno-lint-ignore no-explicit-any
 export type Admin = any;
 
+/** Um story da lista: o envio (gravado antes do media_publish) e a mídia, quando saiu. */
+interface ItemDeStory {
+  container_id?: string | null;
+  media_id?: string | null;
+  publicado?: boolean;
+}
+
 type PostCompleto = PostFila & {
   caption: string;
   slides: Array<{ url: string; alt: string | null }>;
   ig_container_id: string | null;
   attempts: number;
+  placements?: string[] | null;
+  story_slides?: Array<{ url: string }> | null;
+  story_status?: string | null;
+  story_items?: ItemDeStory[] | null;
+  story_claimed_at?: string | null;
 };
+
+/** Sem a coluna (linha antiga, teste antigo), o post é só de feed. */
+const lugares = (p: PostCompleto) => (p.placements?.length ? p.placements : ["feed"]);
 
 export interface RodadaDeps {
   admin: Admin;
@@ -274,12 +314,177 @@ async function reconciliar(ctx: Ctx, p: PostCompleto, statusConhecido?: string):
 /** Falha que acontece antes do media_publish, com a certeza de que nada saiu no Instagram. */
 class NadaPublicado extends Error {}
 
+type DesfechoDosStories =
+  | { pego: false }
+  | { pego: true; publicados: number; faltam: number; erro?: string; primeiraMidia: string | null };
+
+const resumoDosStories = (d: Extract<DesfechoDosStories, { pego: true }>) => ({
+  publicados: d.publicados,
+  faltam: d.faltam,
+  ...(d.erro ? { erro: d.erro } : {}),
+});
+
+/** Escreve nos stories do post SÓ se esta chamada ainda é dona deles (`story_status = publishing`). */
+async function escreverStories(ctx: Ctx, id: string, campos: Record<string, unknown>): Promise<boolean> {
+  const { data, error } = await ctx.admin
+    .from("social_post")
+    .update(campos)
+    .eq("id", id)
+    .eq("story_status", "publishing")
+    .select("id");
+  if (error) {
+    console.error("social-dispatch: escrita nos stories falhou", {
+      social_post_id: id,
+      code: error.code,
+      message: limpar(ctx.cfg, String(error.message)),
+    });
+    return false;
+  }
+  return !!data?.length;
+}
+
+/**
+ * Publica os stories do post, um por slide 9:16, na ordem. Cada story é um envio STORIES e um
+ * media_publish; o envio é gravado em `story_items` ANTES do media_publish. Nova tentativa:
+ * story com `publicado` é pulado, envio PUBLISHED conta como publicado, envio pronto é publicado
+ * sem criar outro, e envio com erro ou vencido dá lugar a um novo. Assim nenhum story sai duas
+ * vezes. `de` são os estados de onde esta chamada pega os stories; `publishing` só vale parado.
+ * Passado o `prazo`, o resto volta para `pending` e sai na próxima rodada.
+ */
+async function publicarStories(
+  ctx: Ctx,
+  post: PostCompleto,
+  de: string[],
+  prazo = Number.POSITIVE_INFINITY,
+): Promise<DesfechoDosStories> {
+  const agoraIso = ctx.relogio().toISOString();
+  let pega = ctx.admin
+    .from("social_post")
+    .update({ story_status: "publishing", story_claimed_at: agoraIso })
+    .eq("id", post.id)
+    .in("story_status", de);
+  if (de.includes("publishing")) {
+    pega = pega.lt("story_claimed_at", new Date(Date.parse(agoraIso) - PUBLICANDO_PARADO_MS).toISOString());
+  }
+  const { data: pego, error } = await pega.select("id, story_slides, story_items");
+  if (error) {
+    console.error("social-dispatch: a pega dos stories falhou", limpar(ctx.cfg, String(error.message)));
+    return { pego: false };
+  }
+  if (!pego?.length) return { pego: false };
+
+  const slides = (pego[0].story_slides ?? []) as Array<{ url: string }>;
+  const itens: ItemDeStory[] = slides.map((_, i) => ({ ...((pego[0].story_items ?? [])[i] ?? {}) }));
+  const op = opcoes(ctx, post.id);
+  const feitos = () => itens.filter((i) => i.publicado).length;
+  const primeiraMidia = () => itens.find((i) => i.media_id)?.media_id ?? null;
+  let nestaChamada = 0;
+
+  const falhar = async (n: number, etapa: EtapaDoStory, resposta: unknown): Promise<DesfechoDosStories> => {
+    const erro = textoDaFalhaDoStory(n, etapa, resposta);
+    if (await escreverStories(ctx, post.id, { story_status: "failed", story_error: erro, story_items: itens })) {
+      await registrar(ctx, post.id, "story_failed", { note: erro, ...(resposta === undefined ? {} : { response: resposta }) });
+    }
+    return { pego: true, publicados: feitos(), faltam: itens.length - feitos(), erro, primeiraMidia: primeiraMidia() };
+  };
+
+  for (const [i, slide] of slides.entries()) {
+    const n = i + 1;
+    const item = itens[i];
+    if (item.publicado) continue;
+    if (nestaChamada > 0 && ctx.relogio().getTime() > prazo) {
+      // Sem tempo para mais um: o resto sai na próxima rodada, do ponto em que parou.
+      await escreverStories(ctx, post.id, { story_status: "pending", story_items: itens });
+      return { pego: true, publicados: feitos(), faltam: itens.length - feitos(), primeiraMidia: primeiraMidia() };
+    }
+    nestaChamada++;
+
+    // Envio de uma tentativa anterior: a Meta diz se ele já saiu, se está pronto ou se não serve.
+    let envio = item.container_id ?? null;
+    let pronto = false;
+    if (envio) {
+      const st = await statusDoContainer(ctx.cfg, envio, op);
+      if (jaPublicado(st)) {
+        itens[i] = { container_id: envio, media_id: null, publicado: true };
+        await escreverStories(ctx, post.id, { story_items: itens });
+        continue;
+      }
+      if (st === "FINISHED") pronto = true;
+      else if (st !== "IN_PROGRESS") envio = null;
+    }
+
+    if (!envio) {
+      const criado = await criarStory(ctx.cfg, slide.url, op);
+      if (!criado.ok) return await falhar(n, "envio", criado.resposta);
+      envio = criado.containerId;
+      itens[i] = { container_id: envio };
+      // Sem o envio gravado, não publica: uma queda depois do media_publish publicaria de novo.
+      if (!(await escreverStories(ctx, post.id, { story_items: itens }))) return await falhar(n, "gravacao", undefined);
+    }
+
+    if (!pronto) {
+      const espera = await esperarContainer(ctx.cfg, envio, op);
+      if (!espera.pronto) return await falhar(n, "processamento", espera);
+    }
+
+    const pub = await publicarEnvio(ctx.cfg, envio, op, "story_publish");
+    if (!pub.ok) {
+      // A Meta às vezes publica e responde erro: olha o envio uma vez antes de dar por falho.
+      if (jaPublicado(await statusDoContainer(ctx.cfg, envio, op))) {
+        itens[i] = { container_id: envio, media_id: null, publicado: true };
+      } else {
+        return await falhar(n, "publicacao", pub.resposta);
+      }
+    } else {
+      itens[i] = { container_id: envio, media_id: pub.mediaId, publicado: true };
+    }
+    // Se esta escrita falhar, o envio já está gravado: a próxima tentativa o acha PUBLISHED.
+    await escreverStories(ctx, post.id, { story_items: itens });
+  }
+
+  if (
+    await escreverStories(ctx, post.id, {
+      story_status: "published",
+      story_items: itens,
+      story_error: null,
+      story_published_at: ctx.relogio().toISOString(),
+    })
+  ) {
+    await registrar(ctx, post.id, "story_published", { note: `${itens.length} stories publicados.` });
+  }
+  return { pego: true, publicados: feitos(), faltam: 0, primeiraMidia: primeiraMidia() };
+}
+
+/**
+ * Post só de stories, já pego (`publishing`): os stories são a publicação. Saíram todos, o post
+ * fica `published` com a mídia do primeiro story; falhou, fica `failed` com o motivo do story.
+ */
+async function publicarSoStories(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
+  const st = await publicarStories(ctx, post, ["pending", "failed"]);
+  if (!st.pego) {
+    const msg = "Os stories deste post não estavam prontos para sair. Reagende para tentar de novo.";
+    await marcarFalha(ctx, post.id, msg);
+    return falhou(post.id, msg);
+  }
+  if (st.erro) {
+    await marcarFalha(ctx, post.id, st.erro);
+    return falhou(post.id, st.erro);
+  }
+  if (!(await marcarPublicado(ctx, post.id, st.primeiraMidia ?? "", null))) {
+    return {
+      status: 500,
+      body: { ok: false, acao: "publicado", post: post.id, erro: "Os stories saíram, mas não consegui marcar o post como publicado." },
+    };
+  }
+  return ok({ acao: "publicado", post: post.id, permalink: null, stories: resumoDosStories(st) });
+}
+
 /**
  * Pega o post e publica: o único caminho de publicação da Edge, usado pela rodada (o post que
  * `escolher` indicou) e pelo "Publicar agora" (o post que a pessoa clicou). `lido` é o post como
  * quem chama o leu; daqui em diante vale a linha que a pega devolver.
  */
-async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date): Promise<Resultado> {
+async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date, prazo: number): Promise<Resultado> {
   // Pega o post. Se outra rodada pegou antes, ou se um reagendamento empurrou a hora para o
   // futuro entre a leitura e agora, a linha não volta e a rodada para aqui.
   const { data: pego, error: ePega } = await ctx.admin
@@ -289,7 +494,7 @@ async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date): Promis
     .eq("status", "approved")
     .lte("scheduled_at", agora.toISOString())
     .is("deleted_at", null)
-    .select("id, scheduled_at, caption, slides, ig_container_id, attempts");
+    .select("id, scheduled_at, caption, slides, ig_container_id, attempts, placements, story_slides, story_status, story_items");
   if (ePega) {
     console.error("social-dispatch: a pega do post falhou", limpar(ctx.cfg, String(ePega.message)));
     return erroDeBanco("Não consegui pegar o post para publicar.");
@@ -298,6 +503,19 @@ async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date): Promis
   // Daqui em diante vale a linha que a pega devolveu, não a lida antes: legenda, slides e container
   // são os de agora, então uma correção que chegou no meio não publica conteúdo velho.
   const post = { ...lido, ...pego[0] } as PostCompleto;
+
+  if (!lugares(post).includes("feed")) return await publicarSoStories(ctx, post);
+  const r = await publicarFeed(ctx, post);
+  // Os stories saem logo depois do feed, na mesma chamada. Falha deles nunca mexe no feed.
+  if (r.status === 200 && lugares(post).includes("story") && (r.body.acao === "publicado" || r.body.acao === "reconciliado")) {
+    const st = await publicarStories(ctx, post, ["pending", "failed"], prazo);
+    if (st.pego) r.body.stories = resumoDosStories(st);
+  }
+  return r;
+}
+
+/** O feed do post já pego: carrossel ou imagem única, com a reconciliação de sempre. */
+async function publicarFeed(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
 
   if (post.ig_container_id) {
     const st = await statusDoContainer(ctx.cfg, post.ig_container_id, opcoes(ctx, post.id));
@@ -370,9 +588,38 @@ async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date): Promis
   return ok({ acao: "publicado", post: post.id, permalink });
 }
 
+/**
+ * A vez dos stories que ficaram para trás: post publicado no feed com stories `pending` (o resto de
+ * uma chamada sem tempo, ou um post antigo que ganhou stories) ou parados em `publishing`. Um post
+ * por rodada. Devolve nulo quando não há nenhum.
+ */
+async function rodadaDeStories(ctx: Ctx, agora: Date, prazo: number): Promise<Resultado | null> {
+  const { data, error } = await ctx.admin
+    .from("social_post")
+    .select(CAMPOS)
+    .is("deleted_at", null)
+    .eq("status", "published")
+    .in("story_status", ["pending", "publishing"]);
+  if (error) {
+    console.error("social-dispatch: não li os stories pendentes", limpar(ctx.cfg, String(error.message)));
+    return null;
+  }
+  const posts = (data ?? []) as PostCompleto[];
+  const vez = proximoComStories(
+    posts.map((p) => ({ ...p, story_status: p.story_status ?? null, story_claimed_at: p.story_claimed_at ?? null })),
+    agora,
+  );
+  if (!vez) return null;
+  const post = posts.find((p) => p.id === vez.id)!;
+  const st = await publicarStories(ctx, post, [vez.de], prazo);
+  if (!st.pego) return ok({ acao: "outra_rodada", post: post.id });
+  return ok({ acao: "stories", post: post.id, stories: resumoDosStories(st) });
+}
+
 export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   const { admin, cfg, agora } = deps;
   const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()) };
+  const prazo = ctx.relogio().getTime() + PRAZO_STORIES_MS;
 
   const { data: chave, error: eChave } = await admin
     .from("app_setting")
@@ -425,7 +672,15 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
 
   // 3. Quem sai agora.
   const escolha = escolher(posts, agora);
-  if (!("id" in escolha)) return ok({ acao: escolha.motivo, ligada });
+  if (!("id" in escolha)) {
+    // Nenhum feed sai agora: a vez dos stories que ficaram para trás. Só com a chave ligada, porque
+    // a chave desligada segura tudo que a rodada publicaria.
+    if (ligada && escolha.motivo !== "em_andamento") {
+      const r = await rodadaDeStories(ctx, agora, prazo);
+      if (r) return r;
+    }
+    return ok({ acao: escolha.motivo, ligada });
+  }
   const lido = posts.find((p) => p.id === escolha.id)!;
 
   // 4. Chave desligada: registra o que faria, uma vez, e não toca em mais nada.
@@ -448,7 +703,7 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   }
 
   // 5. Pega o post e publica.
-  return await pegarEPublicar(ctx, lido, agora);
+  return await pegarEPublicar(ctx, lido, agora, prazo);
 }
 
 /**
@@ -476,7 +731,15 @@ export async function publicarAgora(deps: RodadaDeps, postId: string): Promise<R
   const motivo = motivoParaNaoPublicarAgora(lido, agora);
   if (motivo) return { status: 409, body: { ok: false, post: postId, error: motivo } };
 
-  return await pegarEPublicar(ctx, lido as PostCompleto, agora);
+  const prazo = ctx.relogio().getTime() + PRAZO_STORIES_MS;
+  // Já publicado no feed (a RPC deixou os stories `pending`): sai só o que falta dos stories.
+  if (lido.status === "published") {
+    const st = await publicarStories(ctx, lido as PostCompleto, ["pending"], prazo);
+    if (!st.pego) return ok({ acao: "outra_rodada", post: postId });
+    if (st.erro) return { status: 502, body: { ok: false, acao: "falhou", post: postId, erro: st.erro, stories: resumoDosStories(st) } };
+    return ok({ acao: "stories", post: postId, stories: resumoDosStories(st) });
+  }
+  return await pegarEPublicar(ctx, lido as PostCompleto, agora, prazo);
 }
 
 export interface HandlerDeps {

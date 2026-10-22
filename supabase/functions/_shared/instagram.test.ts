@@ -1,7 +1,16 @@
 // O cliente da Graph API é o único lugar que fala com a Meta. Os testes usam um fetch falso:
 // conferem a ordem das chamadas, os campos de cada uma e que o token nunca vai para o rastro.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { acharMidiaPorLegenda, esperarContainer, type GraphCall, graph, igConfigFromEnv, publicar } from "./instagram.ts";
+import {
+  acharMidiaPorLegenda,
+  criarStory,
+  esperarContainer,
+  type GraphCall,
+  graph,
+  igConfigFromEnv,
+  publicar,
+  publicarEnvio,
+} from "./instagram.ts";
 
 const CFG = { token: "TOKEN-SECRETO", igUserId: "17841", versao: "v21.0" };
 
@@ -209,4 +218,43 @@ Deno.test("esperarContainer: para na primeira consulta que vem FINISHED, sem gas
   const r = await esperarContainer(CFG, "pai", { fetcher, esperaMs: 0 });
   assertEquals(r, { pronto: true, status: "FINISHED" });
   assertEquals(chamadas.length, 3);
+});
+
+// ── stories ─────────────────────────────────────────────────────────────────────────
+
+Deno.test("criarStory: um envio STORIES com a imagem, sem legenda e sem alt (a Meta não aceita)", async () => {
+  const { fetcher, chamadas } = fetchFalso([{ body: { id: "env-1" } }]);
+  const kinds: string[] = [];
+  const r = await criarStory(CFG, "https://x.co/s1.jpg", { fetcher, onCall: (c) => void kinds.push(c.kind) });
+  assertEquals(r, { ok: true, containerId: "env-1" });
+  assertEquals(chamadas.length, 1);
+  assertEquals(chamadas[0].url.endsWith("/17841/media"), true);
+  const corpo = new URLSearchParams(chamadas[0].corpo);
+  assertEquals(corpo.get("media_type"), "STORIES");
+  assertEquals(corpo.get("image_url"), "https://x.co/s1.jpg");
+  assertEquals(corpo.has("alt_text"), false);
+  assertEquals(corpo.has("caption"), false);
+  assertEquals(kinds, ["story_container"]);
+});
+
+Deno.test("criarStory: a Meta recusa e a resposta volta inteira, sem id", async () => {
+  const { fetcher } = fetchFalso([{ status: 400, body: { error: { message: "Invalid image" } } }]);
+  const r = await criarStory(CFG, "https://x.co/s1.jpg", { fetcher });
+  assertEquals(r, { ok: false, resposta: { error: { message: "Invalid image" } } });
+});
+
+Deno.test("publicarEnvio: media_publish com o envio, e o rastro leva o tipo pedido", async () => {
+  const { fetcher, chamadas } = fetchFalso([{ body: { id: "midia-s1" } }]);
+  const kinds: string[] = [];
+  const r = await publicarEnvio(CFG, "env-1", { fetcher, onCall: (c) => void kinds.push(c.kind) }, "story_publish");
+  assertEquals(r, { ok: true, mediaId: "midia-s1" });
+  assertEquals(chamadas[0].url.endsWith("/17841/media_publish"), true);
+  assertEquals(new URLSearchParams(chamadas[0].corpo).get("creation_id"), "env-1");
+  assertEquals(kinds, ["story_publish"]);
+});
+
+Deno.test("publicarEnvio: erro da Meta volta como falha, com a resposta", async () => {
+  const { fetcher } = fetchFalso([{ status: 500, body: { error: { message: "Fatal" } } }]);
+  const r = await publicarEnvio(CFG, "env-1", { fetcher }, "story_publish");
+  assertEquals(r, { ok: false, resposta: { error: { message: "Fatal" } } });
 });

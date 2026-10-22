@@ -151,10 +151,11 @@ const ESTADO_EM_PORTUGUES: Record<string, string> = {
  * O texto vai para a tela (409).
  */
 export function motivoParaNaoPublicarAgora(
-  p: Pick<PostFila, "status" | "scheduled_at">,
+  p: Pick<PostFila, "status" | "scheduled_at"> & { story_status?: string | null },
   agora: Date,
 ): string | null {
-  if (p.status === "published") return "Este post já foi publicado.";
+  // Já saiu no feed: o clique publica só os stories pendentes (a RPC os deixa `pending`).
+  if (p.status === "published") return p.story_status === "pending" ? null : "Este post já foi publicado.";
   if (p.status === "publishing") return "Este post já está sendo publicado.";
   if (p.status !== "approved") {
     return `Só post aprovado sai na hora (este está ${ESTADO_EM_PORTUGUES[p.status] ?? p.status}).`;
@@ -163,4 +164,56 @@ export function motivoParaNaoPublicarAgora(
     return "Este post está agendado para mais tarde. Feche e abra de novo para publicar agora.";
   }
   return null;
+}
+
+// ── Stories ──────────────────────────────────────────────────────────────────────────────
+
+/** Post publicado no feed, com o estado dos stories. */
+export interface PostComStories extends PostFila {
+  story_status: string | null;
+  story_claimed_at: string | null;
+}
+
+/**
+ * O post cujos stories saem nesta rodada: o publicado mais antigo com stories `pending`, ou com
+ * `publishing` parado há mais de 15 minutos (rodada que caiu no meio; os stories já publicados
+ * estão marcados e não saem de novo). Stories com falha esperam um clique em "Publicar agora".
+ */
+export function proximoComStories(
+  posts: PostComStories[],
+  agora: Date,
+): { id: string; de: "pending" | "publishing" } | null {
+  const t = agora.getTime();
+  const elegiveis = posts
+    .filter((p) => p.status === "published")
+    .filter((p) =>
+      p.story_status === "pending" ||
+      (p.story_status === "publishing" && p.story_claimed_at !== null &&
+        t - Date.parse(p.story_claimed_at) > PUBLICANDO_PARADO_MS)
+    )
+    .sort((a, b) => Date.parse(a.published_at ?? a.scheduled_at) - Date.parse(b.published_at ?? b.scheduled_at));
+  const p = elegiveis[0];
+  return p ? { id: p.id, de: p.story_status === "pending" ? "pending" : "publishing" } : null;
+}
+
+/** Em que passo um story falhou. */
+export type EtapaDoStory = "envio" | "processamento" | "publicacao" | "gravacao";
+
+/** O texto de `story_error` que o Manager mostra. O JSON cru fica no evento. */
+export function textoDaFalhaDoStory(n: number, etapa: EtapaDoStory, resposta: unknown): string {
+  const msg = mensagemDaMeta(resposta);
+  switch (etapa) {
+    case "envio":
+      return frase(`Falhou ao enviar o story ${n} à Meta`, msg);
+    case "processamento": {
+      const r = objeto(resposta);
+      const status = typeof r?.status === "string" ? r.status : "";
+      if (status === "TIMEOUT") return frase(`A Meta demorou demais para processar o story ${n}`, null);
+      return frase(`A Meta não aceitou a imagem do story ${n}${status ? ` (${status})` : ""}`, null);
+    }
+    case "publicacao":
+      return frase(`Falhou ao publicar o story ${n} na Meta`, msg, "Confira nos stories do perfil antes de tentar de novo.");
+    case "gravacao":
+      return `Não consegui guardar o envio do story ${n}. Nenhum story novo foi publicado.`;
+  }
 }

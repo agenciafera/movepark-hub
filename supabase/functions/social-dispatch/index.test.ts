@@ -11,8 +11,10 @@ import {
   motivoParaNaoPublicarAgora,
   parados,
   type PostFila,
+  proximoComStories,
   resumoDoErro,
   textoDaFalha,
+  textoDaFalhaDoStory,
 } from "./logic.ts";
 
 const AGORA = new Date("2026-10-28T15:05:00Z"); // 12:05 em São Paulo
@@ -130,6 +132,43 @@ Deno.test("instanteDaMeta lê o formato da Meta (+0000), aceita offset e cai no 
   // O dia em São Paulo é o do instante real da publicação, não o da reconciliação.
   assertEquals(diaEmSaoPaulo(new Date(instanteDaMeta("2026-10-29T02:55:00+0000", agora))), "2026-10-28");
   assertEquals(diaEmSaoPaulo(agora), "2026-10-29");
+});
+
+Deno.test("textoDaFalhaDoStory: diz qual story e o que a Meta respondeu, sem JSON cru", () => {
+  const meta = { error: { message: "Invalid image" } };
+  assertEquals(textoDaFalhaDoStory(2, "envio", meta), "Falhou ao enviar o story 2 à Meta: Invalid image.");
+  assertEquals(textoDaFalhaDoStory(1, "envio", null), "Falhou ao enviar o story 1 à Meta.");
+  assertEquals(textoDaFalhaDoStory(3, "processamento", { status: "ERROR" }), "A Meta não aceitou a imagem do story 3 (ERROR).");
+  assertEquals(textoDaFalhaDoStory(3, "processamento", { status: "TIMEOUT" }), "A Meta demorou demais para processar o story 3.");
+  assertEquals(
+    textoDaFalhaDoStory(4, "publicacao", { error: { message: "Fatal" } }),
+    "Falhou ao publicar o story 4 na Meta: Fatal. Confira nos stories do perfil antes de tentar de novo.",
+  );
+  assertEquals(textoDaFalhaDoStory(5, "gravacao", null), "Não consegui guardar o envio do story 5. Nenhum story novo foi publicado.");
+  assertEquals(textoDaFalhaDoStory(1, "envio", { error: { message: "x".repeat(2000) } }).length <= 500, true);
+});
+
+Deno.test("proximoComStories: o publicado mais antigo com stories pendentes, ou parados há mais de 15 min", () => {
+  const base = { status: "published", scheduled_at: "2026-10-28T12:00:00Z", updated_at: "2026-10-28T12:00:00Z" };
+  const posts = [
+    { ...base, id: "novo", published_at: "2026-10-28T14:00:00Z", story_status: "pending", story_claimed_at: null },
+    { ...base, id: "velho", published_at: "2026-10-28T13:00:00Z", story_status: "pending", story_claimed_at: null },
+    { ...base, id: "feito", published_at: "2026-10-28T11:00:00Z", story_status: "published", story_claimed_at: null },
+    { ...base, id: "falhou", published_at: "2026-10-28T10:00:00Z", story_status: "failed", story_claimed_at: null },
+  ];
+  assertEquals(proximoComStories(posts, AGORA), { id: "velho", de: "pending" });
+  const parado = { ...base, id: "parado", published_at: "2026-10-28T09:00:00Z", story_status: "publishing", story_claimed_at: "2026-10-28T14:40:00Z" };
+  assertEquals(proximoComStories([...posts, parado], AGORA), { id: "parado", de: "publishing" });
+  const vivo = { ...parado, story_claimed_at: "2026-10-28T15:00:00Z" };
+  assertEquals(proximoComStories([vivo], AGORA), null, "stories de outra rodada em andamento ficam com ela");
+  assertEquals(proximoComStories([{ ...posts[0], status: "approved" }], AGORA), null, "só depois do feed");
+});
+
+Deno.test("motivoParaNaoPublicarAgora: publicado com stories pendentes segue; publicado sem stories para", () => {
+  const pub = { status: "published", scheduled_at: "2026-10-28T12:00:00Z" };
+  assertEquals(motivoParaNaoPublicarAgora({ ...pub, story_status: "pending" }, AGORA), null);
+  assertEquals(motivoParaNaoPublicarAgora({ ...pub, story_status: "published" }, AGORA), "Este post já foi publicado.");
+  assertEquals(motivoParaNaoPublicarAgora({ ...pub, story_status: null }, AGORA), "Este post já foi publicado.");
 });
 
 // ── A rodada, com um banco e uma Graph API de mentira ─────────────────────────────────────
@@ -1577,4 +1616,230 @@ Deno.test("CORS: OPTIONS responde com os cabeçalhos, e as respostas do POST tam
   const g = graphFalso(roteiroFeliz);
   const res = await forcar(db, g, JWT_CLIENTE);
   assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*", "o navegador lê o 403");
+});
+
+// ── (i) stories ───────────────────────────────────────────────────────────────────────────
+// Cada slide vira um story 9:16: um envio STORIES e um media_publish por story, sem legenda e sem
+// alt. O envio é gravado antes do media_publish, e nova tentativa consulta o envio em vez de criar
+// outro. Falha de story nunca mexe no feed.
+
+const STORY_SLIDES = [
+  { url: `${BASE}/s-01-story.jpg`, path: "social/o/2/aaaa/s-01-story.jpg" },
+  { url: `${BASE}/s-02-story.jpg`, path: "social/o/2/aaaa/s-02-story.jpg" },
+];
+const comStories = (over: Linha = {}): Linha =>
+  postBanco({ placements: ["feed", "story"], story_slides: STORY_SLIDES, story_status: "pending", story_items: [], ...over });
+
+/** O roteiro feliz do feed, mais os stories: envio `env-s-0N`, pronto, mídia `midia-s-0N`. */
+function roteiroComStories(extra?: (c: ChamadaGraph) => Rota) {
+  return (c: ChamadaGraph): Rota => {
+    const r = extra?.(c);
+    if (r) return r;
+    if (c.metodo === "POST" && c.caminho === `${IG}/media` && c.params.get("media_type") === "STORIES") {
+      const n = /s-(\d+)-story\.jpg$/.exec(c.params.get("image_url")!)![1];
+      return { body: { id: `env-s-${n}` } };
+    }
+    if (c.metodo === "GET" && c.caminho.startsWith("env-s-")) return { body: { status_code: "FINISHED" } };
+    if (c.metodo === "POST" && c.caminho === `${IG}/media_publish` && c.params.get("creation_id")!.startsWith("env-s-")) {
+      return { body: { id: c.params.get("creation_id")!.replace("env-", "midia-") } };
+    }
+    return roteiroFeliz(c);
+  };
+}
+
+const publicacoesDeStory = (g: ReturnType<typeof graphFalso>) =>
+  g.quais("POST", `${IG}/media_publish`).filter((c) => c.params.get("creation_id")!.startsWith("env-s-"));
+
+Deno.test("feed e stories: depois do feed, cada slide sai como story, e o envio é gravado antes de publicar", async () => {
+  const db = banco({ social_post: [comStories()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroComStories(), {
+    antes: (c) => {
+      // No media_publish de um story, o envio dele já está no banco.
+      const env = c.params.get("creation_id");
+      if (c.caminho === `${IG}/media_publish` && env?.startsWith("env-s-")) {
+        const itens = db.linhaDo().story_items as Array<{ container_id?: string }>;
+        assertEquals(itens.some((i) => i.container_id === env), true, `envio ${env} gravado antes`);
+      }
+    },
+  });
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "publicado");
+  assertEquals(r.body.stories, { publicados: 2, faltam: 0 });
+  const l = db.linhaDo();
+  assertEquals(l.status, "published");
+  assertEquals(l.story_status, "published");
+  assertEquals(l.story_published_at, AGORA.toISOString());
+  assertEquals(l.story_items, [
+    { container_id: "env-s-01", media_id: "midia-s-01", publicado: true },
+    { container_id: "env-s-02", media_id: "midia-s-02", publicado: true },
+  ]);
+  assertEquals(publicacoesDeStory(g).length, 2, "um media_publish por story");
+  const envios = g.quais("POST", `${IG}/media`).filter((c) => c.params.get("media_type") === "STORIES");
+  assertEquals(envios.length, 2);
+  for (const e of envios) {
+    assertEquals(e.params.has("alt_text"), false, "story não aceita alt");
+    assertEquals(e.params.has("caption"), false, "story não tem legenda");
+  }
+  assertEquals(db.eventos("story_container").length, 2);
+  assertEquals(db.eventos("story_publish").length, 2);
+  assertEquals(db.eventos("story_published").length, 1);
+  semToken(db.tabelas.social_post_event, db.tabelas.social_post);
+});
+
+Deno.test("story que falha não mexe no feed: o feed fica publicado e os stories com falha e o motivo", async () => {
+  const db = banco({ social_post: [comStories()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroComStories((c) =>
+    c.metodo === "POST" && c.params.get("image_url")?.endsWith("s-02-story.jpg")
+      ? { status: 400, body: { error: { message: "Invalid image" } } }
+      : undefined
+  ));
+  const r = await rodar(db, g);
+  assertEquals(r.status, 200);
+  assertEquals(r.body.acao, "publicado");
+  assertEquals((r.body.stories as Record<string, unknown>).erro, "Falhou ao enviar o story 2 à Meta: Invalid image.");
+  const l = db.linhaDo();
+  assertEquals(l.status, "published");
+  assertEquals(l.ig_media_id, "midia-1");
+  assertEquals(l.story_status, "failed");
+  assertEquals(l.story_error, "Falhou ao enviar o story 2 à Meta: Invalid image.");
+  assertEquals((l.story_items as unknown[])[0], { container_id: "env-s-01", media_id: "midia-s-01", publicado: true });
+  assertEquals(db.eventos("story_failed").length, 1);
+  assertEquals(publicacoesDeStory(g).length, 1);
+});
+
+Deno.test("nova tentativa: story já publicado não sai de novo, e envio PUBLISHED conta como publicado", async () => {
+  const db = banco({
+    social_post: [comStories({
+      status: "published",
+      published_at: "2026-10-28T14:00:00Z",
+      ig_media_id: "midia-1",
+      story_status: "publishing",
+      story_claimed_at: "2026-10-28T14:30:00Z",
+      story_items: [{ container_id: "env-s-01", media_id: "midia-s-01", publicado: true }, { container_id: "env-s-02" }],
+    })],
+    app_setting: chaveLigada("true"),
+  });
+  const g = graphFalso(roteiroComStories((c) => (c.metodo === "GET" && c.caminho === "env-s-02" ? { body: { status_code: "PUBLISHED" } } : undefined)));
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "stories");
+  assertEquals(g.quais("POST").length, 0, "nenhum envio nem media_publish novo");
+  const l = db.linhaDo();
+  assertEquals(l.story_status, "published");
+  assertEquals((l.story_items as unknown[])[1], { container_id: "env-s-02", media_id: null, publicado: true });
+});
+
+Deno.test("nova tentativa: envio de antes que ficou pronto é publicado sem criar outro", async () => {
+  const db = banco({
+    social_post: [comStories({
+      status: "published",
+      published_at: "2026-10-28T14:00:00Z",
+      story_slides: [STORY_SLIDES[0]],
+      story_items: [{ container_id: "env-s-01" }],
+    })],
+    app_setting: chaveLigada("true"),
+  });
+  const g = graphFalso(roteiroComStories());
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "stories");
+  assertEquals(g.quais("POST", `${IG}/media`).length, 0, "não cria outro envio");
+  assertEquals(publicacoesDeStory(g).map((c) => c.params.get("creation_id")), ["env-s-01"]);
+  assertEquals(db.linhaDo().story_status, "published");
+});
+
+Deno.test("media_publish do story responde erro, mas o envio está PUBLISHED: conta como publicado", async () => {
+  const db = banco({ social_post: [comStories({ status: "published", published_at: "2026-10-28T14:00:00Z", story_slides: [STORY_SLIDES[0]] })], app_setting: chaveLigada("true") });
+  let publicou = false;
+  const g = graphFalso(roteiroComStories((c) => {
+    if (c.metodo === "POST" && c.caminho === `${IG}/media_publish`) {
+      publicou = true;
+      return { status: 500, body: { error: { message: "Fatal" } } };
+    }
+    if (c.metodo === "GET" && c.caminho === "env-s-01") return { body: { status_code: publicou ? "PUBLISHED" : "FINISHED" } };
+    return undefined;
+  }));
+  await rodar(db, g);
+  assertEquals(db.linhaDo().story_status, "published");
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 1, "não tenta de novo às cegas");
+});
+
+Deno.test("media_publish do story falha e o envio não saiu: stories com falha pedindo para conferir", async () => {
+  const db = banco({ social_post: [comStories({ status: "published", published_at: "2026-10-28T14:00:00Z", story_slides: [STORY_SLIDES[0]] })], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroComStories((c) =>
+    c.metodo === "POST" && c.caminho === `${IG}/media_publish` ? { status: 500, body: { error: { message: "Fatal" } } } : undefined
+  ));
+  await rodar(db, g);
+  const l = db.linhaDo();
+  assertEquals(l.story_status, "failed");
+  assertEquals(l.story_error, "Falhou ao publicar o story 1 na Meta: Fatal. Confira nos stories do perfil antes de tentar de novo.");
+  assertEquals((l.story_items as unknown[])[0], { container_id: "env-s-01" }, "o envio fica para a próxima tentativa consultar");
+});
+
+Deno.test("chave desligada: stories pendentes de post publicado não saem pela rodada", async () => {
+  const db = banco({ social_post: [comStories({ status: "published", published_at: "2026-10-28T14:00:00Z" })], app_setting: chaveLigada("false") });
+  const g = graphFalso(roteiroComStories());
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "nada");
+  assertEquals(g.chamadas.length, 0);
+  assertEquals(db.linhaDo().story_status, "pending");
+});
+
+Deno.test("stories de outra rodada em andamento ficam com ela", async () => {
+  const db = banco({
+    social_post: [comStories({ status: "published", published_at: "2026-10-28T14:00:00Z", story_status: "publishing", story_claimed_at: "2026-10-28T15:00:00Z" })],
+    app_setting: chaveLigada("true"),
+  });
+  const g = graphFalso(roteiroComStories());
+  assertEquals((await rodar(db, g)).body.acao, "nada");
+  assertEquals(g.chamadas.length, 0);
+});
+
+Deno.test("só stories: o post sai sem feed, e fica publicado com a mídia do primeiro story", async () => {
+  const db = banco({ social_post: [comStories({ placements: ["story"] })], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroComStories());
+  const r = await rodar(db, g);
+  assertEquals(r.body.acao, "publicado");
+  assertEquals(g.quais("POST", `${IG}/media`).every((c) => c.params.get("media_type") === "STORIES"), true, "nada de carrossel");
+  const l = db.linhaDo();
+  assertEquals(l.status, "published");
+  assertEquals(l.ig_media_id, "midia-s-01");
+  assertEquals(l.ig_permalink, null);
+  assertEquals(l.story_status, "published");
+});
+
+Deno.test("só stories, falha: o post vira failed com o motivo do story", async () => {
+  const db = banco({ social_post: [comStories({ placements: ["story"] })], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroComStories((c) =>
+    c.metodo === "POST" && c.caminho === `${IG}/media` ? { status: 400, body: { error: { message: "Invalid image" } } } : undefined
+  ));
+  await rodar(db, g);
+  const l = db.linhaDo();
+  assertEquals(l.status, "failed");
+  assertEquals(l.last_error, "Falhou ao enviar o story 1 à Meta: Invalid image.");
+  assertEquals(l.story_status, "failed");
+});
+
+Deno.test("prazo: depois do tempo da chamada, o resto dos stories fica para a próxima rodada", async () => {
+  const db = banco({ social_post: [comStories({ status: "published", published_at: "2026-10-28T14:00:00Z" })], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroComStories());
+  // O relógio anda 2 minutos a cada consulta: depois do primeiro story, o prazo já passou.
+  let t = AGORA.getTime();
+  const relogio = () => new Date((t += 120_000));
+  const r = await rodada({ admin: db.cliente, cfg: CFG, agora: AGORA, relogio, fetcher: g.fetcher });
+  assertEquals(r.body.stories, { publicados: 1, faltam: 1 });
+  const l = db.linhaDo();
+  assertEquals(l.story_status, "pending", "o resto volta para a fila");
+  assertEquals(publicacoesDeStory(g).length, 1);
+});
+
+Deno.test("Publicar agora num post publicado com stories pendentes publica só os stories", async () => {
+  const db = bancoAgora([comStories({ status: "published", published_at: "2026-10-28T14:00:00Z", ig_media_id: "midia-1" })]);
+  const g = graphFalso(roteiroComStories());
+  const res = await forcar(db, g);
+  assertEquals(res.status, 200);
+  const corpo = await res.json();
+  assertEquals(corpo.acao, "stories");
+  assertEquals(corpo.stories, { publicados: 2, faltam: 0 });
+  assertEquals(g.quais("POST", `${IG}/media`).every((c) => c.params.get("media_type") === "STORIES"), true, "o feed não sai de novo");
+  assertEquals(db.linhaDo().story_status, "published");
+  assertEquals(db.linhaDo().ig_media_id, "midia-1");
 });
