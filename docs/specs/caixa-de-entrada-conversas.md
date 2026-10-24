@@ -257,3 +257,15 @@ compartilhou toda.
    deduplica por id na hora de montar a lista.
 5. **Conversa assumida e esquecida** fica sem resposta para sempre, por decisão. A tela
    mitiga com o filtro "Assumidas".
+6. **A lista lia o banco inteiro para mostrar trinta linhas.** A paginação existia, mas o
+   corte vinha no fim: o `SQL_LISTAR` fazia `DISTINCT ON` sobre todas as mensagens do
+   tenant e convertia cada `content` em JSON para montar a prévia. O `content` carrega os
+   anexos em base64, então cada página descompactava 241 MB. Medido em 24/10/2026 (9.214
+   threads, 51.758 mensagens): **18,8 s por página**, e a sidebar do Manager repete a
+   consulta a cada 15 s para o contador de não lidas. Corrigido no beast-bots (`624e4ba`):
+   a página é escolhida só pelo horário da última mensagem, que sai do índice
+   `(thread_id, "createdAt" desc)` sem abrir a mensagem, e a prévia e a contagem são lidas
+   depois, apenas das trinta. Ficou em 36 a 65 ms. **Regra:** nada que leia `content`
+   roda antes do `limit` da página; há teste de contrato no `dominio.test.ts` do beast-bots.
+   A busca continua lendo o conteúdo (é o que ela procura) e leva de 2 a 12 s conforme o
+   termo; um pré-filtro `ilike` no texto cru foi medido e saiu mais lento.
