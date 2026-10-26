@@ -403,8 +403,8 @@ caminho no envio (o hash é do conteúdo do JPEG), e a skill só escolhe o nome 
 
 Reel de preço ou de faixa do mercado é uma sequência de cenas tipográficas, e cada cena é um
 HTML, como o slide. Copie [`assets/reel-template.html`](assets/reel-template.html) uma vez por
-cena (variantes `foto`, `dado` e `texto`; a classe `entra` faz o elemento subir e aparecer na
-ordem do `--i`) e renderize todas de uma vez:
+cena (variantes `tela`, `foto`, `dado` e `texto`; a classe `entra` faz o elemento subir e
+aparecer na ordem do `--i`) e renderize todas de uma vez:
 
 ```bash
 node .claude/skills/instagram/scripts/render-reel.mjs reel.mp4 \
@@ -418,8 +418,11 @@ JPEG com a primeira cena assentada. Precisa do ffmpeg no PATH (`brew install ffm
 - **Zona segura.** O app cobre o rodapé e a lateral direita do reel, e a grade recorta a capa
   em 3:4 pelo centro. O template já deixa o conteúdo entre y = 260 e y = 1480; não mexa no
   padding.
-- **Foto paisagem entra em faixa.** A do blog é 16:9: na variante `foto` ela fica inteira no
-  alto, sobre ela mesma desfocada. Esticar para 9:16 perde dois terços da imagem.
+- **Foto 9:16 em tela cheia, foto paisagem em faixa.** O fundo gerado para o reel sai do
+  Higgsfield em 9:16 e entra na variante `tela`, com o texto no pé da zona segura. A foto do blog
+  é 16:9: na variante `foto` ela fica inteira no alto, sobre ela mesma desfocada, porque esticar
+  para 9:16 perde dois terços da imagem. Foto gerada para o reel vai para a pasta do post em
+  `docs/social/`, em `.webp`, com linha em `docs/procedencia-imagens.md`.
 - **De 3 a 4 segundos por cena**, um pouco mais na tabela de quatro linhas. A frase principal de
   cada cena segue o limite de 12 palavras do slide.
 - **Mudo de propósito.** Música licenciada só entra pelo app; o vídeo tem que se ler sem som.

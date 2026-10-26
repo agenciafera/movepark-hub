@@ -17,7 +17,7 @@ Os dois saem pelo app do Instagram, à mão: a fila de `/manager/social` não pu
 Oito cenas, 29 segundos, sem narração. Os números são os do post
 [`preco-do-estacionamento-no-aeroporto-de-confins`](https://movepark.co/blog/preco-do-estacionamento-no-aeroporto-de-confins/)
 e de `prospect_location` (pátios e oficial em 07/10/2026; BePark pelo motor, tabela de 06/10/2026).
-Os valores do banco foram reconferidos em 26/10/2026, sem mudança.
+Os valores do banco e a tabela do post no ar foram reconferidos em 26/10/2026, sem mudança.
 
 | Duração | Oficial (Econômico 3, balcão) | Particular mais barato | BePark |
 | --- | ---: | ---: | ---: |
@@ -40,7 +40,10 @@ node .claude/skills/instagram/scripts/render-reel.mjs preco-estacionamento-aerop
 node .claude/skills/instagram/scripts/analisar-carrossel.mjs $P/reel.md
 ```
 
-O MP4 não fica no git: ele sai igual destes HTML, que usam as fotos do blog de Confins.
+O MP4 não fica no git: ele sai igual destes HTML. As fotos de fundo estão em
+[`preco/fotos/`](preco/fotos/): três imagens 9:16 geradas no Higgsfield para este reel, com os
+emblemas de marca, as placas dos carros e o letreiro inventado da sinalização desfocados (registro
+em [`docs/procedencia-imagens.md`](../../procedencia-imagens.md)).
 
 ## Reel da van: roteiro de gravação
 

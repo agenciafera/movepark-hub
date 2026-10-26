@@ -11,5 +11,7 @@ Esta pasta é esse registro. Uma subpasta por atividade, com:
 - a fonte da arte (as cenas HTML do reel), para o arquivo poder ser refeito com um comando;
 - um README com o que falta, como publicar e, depois, a data e o link do que foi ao ar.
 
-O MP4 e o JPEG não vão para o git: saem da fonte pelo `render-reel.mjs`, e as fotos são as do
-blog, em `public/images/blog/`.
+O MP4 e a capa não vão para o git: saem da fonte pelo `render-reel.mjs`. As fotos de fundo vão,
+porque a fonte precisa delas: as do blog são apontadas em `public/images/blog/`, sem cópia, e as
+geradas para o post ficam na subpasta dele em `.webp`, com linha em
+[`docs/procedencia-imagens.md`](../procedencia-imagens.md).

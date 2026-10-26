@@ -429,10 +429,12 @@ ficaria falso no dia em que um vizinho contratar a Go2Park.
   a capa. O analisador passou a conferir reel (vídeo, capa, duração e as cenas) e a cobrar que
   todo R$ da tela esteja escrito na legenda, que é a acessibilidade possível num reel: a API não
   aceita texto alternativo e leitor de tela não lê o quadro.
-- **As fotos de fundo são as do blog de Confins**, já geradas no Higgsfield e revisadas, em faixa
-  16:9. Três fundos 9:16 novos foram gerados no Higgsfield em 23/10, mas o CDN dele
-  (`d8j0ntlcm91z4.cloudfront.net`) estava bloqueado pela rede da sessão; ficaram na conta do
-  Higgsfield.
+- **As fotos de fundo são três imagens 9:16 do Higgsfield**, geradas para o reel em 23/10 e
+  baixadas em 26/10, quando o CDN dele foi liberado na rede da sessão: o terminal com o pátio em
+  frente, a passarela coberta até o terminal e o pátio particular com a van. Revisadas uma a uma:
+  emblemas de marca (inclusive o da van), placas e o letreiro inventado da sinalização foram
+  desfocados. Elas entram em tela cheia (variante `tela` do template). A primeira versão usava as
+  fotos 16:9 do blog numa faixa, enquanto o CDN estava bloqueado.
 
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
