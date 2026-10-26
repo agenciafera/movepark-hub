@@ -35,8 +35,13 @@ function atributo(tag, nome) {
   return m ? decodeEntidades(m[2] ?? m[3] ?? "") : null;
 }
 
+/**
+ * Tags de um nome. O `>` dentro de valor entre aspas é HTML válido e não fecha a tag: a FAQ
+ * traduzida "Under \"My bookings\" > \"Edit vehicle\"" leva um na description, e o `[^>]*`
+ * antigo cortava a tag ali e acusava a página de não ter description (Conteúdo 65).
+ */
 function tags(html, nome) {
-  return html.match(new RegExp(`<${nome}\\b[^>]*>`, "gi")) ?? [];
+  return html.match(new RegExp(`<${nome}\\b(?:[^>"']|"[^"]*"|'[^']*')*>`, "gi")) ?? [];
 }
 
 /**

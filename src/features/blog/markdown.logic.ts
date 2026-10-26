@@ -445,6 +445,24 @@ export function leadFrom(excerpt: string | null | undefined, body: string): stri
 }
 
 /**
+ * Link interno do corpo com a barra final que o blog em português exige.
+ *
+ * `/blog/<slug>/` é a canônica (contrato herdado do WordPress) e a forma sem barra responde
+ * 301 na borda. O acervo tinha 12 links assim, cada clique um redirect, achados na auditoria
+ * de 26/10/2026 (Conteúdo 65). Corrigir no render vale também para o post que alguém ainda vai
+ * escrever. Só o blog em português: em `/en/blog/x` a canônica é sem barra. Arquivo (`.md`,
+ * imagem) fica como está.
+ */
+export function hrefInterno(href: string): string {
+  const m = href.match(/^(\/blog(?:\/[^?#]*)?)([?#].*)?$/);
+  if (!m) return href;
+  const [, caminho, resto = ""] = m;
+  const ultimo = caminho.split("/").pop() ?? "";
+  if (caminho.endsWith("/") || ultimo.includes(".")) return href;
+  return `${caminho}/${resto}`;
+}
+
+/**
  * Âncora de uma seção do corpo.
  *
  * O prefixo não é enfeite: id começando com dígito é HTML válido e seletor CSS

@@ -51,6 +51,8 @@ import {
   productOfferSchema,
   breadcrumbSchema,
   faqSchema,
+  NO,
+  webPageSchema,
   type SchemaReview,
 } from "@/lib/jsonld";
 import { SITE_URL } from "@/lib/site";
@@ -366,6 +368,14 @@ export default function ListingPage() {
         <script type="application/ld+json">
           {JSON.stringify(localBusinessSchema(listing, { description: tldr?.summary, showcase: showcase ?? null }))}
         </script>
+        {/* O `WebPage` é o que liga a ficha ao site: o nó do lugar não aceita `isPartOf`. */}
+        {pageUrl && (
+          <script type="application/ld+json">
+            {JSON.stringify(
+              webPageSchema({ url: pageUrl, name: pageTitle, mainEntity: NO.lugar(pageUrl) }),
+            )}
+          </script>
+        )}
         {productSchemaData && (
           <script type="application/ld+json">{JSON.stringify(productSchemaData)}</script>
         )}

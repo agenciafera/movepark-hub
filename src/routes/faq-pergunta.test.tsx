@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import FaqPerguntaPage, { type FaqPerguntaData } from "@/routes/faq-pergunta";
@@ -234,6 +234,38 @@ describe("FaqPerguntaPage", () => {
       "/precos",
     );
     expect(screen.getByText(/40 estacionamentos comparados em 21 destinos/)).toBeInTheDocument();
+  });
+
+  it("em inglês a meta description é o aeroporto e a resposta, sem frase em português", async () => {
+    // Regressão da Conteúdo 65: a FAQ traduzida publicava "Estacionamento de Aeroporto: Yes.
+    // (...) Confira a tabela atualizada." como description.
+    const resposta = "Yes. Under My bookings you can change the licence plate up to check-in.";
+    const router = createMemoryRouter(
+      [{ path: "/en/faq/:slug", element: <FaqPerguntaPage />, loader: () => ({
+        ...DATA!,
+        locale: "en",
+        traducao: {
+          question: "Can I change the vehicle after booking?",
+          answer: resposta,
+          body_md: null,
+          slug: "can-i-change-the-vehicle-after-booking",
+        },
+        idiomas: [],
+        destinoLabel: "Guarulhos Airport (GRU)",
+      }) }],
+      { initialEntries: ["/en/faq/can-i-change-the-vehicle-after-booking"] },
+    );
+    render(
+      <HelmetProvider>
+        <RouterProvider router={router} />
+      </HelmetProvider>,
+    );
+    await screen.findByRole("heading", { level: 1 });
+    await waitFor(() =>
+      expect(
+        document.head.querySelector('meta[name="description"]')?.getAttribute("content"),
+      ).toBe(`Guarulhos Airport: ${resposta}`),
+    );
   });
 
   it("slug inexistente explica em vez de quebrar", async () => {

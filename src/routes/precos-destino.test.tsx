@@ -152,6 +152,18 @@ describe("PrecosDestinoPage", () => {
     expect(link).toHaveAttribute("href", "/estacionamentos/aeroporto-de-congonhas/precos");
   });
 
+  it("linka a página mais barato do mesmo destino", async () => {
+    // Regressão da Conteúdo 65: três das seis páginas "mais barato" não recebiam link interno.
+    setup();
+    const link = await screen.findByRole("link", {
+      name: "Estacionamento mais barato em Guarulhos (GRU)",
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      "/estacionamentos/aeroporto-internacional-de-sao-paulo-guarulhos/mais-barato",
+    );
+  });
+
   it("destino sem preço explica em vez de quebrar", async () => {
     setup(null);
     expect(await screen.findByText("Sem tabela de preços por aqui")).toBeInTheDocument();

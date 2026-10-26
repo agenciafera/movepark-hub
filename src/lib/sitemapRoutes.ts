@@ -32,6 +32,10 @@ export const SITEMAP_STATIC_ROUTES = [
   "/estacionamento-de-aeroporto-e-seguro",
 ] as const;
 
+const ARQUIVO_DO_BLOG =
+  "arquivo do blog responde `noindex, follow` (lista de links, e a de aeroporto disputaria " +
+  "a busca com a página do destino); o sitemap lista os posts direto";
+
 /**
  * Rotas públicas que existem e NÃO devem entrar no índice, cada uma com o motivo.
  * Estar aqui é decisão, não esquecimento: o teste exige que toda rota do `routes.tsx` esteja
@@ -64,6 +68,19 @@ export const SITEMAP_OPT_OUT: Record<string, string> = {
   "/descadastro":
     "ação de saída da lista de marketing, aberta pelo link do e-mail; sem conteúdo e sem valor de busca",
   "*": "catch-all do React Router, não é URL",
+  // Arquivo e paginação do blog (Conteúdo 65, 26/10/2026). Entraram no sitemap em 18/08 e
+  // respondem `noindex, follow` por decisão de docs/specs/blog.md. Sitemap com URL `noindex` é
+  // sinal contraditório, e a auditoria semanal acusava os 70 como erro. Continuam
+  // pré-renderizadas: o `follow` é o que leva o robô aos posts.
+  "/blog/page/:page": ARQUIVO_DO_BLOG,
+  "/blog/categoria/:slug": ARQUIVO_DO_BLOG,
+  "/blog/categoria/:slug/page/:page": ARQUIVO_DO_BLOG,
+  "/blog/tag/:slug": ARQUIVO_DO_BLOG,
+  "/blog/tag/:slug/page/:page": ARQUIVO_DO_BLOG,
+  "/blog/autor/:slug": ARQUIVO_DO_BLOG,
+  "/blog/autor/:slug/page/:page": ARQUIVO_DO_BLOG,
+  "/blog/aeroporto/:slug": ARQUIVO_DO_BLOG,
+  "/blog/aeroporto/:slug/page/:page": ARQUIVO_DO_BLOG,
 };
 
 /** Prefixos de área logada. Tudo abaixo deles fica fora do sitemap. */
@@ -91,17 +108,4 @@ export const SITEMAP_DYNAMIC_PATTERNS = [
   "/blog/:slug",
   "/faq/:slug",
   "/precos",
-  // Taxonomia e paginação do blog (18/08/2026): `getBlogTaxonomyRoutes` no `vite.config.ts`
-  // espelha a mesma contagem do `getStaticPaths` de `src/routes.tsx` (48 arquivos no dist/)
-  // e entra na seção `blog` do sitemap. Até aqui viviam em `SITEMAP_BLOG_TAXONOMY_PENDING`,
-  // como débito visível; a consulta de agrupamento foi escrita e o débito fechou.
-  "/blog/page/:page",
-  "/blog/categoria/:slug",
-  "/blog/categoria/:slug/page/:page",
-  "/blog/tag/:slug",
-  "/blog/tag/:slug/page/:page",
-  "/blog/autor/:slug",
-  "/blog/autor/:slug/page/:page",
-  "/blog/aeroporto/:slug",
-  "/blog/aeroporto/:slug/page/:page",
 ] as const;

@@ -17,7 +17,7 @@ export const CANCELAMENTO: ContentPage = {
   intro:
     "Quando você reserva direto na Movepark, o cancelamento segue o prazo da sua Tarifa e o reembolso é integral dentro dele. Quando a reserva é concluída no site ou WhatsApp do estacionamento parceiro, vale a política que ele informou a você.",
   updated: "2026-08-19",
-  related: ["termos", "faq"],
+  related: ["termos", "estacionamento-de-aeroporto-e-seguro", "faq"],
   sections: [
     {
       id: "prazos",
@@ -249,7 +249,7 @@ export const METODOLOGIA: ContentPage = {
       ],
     },
   ],
-  related: ["como-funciona", "faq"],
+  related: ["como-funciona", "estacionamento-de-aeroporto-e-seguro", "faq"],
 };
 
 /**

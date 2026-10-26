@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import LoginPage from "./login";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 
@@ -17,6 +17,15 @@ describe("LoginPage", () => {
     // Wordmark também leva pra home.
     const brand = screen.getByRole("link", { name: /página inicial da movepark/i });
     expect(brand).toHaveAttribute("href", "/");
+  });
+
+  it("tem title próprio, e não o \"Movepark Hub\" que o /operator também usa", async () => {
+    // Regressão da Conteúdo 65: o Semrush acusava /login e /operator com o mesmo title.
+    renderWithProviders(<LoginPage />, {
+      auth: mockAuth({ session: null, effectiveRole: null }),
+      route: "/login",
+    });
+    await waitFor(() => expect(document.title).toBe("Entrar | Movepark"));
   });
 
   it("com trocar=1, conta que não reserva fica na tela e entende o porquê", () => {

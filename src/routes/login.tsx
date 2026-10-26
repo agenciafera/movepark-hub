@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { ArrowLeft, ChatCircle, Envelope } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,11 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-soft-gradient px-4 py-12">
+      {/* Sem title próprio a página herdava o "Movepark Hub" do `defaultTitle`, o mesmo do
+          /operator, e a auditoria do Semrush acusava title duplicado (Conteúdo 65). */}
+      <Helmet>
+        <title>Entrar | Movepark</title>
+      </Helmet>
       <Link
         to="/"
         aria-label="Ir para a página inicial da Movepark"

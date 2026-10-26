@@ -157,4 +157,21 @@ describe("alternativasDeIdioma: destino e índice", () => {
     // `/estacionamentos` existe só em português; oferecer troca levaria a 404.
     expect(alternativasDeIdioma({ pathname: "/estacionamentos", dados: null })).toEqual([]);
   });
+
+  it("a home oferece os três idiomas, de qualquer um deles", () => {
+    // Regressão da Conteúdo 65: o rodapé da home mostrava só o rótulo, e `/en` e `/es`
+    // ficavam sem link interno nenhum.
+    const esperado = [
+      { locale: "pt-BR", caminho: "/" },
+      { locale: "en", caminho: "/en" },
+      { locale: "es", caminho: "/es" },
+    ];
+    expect(alternativasDeIdioma({ pathname: "/", dados: null })).toEqual(esperado);
+    expect(alternativasDeIdioma({ pathname: "/en", dados: null })).toEqual(esperado);
+    expect(alternativasDeIdioma({ pathname: "/es/", dados: null })).toEqual(esperado);
+  });
+
+  it("página fora das famílias continua sem escolha", () => {
+    expect(alternativasDeIdioma({ pathname: "/sobre", dados: null })).toEqual([]);
+  });
 });

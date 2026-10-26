@@ -369,6 +369,12 @@ conteúdo próprio, e a de aeroporto ainda disputaria a busca com `/destinos/<sl
 que converte. O `follow` mantém o rastreio, e o sitemap continua listando os 93 posts direto, então
 nenhum post depende de arquivo para ser descoberto.
 
+**E por isso o arquivo não entra no sitemap (26/10/2026, Conteúdo 65).** De 18/08 a 26/10 as 70
+URLs de arquivo e paginação estiveram no sitemap respondendo `noindex`, que é sinal contraditório,
+e a auditoria semanal acusava as 70 como erro. Saíram do sitemap e continuam pré-renderizadas. Os
+padrões estão em `SITEMAP_OPT_OUT` (`src/lib/sitemapRoutes.ts`), e o
+`scripts/canonicalize-sitemap.mjs` reprova o build se alguma voltar.
+
 A busca roda no cliente, sobre o acervo completo, e só puxa a lista inteira quando há termo. Ela
 casa título, resumo, categoria, aeroporto e tag, ignora acento e exige todos os termos: com 93
 posts sobre o mesmo assunto, busca com OU devolveria quase tudo.

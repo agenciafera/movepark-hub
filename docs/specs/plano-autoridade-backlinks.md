@@ -16,6 +16,9 @@
 > - Auditoria de 13/10/2026 (Conteúdo 63): Backlink Audit do Semrush, relatório de Links do Search
 >   Console e lista de compras do painel do WhitePress
 >   ([dados/backlinks-auditoria-2026-10-13](./dados/backlinks-auditoria-2026-10-13/)). Seção 2.7.
+> - Auditoria de 26/10/2026 (Conteúdo 65): auditoria própria do site inteiro, Auditoria do Site e
+>   On Page SEO Checker do Semrush ([dados/auditoria-site-2026-10-26](./dados/auditoria-site-2026-10-26/)).
+>   Seção 2.8.
 
 ## 1. O diagnóstico em uma frase
 
@@ -290,6 +293,66 @@ Guarulhos é menor do que o número sugere.
 - **Rede 1 completa.** Só no plano pago do Semrush. A revisão de 30 dias (Conteúdo 73) reconfere pelo
   Search Console.
 - **Os dois saltos do `aeromixparkestacionamento.com`.** Regra na zona do Cloudflare, fora do repo.
+
+### 2.8 A auditoria de 26/10/2026 e as ideias do On Page SEO Checker (Conteúdo 65)
+
+Três fontes. A **auditoria própria** (`bun run seo:auditoria`, seção 5.5) varreu as 1.150 URLs do
+sitemap em 26/10, antes das correções:
+[`antes.md`](./dados/auditoria-site-2026-10-26/antes.md). A **Auditoria do Site do Semrush** é a
+de 02/10 (100 páginas, o teto do plano gratuito; não foi reexecutada). O **On Page SEO Checker**
+foi reexecutado pelo próprio Semrush em 06/10: as 38 ideias de 29/09 viraram **32 para 7 páginas**
+(10 de conteúdo, 7 técnicas, 6 de backlinks, 5 semânticas, 3 de estratégia e 1 de experiência).
+
+**Auditoria própria: 70 erros, 77 avisos e 7 informativos, um a um.**
+
+| Tipo | Qtd. | Decisão |
+|---|---|---|
+| `noindex` no sitemap (erro) | 70 | **Corrigido.** É o arquivo e a paginação do blog, que respondem `noindex, follow` por decisão do [blog.md](./blog.md) e estavam no sitemap desde 18/08. Saíram do sitemap (`SITEMAP_OPT_OUT`), continuam pré-renderizados, e o `canonicalize-sitemap.mjs` reprova o build se algum voltar |
+| Página órfã | 28 | 21 são o arquivo de aeroporto do blog e saíram com o item acima. **Corrigidas:** `/en` e `/es` (o seletor de idioma do rodapé não aparecia na home, que existe nos três idiomas), as "mais barato" de Congonhas, Tietê e Confins (link na página de preço do destino, `temPaginaMaisBarato`) e `/estacionamento-de-aeroporto-e-seguro` (o card dela existia em `RELACIONADOS`, mas nenhuma página o usava; entrou em `/cancelamento` e `/metodologia`). **Justificada:** `/selo`, que vai direto ao parceiro; o link para ela vem com a adoção do selo (Conteúdo 70) |
+| Title repetido | 16 grupos | **Corrigido.** FAQ de destino com pergunta longa perdia o sufixo e saía igual em até 22 aeroportos. `tituloDaPergunta` (`faqPagina.logic.ts`) nunca deixa o aeroporto cair: pelo nome, e no limite pelo código IATA, cortando a pergunta |
+| Description repetida | 15 grupos | **Justificado e resolvido junto:** todas eram paginação do arquivo do blog repetindo a description da raiz, e saíram do sitemap com o primeiro item |
+| Link interno com redirect | 12 | **Corrigido no render.** Links `/blog/<slug>` sem a barra final, cada um um 301. `hrefInterno` (`markdown.logic.ts`) põe a barra no corpo do post e da FAQ, então vale também para o que ainda vai ser escrito |
+| Link de saída quebrado | 3 | **2 corrigidos** (migration `20261201000000`): a página de estatística da Sesp-PR mudou para `/CAPE/Estatisticas`, e a de ônibus do BH Airport virou "Como chegar". **Justificado:** o `seguranca.mg.gov.br` respondia 503 no site inteiro, inclusive na home; é queda, não endereço morto, e a auditoria da segunda seguinte reconfere |
+| Sem description | 2 | **Falso positivo do script**, corrigido: a FAQ traduzida traz `"My bookings" > "Edit vehicle"`, e o parser cortava a tag no `>`. Ao abrir as duas, apareceu um defeito real: a description de toda FAQ em inglês e espanhol saía metade em português ("Estacionamento de Aeroporto: Yes. (...) Confira a tabela atualizada."). Agora é o aeroporto no idioma da página mais a resposta |
+| Sem canonical | 1 | **Corrigido:** `/seja-parceiro` |
+| Externo sem resposta ou que barra robô (informativo) | 7 | **Justificado:** não reprova. O Planalto derruba a conexão do robô, a Calculauto não respondeu no tempo, `viracopos.com` serve cadeia de certificado incompleta, gov.br e Voe Azul respondem 401 e 403 ao robô |
+
+**Auditoria do Semrush (02/10/2026): 13 erros em 3 tipos.**
+
+| Erro | Decisão |
+|---|---|
+| 10 dados estruturados inválidos | **9 corrigidos:** as fichas emitiam `isPartOf` em `LocalBusiness`, e a propriedade é de `CreativeWork`. O mesmo defeito estava no `Place` do destino e no `ParkingFacility` do lote mapeado. O elo com o site passou para um `WebPage` com `mainEntity` apontando para o lugar. **1 justificado:** a calculadora é `WebApplication` sem `aggregateRating`, e o Google só pede a nota para dar o resultado rico de app. Ela não tem avaliação, e nota inventada viola a regra de dado estruturado |
+| 2 title repetidos | **Corrigido:** `/login` e `/operator` herdavam o "Movepark Hub" do `defaultTitle`. O `/login` ganhou title; o `/operator` é área logada, com `noindex` por caminho |
+| `robots.txt` com erro de formato | **Justificado:** é a linha `Content-Signal` da política de Content Signals da Cloudflare, posta de propósito (E0.8). Linha que o Google não conhece ele ignora, e o resto do arquivo vale |
+
+**On Page SEO Checker: as 32 ideias.** Duas leituras antes da tabela. Seis das sete URLs que o
+Checker analisa são **endereços de antes da migração** e respondem 301 para a ficha nova; foi por
+isso que ele marcou as 7 como "torne a página rastreável" (o rastreador de 100 páginas não chega
+nelas). E três das ideias pedem para encaixar termo de aeroporto na ficha de um parceiro, que é o
+contrário do mapa de canonicalização: o termo de cabeça é da página do destino, e o próprio Checker
+confirma que ela é quem ranqueia melhor (Guarulhos na posição 6, Congonhas na 5, Curitiba na 6).
+
+| Página analisada (URL de hoje) | Palavra-chave | Ideias | Decisão |
+|---|---|---|---|
+| Ficha do Virapark (`/estacionamentos/aeroporto-viracopos/virapark`) | aeroporto campinas, aeroporto de campinas | 4 de conteúdo (termo no title, H1, meta e corpo), 1 semântica, 1 de backlinks, 1 técnica | **Recusadas.** É busca pelo aeroporto, não por vaga: trocar "Estacionamento Aeroporto Viracopos" por "aeroporto de Campinas" no title e no H1 da ficha perderia o termo comercial e disputaria com a dona de "guia do aeroporto" do [mapa VCP](./canonicalizacao-vcp-cnf.md). As palavras semânticas ("companhias aéreas", "América Latina") são de página sobre o aeroporto. A meta já cita Campinas |
+| Ficha do Grand Parking (`/estacionamentos/aeroporto-congonhas/grand-parking`) | estacionamento aeroporto congonhas | 1 de estratégia, 3 de conteúdo (legibilidade, H1, title), 1 de backlinks, 1 técnica | **Recusadas.** É lote mapeado sem contrato (ADR-010), e o termo de cabeça é da página de Congonhas, que está na posição 5. Congonhas é ainda o controle do plano (seção 7) e fica fora de compra de link |
+| Guia comparativo de Guarulhos (blog) | estacionamento aeroporto guarulhos | 1 de estratégia, 1 de legibilidade, 1 semântica, 1 de backlinks, 1 técnica, 1 de tempo na página | **Recusadas, com um ajuste.** O post é o dono de "melhor" em GRU e o termo de cabeça é da página do destino (posição 6). A lista semântica é frase de template de concorrente, inclusive em português de Portugal ("é por isso que compilámos"), e os conceitos (traslado, reserva, tarifa) já estão no texto. O tempo na página vem do GA, desconectado desde 05/10 (seção 2.6), e post answer-first entrega a resposta no topo. A técnica é o limite de 100 páginas: a auditoria própria rastreia a página. **Ajuste:** o H1 dizia "Guia Atualizado: (...) em 2024" e passou a "As 5 melhores opções de estacionamento no Aeroporto Guarulhos em 2026" (migration `20261201010000`); era o único post publicado com ano vencido no título |
+| Destino Curitiba (`/estacionamentos/aeroporto-curitiba`) | estacionamento aeroporto curitiba | 1 de estratégia, 1 semântica, 1 de backlinks, 1 técnica | **Sem ação.** A "outra página que ranqueia melhor" é a própria URL nova, destino do 301 (posição 6). "24 horas por dia" já aparece 8 vezes como "24 horas" |
+| Ficha do Nationpark (`/estacionamentos/aeroporto-curitiba/nationpark`) | aeroporto afonso pena, aeroporto curitiba, aeroporto de curitiba | 1 semântica, 1 de backlinks, 1 técnica | **Recusadas** pelo mesmo motivo do Virapark: "centro de Curitiba", "Foz do Iguaçu" e "voos diários" são vocabulário de guia do aeroporto, não de ficha |
+| Ficha do BePark (`/estacionamentos/aeroporto-confins/bepark`) | estacionamento aeroporto confins | 1 semântica, 1 de backlinks, 1 técnica | **Recusadas.** "Além disso" é conector, e "Aeroporto Internacional de Belo Horizonte" pediria mudar o template de todas as fichas por uma expressão; a página de Confins já traz o nome oficial (Tancredo Neves) |
+| Ficha da Garageinn (`/estacionamentos/aeroporto-viracopos/garageinn`) | estacionamento viracopos | 2 de conteúdo (title e H1), 1 técnica | **Recusadas.** Title e H1 já dizem "Estacionamento Aeroporto Viracopos"; a forma curta exata é o termo de cabeça da página de Viracopos, e ficha de parceiro com ele canibaliza |
+
+As **6 de backlinks** não viram compra por esta atividade. As listas misturam concorrente
+(`parkindigo.com.br`, `bandeirapark.online`, `parkivado.com.br`), o próprio `movepark.co`, Wikipedia,
+Yahoo e Skyscanner com uns poucos sites de nicho (`melhoresdestinos.com.br`,
+`passageirodeprimeira.com`, `aeroin.net`, `dicasdeviagem.com`, `guiaviajarmelhor.com.br`,
+`hoteliernews.com.br`, `bemparana.com.br`). Os de nicho são candidatos da Conteúdo 72, pelas regras
+da seção 4; concorrente nunca. O `carpemundi.com.br`, também listado, já linka a ficha do Ponce Park
+em 10 posts (seção 2.7).
+
+**Pendência.** As 7 ideias técnicas só somem quando o Checker apontar para as URLs de hoje
+(excluir e adicionar página de destino no Semrush). É configuração do projeto na conta
+compartilhada, e não foi feita sem o Diego.
 
 ## 3. A tese
 
@@ -580,7 +643,9 @@ opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da C
   não têm link externo chegando na ficha e não mudaram. Lote novo entra na lista quando o
   Search Console mostrar link externo apontando para ele.
 - **[Conteúdo 65](https://app.clickup.com/t/17tn9e9gfh4):** os erros da auditoria do Semrush e as 38 ideias do On Page SEO Checker nas 7
-  páginas que ele analisou.
+  páginas que ele analisou. **Feito em 26/10/2026** (seção 2.8): os 70 erros da auditoria
+  própria e os 13 do Semrush corrigidos ou justificados um a um, e as 32 ideias que restaram na
+  reexecução de 06/10 decididas, uma aplicada e as outras recusadas com motivo.
 
 ### 5.3 Meses 2 a 5: compra qualificada
 

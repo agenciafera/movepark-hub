@@ -82,6 +82,19 @@ describe("cobertura do sitemap", () => {
     }
   });
 
+  it("arquivo e paginação do blog ficam fora do sitemap, porque respondem noindex", () => {
+    // Regressão da Conteúdo 65 (26/10/2026): de 18/08 em diante os 70 arquivos do blog
+    // entraram no sitemap respondendo `noindex, follow`, e a auditoria semanal os acusava.
+    const arquivosDoBlog = rotasDeclaradas().filter((r) =>
+      /^\/blog\/(page|categoria|tag|autor|aeroporto)\//.test(r),
+    );
+    expect(arquivosDoBlog.length).toBeGreaterThanOrEqual(9);
+    for (const rota of arquivosDoBlog) {
+      expect(SITEMAP_OPT_OUT[rota], `${rota} sem opt-out`).toBeDefined();
+      expect(SITEMAP_DYNAMIC_PATTERNS as readonly string[]).not.toContain(rota);
+    }
+  });
+
   it("todo opt-out tem motivo escrito", () => {
     for (const [rota, motivo] of Object.entries(SITEMAP_OPT_OUT)) {
       expect(motivo.length, `${rota} sem motivo`).toBeGreaterThan(10);

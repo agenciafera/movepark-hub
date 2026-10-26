@@ -114,3 +114,17 @@ if (traduzidasComBarra > 0) {
   console.error("alguma URL do blog traduzida ganhou barra final, que a borda 301");
   process.exit(1);
 }
+
+/*
+  Arquivo e paginação do blog respondem `noindex, follow` (docs/specs/blog.md) e por isso não
+  entram no sitemap: listar URL `noindex` é sinal contraditório. Entraram em 18/08/2026 e
+  ficaram até 26/10 (Conteúdo 65), com a auditoria semanal acusando os 70 como erro. Reprovar
+  aqui é o que impede a volta por outro caminho (rota dinâmica nova, plugin que passe a
+  descobrir o `dist/` sozinho).
+*/
+const ARQUIVO_DO_BLOG = /<loc>https?:\/\/[^/<\s]+\/blog\/(?:page|categoria|tag|autor|aeroporto)\/[^<]*<\/loc>/g;
+const arquivos = [...corrigido.matchAll(ARQUIVO_DO_BLOG)].length;
+if (arquivos > 0) {
+  console.error(`${arquivos} URL(s) de arquivo do blog no sitemap; elas respondem noindex`);
+  process.exit(1);
+}

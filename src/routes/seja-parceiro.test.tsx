@@ -263,3 +263,15 @@ describe("SejaParceiroPage: dado estruturado do vídeo", () => {
     expect(s.embedUrl).toContain("ZkbAd7B6CIo");
   });
 });
+
+describe("SejaParceiroPage: cabeçalho", () => {
+  it("declara o canonical da própria página", async () => {
+    // Regressão da Conteúdo 65: a auditoria de 26/10/2026 achou a página sem rel=canonical.
+    renderPage();
+    await waitFor(() =>
+      expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute("href")).toBe(
+        "https://movepark.co/seja-parceiro",
+      ),
+    );
+  });
+});

@@ -8,6 +8,8 @@
  * gêmeo Markdown juntos.
  */
 
+import { TITLE_MAX, cortarEmPalavra, pickTitle } from "@/lib/seo";
+
 export type FaqDestinoRef = {
   name: string;
   short_name: string | null;
@@ -33,6 +35,46 @@ export function keywordDoTitulo(dest: FaqDestinoRef | null | undefined): string 
   return dest.name.startsWith("Aeroporto")
     ? `Estacionamento Aeroporto ${curto}`
     : `Estacionamento ${curto}`;
+}
+
+const semAcento = (s: string) =>
+  s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/**
+ * O `<title>` da página /faq/<slug>, da forma mais completa para a mais enxuta.
+ *
+ * A mesma pergunta de destino existe em até 22 aeroportos ("E se meu voo atrasar...?"). Quando
+ * ela é longa, o sufixo com a palavra-chave não cabe, e a forma enxuta sem aeroporto deixava
+ * as 22 páginas com o mesmo title. Foram 16 grupos repetidos na auditoria de 26/10/2026
+ * (Conteúdo 65). Por isso, em página de destino, a pergunta só sai sozinha quando ela mesma
+ * cita o aeroporto; senão o aeroporto entra pelo nome e, no limite, pelo código, cortando a
+ * pergunta se preciso. `aeroporto` é o nome no idioma da página ("Guarulhos").
+ */
+export function tituloDaPergunta(
+  pergunta: string,
+  keyword: string,
+  destino: { aeroporto: string; code: string } | null,
+): string {
+  if (!destino) {
+    return pickTitle(
+      `${pergunta} · ${keyword} | Movepark`,
+      `${pergunta} · ${keyword}`,
+      `${pergunta} | Movepark`,
+      pergunta,
+    );
+  }
+  const { aeroporto, code } = destino;
+  const citaOAeroporto = semAcento(pergunta).includes(semAcento(aeroporto));
+  const sufixo = ` (${code})`;
+  return pickTitle(
+    `${pergunta} · ${keyword} | Movepark`,
+    `${pergunta} · ${keyword}`,
+    ...(citaOAeroporto
+      ? [`${pergunta} | Movepark`, pergunta]
+      : [`${pergunta} · ${aeroporto} | Movepark`, `${pergunta} · ${aeroporto}`]),
+    `${pergunta}${sufixo}`,
+    `${cortarEmPalavra(pergunta, TITLE_MAX - sufixo.length)}${sufixo}`,
+  );
 }
 
 /**

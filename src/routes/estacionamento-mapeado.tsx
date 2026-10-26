@@ -19,7 +19,7 @@ import {
 } from "@/features/destinations/loteMapeado.logic";
 import { precoPesquisado, postsDoLote } from "@/features/destinations/loteMapeadoPreco.logic";
 import { buildMetaDescription } from "@/lib/seo";
-import { breadcrumbSchema, faqSchema, parkingFacilitySchema } from "@/lib/jsonld";
+import { NO, breadcrumbSchema, faqSchema, parkingFacilitySchema, webPageSchema } from "@/lib/jsonld";
 import { formatBRL, formatDate, formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
@@ -118,6 +118,11 @@ export default function EstacionamentoMapeadoPage() {
               description: prospect.description,
               amenities: prospect.amenities,
             }),
+          )}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(
+            webPageSchema({ url: canonical, name: title, mainEntity: NO.lugar(canonical) }),
           )}
         </script>
         <script type="application/ld+json">

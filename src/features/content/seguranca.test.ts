@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { faqJsonLd } from "./jsonld";
-import { SEGURANCA } from "./pages";
+import { CANCELAMENTO, METODOLOGIA, SEGURANCA } from "./pages";
 import { readingMinutes } from "./types";
 
 /**
@@ -51,5 +51,16 @@ describe("página de segurança e seguro", () => {
 
   it("tem corpo suficiente para ser página, e não um aviso", () => {
     expect(readingMinutes(SEGURANCA.sections)).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("links que chegam na página de segurança", () => {
+  it("outras páginas de conteúdo levam o card dela em Veja também", () => {
+    // Regressão da Conteúdo 65: o card existia em RELACIONADOS, mas nenhuma página o usava,
+    // e a auditoria de 26/10/2026 achou a página órfã de link interno.
+    const quemLinka = [CANCELAMENTO, METODOLOGIA].filter((p) =>
+      p.related.includes(SEGURANCA.slug),
+    );
+    expect(quemLinka.length).toBeGreaterThanOrEqual(1);
   });
 });

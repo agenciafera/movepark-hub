@@ -35,6 +35,16 @@ export type MaisBaratoLinha = {
 };
 
 /**
+ * O destino tem página "mais barato"? Mesmo critério do `getMaisBaratoRoutes` do
+ * `vite.config.ts`, que decide quais o build gera: alguma vaga de carro com preço. É o que a
+ * página de preço consulta para linkar a "mais barato" sem apontar para página que não existe.
+ * Três das seis estavam órfãs na auditoria de 26/10/2026 (Conteúdo 65).
+ */
+export function temPaginaMaisBarato(dest: PriceDestination): boolean {
+  return carUnits(dest.units).some((u) => (u.prices ?? []).some((p) => p.total != null));
+}
+
+/**
  * Vencedor e vice por duração, só carros, empate resolvido por ordem estável.
  * Duração sem nenhum preço não gera linha (estadia mínima pode esvaziar 1 diária).
  */

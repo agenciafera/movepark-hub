@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GoogleMapEmbed } from "@/components/shared/GoogleMapEmbed";
 import {
+  NO,
   breadcrumbSchema,
   webPageSchema,
   destinationOffersSchema,
@@ -619,18 +620,19 @@ export default function DestinoPage() {
         </script>
         {/* `WebPage` com a data REAL da tabela de preço desta página. É o sinal de
             frescor que desempata duas fontes que dizem o mesmo número, e sem tabela no ar
-            o nó não sai: data inventada é pior que data ausente. */}
-        {prices?.lastUpdated && (
-          <script type="application/ld+json">
-            {JSON.stringify(
-              webPageSchema({
-                url: canonical,
-                name: title,
-                dateModified: prices.lastUpdated,
-              }),
-            )}
-          </script>
-        )}
+            a data não sai: data inventada é pior que data ausente. O nó sai sempre desde
+            26/10/2026 (Conteúdo 65), porque é ele que liga o aeroporto ao site por
+            `mainEntity`: o `Place` não aceita `isPartOf`. */}
+        <script type="application/ld+json">
+          {JSON.stringify(
+            webPageSchema({
+              url: canonical,
+              name: title,
+              dateModified: prices?.lastUpdated ?? null,
+              mainEntity: NO.destino(canonicalPt),
+            }),
+          )}
+        </script>
         <script type="application/ld+json">
           {JSON.stringify(
             breadcrumbSchema([

@@ -389,7 +389,7 @@ function encolher(texto: string, max: number): string {
 }
 
 /** Corta em `max` sem quebrar palavra, fechando com reticência e sem pontuação solta. */
-function cortarEmPalavra(texto: string, max: number): string {
+export function cortarEmPalavra(texto: string, max: number): string {
   if (texto.length <= max) return texto;
   const corte = texto.slice(0, max - 1);
   const espaco = corte.lastIndexOf(" ");

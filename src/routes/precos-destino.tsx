@@ -27,8 +27,9 @@ import {
   type MatrixRow,
   type PriceDestination,
 } from "@/features/price-index/priceIndex.logic";
+import { temPaginaMaisBarato } from "@/features/price-index/maisBarato.logic";
 import { SITE_URL } from "@/lib/site";
-import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
+import { caminhoDestino, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
 export type PrecosDestinoData = {
   days: number[];
@@ -379,6 +380,16 @@ export default function PrecosDestinoPage() {
           >
             Ver o índice completo de preços
           </Link>
+          {/* Sem este link, a "mais barato" de Congonhas, do Tietê e de Confins não recebia link
+              interno de página nenhuma (auditoria de 26/10/2026, Conteúdo 65). */}
+          {temPaginaMaisBarato(destination) && (
+            <Link
+              to={caminhoMaisBarato(destinoSlug)}
+              className="mt-3 block text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+            >
+              Estacionamento mais barato em {nome}
+            </Link>
+          )}
         </section>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">

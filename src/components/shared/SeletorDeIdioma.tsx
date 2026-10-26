@@ -4,6 +4,7 @@ import {
   LOCALES,
   LOCALE_PADRAO,
   SEGMENTO,
+  caminhoDaHome,
   caminhoDoIndice,
   caminhoLocalizado,
   localeDoCaminho,
@@ -76,6 +77,13 @@ export function alternativasDeIdioma(args: {
   pathname: string;
   dados: DadosComIdiomas | null;
 }): { locale: Locale; caminho: string }[] {
+  // A home existe nos três idiomas (`/`, `/en`, `/es`), e o `hreflang` dela já dizia isso.
+  // Sem esta saída o rodapé da home mostrava só o rótulo, e `/en` e `/es` não recebiam link
+  // de página nenhuma: a auditoria de 26/10/2026 achou as duas órfãs (Conteúdo 65).
+  if (localeDoCaminho(args.pathname).resto.replace(/\/+$/, "") === "") {
+    return LOCALES.map((l) => ({ locale: l, caminho: caminhoDaHome(l) }));
+  }
+
   const familia = familiaDoCaminho(args.pathname);
   if (!familia) return [];
 

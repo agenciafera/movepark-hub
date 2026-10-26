@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   faqPairsFrom,
+  hrefInterno,
   leadFrom,
   metaDescription,
   parseInline,
@@ -580,5 +581,29 @@ describe("faqPairsFrom", () => {
   it("devolve vazio para post sem FAQ, que é o caso da maior parte do acervo", () => {
     const md = "## Uma seção\n\nUm parágrafo.\n\n## Outra seção\n\nOutro parágrafo.";
     expect(faqPairsFrom(md)).toEqual([]);
+  });
+});
+
+describe("hrefInterno", () => {
+  // Regressão da Conteúdo 65: 12 links do acervo sem a barra final custavam um 301 cada.
+  it("põe a barra final no post e no arquivo do blog em português", () => {
+    expect(hrefInterno("/blog/virapark-viracopos")).toBe("/blog/virapark-viracopos/");
+    expect(hrefInterno("/blog")).toBe("/blog/");
+    expect(hrefInterno("/blog/categoria/guias")).toBe("/blog/categoria/guias/");
+  });
+
+  it("preserva âncora e query depois da barra", () => {
+    expect(hrefInterno("/blog/garageinn-viracopos#faq")).toBe("/blog/garageinn-viracopos/#faq");
+    expect(hrefInterno("/blog/x?utm=a")).toBe("/blog/x/?utm=a");
+  });
+
+  it("não mexe no que já está certo, em arquivo nem fora do blog em português", () => {
+    expect(hrefInterno("/blog/virapark-viracopos/")).toBe("/blog/virapark-viracopos/");
+    expect(hrefInterno("/blog/virapark-viracopos.md")).toBe("/blog/virapark-viracopos.md");
+    expect(hrefInterno("/en/blog/parking-guide")).toBe("/en/blog/parking-guide");
+    expect(hrefInterno("/estacionamentos/aeroporto-viracopos")).toBe(
+      "/estacionamentos/aeroporto-viracopos",
+    );
+    expect(hrefInterno("/blogueiro")).toBe("/blogueiro");
   });
 });

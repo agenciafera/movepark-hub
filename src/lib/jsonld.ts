@@ -177,7 +177,9 @@ export function localBusinessSchema(
     // Mesmo `@id` que a lista da página de destino usa para esta unidade: é o que
     // consolida as duas menções numa entidade.
     "@id": NO.lugar(urlDaFicha(listing)),
-    isPartOf: { "@id": SITE_ID },
+    // Sem `isPartOf`: ele é propriedade de `CreativeWork`, e em `LocalBusiness` o Semrush o
+    // acusava como inválido nas 9 fichas auditadas (Conteúdo 65). O elo com o site sai do
+    // `WebPage` da ficha, que aponta para este nó por `mainEntity` (`webPageSchema`).
     name: listing.location.public_name ?? `${listing.company.name} - ${listing.location.name}`,
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
@@ -408,7 +410,8 @@ export function destinationSchema(d: {
     "@context": "https://schema.org",
     "@type": isAirport ? ["Place", "Airport"] : "Place",
     "@id": NO.destino(`${SITE_URL}${caminhoDestino(d.public_slug ?? d.slug)}`),
-    isPartOf: { "@id": SITE_ID },
+    // Sem `isPartOf`, que é de `CreativeWork` e não vale em `Place`: o `WebPage` do destino
+    // liga este nó ao site por `mainEntity`.
     iataCode: isAirport ? iata : undefined,
     sameAs: wikidataId ? `https://www.wikidata.org/wiki/${wikidataId}` : undefined,
     name: d.name,
@@ -464,7 +467,7 @@ export function parkingFacilitySchema(p: {
     // Mesmo `@id` que a lista da página de destino usa para este lote: a menção lá e a
     // ficha aqui são o mesmo lugar.
     "@id": NO.lugar(absoluta(p.url)),
-    isPartOf: { "@id": SITE_ID },
+    // Sem `isPartOf` pelo mesmo motivo do `localBusinessSchema`: o elo com o site é o `WebPage`.
     name: p.name,
     description: p.description ?? undefined,
     url: absoluta(p.url),
@@ -725,6 +728,11 @@ export function webPageSchema(args: {
    * auditado (xpark.ai, bandeirapark.com.br) emite isso hoje (set/2026).
    */
   speakable?: boolean;
+  /**
+   * `@id` do lugar de que a página trata (ficha, lote mapeado, destino). É assim que o nó
+   * do lugar se liga ao site: `Place` e `LocalBusiness` não aceitam `isPartOf`.
+   */
+  mainEntity?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -741,6 +749,7 @@ export function webPageSchema(args: {
     // Sem data conhecida o campo sai fora. Carimbar a data do build diria "mudou hoje"
     // todo dia, e frescor que mente é pior que frescor ausente.
     dateModified: args.dateModified ?? undefined,
+    mainEntity: args.mainEntity ? { "@id": args.mainEntity } : undefined,
     speakable: args.speakable
       ? {
           "@type": "SpeakableSpecification",

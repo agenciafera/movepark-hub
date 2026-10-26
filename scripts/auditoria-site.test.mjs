@@ -73,6 +73,15 @@ describe("fatosDaPagina", () => {
     expect([...f.internos]).toEqual(["/estacionamentos/aeroporto-guarulhos/aeropark", "/blog/"]);
     expect([...f.externos]).toEqual(["https://www.viracopos.com/pt_br/"]);
   });
+
+  it("`>` dentro de valor entre aspas não corta a tag", () => {
+    // Falso positivo da rodada de 26/10/2026: a description da FAQ traduzida traz
+    // `"My bookings" > "Edit vehicle"` e a página era acusada de não ter description.
+    const descricao = 'Yes. Under &quot;My bookings&quot; > &quot;Edit vehicle&quot; you can.';
+    const f = fatosDaPagina(html({ descricao, canonical: `${BASE}/x` }), `${BASE}/x`);
+    expect(f.descricao).toBe('Yes. Under "My bookings" > "Edit vehicle" you can.');
+    expect(f.canonical).toBe(`${BASE}/x`);
+  });
 });
 
 describe("temNoindex", () => {

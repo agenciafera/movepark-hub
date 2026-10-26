@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import type { MdBlock, MdInline, MdListItem } from "./markdown.logic";
-import { headingId, parseMarkdown } from "./markdown.logic";
+import { headingId, hrefInterno, parseMarkdown } from "./markdown.logic";
 
 /** Link interno vira `<Link>` (não recarrega a página); externo abre em nova aba. */
 function InlineLink({ href, nodes }: { href: string; nodes: MdInline[] }) {
@@ -11,7 +11,7 @@ function InlineLink({ href, nodes }: { href: string; nodes: MdInline[] }) {
 
   if (href.startsWith("/")) {
     return (
-      <Link to={href} className={classe}>
+      <Link to={hrefInterno(href)} className={classe}>
         {conteudo}
       </Link>
     );

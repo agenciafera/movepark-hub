@@ -335,11 +335,15 @@ build, mesmo quando nada tinha mudado.
 `changefreq` e `priority` continuam uniformes (`daily`, `1.0`). Prioridade igual para tudo não
 informa nada, mas também não mente; mexer nelas é outra conversa.
 
-**Taxonomia e paginação do blog (fechado em 18/08/2026):** `/blog/page/N`, `/blog/categoria/*`,
-`/blog/tag/*`, `/blog/autor/*` e `/blog/aeroporto/*` (48 arquivos no `dist/`) entram no sitemap
-pela mesma seção `blog`. `getBlogTaxonomyRoutes`, no `vite.config.ts`, espelha a contagem do
-`getStaticPaths` de `src/routes.tsx` (mesmo `PAGE_SIZE`), agrupando por slug de categoria, tag,
-autor e destino. Os padrões estão em `SITEMAP_DYNAMIC_PATTERNS`, junto do resto do dinâmico.
+**Taxonomia e paginação do blog: fora do sitemap desde 26/10/2026 (Conteúdo 65).** De 18/08 a
+26/10, `/blog/page/N`, `/blog/categoria/*`, `/blog/tag/*`, `/blog/autor/*` e `/blog/aeroporto/*`
+entraram no sitemap pela seção `blog`, gerados por `getBlogTaxonomyRoutes` no `vite.config.ts`.
+Só que essas páginas respondem `noindex, follow` por decisão do [blog.md](./blog.md), e sitemap
+com URL `noindex` manda dois sinais opostos: a auditoria semanal (`bun run seo:auditoria`) acusou
+as 70 como erro em 06/10 e de novo em 26/10. A função saiu, os padrões foram para
+`SITEMAP_OPT_OUT` com o motivo, e o `scripts/canonicalize-sitemap.mjs` reprova o build se alguma
+URL de arquivo voltar ao sitemap. As páginas continuam pré-renderizadas: o `follow` é o que leva o
+robô aos posts.
 
 **Nomes das páginas legais.** As rotas do Hub são `/termos` e `/privacidade`; o WordPress
 publica `/termos-de-uso/` e `/politica-de-privacidade/`. São nomes diferentes, então a

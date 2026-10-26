@@ -11,11 +11,12 @@ import {
   introDaPergunta,
   keywordDoTitulo,
   shortSemCodigo,
+  tituloDaPergunta,
   type FaqDestinoRef,
   type FaqPrecoContexto,
 } from "@/features/faqs/faqPagina.logic";
 import type { FaqPageData } from "@/features/faqs/api";
-import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
+import { META_MAX, buildMetaDescription, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema, webPageSchema } from "@/lib/jsonld";
 import { OgImage } from "@/lib/ogImage";
@@ -134,12 +135,12 @@ export default function FaqPerguntaPage() {
   ]);
   const keyword = keywordDoTitulo(destino);
   // A pergunta é o que a pessoa digitou: ela fica inteira, e o que sai quando a frase
-  // estoura é o sufixo, primeiro a marca e depois a palavra-chave do destino.
-  const title = pickTitle(
-    `${pergunta} · ${keyword} | Movepark`,
-    `${pergunta} · ${keyword}`,
-    `${pergunta} | Movepark`,
+  // estoura é o sufixo, primeiro a marca e depois a palavra-chave do destino. Em página de
+  // destino o aeroporto nunca sai junto, senão a mesma pergunta repete o title em 22 páginas.
+  const title = tituloDaPergunta(
     pergunta,
+    keyword,
+    destino && destinoCurto ? { aeroporto: destinoCurto, code: destino.code } : null,
   );
   // O corte fino fica com `buildMetaDescription`, que sabe quanto espaço sobra depois do
   // preço e do CTA. Aqui só tiramos a marcação e as frases que não caberiam de jeito nenhum.
@@ -152,12 +153,20 @@ export default function FaqPerguntaPage() {
   // Estrutura única da description: palavra-chave, resposta curta, menor preço do destino e
   // CTA. O resumo entra colado na palavra-chave (e não como complemento) para nunca ser o
   // primeiro a sair quando a frase estoura: numa página de FAQ, a resposta é o snippet.
-  const description = buildMetaDescription({
-    keyword,
-    fill: resumoResposta,
-    price: priceHook(diaria1?.from ?? null),
-    cta: diaria1 ? "comparar" : "conferir",
-  });
+  // Em idioma traduzido a description é o aeroporto no idioma da página mais a resposta. A
+  // palavra-chave e o CTA do `buildMetaDescription` saem em português, e a página em inglês
+  // publicava "Estacionamento de Aeroporto: Yes. (...) Confira a tabela atualizada." (auditoria
+  // de 26/10/2026, Conteúdo 65). O aeroporto na frente é o que separa a mesma resposta dada em
+  // 22 aeroportos: sem ele, as descriptions se repetiam.
+  const description =
+    locale === LOCALE_PADRAO
+      ? buildMetaDescription({
+          keyword,
+          fill: resumoResposta,
+          price: priceHook(diaria1?.from ?? null),
+          cta: diaria1 ? "comparar" : "conferir",
+        })
+      : metaDescriptionFrom(destinoCurto ? `${destinoCurto}: ${resposta}` : resposta, META_MAX);
   // Aeroporto sem parceiro precificado: a página não pode prometer reserva pela
   // Movepark (coerência com a resposta rápida, e ADR-009). As seções de fechamento
   // e os CTAs mudam de contexto junto. O sinal é a ausência de preço do motor,

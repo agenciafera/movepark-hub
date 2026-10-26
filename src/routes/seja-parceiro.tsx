@@ -500,6 +500,7 @@ export default function SejaParceiroPage() {
     <>
       <Helmet>
         <title>Seja parceiro: cadastre seu estacionamento | Movepark</title>
+        <link rel="canonical" href={siteUrl("/seja-parceiro")} />
         {/* Sem este bloco o Search Console recusa indexar o vídeo por falta de miniatura:
             o iframe é do YouTube, mas quem declara o vídeo é a página que o exibe. */}
         <script type="application/ld+json">{JSON.stringify(VIDEO_SCHEMA)}</script>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  temPaginaMaisBarato,
   maisBaratoPorDuracao,
   menorPesquisado,
   mesAnoAtual,
@@ -211,5 +212,28 @@ describe("resposta do mercado (Conteúdo 39)", () => {
     expect(norm(ondePesquisado(v!))).toBe(
       "no A Park (pesquisado em 08/09/2026) e no B Park (pesquisado em 02/10/2026)",
     );
+  });
+});
+
+describe("temPaginaMaisBarato", () => {
+  it("só existe com vaga de carro com preço; moto e unidade sem preço não contam", () => {
+    expect(temPaginaMaisBarato(dest([]))).toBe(false);
+    expect(temPaginaMaisBarato(dest([unit({ company_name: "Sem preço" })]))).toBe(false);
+    expect(
+      temPaginaMaisBarato(
+        dest([
+          unit({
+            company_name: "Moto",
+            parking_type_code: "motorcycle",
+            prices: [{ days: 1, total: 20, old_total: null }],
+          }),
+        ]),
+      ),
+    ).toBe(false);
+    expect(
+      temPaginaMaisBarato(
+        dest([unit({ company_name: "Carro", prices: [{ days: 1, total: 40, old_total: null }] })]),
+      ),
+    ).toBe(true);
   });
 });

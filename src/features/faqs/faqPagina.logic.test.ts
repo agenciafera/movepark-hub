@@ -4,7 +4,9 @@ import {
   introDaPergunta,
   keywordDoTitulo,
   shortSemCodigo,
+  tituloDaPergunta,
 } from "./faqPagina.logic";
+import { TITLE_MAX } from "@/lib/seo";
 
 const GRU = {
   name: "Aeroporto Internacional de São Paulo/Guarulhos",
@@ -93,5 +95,66 @@ describe("introDaPergunta", () => {
 
   it("global fala de estacionamento de aeroporto", () => {
     expect(introDaPergunta(null, "detalhes")).toContain("estacionamento de aeroporto");
+  });
+});
+
+describe("tituloDaPergunta", () => {
+  // Os casos são os grupos repetidos da auditoria de 26/10/2026 (Conteúdo 65): a mesma
+  // pergunta em até 22 aeroportos saía com o mesmo title.
+  const keyword = (curto: string) => `Estacionamento Aeroporto ${curto}`;
+  const gru = { aeroporto: "Guarulhos", code: "GRU" };
+  const jpa = { aeroporto: "João Pessoa", code: "JPA" };
+
+  it("pergunta longa sem aeroporto não perde o aeroporto no title", () => {
+    const pergunta = "E se meu voo atrasar ou eu voltar antes do previsto?";
+    const a = tituloDaPergunta(pergunta, keyword("Guarulhos"), gru);
+    const b = tituloDaPergunta(pergunta, keyword("João Pessoa"), jpa);
+    expect(a).not.toBe(b);
+    expect(a).toContain("GRU");
+    expect(b).toContain("JPA");
+    for (const t of [a, b]) expect(t.length).toBeLessThanOrEqual(TITLE_MAX);
+  });
+
+  it("pergunta que cita o aeroporto e estoura o teto continua distinta depois do corte", () => {
+    const vcp = tituloDaPergunta(
+      "Qual o estacionamento mais barato perto do Aeroporto de Viracopos?",
+      keyword("Viracopos"),
+      { aeroporto: "Viracopos", code: "VCP" },
+    );
+    const cgh = tituloDaPergunta(
+      "Qual o estacionamento mais barato perto do Aeroporto de Congonhas?",
+      keyword("Congonhas"),
+      { aeroporto: "Congonhas", code: "CGH" },
+    );
+    expect(vcp).not.toBe(cgh);
+    expect(vcp.endsWith("(VCP)")).toBe(true);
+    expect(vcp.length).toBeLessThanOrEqual(TITLE_MAX);
+  });
+
+  it("pergunta que cita o aeroporto e cabe sai sozinha, sem repetir o nome", () => {
+    expect(
+      tituloDaPergunta("Tem estacionamento coberto em Guarulhos?", keyword("Guarulhos"), gru),
+    ).toBe("Tem estacionamento coberto em Guarulhos? | Movepark");
+  });
+
+  it("pergunta curta de destino mantém a palavra-chave e a marca", () => {
+    expect(tituloDaPergunta("Tem traslado?", keyword("Guarulhos"), gru)).toBe(
+      "Tem traslado? · Estacionamento Aeroporto Guarulhos | Movepark",
+    );
+  });
+
+  it("acento não engana a checagem de que a pergunta cita o aeroporto", () => {
+    expect(
+      tituloDaPergunta("Onde estacionar em Joao Pessoa?", keyword("João Pessoa"), jpa),
+    ).not.toContain("(JPA)");
+  });
+
+  it("FAQ global segue a regra antiga: pergunta inteira e o sufixo é o que sai", () => {
+    expect(
+      tituloDaPergunta("Posso cancelar minha reserva?", "Estacionamento de Aeroporto", null),
+    ).toBe("Posso cancelar minha reserva? · Estacionamento de Aeroporto");
+    expect(tituloDaPergunta("Tem Pix?", "Estacionamento de Aeroporto", null)).toBe(
+      "Tem Pix? · Estacionamento de Aeroporto | Movepark",
+    );
   });
 });

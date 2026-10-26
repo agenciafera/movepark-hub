@@ -66,6 +66,11 @@ function makeListing(o: Overrides = {}): ListingDetail {
 }
 
 describe("localBusinessSchema", () => {
+  it("LocalBusiness não leva isPartOf, que é propriedade de CreativeWork", () => {
+    // O Semrush acusava as 9 fichas auditadas em 02/10/2026 (Conteúdo 65).
+    expect((localBusinessSchema(makeListing()) as Record<string, unknown>).isPartOf).toBeUndefined();
+  });
+
   it("monta LocalBusiness/ParkingFacility com url canônica do hub", () => {
     const s = localBusinessSchema(makeListing());
     expect(s["@type"]).toEqual(["LocalBusiness", "ParkingFacility"]);
@@ -1281,6 +1286,15 @@ describe("grafo de entidade: @id", () => {
       longitude: -47,
     }) as Record<string, unknown>;
     expect(d["@id"]).toBe("https://movepark.co/estacionamentos/aeroporto-viracopos#place");
-    expect(d.isPartOf).toEqual({ "@id": SITE_ID });
+    // `isPartOf` é de `CreativeWork`: no `Place` ele é inválido (Conteúdo 65). O elo com o
+    // site é o `WebPage`, que aponta para o lugar por `mainEntity`.
+    expect(d.isPartOf).toBeUndefined();
+    const pagina = webPageSchema({
+      url: "https://movepark.co/estacionamentos/aeroporto-viracopos",
+      name: "Estacionamento Aeroporto Viracopos",
+      mainEntity: d["@id"] as string,
+    });
+    expect(pagina.isPartOf).toEqual({ "@id": SITE_ID });
+    expect(pagina.mainEntity).toEqual({ "@id": d["@id"] });
   });
 });
