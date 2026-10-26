@@ -378,9 +378,18 @@ Os 43 informativos são 39 links de compartilhar no LinkedIn (`/sharing/share-of
 responde 403 a robô) dos botões de compartilhamento dos posts, mais Planalto e `viracopos.com`. Não
 reprovam.
 
-**Pendência.** As 7 ideias técnicas só somem quando o Checker apontar para as URLs de hoje
-(excluir e adicionar página de destino no Semrush). É configuração do projeto na conta
-compartilhada, e não foi feita sem o Diego.
+**O Checker com as URLs de hoje (26/10/2026, autorizado pelo Diego).** As seis páginas de antes da
+migração foram trocadas pelas atuais em "Editar palavras-chave ou URL", com as mesmas
+palavras-chave: `/estacionamentos/aeroporto-viracopos/virapark`, `.../aeroporto-congonhas/grand-parking`,
+`.../aeroporto-curitiba`, `.../aeroporto-curitiba/nationpark`, `.../aeroporto-confins/bepark` e
+`.../aeroporto-viracopos/garageinn`. O guia de Guarulhos já estava na URL certa. **A reexecução não
+rodou:** o plano gratuito coleta ideias de 10 palavras-chave por mês, e o Semrush respondeu
+"Limite mensal atingido, 0 de 10". As seis páginas ficam marcadas "Reexecutar" e saem com ideia nova
+quando o limite renovar; até lá o painel mostra só as 6 ideias do guia. Duas coisas para a próxima
+rodada: as palavras-chave do Virapark ("aeroporto campinas") e do Nationpark ("aeroporto curitiba")
+seguem as antigas, de intenção de aeroporto, então o Checker vai repetir as ideias recusadas acima
+até alguém trocar por termo da ficha; e o próprio "potencial de 1000%" do painel é a soma do volume
+dessas palavras como se a página fosse a 1ª em todas, não uma estimativa de ganho.
 
 ## 3. A tese
 
