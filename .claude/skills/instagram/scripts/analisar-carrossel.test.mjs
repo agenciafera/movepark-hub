@@ -161,3 +161,121 @@ describe("analisar-carrossel: CTA e promessa", () => {
     expect(achado(achados, "Caminho").nivel).toBe("laranja");
   });
 });
+
+const META_REEL = {
+  tipo: "reel",
+  corte: "2",
+  origem_post: "preco-do-estacionamento-no-aeroporto-de-confins",
+  destination: "aeroporto-de-confins",
+  keyphrase: "preço do estacionamento no aeroporto de Confins",
+  publicar_em: "2026-10-27",
+  price_date: "2026-10-07",
+  cta_url:
+    "https://movepark.co/blog/preco-do-estacionamento-no-aeroporto-de-confins/?utm_source=instagram&utm_medium=social&utm_campaign=confins-preco-reel",
+  video: "preco-estacionamento-aeroporto-confins-outubro.mp4",
+  capa: "preco-estacionamento-aeroporto-confins-outubro-capa.jpg",
+};
+
+const LEGENDA_REEL = [
+  "Preço do estacionamento no aeroporto de Confins em outubro de 2026: de R$ 20 a R$ 105 a diária.",
+  "",
+  "Dentro do aeroporto, R$ 60 a diária no balcão.",
+  "Fora, R$ 20 a diária no particular mais barato.",
+  "",
+  "Preços conferidos em 7 de outubro de 2026.",
+  "",
+  "A tabela completa está no link da bio.",
+  "",
+  "#confins #estacionamentoaeroporto #movepark",
+].join("\n");
+
+const CENA_HTML = (corpo) =>
+  `<!doctype html><html><head><style>body{color:#fff}</style></head><body class="dado">${corpo}</body></html>`;
+
+/** Grava o rascunho de reel, com as cenas HTML ao lado, e devolve os achados. */
+function analisarReel({ meta = {}, legenda = LEGENDA_REEL, cenas } = {}) {
+  const dir = fs.mkdtempSync(path.join(PASTA, "reel-"));
+  const lista = cenas ?? [
+    { texto: "1 diária", segundos: "3.5", html: CENA_HTML("<h1>1 diária</h1><span>R$&nbsp;60</span><span>R$&nbsp;20</span>") },
+  ];
+  const linhas = ["cenas:"];
+  lista.forEach((c, i) => {
+    // `htmlNome` cita uma cena sem gravar o arquivo (a cena que sumiu).
+    const campos = { texto: c.texto, segundos: c.segundos, html: c.html ? `cena-${i + 1}.html` : c.htmlNome };
+    Object.entries(campos)
+      .filter(([, v]) => v !== undefined)
+      .forEach(([k, v], j) => linhas.push(`${j === 0 ? "  - " : "    "}${k}: ${v}`));
+    if (c.html) fs.writeFileSync(path.join(dir, `cena-${i + 1}.html`), c.html);
+  });
+  const frente = Object.entries({ ...META_REEL, ...meta })
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => `${k}: ${v}`);
+  const arquivo = path.join(dir, "reel.md");
+  fs.writeFileSync(arquivo, ["---", ...frente, ...linhas, "---", "", legenda, ""].join("\n"));
+  const r = spawnSync(process.execPath, [SCRIPT, arquivo, "--json", `--hoje=${HOJE}`], { encoding: "utf8" });
+  const { achados } = JSON.parse(r.stdout);
+  return { status: r.status, achados };
+}
+
+describe("analisar-carrossel: reel", () => {
+  it("reel com MP4, capa e cenas que batem com a legenda passa sem bloqueio", () => {
+    const { status, achados } = analisarReel();
+    expect(achados.filter((a) => a.nivel === "vermelho")).toEqual([]);
+    expect(status).toBe(0);
+    expect(achado(achados, "Arquivo").nivel).toBe("verde");
+    expect(achado(achados, "Tela na legenda").nivel).toBe("verde");
+    expect(achado(achados, "Duração").texto).toMatch(/3\.5 s em 1 cenas/);
+  });
+
+  it("valor que aparece na tela e não na legenda é sinalizado, lido do HTML da cena", () => {
+    const { achados } = analisarReel({
+      cenas: [{ texto: "7 diárias", segundos: "4", html: CENA_HTML("<h1>7 diárias</h1><span>R$&nbsp;125,93</span>") }],
+    });
+    const a = achado(achados, "Tela na legenda");
+    expect(a.nivel).toBe("laranja");
+    expect(a.texto).toContain("R$125,93");
+  });
+
+  it('"R$ 20" na tela não passa por "R$ 200" na legenda', () => {
+    const { achados } = analisarReel({
+      legenda: LEGENDA_REEL.replace(/R\$ 20 /g, "R$ 200 "),
+      cenas: [{ texto: "1 diária", segundos: "3", html: CENA_HTML("<span>R$&nbsp;20</span>") }],
+    });
+    expect(achado(achados, "Tela na legenda").nivel).toBe("laranja");
+  });
+
+  it("cena citada que não existe bloqueia", () => {
+    const { status, achados } = analisarReel({
+      cenas: [{ texto: "1 diária", segundos: "3", htmlNome: "cena-que-sumiu.html" }],
+    });
+    expect(status).toBe(1);
+    expect(achado(achados, "Cena").texto).toContain("cena-que-sumiu.html");
+  });
+
+  it("reel sem vídeo, ou com vídeo fora de MP4, bloqueia", () => {
+    expect(achado(analisarReel({ meta: { video: undefined } }).achados, "Arquivo").nivel).toBe("vermelho");
+    expect(achado(analisarReel({ meta: { video: "reel.webm" } }).achados, "Arquivo").nivel).toBe("vermelho");
+  });
+
+  it("capa fora de JPEG bloqueia, e sem capa só avisa", () => {
+    expect(achado(analisarReel({ meta: { capa: "capa.png" } }).achados, "Capa").nivel).toBe("vermelho");
+    expect(achado(analisarReel({ meta: { capa: undefined } }).achados, "Capa").nivel).toBe("laranja");
+  });
+
+  it("R$ na tela sem price_date bloqueia", () => {
+    const { achados } = analisarReel({ meta: { price_date: undefined } });
+    expect(achado(achados, "Data do preço").nivel).toBe("vermelho");
+  });
+
+  it("reel abaixo de 3 s bloqueia", () => {
+    const { achados } = analisarReel({
+      cenas: [{ texto: "1 diária", segundos: "2", html: CENA_HTML("<span>R$&nbsp;60</span>") }],
+    });
+    expect(achado(achados, "Duração").nivel).toBe("vermelho");
+  });
+
+  it("reel não cobra alt, que a API não aceita", () => {
+    const { achados } = analisarReel();
+    expect(achados.some((a) => a.grupo === "Imagens e alt" && a.nivel !== "verde")).toBe(false);
+  });
+});

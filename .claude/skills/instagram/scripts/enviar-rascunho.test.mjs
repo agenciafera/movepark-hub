@@ -136,6 +136,14 @@ describe("enviar-rascunho: modo seco", () => {
     expect(r.stderr).toContain("render-story.mjs");
   });
 
+  it("reel não vai para a fila e o erro diz onde publicar", () => {
+    const r = enviar({ meta: { ...META_BLOG, tipo: "reel" }, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG });
+    expect(r.status).toBe(1);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toContain("não publica reel");
+    expect(r.stderr).toContain("app do Instagram");
+  });
+
   it("lugar desconhecido em onde aborta", () => {
     const r = enviar({ meta: { ...META_BLOG, onde: "[feed, reel]" }, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG });
     expect(r.status).toBe(1);

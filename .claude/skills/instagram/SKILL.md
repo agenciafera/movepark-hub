@@ -399,6 +399,37 @@ Nome em kebab-case com a palavra-chave e o número do slide, sem acento:
 Path no bucket: `assets-public/social/<origem>/<corte>/<hash>/<arquivo>.jpg`. A plataforma monta esse
 caminho no envio (o hash é do conteúdo do JPEG), e a skill só escolhe o nome do arquivo.
 
+### O reel de número
+
+Reel de preço ou de faixa do mercado é uma sequência de cenas tipográficas, e cada cena é um
+HTML, como o slide. Copie [`assets/reel-template.html`](assets/reel-template.html) uma vez por
+cena (variantes `foto`, `dado` e `texto`; a classe `entra` faz o elemento subir e aparecer na
+ordem do `--i`) e renderize todas de uma vez:
+
+```bash
+node .claude/skills/instagram/scripts/render-reel.mjs reel.mp4 \
+  cena-01.html:3 cena-02.html:3.5 cena-03.html:4 --capa capa.jpg
+```
+
+O script avança a animação quadro a quadro no Chromium e entrega o MP4 no formato que a Meta
+aceita (1080 x 1920, 30 fps, H.264, AAC mudo, conferido pelo `ffprobe` no fim), mais a capa em
+JPEG com a primeira cena assentada. Precisa do ffmpeg no PATH (`brew install ffmpeg`).
+
+- **Zona segura.** O app cobre o rodapé e a lateral direita do reel, e a grade recorta a capa
+  em 3:4 pelo centro. O template já deixa o conteúdo entre y = 260 e y = 1480; não mexa no
+  padding.
+- **Foto paisagem entra em faixa.** A do blog é 16:9: na variante `foto` ela fica inteira no
+  alto, sobre ela mesma desfocada. Esticar para 9:16 perde dois terços da imagem.
+- **De 3 a 4 segundos por cena**, um pouco mais na tabela de quatro linhas. A frase principal de
+  cada cena segue o limite de 12 palavras do slide.
+- **Mudo de propósito.** Música licenciada só entra pelo app; o vídeo tem que se ler sem som.
+- **Gravação real não se monta.** Reel que mostra a operação (a van no mapa, o pátio, o
+  embarque) é filmado. Cena HTML ali é só abertura ou fechamento.
+
+No rascunho, o reel troca `slides` por `video`, `capa`, `capa_alt` e `cenas` (cada uma com
+`texto`, `segundos` e `html`). O analisador lê o HTML de cada cena e confere que todo R$ da tela
+está escrito na legenda.
+
 ## Passo 8: alt
 
 **Toda imagem leva alt**, e aqui ele rende duas vezes: acessibilidade e
@@ -407,7 +438,10 @@ indexação no Google. Até 1.000 caracteres, mas 2 linhas resolvem.
 - Descreva o que a imagem mostra, em pt-BR, sem começar com "imagem de".
 - A capa leva a frase-chave de forma natural; as demais variam a descrição,
   porque alt repetido é sinal ruim.
-- Reel e story **não aceitam** o campo. Não perca tempo escrevendo.
+- Reel e story **não aceitam** o campo pela API. No reel a acessibilidade vem da legenda: o
+  vídeo não tem narração e leitor de tela não lê texto queimado no quadro, então **todo valor
+  que aparece na tela está escrito na legenda** (o analisador cobra). O `capa_alt` do rascunho
+  serve para quem publica pelo app, se o campo aparecer lá.
 
 Bom: `pátio coberto de estacionamento no aeroporto de Guarulhos com van de
 traslado parada na saída`
@@ -482,6 +516,22 @@ Publicar à mão pelo app continua possível, mas aí nada fica registrado na pl
 Detalhe da API em [`references/api-instagram.md`](references/api-instagram.md) e da fila em
 [`docs/specs/instagram-fila-de-publicacao.md`](../../../docs/specs/instagram-fila-de-publicacao.md).
 
+## Passo 12: reel sai pelo app, e o registro mora no repo
+
+**A fila não publica reel** (decisão 4 da spec da fila, mantida em 26/10/2026), e o
+`enviar-rascunho.mjs` recusa `tipo: reel` dizendo isso. O reel sai pelo app do Instagram, à mão,
+e como a plataforma não guarda nada dele, o registro é o repositório:
+
+1. Crie `docs/social/<atividade>/` com o rascunho `.md`, as cenas HTML (apontando as fotos de
+   `public/images/blog/`, sem copiar binário) e um README com o comando do render, o passo a
+   passo do app e a tabela "Publicados". Modelo em
+   [`docs/social/conteudo-49-reels-confins/`](../../../docs/social/conteudo-49-reels-confins/).
+2. O MP4 e a capa não vão para o git: saem da fonte com o `render-reel.mjs`. Entregue os dois a
+   quem publica (anexo na atividade do ClickUp).
+3. Depois de publicado, a data e o link entram na tabela do README e num comentário na atividade.
+
+## O arquivo de trabalho
+
 ## O arquivo de trabalho
 
 Um `.md` com front matter alimenta a análise, a composição dos slides e o
@@ -544,3 +594,6 @@ Antes de dizer que está pronto:
 12. Post de notícia: passou nas três portas, cita a fonte e a data na legenda,
     está dentro da `validade` e a fonte foi reaberta no dia de publicar.
 13. Enviado pela fila (`enviar-rascunho.mjs`), com `price_date` quando houver R$.
+14. Reel: MP4 do `render-reel.mjs` sem bloqueio, capa olhada nos três recortes (9:16, 3:4 e
+    1:1), todo R$ da tela escrito na legenda, e a fonte em `docs/social/` (Passo 12), porque
+    reel não passa pela fila.

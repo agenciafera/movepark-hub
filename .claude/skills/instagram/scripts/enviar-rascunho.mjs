@@ -79,6 +79,18 @@ try {
 }
 
 const meta = analise.meta;
+
+// A fila não publica reel (decisão 4 da spec da fila, mantida em 26/10/2026 no Conteúdo 49).
+// Sem esta trava o rascunho chegaria à Edge sem slide e voltaria com um 422 que não diz o motivo.
+if (meta.tipo === "reel") {
+  console.error(
+    "A fila ainda não publica reel (decisão 4 de docs/specs/instagram-fila-de-publicacao.md).\n" +
+      "Publique pelo app do Instagram com o MP4, a capa e a legenda deste rascunho, e guarde a fonte\n" +
+      "em docs/social/ (SKILL.md, Passo 12), que é o único registro do que saiu.",
+  );
+  process.exit(1);
+}
+
 const ehNoticia = String(meta.origem_post ?? meta.origem ?? "").startsWith("fato-");
 
 // Notícia vencida não entra na fila: ela ainda não guarda a validade, então nada lá barraria a

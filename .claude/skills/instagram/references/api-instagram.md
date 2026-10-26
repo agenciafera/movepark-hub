@@ -81,6 +81,32 @@ aceitam o campo.
 casa usa 1080 x 1920, gerado pelo `render-story.mjs` a partir do slide. Story some em 24 horas
 e cada um conta no limite de 100 publicações por dia.
 
+## Reel (vídeo)
+
+Conferido na referência IG User Media ("Reel Specifications") em 23/10/2026. O `render-reel.mjs`
+confere o MP4 contra esta tabela com o `ffprobe` (`conferirVideo`), então mudou aqui, muda lá.
+
+| Item | Limite |
+|---|---|
+| Contêiner | MOV ou MP4, **sem edit list**, com o `moov` no início do arquivo |
+| Vídeo | H.264 ou HEVC, progressivo, GOP fechado, 4:2:0 |
+| Quadros | de 23 a 60 por segundo |
+| Largura máxima | 1920 px |
+| Proporção | de 0,01:1 a 10:1; a Meta recomenda **9:16** |
+| Taxa de vídeo | VBR, até 25 Mbps |
+| Áudio | AAC, até 48 kHz, mono ou estéreo, 128 kbps |
+| Duração | de **3 s** a 15 min |
+| Arquivo | até 300 MB |
+
+O padrão da casa é **1080 x 1920 a 30 fps, com faixa de áudio muda**. A capa é JPEG (`cover_url`);
+sem ela, a Meta usa um quadro (`thumb_offset`). Compartilhado no feed, o reel aparece recortado
+pelo centro (1:1 segundo a referência; a grade do perfil usa 3:4), então o texto da capa mora no
+meio. O envio é `media_type=REELS` com `video_url` público e `share_to_feed`. Reel **não** aceita
+`alt_text` nem trilha da biblioteca de música do Instagram pela API.
+
+A fila da plataforma não publica reel (decisão 4 da spec da fila): ele sai pelo app, e a fonte
+fica em `docs/social/` (Passo 12 do `SKILL.md`).
+
 `user_tags` pede coordenada x/y de 0.0 a 1.0 em imagem. `location_id` **não
 funciona** em item de carrossel.
 

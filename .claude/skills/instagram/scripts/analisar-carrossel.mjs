@@ -46,6 +46,18 @@ const norm = (s) =>
   semAcento(s).toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 const kebab = (s) => norm(s).replace(/\s+/g, "-");
 
+/** O texto visível de uma cena HTML do reel: o body sem tags, sem estilo e sem comentário. */
+function textoDaCena(html) {
+  const corpo = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html.replace(/<!--[\s\S]*?-->/g, ""))?.[1] ?? "";
+  return corpo
+    .replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
  * Front matter em `chave: valor`, com lista simples em `chave: [a, b]` e a
  * lista de objetos de `slides:` (itens `- chave: valor` indentados).
@@ -94,6 +106,7 @@ const G_CTA = "CTA";
 const G_IMG = "Imagens e alt";
 const G_MARCA = "Marca e ADR";
 const G_NOTICIA = "Notícia";
+const G_VIDEO = "Vídeo";
 
 /** Dia corrido (inteiro) de uma data `AAAA-MM-DD`, com ou sem hora depois. */
 const dia = (s) => {
@@ -353,6 +366,68 @@ if (slides.length) {
   const textoLongo = slides.filter((s) => s.texto && s.texto.trim().split(/\s+/).length > 12);
   if (textoLongo.length) laranja(G_IMG, "Texto no slide", `${textoLongo.length} slide(s) com mais de 12 palavras. No feed não se lê.`);
   else verde(G_IMG, "Texto no slide", "Todos dentro de 12 palavras.");
+}
+
+// --------------------------------------------------------------------- reel
+
+// Reel é vídeo: não tem slide nem alt (a API não aceita o campo), então o que se confere é o
+// MP4, a capa e as cenas. O vídeo não tem narração, e leitor de tela não lê texto queimado no
+// quadro: todo valor que aparece na tela precisa estar escrito na legenda. É a acessibilidade
+// possível no reel, e é também a regra de um número por fato.
+if (meta.tipo === "reel") {
+  const video = meta.video ? String(meta.video) : "";
+  if (!video) vermelho(G_VIDEO, "Arquivo", "Reel sem `video` no front matter.");
+  else if (!/\.(mp4|mov)$/i.test(video)) vermelho(G_VIDEO, "Arquivo", `\`${video}\` não é MP4 nem MOV, os formatos que a Meta aceita em reel.`);
+  else verde(G_VIDEO, "Arquivo", video);
+  if (video && chave) {
+    if (!cobreChave(video.replace(/\.\w+$/, "").replace(/-/g, " ")))
+      laranja(G_VIDEO, "Nome do arquivo", "O nome do MP4 não carrega a palavra-chave. O nome é sinal de busca.");
+    else verde(G_VIDEO, "Nome do arquivo", "Carrega a palavra-chave.");
+  }
+
+  const capa = meta.capa ? String(meta.capa) : "";
+  if (!capa) laranja(G_VIDEO, "Capa", "Sem `capa`. A Meta usa um quadro qualquer, e é a capa que aparece na grade do perfil.");
+  else if (!/\.jpe?g$/i.test(capa)) vermelho(G_VIDEO, "Capa", `\`${capa}\` não é JPEG, o único formato de imagem que a API aceita.`);
+  else verde(G_VIDEO, "Capa", capa);
+
+  // O texto da cena sai do HTML que o render-reel.mjs transforma em vídeo, quando ele existe:
+  // um resumo escrito à mão no front matter pode divergir do que vai para a tela.
+  const pastaDoRascunho = path.dirname(path.resolve(arquivo));
+  const cenas = (Array.isArray(meta.cenas) ? meta.cenas : []).map((c) => {
+    const html = c.html ? path.resolve(pastaDoRascunho, c.html) : null;
+    if (!html) return c;
+    if (!fs.existsSync(html)) {
+      vermelho(G_VIDEO, "Cena", `Não achei ${c.html}, a cena que o vídeo renderiza.`);
+      return c;
+    }
+    return { ...c, tela: textoDaCena(fs.readFileSync(html, "utf8")) };
+  });
+  if (!cenas.length) {
+    laranja(G_VIDEO, "Cenas", "Sem a lista de `cenas`. Sem ela não dá para conferir o texto que aparece na tela.");
+  } else {
+    const segundos = cenas.reduce((s, c) => s + (Number(String(c.segundos ?? "").replace(",", ".")) || 0), 0);
+    if (segundos && segundos < 3) vermelho(G_VIDEO, "Duração", `${segundos.toFixed(1)} s. O reel tem no mínimo 3 s.`);
+    else if (segundos > 90) laranja(G_VIDEO, "Duração", `${segundos.toFixed(0)} s. Reel de número funciona abaixo de 90 s.`);
+    else if (segundos) verde(G_VIDEO, "Duração", `${segundos.toFixed(1)} s em ${cenas.length} cenas.`);
+
+    // A frase principal da cena (o `texto` do front matter), como o slide. A tabela e a fonte do
+    // rodapé ficam fora da conta: quem para o vídeo para ler o número consegue ler.
+    const longas = cenas.filter((c) => c.texto && c.texto.trim().split(/\s+/).length > 12);
+    if (longas.length) laranja(G_VIDEO, "Texto na cena", `${longas.length} cena(s) com frase de mais de 12 palavras. Não dá tempo de ler.`);
+    else verde(G_VIDEO, "Texto na cena", "Todas as frases dentro de 12 palavras.");
+
+    const naTela = [...new Set(cenas.flatMap((c) => String(c.tela ?? c.texto ?? "").match(/R\$\s?\d[\d.,]*\d|R\$\s?\d/g) ?? []))]
+      .map((v) => v.replace(/\s/g, ""));
+    // Valor inteiro: "R$ 20" na tela não pode passar por "R$ 200" na legenda.
+    const legendaSemEspaco = legendaCompleta.replace(/\s/g, "");
+    const escrito = (v) => new RegExp(`${v.replace(/[$.]/g, "\\$&")}(?![\\d]|[.,]\\d)`).test(legendaSemEspaco);
+    const fora = naTela.filter((v) => !escrito(v));
+    if (fora.length) laranja(G_VIDEO, "Tela na legenda", `${fora.join(", ")} aparece(m) na tela e não na legenda. Leitor de tela não lê o vídeo.`);
+    else if (naTela.length) verde(G_VIDEO, "Tela na legenda", `Os ${naTela.length} valores da tela estão escritos na legenda.`);
+
+    if (naTela.length && !meta.price_date)
+      vermelho(G_VIDEO, "Data do preço", "As cenas mostram R$ e o front matter não tem `price_date`.");
+  }
 }
 
 // ------------------------------------------------------------- marca e ADRs
