@@ -381,6 +381,59 @@ trabalha com desconto atrelado a cartão ou a status de viajante", e o post de c
 Garageinn publica condição Azul em Viracopos. Um dos dois está errado, e a correção é da praça de
 Viracopos.
 
+### 2.3.7 Os dois reels de Confins (Conteúdo 49, 26/10/2026)
+
+A fonte dos dois mora em [`docs/social/conteudo-49-reels-confins/`](../social/conteudo-49-reels-confins/),
+com o rascunho da skill `instagram`, as cenas e o roteiro. Os dois saem **pelo app do Instagram**:
+a fila de `/manager/social` não publica reel (decisão 4 de
+[instagram-fila-de-publicacao.md](./instagram-fila-de-publicacao.md), mantida pelo usuário em
+26/10/2026), então a pasta é o registro do que foi ao ar.
+
+**Reel de preço: pronto.** "Quanto custa estacionar no aeroporto de Confins", oito cenas e 29
+segundos, mudo, com o oficial contra o particular mais barato e a BePark em 1, 7 e 30 diárias. Os
+números são os do post `preco-do-estacionamento-no-aeroporto-de-confins` (Conteúdo 45), com a
+data na tela e na legenda:
+
+| Duração | Oficial (Econômico 3, balcão) | Particular mais barato | BePark |
+| --- | ---: | ---: | ---: |
+| 1 diária | R$ 60 (até R$ 105 no Premium) | R$ 20, Auto Park Brasil | R$ 45 |
+| 7 diárias | R$ 420, ou a partir de R$ 189 com reserva de 72h | R$ 125,93, Bandeira Park | R$ 200 |
+| 30 diárias | R$ 1.800 | R$ 300, Auto Park Brasil | R$ 400 |
+
+Os valores de `prospect_location` e do motor foram relidos no banco em 26/10, sem mudança desde
+07/10 e 06/10. A legenda abre com a frase-chave do post e a faixa do mercado (R$ 20 a R$ 105), e o
+CTA leva ao post, que é a única página com o oficial e os 12 pátios por duração. A BePark sai sem
+tipo de vaga, pelos motivos de §2.3.5: "coberta" seria promessa (ADR-009). Analisador VERDE, sem
+aviso.
+
+**Reel da van: esperando a gravação.** O roteiro (seis tomadas, 27 segundos), a legenda e o card
+de fechamento estão prontos. Falta o que só a BePark e a Go2Park dão: a tela do rastreio e a van,
+filmadas. Não há montagem possível aqui, porque um mapa simulado seria a prova falsa do único
+diferencial da BePark. Antes de gravar, confirmar:
+
+- **por onde o cliente abre o rastreio** (WhatsApp, QR, e-mail). A legenda não afirma canal, a
+  mesma regra do bloco Go2Park da ficha;
+- **o fluxo**: a atividade fala em "do pedido até o embarque", mas a van da BePark não é chamada,
+  sai a cada 20 minutos do ponto fixo (§2.3.4). O roteiro segue o fluxo real;
+- se o aviso de proximidade está ligado na BePark, e a autorização de imagem.
+
+A exclusividade entra datada ("no levantamento da Movepark de outubro de 2026, é a única dos 12
+pátios particulares de Confins com a van acompanhada ao vivo"), porque a ficha evita afirmar o que
+ficaria falso no dia em que um vizinho contratar a Go2Park.
+
+**Na execução:**
+
+- **A skill ganhou o reel de número**: `assets/reel-template.html` (9:16, com zona segura para a
+  interface do app e para o recorte da grade) e `scripts/render-reel.mjs`, que avança a animação
+  quadro a quadro no Chromium e entrega o MP4 no formato da Meta (conferido pelo `ffprobe`), mais
+  a capa. O analisador passou a conferir reel (vídeo, capa, duração e as cenas) e a cobrar que
+  todo R$ da tela esteja escrito na legenda, que é a acessibilidade possível num reel: a API não
+  aceita texto alternativo e leitor de tela não lê o quadro.
+- **As fotos de fundo são as do blog de Confins**, já geradas no Higgsfield e revisadas, em faixa
+  16:9. Três fundos 9:16 novos foram gerados no Higgsfield em 23/10, mas o CDN dele
+  (`d8j0ntlcm91z4.cloudfront.net`) estava bloqueado pela rede da sessão; ficaram na conta do
+  Higgsfield.
+
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
 | Critério | BePark | Referência da praça |
@@ -473,7 +526,7 @@ Disputar preço para todo mundo é decisão comercial com a BePark, e não é pr
 | [Conteúdo 46: dona de "melhor" reescrita, com a BePark no perfil sem imprevisto](https://app.clickup.com/t/86akr8ka7) | 07/10 | 14/10 |
 | [Conteúdo 47: guia da marca BePark](https://app.clickup.com/t/86akr8kae) | 14/10 | 20/10 |
 | [Conteúdo 48: post do desconto Azul em Confins](https://app.clickup.com/t/86akr8kap) | 20/10 | 23/10, feito em 21/10 (§2.3.6) |
-| [Conteúdo 49: dois reels](https://app.clickup.com/t/86akr8kb5) | 13/10 | 23/10 |
+| [Conteúdo 49: dois reels](https://app.clickup.com/t/86akr8kb5) | 13/10 | 23/10; o de preço ficou pronto em 26/10, o da van espera a gravação (§2.3.7) |
 | **BePark** | | |
 | [Conteúdo 50: venda pela Movepark (bloco C do piloto)](https://app.clickup.com/t/86akr8kjq) | 30/09 | 16/10 |
 | [Conteúdo 51: a van](https://app.clickup.com/t/86akr8kke) | 30/09 | 09/10 |

@@ -1,0 +1,123 @@
+<!doctype html>
+<!--
+  Cena de reel do Instagram da Movepark, 1080 x 1920 (9:16).
+
+  Por que existe: o reel de número é uma sequência de cenas, e cada cena é este HTML, uma por
+  arquivo. O render-reel.mjs abre cada uma, avança a animação quadro a quadro e entrega o MP4.
+  Mesma lógica do slide: o número sai certo e a tipografia é a Inter da marca, porque o texto
+  entra por cima e nunca é gerado.
+
+  Zona segura: o Instagram cobre o rodapé (legenda, áudio) e a lateral direita (curtir,
+  comentar) da tela do reel, e a grade do perfil recorta a capa em 3:4 pelo centro. Por isso o
+  conteúdo mora entre y = 260 e y = 1480, com 72 px de margem à esquerda e 144 à direita. Não
+  mexa no padding do body sem refazer essa conta.
+
+  Uso:
+    1. Copie este arquivo, um por cena (cena-01.html, cena-02.html...).
+    2. Escolha a variante no <body>: "foto" (foto em faixa 16:9 no alto, sobre ela mesma
+       desfocada), "dado" (gradiente violeta) ou "texto" (navy chapado).
+       Na "foto", aponte --foto para a imagem e CONFIRA A EXTENSAO.
+    3. Edite o texto e apague o data-exemplo. Valor em R$ leva &nbsp; entre o símbolo e o número.
+    4. node ../scripts/render-reel.mjs reel.mp4 cena-01.html:3 cena-02.html:3.5 --capa capa.jpg
+
+  Animação: todo elemento com a classe "entra" sobe e aparece no começo da cena, na ordem do
+  --i (0, 1, 2...). A foto de fundo cresce devagar a cena inteira. O render controla o relógio,
+  então a animação sai igual em toda máquina.
+
+  O conteúdo de exemplo carrega data-exemplo. O render recusa a cena se algum sobreviver.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cena de reel Movepark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #29263F;
+    --indigo: #4041A3;
+    --violet: #5D5FEF;
+    --pale:   #E4F2FF;
+    --red:    #DA455E;
+    --foto:   url("./foto.jpg");
+    /* Duração da cena. O render-reel.mjs sobrescreve com o tempo de cada uma. */
+    --dur: 3s;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; }
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    color: #fff;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 260px 144px 440px 72px;
+    position: relative;
+    overflow: hidden;
+  }
+  body > * { position: relative; }
+  body.dado  { background: linear-gradient(160deg, var(--indigo), var(--violet) 55%, var(--indigo)); }
+  body.texto { background: var(--navy); }
+
+  /* Variante foto: a foto 16:9 inteira numa faixa, sobre ela mesma ampliada e desfocada.
+     Foto paisagem esticada para 9:16 perde dois terços da imagem e sai mole. */
+  .fundo, .faixa { position: absolute; display: none; }
+  body.foto .fundo {
+    display: block; inset: -80px;
+    background: var(--foto) center / cover no-repeat;
+    filter: blur(44px) brightness(.45) saturate(1.1);
+  }
+  body.foto .faixa {
+    display: block; position: relative;
+    width: calc(100% + 216px); margin: 0 -144px 64px -72px;
+    aspect-ratio: 16 / 9;
+    background: var(--foto) center / cover no-repeat;
+    box-shadow: 0 24px 64px rgba(0,0,0,.4);
+    animation: cresce var(--dur) linear both;
+  }
+  @keyframes cresce { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+  .kicker {
+    font-size: 34px; font-weight: 600; letter-spacing: .02em;
+    color: var(--pale); margin-bottom: 32px; opacity: .9;
+  }
+  h1 {
+    font-size: 92px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em;
+    text-wrap: balance;
+  }
+  h1 em { font-style: normal; color: var(--violet); }
+  body.dado h1 em, body.texto h1 em { color: var(--pale); }
+  .numero { font-size: 200px; font-weight: 900; line-height: .95; letter-spacing: -.04em; white-space: nowrap; }
+  .numero .cifra { font-size: .4em; font-weight: 700; vertical-align: .55em; margin-right: .12em; opacity: .72; }
+  p.apoio { font-size: 40px; font-weight: 400; line-height: 1.35; margin-top: 36px; opacity: .92; text-wrap: pretty; }
+
+  /* Tabela de preço: uma linha por opção, rótulo à esquerda e valor à direita. */
+  .linhas { margin-top: 48px; display: flex; flex-direction: column; gap: 28px; }
+  .linha {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 24px;
+    padding-bottom: 24px; border-bottom: 2px solid rgba(255,255,255,.18);
+  }
+  .linha:last-child { border-bottom: 0; padding-bottom: 0; }
+  .linha .rotulo { font-size: 38px; font-weight: 600; line-height: 1.2; }
+  .linha .rotulo small { display: block; font-size: 30px; font-weight: 400; opacity: .78; margin-top: 6px; }
+  .linha .valor { font-size: 64px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+  .linha.destaque .valor { color: var(--pale); }
+
+  footer {
+    margin-top: 56px; font-size: 30px; font-weight: 500; line-height: 1.4; opacity: .78;
+  }
+
+  /* Entrada: sobe 40 px e aparece, em sequência pelo --i. */
+  .entra { animation: entra .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * .14s); }
+  @keyframes entra { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body class="texto">
+<div class="kicker entra" style="--i:0">Em 30 diárias, o oficial custa</div>
+<div class="numero entra" style="--i:1">6 vezes</div>
+<p class="apoio entra" style="--i:2">o preço do particular mais barato: R$&nbsp;1.800 contra R$&nbsp;300, os dois em vaga descoberta.</p>
+<footer class="entra" style="--i:3">BH Airport e Auto Park Brasil, 07/10/2026.</footer>
+</body>
+</html>

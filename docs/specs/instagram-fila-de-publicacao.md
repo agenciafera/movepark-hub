@@ -32,7 +32,7 @@ sozinha na hora marcada, com registro do que saiu.
 | 1 | Quem produz o post (texto, foto, slide) | **O Claude, pela skill `instagram`**, com a foto gerada no Higgsfield pelo MCP, que gasta os créditos da assinatura. A plataforma não gera conteúdo |
 | 2 | O que a plataforma faz | **Só o Instagram:** receber o rascunho pronto, guardar, mostrar para aprovação, publicar na hora marcada e registrar o que saiu |
 | 3 | Toda publicação passa por aprovação humana | **Sim.** Nada sai sem um `hub_admin` aprovar |
-| 4 | Formatos | **Foto única e carrossel no feed, e stories** (ver decisão 10). Reel fica fora |
+| 4 | Formatos | **Foto única e carrossel no feed, e stories** (ver decisão 10). Reel fica fora. Mantida em 26/10/2026, no Conteúdo 49: os dois reels de Confins saem pelo app, com a fonte e o registro do que foi ao ar em `docs/social/`, e o `enviar-rascunho.mjs` recusa `tipo: reel` com essa orientação. Estender a fila para reel é atividade à parte |
 | 5 | O disparo | **Nasce desligado** (`app_setting.social_dispatch_enabled = false`), no padrão do `marketing_dispatch_enabled` |
 | 6 | App Review da Meta | **Não é necessário.** Para app que serve só a negócio próprio, o acesso padrão basta ([doc oficial](https://developers.facebook.com/documentation/instagram-platform/app-review), atualizada em 30/06/2026) |
 | 7 | Upload manual de arte no Manager | **Fora desta entrega** |
