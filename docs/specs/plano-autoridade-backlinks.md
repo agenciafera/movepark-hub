@@ -350,6 +350,25 @@ Yahoo e Skyscanner com uns poucos sites de nicho (`melhoresdestinos.com.br`,
 da seção 4; concorrente nunca. O `carpemundi.com.br`, também listado, já linka a ficha do Ponce Park
 em 10 posts (seção 2.7).
 
+**A rodada depois do deploy (26/10/2026, commit `bade0907`):** 1.080 URLs, **0 erros, 8 avisos
+e 43 informativos** ([`depois.md`](./dados/auditoria-site-2026-10-26/depois.md)), contra 70, 77 e 7
+na rodada da manhã. Os 8 avisos, um a um:
+
+- **3 links de saída quebrados.** Os dois corrigidos de manhã continuavam nas versões em inglês e
+  espanhol dos mesmos posts, que têm corpo próprio em `blog_post_i18n`; corrigidos na migration
+  `20261201020000`, e o banco ficou sem nenhuma ocorrência. O terceiro é a Sejusp-MG, fora do ar.
+- **4 posts órfãos** (`estacionamento-gratuito-no-aeroporto-de-viracopos` e três de Lisboa).
+  **Justificado, com correção proposta à parte.** Nenhum post linka para eles: o único caminho era
+  o arquivo do blog, que é `noindex`. Para o Google nada mudou, porque o arquivo continua lá com
+  `follow` e os quatro seguem no sitemap; a auditoria só passou a enxergar, porque deixou de contar
+  link vindo do arquivo. A correção que serve a todo post é o "Leia também" da lateral sair no HTML
+  pré-renderizado: hoje ele é buscado no navegador (`useRelatedPosts`), e o crawler não o vê.
+- **1 órfã:** `/selo`, justificada acima.
+
+Os 43 informativos são 39 links de compartilhar no LinkedIn (`/sharing/share-offsite`, que
+responde 403 a robô) dos botões de compartilhamento dos posts, mais Planalto e `viracopos.com`. Não
+reprovam.
+
 **Pendência.** As 7 ideias técnicas só somem quando o Checker apontar para as URLs de hoje
 (excluir e adicionar página de destino no Semrush). É configuração do projeto na conta
 compartilhada, e não foi feita sem o Diego.
