@@ -14,9 +14,10 @@
 
   Uso:
     1. Copie este arquivo, um por cena (cena-01.html, cena-02.html...).
-    2. Escolha a variante no <body>: "foto" (foto em faixa 16:9 no alto, sobre ela mesma
-       desfocada), "dado" (gradiente violeta) ou "texto" (navy chapado).
-       Na "foto", aponte --foto para a imagem e CONFIRA A EXTENSAO.
+    2. Escolha a variante no <body>: "tela" (foto 9:16 em tela cheia, texto embaixo), "foto"
+       (foto 16:9 em faixa no alto, sobre ela mesma desfocada), "dado" (gradiente violeta) ou
+       "texto" (navy chapado). Em "tela" e "foto", aponte --foto para a imagem e CONFIRA A
+       EXTENSAO.
     3. Edite o texto e apague o data-exemplo. Valor em R$ leva &nbsp; entre o símbolo e o número.
     4. node ../scripts/render-reel.mjs reel.mp4 cena-01.html:3 cena-02.html:3.5 --capa capa.jpg
 
@@ -79,6 +80,21 @@
   }
   @keyframes cresce { from { transform: scale(1); } to { transform: scale(1.05); } }
 
+  /* Variante tela: foto 9:16 ocupando tudo, com o texto ancorado no pé da zona segura. O
+     degradê escurece só da metade para baixo, então o alto da foto fica à mostra e o texto
+     tem contraste. Não remova o ::after. */
+  body.tela { justify-content: flex-end; }
+  body.tela .fundo {
+    display: block; inset: 0;
+    background: var(--foto) center / cover no-repeat;
+    animation: cresce var(--dur) linear both;
+  }
+  body.tela .fundo::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(41,38,63,.10) 0%, rgba(41,38,63,.30) 38%,
+      rgba(41,38,63,.82) 62%, rgba(41,38,63,.94) 100%);
+  }
+
   .kicker {
     font-size: 34px; font-weight: 600; letter-spacing: .02em;
     color: var(--pale); margin-bottom: 32px; opacity: .9;
@@ -114,7 +130,8 @@
   @keyframes entra { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
-<body class="texto">
+<body class="tela" style="--foto:url('./fotos/preco-estacionamento-aeroporto-confins-oficial-a-pe.webp')">
+<div class="fundo"></div>
 <div class="kicker entra" style="--i:0">Dentro do aeroporto</div>
 <h1 class="entra" style="--i:1">A diária no balcão vai de <em>R$&nbsp;60 a R$&nbsp;105</em></h1>
 <p class="apoio entra" style="--i:2">Pátios oficiais do BH Airport, de 75 a 300 metros do terminal, a pé.</p>

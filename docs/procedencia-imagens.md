@@ -30,6 +30,20 @@ As quatro fallbacks de `og:image` (`marca`, `destinos`, `precos`, `conteudo`) fo
 partir de texto**, sem foto de referência. Não têm origem de terceiro e não pedem atribuição. Ver
 [`src/lib/ogImage.tsx`](../src/lib/ogImage.tsx).
 
+## Fundos de reel do Instagram
+
+Gerados **só a partir de texto** (sem foto de referência) no Higgsfield, modelo **Nano Banana 2**,
+em 9:16, para o reel de preço de Confins (Conteúdo 49). Não têm origem de terceiro e não pedem
+atribuição. Antes de entrar no reel, emblemas de marca dos carros e da van, placas e um letreiro
+de sinalização com texto inventado foram desfocados. Não mostram nenhum pátio real: são cena
+genérica de aeroporto e de pátio com van.
+
+| Arquivo | Job no Higgsfield | Gerado em |
+|---|---|---|
+| [`preco-estacionamento-aeroporto-confins-terminal.webp`](social/conteudo-49-reels-confins/preco/fotos/preco-estacionamento-aeroporto-confins-terminal.webp) | `8c68e235-ca5f-4456-8cbd-b07eaa15346c` | 23/10/2026 |
+| [`preco-estacionamento-aeroporto-confins-oficial-a-pe.webp`](social/conteudo-49-reels-confins/preco/fotos/preco-estacionamento-aeroporto-confins-oficial-a-pe.webp) | `cc0ae1cb-8ad6-4dbd-8a8b-1d3a6c517e06` | 23/10/2026 |
+| [`preco-estacionamento-aeroporto-confins-particular-van.webp`](social/conteudo-49-reels-confins/preco/fotos/preco-estacionamento-aeroporto-confins-particular-van.webp) | `4b18bbef-31ab-4065-86f9-fee2d542563d` | 23/10/2026 |
+
 ## Ponto em aberto: o ShareAlike
 
 Seis das sete fontes são **CC BY-SA**, que pede atribuição **e** ShareAlike: se a imagem publicada
