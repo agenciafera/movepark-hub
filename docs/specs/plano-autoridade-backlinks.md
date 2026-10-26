@@ -369,6 +369,9 @@ na rodada da manhã. Os 8 avisos, um a um:
   Medido no acervo do dia: os 4 passaram a receber 3, 4, 2 e 4 links, e os 10 posts sem link da
   lateral são os de destino com post único, que a página do destino já linka. Detalhe em
   [blog.md](./blog.md), seção "O Leia também sai no HTML do build".
+  **Conferido no ar** (commit `7bc90533`, terceira rodada do dia): 1.080 URLs, **0 erros e 2
+  avisos**, nenhum de post do blog. Os dois são `/selo` e a Sejusp-MG fora do ar, justificados
+  nesta seção ([`depois-leia-tambem.md`](./dados/auditoria-site-2026-10-26/depois-leia-tambem.md)).
 - **1 órfã:** `/selo`, justificada acima.
 
 Os 43 informativos são 39 links de compartilhar no LinkedIn (`/sharing/share-offsite`, que
