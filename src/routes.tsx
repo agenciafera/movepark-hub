@@ -22,6 +22,8 @@ import {
 } from "@/features/price-index/priceIndex.logic";
 import { maisBaratoPorDuracao } from "@/features/price-index/maisBarato.logic";
 import { filterPosts, pageSlice, totalPages } from "@/features/blog/listing.logic";
+import { fetchPostsParaRelacionar } from "@/features/blog/api";
+import { escolherRelacionados, type RelatedPost } from "@/features/blog/related.logic";
 import { caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
 import { AppProviders } from "@/components/shared/AppProviders";
@@ -622,6 +624,26 @@ async function blogPostLoader({ params, request }: LoaderFunctionArgs) {
     post.price_updated_at = frescor?.price_updated_at ?? null;
   }
 
+  /*
+    "Leia também" da lateral, escolhido aqui para os links saírem no HTML do build.
+
+    Era buscado no navegador (`useRelatedPosts`), e o crawler não via: com o arquivo do
+    blog fora do sitemap (Conteúdo 65), 4 posts ficaram sem nenhum link vindo de página
+    indexável. A escolha é por vizinho de data no destino (`related.logic.ts`), que dá
+    link a todo post de destino com dois posts ou mais. O loader lê o destino inteiro e
+    devolve só os 3 escolhidos, que é o que vai serializado na página.
+
+    Só em português: em idioma traduzido o bloco some (ver `blog-post.tsx`), e a lista
+    vazia mantém o hook desligado. Na falha o campo fica de fora e a página cai no hook
+    do cliente, como antes.
+  */
+  let relacionados: RelatedPost[] | undefined = [];
+  if (locale === LOCALE_PADRAO && post.destination_id) {
+    relacionados = await fetchPostsParaRelacionar(post.destination_id as string)
+      .then((posts) => escolherRelacionados(posts, post.slug as string))
+      .catch(() => undefined);
+  }
+
   // Em idioma traduzido a página lê título, resumo e corpo de `traducao`. Mandar o
   // português junto seria peso morto no HTML, e o corpo de um post é a maior string
   // da página: foi o que tirei da FAQ depois de ver 7,5 KB de português invisível.
@@ -648,6 +670,7 @@ async function blogPostLoader({ params, request }: LoaderFunctionArgs) {
     idiomas,
     destinoLabel,
     destinoSlug: destinoSlugTraduzido,
+    relacionados,
   };
 }
 

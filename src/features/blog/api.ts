@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { fetchListaTraduzida } from "./i18nApi";
+import { escolherRelacionados, type RelatedPost } from "./related.logic";
 import type { LocaleTraduzido } from "@/lib/i18n";
 import type { Database } from "@/types/database";
 import type {
@@ -147,8 +148,34 @@ export function useBlogPostList(enabled = true) {
 }
 
 /**
- * Posts de um destino, para o bloco "leia também" da página do post e do destino.
- * Exclui o próprio post quando `exceptSlug` vem preenchido.
+ * O acervo publicado de um destino, só com o que o card do "Leia também" mostra.
+ *
+ * Sem `limit`: a escolha é por vizinho de data (`related.logic.ts`) e precisa ver o
+ * destino inteiro. São cinco colunas curtas por post, e o maior destino (Viracopos)
+ * tem 22. Quem chama é o loader do post, no build, e o hook abaixo, como reserva.
+ */
+export async function fetchPostsParaRelacionar(destinationId: string): Promise<RelatedPost[]> {
+  const { data, error } = await supabase
+    .from("blog_post")
+    .select("id, slug, title, published_at, cover_image_url")
+    .eq("destination_id", destinationId)
+    .eq("is_published", true)
+    .is("deleted_at", null);
+  if (error) throw error;
+  return (data ?? []) as RelatedPost[];
+}
+
+/**
+ * Reserva do "Leia também" para quando o loader não entregou os relacionados.
+ *
+ * No HTML pré-renderizado eles vêm do loader do post, porque crawler não executa JS e
+ * era só por esse bloco que a cauda do blog recebia link (ver `related.logic.ts`). O hook
+ * cobre a navegação pelo cliente que não acha os dados do build, e escolhe pela mesma
+ * regra para a lateral não mudar depois da hidratação.
+ *
+ * A chave é do DESTINO e a escolha mora no `select`: antes a lista já vinha filtrada
+ * pelo post dentro do `queryFn`, com a chave sem o post, e o segundo post aberto do
+ * mesmo destino herdava do cache a lista do primeiro, inclusive com ele mesmo dentro.
  */
 export function useRelatedPosts(destinationId: string | null | undefined, exceptSlug?: string) {
   return useQuery({
@@ -156,18 +183,8 @@ export function useRelatedPosts(destinationId: string | null | undefined, except
       ? blogKeys.byDestination(destinationId)
       : [...blogKeys.all, "destination", "none"],
     enabled: !!destinationId,
-    queryFn: async (): Promise<BlogPost[]> => {
-      const { data, error } = await supabase
-        .from("blog_post")
-        .select("*")
-        .eq("destination_id", destinationId!)
-        .eq("is_published", true)
-        .is("deleted_at", null)
-        .order("published_at", { ascending: false })
-        .limit(6);
-      if (error) throw error;
-      return ((data ?? []) as BlogPost[]).filter((p) => p.slug !== exceptSlug).slice(0, 3);
-    },
+    queryFn: () => fetchPostsParaRelacionar(destinationId!),
+    select: (posts) => escolherRelacionados(posts, exceptSlug ?? ""),
     staleTime: 5 * 60_000,
   });
 }

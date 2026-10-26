@@ -4,8 +4,9 @@ import { LOCALE_PADRAO, caminhoLocalizado } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { CoverImage } from "./CoverImage";
 import { formatDate } from "@/lib/format";
-import type { BlogPost, Destination } from "@/types/domain";
+import type { Destination } from "@/types/domain";
 import { caminhoDestino } from "@/lib/urls";
+import type { RelatedPost } from "./related.logic";
 
 type Props = {
   /** Rótulo do destino no idioma da página, quando existe tradução publicada. */
@@ -13,7 +14,7 @@ type Props = {
   /** Slug do destino naquele idioma, quando a página traduzida dele existe. */
   destinoSlug?: string | null;
   destination: Pick<Destination, "name" | "slug" | "public_slug" | "is_published"> | null;
-  relacionados: BlogPost[];
+  relacionados: RelatedPost[];
 };
 
 /**

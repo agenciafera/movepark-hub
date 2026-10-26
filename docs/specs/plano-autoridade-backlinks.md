@@ -358,11 +358,17 @@ na rodada da manhã. Os 8 avisos, um a um:
   espanhol dos mesmos posts, que têm corpo próprio em `blog_post_i18n`; corrigidos na migration
   `20261201020000`, e o banco ficou sem nenhuma ocorrência. O terceiro é a Sejusp-MG, fora do ar.
 - **4 posts órfãos** (`estacionamento-gratuito-no-aeroporto-de-viracopos` e três de Lisboa).
-  **Justificado, com correção proposta à parte.** Nenhum post linka para eles: o único caminho era
-  o arquivo do blog, que é `noindex`. Para o Google nada mudou, porque o arquivo continua lá com
-  `follow` e os quatro seguem no sitemap; a auditoria só passou a enxergar, porque deixou de contar
-  link vindo do arquivo. A correção que serve a todo post é o "Leia também" da lateral sair no HTML
-  pré-renderizado: hoje ele é buscado no navegador (`useRelatedPosts`), e o crawler não o vê.
+  Nenhum post linkava para eles: o único caminho era o arquivo do blog, que é `noindex`. Para o
+  Google nada tinha mudado, porque o arquivo continua lá com `follow` e os quatro seguem no
+  sitemap; a auditoria só passou a enxergar, porque deixou de contar link vindo do arquivo.
+  **Corrigido no template, para todo post, sem link escrito à mão:** o "Leia também" da lateral
+  era buscado no navegador (`useRelatedPosts`) e o crawler não o via. Agora ele sai no HTML
+  pré-renderizado, escolhido no loader do post, e a regra deixou de ser "os 3 mais recentes do
+  destino" (que em Viracopos mandava o link dos 22 posts para os mesmos 4) e passou a ser
+  **vizinho de data dentro do destino**, que dá link a todo post de destino com dois ou mais.
+  Medido no acervo do dia: os 4 passaram a receber 3, 4, 2 e 4 links, e os 10 posts sem link da
+  lateral são os de destino com post único, que a página do destino já linka. Detalhe em
+  [blog.md](./blog.md), seção "O Leia também sai no HTML do build".
 - **1 órfã:** `/selo`, justificada acima.
 
 Os 43 informativos são 39 links de compartilhar no LinkedIn (`/sharing/share-offsite`, que

@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { optimizedImageUrl } from "@/lib/storage";
 import type { BlogPostWithDestination } from "@/types/domain";
 import type { IdiomaDoPost, PostTraducao } from "@/features/blog/i18nApi";
+import type { RelatedPost } from "@/features/blog/related.logic";
 import { textos } from "@/lib/i18nTextos";
 import { formatUpdated } from "@/features/content/types";
 import {
@@ -59,6 +60,11 @@ export type BlogPostCarregado = BlogPostWithDestination & {
   /** Rótulo e slug do destino no idioma da página, quando a tradução dele existe. */
   destinoLabel?: string | null;
   destinoSlug?: string | null;
+  /**
+   * "Leia também" escolhido no build, para os links saírem no HTML. Ausente quando a
+   * consulta do loader falhou, e aí a página cai no hook do cliente.
+   */
+  relacionados?: RelatedPost[];
 };
 import { absoluteUrl, SITE_URL } from "@/lib/site";
 
@@ -143,7 +149,17 @@ export default function BlogPostPage() {
     [base, traducao],
   );
 
-  const related = useRelatedPosts(base?.destination_id, base?.slug);
+  /*
+    Os relacionados vêm do loader, que é o que sai no HTML pré-renderizado: era só por
+    este bloco que a cauda do blog recebia link, e um link que nasce no navegador o
+    crawler não vê. O hook fica de reserva para a navegação pelo cliente sem dados do
+    build, e escolhe pela mesma regra (`related.logic.ts`).
+  */
+  const relacionadosDoBuild = loaded?.relacionados;
+  const related = useRelatedPosts(
+    relacionadosDoBuild ? undefined : base?.destination_id,
+    base?.slug,
+  );
   /*
     Em idioma traduzido as listas de post somem, e é decisão, não esquecimento.
 
@@ -157,7 +173,7 @@ export default function BlogPostPage() {
     `blog_post_i18n` do mesmo idioma.
   */
   const soPt = locale === LOCALE_PADRAO;
-  const relacionados = soPt ? (related.data ?? []) : [];
+  const relacionados = soPt ? (relacionadosDoBuild ?? related.data ?? []) : [];
   /* Sem destino e sem relacionado a lateral seria 300px de branco ao lado do
      texto, que é pior que não ter lateral. */
   const temSidebar = Boolean(post?.destination) || relacionados.length > 0;

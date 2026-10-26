@@ -383,6 +383,48 @@ Mesmo padrão de `/destinos` e `/destinos/:slug`. As URLs entram no `dynamicRout
 `vite-plugin-sitemap` em `vite.config.ts`. JSON-LD `BlogPosting` mais `BreadcrumbList` em
 `src/lib/jsonld.ts`.
 
+### O "Leia também" sai no HTML do build (26/10/2026)
+
+Com o arquivo fora do sitemap, a auditoria (`bun run seo:auditoria`) parou de contar link vindo
+dele e achou **4 posts sem nenhum link de página indexável**: `estacionamento-gratuito-no-aeroporto-de-viracopos`
+e três de Lisboa. O caminho que deveria cobri-los era o "Leia também" da lateral, e ele não
+servia por dois motivos:
+
+1. **Era buscado no navegador** (`useRelatedPosts`, um `useQuery`), então não existia no HTML
+   pré-renderizado. Crawler não executa JS e não via um único link de post para post.
+2. **A regra era "os 3 mais recentes do destino".** Em Viracopos, com 22 posts, o bloco dos 22
+   apontava para os mesmos 4 mais novos, e os outros 18 não recebiam link de nenhum. Levar essa
+   regra para o HTML teria mantido a cauda órfã para sempre.
+
+**Agora o loader do post (`blogPostLoader`, em `routes.tsx`) escolhe os relacionados**, do mesmo
+jeito que o FAQ e o carimbo de preço: lê o acervo publicado do destino com cinco colunas curtas
+(`fetchPostsParaRelacionar`, sem `body_md`) e devolve só os 3 escolhidos, que é o que vai
+serializado na página. O acervo inteiro nunca entra no HTML.
+
+**A escolha é por vizinho de data** (`escolherRelacionados`, em `src/features/blog/related.logic.ts`):
+o acervo do destino em ordem (mais novo primeiro, o slug desempata, porque 22 posts de Viracopos
+dividem 16 datas) e, para cada post, os 3 mais próximos dele nessa ordem, com o mais novo ganhando
+o empate de distância. Isso garante que **em todo destino com dois posts ou mais, todo post é
+relacionado de pelo menos um outro**: o vizinho imediato está sempre a uma posição, e na distância 1
+cabem no máximo dois candidatos, menos que os três lugares do bloco. O teste
+`related.logic.test.ts` confere a garantia em acervos de 2 a 30 posts.
+
+Destino com um post só não tem vizinho. Esse post é linkado pela página do destino, que lista os 6
+mais recentes (`fetchPostsDoDestino`). Medido no acervo de 26/10/2026 (91 posts publicados): os 10
+posts sem link da lateral são exatamente os 10 destinos de post único, todos na página do destino, e
+os 4 órfãos passaram a receber 3, 4, 2 e 4 links.
+
+O hook `useRelatedPosts` ficou como **reserva**, para a navegação pelo cliente que não acha os
+dados do build (post publicado depois do último build). Ele escolhe pela mesma regra, então a
+lateral não muda depois da hidratação. A chave do cache é o destino e a escolha mora no `select`:
+antes a lista vinha filtrada pelo post dentro do `queryFn`, com a chave sem o post, e o segundo
+post aberto do mesmo destino herdava a lista do primeiro, inclusive com ele mesmo dentro.
+
+Em idioma traduzido o bloco continua fora (o acervo relacionado é português), e o loader manda a
+lista vazia para o hook não disparar. A faixa "Últimos posts" do rodapé segue no cliente: ela
+aponta para os posts mais novos do blog, que já recebem link da página do destino e da lateral, e
+não muda a conta de órfãos.
+
 ### O `FAQPage` do post (25/08/2026)
 
 O post emite `FAQPage` com a FAQ **que ele mesmo escreveu**, derivada do corpo por
@@ -458,6 +500,7 @@ chega no build seguinte, que roda sozinho a cada push na `main`.
 | Vitest | Conversão HTML para Markdown e mapeamento de categoria para destino no importador |
 | Vitest | Render do markdown: rótulo de link, título dentro de item de lista, continuação indentada e sublista |
 | Vitest | Página do post e índice, incluindo o caso de post sem `destination_id` |
+| Vitest | Escolha do "Leia também" por vizinho de data (`related.logic.test.ts`, com a garantia de que todo post de destino com dois ou mais recebe link) e o bloco no HTML do build, renderizado com `renderToString` sobre o roteador estático (`blog-post.test.tsx`) |
 
 O teste do worker se apoia num **fixture versionado com os 93 slugs**, congelado a partir do
 `post-sitemap.xml`. É ele que impede alguém renomear um slug sem perceber que quebrou uma URL
@@ -612,8 +655,9 @@ texto, não a busca de vaga. O CTA é violeta preenchido (`bg-mp-primary`), a ú
 deliberada à regra de que violeta só pinta elemento acionável: o card inteiro é o elemento de
 conversão da página, e o botão dentro dele usa a variante clara para não sumir no fundo.
 
-**"Últimos posts" é diferente do "Leia também".** Na lateral são posts do mesmo destino; na faixa
-do rodapé são os mais recentes do blog inteiro, com `useLatestPosts`. Sem ela, o fim do artigo é
+**"Últimos posts" é diferente do "Leia também".** Na lateral são os vizinhos de data do mesmo
+destino, escolhidos no loader (seção "O Leia também sai no HTML do build"); na faixa do rodapé são
+os mais recentes do blog inteiro, com `useLatestPosts`. Sem ela, o fim do artigo é
 um beco: o leitor termina e a única saída é o botão de voltar. A consulta é própria, com `limit`,
 em vez de reaproveitar o acervo enxuto de 240 KB da listagem.
 

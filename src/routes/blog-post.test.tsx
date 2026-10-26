@@ -346,3 +346,92 @@ describe("BlogPostPage: idioma traduzido", () => {
     expect(await waitForArticle(container)).toBeTruthy();
   });
 });
+
+/**
+ * O "Leia também" no HTML do build.
+ *
+ * Era buscado no navegador, e o crawler não via o bloco: com o arquivo do blog fora do
+ * sitemap (Conteúdo 65), a auditoria de 26/10/2026 achou 4 posts sem link vindo de página
+ * indexável. O render aqui é o do SSG (`renderToString` sobre o roteador estático), onde
+ * nenhuma consulta do cliente roda: o que sai no HTML é só o que o loader entregou.
+ */
+describe("BlogPostPage: Leia também no HTML do build", () => {
+  const RELACIONADOS = [
+    {
+      id: "post-2",
+      slug: "estacionamento-gratuito-no-aeroporto-de-viracopos",
+      title: "Estacionamento gratuito no Aeroporto de Viracopos",
+      published_at: "2026-03-01T12:00:00Z",
+      cover_image_url: null,
+    },
+    {
+      id: "post-3",
+      slug: "viracopos-ou-guarulhos",
+      title: "Viracopos ou Guarulhos",
+      published_at: "2026-02-01T12:00:00Z",
+      cover_image_url: null,
+    },
+  ];
+
+  async function htmlDoBuild(dados: Record<string, unknown>, caminho: string) {
+    const { renderToString } = await import("react-dom/server");
+    const { createStaticHandler, createStaticRouter, StaticRouterProvider } =
+      await import("react-router-dom/server");
+    const handler = createStaticHandler([
+      { path: "/blog/:slug", element: <BlogPostPage />, loader: () => dados },
+      { path: "/en/blog/:slug", element: <BlogPostPage />, loader: () => dados },
+    ]);
+    const contexto = await handler.query(new Request(`https://movepark.co${caminho}`));
+    if (contexto instanceof Response) throw new Error("o loader redirecionou");
+    const router = createStaticRouter(handler.dataRoutes, contexto);
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return renderToString(
+      <QueryClientProvider client={qc}>
+        <HelmetProvider context={{}}>
+          <StaticRouterProvider router={router} context={contexto} />
+        </HelmetProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("os relacionados do loader saem como link no HTML, com a barra final", async () => {
+    const html = await htmlDoBuild(
+      { ...POST, locale: "pt-BR", relacionados: RELACIONADOS },
+      `/blog/${POST.slug}`,
+    );
+    expect(html).toContain('aria-label="Leia também"');
+    expect(html).toContain('href="/blog/estacionamento-gratuito-no-aeroporto-de-viracopos/"');
+    expect(html).toContain('href="/blog/viracopos-ou-guarulhos/"');
+  });
+
+  it("sem os relacionados do loader, o bloco não existe no HTML", async () => {
+    // É o retrato do defeito: o hook do cliente não roda no build, e a página saía sem
+    // um único link para outro post.
+    const html = await htmlDoBuild({ ...POST, locale: "pt-BR" }, `/blog/${POST.slug}`);
+    expect(html).not.toContain('aria-label="Leia também"');
+  });
+
+  it("em idioma traduzido o bloco some, mesmo com relacionados no loader", async () => {
+    // O acervo relacionado é português: em inglês ele levaria o leitor para outro idioma.
+    const html = await htmlDoBuild(
+      {
+        ...POST,
+        locale: "en",
+        traducao: {
+          blog_post_id: "post-1",
+          locale: "en",
+          slug: "viracopos-airport-parking",
+          title: "Parking at Viracopos Airport",
+          excerpt: null,
+          meta_title: null,
+          meta_description: null,
+          body_md: "First paragraph.",
+        },
+        idiomas: [{ locale: "en", slug: "viracopos-airport-parking" }],
+        relacionados: RELACIONADOS,
+      },
+      "/en/blog/viracopos-airport-parking",
+    );
+    expect(html).not.toContain("/blog/estacionamento-gratuito-no-aeroporto-de-viracopos/");
+  });
+});
