@@ -170,9 +170,15 @@ resumo: os 8 parceiros com unidade listada têm site, e 6 já linkam o `movepark
 sem `nofollow`, todos para a home. Dois com o selo (BePark, desde 18/09, e
 Aeropark) e quatro com o crédito "Desenvolvido por" ou "Feito por Movepark" (Abbapark,
 Aerovalet, Nationpark e Virapark, sites que a Movepark fez no Wix). Garageinn e
-Plenty Park não linkam. A BePark passou para a ficha no mesmo dia (repo
-`agenciafera/bepark-website`, `src/config/selo.ts`, travado com a constante
-`FICHA_NA_MOVEPARK` do `llms.txt` dela).
+Plenty Park não linkam. No mesmo dia, os cinco que a Movepark mantém passaram para
+a ficha: a BePark no repo `agenciafera/bepark-website` (`src/config/selo.ts`,
+travado com a constante `FICHA_NA_MOVEPARK` do `llms.txt` dela) e os quatro do Wix
+no editor, na conta Wix Studio da Agência Fera.
+
+**Armadilha do editor do Wix Studio:** ao abrir o painel de link de um texto que
+já tem link, o editor às vezes seleciona a frase inteira, e confirmar transforma o
+crédito todo em link. Selecione só a palavra "Movepark" e confira a seleção antes
+de clicar em OK.
 
 Os links instalados entram na planilha de controle
 ([dados/backlinks-controle.csv](./dados/backlinks-controle.csv)) com o projeto

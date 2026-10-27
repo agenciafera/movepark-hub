@@ -11,17 +11,17 @@ Leitura do HTML servido em 27/10/2026, sem executar JavaScript (é o que o Googl
 
 | Parceiro | Site | Plataforma | Quem fez | Link para o `movepark.co` hoje | Ação |
 |---|---|---|---|---|---|
-| Abbapark | `abbapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | trocar o endereço do link (nós) |
+| Abbapark | `abbapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 | Aeropark | `aeroparking.com.br` | PHP próprio | Grupo Bandeira Park | selo "Estacionamento parceiro Movepark", para a home | pedir a troca do endereço (mensagem 3) |
-| Aerovalet | `aerovalet.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | trocar o endereço do link (nós) |
+| Aerovalet | `aerovalet.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 | BePark | `bepark.com.br` | Vite, repo `agenciafera/bepark-website` | Fera | selo "Estacionamento parceiro Movepark", para a home | **feito em 27/10/2026** (`a1e4740`), conferido no ar |
 | Garageinn | `garageinn.com.br` | WordPress 4.8 | Fera ("feito por F E R A") | nenhum | pedir o selo (mensagem 1); a Fera instala |
-| Nationpark | `nationpark.com.br` | Wix | Movepark | "Feito por **Movepark**", para a home | trocar o endereço do link (nós) |
+| Nationpark | `nationpark.com.br` | Wix | Movepark | "Feito por **Movepark**", para a home (só na home; as páginas internas dizem "Feito por Agência Fera") | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 | Plenty Park | `plentypark.com.br` | WordPress com Elementor | não informado | nenhum | pedir o selo (mensagem 2) |
-| Virapark | `virapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | trocar o endereço do link (nós) |
+| Virapark | `virapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 
-Seis dos oito já linkam o `movepark.co`, todos sem `nofollow` e todos para a home (a BePark
-passou para a ficha no mesmo dia). Os links para
+Seis dos oito já linkam o `movepark.co`, todos sem `nofollow` e todos para a home. No mesmo dia,
+os cinco que a Movepark mantém (BePark e os quatro do Wix) passaram para a ficha. Os links para
 `<parceiro>.movepark.co` (o botão de reservar do white-label) não entram na conta: são outro host.
 
 O crédito "Desenvolvido por / Feito por Movepark" fica como está, porque a Movepark fez esses
@@ -115,9 +115,8 @@ Segunda (rodapé escuro):
 
 ### 4. Sites Wix (só se o acesso ao editor estiver com o parceiro)
 
-Abbapark, Aerovalet, Nationpark e Virapark foram feitos pela Movepark, então a troca deve ser
-nossa: no editor do Wix, clicar no texto do rodapé, selecionar a palavra "Movepark", abrir o link
-e colar o endereço novo da tabela acima. Se o acesso já tiver passado para o parceiro:
+Abbapark, Aerovalet, Nationpark e Virapark ficam na conta Wix Studio da Agência Fera, e a troca
+foi feita lá em 27/10/2026. A mensagem abaixo fica para um site que o parceiro edite sozinho:
 
 > Oi, tudo bem? Aqui é o Diego, da Movepark.
 >

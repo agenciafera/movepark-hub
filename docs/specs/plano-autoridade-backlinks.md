@@ -698,9 +698,10 @@ opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da C
   **Levantamento em 27/10/2026** ([dados/selo-parceiros-2026-10-27.md](./dados/selo-parceiros-2026-10-27.md)):
   os 8 parceiros têm site, 6 já linkam o `movepark.co` (2 pelo selo, 4 pelo crédito de quem fez
   o site) e todos para a home. O selo passou a apontar para a ficha do parceiro
-  ([selo-parceiro.md](./selo-parceiro.md)); a BePark já está na ficha, no ar desde 27/10. Faltam
-  o pedido à Garageinn e à Plenty Park, a troca do endereço nos outros 5 que já linkam e a
-  conferência no ar.
+  ([selo-parceiro.md](./selo-parceiro.md)). Em 27/10 os cinco que a Movepark mantém passaram para
+  a ficha e foram conferidos no ar: a BePark (repo) e Abbapark, Aerovalet, Nationpark e Virapark
+  (Wix Studio da Agência Fera). Faltam a troca na Aeropark e o pedido à Garageinn e à Plenty
+  Park, que dependem de mensagem do Diego.
 - **[Conteúdo 71](https://app.clickup.com/t/17tn9e9gfhf):** índice de preço de estacionamento em aeroporto como pauta nacional de férias de
   fim de ano. As pautas de BH continuam nas Conteúdo 55 e 56.
 - **[Conteúdo 72](https://app.clickup.com/t/17tn9e9gfhh):** blogs de viagem e milhas, com a calculadora e o índice como motivo do link, e
