@@ -17,17 +17,21 @@
  *
  * O formato é o da documentação da Meta para reel (conferida em 23/10/2026, ver
  * ../references/api-instagram.md): MP4 com o moov no início e sem edit list, H.264 progressivo
- * com GOP fechado e 4:2:0, 30 fps, AAC estéreo a 48 kHz. O áudio é mudo de propósito: música
- * licenciada só entra pelo app, e a API não aceita trilha da biblioteca do Instagram.
+ * com GOP fechado e 4:2:0, 30 fps, AAC estéreo a 48 kHz. Sem `--audio`, a faixa é muda: música
+ * licenciada só entra pelo app, e a API não aceita trilha da biblioteca do Instagram. Com
+ * `--audio`, a trilha dada (a narração, por exemplo) entra no lugar, completada com silêncio ou
+ * cortada para durar o mesmo que o vídeo.
  *
  * Uso:
  *   node .claude/skills/instagram/scripts/render-reel.mjs <saida.mp4> <cena.html:segundos>... \
- *        [--capa capa.jpg] [--capa-cena 1]
+ *        [--capa capa.jpg] [--capa-cena 1] [--audio narracao.wav]
  *
  * Exemplo:
  *   node render-reel.mjs reel.mp4 cena-01.html:3 cena-02.html:3.5 cena-03.html:4 --capa capa.jpg
  *
  * A capa é a cena escolhida (a primeira, por padrão) com as animações de entrada concluídas.
+ * O que CSS não anima (um contador que gira até o valor) a cena faz em `window.reelQuadro(ms)`:
+ * o render chama a função a cada quadro com o instante da cena, depois de posicionar as animações.
  * Requer `bun install` (chromium do @playwright/test) e o ffmpeg no PATH (`brew install ffmpeg`
  * no macOS, `apt install ffmpeg` no Linux).
  */
@@ -72,13 +76,19 @@ export function lerCena(arg) {
 /** Quantos quadros uma cena ocupa. Arredonda, para a soma das cenas bater com o relógio. */
 export const quadrosDa = (segundos, fps = FPS) => Math.round(segundos * fps);
 
-/** Os argumentos do ffmpeg: quadros JPEG pela entrada padrão, áudio mudo, saída no formato da Meta. */
-export function argsDoFfmpeg(saida, fps = FPS) {
+/**
+ * Os argumentos do ffmpeg: quadros JPEG pela entrada padrão, a trilha (ou áudio mudo), saída no
+ * formato da Meta. A trilha ganha silêncio no fim (`apad`) e o `-shortest` corta no fim do vídeo.
+ */
+export function argsDoFfmpeg(saida, fps = FPS, audio = null) {
+  const trilha = audio
+    ? ["-i", audio]
+    : ["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000"];
   return [
     "-y", "-loglevel", "error",
     "-f", "image2pipe", "-framerate", String(fps), "-c:v", "mjpeg", "-i", "-",
-    "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
-    "-map", "0:v", "-map", "1:a", "-shortest",
+    ...trilha,
+    "-map", "0:v", "-map", "1:a", ...(audio ? ["-af", "apad"] : []), "-shortest",
     "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-preset", "medium",
     "-crf", "20", "-maxrate", "12M", "-bufsize", "24M",
     "-r", String(fps), "-g", String(fps * 2), "-keyint_min", String(fps * 2), "-sc_threshold", "0",
@@ -171,9 +181,12 @@ async function abrirCena(browser, cena) {
   return page;
 }
 
-/** Põe todas as animações no instante `ms` e devolve o quadro em JPEG. */
+/** Põe todas as animações no instante `ms`, chama o gancho da cena e devolve o quadro em JPEG. */
 async function quadro(page, ms, qualidade = QUALIDADE_QUADRO) {
-  await page.evaluate((t) => document.getAnimations().forEach((a) => (a.currentTime = t)), ms);
+  await page.evaluate((t) => {
+    document.getAnimations().forEach((a) => (a.currentTime = t));
+    if (typeof window.reelQuadro === "function") window.reelQuadro(t);
+  }, ms);
   return page.screenshot({ type: "jpeg", quality: qualidade });
 }
 
@@ -208,24 +221,29 @@ async function principal(argv) {
   let saida = null;
   let capa = null;
   let capaCena = 1;
+  let audio = null;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--capa") capa = argv[++i];
     else if (argv[i] === "--capa-cena") capaCena = Number(argv[++i]);
+    else if (argv[i] === "--audio") audio = argv[++i];
     else if (argv[i].startsWith("--")) throw new Error(`opção desconhecida: ${argv[i]}`);
     else if (!saida) saida = argv[i];
     else cenasArg.push(argv[i]);
   }
   if (!saida || !/\.mp4$/i.test(saida) || !cenasArg.length) {
-    throw new Error("uso: render-reel.mjs <saida.mp4> <cena.html:segundos>... [--capa capa.jpg] [--capa-cena 1]");
+    throw new Error(
+      "uso: render-reel.mjs <saida.mp4> <cena.html:segundos>... [--capa capa.jpg] [--capa-cena 1] [--audio trilha.wav]",
+    );
   }
   const cenas = cenasArg.map(lerCena);
   if (!(capaCena >= 1 && capaCena <= cenas.length)) throw new Error(`--capa-cena ${capaCena} não existe (são ${cenas.length} cenas).`);
+  if (audio && !fs.existsSync(audio)) throw new Error(`não achei a trilha: ${audio}`);
   if (!temFfmpeg()) throw new Error("ffmpeg e ffprobe não estão no PATH. No macOS: brew install ffmpeg; no Linux: apt install ffmpeg.");
 
   saida = path.resolve(saida);
   const { chromium } = (await import("@playwright/test")).default;
   const browser = await chromium.launch();
-  const ff = spawn("ffmpeg", argsDoFfmpeg(saida), { stdio: ["pipe", "ignore", "pipe"] });
+  const ff = spawn("ffmpeg", argsDoFfmpeg(saida, FPS, audio && path.resolve(audio)), { stdio: ["pipe", "ignore", "pipe"] });
   let erroFf = "";
   ff.stderr.on("data", (d) => (erroFf += d));
   const fim = new Promise((ok, falha) =>

@@ -54,6 +54,15 @@ describe("render-reel", () => {
     expect(args.endsWith("/tmp/reel.mp4")).toBe(true);
   });
 
+  it("com trilha, a narração entra no lugar do áudio mudo e é completada até o fim do vídeo", () => {
+    const args = argsDoFfmpeg("/tmp/reel.mp4", 30, "/tmp/narracao.wav");
+    expect(args.join(" ")).toContain("-i /tmp/narracao.wav");
+    expect(args.join(" ")).not.toContain("anullsrc");
+    expect(args.join(" ")).toContain("-af apad -shortest");
+    expect(args.join(" ")).toContain("-c:a aac");
+    expect(argsDoFfmpeg("/tmp/reel.mp4").join(" ")).not.toContain("apad");
+  });
+
   it("o padrão da casa passa sem bloqueio nem aviso", () => {
     expect(conferirVideo(PROBE_OK, 4.4 * MB)).toEqual({ bloqueios: [], avisos: [] });
   });

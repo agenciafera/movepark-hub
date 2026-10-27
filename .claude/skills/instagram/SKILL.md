@@ -425,7 +425,12 @@ JPEG com a primeira cena assentada. Precisa do ffmpeg no PATH (`brew install ffm
   `docs/social/`, em `.webp`, com linha em `docs/procedencia-imagens.md`.
 - **De 3 a 4 segundos por cena**, um pouco mais na tabela de quatro linhas. A frase principal de
   cada cena segue o limite de 12 palavras do slide.
-- **Mudo de propósito.** Música licenciada só entra pelo app; o vídeo tem que se ler sem som.
+- **Som.** Sem `--audio`, o MP4 sai com faixa muda, porque música licenciada só entra pelo app.
+  Com narração, `--audio trilha.wav` põe a voz no lugar (completada com silêncio até o fim do
+  vídeo). Mesmo narrado, o vídeo tem que se ler sem som: a fala vai escrita na tela, como
+  legenda.
+- **Contador e o que o CSS não anima.** A cena define `window.reelQuadro(ms)` e o render chama a
+  função a cada quadro. O número final fica escrito no HTML, que é o que o analisador lê.
 - **Gravação real não se monta.** Reel que mostra a operação (a van no mapa, o pátio, o
   embarque) é filmado. Cena HTML ali é só abertura ou fechamento.
 
