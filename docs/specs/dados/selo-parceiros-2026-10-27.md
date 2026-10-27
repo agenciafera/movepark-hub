@@ -12,12 +12,12 @@ Leitura do HTML servido em 27/10/2026, sem executar JavaScript (é o que o Googl
 | Parceiro | Site | Plataforma | Quem fez | Link para o `movepark.co` hoje | Ação |
 |---|---|---|---|---|---|
 | Abbapark | `abbapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
-| Aeropark | `aeroparking.com.br` | PHP próprio | Grupo Bandeira Park | selo "Estacionamento parceiro Movepark", para a home | pedir a troca do endereço (mensagem 3) |
+| Aeropark | `aeroparking.com.br` | PHP próprio | Grupo Bandeira Park | selo "Estacionamento parceiro Movepark", para a home | fica como está: o selo já está no ar, para a home (decisão do Diego, 27/10/2026) |
 | Aerovalet | `aerovalet.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 | BePark | `bepark.com.br` | Vite, repo `agenciafera/bepark-website` | Fera | selo "Estacionamento parceiro Movepark", para a home | **feito em 27/10/2026** (`a1e4740`), conferido no ar |
-| Garageinn | `garageinn.com.br` | WordPress 4.8 | Fera ("feito por F E R A") | nenhum | pedir o selo (mensagem 1); a Fera instala |
-| Nationpark | `nationpark.com.br` | Wix | Movepark | "Feito por **Movepark**", para a home (só na home; as páginas internas dizem "Feito por Agência Fera") | **feito em 27/10/2026** no editor do Wix, conferido no ar |
-| Plenty Park | `plentypark.com.br` | WordPress com Elementor | não informado | nenhum | pedir o selo (mensagem 2) |
+| Garageinn | `garageinn.com.br` | WordPress 4.8 | Fera ("feito por F E R A") | nenhum | instalar pela Fera; **bloqueado em 27/10/2026**: o WordPress pede login, e nenhum navegador tinha sessão aberta |
+| Nationpark | `nationpark.com.br` | Wix | Movepark | "Feito por **Movepark**", para a home (só na home; as páginas internas diziam só "Feito por Agência Fera") | **feito em 27/10/2026** no editor do Wix, conferido no ar. As páginas internas passaram a "Feito por Agência Fera · Parceiro **Movepark**", com os dois links; as 10 páginas do site linkam a ficha |
+| Plenty Park | `plentypark.com.br` | WordPress com Elementor | não informado | nenhum | fica de fora: a Movepark não tem acesso ao site (27/10/2026) |
 | Virapark | `virapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 
 Seis dos oito já linkam o `movepark.co`, todos sem `nofollow` e todos para a home. No mesmo dia,
@@ -49,6 +49,10 @@ tem três unidades (Guarulhos, Congonhas e Tietê) e um site só; o link vai par
 que é a praça prioritária do plano.
 
 ## Mensagens
+
+**Decisão do Diego em 27/10/2026:** a Aeropark fica com o selo como está, a Plenty Park fica de
+fora (a Movepark não tem acesso ao site) e a Garageinn é instalada pela Fera, sem pedido. As
+mensagens abaixo ficam como registro e para o caso de algum desses mudar.
 
 Para o Diego enviar pelo WhatsApp. Os códigos saíram de `gerarSnippet` em 27/10/2026, na cor do
 rodapé de cada site (Garageinn claro, Plenty Park escuro). Se o selo mudar, gere de novo em vez
