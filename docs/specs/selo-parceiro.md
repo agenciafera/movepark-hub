@@ -170,7 +170,9 @@ resumo: os 8 parceiros com unidade listada têm site, e 6 já linkam o `movepark
 sem `nofollow`, todos para a home. Dois com o selo (BePark, desde 18/09, e
 Aeropark) e quatro com o crédito "Desenvolvido por" ou "Feito por Movepark" (Abbapark,
 Aerovalet, Nationpark e Virapark, sites que a Movepark fez no Wix). Garageinn e
-Plenty Park não linkam.
+Plenty Park não linkam. A BePark passou para a ficha no mesmo dia (repo
+`agenciafera/bepark-website`, `src/config/selo.ts`, travado com a constante
+`FICHA_NA_MOVEPARK` do `llms.txt` dela).
 
 Os links instalados entram na planilha de controle
 ([dados/backlinks-controle.csv](./dados/backlinks-controle.csv)) com o projeto

@@ -14,13 +14,14 @@ Leitura do HTML servido em 27/10/2026, sem executar JavaScript (é o que o Googl
 | Abbapark | `abbapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | trocar o endereço do link (nós) |
 | Aeropark | `aeroparking.com.br` | PHP próprio | Grupo Bandeira Park | selo "Estacionamento parceiro Movepark", para a home | pedir a troca do endereço (mensagem 3) |
 | Aerovalet | `aerovalet.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | trocar o endereço do link (nós) |
-| BePark | `bepark.com.br` | Vite, repo `agenciafera/bepark-website` | Fera | selo "Estacionamento parceiro Movepark", para a home | trocar no código do repo (nós) |
+| BePark | `bepark.com.br` | Vite, repo `agenciafera/bepark-website` | Fera | selo "Estacionamento parceiro Movepark", para a home | **feito em 27/10/2026** (`a1e4740`), conferido no ar |
 | Garageinn | `garageinn.com.br` | WordPress 4.8 | Fera ("feito por F E R A") | nenhum | pedir o selo (mensagem 1); a Fera instala |
 | Nationpark | `nationpark.com.br` | Wix | Movepark | "Feito por **Movepark**", para a home | trocar o endereço do link (nós) |
 | Plenty Park | `plentypark.com.br` | WordPress com Elementor | não informado | nenhum | pedir o selo (mensagem 2) |
 | Virapark | `virapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | trocar o endereço do link (nós) |
 
-Seis dos oito já linkam o `movepark.co`, todos sem `nofollow` e todos para a home. Os links para
+Seis dos oito já linkam o `movepark.co`, todos sem `nofollow` e todos para a home (a BePark
+passou para a ficha no mesmo dia). Os links para
 `<parceiro>.movepark.co` (o botão de reservar do white-label) não entram na conta: são outro host.
 
 O crédito "Desenvolvido por / Feito por Movepark" fica como está, porque a Movepark fez esses
