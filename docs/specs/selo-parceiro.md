@@ -75,13 +75,28 @@ transparente, e não navy: o rodapé do parceiro pode ser preto, grafite ou uma
 foto, e um retângulo navy chapado apareceria como remendo. Na versão clara o
 fundo branco fica, porque ali ele é o que separa o selo do cinza do rodapé.
 
-### O destino é a home, com UTM opcional
+### O destino é a ficha do parceiro, e a home só no gerador público
 
-O link aponta para `/`, e não para uma página interna: é o domínio que precisa da
-autoridade, e a home é a única URL que não muda quando o site é reorganizado. O
-nome do parceiro, quando preenchido, vira `utm_source` (mais `utm_medium=selo`,
+**Mudou em 27/10/2026 (Conteúdo 70).** Até então o link apontava sempre para `/`,
+com o argumento de que é o domínio que precisa da autoridade e de que a home é a
+única URL que não muda. O plano de autoridade mostrou o contrário: a home já tem
+171 domínios de referência, e a página de Guarulhos, o maior mercado, tem 17
+([plano-autoridade-backlinks.md](./plano-autoridade-backlinks.md) §2.2). O Google
+ranqueia página, não domínio.
+
+Agora `gerarSnippet` e `montarUrl` aceitam `pagina`: a ficha do parceiro
+(`/estacionamentos/<aeroporto>/<unidade>`) ou a página do aeroporto. A ficha é a
+escolha padrão para parceiro, por dois motivos. Ela chega à página do aeroporto
+pela trilha, e quem clica no selo cai na unidade que já estava olhando, e não numa
+lista com os concorrentes do parceiro. Caminho fora desses dois formatos volta
+para a home, para não virar link quebrado no rodapé alheio.
+
+O gerador público de `/selo` continua gerando para a home, porque não sabe quem é o
+parceiro. Quem monta o selo de um parceiro conhecido passa a ficha.
+
+O nome do parceiro, quando preenchido, vira `utm_source` (mais `utm_medium=selo`,
 `utm_campaign=parceiros`), que permite medir o tráfego sem prejudicar o link,
-porque a URL canônica da home consolida os sinais.
+porque a URL canônica da página consolida os sinais.
 
 O host nunca é escrito à mão: vem de `siteUrl()` (ver `src/lib/site.ts`).
 
@@ -146,13 +161,27 @@ exceção consciente ao padrão da skill `harmonizar-paginas`.
 | `src/features/selo/SeloGerador.test.tsx` | prévia e código com o mesmo link, troca de frase, UTM ao nomear o parceiro, formato sem símbolo               |
 | `e2e/windup/selo.json`                   | cenário de leitura da página no navegador                                                                     |
 
+## Adoção (Conteúdo 70)
+
+O levantamento de 27/10/2026, parceiro a parceiro, com o endereço novo de cada link
+e as mensagens de pedido, está em
+[dados/selo-parceiros-2026-10-27.md](./dados/selo-parceiros-2026-10-27.md). O
+resumo: os 8 parceiros com unidade listada têm site, e 6 já linkam o `movepark.co`
+sem `nofollow`, todos para a home. Dois com o selo (BePark, desde 18/09, e
+Aeropark) e quatro com o crédito "Desenvolvido por" ou "Feito por Movepark" (Abbapark,
+Aerovalet, Nationpark e Virapark, sites que a Movepark fez no Wix). Garageinn e
+Plenty Park não linkam.
+
+Os links instalados entram na planilha de controle
+([dados/backlinks-controle.csv](./dados/backlinks-controle.csv)) com o projeto
+"Parceiro", para a revisão de 30 dias conferir se seguem no ar.
+
 ## Em aberto
 
-- Não há contagem de quantos parceiros instalaram o selo. Hoje isso só aparece
-  como tráfego por `utm_source` no analytics, e só para quem preencheu o nome.
-  O primeiro instalado é o do bepark.com.br, no rodapé desde 18/09/2026, com o
-  link do gerador desde 21/10/2026 (`utm_source=bepark`). Antes disso ele usava
-  UTMs próprias (`utm_campaign=selo-parceiro-rodape`). Ver
+- Não há contagem automática de quantos parceiros instalaram o selo. A conta é a
+  da planilha de controle, conferida à mão; no analytics só aparece como tráfego
+  por `utm_source`. O selo do bepark.com.br usava UTMs próprias
+  (`utm_campaign=selo-parceiro-rodape`) até 21/10/2026. Ver
   [ataque-cnf-bepark.md](./ataque-cnf-bepark.md) §2.3.5.
 - O passo a passo do Wix foi escrito a partir da interface do editor, e não
   verificado numa conta real. Se o Wix renomear um menu, o texto envelhece sem

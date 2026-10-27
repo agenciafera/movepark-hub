@@ -35,6 +35,11 @@ export type SeloOpcoes = {
   fundo: Fundo;
   /** Nome do parceiro. Vira `utm_source`. Vazio = link sem UTM. */
   parceiro?: string;
+  /**
+   * Página da Movepark para onde o link aponta: a ficha do parceiro
+   * (`/estacionamentos/<aeroporto>/<unidade>`) ou a do aeroporto. Vazio = home.
+   */
+  pagina?: string;
 };
 
 type Frase = {
@@ -90,12 +95,21 @@ export function slugificar(valor: string): string {
     .slice(0, 40);
 }
 
+/** Ficha da unidade ou página do aeroporto. Só essas duas recebem o selo fora da home. */
+const PAGINA_DO_SELO = /^\/estacionamentos\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/;
+
 /**
- * O destino é sempre a home, e não uma página interna: é o domínio que precisa da
- * autoridade, e a home é a única URL que não muda quando o site é reorganizado.
+ * O destino é a ficha do parceiro quando ela é informada, e a home só no gerador público.
+ *
+ * Até 27/10/2026 era sempre a home, que já tem 171 domínios de referência, enquanto a
+ * página de Guarulhos tem 17 (plano-autoridade-backlinks.md §2.2). O link do parceiro na
+ * ficha dele chega à página do aeroporto pela trilha, e o visitante que clica cai na
+ * unidade que ele já estava olhando, e não numa lista de concorrentes.
+ *
+ * Caminho fora do padrão volta para a home em vez de virar link quebrado no rodapé alheio.
  */
-export function montarUrl(parceiro?: string): string {
-  const base = siteUrl("/");
+export function montarUrl(parceiro?: string, pagina?: string): string {
+  const base = siteUrl(pagina && PAGINA_DO_SELO.test(pagina) ? pagina : "/");
   const slug = slugificar(parceiro ?? "");
   if (!slug) return base;
   return `${base}?utm_source=${slug}&utm_medium=selo&utm_campaign=parceiros`;
@@ -178,8 +192,8 @@ function estiloDoLink(estilo: Estilo, fundo: Fundo): string {
  * claro e escuro sem um par de tokens por tema (5.6:1 sobre branco, 7.7:1 sobre navy).
  */
 export function gerarSnippet(opcoes: SeloOpcoes): string {
-  const { frase, estilo, fundo, parceiro } = opcoes;
-  const url = montarUrl(parceiro);
+  const { frase, estilo, fundo, parceiro, pagina } = opcoes;
+  const url = montarUrl(parceiro, pagina);
   const prefixo = (FRASES.find((f) => f.id === frase) ?? FRASES[0]).prefixo;
   const rotulo = textoDoSelo(frase);
 

@@ -35,11 +35,44 @@ describe("montarUrl", () => {
       `${SITE_URL}/?utm_source=vira-park&utm_medium=selo&utm_campaign=parceiros`,
     );
   });
+
+  // Conteúdo 70: a home já tem autoridade de sobra, e o selo do parceiro passou a
+  // apontar para a ficha dele, que leva à página do aeroporto pela trilha.
+  it("aponta para a ficha do parceiro quando ela é informada", () => {
+    expect(montarUrl("Garageinn", "/estacionamentos/aeroporto-viracopos/garageinn")).toBe(
+      `${SITE_URL}/estacionamentos/aeroporto-viracopos/garageinn?utm_source=garageinn&utm_medium=selo&utm_campaign=parceiros`,
+    );
+  });
+
+  it("aceita a página do aeroporto", () => {
+    expect(montarUrl(undefined, "/estacionamentos/aeroporto-guarulhos")).toBe(
+      `${SITE_URL}/estacionamentos/aeroporto-guarulhos`,
+    );
+  });
+
+  it("volta para a home quando o caminho não é ficha nem aeroporto", () => {
+    for (const pagina of [
+      "/blog/",
+      "//outro.com/x",
+      "estacionamentos/a/b",
+      "/estacionamentos/a/b/c",
+    ]) {
+      expect(montarUrl(undefined, pagina)).toBe(`${SITE_URL}/`);
+    }
+  });
 });
 
 describe("gerarSnippet", () => {
   it("leva o visitante para o domínio canônico", () => {
     expect(gerarSnippet(padrao)).toContain(`href="${SITE_URL}/"`);
+  });
+
+  it("leva para a ficha do parceiro quando ela é informada", () => {
+    const html = gerarSnippet({
+      ...padrao,
+      pagina: "/estacionamentos/aeroporto-congonhas/plenty-park",
+    });
+    expect(html).toContain(`href="${SITE_URL}/estacionamentos/aeroporto-congonhas/plenty-park"`);
   });
 
   // O selo existe para transferir autoridade. Com nofollow ele não transfere nada,
