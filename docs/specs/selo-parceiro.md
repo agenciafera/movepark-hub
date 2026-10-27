@@ -173,7 +173,11 @@ Aerovalet, Nationpark e Virapark, sites que a Movepark fez no Wix). Garageinn e
 Plenty Park não linkam. No mesmo dia, os cinco que a Movepark mantém passaram para
 a ficha: a BePark no repo `agenciafera/bepark-website` (`src/config/selo.ts`,
 travado com a constante `FICHA_NA_MOVEPARK` do `llms.txt` dela) e os quatro do Wix
-no editor, na conta Wix Studio da Agência Fera.
+no editor, na conta Wix Studio da Agência Fera. A Garageinn recebeu o selo pelo
+repositório do tema (`agenciafera/garageinn-wordpress`), e a Nationpark passou a
+creditar a Movepark nas páginas internas também. Fecho do dia: 7 dos 8 parceiros
+linkam o `movepark.co`, 6 para a própria ficha; a Aeropark segue para a home por
+decisão do Diego, e a Plenty Park fica de fora por falta de acesso.
 
 **Armadilha do editor do Wix Studio:** ao abrir o painel de link de um texto que
 já tem link, o editor às vezes seleciona a frase inteira, e confirmar transforma o

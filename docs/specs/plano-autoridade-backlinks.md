@@ -702,8 +702,9 @@ opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da C
   a ficha e foram conferidos no ar: a BePark (repo) e Abbapark, Aerovalet, Nationpark e Virapark
   (Wix Studio da Agência Fera). Na Nationpark o crédito passou a sair nas 10 páginas do site, e
   não só na home. Por decisão do Diego, a Aeropark fica com o selo para a home e a Plenty Park
-  fica de fora (sem acesso). Falta a Garageinn, que a Fera instala e depende de login no
-  WordPress dela.
+  fica de fora (sem acesso). A Garageinn recebeu o selo no mesmo dia, pelo repositório do tema.
+  **Fechada em 27/10/2026:** 7 dos 8 parceiros linkam o `movepark.co`, 6 deles para a própria
+  ficha.
 - **[Conteúdo 71](https://app.clickup.com/t/17tn9e9gfhf):** índice de preço de estacionamento em aeroporto como pauta nacional de férias de
   fim de ano. As pautas de BH continuam nas Conteúdo 55 e 56.
 - **[Conteúdo 72](https://app.clickup.com/t/17tn9e9gfhh):** blogs de viagem e milhas, com a calculadora e o índice como motivo do link, e

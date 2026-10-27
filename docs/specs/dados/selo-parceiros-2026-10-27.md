@@ -15,7 +15,7 @@ Leitura do HTML servido em 27/10/2026, sem executar JavaScript (é o que o Googl
 | Aeropark | `aeroparking.com.br` | PHP próprio | Grupo Bandeira Park | selo "Estacionamento parceiro Movepark", para a home | fica como está: o selo já está no ar, para a home (decisão do Diego, 27/10/2026) |
 | Aerovalet | `aerovalet.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
 | BePark | `bepark.com.br` | Vite, repo `agenciafera/bepark-website` | Fera | selo "Estacionamento parceiro Movepark", para a home | **feito em 27/10/2026** (`a1e4740`), conferido no ar |
-| Garageinn | `garageinn.com.br` | WordPress 4.8 | Fera ("feito por F E R A") | nenhum | instalar pela Fera; **bloqueado em 27/10/2026**: o WordPress pede login, e nenhum navegador tinha sessão aberta |
+| Garageinn | `garageinn.com.br` | WordPress 4.8 com tema Twig, repo `agenciafera/garageinn-wordpress` | Fera ("feito por F E R A") | nenhum | **feito em 27/10/2026**: selo no rodapé de todas as páginas, pelo repo `agenciafera/garageinn-wordpress` (`twig/layout/default.twig`, commit `c26e063`), conferido no ar |
 | Nationpark | `nationpark.com.br` | Wix | Movepark | "Feito por **Movepark**", para a home (só na home; as páginas internas diziam só "Feito por Agência Fera") | **feito em 27/10/2026** no editor do Wix, conferido no ar. As páginas internas passaram a "Feito por Agência Fera · Parceiro **Movepark**", com os dois links; as 10 páginas do site linkam a ficha |
 | Plenty Park | `plentypark.com.br` | WordPress com Elementor | não informado | nenhum | fica de fora: a Movepark não tem acesso ao site (27/10/2026) |
 | Virapark | `virapark.com.br` | Wix | Movepark | "Desenvolvido por **Movepark**", para a home | **feito em 27/10/2026** no editor do Wix, conferido no ar |
@@ -51,7 +51,8 @@ que é a praça prioritária do plano.
 ## Mensagens
 
 **Decisão do Diego em 27/10/2026:** a Aeropark fica com o selo como está, a Plenty Park fica de
-fora (a Movepark não tem acesso ao site) e a Garageinn é instalada pela Fera, sem pedido. As
+fora (a Movepark não tem acesso ao site) e a Garageinn é instalada pela Fera, sem pedido (feito no
+mesmo dia, pelo repositório). As
 mensagens abaixo ficam como registro e para o caso de algum desses mudar.
 
 Para o Diego enviar pelo WhatsApp. Os códigos saíram de `gerarSnippet` em 27/10/2026, na cor do
@@ -134,3 +135,16 @@ foi feita lá em 27/10/2026. A mensagem abaixo fica para um site que o parceiro 
 > [endereço novo da tabela]
 
 Na Nationpark o crédito é "Feito por Movepark"; ajuste a frase da mensagem.
+
+## Como o selo entrou na Garageinn
+
+O site é WordPress com tema em Twig, versionado em `agenciafera/garageinn-wordpress` (privado). O
+push na `main` publica em produção pelo workflow `deploy.yml` (Capistrano). O rodapé de todas as
+páginas está em `wp-content/themes/garageinn/twig/layout/default.twig`, e o selo ficou entre o
+"Todos os direitos reservados" e o "feito por FERA".
+
+O primeiro deploy (#12) falhou no `setup-ruby`, e não por causa do selo. O `ubuntu-latest` tinha
+passado para o 26.04, que não tem o Ruby 2.4 do Capistrano. O workflow foi fixado em `ubuntu-24.04`
+(commit `6f169e8`), onde o deploy anterior (#11) tinha rodado, e o #13 publicou o selo. A chave SSH
+desta máquina (`diegoguedesgomes`) não enxerga esse repositório; a edição foi feita pelo GitHub web,
+na sessão `agenciafera` do Chrome.
