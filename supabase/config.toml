@@ -429,6 +429,9 @@ verify_jwt = false
 [functions.wl-deliver]
 verify_jwt = false
 
+[functions.integration-deliver]
+verify_jwt = false
+
 [functions.wl-reconcile]
 verify_jwt = false
 

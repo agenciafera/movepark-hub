@@ -20,19 +20,23 @@ import {
   type VoucherBooking,
   voucherFilename,
 } from "./voucher/fields.ts";
-import { buildVoucherPdf, voucherValidateUrl } from "./voucher/pdf.ts";
+import { buildVoucherPdf, voucherQrContent } from "./voucher/pdf.ts";
 import { notifyBooking } from "./notify.ts";
+import { activeAccessCode, holdConfirmationEmail } from "./integrations/access-code.ts";
 
 /**
  * O voucher vai em anexo no e-mail de confirmação (02/10/2026): o cliente recebe o PDF sem
  * precisar entrar no site. É o mesmo gerador do bucket (`buildVoucherPdf`), montado de novo
  * aqui em vez de baixado do storage, porque a pré-geração do webhook corre em paralelo a este
  * envio e o arquivo pode ainda não existir. Best-effort: se o PDF falhar, o e-mail sai sem
- * anexo, como saía antes, em vez de não sair.
+ * anexo, como saía antes, em vez de não sair. O QR é o da cancela quando a unidade tem
+ * integração (docs/specs/integracoes.md § 5.6).
  */
-async function voucherAttachment(voucher: VoucherBooking): Promise<EmailAttachment[]> {
+// deno-lint-ignore no-explicit-any
+export async function voucherAttachment(admin: any, bookingId: string, voucher: VoucherBooking): Promise<EmailAttachment[]> {
   try {
-    const bytes = await buildVoucherPdf(voucher, voucherValidateUrl(siteUrl(), voucher.code));
+    const accessCode = await activeAccessCode(admin, bookingId);
+    const bytes = await buildVoucherPdf(voucher, voucherQrContent(siteUrl(), voucher.code, accessCode));
     return [pdfAttachment(voucherFilename(voucher.code), bytes)];
   } catch (e) {
     console.error("[booking-confirmation] voucher não anexado:", voucher.code, e);
@@ -40,8 +44,40 @@ async function voucherAttachment(voucher: VoucherBooking): Promise<EmailAttachme
   }
 }
 
+/**
+ * Destinatário do cliente: o snapshot do pedido tem prioridade; senão, a credencial do
+ * auth.users. ADR-006: e-mail e telefone verificados moram no auth.users, nunca no profiles.
+ */
+export async function customerRecipient(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  b: { customer_email?: string | null; customer_name?: string | null; profile_id?: string | null },
+): Promise<{ email: string | null; name: string | null }> {
+  let email: string | null = String(b.customer_email ?? "").trim() || null;
+  let name: string | null = b.customer_name ?? null;
+  if ((!email || !name) && b.profile_id) {
+    if (!name) {
+      const { data: p } = await admin
+        .from("profiles")
+        .select("full_name")
+        .eq("id", b.profile_id)
+        .maybeSingle();
+      name = p?.full_name ?? null;
+    }
+    if (!email) {
+      const { data: u } = await admin.auth.admin.getUserById(b.profile_id);
+      email = u?.user?.email ?? null;
+    }
+  }
+  return { email, name };
+}
+
 // deno-lint-ignore no-explicit-any
 export async function sendBookingConfirmationEmail(admin: any, bookingId: string): Promise<void> {
+  // 0. Unidade com integração de cancela: o e-mail espera o código do provedor por até 15
+  // minutos (decisão D4). Quem processa a entrega solta o e-mail depois (integrations/process.ts).
+  if (await holdConfirmationEmail(admin, bookingId)) return;
+
   // 1. Reivindica o envio (exatamente-uma-vez). Service role ignora RLS.
   const { data: claimed } = await admin
     .from("booking")
@@ -61,24 +97,8 @@ export async function sendBookingConfirmationEmail(admin: any, bookingId: string
       .maybeSingle();
     if (!b) throw new Error("reserva não encontrada");
 
-    // 3. Resolve destinatário: snapshot do pedido tem prioridade; senão, credencial do auth.users.
-    // ADR-006: e-mail/telefone verificados moram no auth.users, nunca no profiles.
-    let email: string | null = String(b.customer_email ?? "").trim() || null;
-    let name: string | null = b.customer_name ?? null;
-    if ((!email || !name) && b.profile_id) {
-      if (!name) {
-        const { data: p } = await admin
-          .from("profiles")
-          .select("full_name")
-          .eq("id", b.profile_id)
-          .maybeSingle();
-        name = p?.full_name ?? null;
-      }
-      if (!email) {
-        const { data: u } = await admin.auth.admin.getUserById(b.profile_id);
-        email = u?.user?.email ?? null;
-      }
-    }
+    // 3. Resolve destinatário.
+    const { email, name } = await customerRecipient(admin, b);
     if (!email) throw new Error("sem e-mail de contato para a reserva");
 
     const { from } = await getEmailConfig(admin);
@@ -88,7 +108,7 @@ export async function sendBookingConfirmationEmail(admin: any, bookingId: string
     const voucher = mapBookingRowToVoucher(b);
     const url = `${siteUrl()}/bookings/${voucher.code}`;
     const tpl = tplBookingConfirmation(voucher, name, url);
-    const attachments = await voucherAttachment(voucher);
+    const attachments = await voucherAttachment(admin, bookingId, voucher);
     const res = await sendEmail({ from, to: email, subject: tpl.subject, html: tpl.html, attachments });
     if (!res.ok) throw new Error(res.error ?? "falha no SMTP");
   } catch (e) {

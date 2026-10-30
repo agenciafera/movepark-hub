@@ -9,8 +9,8 @@ import { parkingTitle } from "@/lib/parkingName";
 import { Wordmark } from "@/components/shared/Brand";
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { nightsOf } from "@/features/account/accountSummary.logic";
-import { useVoucherPdf, type MyBookingDetail } from "./customerApi";
-import { isVoucherReceipt } from "./voucher.logic";
+import { useBookingAccessCode, useVoucherPdf, type MyBookingDetail } from "./customerApi";
+import { isVoucherReceipt, voucherQrContent } from "./voucher.logic";
 
 type Props = {
   booking: MyBookingDetail;
@@ -35,19 +35,25 @@ export function Voucher({ booking }: Props) {
       ? `https://www.google.com/maps?q=${booking.location_detail.latitude},${booking.location_detail.longitude}`
       : null;
 
+  // Unidade com cancela integrada: o QR de entrada é o código do provedor. No comprovante não há
+  // mais entrada, então o QR volta a ser o da validação da reserva.
+  const access = useBookingAccessCode(booking.code, !receipt);
+  const accessCode = receipt ? null : (access.data?.code ?? null);
+  const waitingAccess = !receipt && (access.isLoading || Boolean(access.data?.pending));
+
   React.useEffect(() => {
+    if (waitingAccess) return;
     let active = true;
-    const validateUrl = `${window.location.origin}/voucher/validate?code=${booking.code}`;
     // Guarda contra setState depois de desmontar: a geração do QR é assíncrona, e
     // sem isso ela resolvia após o teardown do teste ("window is not defined") e
     // faria um setState num componente que já saiu.
-    toDataUrl(validateUrl, 240).then((url) => {
+    toDataUrl(voucherQrContent(window.location.origin, booking.code, accessCode), 240).then((url) => {
       if (active) setQrUrl(url);
     });
     return () => {
       active = false;
     };
-  }, [booking.code]);
+  }, [booking.code, accessCode, waitingAccess]);
 
   async function downloadPdf() {
     try {

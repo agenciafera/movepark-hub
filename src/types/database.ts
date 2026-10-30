@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       account_merge_log: {
@@ -82,6 +107,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "add_on_service_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -229,6 +261,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "api_key_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "api_key_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -294,6 +333,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_request_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -548,6 +594,47 @@ export type Database = {
             columns: ["blog_post_id"]
             isOneToOne: false
             referencedRelation: "blog_post"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_post_redirect: {
+        Row: {
+          created_at: string
+          destination_id: string | null
+          http_status: number
+          id: string
+          new_slug: string
+          old_slug: string
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination_id?: string | null
+          http_status?: number
+          id?: string
+          new_slug: string
+          old_slug: string
+          reason: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination_id?: string | null
+          http_status?: number
+          id?: string
+          new_slug?: string
+          old_slug?: string
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_redirect_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
             referencedColumns: ["id"]
           },
         ]
@@ -964,69 +1051,69 @@ export type Database = {
       booking_fare_extension: {
         Row: {
           actor: string
+          actual_check_out_at: string | null
           added_days: number
           booking_id: string
           created_at: string
           flight_number: string | null
           id: string
+          kind: string
           new_check_out_at: string
           old_check_out_at: string
+          overage_cents: number
+          overage_charged_cents: number | null
+          overage_daily_cents: number
+          overage_note: string | null
+          overage_recorded_at: string | null
+          overage_recorded_by: string | null
           partner_credit_cents: number | null
           reason: string | null
-          settlement_id: string | null
-          kind: string
           requested_check_out_at: string | null
-          overage_daily_cents: number
-          overage_cents: number
-          actual_check_out_at: string | null
-          overage_charged_cents: number | null
-          overage_note: string | null
-          overage_recorded_by: string | null
-          overage_recorded_at: string | null
+          settlement_id: string | null
         }
         Insert: {
           actor?: string
+          actual_check_out_at?: string | null
           added_days?: number
           booking_id: string
           created_at?: string
           flight_number?: string | null
           id?: string
+          kind?: string
           new_check_out_at: string
           old_check_out_at: string
+          overage_cents?: number
+          overage_charged_cents?: number | null
+          overage_daily_cents?: number
+          overage_note?: string | null
+          overage_recorded_at?: string | null
+          overage_recorded_by?: string | null
           partner_credit_cents?: number | null
           reason?: string | null
-          settlement_id?: string | null
-          kind?: string
           requested_check_out_at?: string | null
-          overage_daily_cents?: number
-          overage_cents?: number
-          actual_check_out_at?: string | null
-          overage_charged_cents?: number | null
-          overage_note?: string | null
-          overage_recorded_by?: string | null
-          overage_recorded_at?: string | null
+          settlement_id?: string | null
         }
         Update: {
           actor?: string
+          actual_check_out_at?: string | null
           added_days?: number
           booking_id?: string
           created_at?: string
           flight_number?: string | null
           id?: string
+          kind?: string
           new_check_out_at?: string
           old_check_out_at?: string
+          overage_cents?: number
+          overage_charged_cents?: number | null
+          overage_daily_cents?: number
+          overage_note?: string | null
+          overage_recorded_at?: string | null
+          overage_recorded_by?: string | null
           partner_credit_cents?: number | null
           reason?: string | null
-          settlement_id?: string | null
-          kind?: string
           requested_check_out_at?: string | null
-          overage_daily_cents?: number
-          overage_cents?: number
-          actual_check_out_at?: string | null
-          overage_charged_cents?: number | null
-          overage_note?: string | null
-          overage_recorded_by?: string | null
-          overage_recorded_at?: string | null
+          settlement_id?: string | null
         }
         Relationships: [
           {
@@ -1042,6 +1129,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "marketing_booking_fact"
             referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "booking_fare_extension_overage_recorded_by_fkey"
+            columns: ["overage_recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "booking_fare_extension_settlement_id_fkey"
@@ -1298,13 +1392,20 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "commission_rule_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
         ]
       }
       company: {
         Row: {
           contract_accepted_at: string | null
           contract_accepted_by: string | null
-          contract_accepted_ip: unknown | null
+          contract_accepted_ip: unknown
           contract_sha256: string | null
           contract_version: string | null
           created_at: string
@@ -1336,7 +1437,7 @@ export type Database = {
         Insert: {
           contract_accepted_at?: string | null
           contract_accepted_by?: string | null
-          contract_accepted_ip?: unknown | null
+          contract_accepted_ip?: unknown
           contract_sha256?: string | null
           contract_version?: string | null
           created_at?: string
@@ -1368,7 +1469,7 @@ export type Database = {
         Update: {
           contract_accepted_at?: string | null
           contract_accepted_by?: string | null
-          contract_accepted_ip?: unknown | null
+          contract_accepted_ip?: unknown
           contract_sha256?: string | null
           contract_version?: string | null
           created_at?: string
@@ -1457,6 +1558,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_access_link_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "company_access_link_created_by_fkey"
@@ -1571,6 +1679,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "company_onboarding_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "company_onboarding_prospect_location_id_fkey"
             columns: ["prospect_location_id"]
             isOneToOne: false
@@ -1617,6 +1732,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_parking_type_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "company_parking_type_parking_type_id_fkey"
@@ -1689,6 +1811,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_payout_account_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -1801,6 +1930,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -2109,6 +2245,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "discount_rule_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "discount_rule_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
@@ -2213,6 +2356,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "external_exit_click_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "external_exit_click_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
@@ -2239,6 +2389,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_exit_click_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "external_exit_click_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
           },
         ]
       }
@@ -2618,6 +2782,20 @@ export type Database = {
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "home_featured_offer_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "home_featured_offer_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
         ]
       }
       identifier_otp: {
@@ -2655,6 +2833,401 @@ export type Database = {
           requested_by?: string | null
         }
         Relationships: []
+      }
+      identity_assertion: {
+        Row: {
+          api_key_id: string
+          captured_at: string | null
+          created_at: string
+          error: string | null
+          expires_at: string
+          finished_at: string | null
+          id: string
+          ip: string | null
+          new_account: boolean | null
+          otp: string | null
+          phone_hash: string
+          profile_id: string | null
+          status: string
+        }
+        Insert: {
+          api_key_id: string
+          captured_at?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          finished_at?: string | null
+          id?: string
+          ip?: string | null
+          new_account?: boolean | null
+          otp?: string | null
+          phone_hash: string
+          profile_id?: string | null
+          status?: string
+        }
+        Update: {
+          api_key_id?: string
+          captured_at?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          finished_at?: string | null
+          id?: string
+          ip?: string | null
+          new_account?: boolean | null
+          otp?: string | null
+          phone_hash?: string
+          profile_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_assertion_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_key"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_access_code: {
+        Row: {
+          blocked_at: string | null
+          blocked_by: string | null
+          booking_id: string | null
+          code: string
+          company_id: string
+          connection_id: string
+          created_at: string
+          delivery_id: string | null
+          id: string
+          status: string
+          updated_at: string
+          wl_order_id: number | null
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          booking_id?: string | null
+          code: string
+          company_id: string
+          connection_id: string
+          created_at?: string
+          delivery_id?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          wl_order_id?: number | null
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          booking_id?: string | null
+          code?: string
+          company_id?: string
+          connection_id?: string
+          created_at?: string
+          delivery_id?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          wl_order_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_access_code_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_access_code_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "integration_access_code_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_access_code_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "integration_access_code_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "integration_connection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_access_code_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "integration_delivery"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_attempt: {
+        Row: {
+          created_at: string
+          delivery_id: string
+          duration_ms: number | null
+          error: string | null
+          http_status: number | null
+          id: string
+          request: Json | null
+          response: Json | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_id: string
+          duration_ms?: number | null
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          request?: Json | null
+          response?: Json | null
+        }
+        Update: {
+          created_at?: string
+          delivery_id?: string
+          duration_ms?: number | null
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          request?: Json | null
+          response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_attempt_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "integration_delivery"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_connection: {
+        Row: {
+          auth_failed_at: string | null
+          company_id: string
+          config: Json
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          enabled: boolean
+          id: string
+          last_test_at: string | null
+          last_test_detail: string | null
+          last_test_ok: boolean | null
+          location_id: string
+          provider: string
+          secret_hint: string | null
+          secret_id: string | null
+          send_hub_bookings: boolean
+          send_site_bookings: boolean
+          updated_at: string
+        }
+        Insert: {
+          auth_failed_at?: string | null
+          company_id: string
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          id?: string
+          last_test_at?: string | null
+          last_test_detail?: string | null
+          last_test_ok?: boolean | null
+          location_id: string
+          provider: string
+          secret_hint?: string | null
+          secret_id?: string | null
+          send_hub_bookings?: boolean
+          send_site_bookings?: boolean
+          updated_at?: string
+        }
+        Update: {
+          auth_failed_at?: string | null
+          company_id?: string
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          enabled?: boolean
+          id?: string
+          last_test_at?: string | null
+          last_test_detail?: string | null
+          last_test_ok?: boolean | null
+          location_id?: string
+          provider?: string
+          secret_hint?: string | null
+          secret_id?: string | null
+          send_hub_bookings?: boolean
+          send_site_bookings?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_connection_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_connection_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "integration_connection_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_connection_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "integration_connection_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+        ]
+      }
+      integration_delivery: {
+        Row: {
+          attempts: number
+          booking_id: string | null
+          company_id: string
+          connection_id: string
+          created_at: string
+          delivered_at: string | null
+          email_held_at: string | null
+          external_code: string | null
+          hold_released_at: string | null
+          hold_until: string | null
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          last_status: number | null
+          max_attempts: number
+          next_attempt_at: string
+          operation: string
+          payload: Json | null
+          source: string
+          status: string
+          updated_at: string
+          wl_order_id: number | null
+        }
+        Insert: {
+          attempts?: number
+          booking_id?: string | null
+          company_id: string
+          connection_id: string
+          created_at?: string
+          delivered_at?: string | null
+          email_held_at?: string | null
+          external_code?: string | null
+          hold_released_at?: string | null
+          hold_until?: string | null
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          last_status?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          operation?: string
+          payload?: Json | null
+          source: string
+          status?: string
+          updated_at?: string
+          wl_order_id?: number | null
+        }
+        Update: {
+          attempts?: number
+          booking_id?: string | null
+          company_id?: string
+          connection_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          email_held_at?: string | null
+          external_code?: string | null
+          hold_released_at?: string | null
+          hold_until?: string | null
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          last_status?: number | null
+          max_attempts?: number
+          next_attempt_at?: string
+          operation?: string
+          payload?: Json | null
+          source?: string
+          status?: string
+          updated_at?: string
+          wl_order_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_delivery_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_delivery_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "integration_delivery_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_delivery_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "integration_delivery_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "integration_connection"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       knowledge_chunk: {
         Row: {
@@ -3003,6 +3576,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "location_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "location_destination_id_fkey"
             columns: ["destination_id"]
             isOneToOne: false
@@ -3336,6 +3916,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_parking_availability_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "location_parking_availability_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
           },
         ]
       }
@@ -4245,6 +4839,27 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_verify_log: {
+        Row: {
+          created_at: string
+          id: string
+          identifier_hash: string
+          ip: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier_hash: string
+          ip?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier_hash?: string
+          ip?: string | null
+        }
+        Relationships: []
+      }
       parking_type: {
         Row: {
           code: string
@@ -4295,6 +4910,54 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      partner_digest_log: {
+        Row: {
+          company_id: string
+          created_at: string
+          digest_date: string
+          entradas: number
+          novas: number
+          recipients: number
+          saidas: number
+          sent_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          digest_date: string
+          entradas?: number
+          novas?: number
+          recipients?: number
+          saidas?: number
+          sent_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          digest_date?: string
+          entradas?: number
+          novas?: number
+          recipients?: number
+          saidas?: number
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_digest_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_digest_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       partner_lead: {
         Row: {
@@ -4365,10 +5028,10 @@ export type Database = {
           debt_email_sent_at: string | null
           debt_recovered_cents: number
           debt_reservation_id: string | null
-          fee_credit_returned_cents: number
-          fee_credit_reservation_id: string | null
           expires_at: string | null
           fare_target_tier: Database["public"]["Enums"]["fare_tier"] | null
+          fee_credit_reservation_id: string | null
+          fee_credit_returned_cents: number
           gateway_fee_cents: number | null
           gateway_fee_synced_at: string | null
           id: string
@@ -4383,9 +5046,11 @@ export type Database = {
           provider_charge_id: string | null
           provider_payment_id: string | null
           refund_absorbed_by_master: boolean
+          refund_keeps_booking: boolean
           refund_partner_balance_cents: number | null
           refund_partner_cents: number
           refund_reason: string | null
+          refund_requested_by: string | null
           refund_split: Json | null
           refunded_amount: number | null
           refunded_at: string | null
@@ -4405,10 +5070,10 @@ export type Database = {
           debt_email_sent_at?: string | null
           debt_recovered_cents?: number
           debt_reservation_id?: string | null
-          fee_credit_returned_cents?: number
-          fee_credit_reservation_id?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
+          fee_credit_reservation_id?: string | null
+          fee_credit_returned_cents?: number
           gateway_fee_cents?: number | null
           gateway_fee_synced_at?: string | null
           id?: string
@@ -4423,9 +5088,11 @@ export type Database = {
           provider_charge_id?: string | null
           provider_payment_id?: string | null
           refund_absorbed_by_master?: boolean
+          refund_keeps_booking?: boolean
           refund_partner_balance_cents?: number | null
           refund_partner_cents?: number
           refund_reason?: string | null
+          refund_requested_by?: string | null
           refund_split?: Json | null
           refunded_amount?: number | null
           refunded_at?: string | null
@@ -4445,10 +5112,10 @@ export type Database = {
           debt_email_sent_at?: string | null
           debt_recovered_cents?: number
           debt_reservation_id?: string | null
-          fee_credit_returned_cents?: number
-          fee_credit_reservation_id?: string | null
           expires_at?: string | null
           fare_target_tier?: Database["public"]["Enums"]["fare_tier"] | null
+          fee_credit_reservation_id?: string | null
+          fee_credit_returned_cents?: number
           gateway_fee_cents?: number | null
           gateway_fee_synced_at?: string | null
           id?: string
@@ -4463,9 +5130,11 @@ export type Database = {
           provider_charge_id?: string | null
           provider_payment_id?: string | null
           refund_absorbed_by_master?: boolean
+          refund_keeps_booking?: boolean
           refund_partner_balance_cents?: number | null
           refund_partner_cents?: number
           refund_reason?: string | null
+          refund_requested_by?: string | null
           refund_split?: Json | null
           refunded_amount?: number | null
           refunded_at?: string | null
@@ -4486,6 +5155,49 @@ export type Database = {
             foreignKeyName: "payment_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "payment_refund_requested_by_fkey"
+            columns: ["refund_requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_charge_lock: {
+        Row: {
+          booking_id: string
+          created_at: string
+          locked_until: string
+          token: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          locked_until: string
+          token: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          locked_until?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_charge_lock_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_charge_lock_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
             referencedRelation: "marketing_booking_fact"
             referencedColumns: ["booking_id"]
           },
@@ -4629,51 +5341,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payout_debt_reservation: {
-        Row: {
-          amount_cents: number
-          company_id: string
-          consumed_by_payment_id: string | null
-          created_at: string
-          expires_at: string
-          id: string
-          provider: string
-        }
-        Insert: {
-          amount_cents: number
-          company_id: string
-          consumed_by_payment_id?: string | null
-          created_at?: string
-          expires_at: string
-          id?: string
-          provider?: string
-        }
-        Update: {
-          amount_cents?: number
-          company_id?: string
-          consumed_by_payment_id?: string | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          provider?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payout_debt_reservation_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payout_debt_reservation_consumed_by_payment_id_fkey"
-            columns: ["consumed_by_payment_id"]
-            isOneToOne: false
-            referencedRelation: "payment"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       payout_auto_cycle: {
         Row: {
           amount_cents: number | null
@@ -4726,6 +5393,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payout_auto_cycle_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "payout_auto_cycle_withdrawal_id_fkey"
             columns: ["withdrawal_id"]
             isOneToOne: false
@@ -4734,7 +5408,7 @@ export type Database = {
           },
         ]
       }
-      payout_fee_credit_reservation: {
+      payout_debt_reservation: {
         Row: {
           amount_cents: number
           company_id: string
@@ -4764,14 +5438,21 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "payout_fee_credit_reservation_company_id_fkey"
+            foreignKeyName: "payout_debt_reservation_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payout_fee_credit_reservation_consumed_by_payment_id_fkey"
+            foreignKeyName: "payout_debt_reservation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "payout_debt_reservation_consumed_by_payment_id_fkey"
             columns: ["consumed_by_payment_id"]
             isOneToOne: false
             referencedRelation: "payment"
@@ -4822,10 +5503,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payout_debt_settlement_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "payout_debt_settlement_recorded_by_fkey"
             columns: ["recorded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_fee_credit_reservation: {
+        Row: {
+          amount_cents: number
+          company_id: string
+          consumed_by_payment_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          provider: string
+        }
+        Insert: {
+          amount_cents: number
+          company_id: string
+          consumed_by_payment_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          provider?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string
+          consumed_by_payment_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_fee_credit_reservation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_fee_credit_reservation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "payout_fee_credit_reservation_consumed_by_payment_id_fkey"
+            columns: ["consumed_by_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment"
             referencedColumns: ["id"]
           },
         ]
@@ -4922,6 +5662,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_recipient_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -5114,6 +5861,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payout_transfer_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "payout_transfer_requested_by_fkey"
             columns: ["requested_by"]
             isOneToOne: false
@@ -5127,22 +5881,22 @@ export type Database = {
           amount_cents: number
           company_id: string
           created_at: string
+          cycle_id: string | null
           deleted_at: string | null
           expected_at: string | null
           external_recipient_id: string | null
           external_transfer_id: string
           failure_reason: string | null
+          fee_borne_by: string
           fee_cents: number
           gateway_status: string | null
           id: string
+          origin: string
           paid_at: string | null
           provider: string
           raw: Json | null
           requested_at: string | null
           requested_email_sent_at: string | null
-          cycle_id: string | null
-          fee_borne_by: string
-          origin: string
           settled_email_sent_at: string | null
           status: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at: string | null
@@ -5152,22 +5906,22 @@ export type Database = {
           amount_cents: number
           company_id: string
           created_at?: string
+          cycle_id?: string | null
           deleted_at?: string | null
           expected_at?: string | null
           external_recipient_id?: string | null
           external_transfer_id: string
           failure_reason?: string | null
+          fee_borne_by?: string
           fee_cents?: number
           gateway_status?: string | null
           id?: string
+          origin?: string
           paid_at?: string | null
           provider?: string
           raw?: Json | null
           requested_at?: string | null
           requested_email_sent_at?: string | null
-          cycle_id?: string | null
-          fee_borne_by?: string
-          origin?: string
           settled_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at?: string | null
@@ -5177,22 +5931,22 @@ export type Database = {
           amount_cents?: number
           company_id?: string
           created_at?: string
+          cycle_id?: string | null
           deleted_at?: string | null
           expected_at?: string | null
           external_recipient_id?: string | null
           external_transfer_id?: string
           failure_reason?: string | null
+          fee_borne_by?: string
           fee_cents?: number
           gateway_status?: string | null
           id?: string
+          origin?: string
           paid_at?: string | null
           provider?: string
           raw?: Json | null
           requested_at?: string | null
           requested_email_sent_at?: string | null
-          cycle_id?: string | null
-          fee_borne_by?: string
-          origin?: string
           settled_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["payout_withdrawal_status"]
           synced_at?: string | null
@@ -5204,6 +5958,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_withdrawal_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "payout_withdrawal_cycle_fk"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "payout_auto_cycle"
             referencedColumns: ["id"]
           },
         ]
@@ -5285,6 +6053,20 @@ export type Database = {
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pricing_mirror_run_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_mirror_run_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
         ]
       }
       pricing_rule: {
@@ -5304,6 +6086,7 @@ export type Database = {
           incremental_one_day_price: number | null
           incremental_two_days_price: number | null
           location_parking_type_id: string
+          mirror_error: string | null
           mirror_sampled_at: string | null
           mirror_source: string | null
           mirror_status: string
@@ -5334,6 +6117,7 @@ export type Database = {
           incremental_one_day_price?: number | null
           incremental_two_days_price?: number | null
           location_parking_type_id: string
+          mirror_error?: string | null
           mirror_sampled_at?: string | null
           mirror_source?: string | null
           mirror_status?: string
@@ -5364,6 +6148,7 @@ export type Database = {
           incremental_one_day_price?: number | null
           incremental_two_days_price?: number | null
           location_parking_type_id?: string
+          mirror_error?: string | null
           mirror_sampled_at?: string | null
           mirror_source?: string | null
           mirror_status?: string
@@ -5387,11 +6172,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pricing_rule_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_rule_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
             foreignKeyName: "pricing_rule_surcharge_source_id_fkey"
             columns: ["surcharge_source_id"]
             isOneToOne: false
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_rule_surcharge_source_id_fkey"
+            columns: ["surcharge_source_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_rule_surcharge_source_id_fkey"
+            columns: ["surcharge_source_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
           },
         ]
       }
@@ -5461,6 +6274,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "profile_company_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "profile_company_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -5492,6 +6312,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_saved_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "profile_saved_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
           },
           {
             foreignKeyName: "profile_saved_profile_id_fkey"
@@ -6006,6 +6840,170 @@ export type Database = {
         }
         Relationships: []
       }
+      social_post: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          attempts: number
+          blog_post_id: string | null
+          caption: string
+          created_at: string
+          cta_url: string | null
+          cut_number: number | null
+          deleted_at: string | null
+          destination_id: string | null
+          draft_key: string
+          id: string
+          ig_container_id: string | null
+          ig_media_id: string | null
+          ig_permalink: string | null
+          keyphrase: string | null
+          kind: Database["public"]["Enums"]["social_post_kind"]
+          last_error: string | null
+          placements: string[]
+          price_date: string | null
+          published_at: string | null
+          scheduled_at: string
+          slides: Json
+          status: Database["public"]["Enums"]["social_post_status"]
+          story_claimed_at: string | null
+          story_error: string | null
+          story_items: Json
+          story_published_at: string | null
+          story_slides: Json
+          story_status: string | null
+          updated_at: string
+          validation: Json
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attempts?: number
+          blog_post_id?: string | null
+          caption: string
+          created_at?: string
+          cta_url?: string | null
+          cut_number?: number | null
+          deleted_at?: string | null
+          destination_id?: string | null
+          draft_key: string
+          id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
+          keyphrase?: string | null
+          kind: Database["public"]["Enums"]["social_post_kind"]
+          last_error?: string | null
+          placements?: string[]
+          price_date?: string | null
+          published_at?: string | null
+          scheduled_at: string
+          slides: Json
+          status?: Database["public"]["Enums"]["social_post_status"]
+          story_claimed_at?: string | null
+          story_error?: string | null
+          story_items?: Json
+          story_published_at?: string | null
+          story_slides?: Json
+          story_status?: string | null
+          updated_at?: string
+          validation?: Json
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attempts?: number
+          blog_post_id?: string | null
+          caption?: string
+          created_at?: string
+          cta_url?: string | null
+          cut_number?: number | null
+          deleted_at?: string | null
+          destination_id?: string | null
+          draft_key?: string
+          id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
+          keyphrase?: string | null
+          kind?: Database["public"]["Enums"]["social_post_kind"]
+          last_error?: string | null
+          placements?: string[]
+          price_date?: string | null
+          published_at?: string | null
+          scheduled_at?: string
+          slides?: Json
+          status?: Database["public"]["Enums"]["social_post_status"]
+          story_claimed_at?: string | null
+          story_error?: string | null
+          story_items?: Json
+          story_published_at?: string | null
+          story_slides?: Json
+          story_status?: string | null
+          updated_at?: string
+          validation?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_post"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destination"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_post_event: {
+        Row: {
+          actor: string | null
+          created_at: string
+          http_status: number | null
+          id: string
+          kind: string
+          note: string | null
+          request: Json | null
+          response: Json | null
+          social_post_id: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          kind: string
+          note?: string | null
+          request?: Json | null
+          response?: Json | null
+          social_post_id: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          request?: Json | null
+          response?: Json | null
+          social_post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_event_social_post_id_fkey"
+            columns: ["social_post_id"]
+            isOneToOne: false
+            referencedRelation: "social_post"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_ticket: {
         Row: {
           booking_id: string
@@ -6068,6 +7066,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booking"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "support_ticket_closed_by_fkey"
@@ -6261,6 +7266,369 @@ export type Database = {
           },
         ]
       }
+      wl_booking: {
+        Row: {
+          attendance_marked_at: string | null
+          attendance_status: string | null
+          category_slug: string | null
+          check_in_at: string | null
+          check_out_at: string | null
+          company_id: string
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          duplicate_of_wl_order_id: number | null
+          external_id: string | null
+          gateway_transaction_id: string | null
+          has_pcd: boolean
+          id: string
+          is_affiliated: boolean
+          is_duplicate: boolean
+          items: Json
+          license_plate: string | null
+          location_id: string | null
+          location_parking_type_id: string | null
+          origin: string | null
+          paid_total_cents: number | null
+          passenger_count: number | null
+          payment_method_code: string | null
+          payment_method_name: string | null
+          product_slug: string | null
+          status: string
+          synced_at: string
+          total_cents: number | null
+          updated_at: string
+          utm: Json
+          vehicle: Json
+          voucher_url: string | null
+          wl_created_at: string | null
+          wl_order_id: number
+          wl_order_number: string
+          wl_status: string | null
+          wl_updated_at: string | null
+        }
+        Insert: {
+          attendance_marked_at?: string | null
+          attendance_status?: string | null
+          category_slug?: string | null
+          check_in_at?: string | null
+          check_out_at?: string | null
+          company_id: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          duplicate_of_wl_order_id?: number | null
+          external_id?: string | null
+          gateway_transaction_id?: string | null
+          has_pcd?: boolean
+          id?: string
+          is_affiliated?: boolean
+          is_duplicate?: boolean
+          items?: Json
+          license_plate?: string | null
+          location_id?: string | null
+          location_parking_type_id?: string | null
+          origin?: string | null
+          paid_total_cents?: number | null
+          passenger_count?: number | null
+          payment_method_code?: string | null
+          payment_method_name?: string | null
+          product_slug?: string | null
+          status: string
+          synced_at?: string
+          total_cents?: number | null
+          updated_at?: string
+          utm?: Json
+          vehicle?: Json
+          voucher_url?: string | null
+          wl_created_at?: string | null
+          wl_order_id: number
+          wl_order_number: string
+          wl_status?: string | null
+          wl_updated_at?: string | null
+        }
+        Update: {
+          attendance_marked_at?: string | null
+          attendance_status?: string | null
+          category_slug?: string | null
+          check_in_at?: string | null
+          check_out_at?: string | null
+          company_id?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          duplicate_of_wl_order_id?: number | null
+          external_id?: string | null
+          gateway_transaction_id?: string | null
+          has_pcd?: boolean
+          id?: string
+          is_affiliated?: boolean
+          is_duplicate?: boolean
+          items?: Json
+          license_plate?: string | null
+          location_id?: string | null
+          location_parking_type_id?: string | null
+          origin?: string | null
+          paid_total_cents?: number | null
+          passenger_count?: number | null
+          payment_method_code?: string | null
+          payment_method_name?: string | null
+          product_slug?: string | null
+          status?: string
+          synced_at?: string
+          total_cents?: number | null
+          updated_at?: string
+          utm?: Json
+          vehicle?: Json
+          voucher_url?: string | null
+          wl_created_at?: string | null
+          wl_order_id?: number
+          wl_order_number?: string
+          wl_status?: string | null
+          wl_updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_booking_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "wl_booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_point_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "wl_booking_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "location_proximity"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "wl_booking_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "wl_booking_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+        ]
+      }
+      wl_booking_action_log: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          http_status: number | null
+          id: string
+          message: string | null
+          request: Json
+          requested_by: string | null
+          result: string
+          result_code: string | null
+          wl_booking_id: string
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          message?: string | null
+          request?: Json
+          requested_by?: string | null
+          result: string
+          result_code?: string | null
+          wl_booking_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          message?: string | null
+          request?: Json
+          requested_by?: string | null
+          result?: string
+          result_code?: string | null
+          wl_booking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_booking_action_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_action_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "wl_booking_action_log_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_action_log_wl_booking_id_fkey"
+            columns: ["wl_booking_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wl_booking_event: {
+        Row: {
+          actor: string | null
+          company_id: string
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          note: string | null
+          occurred_at: string | null
+          wl_booking_id: string
+          wl_event_id: number
+        }
+        Insert: {
+          actor?: string | null
+          company_id: string
+          created_at?: string
+          data?: Json
+          id?: string
+          kind: string
+          note?: string | null
+          occurred_at?: string | null
+          wl_booking_id: string
+          wl_event_id: number
+        }
+        Update: {
+          actor?: string | null
+          company_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          kind?: string
+          note?: string | null
+          occurred_at?: string | null
+          wl_booking_id?: string
+          wl_event_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_booking_event_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_event_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "wl_booking_event_wl_booking_id_fkey"
+            columns: ["wl_booking_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wl_booking_sync_state: {
+        Row: {
+          company_id: string
+          cursor_after_id: number
+          cursor_updated_since: string
+          imported_total: number
+          last_error: string | null
+          last_error_at: string | null
+          last_ok_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          cursor_after_id?: number
+          cursor_updated_since?: string
+          imported_total?: number
+          last_error?: string | null
+          last_error_at?: string | null
+          last_ok_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          cursor_after_id?: number
+          cursor_updated_since?: string
+          imported_total?: number
+          last_error?: string | null
+          last_error_at?: string | null
+          last_ok_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_booking_sync_state_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_booking_sync_state_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
       wl_delivery: {
         Row: {
           attempts: number
@@ -6318,6 +7686,13 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wl_delivery_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
         ]
       }
       wl_reconcile_log: {
@@ -6357,11 +7732,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "wl_reconcile_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "wl_reconcile_log_location_parking_type_id_fkey"
             columns: ["location_parking_type_id"]
             isOneToOne: false
             referencedRelation: "location_parking_type"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_reconcile_log_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "wl_reconcile_log_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+        ]
+      }
+      wl_sync_state: {
+        Row: {
+          location_parking_type_id: string
+          reconcile_error: string | null
+          reconcile_error_at: string | null
+          reconciled_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          location_parking_type_id: string
+          reconcile_error?: string | null
+          reconcile_error_at?: string | null
+          reconciled_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          location_parking_type_id?: string
+          reconcile_error?: string | null
+          reconcile_error_at?: string | null
+          reconciled_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wl_sync_state_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_sync_state_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "wl_sync_state_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: true
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
           },
         ]
       }
@@ -6424,6 +7866,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wps_delivery_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -6490,6 +7939,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "wps_event_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "wps_event_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
@@ -6514,18 +7970,45 @@ export type Database = {
       }
     }
     Views: {
-      flight_protection_monthly: {
+      checkout_card_funnel: {
         Row: {
-          month: string | null
-          company_id: string | null
-          claims: number | null
-          delay: number | null
-          cancellation: number | null
-          partner_credit_cents: number | null
-          overage_cents: number | null
-          overage_charged_cents: number | null
+          booking_code: string | null
+          booking_status: Database["public"]["Enums"]["booking_status"] | null
+          created_at: string | null
+          http_status: number | null
+          kind: string | null
+          note: string | null
+          request: Json | null
         }
         Relationships: []
+      }
+      flight_protection_monthly: {
+        Row: {
+          cancellation: number | null
+          claims: number | null
+          company_id: string | null
+          delay: number | null
+          month: string | null
+          overage_cents: number | null
+          overage_charged_cents: number | null
+          partner_credit_cents: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       location_point_proximity: {
         Row: {
@@ -6629,7 +8112,38 @@ export type Database = {
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "location_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
         ]
+      }
+      wl_booking_import_target: {
+        Row: {
+          company_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+        }
+        Relationships: []
+      }
+      wl_mirror_target: {
+        Row: {
+          location_parking_type_id: string | null
+        }
+        Relationships: []
+      }
+      wl_reconcile_target: {
+        Row: {
+          location_parking_type_id: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -6671,6 +8185,26 @@ export type Database = {
         }
         Returns: Json
       }
+      _external_readiness: {
+        Args: { p_company_id: string; p_location_id: string }
+        Returns: Json
+      }
+      _hub_readiness: { Args: { p_location_id: string }; Returns: Json }
+      _quote_booking: {
+        Args: {
+          p_add_on_ids: string[]
+          p_api_key_id: string
+          p_check_in_at: string
+          p_check_out_at: string
+          p_coupon_code: string
+          p_fare_tier: Database["public"]["Enums"]["fare_tier"]
+          p_has_pcd: boolean
+          p_location_parking_type_id: string
+          p_passenger_count: number
+          p_profile_id: string
+        }
+        Returns: Json
+      }
       account_has_history: { Args: { p_uid: string }; Returns: boolean }
       acquire_booking_capacity: {
         Args: { p_booking_id: string }
@@ -6680,6 +8214,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      admin_close_support_ticket: { Args: { p_id: string }; Returns: undefined }
       admin_list_users: {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: Json
@@ -7055,6 +8590,13 @@ export type Database = {
           sold_out: boolean
         }[]
       }
+      booking_access_code: {
+        Args: { p_booking_code: string }
+        Returns: {
+          code: string
+          pending: boolean
+        }[]
+      }
       booking_apply_commission: {
         Args: { p_attribution?: Json; p_booking_id: string }
         Returns: Json
@@ -7064,11 +8606,41 @@ export type Database = {
         Returns: Json
       }
       booking_gateway_trail: { Args: { p_booking_id: string }; Returns: Json }
+      booking_history: { Args: { p_booking_id: string }; Returns: Json }
       booking_priority_for_phones: {
         Args: { p_phones: string[] }
         Returns: Json
       }
       booking_reminders_expected_key: { Args: never; Returns: string }
+      bookings_filter_options: {
+        Args: { p_company_ids?: string[] }
+        Returns: Json
+      }
+      bookings_list_page: {
+        Args: {
+          p_add_on?: string
+          p_affiliated?: boolean
+          p_attendance?: string
+          p_channel_origins?: string[]
+          p_company_ids?: string[]
+          p_date_field?: string
+          p_from?: string
+          p_limit?: number
+          p_location_ids?: string[]
+          p_offset?: number
+          p_partner_view?: boolean
+          p_payment?: string
+          p_pcd?: boolean
+          p_plate_changed?: boolean
+          p_search?: string
+          p_source?: string
+          p_statuses?: string[]
+          p_to?: string
+          p_utm_source?: string
+          p_with_summary?: boolean
+        }
+        Returns: Json
+      }
       cancel_booking_with_release: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["booking_status"]
@@ -7106,15 +8678,8 @@ export type Database = {
         Returns: Json
       }
       company_access_link_revoke: { Args: { p_id: string }; Returns: undefined }
-      admin_close_support_ticket: { Args: { p_id: string }; Returns: undefined }
-      operator_record_flight_checkout: {
-        Args: { p_booking_id: string; p_actual_check_out_at: string; p_overage_charged_cents?: number; p_note?: string }
-        Returns: Json
-      }
-      flight_overage_days: { Args: { p_covered: string; p_actual: string }; Returns: number }
-      open_support_ticket_count: { Args: Record<PropertyKey, never>; Returns: number }
-      support_ticket_code: { Args: Record<PropertyKey, never>; Returns: string }
       company_can_receive: { Args: { p_company_id: string }; Returns: boolean }
+      company_has_wl: { Args: { p_company_id: string }; Returns: boolean }
       company_is_silent: { Args: { p_company_id: string }; Returns: boolean }
       company_list_members: {
         Args: { p_company_id: string }
@@ -7142,12 +8707,12 @@ export type Database = {
         }
         Returns: undefined
       }
-      company_set_payout_schedule: {
-        Args: { p_company_id: string; p_day: number | null; p_enabled: boolean | null }
-        Returns: undefined
-      }
       company_set_payout_release_days: {
         Args: { p_company_id: string; p_days: number }
+        Returns: undefined
+      }
+      company_set_payout_schedule: {
+        Args: { p_company_id: string; p_day: number; p_enabled: boolean }
         Returns: undefined
       }
       confirm_or_refund_booking: {
@@ -7207,6 +8772,7 @@ export type Database = {
       }
       cron_prune_api_request_log: { Args: never; Returns: number }
       cron_prune_checkout_handoff: { Args: never; Returns: number }
+      cron_prune_identity_assertion: { Args: never; Returns: undefined }
       cron_prune_integration_logs: { Args: never; Returns: Json }
       cron_prune_otp_request_log: { Args: never; Returns: undefined }
       cron_prune_site_rebuild_request: { Args: never; Returns: Json }
@@ -7311,8 +8877,10 @@ export type Database = {
           p_actor?: string
           p_booking_id: string
           p_flight_number?: string
+          p_kind?: string
           p_new_check_out_at: string
-          p_reason?: string; p_kind?: string }
+          p_reason?: string
+        }
         Returns: Json
       }
       external_checkout_url: {
@@ -7325,6 +8893,10 @@ export type Database = {
       find_user_by_identifier: {
         Args: { p_channel: string; p_identifier: string }
         Returns: string
+      }
+      flight_overage_days: {
+        Args: { p_actual: string; p_covered: string }
+        Returns: number
       }
       generate_unique_company_slug: {
         Args: { p_name: string }
@@ -7427,6 +8999,119 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      identity_assertion_begin: {
+        Args: { p_api_key_id: string; p_ip?: string; p_phone_hash: string }
+        Returns: string
+      }
+      identity_assertion_capture: {
+        Args: { p_otp: string; p_phone_hash: string }
+        Returns: boolean
+      }
+      identity_assertion_finish: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_new_account?: boolean
+          p_ok: boolean
+          p_profile_id?: string
+        }
+        Returns: undefined
+      }
+      identity_assertion_take: { Args: { p_id: string }; Returns: string }
+      integration_connection_secret: {
+        Args: { p_connection_id: string }
+        Returns: string
+      }
+      integration_connections: {
+        Args: { p_company_id?: string }
+        Returns: {
+          auth_failed_at: string
+          company_id: string
+          company_name: string
+          config: Json
+          created_at: string
+          enabled: boolean
+          failed_24h: number
+          has_secret: boolean
+          id: string
+          last_delivered_at: string
+          last_test_at: string
+          last_test_detail: string
+          last_test_ok: boolean
+          location_id: string
+          location_name: string
+          pending_count: number
+          provider: string
+          secret_hint: string
+          send_hub_bookings: boolean
+          send_site_bookings: boolean
+          updated_at: string
+        }[]
+      }
+      integration_deliver_expected_key: { Args: never; Returns: string }
+      integration_delivery_claim: {
+        Args: { p_delivery_id?: string; p_lease?: string; p_limit?: number }
+        Returns: {
+          attempts: number
+          booking_id: string
+          company_id: string
+          config: Json
+          connection_enabled: boolean
+          connection_id: string
+          email_held_at: string
+          hold_released_at: string
+          hold_until: string
+          id: string
+          location_id: string
+          max_attempts: number
+          operation: string
+          payload: Json
+          provider: string
+          source: string
+          wl_order_id: number
+        }[]
+      }
+      integration_health: {
+        Args: never
+        Returns: {
+          auth_failed_at: string
+          company_name: string
+          connection_id: string
+          enabled: boolean
+          failed_24h: number
+          last_delivered_at: string
+          location_name: string
+          provider: string
+          stuck_pending: number
+        }[]
+      }
+      integration_hold_release_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          booking_id: string
+          company_id: string
+          connection_id: string
+          email_held_at: string
+          id: string
+          last_error: string
+          provider: string
+        }[]
+      }
+      integration_set_secret: {
+        Args: { p_connection_id: string; p_secret: string }
+        Returns: undefined
+      }
+      integration_upsert_connection: {
+        Args: {
+          p_config?: Json
+          p_enabled?: boolean
+          p_location_id: string
+          p_provider: string
+          p_send_hub_bookings?: boolean
+          p_send_site_bookings?: boolean
+        }
+        Returns: string
+      }
       is_company_owner: { Args: { p_company_id: string }; Returns: boolean }
       is_hub_admin: { Args: never; Returns: boolean }
       is_tester: { Args: never; Returns: boolean }
@@ -7523,6 +9208,15 @@ export type Database = {
         }
         Returns: string
       }
+      log_checkout_event: {
+        Args: {
+          p_booking_code: string
+          p_detail?: Json
+          p_http_status?: number
+          p_kind: string
+        }
+        Returns: undefined
+      }
       log_external_exit: {
         Args: {
           p_check_in_at?: string
@@ -7544,6 +9238,16 @@ export type Database = {
           min_stay_days: number
           old_total: number
           total: number
+        }[]
+      }
+      manager_company_restricted: {
+        Args: { p_company_ids: string[] }
+        Returns: {
+          contract_accepted_ip: string
+          has_wps_webhook_secret: boolean
+          id: string
+          take_rate_bps: number
+          wl_tenant_key: string
         }[]
       }
       manager_daily_flow: {
@@ -7808,6 +9512,7 @@ export type Database = {
         }
         Returns: string
       }
+      manager_wl_health: { Args: never; Returns: Json }
       marketing_contact_doc: {
         Args: { p_location_ids?: string[] }
         Returns: {
@@ -8054,6 +9759,13 @@ export type Database = {
         Returns: Json
       }
       merge_preview: { Args: { p_loser: string }; Returns: Json }
+      min_stay_label: {
+        Args: {
+          p_unit: Database["public"]["Enums"]["minimum_stay_unit"]
+          p_value: number
+        }
+        Returns: string
+      }
       min_stay_satisfied: {
         Args: {
           p_days: number
@@ -8062,6 +9774,16 @@ export type Database = {
           p_value: number
         }
         Returns: boolean
+      }
+      my_booking_notifications: {
+        Args: { p_booking_codes: string[] }
+        Returns: {
+          booking_code: string
+          channel: string
+          event: string
+          sent_at: string
+          status: string
+        }[]
       }
       my_commission_channels: { Args: { p_company_id: string }; Returns: Json }
       nearest_destination: {
@@ -8131,6 +9853,7 @@ export type Database = {
         Args: { p_account: Json; p_company_id: string }
         Returns: undefined
       }
+      open_support_ticket_count: { Args: never; Returns: number }
       operator_accept_contract: {
         Args: { p_company_id: string; p_version: string }
         Returns: Json
@@ -8173,6 +9896,15 @@ export type Database = {
           location_parking_type_id: string
           parking_type_name: string
         }[]
+      }
+      operator_record_flight_checkout: {
+        Args: {
+          p_actual_check_out_at: string
+          p_booking_id: string
+          p_note?: string
+          p_overage_charged_cents?: number
+        }
+        Returns: Json
       }
       operator_respond_review: {
         Args: { p_response: string; p_review_id: string }
@@ -8288,10 +10020,54 @@ export type Database = {
         Args: { p_identifier_hash: string; p_ip?: string }
         Returns: boolean
       }
+      otp_request_gate: {
+        Args: { p_identifier_hash: string; p_ip?: string }
+        Returns: string
+      }
+      otp_verify_allowed: {
+        Args: { p_identifier_hash: string; p_ip?: string }
+        Returns: boolean
+      }
       partner_account_statement: {
         Args: { p_company_id: string; p_from: string; p_to: string }
         Returns: Json
       }
+      partner_contract_current: { Args: never; Returns: Json }
+      partner_daily_digest: {
+        Args: { p_day: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          entradas: Json
+          novas: Json
+          saidas: Json
+        }[]
+      }
+      partner_digest_expected_key: { Args: never; Returns: string }
+      partner_digest_recipients: {
+        Args: { p_company_id: string }
+        Returns: string[]
+      }
+      payment_charge_lock_claim: {
+        Args: { p_booking_id: string; p_ttl_seconds?: number }
+        Returns: string
+      }
+      payment_charge_lock_release: {
+        Args: { p_booking_id: string; p_token: string }
+        Returns: boolean
+      }
+      payout_auto_day: { Args: { p_company_id: string }; Returns: number }
+      payout_auto_due: {
+        Args: { p_today: string }
+        Returns: {
+          company_id: string
+          scheduled_for: string
+        }[]
+      }
+      payout_auto_enabled: { Args: { p_company_id: string }; Returns: boolean }
+      payout_auto_expected_key: { Args: never; Returns: string }
+      payout_auto_forecast: { Args: { p_company_id: string }; Returns: Json }
+      payout_auto_min_cents: { Args: never; Returns: number }
       payout_balance: {
         Args: { p_company_id: string; p_provider?: string }
         Returns: Json
@@ -8305,16 +10081,6 @@ export type Database = {
         Returns: Json
       }
       payout_debt_overview: { Args: { p_provider?: string }; Returns: Json }
-      partner_contract_current: { Args: never; Returns: Json }
-      payout_auto_day: { Args: { p_company_id: string }; Returns: number }
-      payout_auto_due: {
-        Args: { p_today: string }
-        Returns: { company_id: string; scheduled_for: string }[]
-      }
-      payout_auto_enabled: { Args: { p_company_id: string }; Returns: boolean }
-      payout_auto_expected_key: { Args: Record<PropertyKey, never>; Returns: string }
-      payout_auto_forecast: { Args: { p_company_id: string }; Returns: Json }
-      payout_auto_min_cents: { Args: Record<PropertyKey, never>; Returns: number }
       payout_debt_reserve: {
         Args: {
           p_company_id: string
@@ -8337,6 +10103,21 @@ export type Database = {
         }
         Returns: string
       }
+      payout_fee_credit_cents: {
+        Args: { p_company_id: string; p_provider?: string }
+        Returns: number
+      }
+      payout_fee_credit_reserve: {
+        Args: { p_company_id: string; p_max_cents: number; p_provider?: string }
+        Returns: {
+          amount_cents: number
+          reservation_id: string
+        }[]
+      }
+      payout_next_auto_at: {
+        Args: { p_company_id: string; p_from?: string }
+        Returns: string
+      }
       payout_owed_cents: {
         Args: { p_company_id: string; p_provider?: string }
         Returns: number
@@ -8345,18 +10126,6 @@ export type Database = {
       payout_refund_manual_mark_paid: {
         Args: { p_id: string; p_note?: string }
         Returns: undefined
-      }
-      payout_fee_credit_cents: {
-        Args: { p_company_id: string; p_provider?: string }
-        Returns: number
-      }
-      payout_fee_credit_reserve: {
-        Args: { p_company_id: string; p_max_cents: number; p_provider?: string }
-        Returns: { amount_cents: number; reservation_id: string }[]
-      }
-      payout_next_auto_at: {
-        Args: { p_company_id: string; p_from?: string }
-        Returns: string
       }
       payout_release_days: { Args: { p_company_id: string }; Returns: number }
       payout_statement: {
@@ -8404,6 +10173,32 @@ export type Database = {
         Returns: Json
       }
       purge_google_place_snapshots: { Args: never; Returns: number }
+      quote_booking: {
+        Args: {
+          p_add_on_ids?: string[]
+          p_check_in_at: string
+          p_check_out_at: string
+          p_coupon_code?: string
+          p_fare_tier?: Database["public"]["Enums"]["fare_tier"]
+          p_has_pcd?: boolean
+          p_location_parking_type_id: string
+          p_passenger_count?: number
+        }
+        Returns: Json
+      }
+      quote_booking_for_agent: {
+        Args: {
+          p_add_on_ids?: string[]
+          p_api_key_id: string
+          p_check_in_at: string
+          p_check_out_at: string
+          p_fare_tier?: Database["public"]["Enums"]["fare_tier"]
+          p_has_pcd?: boolean
+          p_location_parking_type_id: string
+          p_passenger_count?: number
+        }
+        Returns: Json
+      }
       recompute_membership: {
         Args: { p_profile_id: string }
         Returns: undefined
@@ -8455,41 +10250,7 @@ export type Database = {
       }
       set_company_take_rate: {
         Args: { p_company_id: string; p_take_rate_bps: number }
-        Returns: {
-          contract_accepted_at: string | null
-          contract_version: string | null
-          created_at: string
-          deleted_at: string | null
-          gateway_split_enabled: boolean
-          hub_relationship: string
-          id: string
-          legal_name: string | null
-          logo_url: string | null
-          monthly_revenue_goal_cents: number | null
-          name: string
-          onboarding_status: Database["public"]["Enums"]["onboarding_status"]
-          payout_auto_day: number | null
-          payout_auto_enabled: boolean | null
-          payout_release_days: number | null
-          slug: string
-          status: Database["public"]["Enums"]["entity_status"]
-          take_rate_bps: number
-          tax_id: string | null
-          updated_at: string
-          wl_domain: string | null
-          wl_public_domain: string | null
-          wl_sync_enabled: boolean
-          wl_tenant_key: string | null
-          wps_webhook_enabled: boolean
-          wps_webhook_secret: string | null
-          wps_webhook_url: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "company"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: Json
       }
       set_email_hint: { Args: { p_email: string }; Returns: undefined }
       set_phone_hint: { Args: { p_phone: string }; Returns: undefined }
@@ -8509,6 +10270,34 @@ export type Database = {
       site_rebuild_decision: { Args: { p_now?: string }; Returns: Json }
       site_rebuild_health: { Args: { p_now?: string }; Returns: Json }
       slugify: { Args: { p_text: string }; Returns: string }
+      social_post_approve: {
+        Args: { p_expected_updated_at: string; p_id: string }
+        Returns: undefined
+      }
+      social_post_day_taken: {
+        Args: { p_at: string; p_id: string }
+        Returns: boolean
+      }
+      social_post_publish_now: {
+        Args: { p_expected_updated_at: string; p_id: string }
+        Returns: undefined
+      }
+      social_post_reject: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      social_post_reschedule: {
+        Args: { p_at: string; p_id: string }
+        Returns: undefined
+      }
+      social_post_set_placements: {
+        Args: {
+          p_expected_updated_at: string
+          p_id: string
+          p_placements: string[]
+        }
+        Returns: undefined
+      }
       split_person_name: {
         Args: { p_full: string }
         Returns: {
@@ -8549,6 +10338,7 @@ export type Database = {
         }
         Returns: string
       }
+      support_ticket_code: { Args: never; Returns: string }
       unit_public_name: {
         Args: { p_brand: string; p_destination_id: string }
         Returns: string
@@ -8579,8 +10369,55 @@ export type Database = {
         }
         Returns: Json
       }
+      wallet_credit_enabled: { Args: never; Returns: boolean }
       wallet_credit_expires_at: { Args: never; Returns: string }
-      wl_agent_mapping: { Args: never; Returns: Json }
+      wl_agent_mapping: { Args: { p_include_hub?: boolean }; Returns: Json }
+      wl_booking_action_context: {
+        Args: { p_action: string; p_wl_booking_id: string }
+        Returns: Json
+      }
+      wl_booking_actions_enabled: { Args: never; Returns: boolean }
+      wl_booking_apply_page: {
+        Args: {
+          p_company_id: string
+          p_next_after_id: number
+          p_next_updated_since: string
+          p_rows: Json
+        }
+        Returns: Json
+      }
+      wl_booking_detail: { Args: { p_id: string }; Returns: Json }
+      wl_booking_hub_status: {
+        Args: { p_attendance: string; p_check_out_at: string; p_status: string }
+        Returns: string
+      }
+      wl_booking_import_enabled: { Args: never; Returns: boolean }
+      wl_booking_import_policy: { Args: never; Returns: Json }
+      wl_booking_my_actions: { Args: { p_company_id: string }; Returns: Json }
+      wl_booking_record_action: {
+        Args: {
+          p_action: string
+          p_attendance_status?: string
+          p_http_status: number
+          p_license_plate?: string
+          p_message: string
+          p_request: Json
+          p_requested_by: string
+          p_result: string
+          p_result_code: string
+          p_wl_booking_id: string
+        }
+        Returns: undefined
+      }
+      wl_booking_search_ids: {
+        Args: { p_busca: string; p_placa: string }
+        Returns: string[]
+      }
+      wl_booking_status: { Args: { p_code: string }; Returns: string }
+      wl_booking_sync_fail: {
+        Args: { p_company_id: string; p_error: string }
+        Returns: undefined
+      }
       wl_company_config: {
         Args: { p_company_id: string }
         Returns: {
@@ -8589,11 +10426,28 @@ export type Database = {
           wl_tenant_key: string
         }[]
       }
+      wl_delivery_claim: {
+        Args: { p_lease?: string; p_limit?: number }
+        Returns: {
+          attempts: number
+          event_id: string
+          id: string
+          max_attempts: number
+          operation: string
+          payload: Json
+          wl_domain: string
+          wl_sync_enabled: boolean
+          wl_tenant_key: string
+        }[]
+      }
+      wl_delivery_retry: { Args: { p_id: string }; Returns: boolean }
       wl_enqueue_dates_changed: {
         Args: { p_booking_id: string }
         Returns: undefined
       }
       wl_external_id: { Args: { p_booking_id: string }; Returns: string }
+      wl_integration_health: { Args: { p_now?: string }; Returns: Json }
+      wl_local_date: { Args: { p_at: string }; Returns: string }
       wl_mirror_apply_pricing: {
         Args: {
           p_anomalies?: Json
@@ -8609,16 +10463,36 @@ export type Database = {
         Args: { p_detail: Json; p_location_parking_type_id: string }
         Returns: undefined
       }
+      wl_mirror_flag_error: {
+        Args: { p_location_parking_type_id: string; p_message: string }
+        Returns: undefined
+      }
       wl_mirror_trigger: {
         Args: { p_location_parking_type_id: string }
         Returns: Json
       }
+      wl_plate_key: { Args: { p_plate: string }; Returns: string }
       wl_public_host: { Args: { p_domain: string }; Returns: string }
       wl_reconcile_apply: {
         Args: { p_lpt_id: string; p_rows: Json }
         Returns: number
       }
+      wl_reconcile_fail: {
+        Args: { p_error: string; p_lpt_id: string }
+        Returns: undefined
+      }
+      wl_revenue: {
+        Args: {
+          p_company_ids?: string[]
+          p_date_field?: string
+          p_from: string
+          p_location_ids?: string[]
+          p_to: string
+        }
+        Returns: Json
+      }
       wl_slug_safe: { Args: { p_slug: string }; Returns: boolean }
+      wl_visible_company_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       booking_item_type: "parking" | "add_on"
@@ -8628,6 +10502,7 @@ export type Database = {
         | "vehicle_change"
         | "fare_upgrade"
         | "refund"
+        | "status_change"
       booking_status:
         | "pending"
         | "confirmed"
@@ -8709,6 +10584,15 @@ export type Database = {
         | "paid"
         | "failed"
         | "canceled"
+      social_post_kind: "image" | "carousel"
+      social_post_status:
+        | "pending_review"
+        | "approved"
+        | "publishing"
+        | "published"
+        | "failed"
+        | "rejected"
+        | "overdue"
       user_role: "hub_admin" | "company_operator" | "customer"
     }
     CompositeTypes: {
@@ -8835,6 +10719,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_item_type: ["parking", "add_on"],
@@ -8844,6 +10731,7 @@ export const Constants = {
         "vehicle_change",
         "fare_upgrade",
         "refund",
+        "status_change",
       ],
       booking_status: [
         "pending",
@@ -8936,6 +10824,16 @@ export const Constants = {
         "paid",
         "failed",
         "canceled",
+      ],
+      social_post_kind: ["image", "carousel"],
+      social_post_status: [
+        "pending_review",
+        "approved",
+        "publishing",
+        "published",
+        "failed",
+        "rejected",
+        "overdue",
       ],
       user_role: ["hub_admin", "company_operator", "customer"],
     },

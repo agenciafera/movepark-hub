@@ -1,8 +1,9 @@
 # Integrações (Cloudpark primeiro)
 
-> **Status:** **plano aprovado em 30/10/2026, nada implementado.** Fase 0 feita no mesmo dia: as 7
-> reservas do Hub que ainda iam entrar na Nationpark e na Abbapark foram criadas na Cloudpark à mão
-> (§ 6, Fase 0).
+> **Status:** **Fase 1 no ar em 30/10/2026** (motor, fila, voucher com o QR da Cloudpark; sem tela).
+> Fase 0 feita no mesmo dia: as 7 reservas do Hub que ainda iam entrar na Nationpark e na Abbapark
+> foram criadas na Cloudpark à mão (§ 6, Fase 0). O que a Fase 1 entregou e como foi validado está
+> no § 10. Fases 2 a 5 a implementar.
 > **Pergunta:** dá para tirar a integração com a Cloudpark do n8n, trazer para dentro do Hub, e
 > deixar cada estacionamento ligar ou não a integração com as próprias credenciais, numa tela
 > "Integrações" com catálogo?
@@ -361,3 +362,41 @@ Vault, fila com rastro visível na reserva e escopo próprio. Nada novo nasce no
   reserva.
 - Notificações por WhatsApp e automações de marketing que também vivem no n8n: não são integração
   com parceiro e seguem fora desta spec.
+
+## 10. Fase 1 implementada (30/10/2026)
+
+**Banco** (`20261201150000_integracoes_cloudpark.sql`, aplicada por `db query --linked` + `migration
+repair`): as 4 tabelas do § 5.2 com RLS (só hub_admin lê direto; parceiro só por RPC), escopos
+`integrations:read` (Dono, Gerente, Operação) e `integrations:write` (só Dono), RPCs
+`integration_upsert_connection`, `integration_set_secret` (Vault), `integration_connections` (sem
+segredo), `booking_access_code` (dono da reserva e equipe com `bookings:read`; não confirma que a
+reserva existe para os outros), `integration_health`, e as de serviço `integration_connection_secret`,
+`integration_delivery_claim`, `integration_hold_release_claim`. Trigger `booking_integration_enqueue`
+(status vira `confirmed` → entrega com `hold_until` de 15 minutos; erro vira WARNING). Cron
+`integration-deliver` a cada minuto, que só chama a Edge quando há trabalho; a chave interna nasce no
+Vault (`integration_deliver_key`). Endereço da Cloudpark restrito ao link de nuvem por CHECK.
+
+**Edges:** `integration-deliver` (cron) e `integration-test` (Testar conexão, Dono e hub_admin).
+Código em `_shared/integrations/`: `types.ts` (`AccessProvider`), `registry.ts`, `cloudpark.ts`
+(adaptador), `input.ts` (reserva → pedido), `schedule.ts` (1, 2, 4, 8, 16 min e depois de hora em
+hora, 28 tentativas ≈ 24 h), `trail.ts` (máscara do rastro), `access-code.ts` (código ativo e
+retenção do e-mail), `process.ts` (uma entrega e o que vem depois), `dispatch.ts` (tentativa imediata,
+10 s). O `pagarme-webhook` e o `reconcile-confirmations` tentam o código antes do voucher e do
+e-mail. O e-mail de confirmação respeita a retenção. O QR do PDF (`_shared/voucher/pdf.ts`
+`voucherQrContent`), da tela do voucher e da confirmação do checkout passa a ser o código cru do
+provedor quando ele existe. E-mails novos: `tplAccessCodeUpdated` (cliente, QR que chegou depois) e
+`tplIntegrationAlert` (equipe e parceiro, pela guarda de silêncio). Republicadas também `api`, `mcp`,
+`mock-payment`, `change-booking-vehicle` e `voucher-pdf`, que embutem o voucher.
+
+**Testes:** pgTAP `integrations.test.sql` (29 asserções, rodado no vivo em transação desfeita) e
+`permissions.test.sql` ampliado; Deno: `cloudpark`, `input`, `schedule`, `trail`, `voucher/qr`,
+`email` e as duas Edges; Vitest: `voucher.logic` e `Voucher` (QR com código, sem integração,
+pendente e comprovante).
+
+**Validação em produção, contra o sandbox da Cloudpark**, na unidade de teste "Agência Fera" (fora da
+vitrine): reserva confirmada por SQL → entrega criada pelo trigger → cron no minuto seguinte → HTTP
+200 em 0,65 s, código ativo, folga e fuso conferidos no rastro, e-mail mascarado, voucher regravado
+0,3 s depois. O QR extraído do PDF é idêntico, pixel a pixel, ao QR do código da Cloudpark.
+
+**Não validado ao vivo:** a soltura do e-mail retido (precisa de confirmação pelo `pagarme-webhook`
+com pagamento real), coberta por pgTAP (reivindicação única) e pela lógica testada.

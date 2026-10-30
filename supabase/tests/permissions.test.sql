@@ -45,8 +45,8 @@ select is(
 select is(
   (select count(*)::int from public.company_role_scope
    where role in ('manager','operator','finance')
-     and scope in ('team:write','api-keys:write','payouts:write')),
-  0, 'manager/operator/finance não têm team:write/api-keys:write/payouts:write'
+     and scope in ('team:write','api-keys:write','payouts:write','integrations:write')),
+  0, 'manager/operator/finance não têm team:write/api-keys:write/payouts:write/integrations:write'
 );
 
 -- Operação tem reservas+checkin mas NÃO preços/financeiro --------------------

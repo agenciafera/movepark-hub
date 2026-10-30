@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test/utils";
+import { rpc } from "@/test/msw/supabase";
+import { toDataUrl } from "@/lib/qr";
 import { Voucher } from "./Voucher";
 import type { MyBookingDetail } from "./customerApi";
+
+// O conteúdo do QR é o que importa (a imagem é o pacote qrcode). Espiona o texto que vira QR.
+vi.mock("@/lib/qr", () => ({ toDataUrl: vi.fn(async () => "data:image/png;base64,AAAA") }));
 
 /**
  * C-15 do roteiro do consumidor. A Edge `voucher-pdf` sempre emitiu para `completed`, mas a tela
@@ -88,4 +93,41 @@ describe("Voucher", () => {
     // `find`: a geração do QR é assíncrona, então no primeiro quadro há skeleton.
     expect(await screen.findByRole("img", { name: /QR MP-A8K7P2/ })).toBeInTheDocument();
   });
+
+  describe("QR da cancela integrada (docs/specs/integracoes.md § 5.6)", () => {
+    beforeEach(() => vi.mocked(toDataUrl).mockClear());
+
+    it("com o código da Cloudpark, o QR é o código cru", async () => {
+      const espiao = rpc("booking_access_code", { json: [{ code: "5d864b66-ff5f-4f98-ad6f-323c7", pending: false }] });
+      renderWithProviders(<Voucher booking={booking("confirmed")} />);
+      await waitFor(() => expect(toDataUrl).toHaveBeenCalledWith("5d864b66-ff5f-4f98-ad6f-323c7", 240));
+      expect(espiao.chamadas[0].body).toEqual({ p_booking_code: "MP-A8K7P2" });
+    });
+
+    it("sem integração, o QR segue sendo a validação do Hub", async () => {
+      rpc("booking_access_code", { json: [{ code: null, pending: false }] });
+      renderWithProviders(<Voucher booking={booking("confirmed")} />);
+      await waitFor(() =>
+        expect(toDataUrl).toHaveBeenCalledWith(`${window.location.origin}/voucher/validate?code=MP-A8K7P2`, 240),
+      );
+    });
+
+    it("enquanto o código é pedido à Cloudpark, não desenha um QR que não abriria a cancela", async () => {
+      const espiao = rpc("booking_access_code", { json: [{ code: null, pending: true }] });
+      renderWithProviders(<Voucher booking={booking("confirmed")} />);
+      await waitFor(() => expect(espiao.chamadas.length).toBeGreaterThan(0));
+      expect(toDataUrl).not.toHaveBeenCalled();
+      expect(screen.queryByRole("img", { name: /QR MP-A8K7P2/ })).not.toBeInTheDocument();
+    });
+
+    it("no comprovante nem pergunta: o QR é o da validação", async () => {
+      const espiao = rpc("booking_access_code", { json: [{ code: "x", pending: false }] });
+      renderWithProviders(<Voucher booking={booking("completed")} />);
+      await waitFor(() =>
+        expect(toDataUrl).toHaveBeenCalledWith(`${window.location.origin}/voucher/validate?code=MP-A8K7P2`, 240),
+      );
+      expect(espiao.chamadas).toHaveLength(0);
+    });
+  });
 });
+

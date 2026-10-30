@@ -252,6 +252,23 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   [`docs/specs/lote-mapeado-vitrine.md`](docs/specs/lote-mapeado-vitrine.md).
   Épico **E0.17**; decidido em Q-022.
 
+- **ADR-011 · Integração com sistema de terceiro vive no Hub, nunca no n8n.** Cancela, pátio,
+  valet ou qualquer sistema do parceiro que precise receber a reserva é integrado **dentro do
+  Hub**, atrás da interface `AccessProvider` (`supabase/functions/_shared/integrations`,
+  `getProvider(key)`), no mesmo espírito da camada de pagamento do ADR-004: provedor novo é
+  adaptador novo, sem mexer em reserva, voucher ou fila. O **catálogo de provedores mora no código**
+  (ADR-007), e o banco guarda só a **conexão**, que é **por unidade** (`integration_connection`,
+  uma por `location` e provedor). O **token vai para o Vault** (`integration_set_secret`), e nenhuma
+  leitura devolve o segredo: a tela mostra só o final. Toda entrega passa pela **fila**
+  (`integration_delivery`, nascida de trigger em `booking`, nunca de chamada solta) com nova
+  tentativa, e **toda chamada fica no rastro** (`integration_attempt`, contato mascarado), visível na
+  reserva. Configurar é escopo `integrations:write`, **só do Dono** (e hub_admin); ver é
+  `integrations:read`. A integração **nunca derruba a confirmação do pagamento** (erro no trigger vira
+  WARNING) e o e-mail de confirmação espera o código do provedor por no máximo 15 minutos. **Nada
+  novo nasce no n8n**; o que vive lá migra para este modelo. Implementado em
+  `supabase/migrations/20261201150000_integracoes_cloudpark.sql` + Edges `integration-deliver` e
+  `integration-test`; ver [`docs/specs/integracoes.md`](docs/specs/integracoes.md).
+
 ## Comandos
 
 Sempre via **bun**:

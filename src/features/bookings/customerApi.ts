@@ -290,6 +290,29 @@ export function useBookingDetail(code: string | undefined) {
   });
 }
 
+export type BookingAccessCode = { code: string | null; pending: boolean };
+
+/**
+ * Código de acesso da cancela (Cloudpark) da reserva, que vai no QR do voucher. A RPC
+ * `booking_access_code` só responde ao dono da reserva e à equipe da unidade, e não diz se a
+ * reserva existe para quem não pode vê-la. `pending` = o código está sendo pedido ao provedor
+ * (até 15 minutos): a tela espera, consultando de novo a cada 3 segundos.
+ * Spec: docs/specs/integracoes.md § 5.6.
+ */
+export function useBookingAccessCode(code: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["booking-access-code", code] as const,
+    enabled: !!code && enabled,
+    queryFn: async (): Promise<BookingAccessCode> => {
+      const { data, error } = await supabase.rpc("booking_access_code", { p_booking_code: code! });
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as { code?: string | null; pending?: boolean } | undefined;
+      return { code: row?.code ?? null, pending: Boolean(row?.pending) };
+    },
+    refetchInterval: (q) => (q.state.data?.pending ? 3000 : false),
+  });
+}
+
 /**
  * Gera/recupera o PDF do voucher via Edge Function `voucher-pdf` (JWT do usuário)
  * e devolve a signed URL para download. Ver supabase/functions/voucher-pdf.

@@ -24,6 +24,7 @@ import {
 } from "../_shared/kyc-link.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { notifyBookingConfirmed, sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
+import { ensureAccessCode } from "../_shared/integrations/dispatch.ts";
 import { countOtherLiveBookingPayments, refundShouldCancelBooking } from "../_shared/refund.ts";
 import {
   cardEventAction,
@@ -565,10 +566,15 @@ Deno.serve(async (req: Request) => {
     } else {
       // confirmed / reconfirmed / noop (já confirmada) → gera voucher + notifica. generateAndStoreVoucher
       // é o gerador ÚNICO do voucher (idempotente por reserva), mesmo quando o cartão confirmou inline.
+      // Unidade com integração de cancela (Cloudpark): o código do provedor vem antes, para o voucher
+      // e o e-mail já saírem com o QR que abre a cancela (docs/specs/integracoes.md § 5.6).
       const site = siteUrl();
+      const accessCodeReady = ensureAccessCode(admin, payment.booking_id);
       await runAfterResponse(
-        generateAndStoreVoucher(admin, payment.booking_id, site).catch((e) =>
-          console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
+        accessCodeReady.then(() =>
+          generateAndStoreVoucher(admin, payment!.booking_id, site).catch((e) =>
+            console.error("[pagarme-webhook] falha ao gerar voucher:", payment!.booking_id, e),
+          )
         ),
       );
 
@@ -580,9 +586,12 @@ Deno.serve(async (req: Request) => {
       );
 
       // E-mail de confirmação para o cliente — guarda de exatamente-uma-vez no helper, best-effort.
+      // Espera a tentativa do código da cancela; se ela não resolveu, o helper retém o e-mail.
       await runAfterResponse(
-        sendBookingConfirmationEmail(admin, payment.booking_id).catch((e) =>
-          console.error("[pagarme-webhook] falha ao enviar e-mail de confirmação:", payment!.booking_id, e),
+        accessCodeReady.then(() =>
+          sendBookingConfirmationEmail(admin, payment!.booking_id).catch((e) =>
+            console.error("[pagarme-webhook] falha ao enviar e-mail de confirmação:", payment!.booking_id, e),
+          )
         ),
       );
     }

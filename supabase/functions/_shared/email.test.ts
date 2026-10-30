@@ -25,6 +25,8 @@ import {
   tplSupportTicketTeam,
   tplSupportTicketCustomer,
   tplFlightProtectionUnit,
+  tplAccessCodeUpdated,
+  tplIntegrationAlert,
 } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
@@ -401,4 +403,36 @@ Deno.test("tplPartnerDailyDigest: fuso inválido na unidade cai para Brasília e
     }],
   });
   assertStringIncludes(t.html, "10:00 · Ana");
+});
+
+// 30/10/2026: integração com a cancela (docs/specs/integracoes.md § 5.6 e § 5.10).
+Deno.test("tplAccessCodeUpdated: voucher novo para a cancela, sem citar o provedor", () => {
+  const b = { code: "MP-855347", location_name: "Aeroporto Afonso Pena", check_in_at: "2026-11-04T07:30:00Z", check_out_at: "2026-11-11T02:00:00Z", vehicle: null };
+  const m = tplAccessCodeUpdated(b, "Bruno Lima", "https://movepark.co/bookings/MP-855347");
+  assertStringIncludes(m.subject, "MP-855347");
+  assertStringIncludes(m.html, "Bruno");
+  assertStringIncludes(m.html, "abre a cancela do Aeroporto Afonso Pena");
+  assertStringIncludes(m.html, "https://movepark.co/bookings/MP-855347");
+  assertEquals(/cloudpark/i.test(m.html + m.subject), false, "o cliente não precisa saber o nome do sistema da cancela");
+  assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
+});
+
+Deno.test("tplIntegrationAlert: reserva, placa, motivo e a ação certa para cada caso", () => {
+  const base = {
+    bookingCode: "MP-A67A17", providerName: "Cloudpark", locationName: "Aeroporto Afonso Pena",
+    checkInAt: "2026-10-31T10:00:00Z", plate: "BBR4H93", error: "Falha de rede <x>",
+    bookingUrl: "https://movepark.co/operator/bookings/MP-A67A17",
+  };
+  const tentando = tplIntegrationAlert({ ...base, retrying: true });
+  assertEquals(tentando.subject, "Reserva MP-A67A17 sem QR da Cloudpark");
+  assertStringIncludes(tentando.html, "placa BBR4H93");
+  assertStringIncludes(tentando.html, "31/10/2026");
+  assertStringIncludes(tentando.html, "segue tentando");
+  assertStringIncludes(tentando.html, "Falha de rede &lt;x&gt;");
+  assertStringIncludes(tentando.html, base.bookingUrl);
+  const parou = tplIntegrationAlert({ ...base, retrying: false, error: null, plate: null });
+  assertStringIncludes(parou.html, "parou de tentar");
+  assertEquals(parou.html.includes("Motivo"), false);
+  assertEquals(parou.html.includes("placa"), false);
+  for (const m of [tentando, parou]) assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
 });

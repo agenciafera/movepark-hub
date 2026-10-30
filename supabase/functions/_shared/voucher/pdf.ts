@@ -13,6 +13,7 @@ import {
   voucherFields,
   type VoucherBooking,
 } from "./fields.ts";
+import { activeAccessCode } from "../integrations/access-code.ts";
 
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
@@ -25,12 +26,12 @@ function pngFromDataUrl(dataUrl: string): Uint8Array {
   return bytes;
 }
 
-/** Monta o PDF (A4) do voucher: cabeçalho, QR de validação e os campos da reserva. */
+/** Monta o PDF (A4) do voucher: cabeçalho, QR (ver `voucherQrContent`) e os campos da reserva. */
 export async function buildVoucherPdf(
   voucher: VoucherBooking,
-  validateUrl: string,
+  qrContent: string,
 ): Promise<Uint8Array> {
-  const qrDataUrl: string = await QRCode.toDataURL(validateUrl, {
+  const qrDataUrl: string = await QRCode.toDataURL(qrContent, {
     errorCorrectionLevel: "M",
     margin: 1,
     width: 320,
@@ -89,6 +90,16 @@ export function voucherValidateUrl(siteUrl: string, code: string): string {
 }
 
 /**
+ * O que vai no QR do voucher. Unidade com integração de cancela (Cloudpark) põe o código cru
+ * devolvido pelo provedor, que é o que a cancela lê, como o legado fazia com `external_qrcode`.
+ * Sem código, segue a página de validação do Hub. Spec: docs/specs/integracoes.md § 5.6.
+ */
+export function voucherQrContent(siteUrl: string, code: string, accessCode?: string | null): string {
+  const c = (accessCode ?? "").trim();
+  return c || voucherValidateUrl(siteUrl, code);
+}
+
+/**
  * Pré-gera o voucher com **service role** (sem RLS) e persiste em `booking.voucher_url`.
  * Chamado pelo webhook quando o pagamento confirma. Idempotente: faz upsert no bucket.
  * Não lança quando a reserva ainda não está confirmada — só pula (retorna null).
@@ -109,7 +120,8 @@ export async function generateAndStoreVoucher(
   if (!VOUCHER_BOOKING_STATUSES.includes(b.status)) return null;
 
   const voucher = mapBookingRowToVoucher(b);
-  const pdfBytes = await buildVoucherPdf(voucher, voucherValidateUrl(siteUrl, b.code));
+  const accessCode = await activeAccessCode(service, b.id);
+  const pdfBytes = await buildVoucherPdf(voucher, voucherQrContent(siteUrl, b.code, accessCode));
   const path = `${b.id}.pdf`;
 
   const { error: upErr } = await service.storage

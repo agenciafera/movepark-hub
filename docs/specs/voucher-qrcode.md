@@ -53,7 +53,7 @@ O voucher é gerado automaticamente ao receber confirmação de pagamento (`book
 | Dado | Fonte |
 |---|---|
 | Código da reserva | `booking.code` |
-| URL do QR code | `https://{domain}/voucher/validate?code={booking.code}` |
+| Conteúdo do QR | `https://{domain}/voucher/validate?code={booking.code}`; na unidade com integração de cancela (Cloudpark), o código cru devolvido pelo provedor (`integration_access_code`), que é o que a cancela lê. Mesma regra no PDF (`voucherQrContent` em `_shared/voucher/pdf.ts`), na tela (`voucher.logic.ts`) e na confirmação do checkout. Ver [integracoes.md](./integracoes.md) § 5.6 |
 | Título (empresa · unidade) | `parkingTitle(company.name, location.name)` (`src/lib/parkingName.ts`) |
 | Endereço | `location.address` |
 | Tipo de vaga | `parking_type.name` |

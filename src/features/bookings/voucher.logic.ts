@@ -21,3 +21,14 @@ export function canDownloadVoucher(status: string): boolean {
 export function isVoucherReceipt(status: string): boolean {
   return status === "completed";
 }
+
+/**
+ * O que vai no QR do voucher. Unidade com integração de cancela (Cloudpark) põe o código cru do
+ * provedor, que é o que a cancela lê; sem código, a página de validação do Hub. Espelha
+ * `voucherQrContent` de `supabase/functions/_shared/voucher/pdf.ts` (o PDF), de propósito: a tela
+ * e o papel têm que mostrar o mesmo QR. Spec: docs/specs/integracoes.md § 5.6.
+ */
+export function voucherQrContent(origin: string, code: string, accessCode?: string | null): string {
+  const c = (accessCode ?? "").trim();
+  return c || `${origin}/voucher/validate?code=${encodeURIComponent(code)}`;
+}

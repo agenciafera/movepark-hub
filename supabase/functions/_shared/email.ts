@@ -939,6 +939,54 @@ export function tplBookingVehicleChanged(b: BookingNoticeData, customerName: str
   };
 }
 
+/**
+ * QR de entrada que chegou depois do voucher (docs/specs/integracoes.md § 5.6): o provedor da
+ * cancela demorou mais que a retenção de 15 minutos, o cliente recebeu o voucher com o QR do Hub,
+ * e agora recebe o voucher novo, em anexo, com o QR que abre a cancela.
+ */
+export function tplAccessCodeUpdated(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+  const fn = primeiroNome(customerName);
+  return {
+    subject: `Reserva ${b.code}: seu QR de entrada chegou`,
+    html: shell(
+      "Seu QR de entrada chegou",
+      `
+      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, o` : "O"} QR de entrada da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> mudou. O voucher novo vai em anexo e é ele que abre a cancela do ${escapeHtml(b.location_name)}.</p>
+      ${checkItem(`Se você salvou o voucher anterior, troque pelo novo.`)}
+      <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
+      { preheader: `Use o voucher novo na cancela do ${b.location_name}` },
+    ),
+  };
+}
+
+/**
+ * Alerta de integração (equipe Movepark e parceiro): o provedor não devolveu o QR de entrada
+ * dentro da retenção, ou recusou a reserva. `retrying` diz se a fila ainda tenta.
+ */
+export function tplIntegrationAlert(a: {
+  bookingCode: string;
+  providerName: string;
+  locationName: string;
+  checkInAt: string;
+  plate: string | null;
+  error: string | null;
+  retrying: boolean;
+  bookingUrl: string;
+}): { subject: string; html: string } {
+  const placa = a.plate ? `, placa ${escapeHtml(a.plate)}` : "";
+  const acao = a.retrying
+    ? `Cadastre a entrada na ${escapeHtml(a.providerName)} à mão. A Movepark segue tentando e, se o QR chegar, manda o voucher novo ao cliente.`
+    : `A Movepark parou de tentar. Cadastre a entrada na ${escapeHtml(a.providerName)} à mão.`;
+  return {
+    subject: `Reserva ${a.bookingCode} sem QR da ${a.providerName}`,
+    html: shell(`A ${escapeHtml(a.providerName)} não devolveu o QR`, `
+      <p>A reserva <strong>${escapeHtml(a.bookingCode)}</strong> (${escapeHtml(a.locationName)}, entrada em ${escapeHtml(formatBRDateTime(a.checkInAt))}${placa}) ficou sem o QR de entrada da ${escapeHtml(a.providerName)}. O cliente recebeu o voucher com o código da reserva.</p>
+      <p>${acao}</p>
+      ${a.error ? `<p style="color:${BRAND.muted};font-size:13px">Motivo: ${escapeHtml(a.error)}</p>` : ""}
+      <p style="margin-top:16px">${button(a.bookingUrl, "Abrir a reserva")}</p>`),
+  };
+}
+
 /** Saída estendida pela proteção de voo (Superflex): a nova hora e que não custou nada. */
 export function tplBookingExtended(
   b: BookingNoticeData,

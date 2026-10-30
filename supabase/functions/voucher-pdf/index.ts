@@ -11,7 +11,8 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { mapBookingRowToVoucher, VOUCHER_BOOKING_SELECT } from "../_shared/voucher/fields.ts";
-import { buildVoucherPdf, voucherValidateUrl } from "../_shared/voucher/pdf.ts";
+import { buildVoucherPdf, voucherQrContent } from "../_shared/voucher/pdf.ts";
+import { activeAccessCode } from "../_shared/integrations/access-code.ts";
 import { checkVoucherAuth, checkVoucherBooking, checkVoucherCode } from "./logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 
@@ -75,11 +76,15 @@ Deno.serve(async (req: Request) => {
   const bookingDenial = checkVoucherBooking(b);
   if (bookingDenial) return jsonResponse({ error: bookingDenial.error }, bookingDenial.status);
 
-  const voucher = mapBookingRowToVoucher(b);
-  const pdfBytes = await buildVoucherPdf(voucher, voucherValidateUrl(SITE_URL, b.code));
-
-  // Upload + voucher_url + signed URL (service role)
+  // Service role a partir daqui: a RLS acima já provou que o usuário pode ver esta reserva.
   const service = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
+  const voucher = mapBookingRowToVoucher(b);
+  // Unidade com integração de cancela: o QR é o código do provedor (docs/specs/integracoes.md § 5.6).
+  const accessCode = await activeAccessCode(service, b.id);
+  const pdfBytes = await buildVoucherPdf(voucher, voucherQrContent(SITE_URL, b.code, accessCode));
+
+  // Upload + voucher_url + signed URL
   const path = `${b.id}.pdf`;
 
   const { error: upErr } = await service.storage

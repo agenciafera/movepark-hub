@@ -16,6 +16,7 @@ import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { notifyBookingConfirmed, sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
+import { ensureAccessCode } from "../_shared/integrations/dispatch.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 
@@ -129,7 +130,9 @@ Deno.serve(async (req: Request) => {
           .eq("id", p.id);
         refunded += 1;
       } else if (acao.tipo === "confirmar") {
-        // Webhook perdido → o voucher pode não ter sido gerado; gera aqui (idempotente).
+        // Webhook perdido → o voucher pode não ter sido gerado; gera aqui (idempotente). Antes, o
+        // código da cancela, se a unidade tiver integração (docs/specs/integracoes.md § 5.6).
+        await ensureAccessCode(admin, p.booking_id);
         await generateAndStoreVoucher(admin, p.booking_id, site).catch(() => null);
         // 23/09/2026: e o cliente também não tinha recebido nada. O e-mail é idempotente por
         // `confirmation_email_sent_at`; o WhatsApp só sai para quem tem o benefício.

@@ -7,7 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";
 import { formatDateTime } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
-import { useVoucherPdf } from "@/features/bookings/customerApi";
+import { useBookingAccessCode, useVoucherPdf } from "@/features/bookings/customerApi";
+import { voucherQrContent } from "@/features/bookings/voucher.logic";
 import type { BookingForCheckout } from "./api";
 
 type Props = {
@@ -17,11 +18,22 @@ type Props = {
 export function Step5Confirmation({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
   const pdf = useVoucherPdf();
+  // Unidade com cancela integrada (Cloudpark): o QR é o código do provedor, que pode levar alguns
+  // segundos para chegar depois do pagamento. Enquanto isso, o QR fica em carregamento.
+  const access = useBookingAccessCode(booking.code);
+  const accessCode = access.data?.code ?? null;
+  const waitingAccess = access.isLoading || Boolean(access.data?.pending);
 
   React.useEffect(() => {
-    const validateUrl = `${window.location.origin}/voucher/validate?code=${booking.code}`;
-    toDataUrl(validateUrl, 240).then(setQrUrl);
-  }, [booking.code]);
+    if (waitingAccess) return;
+    let active = true;
+    toDataUrl(voucherQrContent(window.location.origin, booking.code, accessCode), 240).then((url) => {
+      if (active) setQrUrl(url);
+    });
+    return () => {
+      active = false;
+    };
+  }, [booking.code, accessCode, waitingAccess]);
 
   async function downloadPdf() {
     try {

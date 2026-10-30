@@ -3,6 +3,7 @@ import {
   canDownloadVoucher,
   isVoucherReceipt,
   VOUCHER_BOOKING_STATUSES,
+  voucherQrContent,
 } from "./voucher.logic";
 
 /**
@@ -35,5 +36,22 @@ describe("isVoucherReceipt", () => {
     expect(isVoucherReceipt("completed")).toBe(true);
     expect(isVoucherReceipt("confirmed")).toBe(false);
     expect(isVoucherReceipt("checked_in")).toBe(false);
+  });
+});
+
+/**
+ * docs/specs/integracoes.md § 5.6: com a cancela integrada (Cloudpark), o QR é o código cru do
+ * provedor, igual ao PDF do servidor (`supabase/functions/_shared/voucher/pdf.ts`).
+ */
+describe("voucherQrContent", () => {
+  it("usa o código da cancela quando a reserva tem um", () => {
+    expect(voucherQrContent("https://movepark.co", "MP-1", " 5d864b66-ff5f-4f98-ad6f-323c7 ")).toBe(
+      "5d864b66-ff5f-4f98-ad6f-323c7",
+    );
+  });
+
+  it("sem código, segue a página de validação do Hub", () => {
+    expect(voucherQrContent("https://movepark.co", "MP-1", null)).toBe("https://movepark.co/voucher/validate?code=MP-1");
+    expect(voucherQrContent("https://movepark.co", "MP 1", "  ")).toBe("https://movepark.co/voucher/validate?code=MP%201");
   });
 });
