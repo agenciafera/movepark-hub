@@ -217,10 +217,7 @@ export default function OperatorFinance() {
           <CardTitle>Notas fiscais</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-body-sm text-muted">
-            Em breve: a nota do seu serviço e a da comissão da Movepark. Depende da camada fiscal (E0.2),
-            em definição com a contabilidade.
-          </p>
+          <p className="text-body-sm text-muted">Em breve</p>
         </CardContent>
       </Card>
     </div>

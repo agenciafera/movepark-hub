@@ -59,7 +59,8 @@ describe("OperatorFinance", () => {
     // linha do extrato
     expect(screen.getByText("MP-A1")).toBeInTheDocument();
     // NF como placeholder
-    expect(screen.getByText(/camada fiscal/i)).toBeInTheDocument();
+    expect(screen.getByText("Em breve")).toBeInTheDocument();
+    expect(screen.queryByText(/camada fiscal/i)).not.toBeInTheDocument();
   });
 
   it("sem empresa vinculada → estado vazio", () => {
