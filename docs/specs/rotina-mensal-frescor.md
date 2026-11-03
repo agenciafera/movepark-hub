@@ -1,6 +1,6 @@
 # Rotina mensal de frescor das páginas de cabeça
 
-**Status:** primeira rodada executada em 17/09/2026; rodada extra em 19/10/2026, puxada pela virada de fim de ano de GRU e CGH
+**Status:** primeira rodada executada em 17/09/2026; rodada extra em 19/10/2026, puxada pela virada de fim de ano de GRU e CGH; rodada de outubro executada em 03/11/2026 (GRU, CGH, CWB e VCP)
 **Atividade:** [Conteúdo 38, rotina mensal de carimbo e valores](https://app.clickup.com/t/86ak6hdhe)
 **Depende de:** [plano-conteudo-aeroportos.md](./plano-conteudo-aeroportos.md) (Defesa), [canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md), [baseline-search-console.md](./baseline-search-console.md)
 
@@ -202,14 +202,144 @@ seguinte.
   o `lint:bloco-fato` não o confere.
 - **`blog_post_i18n` não tem trigger de rebuild.** Trocar só a tradução não publica sozinho. Aqui
   não fez diferença porque o pt mudou junto, mas a regra do `CLAUDE.md` pede o trigger em toda
-  tabela pré-renderizada.
+  tabela pré-renderizada. **Fechado em 03/11/2026** (`20261201160000`, ver abaixo).
+
+## O que a rodada de outubro encontrou (03/11/2026)
+
+Atividade: [Conteúdo 38, rodada de outubro/2026](https://app.clickup.com/t/86akkpq61). Saiu em 03/11
+porque a virada de Curitiba (27/10) e a tabela nova da Aerovalet (28/10) caíram no fim do mês.
+
+### Passo 1: quem revisou tabela
+
+`destination_price_freshness` em 03/11/2026, e o que de fato mudou, lido do histórico do espelho
+(`pricing_mirror_run`, `before` e `after` de cada vaga):
+
+| Praça | Mudou em | O que mudou |
+| --- | --- | --- |
+| GRU | 28/10/2026 | Aerovalet descoberta e coberta, tabela alinhada ao Bandeira Park ([card](https://app.clickup.com/t/17tn9e9ugp1)): faixas 1-6 / 7-16 / 17-29 / 30+, descoberta de R$ 16,90 a R$ 6,90 por dia, coberta de R$ 19,90 a R$ 8,90. A diária avulsa de R$ 18,49 deixou de existir. Aeropark e valet seguem na tabela de 19/10 |
+| CGH | 28/10/2026 | Aerovalet coberta, mesmas faixas: de R$ 28,90 a R$ 14,90 por dia (era de R$ 42,90 a R$ 35,90). Plenty Park segue na de 16/10 |
+| CWB | 27/10/2026 | Abbapark e Nationpark, as três vagas de cada (virada de fim de ano), alta de R$ 2,00 a R$ 6,00 por dia |
+| VCP | 20/10/2026 | Virapark de R$ 28,90/R$ 24,90 para R$ 32,90/R$ 29,90 por dia (dia avulso segue R$ 40,00); Garageinn de R$ 45,90 para R$ 56,90 da segunda diária em diante (primeira segue R$ 59,99) |
+| CNF | 06/10/2026 | BePark só estendeu a tabela além de 31 diárias; nada até 31 mudou, e os posts seguem certos |
+| Tietê | 12/08/2026 | sem mudança |
+
+`price_updated_at` sai de `mirror_sampled_at`, que o espelho só reescreve quando o fingerprint da
+regra muda (ver [indice-precos.md](./indice-precos.md)). Por isso a data é confiável como "mudou de
+verdade", e o `before`/`after` do espelho diz exatamente quais valores sumiram.
+
+### Passo 2: 24 FAQs e 45 posts, 255 campos
+
+A varredura comparou todo R$ publicado (pt, en, es; corpo, resumo, `meta_description`, `answer`)
+com a curva antiga e a nova de cada vaga, de 1 a 31 diárias, online e balcão. Achou valor vencido
+em 24 FAQs e 47 posts, com cerca de 1.900 ocorrências (parte delas falso positivo, como tarifa do
+oficial que coincide com um número antigo de parceiro).
+
+A reescrita foi feita em sete pacotes por praça, com a mesma ficha de preço para todos (o
+`simulate_price` de 1 a 31 diárias lido em 03/11, com a data de cada tabela) e um verificador que
+lista, campo a campo, todo R$ que só existe na tabela antiga. Os resíduos que ficaram foram
+conferidos um a um: são tarifa do oficial ou de terceiro, diferença calculada que coincide com um
+total antigo, ou número novo de uma praça igual a um antigo de outra.
+
+| Pacote | Campos | O que mudou de sentido |
+| --- | ---: | --- |
+| FAQs das quatro praças | 84 | Em CGH a menor diária passa a ser a da Aerovalet (R$ 28,90), não a do The Parking, e ela fica abaixo da Plenty em toda duração; em GRU o parceiro ganha do oficial desde o primeiro dia e as duas vagas da Aerovalet ficam abaixo do Standard no mês; em CWB a Abbapark deixa de empatar com a Área C do oficial e com o Hangar Vip; em VCP a queda por duração encolhe (Virapark 25%, Garageinn 5%) |
+| GRU, lote 1 (barato, preço, T1, Aeropark coberta, segurança, proximidade) | 19 | Trocar de pátio vira a segunda maior alavanca de economia; ficar mais perto (Aeropark) custa R$ 56,00 na semana e R$ 330,00 no mês; no mês, as duas vagas da Aerovalet ficam abaixo do Standard |
+| GRU, lote 2 (T2, T3, GRU Airport, 5 opções, guia do aeroporto, mensal) | 36 | O mensal ainda estava em setembro e foi trazido inteiro para as tabelas vigentes; "os dois parceiros cobram igual de sete diárias em diante" saiu; a pegadinha do degrau passa a ser 6 diárias custarem mais que 7 |
+| CGH e posts de várias praças (convênio, quanto custa) | 27 | A Aerovalet volta ao top 5 do post barato, em 2º; "empate de R$ 1.077,00 no mês" e "Plenty mais barata na semana" saíram; em VCP o mês no Virapark passa dos dez dias no oficial |
+| CWB | 26 | O parceiro passa a sair R$ 75,00 mais caro que a Área C do oficial em 15 diárias; a comparação Curitiba x Guarulhos (que ficou aberta em 19/10) foi refeita com as duas tabelas vigentes, e a diferença do mês vira cerca de três vezes |
+| VCP, dois lotes | 63 | O Virapark cai no ranking de 7 diárias (Yellow e Aeroparking ficam à frente); a tese "reservar online é a maior economia" caiu; a vaga coberta do Virapark só ganha do bolsão F a partir do 7º dia |
+
+Em todos os posts, o bloco "Os pátios do ... em números" foi trocado pela saída de
+`bun run lint:bloco-fato -- --print <PRAÇA>`, sem edição. Data de preço de oficial e de terceiro
+ficou como estava; frase que compara datas diferentes passou a escrever as duas.
+
+**Dois erros antigos corrigidos de passagem**, porque a frase ficaria falsa de qualquer jeito: os
+posts `garageinn-viracopos` e `viracopos-aeroparking` diziam que a diária do Garageinn cai "a partir
+da sétima" (o motor mostra a queda na segunda), e `estacionamento-dentro-do-aeroporto-de-viracopos`
+dava o preço de balcão do Virapark como se fosse o online.
+
+**Gravação:** `20261201170000_frescor_outubro_quatro_pracas.sql`, 1,7 MB, com cada campo trocado
+inteiro e só se o `md5` ainda for o do texto lido em 03/11 (senão a migration aborta e nada é
+gravado). Aplicada por `pg_net` a partir do commit `936027ee`, com trava de md5 do arquivo, como na
+rodada de 19/10. Conferência depois de aplicar: os 255 campos lidos de volta pela API são
+idênticos, byte a byte, ao texto revisado.
+
+### Passo 3: o carimbo e a publicação
+
+`20261201160000_traducoes_disparam_publicacao.sql` deu a `blog_post_i18n` e `faq_i18n` o trigger
+`<tabela>_site_rebuild` que faltava, antes da migration de conteúdo. A migration de conteúdo é um
+`do` com 255 `update`, e cada um enfileira um pedido: `site_rebuild_health()` acusa `fila_grande`
+(255 contra o limite de 250) até o cron despachar, e aí o pg_cron coalesce tudo num build só. Em
+03/11 isso levou quatro minutos: aplicada às 11h43, despachada às 11h47 com o Deploy Hook
+respondendo 200, e o alarme voltou a `ok`.
+
+### Passo 4: quedas de posição
+
+Coleta nova: `docs/specs/dados/gsc-baseline-2026-10-31` (17 a 31/10/2026), comparada com a de 31/08
+a 14/09. O site cresceu: de 205.892 para 236.547 impressões e de 1.971 para 2.926 cliques. Nos 12
+clusters de cabeça, 10 ganharam posição; GRU deu o maior salto (preço de 39,9 para 23,1, barato de
+38,4 para 17,1, proximidade de 51,7 para 28,1). Perderam CNF barato (9,4 para 13,3, com mais
+impressões) e, por menos de uma posição, CWB proximidade.
+
+Das 447 páginas comparáveis (30 impressões ou mais antes), 219 caíram mais de 5 posições ou
+perderam metade das impressões. 91 respondem 301 (consolidação, esperado), e boa parte das 128 que
+respondem 200 são âncoras `#secao-...` que o Google deixou de listar à parte. As quedas de página
+viva que importam, lidas por consulta em `consulta-por-pagina.csv`:
+
+| Página | Antes | Depois | Leitura |
+| --- | --- | --- | --- |
+| `/blog/estacionamento-aeroporto-viracopos-vcp-guia-completo-...` (dona de preço de VCP) | 10,0 · 4.775 imp. | 21,0 · 366 | perdeu as consultas genéricas ("estacionamento viracopos", "estacionamento aeroporto campinas") para a ficha do Virapark, e as de marca (Estapar, Yellow) para os posts por lote. A praça caiu de 35.787 para 32.430 impressões: é a única perda líquida e merece olhar na próxima rodada |
+| `/estacionamentos/aeroporto-curitiba/abbapark` e `/nationpark` | 10,5 · 5.494 e 9,0 · 3.020 | 10,4 · 985 e 12,4 · 557 | a página do destino `/estacionamentos/aeroporto-curitiba` ganhou 8.012 impressões (de 17,6 para 8,3): o sinal migrou para ela, e a praça cresceu |
+| `/blog/preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui/` | 19,5 · 1.514 | 37,1 · 847 | a cauda longa de preço passou para `/estacionamentos/aeroporto-guarulhos`, que ganhou 1.783 impressões |
+| `/estacionamentos/aeroporto-curitiba/mais-barato` | 16,3 · 494 | 52,8 · 65 | mesma migração para a página do destino |
+| `/estacionamentos/aeroporto-congonhas/aerovalet` | 7,5 · 344 | 18,3 · 236 | a consulta genérica "aerovalet" foi para a ficha de GRU; "aerovalet congonhas" segue em 4,4 |
+
+**As duas pendências de setembro se resolveram sozinhas:** `/blog/guia-completo-sobre-o-aeroporto-de-guarulhos/`
+voltou de 28,1 para 14,3, e `/faq/quanto-custa-estacionar-no-aeroporto-de-guarulhos` de 53,4 para
+28,4.
+
+### Passo 5: consolidação
+
+Os quatro pares medidos de novo na janela de 17 a 31/10:
+
+| Praça | Antigo | Impressões | Novo | Impressões |
+| --- | --- | ---: | --- | ---: |
+| CGH | `top-3-estacionamentos-do-aeroporto-de-congonhas` | 1.262 (10,8) | `estacionamento-barato-aeroporto-congonhas` | 405 (20,7) |
+| NVT | `top-3-estacionamentos-do-aeroporto-de-navegantes` | 743 (8,1) | `melhores-precos-de-estacionamento-...-navegantes` | 79 (15,9) |
+| CNF | `top-3-estacionamentos-do-aeroporto-de-confins` | 229 (17,1) | `estacionamento-mais-barato-no-aeroporto-de-confins` | 172 (14,3) |
+| VCP | `estacionamento-aeroporto-viracopos-vcp-guia-completo-...` | 366 (21,0) | `quais-os-melhores-...-2024` | 295 (15,2) |
+
+CGH e NVT seguem com o antigo muito à frente, e nada muda. **CNF e VCP chegaram perto do empate**,
+com o novo em posição melhor nos dois. Nenhum par foi consolidado: a eleição segue com o dono de
+cada praça, e em VCP ela depende de entender a perda do guia (passo 4) antes.
+
+### O que ficou aberto
+
+- **Preço de terceiros relido em 09/10** (`20261129140000`) segue fora dos posts, como em 19/10.
+- **Fatos de ficha divergentes que não são preço**, vistos na reescrita e não mexidos:
+  - distância da Aerovalet GRU como 4,5 km ou 2,8 km (FAQs `quanto-custa` e `qual-o-mais-barato`
+    de GRU, `guia-completo-sobre-o-aeroporto-de-guarulhos`), contra 4,85 km do T1 na ficha;
+  - o post `aeropark-descubra-...-vagas-cobertas` (van a cada 10 minutos, 2,7 km, lavagem), que já
+    estava aberto em 19/10, e o "AeroParking" do guia GRU Airport;
+  - em CGH, 700 m e 900 m num post e 740 m e 860 m nos outros; oficial a R$ 39,90 num e R$ 44,90 nos
+    outros, na mesma data;
+  - em VCP, o `guia-completo-estacionamento-aeroporto-viracopos` diverge do acervo em nota, número
+    de avaliações, tempo de van e "100% coberto"; as traduções de `quais-os-melhores` são de uma
+    versão anterior do pt e dizem que o Bandeira Park custa "menos da metade do segundo colocado";
+  - em CWB, a FAQ do top 3 responde "dois em agosto de 2026" a "quantos parceiros existem hoje";
+  - as traduções do post de convênio divergem do pt na linha de Confins e na FAQ do maior desconto.
+- **Tarifa do oficial divergente entre FAQs**: VCP (R$ 28,00/R$ 75,00 numa, R$ 31,00/R$ 83,00 nas
+  outras), Hangar Vip em CWB (R$ 15,90 e R$ 36,00), FlyPark em GRU (R$ 40,80 e R$ 21,60).
+- **A perda da dona de preço de VCP** (passo 4).
 
 ## O procedimento, para a próxima rodada
 
 1. `select d.short_name, f.* from destination d cross join lateral public.destination_price_freshness(d.slug) f ...`
    e liste as praças que revisaram tabela desde a última rodada.
-2. Para cada praça que revisou, liste os posts que citam R$ e as datas que eles citam
-   (`regexp_matches` sobre `body_md` resolve), e corrija os que ficaram para trás.
+2. Para cada praça que revisou, leia o `before` e o `after` de `pricing_mirror_run` desde a última
+   rodada para saber quais valores sumiram, e procure esses valores em todo campo publicado
+   (pt, en, es; corpo, resumo, `meta_description`, `answer` da FAQ). Corrija os que ficaram para
+   trás e grave trocando o campo inteiro com trava de `md5`, como em `20261201170000`.
 3. Confira o carimbo no ar em um post de preço e em um sem preço. Se a linha aparecer com a data da
    tabela, o passo está feito.
 4. Rode `bun run seo:gsc-comparar -- --antes <janela> --depois <janela>` e compute as quedas por
