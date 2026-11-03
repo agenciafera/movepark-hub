@@ -7,7 +7,7 @@
 -- disparo é o de segurança: sem segredo no Vault, ninguém publica e a fila não é perdida.
 
 begin;
-select plan(22);
+select plan(24);
 
 delete from public.site_rebuild_request;
 
@@ -21,6 +21,10 @@ select has_trigger('public', 'location_amenity', 'location_amenity_site_rebuild'
   'comodidade da unidade enfileira publicação');
 select has_trigger('public', 'faq', 'faq_site_rebuild',
   'FAQ enfileira publicação');
+select has_trigger('public', 'faq_i18n', 'faq_i18n_site_rebuild',
+  'tradução de FAQ enfileira publicação');
+select has_trigger('public', 'blog_post_i18n', 'blog_post_i18n_site_rebuild',
+  'tradução de post enfileira publicação');
 
 -- ── Fila vazia ──
 select is(public.site_rebuild_decision()->>'motivo', 'nada_pendente',
