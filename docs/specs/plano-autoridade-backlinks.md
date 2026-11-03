@@ -461,6 +461,11 @@ Movepark, Guarulhos, Viracopos, Curitiba e Confins**. Nenhum link vai para outro
 barato. A lista não tem portal de Guarulhos nem de Curitiba: Guarulhos recebe link de site
 nacional de viagem e do portal do Alto Tietê, Curitiba recebe dos dois maiores portais do interior
 do Paraná, e o WhitePress precisa ser consultado sobre portais das duas cidades (Conteúdo 85).
+**Escopo do pedido, decidido pelo Diego em 03/11/2026:** só portais de notícia ou guia de cidade
+de Guarulhos e de Curitiba com São José dos Pinhais. Blogs de milhas e mais sites de Campinas e de
+viagem saíram do pedido, porque as praças já têm portais na lista e dentro do teto de R$ 4.000.
+O que passar no filtro da seção 4 disputa a vaga do `odiariodemogi.net.br` (novembro, C82) e do
+`maringapost.com.br` (dezembro, C84).
 
 | Mês | Site | Preço | AS | Tráfego Semrush | Destino do link |
 |---|---|---|---|---|---|
@@ -644,7 +649,10 @@ prazo em 19/10/2026. O registro de cada um está na planilha de controle.
 R$ 6.423,90 e R$ 4.974,90) e precisam ser enxugados. A referência: Guarulhos, Confins e Curitiba
 com a metade Movepark, Viracopos com a metade Virapark. A metade Virapark dos próximos meses tem o
 `carpemundi.com.br`, o `sampi.net.br` (a confirmar) e o `maladeaventuras.com` (reserva) como
-opções; vale pedir ao WhitePress mais sites de Campinas e de viagem junto da Conteúdo 85.
+opções. A ideia de pedir ao WhitePress mais sites de Campinas e de viagem junto da Conteúdo 85
+saiu em 03/11/2026 (seção 4.1). Na metade de cerca de R$ 2.000, só o `carpemundi.com.br` e o
+`maladeaventuras.com` cabem, então um dos três meses fica sem opção e a busca volta quando o lote
+de janeiro abrir.
 
 ## 5. O plano
 
