@@ -135,3 +135,15 @@ describe("oferta em evidência na ficha (?vaga=)", () => {
     await waitFor(async () => expect(await selecionada()).toBe("Vaga Coberta"), { timeout: 5000 });
   });
 });
+
+// A ficha deste arquivo é unidade própria (hub) sem nenhuma avaliação Movepark: o parceiro novo.
+// Até 04/11/2026 ela mostrava "Seja o primeiro a avaliar" logo acima da nota do Google, e o
+// vazio lia como unidade fraca. Agora o bloco só existe a partir da primeira avaliação.
+describe("avaliações Movepark na ficha", () => {
+  it("não mostra o bloco interno enquanto a unidade não tem avaliação", async () => {
+    montaPagina("covered");
+    await waitFor(async () => expect(await selecionada()).toBe("Vaga Coberta"), { timeout: 5000 });
+    expect(screen.queryByText(/Seja o primeiro a avaliar/i)).not.toBeInTheDocument();
+    expect(document.getElementById("avaliacoes")).toBeNull();
+  });
+});

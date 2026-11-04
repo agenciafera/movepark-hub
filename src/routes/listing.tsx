@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, ArrowRight, Buildings, Bus, CalendarX, Car, Heart, MapPin, SealCheck, ShieldCheck, Star } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowRight, Buildings, Bus, CalendarX, Car, Heart, MapPin, SealCheck, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -37,6 +37,7 @@ import { optimizedImageUrl } from "@/lib/storage";
 import { parkingTitle } from "@/lib/parkingName";
 import { listingDescription, listingHeading, listingTitle } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { temAvaliacao } from "@/lib/reviews-volume.mjs";
 import { CANCELLATION_POLICY_LINES_GENERIC } from "@/features/bookings/cancellation.logic";
 import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
 import { UpgradeVagaNudge } from "@/features/listing/UpgradeVagaNudge";
@@ -583,17 +584,18 @@ export default function ListingPage() {
             )}
           </section>
 
-          {/* Avaliações: na unidade própria fica sempre visível, e o ReviewsBlock mostra o
-              empty state quando count = 0. Na externa o bloco inteiro sai, inclusive quando
-              existe avaliação histórica: ela veio de reserva feita no Hub, num arranjo que não
-              vale mais para esta unidade. */}
-          {caps.reviews && (
+          {/* Avaliações Movepark: só aparecem quando a unidade já tem pelo menos uma. Parceiro
+              novo não mostra "Seja o primeiro a avaliar" (decisão do Kallef, 04/11/2026): o
+              vazio ao lado da nota do Google lia como unidade fraca. Na externa o bloco inteiro
+              sai, inclusive quando existe avaliação histórica: ela veio de reserva feita no Hub,
+              num arranjo que não vale mais para esta unidade. */}
+          {caps.reviews && temAvaliacao(listing.location.review_count) && (
             <>
               <Separator />
-              <ListingReviewsSection
+              <ReviewsBlock
                 locationId={listing.location.id}
-                reviewCount={listing.location.review_count}
-                reviewAvg={listing.location.review_avg}
+                totalCount={listing.location.review_count}
+                avg={listing.location.review_avg}
               />
             </>
           )}
@@ -719,36 +721,6 @@ function ListingFaqSection({ items, isLoading, includeGlobal = true }: ListingFa
           <FaqList items={visibleItems} groupByScope />
         </DialogContent>
       </Dialog>
-    </section>
-  );
-}
-
-type ListingReviewsSectionProps = {
-  locationId: string;
-  reviewCount: number;
-  reviewAvg: number | null;
-};
-
-function ListingReviewsSection({ locationId, reviewCount, reviewAvg }: ListingReviewsSectionProps) {
-  if (reviewCount > 0) {
-    return <ReviewsBlock locationId={locationId} totalCount={reviewCount} avg={reviewAvg} />;
-  }
-
-  return (
-    <section id="avaliacoes" className="scroll-mt-24 space-y-4">
-      <h2 className="text-display-sm text-ink">Avaliações</h2>
-      <div className="flex flex-col items-center gap-3 rounded-md border border-hairline bg-surface-soft py-10 text-center">
-        <div className="flex items-center gap-0.5">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <Star key={n} className="h-6 w-6 text-hairline" />
-          ))}
-        </div>
-        <p className="text-body-md font-medium text-ink">Seja o primeiro a avaliar</p>
-        <p className="max-w-xs text-body-sm text-muted">
-          As avaliações aparecem aqui após a conclusão das reservas. Reserve e compartilhe sua
-          experiência.
-        </p>
-      </div>
     </section>
   );
 }

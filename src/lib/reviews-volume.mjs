@@ -22,3 +22,12 @@ export const MIN_AVALIACOES_PARA_NOTA = 5;
 export function temVolumeParaNota(count) {
   return (count ?? 0) >= MIN_AVALIACOES_PARA_NOTA;
 }
+
+/**
+ * A unidade já tem alguma avaliação Movepark? Decide se o bloco de avaliações existe na ficha
+ * (04/11/2026): sem nenhuma ele não renderiza e fica só o do Google. A nota média continua
+ * esperando o piso acima; os cards aparecem desde a primeira.
+ */
+export function temAvaliacao(count) {
+  return (count ?? 0) > 0;
+}

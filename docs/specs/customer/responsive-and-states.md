@@ -127,7 +127,7 @@ Cada empty tem: ícone outline 64×64, título `display-sm`, descrição `body-m
 | Sem veículos | Carro | "Cadastre um veículo." | "Adicione veículos pra agilizar suas reservas." | `[Adicionar]` |
 | Sem cartões | Cartão | "Adicione um método de pagamento." | "Salve cartões pra checkouts mais rápidos." | `[Adicionar]` |
 | Sem resultados de busca | Mapa | "Nenhuma vaga disponível pra esse período." | "Tente outras datas ou remova filtros." | `[Limpar filtros]` |
-| Sem avaliações | Estrela | "Ainda sem avaliações." | "Seja o primeiro a avaliar." | — |
+| Sem avaliações | (sem empty) | O bloco não renderiza na ficha da unidade enquanto não houver avaliação Movepark; fica só o do Google, quando existe (04/11/2026, ver [reviews.md](../reviews.md) §2). | | |
 | Sem fotos | Câmera | "Foto em breve." | (placeholder em cards) | — |
 
 ---

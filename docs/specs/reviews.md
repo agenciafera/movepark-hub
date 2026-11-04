@@ -66,6 +66,10 @@ tudo acima acende sozinho, sem deploy.
 - Card de busca e topo do detalhe: selo `★ 4,8 · 248 avaliações` (`RatingBadge`). **Some sem avaliações
   e abaixo do piso de volume** (§1b).
 - Bloco na unidade (`ReviewsBlock`): grid 2-col (autor, data, nota, comentário, resposta do dono) + modal "ver todas".
+  **Só existe a partir da primeira avaliação Movepark** (`location.review_count > 0`). Sem nenhuma, a
+  ficha não mostra bloco nem "Seja o primeiro a avaliar" e fica só com as avaliações do Google, quando
+  houver. Decisão do Kallef em 04/11/2026: no parceiro recém-chegado o vazio aparecia logo acima da
+  nota do Google e lia como unidade fraca. Antes disso (commit `514945a1`) a seção era sempre visível.
   O card mostra o **contexto de estadia** ("Estacionou de DD/MM a DD/MM" / "Estacionou em DD/MM" no mesmo dia)
   quando há `stay_check_in/out` — PRD-08.8, `reviews.logic.ts → stayContextLabel` (some sem datas).
 - Busca: `sort=rating_desc` e filtro `min_rating` (edge `search` lê `location.review_avg/count`).

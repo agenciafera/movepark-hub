@@ -126,7 +126,8 @@ Lista 2 colunas de amenidades com ícone outline 24 px à esquerda e label em `b
 Botão "Ver todas as N comodidades" abre modal se houver mais de 8.
 
 ### 5.4 Avaliações
-`display-md` "Avaliações (N)".
+`display-md` "Avaliações (N)". A seção só existe com N > 0: sem avaliação Movepark ela não renderiza,
+sem empty state, e a ficha fica só com as avaliações do Google (ver [reviews.md](../reviews.md) §2).
 
 Rating display canônico do design system (`{component.rating-display-card}`):
 ```
