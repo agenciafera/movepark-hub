@@ -647,7 +647,14 @@ export function PricingRuleEditor({
                 <p className="text-caption text-muted">
                   O preço que aparece riscado ao lado do preço Movepark, faixa por faixa.
                 </p>
-                <PricingTierEditor strategy={strategy} tiers={oldTiers} onChange={setOldTiers} />
+                {/* Sempre com as duas colunas: o riscado espelhado do white-label guarda TOTAL
+                    até em tabela de diária uniforme (166 de 201 faixas em 04/11/2026). Com a
+                    coluna da estratégia, o total sumia da tela e aparecia "R$ 0,00". */}
+                <PricingTierEditor
+                  strategy="fixed_bracket"
+                  tiers={oldTiers}
+                  onChange={setOldTiers}
+                />
               </div>
             )}
           </section>
