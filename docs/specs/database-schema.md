@@ -204,5 +204,5 @@ As tabelas abaixo ainda não foram criadas e são necessárias:
 | Item | Motivo |
 |---|---|
 | Staff / roles de backoffice | Decisão de modelo ainda pendente |
-| Preço dinâmico por janela/dia da semana/feriado | Definido como v2, não MVP |
+| Preço dinâmico por janela/dia da semana/feriado (pela data da estadia) | Definido como v2, não MVP. A troca de tabela **por data de compra** já existe: `pricing_schedule`, ver [agendamento-de-preco.md](./agendamento-de-preco.md) |
 | `user_company` pivot | Só se surgir necessidade de dados por par usuário×empresa |

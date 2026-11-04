@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
 import {
+  useCancelPricingSchedule,
   useCreateLocationParkingType,
+  useCreatePricingSchedule,
   useEnableCompanyParkingType,
   useOperatorSetPricing,
   useSimulatePrice,
@@ -207,5 +209,104 @@ describe("useSimulatePrice", () => {
       p_days: 5,
     });
     expect(r).toEqual({ total: 199.5 });
+  });
+});
+
+describe("useOperatorSetPricing: preço riscado", () => {
+  it("sem faixas do riscado, o parâmetro não vai e o servidor preserva o que existe", async () => {
+    // Ausente = preserva. Mandar [] apagaria o riscado de toda tabela salva pela tela.
+    const espiao = rpc("operator_set_pricing", { json: null });
+
+    const { result } = renderMutation(() => useOperatorSetPricing());
+    await result.current.mutateAsync({ locationParkingTypeId: "lpt-9", basePrice: 40, rule: {}, tiers: [] });
+
+    expect(espiao.ultimoBody).not.toHaveProperty("p_old_tiers");
+  });
+
+  it("com tabela própria, as faixas do riscado vão para a RPC", async () => {
+    const espiao = rpc("operator_set_pricing", { json: null });
+    const oldTiers = [{ from_day: 1, to_day: 14, unit_price: 18.9, total_price: null }];
+
+    const { result } = renderMutation(() => useOperatorSetPricing());
+    await result.current.mutateAsync({
+      locationParkingTypeId: "lpt-9",
+      basePrice: 17.01,
+      rule: { old_price_strategy: "own_table" },
+      tiers: [],
+      oldTiers,
+    });
+
+    expect((espiao.ultimoBody as { p_old_tiers: unknown }).p_old_tiers).toEqual(oldTiers);
+  });
+});
+
+describe("useCreatePricingSchedule", () => {
+  it("manda o dia (não um horário) e a tabela inteira", async () => {
+    // O servidor converte o dia para 0h no fuso da unidade. Se a tela mandasse um horário,
+    // a troca cairia às 21h da véspera em Brasília.
+    const espiao = rpc("pricing_schedule_create", { json: "sched-1" });
+    const tiers = [{ from_day: 1, to_day: 14, unit_price: 22.41, total_price: null }];
+
+    const { result } = renderMutation(() => useCreatePricingSchedule());
+    await result.current.mutateAsync({
+      locationParkingTypeId: "lpt-9",
+      effectiveDate: "2026-12-01",
+      basePrice: 22.41,
+      rule: { strategy: "fixed_bracket" },
+      tiers,
+      minimumStayDays: 3,
+    });
+
+    expect(espiao.ultimoBody).toMatchObject({
+      p_location_parking_type_id: "lpt-9",
+      p_effective_date: "2026-12-01",
+      p_base_price: 22.41,
+      p_rule: { strategy: "fixed_bracket" },
+      p_tiers: tiers,
+      p_minimum_stay_days: 3,
+    });
+    expect(espiao.ultimoBody).not.toHaveProperty("p_old_tiers");
+  });
+
+  it("sem estadia mínima, o parâmetro não vai e a de hoje continua", async () => {
+    const espiao = rpc("pricing_schedule_create", { json: "sched-1" });
+
+    const { result } = renderMutation(() => useCreatePricingSchedule());
+    await result.current.mutateAsync({
+      locationParkingTypeId: "lpt-9",
+      effectiveDate: "2026-12-01",
+      basePrice: null,
+      rule: { strategy: "fixed_bracket" },
+      tiers: [],
+      minimumStayDays: null,
+    });
+
+    expect(espiao.ultimoBody).not.toHaveProperty("p_minimum_stay_days");
+  });
+
+  it("propaga a recusa do servidor (vaga espelhada, dia repetido)", async () => {
+    falha("rpc", "pricing_schedule_create", 400, "O preço desta vaga vem do sistema antigo");
+
+    const { result } = renderMutation(() => useCreatePricingSchedule());
+    await expect(
+      result.current.mutateAsync({
+        locationParkingTypeId: "lpt-9",
+        effectiveDate: "2026-12-01",
+        basePrice: null,
+        rule: { strategy: "fixed_bracket" },
+        tiers: [],
+      }),
+    ).rejects.toThrow(/sistema antigo/);
+  });
+});
+
+describe("useCancelPricingSchedule", () => {
+  it("cancela pelo id do agendamento", async () => {
+    const espiao = rpc("pricing_schedule_cancel", { json: null });
+
+    const { result } = renderMutation(() => useCancelPricingSchedule());
+    await result.current.mutateAsync("sched-1");
+
+    expect(espiao.ultimoBody).toEqual({ p_id: "sched-1" });
   });
 });

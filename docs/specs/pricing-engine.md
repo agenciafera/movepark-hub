@@ -356,6 +356,11 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
   N chamadas client-side cacheadas (mesmo padrão do `PricingSimulationDialog` do operador). Preço
   sazonal (Tábua de Marés) é v2 do motor.
 
+- **Tabela programada (`pricing_schedule`, ✅):** o parceiro agenda a próxima tabela com data e o
+  pg_cron `pricing-schedule-apply` troca `pricing_rule`/`pricing_tier` às 0h do dia, no fuso da
+  unidade. O motor não muda: ele segue lendo a tabela atual, e a vigência é pela data da compra.
+  Toda escrita de tabela passa por `_pricing_write`. Ver [agendamento-de-preco.md](./agendamento-de-preco.md).
+
 ## Algoritmo de cálculo (pseudocódigo)
 
 ```

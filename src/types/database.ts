@@ -6208,6 +6208,108 @@ export type Database = {
           },
         ]
       }
+      pricing_schedule: {
+        Row: {
+          applied_at: string | null
+          base_price: number | null
+          canceled_at: string | null
+          canceled_by: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          effective_at: string
+          effective_date: string
+          error: string | null
+          id: string
+          location_parking_type_id: string
+          minimum_stay_days: number | null
+          old_tiers: Json | null
+          replaced: Json | null
+          rule: Json
+          status: string
+          tiers: Json
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          base_price?: number | null
+          canceled_at?: string | null
+          canceled_by?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_at: string
+          effective_date: string
+          error?: string | null
+          id?: string
+          location_parking_type_id: string
+          minimum_stay_days?: number | null
+          old_tiers?: Json | null
+          replaced?: Json | null
+          rule: Json
+          status?: string
+          tiers?: Json
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          base_price?: number | null
+          canceled_at?: string | null
+          canceled_by?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_at?: string
+          effective_date?: string
+          error?: string | null
+          id?: string
+          location_parking_type_id?: string
+          minimum_stay_days?: number | null
+          old_tiers?: Json | null
+          replaced?: Json | null
+          rule?: Json
+          status?: string
+          tiers?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_schedule_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_schedule_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "pricing_schedule_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "location_parking_type"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_schedule_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_mirror_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+          {
+            foreignKeyName: "pricing_schedule_location_parking_type_id_fkey"
+            columns: ["location_parking_type_id"]
+            isOneToOne: false
+            referencedRelation: "wl_reconcile_target"
+            referencedColumns: ["location_parking_type_id"]
+          },
+        ]
+      }
       pricing_tier: {
         Row: {
           from_day: number
@@ -8190,6 +8292,16 @@ export type Database = {
         Returns: Json
       }
       _hub_readiness: { Args: { p_location_id: string }; Returns: Json }
+      _pricing_write: {
+        Args: {
+          p_base_price: number
+          p_location_parking_type_id: string
+          p_old_tiers?: Json
+          p_rule: Json
+          p_tiers: Json
+        }
+        Returns: string
+      }
       _quote_booking: {
         Args: {
           p_add_on_ids: string[]
@@ -9948,6 +10060,7 @@ export type Database = {
         Args: {
           p_base_price: number
           p_location_parking_type_id: string
+          p_old_tiers?: Json
           p_rule: Json
           p_tiers?: Json
         }
@@ -10155,6 +10268,20 @@ export type Database = {
         Returns: boolean
       }
       pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
+      pricing_schedule_apply_due: { Args: never; Returns: number }
+      pricing_schedule_cancel: { Args: { p_id: string }; Returns: undefined }
+      pricing_schedule_create: {
+        Args: {
+          p_base_price: number
+          p_effective_date: string
+          p_location_parking_type_id: string
+          p_minimum_stay_days?: number
+          p_old_tiers?: Json
+          p_rule: Json
+          p_tiers?: Json
+        }
+        Returns: string
+      }
       prospect_public_path: {
         Args: { p: Database["public"]["Tables"]["prospect_location"]["Row"] }
         Returns: string

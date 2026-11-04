@@ -50,12 +50,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  useCreatePricingSchedule,
   useOperatorSetPricing,
   useLocationParkingTypesByCompany,
   type LocationParkingTypeWithRelations,
 } from "./api";
+import {
+  minScheduleDate,
+  saveLabel,
+  whyCannotSchedule,
+  type ScheduleMode,
+} from "./pricing-schedule.logic";
 import { fetchPricingCurve, findCurveInversions, pricingCurveKeys } from "./pricing-curve";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, formatDate } from "@/lib/format";
 
 type Props = {
   open: boolean;
@@ -67,9 +74,12 @@ type Props = {
   parkingTypeCode: string;
 };
 
-function tiersToDraft(tiers: { id: string; from_day: number; to_day: number | null; unit_price: number | null; total_price: number | null; is_old_price: boolean }[]): TierDraft[] {
+function tiersToDraft(
+  tiers: { id: string; from_day: number; to_day: number | null; unit_price: number | null; total_price: number | null; is_old_price: boolean }[],
+  oldPrice = false,
+): TierDraft[] {
   return tiers
-    .filter((t) => !t.is_old_price)
+    .filter((t) => t.is_old_price === oldPrice)
     .sort((a, b) => a.from_day - b.from_day)
     .map((t) => ({
       id: t.id,
@@ -90,7 +100,13 @@ export function PricingRuleEditor({
   parkingTypeCode,
 }: Props) {
   const setPricing = useOperatorSetPricing();
+  const createSchedule = useCreatePricingSchedule();
   const qc = useQueryClient();
+
+  // Quando a tabela vale: agora, ou a partir de um dia (vigência pela data da compra).
+  const [mode, setMode] = React.useState<ScheduleMode>("now");
+  const [effectiveDate, setEffectiveDate] = React.useState<string | null>(null);
+  const [minStayDays, setMinStayDays] = React.useState<number | null>(null);
 
   const [strategy, setStrategy] = React.useState<PricingStrategy>("uniform_by_duration");
   const [fractionalPolicy, setFractionalPolicy] = React.useState<FractionalDayPolicy>("any_extra");
@@ -123,6 +139,8 @@ export function PricingRuleEditor({
 
   // tiers
   const [tiers, setTiers] = React.useState<TierDraft[]>([]);
+  // faixas do preço riscado (old_price_strategy = own_table)
+  const [oldTiers, setOldTiers] = React.useState<TierDraft[]>([]);
 
   // Estratégia escolhida que descartaria as faixas, aguardando confirmação.
   const [pendingStrategy, setPendingStrategy] = React.useState<PricingStrategy | null>(null);
@@ -160,6 +178,15 @@ export function PricingRuleEditor({
     setSurchargeMultiplier(r?.surcharge_multiplier != null ? Number(r.surcharge_multiplier) : null);
 
     setTiers(tiersToDraft(r?.tiers ?? []));
+    setOldTiers(tiersToDraft(r?.tiers ?? [], true));
+
+    setMode("now");
+    setEffectiveDate(null);
+    setMinStayDays(
+      lpt.has_minimum_stay && (lpt.minimum_stay_unit ?? "days") === "days"
+        ? lpt.minimum_stay_value
+        : null,
+    );
   }, [open, lpt]);
 
   if (!lpt) return null;
@@ -199,7 +226,22 @@ export function PricingRuleEditor({
       }))
     : [];
 
-  const blockedReason = whyCannotSave(strategy, draftTiers, draftRule);
+  const usesOldTable = oldPriceStrategy === "own_table";
+  const draftOldTiers = usesOldTable
+    ? oldTiers.map((t) => ({
+        from_day: t.from_day,
+        to_day: t.to_day,
+        unit_price: t.unit_price,
+        total_price: t.total_price,
+      }))
+    : null;
+
+  const blockedReason =
+    whyCannotSave(strategy, draftTiers, draftRule) ??
+    (usesOldTable && oldTiers.length === 0
+      ? "Adicione as faixas do preço de balcão ou troque a estratégia do riscado."
+      : null) ??
+    whyCannotSchedule(mode, effectiveDate);
 
   /** Trocar de estratégia pode descartar as faixas: confirma antes em vez de apagar calado. */
   function requestStrategyChange(next: PricingStrategy) {
@@ -213,11 +255,27 @@ export function PricingRuleEditor({
   async function handleSave() {
     if (!lpt) return;
     try {
+      if (mode === "scheduled" && effectiveDate) {
+        await createSchedule.mutateAsync({
+          locationParkingTypeId: lpt.id,
+          effectiveDate,
+          basePrice,
+          rule: draftRule,
+          tiers: draftTiers,
+          oldTiers: draftOldTiers,
+          minimumStayDays: minStayDays,
+        });
+        toast.success(`Tabela programada para ${formatDate(effectiveDate)}`);
+        onOpenChange(false);
+        return;
+      }
+
       await setPricing.mutateAsync({
         locationParkingTypeId: lpt.id,
         basePrice,
         rule: draftRule,
         tiers: draftTiers,
+        oldTiers: draftOldTiers,
       });
 
       toast.success("Precificação salva");
@@ -252,7 +310,7 @@ export function PricingRuleEditor({
     }
   }
 
-  const submitting = setPricing.isPending;
+  const submitting = setPricing.isPending || createSchedule.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -275,6 +333,64 @@ export function PricingRuleEditor({
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pb-8">
+
+          <section className="space-y-3">
+            <h4 className="text-title-md">Quando vale</h4>
+            <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="prule-mode">Esta tabela</Label>
+                <Select value={mode} onValueChange={(v) => setMode(v as ScheduleMode)}>
+                  <SelectTrigger id="prule-mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="now">Vale a partir de agora</SelectItem>
+                    <SelectItem value="scheduled">Vale a partir de uma data</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {mode === "scheduled" && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="prule-date">A partir de</Label>
+                  <Input
+                    id="prule-date"
+                    type="date"
+                    min={minScheduleDate()}
+                    value={effectiveDate ?? ""}
+                    onChange={(e) => setEffectiveDate(e.target.value || null)}
+                  />
+                </div>
+              )}
+            </div>
+            {mode === "scheduled" && (
+              <>
+                <p className="text-caption text-muted">
+                  A troca acontece à meia-noite desse dia, no horário da unidade. Quem comprar
+                  antes paga a tabela de hoje, mesmo que estacione depois. Até lá, nada muda no
+                  site.
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="prule-minstay">Estadia mínima a partir dessa data (diárias)</Label>
+                  <Input
+                    id="prule-minstay"
+                    type="number"
+                    min={1}
+                    className="w-32"
+                    value={minStayDays ?? ""}
+                    placeholder="Sem mínimo"
+                    onChange={(e) =>
+                      setMinStayDays(e.target.value === "" ? null : Number(e.target.value))
+                    }
+                  />
+                  <p className="text-caption text-muted">
+                    Em branco, a estadia mínima de hoje continua.
+                  </p>
+                </div>
+              </>
+            )}
+          </section>
+
+          <Separator />
 
           {/* Strategy */}
           <section className="space-y-3">
@@ -526,6 +642,14 @@ export function PricingRuleEditor({
                 </p>
               </div>
             )}
+            {usesOldTable && (
+              <div className="space-y-2">
+                <p className="text-caption text-muted">
+                  O preço que aparece riscado ao lado do preço Movepark, faixa por faixa.
+                </p>
+                <PricingTierEditor strategy={strategy} tiers={oldTiers} onChange={setOldTiers} />
+              </div>
+            )}
           </section>
 
           <Separator />
@@ -580,7 +704,7 @@ export function PricingRuleEditor({
               title={blockedReason ?? undefined}
             >
               <FloppyDisk className="h-4 w-4" />
-              {submitting ? "Salvando…" : "Salvar precificação"}
+              {submitting ? "Salvando…" : saveLabel(mode, effectiveDate)}
             </Button>
           </div>
         </div>

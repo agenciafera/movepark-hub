@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Database, Json } from "@/types/database";
-import type { ParkingType } from "@/types/domain";
+import type { ParkingType, PricingSchedule } from "@/types/domain";
 
 type LocationParkingTypeRow = Database["public"]["Tables"]["location_parking_type"]["Row"];
 type LocationParkingTypeInsert = Database["public"]["Tables"]["location_parking_type"]["Insert"];
@@ -164,7 +164,9 @@ export function useOperatorSetPricing() {
       locationParkingTypeId: string;
       basePrice: number | null;
       rule: Record<string, unknown>;
-      tiers: { from_day: number; to_day: number | null; unit_price: number | null; total_price: number | null }[];
+      tiers: TierPayload[];
+      /** Faixas do preço riscado (`own_table`). Omitido/null preserva as que já existem. */
+      oldTiers?: TierPayload[] | null;
     }) => {
       const { error } = await supabase.rpc("operator_set_pricing", {
         p_location_parking_type_id: args.locationParkingTypeId,
@@ -172,10 +174,85 @@ export function useOperatorSetPricing() {
         p_base_price: args.basePrice as number,
         p_rule: args.rule as Json,
         p_tiers: args.tiers as unknown as Json,
+        ...(args.oldTiers ? { p_old_tiers: args.oldTiers as unknown as Json } : {}),
       });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: parkingTypesKeys.all }),
+  });
+}
+
+/* ------------------- Agendamento de tabela (agendamento-de-preco.md) ---------------- */
+
+export type TierPayload = {
+  from_day: number;
+  to_day: number | null;
+  unit_price: number | null;
+  total_price: number | null;
+};
+
+export const pricingScheduleKeys = {
+  all: ["pricing-schedule"] as const,
+  byLpt: (lptId: string) => [...pricingScheduleKeys.all, "lpt", lptId] as const,
+};
+
+/** Agendamentos do tipo de vaga. A RLS limita aos da própria empresa (e hub_admin). */
+export function usePricingSchedules(lptId: string | undefined) {
+  return useQuery({
+    queryKey: lptId ? pricingScheduleKeys.byLpt(lptId) : [...pricingScheduleKeys.all, "none"],
+    queryFn: async (): Promise<PricingSchedule[]> => {
+      const { data, error } = await supabase
+        .from("pricing_schedule")
+        .select("*")
+        .eq("location_parking_type_id", lptId!)
+        .order("effective_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!lptId,
+  });
+}
+
+/**
+ * Programa a próxima tabela. O servidor converte o dia para 0h no fuso da unidade, recusa data
+ * passada, dia repetido e vaga espelhada do white-label, e confere a tabela no motor.
+ */
+export function useCreatePricingSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      locationParkingTypeId: string;
+      effectiveDate: string;
+      basePrice: number | null;
+      rule: Record<string, unknown>;
+      tiers: TierPayload[];
+      oldTiers?: TierPayload[] | null;
+      minimumStayDays?: number | null;
+    }) => {
+      const { error } = await supabase.rpc("pricing_schedule_create", {
+        p_location_parking_type_id: args.locationParkingTypeId,
+        p_effective_date: args.effectiveDate,
+        // a RPC aceita null (numeric); o tipo gerado não reflete a nulidade do parâmetro
+        p_base_price: args.basePrice as number,
+        p_rule: args.rule as Json,
+        p_tiers: args.tiers as unknown as Json,
+        ...(args.oldTiers ? { p_old_tiers: args.oldTiers as unknown as Json } : {}),
+        ...(args.minimumStayDays ? { p_minimum_stay_days: args.minimumStayDays } : {}),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: pricingScheduleKeys.all }),
+  });
+}
+
+export function useCancelPricingSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("pricing_schedule_cancel", { p_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: pricingScheduleKeys.all }),
   });
 }
 

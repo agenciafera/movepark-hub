@@ -11,6 +11,31 @@ export function StrategyChip({ strategy }: { strategy: PricingStrategy | string 
   );
 }
 
+type SummaryTier = {
+  from_day: number;
+  to_day: number | null;
+  unit_price: number | string | null;
+  total_price: number | string | null;
+  is_old_price?: boolean;
+};
+
+/** Regra resumível: a salva (`pricing_rule`) ou a de um agendamento (`pricing_schedule.rule`). */
+export type SummaryRule = {
+  strategy: string;
+  tiers?: SummaryTier[] | null;
+  incremental_one_day_price?: number | string | null;
+  incremental_two_days_price?: number | string | null;
+  incremental_base?: number | string | null;
+  incremental_multiplier?: number | string | null;
+  monthly_fixed_price?: number | string | null;
+  monthly_daily_rate?: number | string | null;
+  hourly_initial_rate?: number | string | null;
+  hourly_one_hour_rate?: number | string | null;
+  hourly_fraction_rate?: number | string | null;
+  hourly_daily_rate?: number | string | null;
+  surcharge_multiplier?: number | string | null;
+};
+
 /** Resumo compacto da regra de preço: uma linha por estratégia */
 export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations }) {
   const rule = lpt.pricing_rule;
@@ -21,7 +46,10 @@ export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations 
       </p>
     );
   }
+  return <PricingRuleSummary rule={rule} />;
+}
 
+export function PricingRuleSummary({ rule }: { rule: SummaryRule }) {
   const tiers = (rule.tiers ?? [])
     .filter((t) => !t.is_old_price)
     .sort((a, b) => a.from_day - b.from_day);
@@ -31,7 +59,7 @@ export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations 
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-body">
         {tiers.map((t) => (
-          <span key={t.id} className="tabular-nums">
+          <span key={`${t.from_day}-${t.to_day}`} className="tabular-nums">
             <strong className="text-ink">
               {t.from_day}
               {t.to_day && t.to_day !== t.from_day ? `a ${t.to_day}` : ""}
@@ -48,7 +76,7 @@ export function PricingSummary({ lpt }: { lpt: LocationParkingTypeWithRelations 
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-body">
         {tiers.map((t) => (
-          <span key={t.id} className="tabular-nums">
+          <span key={`${t.from_day}-${t.to_day}`} className="tabular-nums">
             <strong className="text-ink">
               {t.from_day}
               {t.to_day && t.to_day !== t.from_day ? `a ${t.to_day}` : ""}

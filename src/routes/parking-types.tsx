@@ -41,6 +41,7 @@ import { CapacityRulesForm } from "@/features/parking-types/CapacityRulesForm";
 import { PricingRuleEditor } from "@/features/parking-types/PricingRuleEditor";
 import { PricingSimulationDialog } from "@/features/parking-types/PricingSimulationTable";
 import { PricingSummary, StrategyChip } from "@/features/parking-types/PricingSummary";
+import { PricingScheduleList } from "@/features/parking-types/PricingScheduleList";
 import { findCurveInversions, usePricingCurve } from "@/features/parking-types/pricing-curve";
 import { CurveInversionAlert } from "@/features/parking-types/CurveInversionAlert";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
@@ -367,6 +368,8 @@ function ParkingTypeCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <PricingSummary lpt={lpt} />
+
+        <PricingScheduleList lptId={lpt.id} canEditPricing={canEditPricing} />
 
         {inversion && (
           <CurveInversionAlert inversion={inversion} onOpenSimulation={onOpenSimulation} />

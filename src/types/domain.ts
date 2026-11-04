@@ -27,6 +27,9 @@ export type Profile = Tables<"profiles">;
 export type Vehicle = Tables<"vehicle">;
 export type Payment = Tables<"payment">;
 export type ParkingType = Tables<"parking_type">;
+/** Próxima tabela de preço com data (vigência pela data da compra). Ver agendamento-de-preco.md. */
+export type PricingSchedule = Tables<"pricing_schedule">;
+export type PricingScheduleStatus = "scheduled" | "applied" | "canceled" | "failed";
 export type CompanyOnboarding = Tables<"company_onboarding">;
 /** Recebedor do parceiro no gateway (id externo, status, link de KYC, pendências). */
 export type PayoutRecipient = Tables<"payout_recipient">;
