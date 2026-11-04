@@ -22,7 +22,17 @@ import {
 } from "../_shared/payments/index.ts";
 import { appliedFeeCreditCents, debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
 import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
-import { buildCardItems, cardFieldMessage, extractCardId, parseCardInput, reaisToCents } from "./logic.ts";
+import {
+  ANTIFRAUD_MESSAGE,
+  ANTIFRAUD_NOTE,
+  ANTIFRAUD_RETRY_LIMIT,
+  buildCardItems,
+  cardFieldMessage,
+  clientIp,
+  extractCardId,
+  parseCardInput,
+  reaisToCents,
+} from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
@@ -344,6 +354,18 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     cardRef = { cardToken: input.cardToken! };
   }
 
+  // 7a. Reprovações do antifraude: depois do limite o cartão não vai mais ao gateway, porque cada
+  // tentativa piora o score do comprador e nenhuma passou desde 20/10/2026. O cliente segue no PIX.
+  const { count: reprovacoes } = await admin
+    .from("payment_gateway_event")
+    .select("id", { count: "exact", head: true })
+    .eq("booking_id", booking.id)
+    .eq("kind", "charge_failed")
+    .eq("note", ANTIFRAUD_NOTE);
+  if ((reprovacoes ?? 0) >= ANTIFRAUD_RETRY_LIMIT) {
+    return await recusar(402, ANTIFRAUD_MESSAGE, { code: "antifraud_limit" });
+  }
+
   // 8. Cobrança no gateway
   let gateway;
   try {
@@ -369,6 +391,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     split: splitEnabled ? gatewaySplit : undefined,
     card: cardRef,
     billingAddress: input.billingAddress ?? undefined,
+    ip: clientIp(req.headers) ?? undefined,
     installments: input.installments,
     metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents) },
   });
@@ -404,7 +427,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       note: detalhe.integrationError
         ? `erro de integração (${detalhe.code}): ${detalhe.messages.join("; ") || "sem mensagem"}`
         : detalhe.antifraudReproved
-          ? "reprovado pelo antifraude da Pagar.me (o banco tinha aprovado)"
+          ? ANTIFRAUD_NOTE
           : `cartão recusado pelo emissor${detalhe.code ? ` (${detalhe.code})` : ""}`,
     });
     if (detalhe.integrationError) {
@@ -417,7 +440,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     }
     if (detalhe.antifraudReproved) {
       return jsonResponse(
-        { error: "O pagamento não passou na análise de segurança. Tente de novo em alguns minutos ou pague com PIX.", code: "antifraud_reproved" },
+        { error: ANTIFRAUD_MESSAGE, code: "antifraud_reproved" },
         402,
       );
     }

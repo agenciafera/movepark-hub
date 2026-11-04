@@ -401,6 +401,9 @@ export function buildCardOrderBody(input: CardChargeInput): Record<string, unkno
       };
   return {
     code: input.externalCode,
+    // IP e endereço do cliente alimentam o antifraude. Sem eles, de 20/10 a 03/11/2026 o banco
+    // aprovou e o antifraude da Pagar.me reprovou 11 de 13 reservas.
+    ...(input.ip ? { ip: input.ip } : {}),
     customer: {
       name: input.customer.name,
       email: input.customer.email,
@@ -415,6 +418,7 @@ export function buildCardOrderBody(input: CardChargeInput): Record<string, unkno
             },
           }
         : undefined,
+      ...(input.billingAddress ? { address: input.billingAddress } : {}),
     },
     items: input.items.map((i) => ({
       amount: i.amount,

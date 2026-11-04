@@ -130,3 +130,29 @@ export function cardFieldMessage(field: "cvv" | "expiry" | "holder"): string {
       return "Confira o nome impresso no cartão.";
   }
 }
+
+/**
+ * IP do comprador, para o antifraude da Pagar.me (`ip` no pedido). O navegador chama a Edge
+ * direto, então o primeiro IP do encaminhamento é o do cliente. Sem IP o antifraude avalia o
+ * pedido às cegas: de 20/10 a 03/11/2026 o banco aprovou e o antifraude reprovou 11 de 13 reservas.
+ */
+export function clientIp(headers: Headers): string | null {
+  const raw = headers.get("cf-connecting-ip") ?? headers.get("x-forwarded-for")?.split(",")[0] ?? "";
+  const ip = raw.trim();
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return ip;
+  if (/^[0-9a-f:]+$/i.test(ip) && ip.includes(":")) return ip;
+  return null;
+}
+
+/**
+ * Reprovações do antifraude aceitas por reserva antes de parar de mandar o cartão. Cada nova
+ * tentativa sobe o score (moderated → high → very_high) e, depois de 20/10/2026, nenhuma
+ * retentativa passou. A terceira vai para o PIX sem tocar no gateway.
+ */
+export const ANTIFRAUD_RETRY_LIMIT = 2;
+
+/** Nota do rastro que marca a reprovação do antifraude (o contador lê por ela). */
+export const ANTIFRAUD_NOTE = "reprovado pelo antifraude da Pagar.me (o banco tinha aprovado)";
+
+export const ANTIFRAUD_MESSAGE =
+  "A análise de segurança não liberou este cartão agora. Pague com PIX: a confirmação chega na hora.";

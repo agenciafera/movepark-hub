@@ -26,7 +26,12 @@ import {
   summarizeInstallmentOption,
 } from "@/features/checkout/installments.logic";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
-import { cardFailureEvent, logCheckoutEvent, type CardFailureStage } from "./checkoutTrail";
+import {
+  antifraudOutcome,
+  cardFailureEvent,
+  logCheckoutEvent,
+  type CardFailureStage,
+} from "./checkoutTrail";
 import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
 import { brandLabel, detectBrand, isCvvValid } from "@/lib/card-brand";
@@ -213,6 +218,9 @@ export function Step4Payment({
   // janela viraram duas cobranças. A ref barra o segundo clique na hora; o estado desabilita o botão.
   const enviando = React.useRef(false);
   const [paying, setPaying] = React.useState(false);
+  const [tab, setTab] = React.useState("pix");
+  // Recusa do antifraude: a tela passa a oferecer o PIX (retentar o mesmo cartão só piora).
+  const [antifraude, setAntifraude] = React.useState<"reproved" | "limit" | null>(null);
   function comecaEnvio(): boolean {
     if (enviando.current) return false;
     enviando.current = true;
@@ -321,6 +329,8 @@ export function Step4Payment({
     } catch (err) {
       const ev = cardFailureEvent(stage, err, ctx);
       logCheckoutEvent(bookingCode, ev.kind, ev.httpStatus, ev.detail);
+      const af = antifraudOutcome(err);
+      if (af) setAntifraude(af);
       toast.error(err instanceof Error ? err.message : "Pagamento recusado");
     } finally {
       terminaEnvio();
@@ -393,7 +403,7 @@ export function Step4Payment({
         onOpenChange={setTermsOpen}
       />
 
-      <Tabs defaultValue="pix">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="pix" className="inline-flex items-center gap-2">
             <DeviceMobile className="h-4 w-4" />
@@ -628,7 +638,30 @@ export function Step4Payment({
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={busy}>
+              {antifraude && (
+                <div
+                  role="alert"
+                  className="space-y-3 rounded-md border border-hairline bg-surface-soft p-4 text-body-md text-body"
+                >
+                  <p className="text-pretty">
+                    A análise de segurança não liberou este cartão. No PIX a reserva confirma na hora.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setTab("pix");
+                      void initPix();
+                    }}
+                    disabled={busy}
+                  >
+                    <DeviceMobile className="h-4 w-4" />
+                    Pagar com PIX
+                  </Button>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={busy || antifraude === "limit"}>
                 {paying || card.isPending ? "Processando…" : waitingForConfirmation ? "Confirmando…" : "Pagar com cartão"}
               </Button>
             </form>

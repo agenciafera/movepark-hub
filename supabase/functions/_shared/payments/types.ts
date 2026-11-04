@@ -221,6 +221,8 @@ export interface CardChargeInput {
    * 17/09/2026) e ele não entra no token: vai junto do token no pedido. Cartão salvo já tem o dele.
    */
   billingAddress?: BillingAddress;
+  /** IP do comprador, para o antifraude (sem ele o pedido é avaliado às cegas). */
+  ip?: string;
   installments: number;
   statementDescriptor?: string;
   metadata?: Record<string, string>;

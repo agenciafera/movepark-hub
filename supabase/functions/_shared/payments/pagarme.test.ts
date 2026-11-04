@@ -175,6 +175,28 @@ Deno.test("buildCardOrderBody: cartão salvo usa card_id (não token)", () => {
   }) as Record<string, any>;
   assertEquals(body.payments[0].credit_card.card_id, "card_saved_1");
   assertEquals(body.payments[0].credit_card.card, undefined);
+  // Sem IP nem endereço, as chaves não vão vazias.
+  assertEquals("ip" in body, false);
+  assertEquals("address" in body.customer, false);
+});
+
+Deno.test("buildCardOrderBody: IP do comprador e endereço do cliente vão ao antifraude", () => {
+  // Regressão (04/11/2026): de 20/10 a 03/11 o banco aprovou e o antifraude reprovou 11 de 13
+  // reservas, com o pedido sem IP e sem endereço do cliente.
+  const endereco = { zip_code: "80020310", line_1: "123, Rua XV, Centro", city: "Curitiba", state: "PR", country: "BR" };
+  const body = buildCardOrderBody({
+    externalCode: "MP-CARD3",
+    amountCents: 10000,
+    customer: { name: "C", email: "c@ex.com", document: "39053344705", type: "individual" },
+    items: [{ amount: 10000, description: "x", quantity: 1 }],
+    card: { cardToken: "tok" },
+    billingAddress: endereco,
+    ip: "200.150.10.20",
+    installments: 1,
+  }) as Record<string, any>;
+  assertEquals(body.ip, "200.150.10.20");
+  assertEquals(body.customer.address, endereco);
+  assertEquals(body.payments[0].credit_card.card.billing_address, endereco);
 });
 
 Deno.test("buildChargeResult extrai qr_code e status do charge", () => {

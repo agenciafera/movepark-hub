@@ -80,3 +80,15 @@ export function logCheckoutEvent(
     // Sem cliente (SSR, env ausente): o rastro é opcional.
   }
 }
+
+/**
+ * Recusa do antifraude da Pagar.me (o banco tinha aprovado). "reproved" ainda deixa tentar outro
+ * cartão; "limit" é quando a Edge parou de mandar cartão desta reserva ao gateway. Nos dois casos a
+ * tela oferece o PIX, porque retentar o mesmo cartão só piora a análise.
+ */
+export function antifraudOutcome(err: unknown): "reproved" | "limit" | null {
+  const code = err && typeof err === "object" && "code" in err ? (err as { code: unknown }).code : null;
+  if (code === "antifraud_reproved") return "reproved";
+  if (code === "antifraud_limit") return "limit";
+  return null;
+}

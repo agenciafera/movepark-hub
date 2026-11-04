@@ -576,6 +576,20 @@ A Edge (`parseBillingAddress`) exige o endereço com `card_token` e dispensa com
 por validação (`chargeFailureDetail`: 400/412/422) é erro nosso e o cliente lê "Não conseguimos
 processar o pagamento agora", nunca "cartão recusado"; o gateway trail guarda o motivo.
 
+**Antifraude reprovando o que o banco aprova (04/11/2026).** De 06/10 a 19/10, 15 de 17 reservas no
+cartão passaram no antifraude da Pagar.me; de 20/10 a 03/11, só 2 de 13. Em quase toda recusa o
+adquirente devolveu `acquirer_return_code 0000` e quem barrou foi `antifraud_response`
+(`provider_name: pagarme`, score `moderated`/`high`/`very_high`). O corpo do pedido não mudou no
+período; ele ia sem `ip` e sem `customer.address`. Perda medida: 8 clientes, R$ 2.117,50, uma só
+salva pelo PIX. Mudanças: (1) o pedido de cartão leva `ip` (do `cf-connecting-ip`/`x-forwarded-for`,
+`clientIp` em `create-card-charge/logic.ts`) e `customer.address` igual ao endereço de cobrança;
+(2) retentar piora: o score sobe a cada tentativa e nenhuma retentativa passou depois de 20/10.
+Depois de **2** reprovações do antifraude na mesma reserva (`ANTIFRAUD_RETRY_LIMIT`, contadas pela
+nota do `charge_failed` no rastro) a Edge responde 402 `antifraud_limit` sem chamar o gateway;
+(3) a tela, ao receber `antifraud_reproved` ou `antifraud_limit`, mostra o aviso com o botão
+"Pagar com PIX", que troca de aba e gera o código. A regra do antifraude em si é da Pagar.me e foi
+levada a ela por chamado.
+
 **Parcelamento — política dinâmica (resolve a Q-001):** vive em `app_setting.card_installment_policy`
 (JSON), editável no **Manager → Configurações → Pagamentos** sem code change: `enabled`, `maxInstallments`,
 `interestFreeUpTo`, `monthlyInterestPct` (PMT/Price), `minInstallmentCents`, `absorb`

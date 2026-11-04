@@ -566,6 +566,8 @@ export function useCreateCardCharge() {
         // O status vai junto para o rastro do checkout (checkoutTrail.ts).
         throw Object.assign(new Error(err.error ?? `Falha ao processar o cartão (HTTP ${res.status})`), {
           httpStatus: res.status,
+          // Ex.: antifraud_reproved, antifraud_limit (a tela leva o cliente ao PIX).
+          code: typeof err.code === "string" ? err.code : null,
         });
       }
       return res.json();

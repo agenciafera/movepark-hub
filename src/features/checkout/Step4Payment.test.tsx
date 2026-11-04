@@ -229,6 +229,70 @@ describe("Step4Payment", () => {
     );
   });
 
+  // Regressão (04/11/2026): de 20/10 a 03/11 o antifraude da Pagar.me reprovou 11 de 13 reservas e
+  // a tela mandava "tente de novo", o que só subia o score. Agora oferece o PIX na hora.
+  it("reprovado pelo antifraude: oferece o PIX e gera o código com um clique", async () => {
+    const user = userEvent.setup();
+    cardMutate.mockRejectedValueOnce(
+      Object.assign(new Error("A análise de segurança não liberou este cartão agora."), {
+        httpStatus: 402,
+        code: "antifraud_reproved",
+      }),
+    );
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+    await preencheCartao("12/30");
+    fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+
+    const aviso = await screen.findByRole("alert");
+    expect(aviso).toHaveTextContent(/No PIX a reserva confirma na hora/);
+    // Reprovação simples ainda deixa tentar outro cartão.
+    expect(screen.getByRole("button", { name: /Pagar com cartão/i })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: /Pagar com PIX/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Copiar código PIX/i })).toBeInTheDocument(),
+    );
+  });
+
+  it("limite de reprovações: o cartão fica travado e o PIX segue disponível", async () => {
+    const user = userEvent.setup();
+    cardMutate.mockRejectedValueOnce(
+      Object.assign(new Error("A análise de segurança não liberou este cartão agora."), {
+        httpStatus: 402,
+        code: "antifraud_limit",
+      }),
+    );
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={100}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Número do cartão");
+    await preencheCartao("12/30");
+    fireEvent.click(screen.getByRole("button", { name: /Pagar com cartão/i }));
+
+    await screen.findByRole("alert");
+    expect(screen.getByRole("button", { name: /Pagar com cartão/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Pagar com PIX/i })).toBeEnabled();
+  });
+
   // Regressão MP-07DAE9 (17/10/2026): dois cliques com 3 s de intervalo, durante a tokenização,
   // viraram duas cobranças aprovadas. O segundo clique não pode nem começar outro envio.
   it("clique duplo no cartão tokeniza e cobra uma vez só", async () => {

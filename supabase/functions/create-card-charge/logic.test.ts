@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { buildCardItems, cardFieldMessage, extractCardId, parseBillingAddress, parseCardInput, reaisToCents } from "./logic.ts";
+import { buildCardItems, cardFieldMessage, clientIp, extractCardId, parseBillingAddress, parseCardInput, reaisToCents } from "./logic.ts";
 
 Deno.test("reaisToCents arredonda corretamente", () => {
   assertEquals(reaisToCents(159.5), 15950);
@@ -97,4 +97,12 @@ Deno.test("cardFieldMessage: diz ao cliente o que corrigir", () => {
     "O código de segurança (CVV) não confere. Confira os 3 dígitos no verso do cartão (4 na frente, no Amex).",
   );
   assertEquals(cardFieldMessage("expiry"), "A validade do cartão não confere. Confira o mês e o ano (MM/AA).");
+});
+
+Deno.test("clientIp: lê o IP do comprador dos cabeçalhos de encaminhamento", () => {
+  assertEquals(clientIp(new Headers({ "cf-connecting-ip": "200.150.10.20" })), "200.150.10.20");
+  assertEquals(clientIp(new Headers({ "x-forwarded-for": "177.10.1.2, 10.0.0.1" })), "177.10.1.2");
+  assertEquals(clientIp(new Headers({ "x-forwarded-for": "2804:14c::1" })), "2804:14c::1");
+  assertEquals(clientIp(new Headers({ "x-forwarded-for": "lixo" })), null);
+  assertEquals(clientIp(new Headers()), null);
 });
