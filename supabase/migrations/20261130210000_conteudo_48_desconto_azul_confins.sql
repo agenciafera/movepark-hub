@@ -236,7 +236,8 @@ $corpo$,
   'Desconto Azul no estacionamento de Confins: de 10% a 40% na BePark. A partir de R$ 45,00 a diária em outubro de 2026. Compare e reserve pela Movepark.',
   (select id from public.destination where slug = 'aeroporto-de-confins'),
   'peu',
-  '1700c4e9-8fa8-48ef-8f33-7bf1fa861ca3',
+  -- Guarda de replay: o autor só existe em produção. No `db reset` do CI fica nulo.
+  (select id from public.blog_author where id = '1700c4e9-8fa8-48ef-8f33-7bf1fa861ca3'),
   (select id from public.blog_category where slug = 'guias'),
   false)
 on conflict (slug) do update set

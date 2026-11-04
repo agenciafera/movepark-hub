@@ -19,6 +19,13 @@ declare
   n int;
   total int := 0;
 begin
+  -- Guarda de replay: num banco sem o acervo (db reset do CI) não há texto a revisar. Em produção a
+  -- FAQ existe e a trava de md5 abaixo continua valendo.
+  if not exists (select 1 from public.faq where id = '7288e5fb-050c-47a0-80a4-ed143bf3b461') then
+    raise notice 'frescor: banco sem o acervo de 03/11, nada a revisar';
+    return;
+  end if;
+
   -- faq · compensa-deixar-o-carro-mais-dias-no-aeroporto-de-guarulhos · pt · answer
   update public.faq set answer = $f1$Compensa, e mais em estadia longa. Na Aerovalet a vaga descoberta sai de R$ 16,90 por dia de 1 a 6 diárias para R$ 11,90 por dia em uma semana e R$ 6,90 por dia em 30 diárias, 59% menos. A coberta faz o mesmo caminho, de R$ 19,90 para R$ 8,90 por dia no mês. No Aeropark, que entra a partir de duas diárias, a descoberta vai de R$ 21,90 para R$ 17,90 por dia. O estacionamento oficial cobra a mesma diária em qualquer duração. Preços da Aerovalet na tabela de 28/10/2026 e do Aeropark na de 19/10/2026.$f1$
    where id = '7288e5fb-050c-47a0-80a4-ed143bf3b461' and md5(answer) = 'c3d01a516ce78bbafa09bcc7cfc707db';
