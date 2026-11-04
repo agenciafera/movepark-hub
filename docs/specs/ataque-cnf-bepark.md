@@ -720,6 +720,17 @@ estacionamento" 9,0), e a cabeça piorou.
    e "com reserva pela Movepark desde 6 de outubro") e `desconto-azul-no-estacionamento-de-confins`
    (o cupom "na etapa de cupons" e "o total com o cupom sai na tela do checkout", que são do checkout
    do Hub). Promessa sem capacidade declarada não pode ficar no ar. Volta quando a venda voltar.
+
+   **Feito em 04/11/2026** (migration `20261201190000_bepark_posts_sem_venda_pelo_hub.sql`, 23
+   trechos: 9 no `bepark-confins`, 6 no de "melhor" e 8 no do desconto Azul). O texto agora diz o que vale com a unidade externa: o preço por duração
+   está na página da BePark na Movepark, a reserva fecha no sistema da própria BePark, e as regras de
+   cancelamento e troca são as da tela de pagamento dela. No desconto Azul, saiu o cupom "na etapa de
+   cupons". Ficou a confirmação da BePark de que ele vale em qualquer período, com a instrução de
+   conferir na tela se entrou: nenhuma das 269 reservas do white-label desde 19/10 registra cupom Azul,
+   e não está confirmado que o sistema dela tenha esse cupom. As traduções en/es do post de "melhor"
+   são da versão de setembro e não falam da venda. Os cupons `AZUL*` do Hub (§6) continuam ativos e
+   voltam a valer se a venda pelo Hub voltar. Quando ela voltar, os três posts precisam do texto de
+   volta, e a fonte é o histórico desta migration.
 2. **A meta "Modo IA cita a BePark em 3 de 6" depende da venda pelo Hub**, porque a frase 4 da §3 (a
    reserva mais protegida) só existe com a virada. Enquanto o impasse durar, o caminho para a meta é
    o desconto Azul e a van, e a revisão de 90 dias mede contra isso.
