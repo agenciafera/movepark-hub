@@ -16,6 +16,7 @@
 > - Baseline de 16 meses ([dados/gsc-baseline-2026-08-29](./dados/gsc-baseline-2026-08-29/)).
 > - Banco vivo, consultado em 28 e 29/09.
 > - Checagem da busca e dos sites concorrentes em 28/09/2026.
+> - Revisão de 30 dias (§5.1): Search Console de 01 a 27/10 ([dados/gsc-baseline-2026-10-27](./dados/gsc-baseline-2026-10-27/)) e de 17 a 31/10 ([dados/gsc-baseline-2026-10-31](./dados/gsc-baseline-2026-10-31/)), placar rodado em 04/11/2026.
 
 ## 1. O gatilho
 
@@ -540,7 +541,7 @@ Disputar preço para todo mundo é decisão comercial com a BePark, e não é pr
 | [Conteúdo 56: imprensa de BH, férias de fim de ano](https://app.clickup.com/t/86akr8kra) | 16/11 | 27/11 |
 | [Conteúdo 57: vídeo curto no YouTube](https://app.clickup.com/t/86akr8krn) | 19/10 | 30/10 |
 | **Medição** | | |
-| [Conteúdo 58: revisão de 30 dias](https://app.clickup.com/t/86akr8kt4) | 28/10 | 30/10 |
+| [Conteúdo 58: revisão de 30 dias](https://app.clickup.com/t/86akr8kt4) | 28/10 | 30/10; feita em 04/11 (§5.1) |
 | [Conteúdo 59: revisão de 90 dias](https://app.clickup.com/t/86akr8kth) | 22/12 | 29/12 |
 
 **O portão de canibalização** da skill `blogpost-seo-geo` foi rodado no banco em 29/09, contra os 8 posts publicados de Confins:
@@ -575,8 +576,167 @@ Na posição, vale o Search Console, comparado com `bun run seo:gsc-comparar`. N
 
 Revisões:
 
-- **30 dias:** Conteúdo 58, de 28 a 30/10, junto com a rodada do placar.
+- **30 dias:** Conteúdo 58, de 28 a 30/10, junto com a rodada do placar. Feita em 04/11/2026 (§5.1).
 - **90 dias:** Conteúdo 59, de 22 a 29/12.
+
+### 5.1 Revisão de 30 dias (Conteúdo 58, 04/11/2026)
+
+**A rodada do placar de 28/10 não aconteceu.** As colunas de out/2026 da planilha estavam vazias em
+04/11, inclusive no bloco do Ataque CNF, e a tarefa agendada `placar-citacao-ia-movepark` não existe
+nesta máquina. A rodada foi feita em 04/11, no Chrome do Diego, logado no Google, no ChatGPT e no
+Gemini. O Perplexity rodou **deslogado**, como em agosto, e o placar cobra logado. A planilha não foi
+preenchida, porque o conector do Google Sheets pede permissão nova; o resultado está aqui.
+
+#### As metas
+
+| Métrica | Marco (setembro) | 30 dias | Meta de 90 dias |
+| --- | --- | --- | --- |
+| Modo IA cita a Movepark (6 consultas) | 0 de 1 (28/09) | **4 de 6** | 3 de 6, já atingida |
+| Modo IA cita a BePark (6 consultas) | 0 de 1 (28/09) | 1 de 6 | 3 de 6 |
+| "estacionamento aeroporto confins" | 10,4 | 11,8 (01 a 27/10); **14,3** (17 a 31/10) | até 4 |
+| As outras 4 de preço (valor, diária, qual o valor, quanto custa) | 10,3 a 11,5 | 7,6 a 10,4; **8,4 a 11,4** | até 4 |
+| "qual o melhor estacionamento aeroporto confins" | 22,5 | 14,2; **14,9** | até 5 |
+| Ficha da BePark em "bepark" | 5,3 | 5,6; **5,2** | até 3 |
+| Ficha da BePark em "be park confins" | 10,7 (a praça ficava em 5,9) | 6,3; **6,4** | até 3 |
+| Nota da BePark no Google | 4,3 (774), 27/09 | 4,3 (779), snapshot de 25/10 | 4,5 |
+
+Em negrito, a janela de 17 a 31/10, que tem a mesma duração do marco (15 dias) e pega só os 5
+últimos dias do buraco de 09 a 21/10 (abaixo), contra 19 dias na janela de 01 a 27/10.
+
+#### O placar de 04/11/2026
+
+M é Movepark (fonte `movepark.co`, regra 5), B é Bandeira Park, X é xpark e "BePark" diz se ela
+apareceu e por qual fonte.
+
+| Consulta | ChatGPT | Gemini | Perplexity (deslogado) | Visão geral de IA | Modo IA | BePark citada? |
+| --- | --- | --- | --- | --- | --- | --- |
+| C1 estacionamento aeroporto confins preço | B + X | M + B + X | B | nenhum | M + B | ChatGPT e Gemini (bepark.com.br) |
+| C2 melhor estacionamento aeroporto confins | M + B + X | M + B | M + B | B | M + B | não |
+| C3 estacionamento aeroporto confins desconto azul | M | M | M | M | M | **nos 5** (movepark.co, bepark.com.br, Azul) |
+| 7 quanto custa estacionar em confins | M + B | B | B + X | nenhum | B | ChatGPT, só na tabela, como a mais cara |
+| 8 qual o estacionamento mais barato em confins | B + X | M | B | M + B | B | não |
+| 9 estacionamento mais próximo do aeroporto de confins | M + X | nenhum | nenhum | nenhum | M | não |
+
+Somando as 30 células: **Movepark 16, Bandeira Park 17, xpark 6, BePark 8**. A visão geral de IA,
+que não apareceu em nenhuma das 12 consultas de agosto, agora aparece nas 6.
+
+**A leitura.** A Movepark virou fonte em Confins: está em 4 das 6 respostas do Modo IA, contra 0 no
+print de 28/09, e o Modo IA usa as donas de preço, de melhor e de proximidade. Quem ganha as três
+perguntas de dinheiro (preço, quanto custa, mais barato) é o Bandeira Park, e sempre com o mesmo
+número: R$ 18,49 a diária e R$ 7,98 em 30 dias, que é o do site institucional, "preços conferidos em
+10/10/2026", repetido no post, no comparativo e no xpark. A Movepark registra R$ 24,99, o valor sem
+cupom do sistema onde a reserva fecha (§2.3.1). O resultado é que a fonte que se diz confiável
+contradiz o número que a IA vê em três lugares, e nas respostas de preço a IA fica com o Bandeira.
+
+**A BePark só ganhou onde tem um fato que é só dela e que está escrito em mais de uma fonte**: o
+desconto Azul, citado nos 5 motores, com o post 48 e o bepark.com.br lado a lado. Nas outras
+consultas ela aparece só em tabela de preço, como a diária mais cara (R$ 45,00). A van acompanhada
+ao vivo, que é a tese do perfil "sem imprevisto" (§3), **não apareceu em nenhuma das 30
+respostas**. Os motores ainda repetem "8 minutos do aeroporto", que vem da página da Azul e do
+Instagram da BePark (§2.3.5).
+
+#### Search Console
+
+Duas janelas novas: a que a atividade pediu (01 a 27/10, 27 dias, `dados/gsc-baseline-2026-10-27`) e
+a de 17 a 31/10 (15 dias, `dados/gsc-baseline-2026-10-31`, coletada no Conteúdo 38). Impressão de
+janela de tamanho diferente só se compara por dia.
+
+| Recorte | 31/08 a 14/09 | 01 a 27/10 | 17 a 31/10 |
+| --- | ---: | ---: | ---: |
+| Site inteiro, impressões por dia | 10.616 | 12.759 | 12.296 |
+| URLs de Confins e da BePark, impressões por dia | 836 | 1.325 | 1.128 |
+| URLs de Confins e da BePark, cliques por dia | 4,7 | 7,9 | 5,6 |
+
+Confins cresceu mais que o site (+35% por dia contra +16%, na janela de mesma duração). O
+`seo:gsc-comparar` dá, no cluster CNF, preço de 14,3 para 12,1 e proximidade de 12,2 para 11,2, e
+"barato" de 9,4 para 12,7, a única célula dos 12 clusters que caiu mais de uma posição.
+
+**A janela de 01 a 27/10 está contaminada** por dois eventos que não fazem parte do ataque:
+
+- **As quatro donas de Confins e o `bepark-confins` responderam 404 de 09 a 21/10**, no acervo
+  despublicado sem registro ([blog.md](./blog.md)). A dona de proximidade caiu de 117 para 38
+  impressões por dia, e a de "mais barato" de 17 para 11.
+- **O guia `guia-completo-estacionamento-aeroporto-confins`**, publicado em 10/10 e despublicado em
+  14/10 sem 301, levou 944 impressões da cabeça "estacionamento aeroporto confins" em quatro dias
+  (posição 11,5). Responde 404 desde então e ainda recebeu 314 impressões de 17 a 31/10.
+
+**Por página**, por dia, do marco para 17 a 31/10:
+
+| Página | Marco | 17 a 31/10 | Posição |
+| --- | ---: | ---: | --- |
+| `/estacionamentos/aeroporto-confins` | 219 | 162 | 9,2 para 9,2 |
+| post de preço | 81 | 99 | 8,1 para 9,8 |
+| post de proximidade | 118 | 38 | 9,5 para 10,7 |
+| post de "melhor" (`top-3-...`) | 46 | 15 | 12,3 para 17,1 |
+| post de "mais barato" | 17 | 12 | 7,6 para 14,3 |
+| ficha da BePark | 26 | 102 | 7,7 para 7,5 |
+| `bepark-confins` (novo) | 0 | 23 | 9,1 |
+| FAQ "a BePark já se chamou B Park?" (nova) | 0 | 17 | 8,8 |
+| fichas de lote mapeado com impressão, somadas | 62 (6 fichas) | 344 (10 fichas) | 7,5 a 14,3 |
+
+A ficha da BePark quadruplicou e passou a receber a busca de marca que antes caía na página da
+praça. As fichas de lote mapeado viraram a maior fonte nova de impressão: Premium Park, Estapar,
+Multipark e Central Park não apareciam no marco e somam 188 impressões por dia. A ficha do Bandeira
+Park não teve impressão nenhuma nas duas janelas de outubro. As donas reescritas em 07/10
+ainda não recuperaram o que perderam nos 12 dias de 404 (a janela de 17 a 31/10 ainda tem 5 deles):
+o Google voltou a mostrá-las, mas abaixo de onde estavam. A comparação limpa das donas fica para a
+revisão de 90 dias. A cauda de preço melhorou ("qual o valor" 8,8, "quanto custa" 8,4, "valor do
+estacionamento" 9,0), e a cabeça piorou.
+
+#### Negócio
+
+- **A venda pela Movepark parou em 19/10.** A BePark vendeu pelo Hub de 06 a 19/10: 16 reservas
+  criadas, 6 pagas e concluídas (entre 12 e 15/10) e 10 expiradas sem pagamento. Em 19/10 a unidade
+  voltou a `checkout_mode = 'external'` por um impasse com o cliente (comentário do Diego no
+  Conteúdo 50) e vende só no white-label.
+- **Clique de saída da ficha para o white-label:** 5 em outubro, 3 deles depois de 19/10
+  (`external_exit_click`). É pouco para ler tendência.
+- **Reservas no white-label da BePark** (`wl_booking`, sem duplicadas): de 40 a 64 confirmadas por
+  semana em setembro e de 80 a 157 em outubro, com o pico na semana do feriado de 12/10. A origem
+  registrada é `google/organic`, `bepark.com.br` ou "não identificado", então o aumento não é
+  atribuível à Movepark.
+
+#### O que dobrar e o que cortar (decidido em 04/11/2026)
+
+**Dobrar:**
+
+1. **O formato do desconto Azul.** Foi a única consulta em que a tese funcionou inteira, nos 5
+   motores. O padrão é um fato que só a BePark tem, publicado igual na Movepark e no site dela, com
+   uma terceira fonte (a Azul) confirmando. A van ao vivo precisa do mesmo tratamento: hoje ela só
+   existe na Movepark. O bepark.com.br e a imprensa do Conteúdo 56 têm que publicar a van com o
+   rastreio e com os números da ficha (10 minutos de trajeto, saída a cada 20).
+2. **As fichas de lote mapeado.** Somam 344 impressões por dia, contra 62 no marco. É onde o número
+   verificado da Movepark encontra quem pesquisa o concorrente. A do Bandeira Park não aparece na
+   busca, e vale entender por quê antes da revisão de 90 dias.
+3. **A cauda de preço.** Está entre 8 e 9, e é ela que a meta de "até 4" vai mover primeiro. Mantém
+   o carimbo mensal da rotina de frescor.
+
+**Cortar ou corrigir:**
+
+1. **A promessa da venda pela Movepark nos posts da BePark (ADR-009).** Desde 19/10 a unidade é
+   externa, e três posts ainda falam da reserva pela Movepark: `bepark-confins` ("Quais tarifas a
+   reserva pela Movepark oferece?", "três tarifas" e "a vaga vendida é a coberta"),
+   `top-3-estacionamentos-do-aeroporto-de-confins` ("O que a reserva pela Movepark muda na BePark?"
+   e "com reserva pela Movepark desde 6 de outubro") e `desconto-azul-no-estacionamento-de-confins`
+   (o cupom "na etapa de cupons" e "o total com o cupom sai na tela do checkout", que são do checkout
+   do Hub). Promessa sem capacidade declarada não pode ficar no ar. Volta quando a venda voltar.
+2. **A meta "Modo IA cita a BePark em 3 de 6" depende da venda pelo Hub**, porque a frase 4 da §3 (a
+   reserva mais protegida) só existe com a virada. Enquanto o impasse durar, o caminho para a meta é
+   o desconto Azul e a van, e a revisão de 90 dias mede contra isso.
+3. **O número do Bandeira nas respostas de preço.** Registrar só o R$ 24,99 do sistema de reserva
+   faz a Movepark contradizer o R$ 18,49 que a IA lê em três fontes. A proposta é publicar os dois
+   lado a lado na tabela das donas e na FAQ "quanto custa" ("anuncia R$ 18,49 no site institucional;
+   cobra R$ 24,99 sem cupom no sistema de reserva, conferido em <data>"), que é o que o post de
+   "melhor" já faz no texto. Não muda a decisão 4 da §6 (o valor do sistema continua sendo o
+   registrado), muda só o que a página mostra.
+4. **A URL morta do guia completo.** `guia-completo-estacionamento-aeroporto-confins` responde 404 e
+   ainda tem impressão na cabeça. Vai para 301 na página da praça, em migration, como manda
+   [blog.md](./blog.md).
+5. **O placar sem dono.** A rodada de 28/10 não rodou e ninguém viu. Precisa de dono com data
+   (proposta da planilha: Léo Henrique, dia 28) e do Perplexity logado.
+
+**Não muda:** a tese de não disputar "mais barato" nem "mais perto" (§3) se confirmou. Nas três
+consultas de dinheiro a IA escolhe pelo menor número, e a BePark não tem esse número.
 
 ## 6. Decisões em aberto
 
