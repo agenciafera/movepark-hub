@@ -69,12 +69,14 @@ jobs:
           if [ -n "$dups" ]; then
             echo "Migrations com timestamp duplicado:"; echo "$dups"; exit 1
           fi
-      # Versão fixa, nunca "latest": a v3 saiu em 03/11/2026 recusando o `[inbucket]` do config.toml,
-      # e o job morreu antes de aplicar uma migration sequer. Subir a versão é decisão de PR, junto
-      # com o config. Mesma versão da máquina local.
+      # Versão fixa, nunca "latest": a v3 saiu em 02/11/2026 recusando o `[inbucket]` do config.toml,
+      # e o job morreu antes de aplicar uma migration sequer. Nem qualquer 2.x serve: a 2.100.0 sobe
+      # o Postgres 17.6.1, que caiu duas vezes no meio do pgTAP (throws_ok como `authenticated`).
+      # A 2.121.0 é a que rodava verde em 21/10/2026 (Postgres 17.11). Subir a versão é decisão de
+      # PR, junto com o config.
       - uses: supabase/setup-cli@v2
         with:
-          version: 2.100.0
+          version: 2.121.0
       - run: supabase db start
       - run: supabase test db
 
