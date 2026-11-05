@@ -110,7 +110,7 @@ antes. A mesma foto nas duas listas aparece uma vez, na posição do tipo. A ord
 foto da galeria). O `image` do JSON-LD leva as fotos da unidade **e de todos os tipos**
 (`fotosDaUnidade`), porque o nó descreve o estacionamento inteiro. A capa do card da busca continua
 sendo `location.photos[0]`. Ainda não há tela para editar as fotos por tipo: hoje entram por SQL,
-como as da unidade importadas do legado. Migration `20261201190000_fotos_por_tipo_de_vaga.sql`.
+como as da unidade importadas do legado. Migration `20261201200000_fotos_por_tipo_de_vaga.sql`.
 
 ---
 

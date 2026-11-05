@@ -1,4 +1,4 @@
--- Fotos por tipo de vaga (20261201190000). A ficha abre com as fotos do tipo em evidência e
+-- Fotos por tipo de vaga (20261201200000). A ficha abre com as fotos do tipo em evidência e
 -- segue com as da unidade; a coluna precisa ser array, porque o front lê com Array.isArray.
 begin;
 select plan(5);
