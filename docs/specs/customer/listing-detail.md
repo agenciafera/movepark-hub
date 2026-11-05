@@ -100,6 +100,18 @@ Inspirado no Airbnb. **5 fotos** visíveis no desktop: 1 grande (esquerda, 2 col
 
 **Mobile**: carrossel horizontal full-bleed com aspect 4:5, dots indicators.
 
+**Ordem das fotos (05/11/2026).** O tipo de vaga é escolhido dentro da ficha (`?vaga=`), então a
+galeria abre com as fotos **do tipo em evidência** (`location_parking_type.photos`) e segue com as
+**da unidade** (`location.photos`: fachada, recepção, traslado, moto), que valem para qualquer vaga.
+Trocar a vaga troca as primeiras fotos: quem escolhe Descoberta vê o pátio aberto, quem escolhe
+Coberta vê o toldo. Tipo sem foto própria (o padrão, `[]`) fica com a galeria da unidade, como
+antes. A mesma foto nas duas listas aparece uma vez, na posição do tipo. A ordem mora em
+`galeriaDaFicha` (`src/features/listing/fotos.logic.ts`) e também decide o `og:image` (a primeira
+foto da galeria). O `image` do JSON-LD leva as fotos da unidade **e de todos os tipos**
+(`fotosDaUnidade`), porque o nó descreve o estacionamento inteiro. A capa do card da busca continua
+sendo `location.photos[0]`. Ainda não há tela para editar as fotos por tipo: hoje entram por SQL,
+como as da unidade importadas do legado. Migration `20261201190000_fotos_por_tipo_de_vaga.sql`.
+
 ---
 
 ## 5. Coluna esquerda (conteúdo)
@@ -375,7 +387,7 @@ Sua reserva atual: 2 dias — não disponível.
 
 ## 12. Open points
 
-- [ ] **Galeria de fotos**: cada `location` precisa de tabela `location_photo (location_id, url, order)`. Falta migration.
+- [x] **Galeria de fotos**: resolvido sem tabela própria, com `location.photos` (jsonb) para a unidade e `location_parking_type.photos` para o tipo de vaga (§4).
 - [x] **Reviews**: implementado (PRD-08 — ver [reviews.md](../reviews.md)). `review` + agregado `location.review_avg/count`; o bloco e o selo do topo somem sem avaliações.
 - [ ] **Geolocalização da estacionamento**: já temos `location.lat/lng`. Mas pra mostrar "1,2 km do terminal" precisamos da coord do **terminal**, não da vaga. Catálogo de aeroportos com lat/lng necessário.
 - [ ] **Outras localizações da estacionamento**: query simples `location WHERE company_id = c.id AND id != current.id`. OK.

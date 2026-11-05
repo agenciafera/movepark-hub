@@ -22,12 +22,21 @@ const PATH = "/estacionamentos/:destino/:lote";
 const DESTINO = "aeroporto-guarulhos";
 const LOTE = "aeropark";
 
-function linha(code: string, name: string, basePrice: number, capacity: number) {
+type Fotos = { unidade: string[]; porTipo: Record<string, string[]> };
+
+function linha(
+  code: string,
+  name: string,
+  basePrice: number,
+  capacity: number,
+  fotos: Fotos = { unidade: [], porTipo: {} },
+) {
   return {
     id: `lpt-${code}`,
     capacity,
     is_active: true,
     external_checkout_url: null,
+    photos: fotos.porTipo[code] ?? [],
     location: {
       id: "loc-1",
       slug: "aeropark",
@@ -60,7 +69,7 @@ function linha(code: string, name: string, basePrice: number, capacity: number) 
       google_place_id: null,
       review_avg: null,
       review_count: 0,
-      photos: [],
+      photos: fotos.unidade,
       company: {
         id: "c-1",
         slug: "aeropark",
@@ -79,13 +88,13 @@ function linha(code: string, name: string, basePrice: number, capacity: number) 
 }
 
 /** O lote tem três tipos; o mais barato (coberta) é o que o build pré-renderiza. */
-function montaPagina(vaga: string) {
+function montaPagina(vaga: string, fotos?: Fotos) {
   server.use(
     http.get(`${BASE}/rest/v1/location_parking_type`, () =>
       HttpResponse.json([
-        linha("covered", "Vaga Coberta", 20, 320),
-        linha("uncovered", "Vaga Descoberta", 30, 150),
-        linha("valet", "Valet", 40, 40),
+        linha("covered", "Vaga Coberta", 20, 320, fotos),
+        linha("uncovered", "Vaga Descoberta", 30, 150, fotos),
+        linha("valet", "Valet", 40, 40, fotos),
       ]),
     ),
   );
@@ -145,5 +154,37 @@ describe("avaliações Movepark na ficha", () => {
     await waitFor(async () => expect(await selecionada()).toBe("Vaga Coberta"), { timeout: 5000 });
     expect(screen.queryByText(/Seja o primeiro a avaliar/i)).not.toBeInTheDocument();
     expect(document.getElementById("avaliacoes")).toBeNull();
+  });
+});
+
+// 05/11/2026: a galeria é da unidade, mas o tipo é escolhido dentro da ficha. Quem pede a
+// Descoberta tem que ver o pátio aberto primeiro, e não o toldo da Coberta pré-renderizada.
+describe("galeria por tipo de vaga", () => {
+  const fotos: Fotos = {
+    unidade: ["/Estacionamentos/aeropark/fachada.avif"],
+    porTipo: {
+      covered: ["/Estacionamentos/aeropark/toldo.avif"],
+      uncovered: ["/Estacionamentos/aeropark/patio-aberto.avif"],
+    },
+  };
+
+  async function primeiraFoto(): Promise<string> {
+    const botoes = await screen.findAllByRole("button", { name: "Abrir foto 1 de Aeropark" });
+    return botoes[0].querySelector("img")?.getAttribute("src") ?? "";
+  }
+
+  it("abre com a foto do tipo pedido na URL e mantém a da unidade depois", async () => {
+    montaPagina("uncovered", fotos);
+    await waitFor(async () => expect(await selecionada()).toBe("Vaga Descoberta"), { timeout: 5000 });
+    await waitFor(async () => expect(await primeiraFoto()).toContain("patio-aberto"), { timeout: 5000 });
+    const segunda = await screen.findAllByRole("button", { name: "Abrir foto 2 de Aeropark" });
+    expect(segunda[0].querySelector("img")?.getAttribute("src")).toContain("fachada");
+    expect(document.querySelector('img[src*="toldo"]')).toBeNull();
+  });
+
+  it("tipo sem foto própria fica com a galeria da unidade", async () => {
+    montaPagina("valet", fotos);
+    await waitFor(async () => expect(await selecionada()).toBe("Valet"), { timeout: 5000 });
+    await waitFor(async () => expect(await primeiraFoto()).toContain("fachada"), { timeout: 5000 });
   });
 });

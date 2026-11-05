@@ -197,6 +197,7 @@ As tabelas abaixo ainda não foram criadas e são necessárias:
 |---|---|---|
 | `minimum_stay_*`, `minimum_date_*` | `location_parking_type` | [capacity-rules.md](./capacity-rules.md) |
 | `near_capacity_threshold`, `near_capacity_message` | `location_parking_type` | [capacity-rules.md](./capacity-rules.md) |
+| `photos` (jsonb array, default `[]`) | `location_parking_type` | [customer/listing-detail.md](./customer/listing-detail.md) §4 |
 | `reservation_policy`, `has_notice`, `notice` | `location` | [capacity-rules.md](./capacity-rules.md) |
 
 ### Futuro (fora do MVP)

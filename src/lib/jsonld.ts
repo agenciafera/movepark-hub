@@ -2,6 +2,7 @@ import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { LANG_HTML, LOCALE_PADRAO, type Locale } from "@/lib/i18n";
 import { showcaseFromPrice, type PriceShowcase } from "@/features/listing/reservation.logic";
 import type { ListingDetail } from "@/features/listing/api";
+import { fotosDaUnidade } from "@/features/listing/fotos.logic";
 import { SITE_URL } from "@/lib/site";
 import { MARCAS } from "@/features/grupo/marcas";
 import { caminhoDestino, caminhoFicha } from "@/lib/urls";
@@ -184,8 +185,9 @@ export function localBusinessSchema(
     // TLDR-first: prefere o resumo extraível quando fornecido; senão a descrição do tipo de vaga.
     description: opts?.description ?? listing.parking_type.description ?? undefined,
     // Metade das unidades guarda a foto como caminho relativo do legado
-    // (`/Estacionamentos/...`), e URL relativa em JSON-LD o buscador não resolve.
-    image: listing.location.photos?.length ? listing.location.photos.map(absoluta) : undefined,
+    // (`/Estacionamentos/...`), e URL relativa em JSON-LD o buscador não resolve. Entram as
+    // fotos da unidade e as de cada tipo de vaga: o nó descreve o estacionamento inteiro.
+    image: imagensDaUnidade(listing),
     url: urlDaFicha(listing),
     telephone: listing.location.phone ?? undefined,
     email: listing.location.email ?? undefined,
@@ -328,7 +330,7 @@ export function productOfferSchema(
     description: opts?.description ?? listing.parking_type.description ?? undefined,
     // `image` é exigido pelo Google pro rich result de Product: usa as fotos da unidade,
     // absolutas, porque caminho relativo o buscador não resolve.
-    image: listing.location.photos?.length ? listing.location.photos.map(absoluta) : undefined,
+    image: imagensDaUnidade(listing),
     offers,
     aggregateRating: hasRating
       ? {
@@ -503,6 +505,12 @@ export function parkingFacilitySchema(p: {
 /** Deixa a URL absoluta sem duplicar o host quando ela já é absoluta. */
 function absoluta(url: string): string {
   return /^https?:\/\//i.test(url) ? url : `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+/** Fotos da unidade e de cada tipo de vaga, absolutas; `undefined` quando não há nenhuma. */
+function imagensDaUnidade(listing: ListingDetail): string[] | undefined {
+  const fotos = fotosDaUnidade(listing.location.photos, listing.tipos);
+  return fotos.length ? fotos.map(absoluta) : undefined;
 }
 
 export function blogPostingSchema(p: {

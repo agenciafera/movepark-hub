@@ -24,6 +24,8 @@ export type TipoDeVaga = {
   capacity: number;
   base_price: number;
   external_checkout_url: string | null;
+  /** Fotos deste tipo (`location_parking_type.photos`). Vazio quando a unidade não separa por tipo. */
+  photos: string[];
 };
 
 export type ListingDetail = {
@@ -38,6 +40,11 @@ export type ListingDetail = {
    * incompleto. O front nunca monta essa URL; só acrescenta as datas da busca no fim.
    */
   external_checkout_url: string | null;
+  /**
+   * Fotos do tipo de vaga em evidência. A galeria abre com elas e segue com `location.photos`
+   * (`galeriaDaFicha`), para quem escolhe Descoberta ver o pátio aberto antes do toldo.
+   */
+  vaga_photos: string[];
   company: {
     id: string;
     slug: string;
@@ -132,7 +139,7 @@ export type ListingDetail = {
 };
 
 const baseSelect = `
-  id, capacity, is_active, external_checkout_url,
+  id, capacity, is_active, external_checkout_url, photos,
   location:location!inner(
     id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours, is_24h,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
@@ -194,6 +201,7 @@ export async function fetchListing(
       capacity: (r.capacity ?? 0) as number,
       base_price: Number(r.company_parking_type.base_price),
       external_checkout_url: (r.external_checkout_url ?? null) as string | null,
+      photos: Array.isArray(r.photos) ? (r.photos as string[]) : [],
     }))
     .sort((a, b) => a.base_price - b.base_price || a.code.localeCompare(b.code));
 
@@ -244,6 +252,7 @@ export async function fetchListing(
     capacity: m.capacity,
     is_active: m.is_active,
     external_checkout_url: m.external_checkout_url ?? null,
+    vaga_photos: escolhido.photos,
     company: m.location.company,
     location: {
       id: m.location.id,

@@ -29,6 +29,7 @@ type Overrides = {
   review_avg?: number | null;
   review_count?: number;
   photos?: string[];
+  tipos?: { photos: string[] }[];
   base_price?: number;
   checkout_mode?: "hub" | "external";
   google?: GooglePlaceSnapshot | null;
@@ -61,6 +62,7 @@ function makeListing(o: Overrides = {}): ListingDetail {
     parking_type: { name: "Vaga Coberta", code: "covered", description },
     company_parking_type: { base_price: o.base_price ?? 30 },
     google: "google" in o ? o.google : null,
+    tipos: o.tipos ?? [],
     // demais campos de ListingDetail não são usados pelos schemas
   } as unknown as ListingDetail;
 }
@@ -349,6 +351,25 @@ describe("image absoluta", () => {
     const esperado = ["https://movepark.co/Estacionamentos/x/1.webp", "https://cdn.exemplo/2.jpg"];
     expect(produto(makeListing({ photos: fotos })).image).toEqual(esperado);
     expect(localBusinessSchema(makeListing({ photos: fotos })).image).toEqual(esperado);
+  });
+
+  // 05/11/2026: cada tipo de vaga pode ter fotos próprias, e a ficha mostra as do tipo
+  // escolhido. O schema descreve o estacionamento inteiro, então leva as de todos os tipos.
+  it("junta as fotos da unidade e as de cada tipo de vaga, sem repetir", () => {
+    const listing = makeListing({
+      photos: ["/Estacionamentos/x/fachada.avif"],
+      tipos: [
+        { photos: ["/Estacionamentos/x/patio.avif"] },
+        { photos: ["/Estacionamentos/x/toldo.avif", "/Estacionamentos/x/fachada.avif"] },
+      ],
+    });
+    const esperado = [
+      "https://movepark.co/Estacionamentos/x/fachada.avif",
+      "https://movepark.co/Estacionamentos/x/patio.avif",
+      "https://movepark.co/Estacionamentos/x/toldo.avif",
+    ];
+    expect(localBusinessSchema(listing).image).toEqual(esperado);
+    expect(produto(listing).image).toEqual(esperado);
   });
 });
 

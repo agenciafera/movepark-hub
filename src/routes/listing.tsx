@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PhotoGrid } from "@/features/listing/PhotoGrid";
+import { galeriaDaFicha } from "@/features/listing/fotos.logic";
 import { AmenityList } from "@/features/listing/AmenityList";
 import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
@@ -241,12 +242,14 @@ export default function ListingPage() {
       ? caminhoFicha(listing.location.destination.public_slug, listing.location.public_slug)
       : "";
   const pageUrl = caminho ? `${SITE_URL}${caminho}` : "";
+  // A galeria abre com as fotos do tipo de vaga em evidência e segue com as da unidade.
+  const galeria = listing ? galeriaDaFicha(listing.vaga_photos, listing.location.photos) : [];
   // og:image relativa é inválida (o scraper social não resolve o caminho relativo
-  // das fotos importadas do legado): absolutiza sobre o domínio canônico.
-  const ogImageRaw =
-    listing && listing.location.photos[0]
-      ? optimizedImageUrl(listing.location.photos[0], { width: 1200, height: 630, resize: "cover" })
-      : undefined;
+  // das fotos importadas do legado): absolutiza sobre o domínio canônico. É a primeira foto
+  // da galeria, a mesma que abre a página.
+  const ogImageRaw = galeria[0]
+    ? optimizedImageUrl(galeria[0], { width: 1200, height: 630, resize: "cover" })
+    : undefined;
   const ogImage = ogImageRaw?.startsWith("/") ? `${SITE_URL}${ogImageRaw}` : ogImageRaw;
   // Identidade legal visível: espelha o legalName/taxID do LocalBusiness (unidade > empresa).
   const cnpjDaUnidade = listing
@@ -498,7 +501,7 @@ export default function ListingPage() {
       </div>
 
       {/* Galeria de fotos */}
-      <PhotoGrid title={listing.location.name} photoUrls={listing.location.photos} />
+      <PhotoGrid title={listing.location.name} photoUrls={galeria} />
 
       {/* Mobile: card de reserva logo após as fotos */}
       <div ref={mobileCardRef} className="mt-6 desktop:hidden">

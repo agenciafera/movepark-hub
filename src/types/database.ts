@@ -3950,6 +3950,7 @@ export type Database = {
           minimum_stay_value: number | null
           near_capacity_message: string | null
           near_capacity_threshold: number | null
+          photos: Json
           updated_at: string
           wl_category_slug: string | null
           wl_product_slug: string | null
@@ -3970,6 +3971,7 @@ export type Database = {
           minimum_stay_value?: number | null
           near_capacity_message?: string | null
           near_capacity_threshold?: number | null
+          photos?: Json
           updated_at?: string
           wl_category_slug?: string | null
           wl_product_slug?: string | null
@@ -3990,6 +3992,7 @@ export type Database = {
           minimum_stay_value?: number | null
           near_capacity_message?: string | null
           near_capacity_threshold?: number | null
+          photos?: Json
           updated_at?: string
           wl_category_slug?: string | null
           wl_product_slug?: string | null
