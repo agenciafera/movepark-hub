@@ -1,6 +1,6 @@
 # Analytics de e-commerce (GA4 via dataLayer)
 
-> **Status:** implementado em 05/11/2026 no consumidor do Hub. Falta a validação com compra real (PIX ou cartão, sandbox) e a configuração das tags no GTM (`GTM-KHBBZT9`).
+> **Status:** implementado e **validado com compra real em 05/11/2026** (reserva `MP-19DFA0`, Abbapark, PIX em produção, com adicional e Tarifa Flex): os sete eventos saíram na ordem, uma vez cada, e recarregar a confirmação não repetiu o `purchase`. Falta a configuração das tags no GTM (`GTM-KHBBZT9`, §6) e a conferência no DebugView do GA4.
 >
 > **Back-ref:** substitui o componente `DataLayer` do `movepark-nextjs` (white-label), que disparava `view_item`, `add_to_cart`, `begin_checkout` e `purchase`. Referência do Google: [eventos recomendados, seção "Online sales"](https://support.google.com/analytics/answer/9267735#online-sales).
 
@@ -66,7 +66,7 @@ Cada push é precedido de `{ ecommerce: null }`. O evento:
         affiliation: "Movepark",
         item_brand: "Aerovalet",                  // empresa parceira
         item_category: "GRU",                     // destino (IATA quando aeroporto)
-        item_category2: "estacionamento",         // estacionamento | adicional
+        item_category2: "estacionamento",         // estacionamento | adicional | tarifa
         item_variant: "Vaga coberta",             // tipo de vaga
         price: 151.4,                             // subtotal da vaga (antes do cupom)
         quantity: 1,
@@ -79,6 +79,14 @@ Cada push é precedido de `{ ecommerce: null }`. O evento:
         item_category2: "adicional",
         price: 17.07,
         quantity: 2
+      },
+      {
+        item_id: "tarifa:flex",                   // a tarifa paga é item próprio; a Básica (grátis) não vira item
+        item_name: "Tarifa Flex",
+        item_category2: "tarifa",
+        price: 12.9,
+        quantity: 1,
+        fare_tier: "flex"
       }
     ]
   },
@@ -92,8 +100,9 @@ Cada push é precedido de `{ ecommerce: null }`. O evento:
 Regras por evento:
 
 - `view_item_list` e `select_item` levam `item_list_id`/`item_list_name` (`search` · "Resultados da busca"; `destino_<slug>` · "Destino <nome>") e cada item com `index` (posição na tela). Sem `value`.
-- `view_item`, `add_to_cart` e `external_checkout_click` levam `currency`, `value` (o total da estadia, ou o "a partir de" quando não há datas) e um item. `add_to_cart` leva `coupon` quando aplicado e `fare_tier`.
-- `begin_checkout`, `add_payment_info` e `purchase` são montados do snapshot da reserva (`BookingForCheckout`): o `value` é `total_amount`, os itens vêm de `booking_item`. `add_payment_info` leva `payment_type` e, no cartão, `installments`.
+- `view_item`, `add_to_cart` e `external_checkout_click` levam `currency`, `value` (o total da estadia, ou o "a partir de" quando não há datas) e o item da vaga. `add_to_cart` leva `coupon` quando aplicado, `fare_tier`, e o item da tarifa quando ela custa.
+- `begin_checkout`, `add_payment_info` e `purchase` são montados do snapshot da reserva (`BookingForCheckout`): o `value` é `total_amount`, os itens vêm de `booking_item` mais a tarifa de `price_breakdown.fare`. `add_payment_info` leva `payment_type` e, no cartão, `installments`.
+- **A soma de `price × quantity` dos itens bate com `value`** (menos o cupom, que o GA4 trata à parte). É por isso que a tarifa é item e não parte do preço da vaga: na validação de 05/11 o `begin_checkout` saía com a vaga a R$ 89,70 e o total a R$ 102,60, com a Flex invisível.
 - `user_id` vai em todo evento de quem está logado. `new_customer` e `user_data` só no `purchase`.
 
 **PII.** E-mail e telefone saem do snapshot da reserva (contato operacional, ADR-006), em `user_data`, fora de `ecommerce`. Esse objeto só sai do navegador se o GTM tiver uma tag que o leia (conversão otimizada do Google Ads, que faz hash antes de enviar). A tag GA4 não envia.

@@ -31,7 +31,7 @@ export type EcommerceItem = {
   item_brand: string;
   /** Destino (código IATA quando aeroporto). */
   item_category: string;
-  item_category2: "estacionamento" | "adicional";
+  item_category2: "estacionamento" | "adicional" | "tarifa";
   item_variant?: string;
   price: number;
   quantity: number;
@@ -128,11 +128,38 @@ export function resultsSignature(listId: string, results: { id: string }[]): str
 }
 
 export type ListingPrice = {
-  /** Total da estadia (ou o "a partir de" quando não há datas). */
+  /** Total da estadia (ou o "a partir de" quando não há datas), com a tarifa dentro. */
   total: number;
   days: number;
   fareTier?: string | null;
+  /** Acréscimo da tarifa escolhida (Flex/Superflex). Vira item próprio quando > 0. */
+  fareSurcharge?: number;
+  fareLabel?: string;
 };
+
+/**
+ * A tarifa (Flex/Superflex) é item próprio, e não parte do preço da vaga: é receita de serviço
+ * da Movepark, e separada ela aparece no relatório de itens do GA4 e faz a soma dos itens bater
+ * com `value`. A Básica é grátis e não vira item.
+ */
+function fareItem(
+  brand: string,
+  category: string,
+  fare: { tier: string; label: string; amount: number } | null | undefined,
+): EcommerceItem | null {
+  if (!fare || !(fare.amount > 0)) return null;
+  return {
+    item_id: `tarifa:${fare.tier}`,
+    item_name: `Tarifa ${fare.label}`,
+    affiliation: AFFILIATION,
+    item_brand: brand,
+    item_category: category,
+    item_category2: "tarifa",
+    price: money(fare.amount),
+    quantity: 1,
+    fare_tier: fare.tier,
+  };
+}
 
 export function itemFromListing(listing: ListingDetail, price: ListingPrice | null): EcommerceItem {
   return {
@@ -147,7 +174,7 @@ export function itemFromListing(listing: ListingDetail, price: ListingPrice | nu
     item_category: listing.location.destination?.code ?? listing.location.destination?.name ?? "",
     item_category2: "estacionamento",
     item_variant: listing.parking_type.name,
-    price: money(price?.total),
+    price: money((price?.total ?? 0) - (price?.fareSurcharge ?? 0)),
     quantity: 1,
     ...(price ? { stay_days: price.days } : {}),
     ...(price?.fareTier ? { fare_tier: price.fareTier } : {}),
@@ -161,11 +188,19 @@ export function listingEcommerce(
   coupon?: string | null,
 ): Ecommerce {
   const item = itemFromListing(listing, price);
+  const fare =
+    price?.fareTier && price.fareSurcharge
+      ? fareItem(item.item_brand, item.item_category, {
+          tier: price.fareTier,
+          label: price.fareLabel ?? price.fareTier,
+          amount: price.fareSurcharge,
+        })
+      : null;
   return {
     currency: CURRENCY,
-    value: item.price,
+    value: money(price?.total),
     ...(coupon ? { coupon } : {}),
-    items: [item],
+    items: fare ? [item, fare] : [item],
   };
 }
 
@@ -175,7 +210,8 @@ export function itemsFromBooking(booking: BookingForCheckout): EcommerceItem[] {
   const name = tituloDaUnidade(loc.public_name, loc.company.name, loc.name);
   const category = loc.destination?.code ?? loc.destination?.name ?? "";
   const days = booking.price_breakdown?.days;
-  return booking.items.map((it) => {
+  const fare = fareItem(loc.company.name, category, booking.price_breakdown?.fare);
+  const items: EcommerceItem[] = booking.items.map((it) => {
     if (it.item_type === "add_on") {
       return {
         item_id: `adicional:${it.add_on_service_id ?? it.id}`,
@@ -202,6 +238,7 @@ export function itemsFromBooking(booking: BookingForCheckout): EcommerceItem[] {
       ...(booking.fare_tier ? { fare_tier: booking.fare_tier } : {}),
     };
   });
+  return fare ? [...items, fare] : items;
 }
 
 /** `begin_checkout`: a reserva como está quando o checkout abre. */

@@ -278,7 +278,13 @@ export function ReservationCard({
         "add_to_cart",
         listingEcommerce(
           listing,
-          { total: result.total_amount, days: result.days, fareTier: effectiveFare },
+          {
+            total: result.total_amount,
+            days: result.days,
+            fareTier: effectiveFare,
+            fareSurcharge,
+            fareLabel: fareOption.label,
+          },
           applied?.code ?? null,
         ),
         { user_id: session?.userId },

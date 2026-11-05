@@ -95,6 +95,7 @@ function reserva(over: Partial<BookingForCheckout> = {}): BookingForCheckout {
       subtotal: 151.4,
       auto_discount: null,
       coupon: { code: "FERA10", discount: 15.14 },
+      fare: { tier: "flex", label: "Flex", amount: 12.9 },
       total: 170.4,
       line_items: [],
     },
@@ -218,10 +219,31 @@ describe("ficha", () => {
     expect(ec.items[0]).not.toHaveProperty("fare_tier");
   });
 
-  it("add_to_cart leva tarifa, diárias e cupom", () => {
-    const ec = listingEcommerce(ficha(), { total: 170.4, days: 2, fareTier: "flex" }, "FERA10");
+  it("add_to_cart: a tarifa sai como item próprio e a soma bate com o total", () => {
+    const ec = listingEcommerce(
+      ficha(),
+      { total: 170.4, days: 2, fareTier: "flex", fareSurcharge: 12.9, fareLabel: "Flex" },
+      "FERA10",
+    );
     expect(ec.coupon).toBe("FERA10");
-    expect(ec.items[0]).toMatchObject({ fare_tier: "flex", stay_days: 2, price: 170.4 });
+    expect(ec.value).toBe(170.4);
+    expect(ec.items).toHaveLength(2);
+    expect(ec.items[0]).toMatchObject({ fare_tier: "flex", stay_days: 2, price: 157.5 });
+    expect(ec.items[1]).toMatchObject({
+      item_id: "tarifa:flex",
+      item_name: "Tarifa Flex",
+      item_category2: "tarifa",
+      item_category: "GRU",
+      price: 12.9,
+      quantity: 1,
+    });
+    expect(ec.items.reduce((s, i) => s + i.price * i.quantity, 0)).toBeCloseTo(ec.value!, 2);
+  });
+
+  it("tarifa Básica (grátis) não vira item", () => {
+    const ec = listingEcommerce(ficha(), { total: 100, days: 2, fareTier: "basic", fareSurcharge: 0 });
+    expect(ec.items).toHaveLength(1);
+    expect(ec.items[0].price).toBe(100);
   });
 
   it("sem preço o item sai zerado em vez de inventar", () => {
@@ -238,7 +260,7 @@ describe("reserva", () => {
     expect(ec.currency).toBe("BRL");
     expect(ec.value).toBe(170.4);
     expect(ec.coupon).toBe("FERA10");
-    expect(ec.items).toHaveLength(2);
+    expect(ec.items).toHaveLength(3);
     expect(ec.items[0]).toMatchObject({
       item_id: "aerovalet/guarulhos:covered",
       item_name: "Aerovalet - Estacionamento Guarulhos",
@@ -257,6 +279,21 @@ describe("reserva", () => {
       price: 17.07,
       quantity: 2,
     });
+    expect(ec.items[2]).toMatchObject({
+      item_id: "tarifa:flex",
+      item_name: "Tarifa Flex",
+      item_category2: "tarifa",
+      item_brand: "Aerovalet",
+      price: 12.9,
+      quantity: 1,
+      fare_tier: "flex",
+    });
+  });
+
+  it("sem tarifa paga no snapshot, não há item de tarifa", () => {
+    const b = reserva();
+    b.price_breakdown = { ...b.price_breakdown!, fare: { tier: "basica", label: "Básica", amount: 0 } };
+    expect(bookingEcommerce(b).items.map((i) => i.item_category2)).toEqual(["estacionamento", "adicional"]);
   });
 
   it("sem cupom o campo não vai", () => {
