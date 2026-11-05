@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALTURA, argsDoFfmpeg, conferirVideo, FPS, LARGURA, lerCena, quadrosDa } from "./render-reel.mjs";
+import { ALTURA, argsDoFfmpeg, conferirVideo, FPS, LARGURA, lerCena, lerTamanho, quadrosDa } from "./render-reel.mjs";
 
 /** ffprobe de um reel que a Meta aceita: o padrão da casa. */
 const PROBE_OK = {
@@ -47,6 +47,7 @@ describe("render-reel", () => {
     expect(args).toContain("anullsrc=channel_layout=stereo:sample_rate=48000");
     expect(args).toContain("-c:v libx264");
     expect(args).toContain("-pix_fmt yuv420p");
+    expect(args).toContain("-vf scale=in_range=pc:out_range=tv,format=yuv420p");
     expect(args).toContain("-c:a aac");
     expect(args).toContain("-ar 48000");
     expect(args).toContain("-movflags +faststart");
@@ -93,5 +94,19 @@ describe("render-reel", () => {
     expect(avisos.join(" ")).toMatch(/abaixo de 90 s/);
     const semAudio = { format: PROBE_OK.format, streams: [PROBE_OK.streams[0]] };
     expect(conferirVideo(semAudio, 4 * MB).avisos.join(" ")).toMatch(/faixa muda/);
+  });
+
+  it("--tamanho troca o viewport: 16:9 para o YouTube, sempre em pares", () => {
+    expect(lerTamanho(undefined)).toEqual({ largura: 1080, altura: 1920 });
+    expect(lerTamanho("1920x1080")).toEqual({ largura: 1920, altura: 1080 });
+    expect(() => lerTamanho("1920")).toThrow(/<largura>x<altura>/);
+    expect(() => lerTamanho("1921x1080")).toThrow(/pares/);
+  });
+
+  it("no 16:9 pedido, o 1920x1080 passa sem aviso de tamanho e o 9:16 é o que avisa", () => {
+    const yt = { largura: 1920, altura: 1080 };
+    const { avisos } = conferirVideo(com({ width: 1920, height: 1080 }), 4 * MB, yt);
+    expect(avisos).toEqual([]);
+    expect(conferirVideo(PROBE_OK, 4 * MB, yt).avisos.join(" ")).toMatch(/esperava 1920x1080/);
   });
 });

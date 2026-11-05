@@ -1,0 +1,68 @@
+{
+  "folga": 0.7,
+  "ritmo": 1.12,
+  "minimo": 3,
+  "voz": "Higgsfield text2speech_v2, variante elevenlabs, voz predefinida Andre (f1e8226e-2248-4d5f-b43c-0a79e9949dbf), gerada em 05/11/2026",
+  "cenas": [
+    {
+      "html": "cena-01.html",
+      "audio": "narracao/cena-01.mp3",
+      "fala": "Quanto custa estacionar no aeroporto de Confins em dois mil e vinte e seis? Preços conferidos em sete de outubro, no pátio oficial e em doze pátios particulares.",
+      "legenda": "Quanto custa estacionar no aeroporto de Confins em 2026? Preços conferidos em 7 de outubro, no pátio oficial e em 12 pátios particulares."
+    },
+    {
+      "html": "cena-02.html",
+      "audio": "narracao/cena-02.mp3",
+      "fala": "Dentro do aeroporto, nos pátios oficiais do BH Airport, a diária no balcão vai de sessenta a cento e cinco reais, a pé do terminal.",
+      "legenda": "Dentro do aeroporto, nos pátios oficiais do BH Airport, a diária no balcão vai de R$ 60 a R$ 105, a pé do terminal."
+    },
+    {
+      "html": "cena-03.html",
+      "audio": "narracao/cena-03.mp3",
+      "fala": "Fora, doze pátios particulares, de dois vírgula nove a nove vírgula oito quilômetros, levam você de van. A diária começa em vinte reais.",
+      "legenda": "Fora, 12 pátios particulares, de 2,9 a 9,8 km, levam você de van. A diária começa em R$ 20."
+    },
+    {
+      "html": "cena-04.html",
+      "audio": "narracao/cena-04.mp3",
+      "fala": "Uma diária: sessenta reais no oficial, vinte no Auto Park Brasil, o mais barato, e quarenta e cinco na BePark, a parceira da Movepark.",
+      "legenda": "1 diária: R$ 60 no oficial, R$ 20 no Auto Park Brasil, o mais barato, e R$ 45 na BePark, a parceira da Movepark."
+    },
+    {
+      "html": "cena-05.html",
+      "audio": "narracao/cena-05.mp3",
+      "fala": "Sete diárias: quatrocentos e vinte no oficial, ou a partir de cento e oitenta e nove reservando com setenta e duas horas. Cento e vinte e cinco e noventa e três no Bandeira Park. Duzentos na BePark.",
+      "legenda": "7 diárias: R$ 420 no oficial, ou a partir de R$ 189 reservando com 72 horas. R$ 125,93 no Bandeira Park. R$ 200 na BePark."
+    },
+    {
+      "html": "cena-06.html",
+      "audio": "narracao/cena-06.mp3",
+      "fala": "Trinta diárias: mil e oitocentos no oficial, trezentos no Auto Park Brasil, quatrocentos na BePark.",
+      "legenda": "30 diárias: R$ 1.800 no oficial, R$ 300 no Auto Park Brasil, R$ 400 na BePark."
+    },
+    {
+      "html": "cena-07.html",
+      "audio": "narracao/cena-07.mp3",
+      "fala": "Em trinta diárias, o oficial custa seis vezes o particular mais barato.",
+      "legenda": "Em 30 diárias, o oficial custa 6 vezes o particular mais barato."
+    },
+    {
+      "html": "cena-08.html",
+      "audio": "narracao/cena-08.mp3",
+      "fala": "E a BePark tem o que nenhum outro pátio de Confins tinha em outubro de dois mil e vinte e seis: a van aparece no mapa do celular, ao vivo.",
+      "legenda": "E a BePark tem o que nenhum outro pátio de Confins tinha em outubro de 2026: a van aparece no mapa do celular, ao vivo."
+    },
+    {
+      "html": "cena-09.html",
+      "audio": "narracao/cena-09.mp3",
+      "fala": "Ela sai a cada vinte minutos, vinte e quatro horas, e leva cerca de dez minutos até o terminal. O embarque é no piso inferior, na plataforma da Expresso Unir.",
+      "legenda": "Ela sai a cada 20 minutos, 24 horas, e leva cerca de 10 minutos até o terminal. O embarque é no piso inferior, na plataforma da Expresso Unir."
+    },
+    {
+      "html": "cena-10.html",
+      "audio": "narracao/cena-10.mp3",
+      "fala": "A tabela completa, com a data de cada preço, está na Movepark. O link está na descrição.",
+      "legenda": "A tabela completa, com a data de cada preço, está na Movepark. O link está na descrição."
+    }
+  ]
+}

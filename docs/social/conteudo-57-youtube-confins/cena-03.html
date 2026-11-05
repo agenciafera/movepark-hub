@@ -1,0 +1,107 @@
+<!doctype html>
+<!--
+  Cena do vídeo do YouTube da Movepark, 1920 x 1080 (16:9). Conteúdo 57.
+
+  É a mesma ideia da cena de reel (assets/reel-template.html da skill instagram): cada cena é um
+  HTML com o número escrito uma vez, e o render-reel.mjs avança a animação quadro a quadro e
+  entrega o MP4 com `--tamanho 1920x1080`. Muda só a geometria: paisagem, texto à esquerda sobre
+  a foto escurecida da esquerda para a direita, e 150 px livres no pé para a legenda (CC) do
+  YouTube não cobrir o texto.
+
+  Variantes no <body>: "tela" (foto 16:9 em tela cheia, texto à esquerda), "dado" (gradiente
+  violeta) e "texto" (navy chapado). Em "tela", aponte --foto para a imagem e confira a extensão.
+  Valor em R$ leva &nbsp; entre o símbolo e o número.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cena de vídeo Movepark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #29263F;
+    --indigo: #4041A3;
+    --violet: #5D5FEF;
+    --pale:   #E4F2FF;
+    --red:    #DA455E;
+    --foto:   url("./foto.jpg");
+    /* Duração da cena. O render-reel.mjs sobrescreve com o tempo de cada uma. */
+    --dur: 3s;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; }
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    color: #fff;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 240px 150px 160px;
+    position: relative;
+    overflow: hidden;
+  }
+  body > * { position: relative; }
+  body.dado  { background: linear-gradient(160deg, var(--indigo), var(--violet) 55%, var(--indigo)); }
+  body.texto { background: var(--navy); }
+
+  /* Variante tela: foto 16:9 em tela cheia. O degradê escurece da esquerda (onde o texto mora)
+     para a direita e um pouco de baixo para cima; a metade direita da foto fica à mostra. */
+  .fundo { position: absolute; display: none; }
+  body.tela { justify-content: flex-end; }
+  body.tela .fundo {
+    display: block; inset: 0;
+    background: var(--foto) center / cover no-repeat;
+    animation: cresce var(--dur) linear both;
+  }
+  body.tela .fundo::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(41,38,63,.92) 0%, rgba(41,38,63,.78) 38%, rgba(41,38,63,.28) 72%, rgba(41,38,63,.08) 100%),
+      linear-gradient(180deg, rgba(41,38,63,0) 45%, rgba(41,38,63,.70) 100%);
+  }
+  @keyframes cresce { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+  .kicker {
+    font-size: 34px; font-weight: 600; letter-spacing: .02em;
+    color: var(--pale); margin-bottom: 28px; opacity: .9;
+  }
+  h1 {
+    font-size: 88px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em;
+    text-wrap: balance; max-width: 1180px;
+  }
+  h1 em { font-style: normal; color: var(--violet); }
+  body.tela h1 em { color: #9C9DFF; }
+  body.dado h1 em, body.texto h1 em { color: var(--pale); }
+  .numero { font-size: 220px; font-weight: 900; line-height: .95; letter-spacing: -.04em; white-space: nowrap; }
+  p.apoio { font-size: 40px; font-weight: 400; line-height: 1.35; margin-top: 32px; opacity: .92; text-wrap: pretty; max-width: 1100px; }
+
+  /* Tabela de preço: uma linha por opção, rótulo à esquerda e valor à direita. */
+  .linhas { margin-top: 40px; display: flex; flex-direction: column; gap: 18px; max-width: 1300px; }
+  .linha {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 40px;
+    padding-bottom: 18px; border-bottom: 2px solid rgba(255,255,255,.18);
+  }
+  .linha:last-child { border-bottom: 0; padding-bottom: 0; }
+  .linha .rotulo { font-size: 40px; font-weight: 600; line-height: 1.2; }
+  .linha .rotulo small { display: block; font-size: 30px; font-weight: 400; opacity: .78; margin-top: 4px; }
+  .linha .valor { font-size: 72px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+  .linha.destaque .valor { color: var(--pale); }
+
+  footer { margin-top: 40px; font-size: 28px; font-weight: 500; line-height: 1.4; opacity: .78; max-width: 1300px; }
+
+  /* Entrada: sobe 40 px e aparece, em sequência pelo --i. */
+  .entra { animation: entra .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * .14s); }
+  @keyframes entra { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body class="tela" style="--foto:url('../../../public/images/blog/preco-do-estacionamento-no-aeroporto-de-confins/preco-estacionamento-aeroporto-confins-traslado.webp')">
+<div class="fundo"></div>
+<div class="kicker entra" style="--i:0">Fora, com traslado de van</div>
+<h1 class="entra" style="--i:1">Os pátios particulares começam em <em>R$&nbsp;20</em> a diária</h1>
+<p class="apoio entra" style="--i:2">12 pátios, de 2,9 a 9,8 km do terminal.</p>
+<footer class="entra" style="--i:3">Sites dos pátios, 07/10/2026.</footer>
+</body>
+</html>

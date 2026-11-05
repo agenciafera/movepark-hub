@@ -38,6 +38,14 @@ atribuição. Antes de entrar no reel, emblemas de marca dos carros e da van, pl
 de sinalização com texto inventado foram desfocados. Não mostram nenhum pátio real: são cena
 genérica de aeroporto e de pátio com van.
 
+## Fotos do vídeo do YouTube (Conteúdo 57)
+
+O vídeo de Confins (`docs/social/conteudo-57-youtube-confins/`) usa as capas 16:9 dos posts de
+Confins em `public/images/blog/`, apontadas por caminho, sem cópia. A única cópia é
+`fotos/bepark-confins-van-ao-vivo-sem-emblema.jpg`: a capa do guia `bepark-confins` com o emblema
+de marca da van apagado pelo `delogo` do ffmpeg (05/11/2026). Mesma origem da capa: gerada só a
+partir de texto, sem foto de referência, sem atribuição a pagar.
+
 | Arquivo | Job no Higgsfield | Gerado em |
 |---|---|---|
 | [`preco-estacionamento-aeroporto-confins-terminal.webp`](social/conteudo-49-reels-confins/preco/fotos/preco-estacionamento-aeroporto-confins-terminal.webp) | `8c68e235-ca5f-4456-8cbd-b07eaa15346c` | 23/10/2026 |

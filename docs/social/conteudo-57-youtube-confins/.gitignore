@@ -1,0 +1,4 @@
+# O vídeo, a trilha e a miniatura saem dos HTML, dos MP3 e do cenas.json com os comandos do README.
+*.mp4
+trilha.wav
+miniatura.jpg

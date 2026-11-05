@@ -438,6 +438,24 @@ No rascunho, o reel troca `slides` por `video`, `capa`, `capa_alt` e `cenas` (ca
 `texto`, `segundos` e `html`). O analisador lê o HTML de cada cena e confere que todo R$ da tela
 está escrito na legenda.
 
+### O vídeo narrado do YouTube
+
+O mesmo render serve ao vídeo do YouTube (Conteúdo 57): cenas HTML escritas em 16:9 (modelo em
+[`docs/social/conteudo-57-youtube-confins/`](../../../docs/social/conteudo-57-youtube-confins/))
+e `--tamanho 1920x1080`. A diferença é a narração, porque o YouTube e a IA leem a transcrição:
+
+- **Um clipe por cena**, gerado no Higgsfield (`text2speech_v2`, variante ElevenLabs, voz
+  predefinida Andre), com os números por extenso no texto da fala.
+- **`cenas.json`** guarda, por cena, o HTML, o clipe, a `fala` (o que foi para a voz) e a
+  `legenda` (o mesmo texto como se lê, com algarismos). `folga` é o respiro depois da fala e
+  `ritmo` acelera a voz sem mudar o tom, quando o vídeo passa dos 90 s.
+- **`scripts/montar-narracao.mjs`** mede os clipes, dá a cada cena a duração da fala mais a
+  folga, escreve a trilha (WAV, nivelada a -16 LUFS) e a legenda SRT, e devolve os argumentos
+  `cena.html:segundos` do render. A cena nunca corta a fala, e a legenda nasce da mesma linha do
+  tempo. O SRT sobe junto do vídeo; a legenda automática do YouTube erra número.
+- **Título com a pergunta literal e o ano; descrição com os números datados e o link da página.**
+  A regra da ADR-009 vale igual: fato da unidade entra, promessa de transação não.
+
 ## Passo 8: alt
 
 **Toda imagem leva alt**, e aqui ele rende duas vezes: acessibilidade e

@@ -437,6 +437,44 @@ ficaria falso no dia em que um vizinho contratar a Go2Park.
   desfocados. Elas entram em tela cheia (variante `tela` do template). A primeira versão usava as
   fotos 16:9 do blog numa faixa, enquanto o CDN estava bloqueado.
 
+### 2.3.8 O vídeo do YouTube (Conteúdo 57, 05/11/2026)
+
+A fonte mora em [`docs/social/conteudo-57-youtube-confins/`](../social/conteudo-57-youtube-confins/):
+as dez cenas em 16:9, a narração, o `cenas.json`, a legenda SRT, o README e o
+[`roteiro.md`](../social/conteudo-57-youtube-confins/roteiro.md) com título, descrição, capítulos e
+tags. O MP4 (1920 x 1080, 30 fps, 89 s), a trilha e a miniatura saem do comando do README e não
+ficam no git. O vídeo sobe à mão no YouTube Studio; o README tem o passo a passo e a tabela
+"Publicados".
+
+**O que o vídeo diz.** Sete cenas de preço, as mesmas do reel de preço do Conteúdo 49 reescritas
+em paisagem, e três da van. Os números são os do post de preço e de `prospect_location`, relidos
+no banco em 05/11/2026 sem mudança desde 07/10 (BePark 06/10). O título traz a pergunta literal e
+o ano; a descrição traz a tabela datada, o link de `/estacionamentos/aeroporto-confins` e o do
+post, com UTM. A van entra como fato da unidade (a cada 20 min, cerca de 10 min de trajeto,
+embarque na plataforma da Expresso Unir, rastreio pela Go2Park, exclusividade datada em outubro
+de 2026), sem promessa de transação (ADR-009): a unidade vende no sistema dela desde 19/10.
+
+**A gravação da van não existe.** A atividade sugeria reaproveitar a do Conteúdo 49, que segue
+esperando a BePark e a Go2Park (§2.3.7). Um mapa montado seria prova falsa, então a van é texto
+sobre foto. Quando a gravação vier, ela substitui as cenas 8 e 9 e o vídeo é republicado.
+
+**Na execução:**
+
+- **O vídeo é narrado**, porque o YouTube e o Modo IA leem a transcrição, e um vídeo mudo não
+  tem transcrição. A voz é a predefinida Andre do Higgsfield (`text2speech_v2`, ElevenLabs), um
+  clipe por cena, com os números por extenso na fala. A primeira versão da fala dava 125 s; o
+  texto foi cortado para 195 palavras e a voz acelerada em 12% pelo `atempo`, para caber nos 90 s
+  da atividade (saiu em 88,7 s).
+- **A skill ganhou o `montar-narracao.mjs`**: mede os clipes, dá a cada cena a duração da fala
+  mais o respiro, escreve a trilha nivelada a -16 LUFS e a legenda SRT a partir da mesma linha do
+  tempo, e devolve os argumentos do render. A cena nunca corta a fala e a legenda nasce certa. O
+  `render-reel.mjs` ganhou `--tamanho 1920x1080` (o 16:9 é só viewport; codec, fps e áudio são os
+  mesmos) e passou a converter o quadro JPEG para a faixa de vídeo, porque o ffmpeg 9 gravava o
+  H.264 como `yuvj420p` e o guarda da Meta recusava.
+- **As fotos** são as capas 16:9 dos posts de Confins, apontadas por caminho; a única cópia é a
+  capa do guia da BePark com o emblema da van apagado (`docs/procedencia-imagens.md`).
+- **A legenda sobe como SRT**, e não fica na legenda automática do YouTube, que erra número.
+
 ### 2.4 A BePark nos critérios da pergunta "preço"
 
 | Critério | BePark | Referência da praça |
@@ -539,7 +577,7 @@ Disputar preço para todo mundo é decisão comercial com a BePark, e não é pr
 | **Autoridade** | | |
 | [Conteúdo 55: imprensa de BH, feriado de 12/10](https://app.clickup.com/t/86akr8kr1) | 01/10 | 07/10 |
 | [Conteúdo 56: imprensa de BH, férias de fim de ano](https://app.clickup.com/t/86akr8kra) | 16/11 | 27/11 |
-| [Conteúdo 57: vídeo curto no YouTube](https://app.clickup.com/t/86akr8krn) | 19/10 | 30/10 |
+| [Conteúdo 57: vídeo curto no YouTube](https://app.clickup.com/t/86akr8krn) | 19/10 | 30/10; vídeo, legenda e roteiro prontos em 05/11, esperando o envio ao YouTube (§2.3.8) |
 | **Medição** | | |
 | [Conteúdo 58: revisão de 30 dias](https://app.clickup.com/t/86akr8kt4) | 28/10 | 30/10; feita em 04/11 (§5.1) |
 | [Conteúdo 59: revisão de 90 dias](https://app.clickup.com/t/86akr8kth) | 22/12 | 29/12 |

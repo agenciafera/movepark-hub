@@ -24,7 +24,11 @@
  *
  * Uso:
  *   node .claude/skills/instagram/scripts/render-reel.mjs <saida.mp4> <cena.html:segundos>... \
- *        [--capa capa.jpg] [--capa-cena 1] [--audio narracao.wav]
+ *        [--capa capa.jpg] [--capa-cena 1] [--audio narracao.wav] [--tamanho 1920x1080]
+ *
+ * `--tamanho` troca o viewport: o vídeo do YouTube (Conteúdo 57) sai em 1920x1080 das cenas de
+ * `docs/social/conteudo-57-youtube-confins/`, escritas para 16:9. O resto (codec, fps, áudio) é o
+ * mesmo, porque o que o YouTube pede cabe no que a Meta aceita. A capa vira a miniatura.
  *
  * Exemplo:
  *   node render-reel.mjs reel.mp4 cena-01.html:3 cena-02.html:3.5 cena-03.html:4 --capa capa.jpg
@@ -39,12 +43,26 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawn } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const LARGURA = 1080;
 export const ALTURA = 1920;
 export const FPS = 30;
 const QUALIDADE_QUADRO = 92;
+
+/**
+ * `1920x1080` → `{ largura: 1920, altura: 1080 }`. Sem o argumento, o 9:16 do reel. O 16:9 existe
+ * para o vídeo do YouTube (Conteúdo 57), que sai das mesmas cenas HTML: muda só o viewport.
+ */
+export function lerTamanho(arg) {
+  if (arg == null) return { largura: LARGURA, altura: ALTURA };
+  const m = /^(\d{3,4})x(\d{3,4})$/i.exec(String(arg));
+  if (!m) throw new Error(`"${arg}" não é <largura>x<altura> (ex.: 1920x1080).`);
+  const largura = Number(m[1]);
+  const altura = Number(m[2]);
+  if (largura % 2 || altura % 2) throw new Error(`${arg}: largura e altura têm que ser pares, o 4:2:0 do H.264 exige.`);
+  return { largura, altura };
+}
 const QUALIDADE_CAPA = 85;
 const LIMITE_CAPA_BYTES = 8 * 1024 * 1024;
 
@@ -89,6 +107,10 @@ export function argsDoFfmpeg(saida, fps = FPS, audio = null) {
     "-f", "image2pipe", "-framerate", String(fps), "-c:v", "mjpeg", "-i", "-",
     ...trilha,
     "-map", "0:v", "-map", "1:a", ...(audio ? ["-af", "apad"] : []), "-shortest",
+    // O quadro JPEG chega em faixa cheia (yuvj420p). Sem converter para a faixa de vídeo, o
+    // ffmpeg 9 grava o H.264 marcado como faixa cheia e o ffprobe o chama de yuvj420p, que a
+    // Meta recusa; o player também exibiria o preto e o branco lavados.
+    "-vf", "scale=in_range=pc:out_range=tv,format=yuv420p",
     "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-preset", "medium",
     "-crf", "20", "-maxrate", "12M", "-bufsize", "24M",
     "-r", String(fps), "-g", String(fps * 2), "-keyint_min", String(fps * 2), "-sc_threshold", "0",
@@ -102,7 +124,7 @@ export function argsDoFfmpeg(saida, fps = FPS, audio = null) {
  * Confere o MP4 contra a especificação da Meta, a partir do JSON do ffprobe. Devolve os
  * bloqueios (a Meta recusaria) e os avisos (sai, mas fora do padrão da casa).
  */
-export function conferirVideo(probe, bytes) {
+export function conferirVideo(probe, bytes, tamanho = { largura: LARGURA, altura: ALTURA }) {
   const bloqueios = [];
   const avisos = [];
   const video = probe.streams?.find((s) => s.codec_type === "video");
@@ -127,7 +149,10 @@ export function conferirVideo(probe, bytes) {
     if (Number(audio.channels) > 2) bloqueios.push(`${audio.channels} canais de áudio; a Meta aceita mono ou estéreo.`);
   }
 
-  if (video.width !== LARGURA || video.height !== ALTURA) avisos.push(`${video.width}x${video.height}; o padrão da casa é ${LARGURA}x${ALTURA} (9:16).`);
+  if (video.width !== tamanho.largura || video.height !== tamanho.altura) {
+    const padrao = tamanho.largura === LARGURA && tamanho.altura === ALTURA ? " (9:16, o padrão da casa)" : "";
+    avisos.push(`${video.width}x${video.height}; esperava ${tamanho.largura}x${tamanho.altura}${padrao}.`);
+  }
   if (duracao > DURACAO_RECOMENDADA) avisos.push(`${duracao.toFixed(0)} s; reel de número funciona abaixo de ${DURACAO_RECOMENDADA} s.`);
   if (!audio) avisos.push("Sem faixa de áudio. A Meta aceita, mas o padrão da casa leva a faixa muda.");
   return { bloqueios, avisos };
@@ -136,10 +161,10 @@ export function conferirVideo(probe, bytes) {
 // ------------------------------------------------------------------- execução
 
 /** Abre a cena, confere as travas e devolve a página com as animações pausadas. */
-async function abrirCena(browser, cena) {
+async function abrirCena(browser, cena, tamanho) {
   const html = path.resolve(cena.html);
   if (!fs.existsSync(html)) throw new Error(`não achei a cena: ${html}`);
-  const page = await browser.newPage({ viewport: { width: LARGURA, height: ALTURA }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: tamanho.largura, height: tamanho.altura }, deviceScaleFactor: 1 });
   const falharam = [];
   page.on("requestfailed", (req) => req.resourceType() === "image" && falharam.push(req.url()));
   await page.goto(pathToFileURL(html).href);
@@ -222,20 +247,23 @@ async function principal(argv) {
   let capa = null;
   let capaCena = 1;
   let audio = null;
+  let tamanhoArg = null;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--capa") capa = argv[++i];
     else if (argv[i] === "--capa-cena") capaCena = Number(argv[++i]);
     else if (argv[i] === "--audio") audio = argv[++i];
+    else if (argv[i] === "--tamanho") tamanhoArg = argv[++i];
     else if (argv[i].startsWith("--")) throw new Error(`opção desconhecida: ${argv[i]}`);
     else if (!saida) saida = argv[i];
     else cenasArg.push(argv[i]);
   }
   if (!saida || !/\.mp4$/i.test(saida) || !cenasArg.length) {
     throw new Error(
-      "uso: render-reel.mjs <saida.mp4> <cena.html:segundos>... [--capa capa.jpg] [--capa-cena 1] [--audio trilha.wav]",
+      "uso: render-reel.mjs <saida.mp4> <cena.html:segundos>... [--capa capa.jpg] [--capa-cena 1] [--audio trilha.wav] [--tamanho 1920x1080]",
     );
   }
   const cenas = cenasArg.map(lerCena);
+  const tamanho = lerTamanho(tamanhoArg);
   if (!(capaCena >= 1 && capaCena <= cenas.length)) throw new Error(`--capa-cena ${capaCena} não existe (são ${cenas.length} cenas).`);
   if (audio && !fs.existsSync(audio)) throw new Error(`não achei a trilha: ${audio}`);
   if (!temFfmpeg()) throw new Error("ffmpeg e ffprobe não estão no PATH. No macOS: brew install ffmpeg; no Linux: apt install ffmpeg.");
@@ -249,10 +277,14 @@ async function principal(argv) {
   const fim = new Promise((ok, falha) =>
     ff.on("close", (code) => (code === 0 ? ok() : falha(new Error(`o ffmpeg falhou (${code}): ${erroFf.trim()}`)))),
   );
+  // Se uma cena falhar no meio, o catch abaixo mata o ffmpeg e `fim` rejeita antes de alguém
+  // esperar por ele; sem este guarda, o Node derruba o processo por rejeição sem dono e o erro
+  // de verdade (a cena) nunca aparece. O `await fim` lá embaixo continua vendo a rejeição.
+  fim.catch(() => {});
 
   try {
     for (const [i, cena] of cenas.entries()) {
-      const page = await abrirCena(browser, cena);
+      const page = await abrirCena(browser, cena, tamanho);
       const total = quadrosDa(cena.segundos);
       for (let q = 0; q < total; q++) await escrever(ff.stdin, await quadro(page, (q * 1000) / FPS));
       if (capa && i + 1 === capaCena) {
@@ -276,19 +308,20 @@ async function principal(argv) {
   const probe = JSON.parse(
     execFileSync("ffprobe", ["-v", "error", "-show_format", "-show_streams", "-of", "json", saida], { encoding: "utf8" }),
   );
-  const { bloqueios, avisos } = conferirVideo(probe, bytes);
+  const { bloqueios, avisos } = conferirVideo(probe, bytes, tamanho);
   const duracao = Number(probe.format.duration).toFixed(1);
-  console.log(`${path.basename(saida)}  ${LARGURA}x${ALTURA}  ${FPS} fps  ${duracao} s  ${(bytes / 1048576).toFixed(2)} MB`);
+  const lxa = `${tamanho.largura}x${tamanho.altura}`;
+  console.log(`${path.basename(saida)}  ${lxa}  ${FPS} fps  ${duracao} s  ${(bytes / 1048576).toFixed(2)} MB`);
   if (capa) {
     const b = fs.statSync(path.resolve(capa)).size;
-    console.log(`${path.basename(capa)}  ${LARGURA}x${ALTURA}  JPEG  ${(b / 1048576).toFixed(2)} MB  (cena ${capaCena})`);
+    console.log(`${path.basename(capa)}  ${lxa}  JPEG  ${(b / 1048576).toFixed(2)} MB  (cena ${capaCena})`);
     if (b > LIMITE_CAPA_BYTES) bloqueios.push("A capa passou de 8 MB.");
   }
   for (const a of avisos) console.warn(`aviso: ${a}`);
   if (bloqueios.length) throw new Error(`O MP4 não passa na especificação da Meta:\n  ${bloqueios.join("\n  ")}`);
 }
 
-const ehPrincipal = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
+const ehPrincipal = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (ehPrincipal) {
   principal(process.argv.slice(2)).catch((e) => {
     console.error(`\n${e.message}\n`);

@@ -26,7 +26,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const LARGURA = 1080;
 export const ALTURA = 1920;
@@ -108,7 +108,7 @@ async function renderizar(browser, entradaOriginal, saida) {
   return bytes;
 }
 
-const ehPrincipal = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
+const ehPrincipal = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (ehPrincipal) {
   const args = process.argv.slice(2);
   if (!args.length) {
