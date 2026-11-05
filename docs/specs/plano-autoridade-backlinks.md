@@ -746,18 +746,39 @@ de janeiro abrir.
 
 ## 6. Metas
 
-| Métrica | 29/09/2026 | 90 dias | 180 dias |
-|---|---|---|---|
-| Authority Score | 25 | 30 | 35 |
-| Domínios de ref. de `/estacionamentos/aeroporto-guarulhos` | 17 | 40 | 60 |
-| Domínios novos com AS ≥ 20 por mês | sem linha de base no plano gratuito (50 domínios com AS > 20 no total em 05/10; seção 2.6) | 10 | 15 |
-| Domínios de ref. do Brasil | 15 | 40 | 70 |
-| Posição média dos termos de cabeça de GRU no GSC | 40 a 55 | até 20 | até 5 |
-| Termos monitorados no top 10 (GSC, `bun run seo:posicao`) | 9 de 59 em 04/10 (eram 5 de 9 no Semrush, com marca de parceiro) | 20 de 59 | 35 de 59 |
-| Saúde do site no Semrush (auditoria completa) | 76% sobre 100 páginas (82% em 02/10; o plano gratuito não passa de 100) | 85% | 90% |
+| Métrica | 29/09/2026 | 30 dias (05/11/2026) | 90 dias | 180 dias |
+|---|---|---|---|---|
+| Authority Score | 25 | **26** | 30 | 35 |
+| Domínios de ref. de `/estacionamentos/aeroporto-guarulhos` | 17 | não medido (relatório de Links do GSC pediu novo login) | 40 | 60 |
+| Domínios novos com AS ≥ 20 por mês | sem linha de base no plano gratuito (50 domínios com AS > 20 no total em 05/10; seção 2.6) | sem linha de base | 10 | 15 |
+| Domínios de ref. do Brasil | 15 | não medido (a Análise de backlinks está borrada no plano gratuito) | 40 | 70 |
+| Posição média dos termos de cabeça de GRU no GSC | 40 a 55 | **27,7** (25,8 ponderada por impressão; 33,4 em 04/10) | até 20 | até 5 |
+| Termos monitorados no top 10 (GSC, `bun run seo:posicao`) | 9 de 59 em 04/10 (eram 5 de 9 no Semrush, com marca de parceiro) | **14 de 59** (02/11) | 20 de 59 | 35 de 59 |
+| Saúde do site no Semrush (auditoria completa) | 76% sobre 100 páginas (82% em 02/10; o plano gratuito não passa de 100) | 82% (a auditoria de 02/10 não reroda no gratuito) | 85% | 90% |
 
 A meta de posição soma o efeito deste plano com o do plano de conteúdo. As duas specs medem o mesmo
 GSC, então a revisão é feita junto.
+
+### 6.1 Revisão de 30 dias ([Conteúdo 73](https://app.clickup.com/t/17tn9e9gfhj), 05/11/2026)
+
+Dados em [dados/autoridade-30-dias-2026-11-05](./dados/autoridade-30-dias-2026-11-05/RESUMO.md).
+
+- **Autoridade:** o Authority Score saiu de 25 para 26, o primeiro movimento em 12 meses. O
+  número de domínios de referência não dá para comparar (a base do painel é outra e a Análise de
+  backlinks está borrada no gratuito), então o AS é o único marcador de autoridade desta rodada.
+- **Resultado que já aparece:** tráfego orgânico estimado de 2,6 mil para 4,4 mil, menções em IA
+  de 8 para 29, termos da meta no top 10 de 9 para 14 de 59 e a posição média de GRU de 40 a 55
+  para 27,7. GRU ainda não tem nenhum termo no top 10. O efeito se mistura com o plano de
+  conteúdo (seção 7, "Atribuição"), e dos links comprados em outubro só quatro saíram, todos em
+  14/10, então ainda é cedo para creditar o link.
+- **Links da planilha:** dos 47 com URL, 44 no ar, 2 perdidos (os mesmos de 13/10) e 2 não
+  verificáveis por geobloqueio e Cloudflare. O `viagensecaminhos.com` (Conteúdo 75, R$ 1.610,00)
+  segue sem publicar 17 dias depois do prazo.
+- **Ajuste de rota:** nenhum de estratégia, a rota segue. Três pendências operacionais: (1)
+  cobrar a publicação do `viagensecaminhos.com`; (2) medir domínios de referência de GRU e do
+  Brasil no relatório de Links do GSC quando o Diego estiver logado, antes da Conteúdo 74; (3) o
+  Semrush não reaudita o Backlink Audit desde 05/10, então o efeito do disavow de 13/10 só será
+  visível no GSC ou numa reexecução manual.
 
 ## 7. Riscos
 

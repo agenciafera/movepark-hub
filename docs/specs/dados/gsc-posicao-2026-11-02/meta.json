@@ -1,0 +1,16 @@
+{
+  "propriedade": "sc-domain:movepark.co",
+  "inicio": "2026-10-06",
+  "fim": "2026-11-02",
+  "pais": "bra",
+  "dataState": "final",
+  "geradoEm": "2026-11-05T21:18:07.347Z",
+  "script": "scripts/gsc-posicao.mjs",
+  "termos": 71,
+  "meta": {
+    "termos": 59,
+    "noTop": 14,
+    "semDado": 11
+  },
+  "anterior": "2026-10-04"
+}
