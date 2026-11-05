@@ -20,6 +20,8 @@ import { computeResultBadges } from "@/features/search/searchBadges";
 import { resolveSearchDates } from "@/features/search/dates";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { ResultCard } from "@/features/search/ResultCard";
+import { trackEcommerce } from "@/lib/analytics";
+import { SEARCH_LIST, listEcommerce, resultsSignature } from "@/lib/analytics-ecommerce";
 import { isTypeDescriptorAmenity } from "@/features/search/amenities.logic";
 
 function parseCsv(value: string | null): string[] {
@@ -89,6 +91,21 @@ export default function SearchResultsPage() {
   ]);
 
   const { data, isLoading, error } = useSearchResults(filters);
+
+  // GA4 `view_item_list`: uma vez por conjunto de resultados. A assinatura segura o refetch
+  // da mesma lista; filtro novo é lista nova e dispara de novo.
+  const listaVista = React.useRef<string | null>(null);
+  const destinoCode = data?.destination?.code ?? dest ?? null;
+  React.useEffect(() => {
+    if (!data?.results?.length) return;
+    const sig = resultsSignature(SEARCH_LIST.id, data.results);
+    if (listaVista.current === sig) return;
+    listaVista.current = sig;
+    trackEcommerce(
+      "view_item_list",
+      listEcommerce(data.results, { list: SEARCH_LIST, destination: destinoCode }),
+    );
+  }, [data, destinoCode]);
 
   function patch(updates: Record<string, string | null>) {
     const next = new URLSearchParams(params);
@@ -238,7 +255,7 @@ export default function SearchResultsPage() {
               de cards bate com o contador de vagas (E2.1.3). */}
           {!isLoading && data && data.results.length > 0 && (
             <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
-              {data.results.map((r) => (
+              {data.results.map((r, i) => (
                 <ResultCard
                   key={r.id}
                   item={r}
@@ -247,6 +264,9 @@ export default function SearchResultsPage() {
                   searchParams={params}
                   source="search"
                   badges={computeResultBadges(r, data.results)}
+                  index={i}
+                  list={SEARCH_LIST}
+                  destination={destinoCode}
                 />
               ))}
             </div>

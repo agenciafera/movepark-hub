@@ -6,6 +6,8 @@ import { stretchParamsToMinStay } from "./dates";
 import { isTypeDescriptorAmenity } from "./amenities.logic";
 import { Go2ParkCardCredit, Go2ParkLivePill } from "@/features/go2park/Go2ParkLive";
 import { ParkingCard, ParkingCardBadge, type ParkingCardAmenity } from "./ParkingCard";
+import { trackEcommerce } from "@/lib/analytics";
+import { selectItemEcommerce, type ItemList } from "@/lib/analytics-ecommerce";
 import type { SearchResultItem } from "./useSearchResults";
 import type { SearchBadge, SearchBadgeKind } from "./searchBadges";
 import { useLocale, useTextos } from "@/lib/LocaleContext";
@@ -29,6 +31,11 @@ type Props = {
   source?: "search" | "destino";
   /** Badges comparativos calculados sobre o conjunto de resultados (PRD-13). */
   badges?: SearchBadge[];
+  /** Posição e lista de origem: é o que o `select_item` do GA4 carrega. Sem lista, não há evento. */
+  index?: number;
+  list?: ItemList;
+  /** Código do destino buscado (`item_category`). */
+  destination?: string | null;
 };
 
 const AMENITY_LABEL: Record<string, string> = {
@@ -80,6 +87,9 @@ export function ResultCard({
   searchParams,
   source,
   badges = [],
+  index,
+  list,
+  destination,
 }: Props) {
   const locale = useLocale();
   const T = useTextos();
@@ -169,6 +179,15 @@ export function ResultCard({
     <ParkingCard
       testId="result-card"
       href={url}
+      onClick={
+        list && index != null
+          ? () =>
+              trackEcommerce(
+                "select_item",
+                selectItemEcommerce(item, index, { list, destination }),
+              )
+          : undefined
+      }
       soldOut={soldOut}
       coverImage={item.location.cover_image}
       coverAlt={`${nomeDaVaga(locale, item.parking_type.code, item.parking_type.name)} - ${item.location.name}`}

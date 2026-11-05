@@ -70,6 +70,8 @@ export type ParkingCardProps = {
   favorite?: { isSaved: boolean; onToggle: () => void };
   /** Esgotado: tira o link (card não clicável) e esmaece. */
   soldOut?: boolean;
+  /** Clique no link do card (analytics). Não impede a navegação. */
+  onClick?: () => void;
   className?: string;
   testId?: string;
   typeTestId?: string;
@@ -81,11 +83,13 @@ export type ParkingCardProps = {
 function CardLink({
   to,
   soldOut,
+  onClick,
   className,
   children,
 }: {
   to: string;
   soldOut: boolean;
+  onClick?: () => void;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -97,7 +101,7 @@ function CardLink({
     );
   }
   return (
-    <Link to={to} className={className}>
+    <Link to={to} className={className} onClick={onClick}>
       {children}
     </Link>
   );
@@ -134,6 +138,7 @@ export function ParkingCard({
   imageFooter,
   favorite,
   soldOut = false,
+  onClick,
   className,
   testId,
   typeTestId,
@@ -153,6 +158,7 @@ export function ParkingCard({
       <CardLink
         to={href}
         soldOut={soldOut}
+        onClick={onClick}
         className="relative block aspect-[4/3] overflow-hidden bg-surface-soft"
       >
         {coverImage ? (
@@ -198,7 +204,7 @@ export function ParkingCard({
       )}
 
       {/* Conteúdo */}
-      <CardLink to={href} soldOut={soldOut} className="flex flex-1 flex-col gap-3 p-5">
+      <CardLink to={href} soldOut={soldOut} onClick={onClick} className="flex flex-1 flex-col gap-3 p-5">
         <div className="min-w-0 space-y-0.5">
           {/* Duas linhas: "Empresa · Unidade" não cabe em uma só nos cards de 3 colunas,
               e a parte cortada seria justamente a unidade, que é o que diferencia. */}

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  useCheckoutBooking,
   useCreateCardCharge,
   useCreatePixCharge,
   usePaymentConfig,
@@ -32,6 +33,8 @@ import {
   logCheckoutEvent,
   type CardFailureStage,
 } from "./checkoutTrail";
+import { trackEcommerce } from "@/lib/analytics";
+import { paymentEcommerce, type PaymentType } from "@/lib/analytics-ecommerce";
 import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
 import { brandLabel, detectBrand, isCvvValid } from "@/lib/card-brand";
@@ -93,6 +96,15 @@ export function Step4Payment({
   const card = useCreateCardCharge();
   const config = usePaymentConfig();
   const { session } = useAuth();
+  // A reserva inteira, do cache da página (mesma key): é o que o `add_payment_info` carrega.
+  const { data: bookingForTracking } = useCheckoutBooking(bookingCode);
+  /** GA4 `add_payment_info`: o cliente escolheu o meio e mandou pagar. */
+  function trackPayment(paymentType: PaymentType, parcelas?: number) {
+    if (!bookingForTracking) return;
+    trackEcommerce("add_payment_info", paymentEcommerce(bookingForTracking, paymentType, parcelas), {
+      user_id: session?.userId,
+    });
+  }
   const profileQ = useProfile(session?.userId);
   const updateProfile = useUpdateProfile();
   const updateCustomer = useUpdateBookingCustomer();
@@ -238,6 +250,7 @@ export function Step4Payment({
       if (!(await persistTaxId())) return;
       await garantirAceite();
       const res = await pix.mutateAsync({ booking_code: bookingCode });
+      trackPayment("pix");
       setPixPayload(res.qr_code);
       if (res.qr_code) setPixSvg(await toSvgString(res.qr_code, 256));
       toast.success("PIX gerado. Pague no seu app de banco.");
@@ -273,6 +286,7 @@ export function Step4Payment({
         return;
       }
       await garantirAceite();
+      trackPayment("card", installments);
       if (savedCard) {
         stage = "charge";
         await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: cardChoice });

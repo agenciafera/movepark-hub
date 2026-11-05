@@ -11,6 +11,7 @@ import {
   useTermsAccepted,
 } from "@/features/checkout/api";
 import { wantsPayStep } from "@/features/checkout/handoff";
+import { useCheckoutTracking } from "@/features/checkout/useCheckoutTracking";
 import { Countdown } from "@/features/checkout/Countdown";
 import { KeepAliveModal } from "@/features/checkout/KeepAliveModal";
 import { Stepper } from "@/features/checkout/Stepper";
@@ -43,6 +44,8 @@ export default function CheckoutPage() {
   const { data: booking, isLoading, error } = useCheckoutBooking(code);
   const { data: termsAccepted } = useTermsAccepted(booking?.id);
   const [step, setStep] = React.useState<CheckoutStep>(1);
+  // GA4: `begin_checkout` ao abrir com a reserva pendente, `purchase` quando ela confirma.
+  useCheckoutTracking(booking);
 
   // O passo de adicionais só existe se a unidade oferecer algum, então a régua de
   // progresso e a navegação dependem do catálogo. Enquanto ele não chega, o Stepper

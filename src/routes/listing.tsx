@@ -12,6 +12,8 @@ import { AmenityList } from "@/features/listing/AmenityList";
 import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
+import { trackEcommerce } from "@/lib/analytics";
+import { listingEcommerce } from "@/lib/analytics-ecommerce";
 import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
 import { aPartirDe, type PriceShowcase, type ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
@@ -118,7 +120,7 @@ export default function ListingPage() {
   // Faixa de diária do motor de preço: alimenta o "a partir de" do card e o `AggregateOffer` do
   // JSON-LD com o MESMO número, que é o que o ADR-009 pede. O loader já trouxe no build; o hook
   // cobre a navegação por link.
-  const { data: showcase } = usePriceShowcase(
+  const { data: showcase, isPending: showcasePending } = usePriceShowcase(
     companySlug,
     locationSlug,
     parkingTypeCode,
@@ -126,6 +128,19 @@ export default function ListingPage() {
     // `initialData: null` também conta como dado e mataria o fetch quando o build falhou.
     loaderBateComVaga ? (loaderData?.showcase ?? undefined) : undefined,
   );
+
+  // GA4 `view_item`: uma vez por oferta (unidade + tipo de vaga), com o "a partir de" do motor.
+  // Espera a faixa responder para o evento sair com preço; se ela falhar, sai sem.
+  const ofertaVista = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!listing || showcasePending || ofertaVista.current === listing.id) return;
+    ofertaVista.current = listing.id;
+    const entrada = aPartirDe(showcase);
+    trackEcommerce(
+      "view_item",
+      listingEcommerce(listing, entrada ? { total: entrada.total, days: entrada.days } : null),
+    );
+  }, [listing, showcase, showcasePending]);
 
   const { data: reviews } = useLocationReviews(
     (listing?.location.review_count ?? 0) > 0 ? listing?.location.id : undefined,

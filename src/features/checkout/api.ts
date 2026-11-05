@@ -61,7 +61,11 @@ export type BookingForCheckout = {
     checkout_mode: string | null;
     /** Fotos da unidade. A primeira vira a miniatura do resumo. */
     photos: string[];
+    /** Nome canônico da ficha, para o `item_name` do analytics bater com o da busca. */
+    public_name: string | null;
     company: { slug: string; name: string };
+    /** Destino da unidade: vira `item_category` nos eventos de e-commerce. */
+    destination: { code: string | null; name: string } | null;
   };
   items: {
     id: string;
@@ -78,7 +82,8 @@ export type BookingForCheckout = {
     id: string;
     status: "pending" | "authorized" | "paid" | "refunded" | "failed" | "cancelled";
     provider: string;
-    method?: string;
+    /** `pix` ou `card`: é o `payment_type` do `purchase`. */
+    method: string | null;
     paid_at: string | null;
   } | null;
   /** Cupom aplicado, lido do snapshot da reserva (ver `resolveBookingCoupon`). */
@@ -103,14 +108,15 @@ export function useCheckoutBooking(code: string | undefined) {
            fare_cancel_until, expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone, fare_tier, flight_number,
-           location:location!inner(id, slug, name, address, photos, checkout_mode,
-             company:company!inner(slug, name)),
+           location:location!inner(id, slug, name, address, photos, checkout_mode, public_name,
+             company:company!inner(slug, name),
+             destination:destination(code, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
              parking_type:parking_type(code, name),
              add_on_service:add_on_service(name)
            ),
            coupons:booking_coupon(discount_applied),
-           payments:payment(id, status, provider, paid_at, created_at)`,
+           payments:payment(id, status, provider, method, paid_at, created_at)`,
         )
         .eq("code", code)
         .maybeSingle();
@@ -156,6 +162,8 @@ export function useCheckoutBooking(code: string | undefined) {
           // `photos` é jsonb no banco: normaliza pra array antes de sair daqui,
           // igual o listing faz, pra tela não precisar checar o formato.
           photos: Array.isArray(row.location?.photos) ? (row.location.photos as string[]) : [],
+          public_name: row.location?.public_name ?? null,
+          destination: row.location?.destination ?? null,
         },
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any
@@ -175,6 +183,7 @@ export function useCheckoutBooking(code: string | undefined) {
               id: lastPayment.id,
               status: lastPayment.status,
               provider: lastPayment.provider,
+              method: lastPayment.method ?? null,
               paid_at: lastPayment.paid_at,
             }
           : null,

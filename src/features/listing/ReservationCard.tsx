@@ -14,6 +14,8 @@ import { DateRangePicker } from "@/features/search/DateRangePicker";
 import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
 import { originFromSrc } from "@/lib/bookingOrigin";
+import { trackEcommerce } from "@/lib/analytics";
+import { listingEcommerce } from "@/lib/analytics-ecommerce";
 import { bookingAttributionPayload } from "@/lib/utm";
 import {
   parseCouponParam,
@@ -271,6 +273,16 @@ export function ReservationCard({
         // UTM + prova da origem: a comissão da venda depende de onde o cliente veio (E0.3.12).
         ...bookingAttributionPayload(),
       });
+      // GA4 `add_to_cart`: a vaga virou reserva pendente (o "carrinho" do Hub é a reserva).
+      trackEcommerce(
+        "add_to_cart",
+        listingEcommerce(
+          listing,
+          { total: result.total_amount, days: result.days, fareTier: effectiveFare },
+          applied?.code ?? null,
+        ),
+        { user_id: session?.userId },
+      );
       navigate(`/checkout/${result.code}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao criar reserva");
@@ -684,7 +696,14 @@ export function ReservationCard({
                 // E0.16: é o único ponto do funil que o Hub enxerga, porque a reserva nasce do
                 // outro lado. Sem `preventDefault` e sem `await`: o registro sai junto e a
                 // navegação segue. Ver `exitClick.ts`.
-                onClick={() => recordExitClick({ locationParkingTypeId: listing.id, from, to })}
+                onClick={() => {
+                  recordExitClick({ locationParkingTypeId: listing.id, from, to });
+                  // GA4: a reserva nasce no site do parceiro; o clique é o fim do funil daqui.
+                  trackEcommerce(
+                    "external_checkout_click",
+                    listingEcommerce(listing, sim.data?.price != null ? { total: displayTotal, days } : null),
+                  );
+                }}
               >
                 Reservar no site do estacionamento
               </a>

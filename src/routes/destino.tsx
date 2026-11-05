@@ -32,6 +32,8 @@ import { useSearchResults, type SearchResultItem } from "@/features/search/useSe
 import { useFaqCombined, type FaqCombinedItem } from "@/features/faqs/api";
 import { FaqList } from "@/features/faqs/FaqList";
 import { ResultCard } from "@/features/search/ResultCard";
+import { trackEcommerce } from "@/lib/analytics";
+import { destinoList, listEcommerce, resultsSignature } from "@/lib/analytics-ecommerce";
 import { useSavedListings } from "@/features/search/useSavedListings";
 import { computeResultBadges } from "@/features/search/searchBadges";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -228,6 +230,35 @@ export default function DestinoPage() {
   // navegação no cliente, e por isso só dispara quando o loader não entregou.
   const prospects = useDestinationProspects(loaded ? undefined : destination?.slug);
 
+  // A busca com datas manda quando responde; até lá vale a semente do build. As duas usam
+  // o id do location_parking_type como chave, então o React reaproveita o DOM em vez de
+  // trocar o bloco inteiro na frente de quem está lendo.
+  const results = React.useMemo(
+    () => search.data?.results ?? loaded?.units ?? [],
+    [search.data?.results, loaded?.units],
+  );
+
+  // GA4 `view_item_list` da vitrine do destino. Fica ANTES do retorno antecipado abaixo, porque
+  // é hook. A semente do build e a busca com datas trazem os mesmos lotes; a assinatura (sem
+  // ordem) evita contar a troca de uma pela outra como lista nova.
+  const lista = destination
+    ? destinoList(destinoSlug, destination.short_name ?? destination.name)
+    : null;
+  const listaVista = React.useRef<string | null>(null);
+  const destinationCode = destination?.code ?? null;
+  React.useEffect(() => {
+    if (!lista || !results.length) return;
+    const sig = resultsSignature(lista.id, results);
+    if (listaVista.current === sig) return;
+    listaVista.current = sig;
+    trackEcommerce(
+      "view_item_list",
+      listEcommerce(results, { list: lista, destination: destinationCode }),
+    );
+    // `lista` é objeto novo a cada render; o que identifica a lista é o id, já na assinatura.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results, destinationCode]);
+
   if (!destination) {
     if (query.isLoading) {
       return (
@@ -309,10 +340,6 @@ export default function DestinoPage() {
   const schemaImages = heroUrl
     ? ([heroUrl, ogImage, squareImage].filter(Boolean) as string[])
     : undefined;
-  // A busca com datas manda quando responde; até lá vale a semente do build. As duas usam
-  // o id do location_parking_type como chave, então o React reaproveita o DOM em vez de
-  // trocar o bloco inteiro na frente de quem está lendo.
-  const results = search.data?.results ?? loaded?.units ?? [];
   const prospectItems = loaded?.prospects ?? prospects.data ?? [];
   const points = loaded?.points ?? [];
 
@@ -753,7 +780,7 @@ export default function DestinoPage() {
               />
             ) : (
               <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-                {results.map((r) => (
+                {results.map((r, i) => (
                   <ResultCard
                     key={r.id}
                     item={r}
@@ -762,6 +789,9 @@ export default function DestinoPage() {
                     searchParams={searchWindowParams}
                     source="destino"
                     badges={computeResultBadges(r, results)}
+                    index={i}
+                    list={lista ?? undefined}
+                    destination={destination.code}
                   />
                 ))}
               </div>
