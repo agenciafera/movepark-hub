@@ -1,6 +1,6 @@
 # Analytics de e-commerce (GA4 via dataLayer)
 
-> **Status:** implementado e **validado com compra real em 05/11/2026** (reserva `MP-19DFA0`, Abbapark, PIX em produção, com adicional e Tarifa Flex): os sete eventos saíram na ordem, uma vez cada, e recarregar a confirmação não repetiu o `purchase`. Falta a configuração das tags no GTM (`GTM-KHBBZT9`, §6) e a conferência no DebugView do GA4.
+> **Status:** implementado e **validado com compra real em 05/11/2026** (reserva `MP-19DFA0`, Abbapark, PIX em produção, com adicional e Tarifa Flex): os sete eventos saíram na ordem, uma vez cada, e recarregar a confirmação não repetiu o `purchase`. No mesmo dia o `purchase` ganhou a via do servidor (Measurement Protocol, §3), disparada pelo webhook de pagamento. Falta a configuração das tags no GTM (`GTM-KHBBZT9`, §6), o segredo da API do Measurement Protocol nas Edges (§6) e a conferência no DebugView do GA4.
 >
 > **Back-ref:** substitui o componente `DataLayer` do `movepark-nextjs` (white-label), que disparava `view_item`, `add_to_cart`, `begin_checkout` e `purchase`. Referência do Google: [eventos recomendados, seção "Online sales"](https://support.google.com/analytics/answer/9267735#online-sales).
 
@@ -38,11 +38,15 @@ Sete eventos da lista "Online sales" do GA4, mais um nosso. Fora da lista, de pr
 | 4b | "Reservar no site do estacionamento" (unidade externa) | `external_checkout_click` (nosso) | `ReservationCard`, junto do `recordExitClick` | Por clique |
 | 5 | O checkout abre com a reserva pendente | `begin_checkout` | `useCheckoutTracking` (em `src/routes/checkout.tsx`) | Uma vez por reserva, e só dentro do prazo do hold |
 | 6 | O cliente escolhe o meio e manda pagar: "Gerar PIX" ou o submit do cartão | `add_payment_info` | `Step4Payment` (`trackPayment`) | Por tentativa (uma recusa seguida de nova tentativa conta duas) |
-| 7 | A reserva confirma | `purchase` | `useCheckoutTracking` | `localStorage` (`mp_ga_purchase:<código>`) + janela de 24h sobre `paid_at` |
+| 7 | A reserva confirma | `purchase` | `useCheckoutTracking` (navegador) **e** `_shared/ga4.ts` (servidor, pelo webhook) | Navegador: `localStorage` (`mp_ga_purchase:<código>`) + janela de 24h sobre `paid_at`. Servidor: `booking.ga_purchase_sent_at`. Entre os dois: o GA4 deduplica pelo `transaction_id` |
 
 O que **não** dispara evento: o passo de adicionais (os adicionais entram como itens em `begin_checkout`, `add_payment_info` e `purchase`), o Clube, a conta do cliente e qualquer tela do Manager ou do Operator.
 
-**Onde o `purchase` pode faltar.** Ele sai no navegador, quando a página do checkout vê a reserva confirmada. Quem gera o PIX, fecha a aba e paga depois só dispara o `purchase` se voltar ao link do checkout em até 24h. Para fechar esse buraco de vez o caminho é o Measurement Protocol do GA4, disparado pelo webhook de pagamento, com o mesmo `transaction_id` (o GA4 deduplica). Fica como evolução; hoje o número de referência para conciliar é a tabela `booking`, não o GA4.
+**O `purchase` sai por duas vias, e o GA4 fica com uma.** No navegador ele sai quando a página do checkout vê a reserva confirmada, e isso deixava um buraco: quem gera o PIX, fecha a aba e paga depois só voltava ao checkout por acaso, e a venda sumia do GA4. Desde 05/11/2026 o ponto de confirmação do pagamento (o webhook da Pagar.me e, quando o webhook se perde, a reconciliação `reconcile-confirmations`) manda o mesmo evento pelo **Measurement Protocol** (`supabase/functions/_shared/ga4.ts`, `sendPurchase`), com o mesmo `transaction_id` (código da reserva), e o GA4 deduplica as duas vias em até 72h. O disparo do navegador **continua**: é ele que carrega o `user_data` da conversão otimizada e a sessão inteira; o servidor é a rede de segurança.
+
+Como o servidor casa o hit com a sessão de quem comprou: o `ReservationCard` manda no `create-booking` o `client_id` (cookie `_ga`) e o `session_id` (cookie `_ga_<stream>`), lidos por `src/lib/ga-cookie.ts`, e a Edge grava os dois na reserva (`booking.ga_client_id`, `booking.ga_session_id`), depois de conferir o formato. Sem cookie (opt-out, bloqueador, reserva criada por agente), o servidor manda com o `user_id` como `client_id`: o evento entra, a receita conta, mas o GA4 não liga esse hit à sessão do navegador e o cliente aparece como usuário novo. O corpo leva `timestamp_micros` com o `paid_at` quando o pagamento tem menos de 72h (o GA4 descarta carimbo mais velho), `engagement_time_msec` para o hit contar como atividade, `new_customer` como parâmetro do evento (no navegador ele fica fora de `ecommerce`) e `event_source: "server"` para separar as duas vias num relatório.
+
+O envio é **best-effort por contrato**: `sendPurchase` nunca lança, roda pós-resposta e nunca na frente da confirmação (mesmo espírito do ADR-011). A guarda `booking.ga_purchase_sent_at` é reivindicada antes do POST, para a reentrega do webhook não mandar de novo, e liberada se o GA4 ou a rede falharem, para a próxima tentativa valer. Sem os segredos `GA4_MEASUREMENT_ID` e `GA4_API_SECRET` nas Edges (§6) o módulo não faz nada e avisa no log. O que não vai pelo servidor: `user_data` (a conversão otimizada do Ads exige hash e consentimento que só o navegador tem) e qualquer outro evento da jornada. O número de referência para conciliar continua sendo a tabela `booking`, não o GA4.
 
 ## 4. O formato
 
@@ -118,8 +122,15 @@ Regras por evento:
 | `src/features/checkout/useCheckoutTracking.ts` | `begin_checkout` e `purchase` a partir da reserva; `shouldTrack*` puros |
 | `src/features/checkout/api.ts` | O select do checkout passou a trazer `public_name`, `destination(code, name)` e `payment.method` |
 | `src/features/search/ParkingCard.tsx` | Ganhou `onClick` no link, que o `ResultCard` usa para o `select_item` |
+| `src/lib/ga-cookie.ts` | Lê `client_id` e `session_id` dos cookies do GA4; `gaIdsPayload()` entra no corpo do `create-booking` (`ReservationCard`) |
+| `supabase/functions/create-booking/logic.ts` | `decidirGa`: confere o formato dos dois ids e monta o patch de `booking.ga_client_id`/`ga_session_id` |
+| `supabase/functions/_shared/ga4.ts` | `sendPurchase`: o `purchase` pelo Measurement Protocol; `purchaseItems` espelha `itemsFromBooking`, `tituloDaUnidade` espelha `parkingName.ts` |
+| `supabase/functions/pagarme-webhook/index.ts`, `reconcile-confirmations/index.ts` | Chamam `sendPurchase` depois da confirmação, pós-resposta |
+| `supabase/migrations/20261201210000_booking_ga_client.sql` | `booking.ga_client_id`, `ga_session_id`, `ga_purchase_sent_at` |
 
-Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src/features/checkout/useCheckoutTracking.test.ts`.
+Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src/features/checkout/useCheckoutTracking.test.ts`, `src/lib/ga-cookie.test.ts`; no Deno, `supabase/functions/_shared/ga4.test.ts` (payload, guarda, erro engolido) e `create-booking/logic.test.ts` (`decidirGa`).
+
+**Os itens têm duas cópias de propósito.** `purchaseItems` (Deno) e `itemsFromBooking` (front) montam o mesmo schema a partir da mesma reserva, porque Deno não importa do `src/`. Mudou um campo de item, muda nos dois e nos dois testes.
 
 **Evento novo passa por aqui.** A união `EcommerceEvent` é fechada e esta tabela é o contrato com o GTM. Adicionar um evento é: linha na §3, builder em `analytics-ecommerce.ts` com teste, e a tag no GTM.
 
@@ -132,10 +143,18 @@ Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src
 3. **Tag GA4 › Evento**: nome do evento = `{{Event}}`, "Enviar dados de e-commerce" ligado com fonte "Camada de dados", `user_id` mapeado nas propriedades do usuário.
 4. `external_checkout_click`: tag GA4 própria (evento personalizado); registrar o nome em Administrador › Eventos para virar conversão se fizer sentido.
 5. **Conversão otimizada do Ads** (opcional): a tag de conversão lê `user_data` do dataLayer.
-6. Dimensões personalizadas de item no GA4: `stay_days` e `fare_tier` (escopo item), se quiser cruzar receita por tarifa.
+6. Dimensões personalizadas de item no GA4: `stay_days` e `fare_tier` (escopo item), se quiser cruzar receita por tarifa. Dimensões de evento, se quiser: `event_source` (navegador vs servidor) e `new_customer`.
+7. **Measurement Protocol (o `purchase` do servidor).** No GA4: Administrador › Fluxos de dados › o fluxo web do site › *Chaves secretas da API do Measurement Protocol* › Criar. Depois, nas Edges do Supabase (projeto `mgaigbezdalbyuqiofcf`), os dois segredos:
+
+   ```bash
+   supabase secrets set GA4_MEASUREMENT_ID=G-XXXXXXXXXX GA4_API_SECRET=<chave criada no GA4>
+   ```
+
+   O `GA4_MEASUREMENT_ID` é o id do fluxo (`G-...`), o mesmo que a tag GA4 do GTM usa. Como o site alimenta duas propriedades (`G-L99117RGEY` e `G-X75P1WZBTM`, acima), os dois segredos aceitam lista separada por vírgula, pareada pela posição (`G-L99117RGEY,G-X75P1WZBTM` com `segredo1,segredo2`); cada propriedade precisa da própria chave, criada nela. O servidor manda o mesmo corpo às duas, direto ao Google, sem passar pelo Stape. Lista desparelhada desliga o envio. Sem os dois, o servidor não manda nada e o log das Edges avisa `GA4_MEASUREMENT_ID/GA4_API_SECRET ausentes`. Se o contêiner do Stape passar a guardar o id do cliente em cookie `FPID` (HttpOnly) em vez de `_ga`, o navegador deixa de conseguir ler o `client_id` e o servidor cai no `user_id`; o evento continua entrando, só não casa com a sessão. Para conferir antes de confiar, o endpoint de depuração (`/debug/mp/collect`, mesma query) devolve o que o GA4 acharia do corpo; o de produção responde 204 para qualquer coisa.
 
 ## 7. Como validar
 
 - **Local**: com `bun run dev`, o GTM carrega normalmente. No console, `window.dataLayer` mostra os pushes; o Tag Assistant (modo de visualização do GTM) mostra o que a tag montou.
 - **Compra de teste**: unidade com `checkout_mode = hub` (a da Agência Fera, `peu+agenciafera@fera.ag`), cliente `peu+teste1@fera.ag`, cupom `FERA10`. O gateway está em sandbox: o PIX liquida sozinho em segundos e a confirmação dispara o `purchase`.
 - **GA4 › DebugView**: com o parâmetro de depuração do Tag Assistant ligado, os sete eventos aparecem em tempo real com os itens expandidos. Os relatórios de monetização só consolidam no dia seguinte.
+- **A via do servidor**: paga, fecha a aba antes de a confirmação aparecer e confere no GA4 (Tempo real, ou DebugView se o corpo for mandado ao `/debug/mp/collect`) um `purchase` com `event_source = server` e o código da reserva. Na reserva, `booking.ga_purchase_sent_at` preenchido; no log da Edge `pagarme-webhook`, `[ga4] purchase enviado: <código> sessão do navegador`. Para a dedupe: a mesma compra com a aba aberta gera as duas vias e um `purchase` só nos relatórios.

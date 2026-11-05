@@ -732,6 +732,9 @@ export type Database = {
           fare_price_cents: number
           fare_tier: Database["public"]["Enums"]["fare_tier"]
           flight_number: string | null
+          ga_client_id: string | null
+          ga_purchase_sent_at: string | null
+          ga_session_id: string | null
           has_pcd: boolean
           id: string
           idempotency_key: string | null
@@ -787,6 +790,9 @@ export type Database = {
           fare_price_cents?: number
           fare_tier?: Database["public"]["Enums"]["fare_tier"]
           flight_number?: string | null
+          ga_client_id?: string | null
+          ga_purchase_sent_at?: string | null
+          ga_session_id?: string | null
           has_pcd?: boolean
           id?: string
           idempotency_key?: string | null
@@ -842,6 +848,9 @@ export type Database = {
           fare_price_cents?: number
           fare_tier?: Database["public"]["Enums"]["fare_tier"]
           flight_number?: string | null
+          ga_client_id?: string | null
+          ga_purchase_sent_at?: string | null
+          ga_session_id?: string | null
           has_pcd?: boolean
           id?: string
           idempotency_key?: string | null

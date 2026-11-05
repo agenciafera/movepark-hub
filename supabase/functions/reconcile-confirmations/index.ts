@@ -16,6 +16,7 @@ import { loadGatewaySettings } from "../_shared/payments/settings.ts";
 import { autorizado, BATCH_LIMIT, confirmationCutoffIso, decidirAcao } from "./logic.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { notifyBookingConfirmed, sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
+import { sendPurchase } from "../_shared/ga4.ts";
 import { ensureAccessCode } from "../_shared/integrations/dispatch.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
@@ -141,6 +142,10 @@ Deno.serve(async (req: Request) => {
         );
         await notifyBookingConfirmed(admin, p.booking_id).catch((e) =>
           console.error("[reconcile-confirmations] WhatsApp de confirmação falhou:", p.booking_id, e),
+        );
+        // E o `purchase` do GA4 pelo servidor, que o webhook perdido também não mandou.
+        await sendPurchase(admin, p.booking_id).catch((e) =>
+          console.error("[reconcile-confirmations] purchase do GA4 falhou:", p.booking_id, e),
         );
         confirmed += 1;
       }

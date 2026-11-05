@@ -18,7 +18,8 @@
 //   "attribution": {                 // optional, prova da origem (E0.3.12)
 //     "clicked_at": "2026-09-10T12:00:00Z", "landing_url": "/p/x?utm_source=abbapark",
 //     "referrer": "https://abbapark.com.br/"
-//   }
+//   },
+//   "ga": { "client_id": "1234567890.1699999999", "session_id": "1762300000" }  // optional, GA4
 // }
 //
 // Resposta:
@@ -27,6 +28,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  decidirGa,
   decidirUtm,
   montarArgsRpc,
   montarAtribuicao,
@@ -113,14 +115,17 @@ Deno.serve(async (req: Request) => {
   }
 
   // Atribuição (E2.4.1): grava os UTMs na reserva recém-criada. Best-effort — não bloqueia.
+  // Junto vão os ids do GA4 (cookie `_ga`), para o `purchase` que o webhook manda pelo
+  // Measurement Protocol cair na mesma sessão do navegador (analytics-ecommerce.md §3).
   const bookingId = (data as { booking_id?: string })?.booking_id;
   const utm = decidirUtm(bookingId, input);
-  if (utm.gravar) {
+  const ga = decidirGa(bookingId, input);
+  if (utm.gravar || ga.gravar) {
     const { error: utmErr } = await admin
       .from("booking")
-      .update(utm.patch)
+      .update({ ...(utm.gravar ? utm.patch : {}), ...(ga.gravar ? ga.patch : {}) })
       .eq("id", bookingId!);
-    if (utmErr) console.error("utm update falhou:", utmErr.message);
+    if (utmErr) console.error("utm/ga update falhou:", utmErr.message);
   }
 
   // Comissão por origem (E0.3.12): congela na reserva o pacote (comissão, quem paga a taxa do

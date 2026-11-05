@@ -4,7 +4,7 @@
 // formato "user:pass"), comparado em tempo constante e EXIGIDO em produção (chave não `sk_test_`).
 // Idempotência por id do evento (tabela payment_webhook_event).
 // verify_jwt = false (o Pagar.me não envia JWT do Supabase).
-// No `pago`: confirma a reserva e pré-gera o voucher (service role, pós-resposta).
+// No `pago`: confirma a reserva, pré-gera o voucher e manda o `purchase` ao GA4 (service role, pós-resposta).
 //
 // POST /functions/v1/pagarme-webhook
 // Authorization: Basic <base64(user:pass)>
@@ -24,6 +24,7 @@ import {
 } from "../_shared/kyc-link.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { notifyBookingConfirmed, sendBookingConfirmationEmail } from "../_shared/booking-confirmation.ts";
+import { sendPurchase } from "../_shared/ga4.ts";
 import { ensureAccessCode } from "../_shared/integrations/dispatch.ts";
 import { countOtherLiveBookingPayments, refundShouldCancelBooking } from "../_shared/refund.ts";
 import {
@@ -592,6 +593,15 @@ Deno.serve(async (req: Request) => {
           sendBookingConfirmationEmail(admin, payment!.booking_id).catch((e) =>
             console.error("[pagarme-webhook] falha ao enviar e-mail de confirmação:", payment!.booking_id, e),
           )
+        ),
+      );
+
+      // `purchase` do GA4 pelo servidor (Measurement Protocol): cobre quem gerou o PIX, fechou a
+      // aba e pagou depois. Mesmo `transaction_id` do navegador, o GA4 deduplica. Best-effort,
+      // guarda de exatamente-uma-vez em `booking.ga_purchase_sent_at` (analytics-ecommerce.md §3).
+      await runAfterResponse(
+        sendPurchase(admin, payment.booking_id).catch((e) =>
+          console.error("[pagarme-webhook] falha ao enviar purchase ao GA4:", payment!.booking_id, e),
         ),
       );
     }

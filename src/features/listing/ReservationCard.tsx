@@ -17,6 +17,7 @@ import { originFromSrc } from "@/lib/bookingOrigin";
 import { trackEcommerce } from "@/lib/analytics";
 import { listingEcommerce } from "@/lib/analytics-ecommerce";
 import { bookingAttributionPayload } from "@/lib/utm";
+import { gaIdsPayload } from "@/lib/ga-cookie";
 import {
   parseCouponParam,
   getStoredCoupon,
@@ -272,6 +273,8 @@ export function ReservationCard({
         origin: originFromSrc(new URLSearchParams(location.search).get("src")),
         // UTM + prova da origem: a comissão da venda depende de onde o cliente veio (E0.3.12).
         ...bookingAttributionPayload(),
+        // Ids do GA4: o `purchase` que o webhook manda pelo servidor cai na sessão desta compra.
+        ...gaIdsPayload(),
       });
       // GA4 `add_to_cart`: a vaga virou reserva pendente (o "carrinho" do Hub é a reserva).
       trackEcommerce(

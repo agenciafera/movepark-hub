@@ -34,6 +34,8 @@ export type CreateBookingInput = {
   utm_campaign?: string | null;
   /** Prova da origem (E0.3.12): quando clicou, por onde entrou e de onde veio. */
   attribution?: { clicked_at?: unknown; landing_url?: unknown; referrer?: unknown } | null;
+  /** Ids do GA4 (cookies `_ga` e `_ga_<stream>`), para o purchase do servidor casar com a sessão. */
+  ga?: { client_id?: unknown; session_id?: unknown } | null;
   [extra: string]: unknown;
 };
 
@@ -141,4 +143,24 @@ export function montarAtribuicao(input: CreateBookingInput): Atribuicao | null {
     landing_url: landing && landing.startsWith("/") && !landing.startsWith("//") ? landing : null,
     referrer: referrer && /^https?:\/\//i.test(referrer) ? referrer : null,
   };
+}
+
+export type PatchGa = { ga_client_id: string | null; ga_session_id: string | null };
+
+/**
+ * Os ids do GA4 que vão para a reserva (docs/specs/analytics-ecommerce.md §3). Mesmo cuidado
+ * do UTM: dois campos NOMEADOS, cada um com formato conferido, porque viram escrita com
+ * service_role. O `client_id` do GA é `<aleatório>.<timestamp>` e o `session_id` é um
+ * timestamp; qualquer outra coisa é descartada (vira null), nunca gravada.
+ */
+export function decidirGa(bookingId: string | undefined, input: CreateBookingInput): { gravar: false } | { gravar: true; patch: PatchGa } {
+  if (!bookingId) return { gravar: false };
+  const ga = input.ga && typeof input.ga === "object" ? input.ga : null;
+  if (!ga) return { gravar: false };
+  const client = texto(ga.client_id, 64);
+  const session = texto(ga.session_id, 32);
+  const ga_client_id = client && /^\d{1,20}\.\d{1,20}$/.test(client) ? client : null;
+  const ga_session_id = ga_client_id && session && /^\d{1,20}$/.test(session) ? session : null;
+  if (!ga_client_id) return { gravar: false };
+  return { gravar: true, patch: { ga_client_id, ga_session_id } };
 }

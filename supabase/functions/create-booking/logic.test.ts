@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { decidirUtm, montarArgsRpc, montarAtribuicao, validarEntrada } from "./logic.ts";
+import { decidirGa, decidirUtm, montarArgsRpc, montarAtribuicao, validarEntrada } from "./logic.ts";
 
 const BASE = {
   location_parking_type_id: "lpt-1",
@@ -148,4 +148,27 @@ Deno.test("a prova carrega SÓ os seis campos, mesmo com lixo no corpo", () => {
 
 Deno.test("UTM gigante é cortado", () => {
   assertEquals(montarAtribuicao({ ...BASE, utm_source: "a".repeat(999) })?.utm_source?.length, 200);
+});
+
+Deno.test("decidirGa: client_id e session_id no formato do GA viram patch", () => {
+  const d = decidirGa("bk-1", { ...BASE, ga: { client_id: "1234567890.1699999999", session_id: "1762300000" } });
+  assertEquals(d, { gravar: true, patch: { ga_client_id: "1234567890.1699999999", ga_session_id: "1762300000" } });
+});
+
+Deno.test("decidirGa: sessão fora do formato cai, client_id fica", () => {
+  const d = decidirGa("bk-1", { ...BASE, ga: { client_id: "1.2", session_id: "GS1.1.x" } });
+  assertEquals(d, { gravar: true, patch: { ga_client_id: "1.2", ga_session_id: null } });
+});
+
+Deno.test("decidirGa: sem client_id válido não grava nada (nem a sessão)", () => {
+  assertEquals(decidirGa("bk-1", { ...BASE, ga: { client_id: "<script>", session_id: "1" } }), { gravar: false });
+  assertEquals(decidirGa("bk-1", { ...BASE, ga: null }), { gravar: false });
+  assertEquals(decidirGa("bk-1", { ...BASE }), { gravar: false });
+  assertEquals(decidirGa(undefined, { ...BASE, ga: { client_id: "1.2" } }), { gravar: false });
+});
+
+Deno.test("decidirGa: o patch só tem os dois campos nomeados, nunca o corpo", () => {
+  const d = decidirGa("bk-1", { ...BASE, status: "confirmed", ga: { client_id: "1.2", status: "confirmed" } });
+  if (!d.gravar) throw new Error("deveria gravar");
+  assertEquals(Object.keys(d.patch).sort(), ["ga_client_id", "ga_session_id"]);
 });
