@@ -125,6 +125,8 @@ Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src
 
 ## 6. O que configurar no GTM (`GTM-KHBBZT9`)
 
+**Como o container está hoje (visto em produção em 05/11/2026):** o GA4 sai por tagueamento server-side em `stape.movepark.co`, para duas propriedades (`G-L99117RGEY` e `G-X75P1WZBTM`), ao lado de três contas do Google Ads (`AW-17259932016`, `AW-326904374`, `AW-11286871587`) e do Clarity. Só `page_view` chega ao GA4: o `view_item_list` já está no `dataLayer` em produção e nenhum hit com `en=view_item_list` sai, porque não há tag para os eventos de e-commerce. É o que os passos abaixo criam. Sendo server-side, a tag GA4 do contêiner web manda para o contêiner do Stape, e a tag de lá repassa ao GA4; o objeto `ecommerce` passa inteiro.
+
 1. **Variáveis**: `user_id`, `new_customer` e `user_data` como variáveis de camada de dados (versão 2).
 2. **Acionador**: evento personalizado com regex `^(view_item_list|select_item|view_item|add_to_cart|begin_checkout|add_payment_info|purchase)$`.
 3. **Tag GA4 › Evento**: nome do evento = `{{Event}}`, "Enviar dados de e-commerce" ligado com fonte "Camada de dados", `user_id` mapeado nas propriedades do usuário.
