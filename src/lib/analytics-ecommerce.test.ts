@@ -10,6 +10,7 @@ import {
   listingEcommerce,
   markPurchaseTracked,
   paymentEcommerce,
+  partnerFromBooking,
   purchaseEcommerce,
   resultsSignature,
   selectItemEcommerce,
@@ -129,6 +130,8 @@ function reserva(over: Partial<BookingForCheckout> = {}): BookingForCheckout {
       public_name: "Aerovalet - Estacionamento Guarulhos",
       company: { slug: "aerovalet", name: "Aerovalet" },
       destination: { code: "GRU", name: "Aeroporto de Guarulhos" },
+      ads_conversion_id: null,
+      ads_conversion_label: null,
     },
     items: [
       {
@@ -371,5 +374,33 @@ describe("purchase só perto do pagamento, e uma vez por navegador", () => {
     markPurchaseTracked("MP-1");
     expect(wasPurchaseTracked("MP-1")).toBe(true);
     expect(wasPurchaseTracked("MP-2")).toBe(false);
+  });
+});
+
+describe("partner: de quem é a compra, e para qual conta de Ads vai a conversão", () => {
+  it("leva os slugs da unidade e a conta do parceiro quando o par está preenchido", () => {
+    const b = reserva();
+    b.location.ads_conversion_id = "AW-326904374";
+    b.location.ads_conversion_label = "EaA6CMu82aYbELbU8JsB";
+    expect(partnerFromBooking(b)).toEqual({
+      company_slug: "aerovalet",
+      location_slug: "guarulhos",
+      destination_code: "GRU",
+      ads_conversion_id: "AW-326904374",
+      ads_conversion_label: "EaA6CMu82aYbELbU8JsB",
+    });
+  });
+  it("sem conta própria, os campos de Ads vão nulos e a tag genérica não dispara", () => {
+    const p = partnerFromBooking(reserva());
+    expect(p.ads_conversion_id).toBeNull();
+    expect(p.ads_conversion_label).toBeNull();
+    expect(p.company_slug).toBe("aerovalet");
+  });
+  it("metade do par não dispara nada: id sem rótulo vira nulo dos dois lados", () => {
+    const b = reserva();
+    b.location.ads_conversion_id = "AW-326904374";
+    const p = partnerFromBooking(b);
+    expect(p.ads_conversion_id).toBeNull();
+    expect(p.ads_conversion_label).toBeNull();
   });
 });

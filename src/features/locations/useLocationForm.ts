@@ -109,8 +109,49 @@ export function slugify(s: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Conversão do Google Ads da unidade: o id da conta (`AW-` + dígitos) e o rótulo da ação, a parte
+ * depois da barra no snippet. As duas regex espelham as constraints do banco
+ * (`location_ads_conversion_*_format`), para o erro aparecer na tela antes do 23514.
+ */
+export const ADS_CONVERSION_ID_RE = /^AW-[0-9]{6,}$/;
+export const ADS_CONVERSION_LABEL_RE = /^[A-Za-z0-9_-]{4,}$/;
+
+/**
+ * Aceita o snippet inteiro colado do Google Ads (`AW-326904374/EaA6CMu82aYbELbU8JsB`) e devolve
+ * as duas partes. Sem barra, devolve só o id. É o que deixa o campo de id receber o que a tela
+ * de conversão do Ads oferece para copiar, sem a pessoa ter que fatiar à mão.
+ */
+export function splitAdsSnippet(raw: string): { id: string; label: string | null } {
+  const value = raw.trim();
+  const slash = value.indexOf("/");
+  if (slash === -1) return { id: value, label: null };
+  return { id: value.slice(0, slash).trim(), label: value.slice(slash + 1).trim() };
+}
+
+/**
+ * Valida o par id + rótulo como o banco valida: os dois vazios (sem conversão de parceiro) ou os
+ * dois preenchidos e no formato. Devolve a mensagem do primeiro problema, ou null.
+ */
+export function validateAdsConversion(id: string, label: string): string | null {
+  const i = id.trim();
+  const l = label.trim();
+  if (i === "" && l === "") return null;
+  if (i === "") return "Informe o id da conta (AW-...) junto com o rótulo.";
+  if (l === "") return "Informe o rótulo da conversão junto com o id da conta.";
+  if (!ADS_CONVERSION_ID_RE.test(i)) return "O id da conta tem a forma AW-123456789.";
+  if (!ADS_CONVERSION_LABEL_RE.test(l))
+    return "O rótulo é a parte depois da barra no snippet, só letras, números, - e _.";
+  return null;
+}
+
 /** Campos que a validação e a âncora de erro conhecem. */
-export type LocationFieldError = "name" | "shuttleFrequency" | "shuttleToTerminal" | "photos";
+export type LocationFieldError =
+  | "name"
+  | "shuttleFrequency"
+  | "shuttleToTerminal"
+  | "photos"
+  | "adsConversion";
 
 type Options = {
   companyId: string;
@@ -147,6 +188,9 @@ type Snapshot = {
   photos: string[];
   externalRef: string;
   amenities: string[];
+  /** Conversão do Google Ads por unidade (Manager): id da conta e rótulo da ação. */
+  adsConversionId: string;
+  adsConversionLabel: string;
 };
 
 /**
@@ -193,6 +237,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [photos, setPhotos] = React.useState<string[]>([]);
   const [externalRef, setExternalRef] = React.useState("");
   const [amenities, setAmenities_] = React.useState<string[]>([]);
+  const [adsConversionId, setAdsConversionId] = React.useState("");
+  const [adsConversionLabel, setAdsConversionLabel] = React.useState("");
   const [errors, setErrors] = React.useState<Partial<Record<LocationFieldError, string>>>({});
 
   // Fonte única do "estado original": `reset` aplica isto e `isDirty` compara com
@@ -244,6 +290,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       photos: Array.isArray(location?.photos) ? (location.photos as string[]) : [],
       externalRef: location?.external_ref ?? "",
       amenities: amenitiesData ?? [],
+      adsConversionId: location?.ads_conversion_id ?? "",
+      adsConversionLabel: location?.ads_conversion_label ?? "",
     }),
     [location, amenitiesData],
   );
@@ -273,6 +321,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setLongitude(baseline.longitude);
     setPhotos(baseline.photos);
     setExternalRef(baseline.externalRef);
+    setAdsConversionId(baseline.adsConversionId);
+    setAdsConversionLabel(baseline.adsConversionLabel);
     setErrors({});
     // amenidades chegam depois (query própria); o efeito abaixo semeia quando vierem.
   }, [baseline]);
@@ -309,6 +359,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     photos,
     externalRef,
     amenities,
+    adsConversionId,
+    adsConversionLabel,
   };
 
   // Compara ordenando amenidades (ordem não importa) e mantendo a de fotos (a
@@ -329,6 +381,11 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     // listagem sem foto; aqui a barreira é na voz do operador. Manager salva rascunho.
     if (operatorMode && photos.length === 0)
       next.photos = "Suba pelo menos 1 foto. Sem foto, a unidade não entra na busca.";
+    // Só o Manager vê e manda os campos de conversão; no operator eles nem entram no patch.
+    if (!operatorMode) {
+      const ads = validateAdsConversion(adsConversionId, adsConversionLabel);
+      if (ads) next.adsConversion = ads;
+    }
     return next;
   }
 
@@ -338,6 +395,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     shuttleFrequency: "shuttle-freq",
     shuttleToTerminal: "shuttle-terminal",
     photos: "photos-field",
+    adsConversion: "ads-conversion-id",
   };
 
   async function submit(e: React.FormEvent) {
@@ -381,6 +439,10 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       destination_id: uuidOuNulo(destinationId),
       company_id: companyId,
       external_ref: externalRef.trim() || null,
+      // Os dois vazios viram null juntos (constraint `location_ads_conversion_pair`); a validação
+      // acima já garantiu que não vai metade.
+      ads_conversion_id: adsConversionId.trim() || null,
+      ads_conversion_label: adsConversionLabel.trim() || null,
       latitude,
       longitude,
       photos,
@@ -512,6 +574,18 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setExternalRef,
       amenities,
       setAmenities: setAmenities_,
+      adsConversionId,
+      /**
+       * Colar o snippet inteiro (`AW-123/rótulo`) no campo de id preenche os dois: é o que a
+       * tela do Google Ads oferece para copiar, e fatiar à mão é onde o rótulo se perde.
+       */
+      setAdsConversionId: (v: string) => {
+        const parts = splitAdsSnippet(v);
+        setAdsConversionId(parts.id);
+        if (parts.label) setAdsConversionLabel(parts.label);
+      },
+      adsConversionLabel,
+      setAdsConversionLabel,
     },
   };
 }

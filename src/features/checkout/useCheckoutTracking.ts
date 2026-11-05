@@ -10,6 +10,7 @@ import {
   isFreshPurchase,
   isNewCustomer,
   markPurchaseTracked,
+  partnerFromBooking,
   purchaseEcommerce,
   userDataFromBooking,
   wasPurchaseTracked,
@@ -52,7 +53,10 @@ export function useCheckoutTracking(booking: BookingForCheckout | null | undefin
   React.useEffect(() => {
     if (!shouldTrackBeginCheckout(booking, begun.current)) return;
     begun.current = booking!.code;
-    trackEcommerce("begin_checkout", bookingEcommerce(booking!), { user_id: userId });
+    trackEcommerce("begin_checkout", bookingEcommerce(booking!), {
+      user_id: userId,
+      partner: partnerFromBooking(booking!),
+    });
   }, [booking, userId]);
 
   // O histórico só é consultado depois da confirmação: antes disso ele não serve para nada aqui.
@@ -69,6 +73,8 @@ export function useCheckoutTracking(booking: BookingForCheckout | null | undefin
       user_id: userId,
       new_customer: history.data ? isNewCustomer(history.data, booking.code) : undefined,
       user_data: userDataFromBooking(booking),
+      // De quem é a compra, e para qual conta de Ads do parceiro vai a conversão.
+      partner: partnerFromBooking(booking),
     });
   }, [booking, historyReady, history.data, userId]);
 }

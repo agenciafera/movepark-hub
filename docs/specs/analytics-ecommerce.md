@@ -48,6 +48,28 @@ Como o servidor casa o hit com a sessão de quem comprou: o `ReservationCard` ma
 
 O envio é **best-effort por contrato**: `sendPurchase` nunca lança, roda pós-resposta e nunca na frente da confirmação (mesmo espírito do ADR-011). A guarda `booking.ga_purchase_sent_at` é reivindicada antes do POST, para a reentrega do webhook não mandar de novo, e liberada se o GA4 ou a rede falharem, para a próxima tentativa valer. Sem os segredos `GA4_MEASUREMENT_ID` e `GA4_API_SECRET` nas Edges (§6) o módulo não faz nada e avisa no log. O que não vai pelo servidor: `user_data` (a conversão otimizada do Ads exige hash e consentimento que só o navegador tem) e qualquer outro evento da jornada. O número de referência para conciliar continua sendo a tabela `booking`, não o GA4.
 
+### 3.1 O bloco `partner`: conversão do Google Ads por unidade
+
+O container GTM do site é um só para todos os parceiros, e uma tag de conversão do Google Ads pertence a **uma** conta (`AW-xxx`) e a **uma** ação (o rótulo). Até 05/11/2026 a tag `[Virapark] Purchase` disparava em toda compra do site, de qualquer parceiro, porque o acionador não tinha condição: a conta do Virapark contava venda da Abbapark como conversão própria.
+
+A decisão (Q de 05/11/2026): o de para entre unidade e conta de Ads mora **no cadastro da unidade**, não numa tabela do GTM nem numa tag por parceiro. `location.ads_conversion_id` e `location.ads_conversion_label` (migration `20261201220000`), editados no Manager na seção **"Conversão e mídia paga"** do formulário da unidade, só por `hub_admin` (trigger `location_ads_conversion_guard`, mesma régua de `location_checkout_mode_guard`). Os dois têm formato fechado por constraint e andam juntos: metade preenchida é recusada, porque metade configurada não dispara nada e a tela pareceria pronta.
+
+Os três eventos do checkout (`begin_checkout`, `add_payment_info`, `purchase`) saem com o bloco **fora** de `ecommerce`:
+
+```js
+partner: {
+  company_slug: "virapark",          // identifica a unidade: location.slug só é único por empresa
+  location_slug: "virapark",
+  destination_code: "VCP",
+  ads_conversion_id: "AW-326904374", // null quando a unidade não tem conta própria
+  ads_conversion_label: "EaA6CMu82aYbELbU8JsB",
+}
+```
+
+No GTM é **uma tag só**, "Compra - Parceiro" (conversão do Google Ads), com o id e o rótulo lidos de variáveis de camada de dados (`partner.ads_conversion_id`, `partner.ads_conversion_label`) e acionador `purchase` **quando** `partner.ads_conversion_id` não está vazio. A tag da Movepark (`AW-11286871587`) segue fixa, disparando em toda compra. Parceiro novo é dois campos preenchidos na ficha da unidade; ninguém abre o GTM. Unidade sem os campos não dispara conversão de parceiro nenhuma.
+
+Por unidade, e não por empresa, porque o parceiro pode ter uma conta de Ads por praça; empresa com uma conta só repete os valores em cada unidade. Os dois valores não são segredo (já aparecem no código-fonte de qualquer página com a tag), por isso ficam na `location` e saem no `dataLayer`. O mesmo bloco serve mais tarde para pixel da Meta e remarketing por parceiro, acrescentando campos, sem mexer no formato dos eventos.
+
 ## 4. O formato
 
 Cada push é precedido de `{ ecommerce: null }`. O evento:
@@ -118,7 +140,9 @@ Regras por evento:
 | Arquivo | O quê |
 |---|---|
 | `src/lib/analytics.ts` | `trackEcommerce(event, ecommerce, extra)`: o push com reset; a união fechada `EcommerceEvent` |
-| `src/lib/analytics-ecommerce.ts` | Os builders puros: item da busca, da ficha, da reserva; `purchaseEcommerce`; dedupe (`resultsSignature`, `wasPurchaseTracked`); `isNewCustomer`; `isFreshPurchase` |
+| `src/lib/analytics-ecommerce.ts` | Os builders puros: item da busca, da ficha, da reserva; `purchaseEcommerce`; `partnerFromBooking` (§3.1); dedupe (`resultsSignature`, `wasPurchaseTracked`); `isNewCustomer`; `isFreshPurchase` |
+| `src/features/locations/useLocationForm.ts`, `LocationSections.tsx` | Seção "Conversão e mídia paga" do formulário da unidade (só Manager): `splitAdsSnippet` (colar o snippet inteiro preenche os dois), `validateAdsConversion` (espelha as constraints) |
+| `supabase/migrations/20261201220000_location_ads_conversion.sql` | `location.ads_conversion_id`/`ads_conversion_label`, constraints de formato e do par, trigger `location_ads_conversion_guard` (só `hub_admin`), seed do Virapark. pgTAP: `supabase/tests/location_ads_conversion.test.sql` |
 | `src/features/checkout/useCheckoutTracking.ts` | `begin_checkout` e `purchase` a partir da reserva; `shouldTrack*` puros |
 | `src/features/checkout/api.ts` | O select do checkout passou a trazer `public_name`, `destination(code, name)` e `payment.method` |
 | `src/features/search/ParkingCard.tsx` | Ganhou `onClick` no link, que o `ResultCard` usa para o `select_item` |
@@ -143,6 +167,7 @@ Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src
 3. **Tag GA4 › Evento**: nome do evento = `{{Event}}`, "Enviar dados de e-commerce" ligado com fonte "Camada de dados", `user_id` mapeado nas propriedades do usuário.
 4. `external_checkout_click`: tag GA4 própria (evento personalizado); registrar o nome em Administrador › Eventos para virar conversão se fizer sentido.
 5. **Conversão otimizada do Ads** (opcional): a tag de conversão lê `user_data` do dataLayer.
+5b. **Conversão por parceiro (§3.1)**: variáveis de camada de dados `partner.ads_conversion_id` e `partner.ads_conversion_label`; acionador "evento personalizado `purchase`" com a condição `partner.ads_conversion_id` *não é igual a* vazio (`undefined` também não passa); uma tag "Conversão do Google Ads" com *ID de conversão* = `{{partner.ads_conversion_id}}`, *Rótulo* = `{{partner.ads_conversion_label}}`, *Valor* = `{{ecommerce.value}}`, *ID da transação* = `{{ecommerce.transaction_id}}`, *Moeda* = `{{ecommerce.currency}}`. Depois de publicada e conferida no Visualizar, a tag `[Virapark] Purchase` é **pausada** (não apagada): o par do Virapark já está na unidade.
 6. Dimensões personalizadas de item no GA4: `stay_days` e `fare_tier` (escopo item), se quiser cruzar receita por tarifa. Dimensões de evento, se quiser: `event_source` (navegador vs servidor) e `new_customer`.
 7. **Measurement Protocol (o `purchase` do servidor).** No GA4: Administrador › Fluxos de dados › o fluxo web do site › *Chaves secretas da API do Measurement Protocol* › Criar. Depois, nas Edges do Supabase (projeto `mgaigbezdalbyuqiofcf`), os dois segredos:
 

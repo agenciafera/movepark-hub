@@ -8,6 +8,8 @@ import {
   mensagemDeErro,
   statusFieldFrom,
   statusFieldToPayload,
+  splitAdsSnippet,
+  validateAdsConversion,
 } from "./useLocationForm";
 
 describe("statusFieldFrom / statusFieldToPayload (Rascunho como status na tela)", () => {
@@ -143,5 +145,35 @@ describe("patch do destino: omitir é diferente de mandar null", () => {
     const comIntencao = montaPatch(payload, true);
     expect(Object.keys(semIntencao)).not.toContain("destination_id");
     expect(Object.keys(comIntencao)).toContain("destination_id");
+  });
+});
+
+describe("conversão do Google Ads por unidade (splitAdsSnippet / validateAdsConversion)", () => {
+  // A tela do Google Ads oferece o snippet inteiro para copiar (`AW-123/rótulo`). Colar no campo
+  // de id tem que preencher os dois, porque fatiar à mão é onde o rótulo se perde.
+  it("o snippet inteiro colado no id vira id + rótulo", () => {
+    expect(splitAdsSnippet(" AW-326904374/EaA6CMu82aYbELbU8JsB ")).toEqual({
+      id: "AW-326904374",
+      label: "EaA6CMu82aYbELbU8JsB",
+    });
+  });
+  it("sem barra, devolve só o id e não mexe no rótulo", () => {
+    expect(splitAdsSnippet("AW-326904374")).toEqual({ id: "AW-326904374", label: null });
+  });
+
+  // Espelha as constraints do banco: os dois vazios ou os dois preenchidos e no formato.
+  it("os dois vazios é válido: a unidade não tem conta própria", () => {
+    expect(validateAdsConversion("", "  ")).toBeNull();
+  });
+  it("metade preenchida é recusada, com a mensagem dizendo qual metade falta", () => {
+    expect(validateAdsConversion("AW-326904374", "")).toMatch(/rótulo/);
+    expect(validateAdsConversion("", "EaA6CMu82aYbELbU8JsB")).toMatch(/AW-/);
+  });
+  it("id sem o prefixo AW- e rótulo com caractere fora do snippet são recusados", () => {
+    expect(validateAdsConversion("326904374", "EaA6CMu82aYbELbU8JsB")).toMatch(/AW-123456789/);
+    expect(validateAdsConversion("AW-326904374", "tem espaço")).toMatch(/depois da barra/);
+  });
+  it("o par no formato passa", () => {
+    expect(validateAdsConversion("AW-326904374", "EaA6CMu82aYbELbU8JsB")).toBeNull();
   });
 });

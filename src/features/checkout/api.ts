@@ -66,6 +66,12 @@ export type BookingForCheckout = {
     company: { slug: string; name: string };
     /** Destino da unidade: vira `item_category` nos eventos de e-commerce. */
     destination: { code: string | null; name: string } | null;
+    /**
+     * Conta do Google Ads do parceiro que recebe a conversão desta unidade (bloco `partner` do
+     * `purchase`). Nulos quando a unidade não tem conta própria; a da Movepark recebe sempre.
+     */
+    ads_conversion_id: string | null;
+    ads_conversion_label: string | null;
   };
   items: {
     id: string;
@@ -109,6 +115,7 @@ export function useCheckoutBooking(code: string | undefined) {
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone, fare_tier, flight_number,
            location:location!inner(id, slug, name, address, photos, checkout_mode, public_name,
+             ads_conversion_id, ads_conversion_label,
              company:company!inner(slug, name),
              destination:destination(code, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
@@ -164,6 +171,8 @@ export function useCheckoutBooking(code: string | undefined) {
           photos: Array.isArray(row.location?.photos) ? (row.location.photos as string[]) : [],
           public_name: row.location?.public_name ?? null,
           destination: row.location?.destination ?? null,
+          ads_conversion_id: row.location?.ads_conversion_id ?? null,
+          ads_conversion_label: row.location?.ads_conversion_label ?? null,
         },
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any

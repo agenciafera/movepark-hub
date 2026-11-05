@@ -42,6 +42,8 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
       public_name: null,
       company: { slug: "aero", name: "Aerovalet" },
       destination: { code: "GRU", name: "Aeroporto de Guarulhos" },
+      ads_conversion_id: null,
+      ads_conversion_label: null,
     },
     items: [
       {

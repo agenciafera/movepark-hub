@@ -3431,6 +3431,8 @@ export type Database = {
         Row: {
           address: string | null
           address_complement: string | null
+          ads_conversion_id: string | null
+          ads_conversion_label: string | null
           business_hours: Json | null
           checkout_mode: string
           checkout_mode_changed_at: string | null
@@ -3478,6 +3480,8 @@ export type Database = {
         Insert: {
           address?: string | null
           address_complement?: string | null
+          ads_conversion_id?: string | null
+          ads_conversion_label?: string | null
           business_hours?: Json | null
           checkout_mode?: string
           checkout_mode_changed_at?: string | null
@@ -3525,6 +3529,8 @@ export type Database = {
         Update: {
           address?: string | null
           address_complement?: string | null
+          ads_conversion_id?: string | null
+          ads_conversion_label?: string | null
           business_hours?: Json | null
           checkout_mode?: string
           checkout_mode_changed_at?: string | null

@@ -451,6 +451,50 @@ export function LocationSections({
           </div>
         </Section>
       )}
+
+      {!operatorMode && (
+        <Section
+          title="Conversão e mídia paga"
+          description="Para onde vai a conversão de compra desta unidade. A conta da Movepark recebe sempre; aqui entra a conta do parceiro, quando ele roda campanha própria."
+        >
+          {/* Os dois campos andam juntos (constraint do par no banco). O erro é um só, ancorado
+              no id, porque a mensagem já diz qual metade falta. */}
+          <Field
+            label="Google Ads · id da conta"
+            htmlFor="ads-conversion-id"
+            error={errors.adsConversion}
+            hint="Cole o snippet inteiro da ação de conversão (AW-123456789/AbCd...) que o rótulo preenche sozinho."
+          >
+            <Input
+              id="ads-conversion-id"
+              value={f.adsConversionId}
+              onChange={(e) => f.setAdsConversionId(e.target.value)}
+              placeholder="AW-123456789"
+              autoComplete="off"
+              spellCheck={false}
+              {...errorProps("ads-conversion-id", errors.adsConversion)}
+            />
+          </Field>
+          <Field
+            label="Google Ads · rótulo da conversão"
+            htmlFor="ads-conversion-label"
+            hint="A parte depois da barra no snippet. Fica em branco quando a unidade não tem conta própria."
+          >
+            <Input
+              id="ads-conversion-label"
+              value={f.adsConversionLabel}
+              onChange={(e) => f.setAdsConversionLabel(e.target.value)}
+              placeholder="AbCdEfGhIjKlMnOpQrSt"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+          <p className="text-caption text-muted tablet:col-span-2">
+            Com os dois preenchidos, cada compra confirmada nesta unidade registra uma conversão na
+            conta do parceiro, além da conta da Movepark. Nada muda no GTM: a tag genérica lê daqui.
+          </p>
+        </Section>
+      )}
     </>
   );
 }

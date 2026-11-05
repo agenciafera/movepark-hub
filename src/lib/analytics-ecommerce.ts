@@ -279,6 +279,36 @@ export function purchaseEcommerce(booking: BookingForCheckout): Ecommerce {
 }
 
 /**
+ * O parceiro da compra, fora de `ecommerce`, para o GTM decidir conversão por unidade sem fatiar
+ * string. Os slugs identificam a unidade (`location.slug` só é único dentro da empresa); os
+ * campos `ads_*` são a conta do Google Ads do parceiro, lidos do cadastro da unidade. A tag
+ * genérica do GTM dispara quando `ads_conversion_id` vem preenchido e manda a conversão para ela.
+ * Ver docs/specs/analytics-ecommerce.md §3.1.
+ */
+export type Partner = {
+  company_slug: string;
+  location_slug: string;
+  destination_code: string | null;
+  ads_conversion_id: string | null;
+  ads_conversion_label: string | null;
+};
+
+export function partnerFromBooking(
+  booking: Pick<BookingForCheckout, "location">,
+): Partner {
+  const loc = booking.location;
+  // O par só vale junto (constraint do banco); se um lado vier vazio, a tag não pode disparar.
+  const complete = !!loc.ads_conversion_id && !!loc.ads_conversion_label;
+  return {
+    company_slug: loc.company.slug,
+    location_slug: loc.slug,
+    destination_code: loc.destination?.code ?? null,
+    ads_conversion_id: complete ? loc.ads_conversion_id : null,
+    ads_conversion_label: complete ? loc.ads_conversion_label : null,
+  };
+}
+
+/**
  * E-mail e telefone do pedido, fora de `ecommerce`, no formato que o GTM espera para a
  * conversão otimizada do Google Ads (`user_data`). Vem do snapshot da reserva, que é o contato
  * operacional (ADR-006), nunca do `profiles`.

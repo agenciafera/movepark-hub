@@ -140,3 +140,76 @@ describe("LocationForm: aviso de unidade sem e-mail (proteção de voo, 25/09/20
     expect(screen.queryByTestId("location-email-warning")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * A conta de Ads que recebe a conversão da unidade é configuração de mídia paga da plataforma
+ * (docs/specs/analytics-ecommerce.md §3.1). A seção só existe no Manager; o banco é quem barra o
+ * parceiro de verdade (trigger `location_ads_conversion_guard`), e a tela espelha isso.
+ */
+describe("LocationForm — seção Conversão e mídia paga", () => {
+  it("mostra os campos de Google Ads no full scope (hub_admin)", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Conversão e mídia paga" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Google Ads · id da conta/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Google Ads · rótulo da conversão/i)).toBeInTheDocument();
+  });
+
+  it("esconde a seção no operator scope", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="operator"
+      />,
+    );
+    expect(screen.queryByRole("heading", { name: "Conversão e mídia paga" })).not.toBeInTheDocument();
+  });
+
+  it("colar o snippet inteiro no id preenche o rótulo sozinho", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    const id = screen.getByLabelText(/Google Ads · id da conta/i);
+    await user.click(id);
+    await user.paste("AW-326904374/EaA6CMu82aYbELbU8JsB");
+    expect(id).toHaveValue("AW-326904374");
+    expect(screen.getByLabelText(/Google Ads · rótulo da conversão/i)).toHaveValue(
+      "EaA6CMu82aYbELbU8JsB",
+    );
+  });
+
+  it("metade do par preenchida não salva e explica qual metade falta", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    await user.type(screen.getByLabelText(/Google Ads · id da conta/i), "AW-326904374");
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => {
+      expect(screen.getByText(/Informe o rótulo da conversão/i)).toBeInTheDocument();
+    });
+  });
+});

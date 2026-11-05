@@ -34,7 +34,7 @@ import {
   type CardFailureStage,
 } from "./checkoutTrail";
 import { trackEcommerce } from "@/lib/analytics";
-import { paymentEcommerce, type PaymentType } from "@/lib/analytics-ecommerce";
+import { partnerFromBooking, paymentEcommerce, type PaymentType } from "@/lib/analytics-ecommerce";
 import { parseValidade } from "@/lib/card-expiry";
 import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
 import { brandLabel, detectBrand, isCvvValid } from "@/lib/card-brand";
@@ -103,6 +103,7 @@ export function Step4Payment({
     if (!bookingForTracking) return;
     trackEcommerce("add_payment_info", paymentEcommerce(bookingForTracking, paymentType, parcelas), {
       user_id: session?.userId,
+      partner: partnerFromBooking(bookingForTracking),
     });
   }
   const profileQ = useProfile(session?.userId);
