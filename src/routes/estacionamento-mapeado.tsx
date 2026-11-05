@@ -20,6 +20,7 @@ import {
 import { precoPesquisado, postsDoLote } from "@/features/destinations/loteMapeadoPreco.logic";
 import { buildMetaDescription } from "@/lib/seo";
 import { NO, breadcrumbSchema, faqSchema, parkingFacilitySchema, webPageSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { formatBRL, formatDate, formatDistance } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { SITE_URL } from "@/lib/site";
@@ -105,7 +106,7 @@ export default function EstacionamentoMapeadoPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             parkingFacilitySchema({
               name: prospect.name,
               url: canonical,
@@ -121,12 +122,12 @@ export default function EstacionamentoMapeadoPage() {
           )}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             webPageSchema({ url: canonical, name: title, mainEntity: NO.lugar(canonical) }),
           )}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
               { name: "Estacionamentos", url: `${SITE_URL}/estacionamentos` },
@@ -138,7 +139,7 @@ export default function EstacionamentoMapeadoPage() {
         {/* Um único FAQPage, idêntico ao visível (ADR-002): só o FAQ do aeroporto. */}
         {faqItems.length > 0 && (
           <script type="application/ld+json">
-            {JSON.stringify(
+            {serializarJsonLd(
               faqSchema(faqItems.map((f) => ({ question: f.question, answer: f.answer }))),
             )}
           </script>

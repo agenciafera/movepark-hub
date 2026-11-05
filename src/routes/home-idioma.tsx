@@ -18,6 +18,7 @@ import {
 } from "@/lib/i18n";
 import { textos } from "@/lib/i18nTextos";
 import { breadcrumbSchema, itemListSchema, organizationSchema, webPageSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -102,18 +103,18 @@ export default function HomeIdiomaPage() {
           pt-BR, e um segundo nó com o mesmo `@id` e outro idioma seria contradição no
           grafo. Quem declara o idioma desta URL é a `WebPage`.
         */}
-        <script type="application/ld+json">{JSON.stringify(organizationSchema())}</script>
+        <script type="application/ld+json">{serializarJsonLd(organizationSchema())}</script>
         <script type="application/ld+json">
-          {JSON.stringify(webPageSchema({ url: canonical, name: T.homeMetaTitle, locale }))}
+          {serializarJsonLd(webPageSchema({ url: canonical, name: T.homeMetaTitle, locale }))}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([{ name: "Movepark", url: canonical }]),
           )}
         </script>
         {destinos.length > 0 && (
           <script type="application/ld+json">
-            {JSON.stringify(
+            {serializarJsonLd(
               itemListSchema(
                 destinos.map((d) => ({
                   name: d.rotulo,

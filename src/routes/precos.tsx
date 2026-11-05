@@ -21,6 +21,7 @@ import {
   priceTableOffersSchema,
   type PriceTableItem,
 } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { cn } from "@/lib/utils";
 import { OgImage } from "@/lib/ogImage";
 import {
@@ -513,14 +514,14 @@ export default function PrecosPage() {
         <meta property="og:title" content={tituloSeo} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        <script type="application/ld+json">{JSON.stringify(pagina)}</script>
-        <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
-        <script type="application/ld+json">{JSON.stringify(lista)}</script>
+        <script type="application/ld+json">{serializarJsonLd(pagina)}</script>
+        <script type="application/ld+json">{serializarJsonLd(breadcrumb)}</script>
+        <script type="application/ld+json">{serializarJsonLd(lista)}</script>
         {produtos && (
-          <script type="application/ld+json">{JSON.stringify(produtos)}</script>
+          <script type="application/ld+json">{serializarJsonLd(produtos)}</script>
         )}
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             datasetSchema({
               dateModified: precoEm ?? generatedAt,
               spatial: aeroportos.map((a) => a.name),

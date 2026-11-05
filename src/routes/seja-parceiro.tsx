@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/shared/YouTubeEmbed";
 import { youTubeVideoSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { siteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { FaqList } from "@/features/faqs/FaqList";
@@ -503,7 +504,7 @@ export default function SejaParceiroPage() {
         <link rel="canonical" href={siteUrl("/seja-parceiro")} />
         {/* Sem este bloco o Search Console recusa indexar o vídeo por falta de miniatura:
             o iframe é do YouTube, mas quem declara o vídeo é a página que o exibe. */}
-        <script type="application/ld+json">{JSON.stringify(VIDEO_SCHEMA)}</script>
+        <script type="application/ld+json">{serializarJsonLd(VIDEO_SCHEMA)}</script>
         <meta
           name="description"
           content="Cadastre o seu estacionamento de aeroporto na Movepark e receba reservas online com pagamento garantido, sem mensalidade e sem adesão. Fale com a gente."

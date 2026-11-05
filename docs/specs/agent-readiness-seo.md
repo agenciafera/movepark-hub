@@ -125,6 +125,19 @@ tamanho, CTA e ausência de travessão.
   - `FAQPage` por **GEO** (o rich result de FAQ foi aposentado em 7/mai/2026, mas o schema segue valioso para extração por LLM).
   - Ressalva honesta: schema **não é fator de ranking direto** (John Mueller); o ganho comprovado é
     **acurácia de extração** por IA, não citação garantida.
+- **Toda escrita de JSON-LD passa por `serializarJsonLd`** (`src/lib/jsonld-seguro.ts`), nunca por
+  `JSON.stringify` direto (05/11/2026). O build escreve o head com `helmet.script.toString()`, e o
+  `react-helmet-async` 1.3 cola o conteúdo entre as tags sem escape. Como o `JSON.stringify` não escapa
+  `<`, um `</script>` dentro de qualquer texto do schema fechava o script no HTML publicado, e o resto
+  rodava como código em movepark.co, o mesmo domínio da sessão do cliente e do Manager. Esses textos não
+  são só da equipe: o parceiro com `locations:write` grava nome, endereço, telefone e fotos da unidade, e
+  qualquer membro da empresa grava a FAQ da unidade, e o trigger republica a página em minutos. A função
+  troca `<`, `>`, `&`, U+2028 e U+2029 pelo escape `\uXXXX`, que é o mesmo caractere para quem lê o
+  JSON. A guarda `src/lib/jsonld-seguro.contract.test.ts` reprova `JSON.stringify` e
+  `dangerouslySetInnerHTML` dentro de `<script type="application/ld+json">`, e
+  `jsonld-seguro.test.tsx` reproduz a quebra pelo mesmo caminho do build. Na correção, nenhuma linha
+  de `location`, `location_parking_type`, `company`, `faq`, `faq_i18n`, `destination`,
+  `prospect_location`, `blog_post` e `review` tinha tag `script` (conferido no banco em 05/11/2026).
 
 ## Descoberta (robots, sitemap, llms.txt)
 

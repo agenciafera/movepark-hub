@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { organizationSchema, webSiteSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { LOCALES, OG_LOCALE, clusterHreflang, urlDaHome, type Locale } from "@/lib/i18n";
 import { Hero } from "@/features/home/Hero";
 import { DestinationsGallery } from "@/features/home/DestinationsGallery";
@@ -48,9 +49,9 @@ export default function HomePage() {
         <meta property="og:locale" content={OG_LOCALE["pt-BR"]} />
         {/* A entidade Movepark: âncora do knowledge panel e da desambiguação de
             marca nos LLMs, no dado estruturado da porta de entrada do site. */}
-        <script type="application/ld+json">{JSON.stringify(organizationSchema())}</script>
+        <script type="application/ld+json">{serializarJsonLd(organizationSchema())}</script>
         {/* SearchAction: ensina buscador e agente a montar /search?dest=GRU. */}
-        <script type="application/ld+json">{JSON.stringify(webSiteSchema())}</script>
+        <script type="application/ld+json">{serializarJsonLd(webSiteSchema())}</script>
       </Helmet>
       <Hero />
       <FeaturedParkingLots />

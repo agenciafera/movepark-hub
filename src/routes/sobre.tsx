@@ -7,6 +7,7 @@ import { PartnerLogos } from "@/features/partners/PartnerLogos";
 import { HOW_IT_WORKS } from "@/features/how-it-works/copy";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 import { organizationSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { siteUrl } from "@/lib/site";
 import { caminhoDestino } from "@/lib/urls";
 
@@ -121,7 +122,7 @@ export default function SobrePage() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl("/sobre")} />
         <link rel="canonical" href={siteUrl("/sobre")} />
-        <script type="application/ld+json">{JSON.stringify(aboutSchema)}</script>
+        <script type="application/ld+json">{serializarJsonLd(aboutSchema)}</script>
       </Helmet>
 
       {/* Hero de marca em foto, sangrando de ponta a ponta. Overlay navy em degradê

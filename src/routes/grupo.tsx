@@ -7,6 +7,7 @@ import { MarcaLogo } from "@/features/grupo/MarcaLogo";
 import { Organograma } from "@/features/grupo/Organograma";
 import { MARCAS, ESTAGIO_ROTULO } from "@/features/grupo/marcas";
 import { breadcrumbSchema, organizationSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { siteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -55,9 +56,9 @@ export default function GrupoPage() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl("/grupo")} />
         <link rel="canonical" href={siteUrl("/grupo")} />
-        <script type="application/ld+json">{JSON.stringify(aboutSchema)}</script>
+        <script type="application/ld+json">{serializarJsonLd(aboutSchema)}</script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: siteUrl("/") },
               { name: "O grupo", url: siteUrl("/grupo") },

@@ -23,6 +23,7 @@ import {
   totalPages,
 } from "@/features/blog/listing.logic";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { LOCALES, caminhoDoIndice, clusterHreflang, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { BlogPostListItem } from "@/types/domain";
@@ -227,7 +228,7 @@ export default function BlogListingPage() {
         <meta property="og:description" content={metaDesc} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema(
               [
                 { name: "Início", url: `${SITE_URL}/` },
@@ -238,7 +239,7 @@ export default function BlogListingPage() {
           )}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             itemListSchema(
               posts.map((p) => ({ name: p.title, url: `${SITE_URL}/blog/${p.slug}/` })),
             ),

@@ -4,6 +4,7 @@ import { RELACIONADOS, SEGURANCA } from "@/features/content/pages";
 import { faqJsonLd } from "@/features/content/jsonld";
 import { readingMinutes } from "@/features/content/types";
 import { breadcrumbSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { siteUrl } from "@/lib/site";
 
 /**
@@ -39,14 +40,14 @@ export default function SegurancaPage() {
         <meta property="og:url" content={url} />
         <link rel="canonical" href={url} />
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: siteUrl("/") },
               { name: p.label, url },
             ]),
           )}
         </script>
-        {faq && <script type="application/ld+json">{JSON.stringify(faq)}</script>}
+        {faq && <script type="application/ld+json">{serializarJsonLd(faq)}</script>}
       </Helmet>
 
       <ContentPageView

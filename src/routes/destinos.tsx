@@ -4,6 +4,7 @@ import { MapPin } from "@phosphor-icons/react";
 import { useDestinations, type Destination } from "@/features/search/api";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { breadcrumbSchema, itemListSchema, webPageSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino } from "@/lib/urls";
@@ -56,7 +57,7 @@ export default function DestinosPage() {
         <meta property="og:description" content={DESCRIPTION} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
               { name: "Estacionamentos", url: canonical },
@@ -66,10 +67,10 @@ export default function DestinosPage() {
         {/* Âncora de entidade da página: `@id` próprio e `isPartOf` do site. Sai sempre,
             e não junto da lista: a página existe no grafo mesmo sem item para listar. */}
         <script type="application/ld+json">
-          {JSON.stringify(webPageSchema({ url: canonical, name: TITLE }))}
+          {serializarJsonLd(webPageSchema({ url: canonical, name: TITLE }))}
         </script>
         {listItems.length > 0 && (
-          <script type="application/ld+json">{JSON.stringify(itemListSchema(listItems))}</script>
+          <script type="application/ld+json">{serializarJsonLd(itemListSchema(listItems))}</script>
         )}
       </Helmet>
       <OgImage area="destinos" />

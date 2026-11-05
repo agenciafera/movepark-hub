@@ -57,6 +57,7 @@ import {
   webPageSchema,
   type SchemaReview,
 } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { SITE_URL } from "@/lib/site";
 import { caminhoFicha } from "@/lib/urls";
 
@@ -370,21 +371,21 @@ export default function ListingPage() {
         {ogImage && <meta name="twitter:image" content={ogImage} />}
         <link rel="canonical" href={pageUrl} />
         <script type="application/ld+json">
-          {JSON.stringify(localBusinessSchema(listing, { description: tldr?.summary, showcase: showcase ?? null }))}
+          {serializarJsonLd(localBusinessSchema(listing, { description: tldr?.summary, showcase: showcase ?? null }))}
         </script>
         {/* O `WebPage` é o que liga a ficha ao site: o nó do lugar não aceita `isPartOf`. */}
         {pageUrl && (
           <script type="application/ld+json">
-            {JSON.stringify(
+            {serializarJsonLd(
               webPageSchema({ url: pageUrl, name: pageTitle, mainEntity: NO.lugar(pageUrl) }),
             )}
           </script>
         )}
         {productSchemaData && (
-          <script type="application/ld+json">{JSON.stringify(productSchemaData)}</script>
+          <script type="application/ld+json">{serializarJsonLd(productSchemaData)}</script>
         )}
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
               { name: listing.location.name, url: pageUrl },
@@ -392,7 +393,7 @@ export default function ListingPage() {
           )}
         </script>
         {faqSchemaData && (
-          <script type="application/ld+json">{JSON.stringify(faqSchemaData)}</script>
+          <script type="application/ld+json">{serializarJsonLd(faqSchemaData)}</script>
         )}
       </Helmet>
 

@@ -12,6 +12,7 @@ import { pageSlice, searchPosts, totalPages } from "@/features/blog/listing.logi
 import { useListaTraduzida } from "@/features/blog/api";
 import type { PostTraduzidoNaLista } from "@/features/blog/i18nApi";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import {
   LANG_HTML,
   LOCALES,
@@ -146,7 +147,7 @@ export default function BlogIndiceIdiomaPage() {
         <meta property="og:description" content={T.blogIndiceMetaDescription} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Movepark", url: `${SITE_URL}/` },
               { name: T.blogIndiceTitulo, url: `${SITE_URL}${base}` },
@@ -157,7 +158,7 @@ export default function BlogIndiceIdiomaPage() {
             e foi o que o `audit-structured-data` apontou na página 2. */}
         {posts.length > 0 && (
           <script type="application/ld+json">
-            {JSON.stringify(
+            {serializarJsonLd(
               itemListSchema(
                 posts.map((p) => ({
                   name: p.title,

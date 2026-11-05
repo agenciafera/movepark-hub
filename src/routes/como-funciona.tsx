@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/accordion";
 import { CtaBanner } from "@/components/shared/CtaBanner";
 import { faqSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { useGsapReveal } from "@/hooks/useGsapReveal";
 import { cn } from "@/lib/utils";
 import {
@@ -284,9 +285,9 @@ export default function ComoFuncionaPage() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={siteUrl("/como-funciona")} />
         <link rel="canonical" href={siteUrl("/como-funciona")} />
-        <script type="application/ld+json">{JSON.stringify(journeyHowToJsonLd())}</script>
+        <script type="application/ld+json">{serializarJsonLd(journeyHowToJsonLd())}</script>
         <script type="application/ld+json">
-          {JSON.stringify(faqSchema(JOURNEY_FAQ.map((f) => ({ question: f.q, answer: f.a }))))}
+          {serializarJsonLd(faqSchema(JOURNEY_FAQ.map((f) => ({ question: f.q, answer: f.a }))))}
         </script>
       </Helmet>
 

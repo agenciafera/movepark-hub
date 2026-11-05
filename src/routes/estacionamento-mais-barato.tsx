@@ -19,6 +19,7 @@ import { durationLabel } from "@/features/price-index/priceIndex.logic";
 import { buildMetaDescription, pickTitle, priceHook } from "@/lib/seo";
 import { formatBRL, formatDate } from "@/lib/format";
 import { breadcrumbSchema, faqSchema, priceTableOffersSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
@@ -140,11 +141,13 @@ export default function EstacionamentoMaisBaratoPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <script type="application/ld+json">
-          {JSON.stringify(faqSchema(perguntasRapidas.map((p) => ({ question: p.q, answer: p.a }))))}
+          {serializarJsonLd(
+            faqSchema(perguntasRapidas.map((p) => ({ question: p.q, answer: p.a }))),
+          )}
         </script>
-        {produtos && <script type="application/ld+json">{JSON.stringify(produtos)}</script>}
+        {produtos && <script type="application/ld+json">{serializarJsonLd(produtos)}</script>}
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
               { name: curto, url: `${SITE_URL}${caminhoDestino(destino.slug)}` },

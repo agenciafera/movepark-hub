@@ -19,6 +19,7 @@ import type { FaqPageData } from "@/features/faqs/api";
 import { META_MAX, buildMetaDescription, priceHook } from "@/lib/seo";
 import { formatBRL } from "@/lib/format";
 import { breadcrumbSchema, faqSchema, webPageSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { OgImage } from "@/lib/ogImage";
 import { SITE_URL } from "@/lib/site";
 import { caminhoDestino, caminhoPrecos } from "@/lib/urls";
@@ -223,9 +224,9 @@ export default function FaqPerguntaPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        <script type="application/ld+json">{JSON.stringify(schema)}</script>
-        <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
-        <script type="application/ld+json">{JSON.stringify(pagina)}</script>
+        <script type="application/ld+json">{serializarJsonLd(schema)}</script>
+        <script type="application/ld+json">{serializarJsonLd(breadcrumb)}</script>
+        <script type="application/ld+json">{serializarJsonLd(pagina)}</script>
       </Helmet>
       <OgImage area="conteudo" alt={T.ogImageAlt} />
 

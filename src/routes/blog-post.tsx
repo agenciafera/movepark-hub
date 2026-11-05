@@ -35,6 +35,7 @@ import {
   sectionsFrom,
 } from "@/features/blog/markdown.logic";
 import { blogPostingSchema, breadcrumbSchema, faqSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { optimizedImageUrl } from "@/lib/storage";
@@ -326,7 +327,7 @@ export default function BlogPostPage() {
         {ogImage && <meta property="og:image:alt" content={post.title} />}
         <meta property="article:published_time" content={post.published_at} />
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             blogPostingSchema({
               title: post.title,
               slug: post.slug,
@@ -350,7 +351,7 @@ export default function BlogPostPage() {
           )}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: `${SITE_URL}/` },
               { name: "Blog", url: `${SITE_URL}/blog/` },
@@ -359,7 +360,7 @@ export default function BlogPostPage() {
           )}
         </script>
         {faqSchemaData && (
-          <script type="application/ld+json">{JSON.stringify(faqSchemaData)}</script>
+          <script type="application/ld+json">{serializarJsonLd(faqSchemaData)}</script>
         )}
       </Helmet>
       {/* Post sem capa cai na imagem de conteúdo, não na genérica da marca. */}

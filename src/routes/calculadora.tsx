@@ -26,6 +26,7 @@ import { PageHero } from "@/components/shared/PageHero";
 import { formatBRL, formatDate } from "@/lib/format";
 import { buildMetaDescription, priceHook } from "@/lib/seo";
 import { breadcrumbSchema, webApplicationSchema } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import { cn } from "@/lib/utils";
 import { JOURNEY_COMPARISON } from "@/features/how-it-works/journey";
 import {
@@ -485,9 +486,9 @@ export default function CalculadoraPage() {
         <meta property="og:title" content={tituloSeo} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        <script type="application/ld+json">{JSON.stringify(breadcrumb)}</script>
+        <script type="application/ld+json">{serializarJsonLd(breadcrumb)}</script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             webApplicationSchema({
               name: "Calculadora de estacionamento de aeroporto",
               url: canonical,

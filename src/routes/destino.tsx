@@ -45,6 +45,7 @@ import {
   destinationSchema,
   faqSchema,
 } from "@/lib/jsonld";
+import { serializarJsonLd } from "@/lib/jsonld-seguro";
 import {
   destinationTitle,
   proximityAnchorLabel,
@@ -609,7 +610,7 @@ export default function DestinoPage() {
         )}
         {ogImage && <meta name="twitter:image" content={ogImage} />}
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             destinationSchema({
               ...destination,
               latitude: lat,
@@ -624,7 +625,7 @@ export default function DestinoPage() {
             26/10/2026 (Conteúdo 65), porque é ele que liga o aeroporto ao site por
             `mainEntity`: o `Place` não aceita `isPartOf`. */}
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             webPageSchema({
               url: canonical,
               name: title,
@@ -634,7 +635,7 @@ export default function DestinoPage() {
           )}
         </script>
         <script type="application/ld+json">
-          {JSON.stringify(
+          {serializarJsonLd(
             breadcrumbSchema([
               { name: "Início", url: SITE_URL },
               { name: "Estacionamentos", url: `${SITE_URL}/estacionamentos` },
@@ -643,10 +644,10 @@ export default function DestinoPage() {
           )}
         </script>
         {offersSchema && offersSchema.length > 0 && (
-          <script type="application/ld+json">{JSON.stringify(offersSchema)}</script>
+          <script type="application/ld+json">{serializarJsonLd(offersSchema)}</script>
         )}
         {faqItems.length > 0 && (
-          <script type="application/ld+json">{JSON.stringify(faqSchema(faqItems))}</script>
+          <script type="application/ld+json">{serializarJsonLd(faqSchema(faqItems))}</script>
         )}
       </Helmet>
       {/* Destino sem hero cai na imagem da MARCA, nunca na de destinos.
