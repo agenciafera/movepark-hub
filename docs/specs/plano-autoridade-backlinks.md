@@ -771,7 +771,7 @@ Dados em [dados/autoridade-30-dias-2026-11-05](./dados/autoridade-30-dias-2026-1
   para 27,7. GRU ainda não tem nenhum termo no top 10. O efeito se mistura com o plano de
   conteúdo (seção 7, "Atribuição"), e dos links comprados em outubro, cinco saíram (quatro em 14/10 e um em
   20/10), então ainda é cedo para creditar o link.
-- **Links da planilha:** dos 48 com URL, 45 no ar, 2 perdidos (os mesmos de 13/10) e 2 não
+- **Links da planilha:** dos 49 com URL, 45 no ar, 2 perdidos (os mesmos de 13/10) e 2 não
   verificáveis por geobloqueio e Cloudflare. O `viagensecaminhos.com` (Conteúdo 75) estava
   como pendente na planilha, mas saiu em 20/10 e está no ar com link dofollow.
 - **Ajuste de rota:** nenhum de estratégia, a rota segue. Duas pendências operacionais: (1) medir domínios de referência de GRU e do

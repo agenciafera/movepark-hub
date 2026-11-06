@@ -39,7 +39,7 @@ Dos 14 termos de GRU com dado, 11 subiram e 3 caíram (de -0,8 a -1,8). O maior 
 foi "estacionamento próximo ao aeroporto de guarulhos" (+19,9 posições). Nenhum chegou ao top 10:
 o melhor é "diaria estacionamento guarulhos", em 14,4.
 
-## Links da planilha de controle (48 com URL, conferidos em 05/11 e 06/11/2026)
+## Links da planilha de controle (49 com URL, conferidos em 05/11 e 06/11/2026)
 
 - **45 no ar** com link para `movepark.co` ou `virapark.com.br` (curl, e navegador nos dois que
   bloqueiam robô). Datas de `conferido_em` atualizadas.
