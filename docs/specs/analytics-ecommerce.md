@@ -177,6 +177,43 @@ Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src
 
    O `GA4_MEASUREMENT_ID` é o id do fluxo (`G-...`), o mesmo que a tag GA4 do GTM usa. Como o site alimenta duas propriedades (`G-L99117RGEY` e `G-X75P1WZBTM`, acima), os dois segredos aceitam lista separada por vírgula, pareada pela posição (`G-L99117RGEY,G-X75P1WZBTM` com `segredo1,segredo2`); cada propriedade precisa da própria chave, criada nela. O servidor manda o mesmo corpo às duas, direto ao Google, sem passar pelo Stape. Lista desparelhada desliga o envio. Sem os dois, o servidor não manda nada e o log das Edges avisa `GA4_MEASUREMENT_ID/GA4_API_SECRET ausentes`. Se o contêiner do Stape passar a guardar o id do cliente em cookie `FPID` (HttpOnly) em vez de `_ga`, o navegador deixa de conseguir ler o `client_id` e o servidor cai no `user_id`; o evento continua entrando, só não casa com a sessão. Para conferir antes de confiar, o endpoint de depuração (`/debug/mp/collect`, mesma query) devolve o que o GA4 acharia do corpo; o de produção responde 204 para qualquer coisa.
 
+### 6.1 Limpeza do container (plano para a versão 32, item a item)
+
+Levantado em 06/11/2026 a partir do export do container e do Tag Assistant. Regra: nada é apagado antes de uma semana pausado; o que já está pausado há meses pode sair. Cada item é aprovado em separado.
+
+**A. Pausar agora (dado de todo o site indo para a conta de um parceiro)**
+
+| Tag | O que faz hoje | Por quê pausar |
+|---|---|---|
+| `[Google Ads] Remarketing` | Remarketing `AW-326904374` (Virapark) em toda página | Todo visitante do movepark.co entra nas listas de remarketing do Virapark, inclusive quem procura Guarulhos |
+| `Tag do Google AW-326904374` | Google tag do Virapark na inicialização de toda página (entrou em 09/09/2026) | Alimenta a conta de Ads do Virapark com o tráfego inteiro do site. A conversão do Virapark, quando ele fechar no Hub, vem pela tag `[Parceiro]`, que carrega o gtag sozinha |
+
+**B. Decidir (precisa de resposta de quem conhece as contas)**
+
+| Item | Situação | Pergunta |
+|---|---|---|
+| `[Meta] Pixel` (`4580381162192556`, toda página, editado em 30/07/2026) e `🔵00.00 | Page View` (`1303741108059436`, toda página) | Dois pixels recebem PageView; só o `1303741108059436` recebe AddToCart, InitiateCheckout e Purchase. O script `Meta Pixel ID Dinâmico` diz que `1303741108059436` é o da Movepark e `2429370164113369` o do Virapark | De quem é o `4580381162192556`? Se for o pixel novo da Movepark, os eventos 🔵 têm que migrar para ele; se for de outro cliente, pausa |
+| `GA4 - Tag` (`G-2TS424EG0E`, pausada) | Propriedade GA4 que não aparece em nenhum outro lugar | É de alguém? Se ninguém reconhece, apaga |
+| `FB_CONVERSIONS_API-*` (5 tags, 8 variáveis, 2 acionadores, tudo pausado desde out/2025) | Tentativa de Conversions API da Meta pelo gateway da Amazon, nunca ligada | Apagar, ou alguém ainda pretende ligar? |
+
+**C. Consertar na mesma versão (hoje mandam vazio ou nunca disparam)**
+
+| Item | Problema | Conserto |
+|---|---|---|
+| `Compra - Google Ads` (Movepark, `AW-11286871587` / `8HiACNmGk80YEKP8_4Uq`) | Pausada: a conta de Ads da **Movepark** não recebe conversão de compra nenhuma hoje | Religar com acionador `purchase` (`🟠AC | Purchase`), valor `{{ecommerce.value}}`, transação `{{ecommerce.transaction_id}}`, moeda `{{ecommerce.currency}}`, e "dados do novo cliente" ligado (o Hub manda `new_customer`) |
+| `🔵00.03 | Purchase` (Meta) | Correspondência avançada lê `{{email}}` e `{{Ecommerce.phone}}`, que apontam para `ecommerce.email`/`ecommerce.phone` (schema do site antigo), logo vão vazios | Variáveis novas `user_data.email_address` e `user_data.phone_number` (o Hub manda fora de `ecommerce`, ver §4) e apontar os dois campos para elas |
+| `🔵ViewContent` (Meta) | Acionador `🔵AC | View_content` escuta `view_content`, que o Hub não emite | Trocar o acionador para `🟠AC | View_item` |
+| `User-Provided Data` | Lê `{{email}}` (vazio) | Apontar para `user_data.email_address`; usar nas tags de conversão do Ads (otimizada) |
+
+**D. Apagar (já pausado há meses ou sem uso; risco zero)**
+
+- Tags pausadas: `Typebot - *` (4), `Google Analytics - G4 (Nova)` (duplica a `🟠GA4 Config`), `Reserva Online - GA4`, `🟠GA4 Configuration - Dinâmico`, `🟢TAG`, `🔵Meta Pixel - Base Code - Dinâmico`.
+- Acionadores sem tag: `Transaction Event`, `Single Garageinn CEV`, `Single Nationpark`, `Single Virapark`, `Non single or category pages`, `🔵AC | Checkout`.
+- Variáveis mortas: `[Cookie] email`, `[Cookie] name`, `[Cookie] Homephone_meta`, `[Decoded] email`, `[Decoded] homephone_meta`, `[decoded] name` (dependiam da `Set Cookie`), `Detecta Origem`, `GA4 ID Dinâminco`, `Meta Pixel ID Dinâmico`, `🔵Pixel ViraPark` (o valor é o pixel da Movepark, nome errado), `Variavel | Phone`, `Ecommerce.phone`, `email`, `Tipo de Vaga`, `dLv - id` (igual a `ecommerce.transaction_id`).
+- Depois de uma semana com a versão 31 estável: as quatro `🟠GA4 - *` antigas, `🍪| Set Cookie`, `[Virapark] Purchase` e os acionadores `🟠AC | *` e `🔵AC | *` que ficarem órfãos.
+
+Fica como está: `Remarketing - Google Ads` (Movepark), `Vinculador de Conversões`, `🟠GA4 Config`, `🔵00.01`/`🔵00.02`/`🔵00.03` (os acionadores batem com os nomes do Hub), `dLv - total`/`dLv - Ecommerce Product Items` (lêem `ecommerce.value`/`ecommerce.items`, certos), `[Cookie]_ga`/`_fbp`/`_fbc`, `[Confing] Event ID`, `[Dado] event_time_unix`.
+
 ## 7. Como validar
 
 - **Local**: com `bun run dev`, o GTM carrega normalmente. No console, `window.dataLayer` mostra os pushes; o Tag Assistant (modo de visualização do GTM) mostra o que a tag montou.
