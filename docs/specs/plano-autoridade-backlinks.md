@@ -769,14 +769,13 @@ Dados em [dados/autoridade-30-dias-2026-11-05](./dados/autoridade-30-dias-2026-1
 - **Resultado que já aparece:** tráfego orgânico estimado de 2,6 mil para 4,4 mil, menções em IA
   de 8 para 29, termos da meta no top 10 de 9 para 14 de 59 e a posição média de GRU de 40 a 55
   para 27,7. GRU ainda não tem nenhum termo no top 10. O efeito se mistura com o plano de
-  conteúdo (seção 7, "Atribuição"), e dos links comprados em outubro só quatro saíram, todos em
-  14/10, então ainda é cedo para creditar o link.
-- **Links da planilha:** dos 47 com URL, 44 no ar, 2 perdidos (os mesmos de 13/10) e 2 não
-  verificáveis por geobloqueio e Cloudflare. O `viagensecaminhos.com` (Conteúdo 75, R$ 1.610,00)
-  segue sem publicar 17 dias depois do prazo.
-- **Ajuste de rota:** nenhum de estratégia, a rota segue. Três pendências operacionais: (1)
-  cobrar a publicação do `viagensecaminhos.com`; (2) medir domínios de referência de GRU e do
-  Brasil no relatório de Links do GSC quando o Diego estiver logado, antes da Conteúdo 74; (3) o
+  conteúdo (seção 7, "Atribuição"), e dos links comprados em outubro, cinco saíram (quatro em 14/10 e um em
+  20/10), então ainda é cedo para creditar o link.
+- **Links da planilha:** dos 48 com URL, 45 no ar, 2 perdidos (os mesmos de 13/10) e 2 não
+  verificáveis por geobloqueio e Cloudflare. O `viagensecaminhos.com` (Conteúdo 75) estava
+  como pendente na planilha, mas saiu em 20/10 e está no ar com link dofollow.
+- **Ajuste de rota:** nenhum de estratégia, a rota segue. Duas pendências operacionais: (1) medir domínios de referência de GRU e do
+  Brasil no relatório de Links do GSC quando o Diego estiver logado, antes da Conteúdo 74; (2) o
   Semrush não reaudita o Backlink Audit desde 05/10, então o efeito do disavow de 13/10 só será
   visível no GSC ou numa reexecução manual.
 

@@ -39,16 +39,15 @@ Dos 14 termos de GRU com dado, 11 subiram e 3 caíram (de -0,8 a -1,8). O maior 
 foi "estacionamento próximo ao aeroporto de guarulhos" (+19,9 posições). Nenhum chegou ao top 10:
 o melhor é "diaria estacionamento guarulhos", em 14,4.
 
-## Links da planilha de controle (47 com URL, conferidos em 05/11/2026)
+## Links da planilha de controle (48 com URL, conferidos em 05/11 e 06/11/2026)
 
-- **44 no ar** com link para `movepark.co` ou `virapark.com.br` (curl, e navegador nos dois que
+- **45 no ar** com link para `movepark.co` ou `virapark.com.br` (curl, e navegador nos dois que
   bloqueiam robô). Datas de `conferido_em` atualizadas.
 - **2 perdidos**, já marcados em 13/10: `egobrazil.ig.com.br` (sem resposta) e
   `atendimentoaocliente.app.br` (404). Nada mudou.
 - **2 não verificáveis**, como em 13/10: `dropsdejogos.uai.com.br` ("Indisponível no Brasil",
   geobloqueio) e `agendaculturalporto.org` (desafio do Cloudflare).
-- **1 pedido sem URL**: `viagensecaminhos.com` (pedido 1887783, Conteúdo 75, R$ 1.610,00). O
-  prazo do publicador era 19/10 e há 17 dias sem publicação. **Cobrar no WhitePress.**
+- **`viagensecaminhos.com`** (Conteúdo 75, R$ 1.610,00): publicado em 20/10 e conferido em 06/11, com link dofollow para `/estacionamentos/aeroporto-guarulhos`. Estava como "pedido" na planilha por falta de atualização.
 - Os 7 sites de parceiros que linkam o `movepark.co` (Conteúdo 70) seguem no ar.
 - `jornadageek.ig.com.br` e `followthecolours.com.br` respondem 406 a robô, mas no navegador o
   link está lá e é dofollow (`rel="noopener"`).
