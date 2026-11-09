@@ -143,3 +143,35 @@ export function useSetTester() {
     onSuccess: () => qc.invalidateQueries({ queryKey: usersKeys.all }),
   });
 }
+
+const LOGIN_LINK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-user-login-link`;
+
+export type UserLoginLink = { url: string; email: string; sent: boolean };
+
+/**
+ * Link de acesso de um usuário, gerado pela equipe (hub_admin). O login é passwordless, então
+ * "redefinir o acesso" é um link de uso único que entra logado na conta: ou volta para a tela
+ * (para copiar) ou a Edge manda por e-mail à própria pessoa (`sendEmail: true`). O e-mail da
+ * conta vem de auth.users no servidor; o front só diz quem.
+ */
+export function useUserLoginLink() {
+  return useMutation({
+    mutationFn: async ({ userId, sendEmail }: { userId: string; sendEmail: boolean }): Promise<UserLoginLink> => {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(LOGIN_LINK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ user_id: userId, send_email: sendEmail }),
+      });
+      const json = (await res.json().catch(() => ({}))) as Partial<UserLoginLink> & { error?: string };
+      if (!res.ok) throw new Error(json.error ?? `Falha ao gerar o link (${res.status})`);
+      return { url: json.url!, email: json.email!, sent: json.sent === true };
+    },
+  });
+}

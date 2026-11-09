@@ -502,6 +502,18 @@ export function tplTeamInvite(
   };
 }
 
+export function tplAccessLink(actionLink: string): { subject: string; html: string } {
+  return {
+    subject: "Seu link de acesso à Movepark",
+    html: shell("Seu acesso", `
+      <p>Olá!</p>
+      <p>A equipe da Movepark gerou um link para você entrar na sua conta, sem precisar de senha.</p>
+      <p>${button(actionLink, "Entrar na Movepark")}</p>
+      <p style="color:${BRAND.muted};font-size:13px">O link vale uma vez só. Se o botão não funcionar, copie e cole este endereço no navegador:<br>${actionLink}</p>
+      <p style="color:${BRAND.muted};font-size:13px">Não pediu isso? Pode ignorar este e-mail.</p>`),
+  };
+}
+
 export function tplRejection(contactName: string, reason?: string | null): { subject: string; html: string } {
   return {
     subject: "Sobre seu cadastro na Movepark",

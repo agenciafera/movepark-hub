@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { CaretLeft, CaretRight, EnvelopeSimple, GoogleLogo, WhatsappLogo } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, Copy, EnvelopeSimple, GoogleLogo, Key, WhatsappLogo } from "@phosphor-icons/react";
 import { formatPhoneBR, LOGIN_CHANNEL_LABEL, pageInfo } from "./users.logic";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -39,6 +39,7 @@ import {
   useLinkUserCompany,
   useUnlinkUserCompany,
   useSetTester,
+  useUserLoginLink,
   type LoginChannel,
   type UserListItem,
 } from "@/features/users/api";
@@ -77,6 +78,9 @@ export default function ManagerUsers() {
   const linkCompany = useLinkUserCompany();
   const unlinkCompany = useUnlinkUserCompany();
   const setTester = useSetTester();
+  const loginLink = useUserLoginLink();
+  const [accessUser, setAccessUser] = React.useState<UserListItem | null>(null);
+  const [accessUrl, setAccessUrl] = React.useState<string>("");
   const [linkingUser, setLinkingUser] = React.useState<UserListItem | null>(null);
   const [selectedCompany, setSelectedCompany] = React.useState<string>("");
   const [selectedRole, setSelectedRole] = React.useState<CompanyRole>("owner");
@@ -123,6 +127,27 @@ export default function ManagerUsers() {
       setLinkingUser(null);
       setSelectedCompany("");
       setSelectedRole("owner");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro");
+    }
+  }
+
+  function closeAccess() {
+    setAccessUser(null);
+    setAccessUrl("");
+  }
+
+  async function handleAccess(sendEmail: boolean) {
+    if (!accessUser) return;
+    try {
+      const r = await loginLink.mutateAsync({ userId: accessUser.id, sendEmail });
+      setAccessUrl(r.url);
+      if (r.sent) {
+        toast.success(`Link enviado para ${r.email}`);
+      } else {
+        await navigator.clipboard?.writeText(r.url).catch(() => undefined);
+        toast.success("Link gerado e copiado");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     }
@@ -268,16 +293,29 @@ export default function ManagerUsers() {
                     </TableCell>
                     <TableCell className="text-muted">{formatDate(u.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          setLinkingUser(u);
-                          setSelectedCompany("");
-                        }}
-                      >
-                        Vincular empresa
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setAccessUser(u);
+                            setAccessUrl("");
+                          }}
+                        >
+                          <Key size={16} />
+                          Acesso
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setLinkingUser(u);
+                            setSelectedCompany("");
+                          }}
+                        >
+                          Vincular empresa
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -316,6 +354,63 @@ export default function ManagerUsers() {
           </div>
         </div>
       )}
+
+      <Dialog open={!!accessUser} onOpenChange={(open) => !open && closeAccess()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Acesso de {accessUser?.full_name ?? "usuário"}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <p className="text-body-sm text-muted">
+              O Movepark não usa senha: a pessoa entra por código ou Google. Se ela perdeu o acesso,
+              gere um link de uso único que já entra logado na conta.
+            </p>
+            {accessUser?.email ? (
+              <>
+                <p className="text-caption text-muted">
+                  Conta: <span className="text-ink">{accessUser.email}</span>
+                </p>
+                {accessUrl && (
+                  <div className="flex gap-2">
+                    <Input readOnly value={accessUrl} aria-label="Link de acesso" onFocus={(e) => e.currentTarget.select()} />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label="Copiar link"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(accessUrl).then(
+                          () => toast.success("Link copiado"),
+                          () => toast.error("Não deu pra copiar. Selecione o texto."),
+                        );
+                      }}
+                    >
+                      <Copy size={16} />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex flex-wrap justify-end gap-2 pt-2">
+                  <Button variant="secondary" onClick={() => handleAccess(false)} disabled={loginLink.isPending}>
+                    <Copy size={16} />
+                    Gerar e copiar link
+                  </Button>
+                  <Button onClick={() => handleAccess(true)} disabled={loginLink.isPending}>
+                    <EnvelopeSimple size={16} />
+                    Enviar por e-mail
+                  </Button>
+                </div>
+                <p className="text-caption text-muted-soft">
+                  Quem tiver o link entra na conta. Gerar um novo pode invalidar o anterior.
+                </p>
+              </>
+            ) : (
+              <p className="text-caption text-ink">
+                Esta conta entra por WhatsApp e não tem e-mail, então não dá para gerar link. A pessoa
+                entra pedindo o código no WhatsApp.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!linkingUser} onOpenChange={(open) => !open && setLinkingUser(null)}>
         <DialogContent className="max-w-md">

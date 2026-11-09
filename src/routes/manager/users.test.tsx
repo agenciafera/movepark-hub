@@ -3,7 +3,9 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { rpc, tabela } from "@/test/msw/supabase";
+import { edge, rpc, tabela } from "@/test/msw/supabase";
+import { vi } from "vitest";
+import { supabase } from "@/lib/supabase";
 import { renderWithProviders } from "@/test/utils";
 import ManagerUsers from "./users";
 
@@ -140,5 +142,33 @@ describe("Manager · Usuários", () => {
 
     await waitFor(() => expect(upsert.ultimoBody).toMatchObject({ company_id: "c2" }));
     expect(promove.chamadas).toHaveLength(0);
+  });
+
+  it("Acesso: gera o link, mostra no campo e manda e-mail quando pedido", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
+      data: { session: { access_token: "jwt-admin" } },
+      error: null,
+    } as never);
+    const espiao = edge("admin-user-login-link", {
+      json: { url: "https://x.supabase.co/auth/v1/verify?token=t", email: "pessoa1@ex.com", sent: false },
+    });
+    montaTela(1, [linha(1)]);
+    await screen.findByText("Pessoa 1");
+    await userEvent.click(screen.getByRole("button", { name: /Acesso/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /Gerar e copiar link/ }));
+    expect(await screen.findByLabelText("Link de acesso")).toHaveValue(
+      "https://x.supabase.co/auth/v1/verify?token=t",
+    );
+    expect(espiao.ultimoBody).toEqual({ user_id: linha(1).id, send_email: false });
+    await userEvent.click(screen.getByRole("button", { name: /Enviar por e-mail/ }));
+    await waitFor(() => expect(espiao.ultimoBody).toEqual({ user_id: linha(1).id, send_email: true }));
+  });
+
+  it("Acesso: conta sem e-mail explica e não oferece os botões", async () => {
+    montaTela(1, [linha(1, { email: null })]);
+    await screen.findByText("Pessoa 1");
+    await userEvent.click(screen.getByRole("button", { name: /Acesso/ }));
+    expect(await screen.findByText(/entra por WhatsApp e não tem e-mail/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Enviar por e-mail/ })).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
+import { edge, falha, renderMutation, rpc, tabela } from "@/test/msw/supabase";
+import { vi } from "vitest";
+import { supabase } from "@/lib/supabase";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
@@ -8,6 +10,7 @@ import {
   useSetTester,
   useUnlinkUserCompany,
   useUpdateUserRole,
+  useUserLoginLink,
   useUsers,
 } from "./api";
 
@@ -130,5 +133,34 @@ describe("useSetTester", () => {
     falha("rpc", "admin_set_tester", 403, "Só hub_admin marca testador.");
     const { result } = renderMutation(() => useSetTester());
     await expect(result.current.mutateAsync({ id: "u9", enabled: true })).rejects.toThrow();
+  });
+});
+
+describe("useUserLoginLink", () => {
+  const ID = "e7c87c78-9b76-48e1-8cf7-395e7e5aec67";
+
+  it("manda user_id e send_email à Edge com o JWT e devolve o link", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValueOnce({
+      data: { session: { access_token: "jwt-admin" } },
+      error: null,
+    } as never);
+    const espiao = edge("admin-user-login-link", {
+      json: { url: "https://x.supabase.co/auth/v1/verify?token=t", email: "a@b.co", sent: true },
+    });
+    const { result } = renderMutation(() => useUserLoginLink());
+    const r = await result.current.mutateAsync({ userId: ID, sendEmail: true });
+    expect(r).toEqual({ url: "https://x.supabase.co/auth/v1/verify?token=t", email: "a@b.co", sent: true });
+    expect(espiao.ultimoBody).toEqual({ user_id: ID, send_email: true });
+    expect(espiao.chamadas[0].headers.get("authorization")).toBe("Bearer jwt-admin");
+  });
+
+  it("propaga a recusa da Edge (conta sem e-mail)", async () => {
+    vi.spyOn(supabase.auth, "getSession").mockResolvedValueOnce({
+      data: { session: { access_token: "jwt-admin" } },
+      error: null,
+    } as never);
+    falha("edge", "admin-user-login-link", 422, "Essa conta entra por WhatsApp e não tem e-mail.");
+    const { result } = renderMutation(() => useUserLoginLink());
+    await expect(result.current.mutateAsync({ userId: ID, sendEmail: false })).rejects.toThrow(/WhatsApp/);
   });
 });
