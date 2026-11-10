@@ -36,8 +36,8 @@ de venda, clientes e cancelamento vêm comparados com o mesmo dia da semana ante
 ## Quem recebe
 
 A lista `app_setting.team_daily_digest_recipients` (e-mails separados por vírgula), editável sem
-deploy. Começou com `contato@movepark.co`, a caixa que a equipe já lê para leads e suporte: o único
-`hub_admin` cadastrado em 10/11/2026 era a conta de teste `developer@fera.ag`.
+deploy. A migration semeia `contato@movepark.co`; em 10/11/2026, por decisão do Kallef, a lista
+passou a ser só `developer@fera.ag` (o único `hub_admin`) "por enquanto".
 
 ## Peças
 
