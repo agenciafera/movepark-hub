@@ -21,7 +21,8 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Panel, PanelTitle } from "@/components/shared/Panel";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { useRecentBookings } from "@/features/bookings/api";
-import { useRevenueByRange } from "@/features/reports/api";
+import { useRevenueByPaymentDay, useRevenueByRange } from "@/features/reports/api";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
 import { formatRangeLabel, periodLabel } from "@/features/manager-filters/managerFilters.logic";
@@ -101,18 +102,23 @@ function NetworkGauge({ earning, total }: { earning: number; total: number }) {
   );
 }
 
-/** Origem no endereço (`?origem=hub|wl`), como na lista de Reservas: sobrevive ao F5. */
-const FILTROS = { origem: "all" };
+/**
+ * Origem no endereço (`?origem=hub|wl`), como na lista de Reservas: sobrevive ao F5. `data` é a
+ * base do gráfico de receita (09/11/2026): `checkin` (quando o carro entra) ou `pagamento` (quando
+ * o dinheiro entrou, a conta que bate com o gateway).
+ */
+const FILTROS = { origem: "all", data: "checkin" };
 
 export default function ManagerDashboard() {
   const { period, range, compareRange, scopedLocationIds } = useManagerFilters();
   // Filtro de origem (13/10/2026). Receita, reservas pagas e gráfico existem para as duas origens;
   // ranking, permanência, tarifas, clientes, destino, fluxo e recentes são dados só do Hub e
   // aparecem só com "Todas" ou "Hub". Com "White-label" entra a venda do site por estacionamento.
-  const { filters: of, set: setOrigem } = useUrlFilters(FILTROS);
+  const { filters: of, set: setFiltro } = useUrlFilters(FILTROS);
   const origem = of.origem as SourceFilter;
   const verHub = origem !== "wl";
   const verSite = origem !== "hub";
+  const porPagamento = of.data === "pagamento";
   const [flowDate, setFlowDate] = React.useState(todayIsoDate);
   const navigate = useNavigate();
 
@@ -129,7 +135,24 @@ export default function ManagerDashboard() {
     locationIds: scopedLocationIds,
   });
   const wl = wlQ.data?.total ?? { created: 0, paid: 0, paid_amount: 0 };
-  const flow = useManagerDailyFlow(flowDate, scopedLocationIds);
+  // Gráfico por dia do pagamento: só busca quando a pessoa escolhe essa base. No white-label não
+  // há data de pagamento, e a mais próxima é a da compra (o site cobra na hora).
+  const revenuePaid = useRevenueByPaymentDay(
+    range.from.toISOString(),
+    range.to.toISOString(),
+    scopedLocationIds,
+    porPagamento && verHub,
+  );
+  const wlPaidQ = useWlRevenue(
+    {
+      from: range.from.toISOString(),
+      to: range.to.toISOString(),
+      locationIds: scopedLocationIds,
+      dateField: "created_at",
+    },
+    porPagamento && verSite,
+  );
+  const flow =useManagerDailyFlow(flowDate, scopedLocationIds);
   const recent = useRecentBookings(20, scopedLocationIds);
 
   const cur = overview.data?.current;
@@ -137,14 +160,17 @@ export default function ManagerDashboard() {
   const money = overview.data?.money ?? { commission: 0, payout: 0 };
   const label = periodLabel(period, range);
 
+  const hubDaily = porPagamento ? revenuePaid : revenue;
+  const siteDaily = porPagamento ? wlPaidQ : wlQ;
   const daily = React.useMemo(
     () =>
       mergeDailyByOrigin(
-        verHub ? (revenue.data ?? []).map((d) => ({ date: d.date, value: d.total })) : [],
-        verSite ? (wlQ.data?.by_day ?? []) : [],
+        verHub ? (hubDaily.data ?? []).map((d) => ({ date: d.date, value: d.total })) : [],
+        verSite ? (siteDaily.data?.by_day ?? []) : [],
       ),
-    [revenue.data, wlQ.data, verHub, verSite],
+    [hubDaily.data, siteDaily.data, verHub, verSite],
   );
+  const chartLoading = (verHub && hubDaily.isLoading) || (verSite && siteDaily.isLoading);
   const hubRevenue = verHub ? (cur?.revenue ?? 0) : 0;
   const siteRevenue = verSite ? wl.paid_amount : 0;
   // Quebra por origem só com "Todas" e venda no site; com uma origem só, não há o que quebrar.
@@ -159,6 +185,12 @@ export default function ManagerDashboard() {
         ? "Receita do white-label"
         : "Receita da rede";
   const best = bestRevenueDay(daily);
+  // Por pagamento, o recorte do gráfico é outro (quem pagou no período, não quem entrou), então o
+  // total sai do próprio gráfico e não do card de cima, que segue por check-in.
+  const chartHub = porPagamento ? daily.reduce((acc, d) => acc + d.hub, 0) : (cur?.revenue ?? 0);
+  const chartSite = porPagamento ? daily.reduce((acc, d) => acc + d.wl, 0) : wl.paid_amount;
+  const chartTotal = porPagamento ? chartHub + chartSite : receitaTotal;
+  const chartTemSite = origem === "all" && chartSite > 0;
 
   const ranking = rankLocations(overview.data?.top_locations ?? [], cur?.revenue ?? 0);
   const conc = concentration(overview.data?.top_locations ?? [], cur?.revenue ?? 0);
@@ -198,7 +230,7 @@ export default function ManagerDashboard() {
         description={`O resultado da rede em ${formatRangeLabel(range)}.`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={origem} onValueChange={(v) => setOrigem({ origem: v })}>
+            <Select value={origem} onValueChange={(v) => setFiltro({ origem: v })}>
               <SelectTrigger className="h-auto w-40" aria-label="Origem">
                 <SelectValue />
               </SelectTrigger>
@@ -381,16 +413,29 @@ export default function ManagerDashboard() {
         <Panel className="flex flex-col">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-title-md text-ink">
-                Receita por dia de check-in,{" "}
+              <div className="text-title-md text-ink" data-testid="titulo-grafico-receita">
+                {porPagamento ? "Receita por dia do pagamento," : "Receita por dia de check-in,"}{" "}
                 <span className="text-mp-primary">{formatRangeLabel(range)}</span>
               </div>
-              <p className="mt-1.5 text-body-sm text-muted">
-                Total do período {formatBRL(receitaTotal)}
-                {temSite
-                  ? ` (${originBreakdown(cur?.revenue ?? 0, wl.paid_amount, formatBRL)})`
-                  : ""}
+              <p className="mt-1.5 text-body-sm text-muted" data-testid="total-grafico-receita">
+                Total do período {formatBRL(chartTotal)}
+                {chartTemSite ? ` (${originBreakdown(chartHub, chartSite, formatBRL)})` : ""}
               </p>
+              {porPagamento && verSite && (
+                <p className="mt-1 text-caption text-muted-soft">
+                  No white-label, vale a data da compra.
+                </p>
+              )}
+              <Tabs
+                value={porPagamento ? "pagamento" : "checkin"}
+                onValueChange={(v) => setFiltro({ data: v })}
+                className="mt-3"
+              >
+                <TabsList aria-label="Agrupar a receita por">
+                  <TabsTrigger value="checkin">Check-in</TabsTrigger>
+                  <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
             {best && (
               <div className="shrink-0 text-right">
@@ -406,7 +451,7 @@ export default function ManagerDashboard() {
           </div>
 
           <div className="mt-6 h-[220px] min-h-[220px] flex-1">
-            {revenue.isLoading || wlQ.isLoading ? (
+            {chartLoading ? (
               <Skeleton className="h-full w-full" />
             ) : daily.length === 0 ? (
               <EmptyState
@@ -467,7 +512,7 @@ export default function ManagerDashboard() {
                       activeDot={{ r: 5 }}
                     />
                   )}
-                  {(temSite || origem === "wl") && (
+                  {(chartTemSite || origem === "wl") && (
                     <Area
                       type="monotone"
                       dataKey="wl"

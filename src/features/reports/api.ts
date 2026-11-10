@@ -9,6 +9,7 @@ import {
   type MoneyPaymentLike,
   type PriceBreakdownLike,
 } from "@/features/bookings/bookingMoney.logic";
+import { tallyRevenueByPaidDay, type PaidDayRow } from "./revenueByPaidDay.logic";
 
 export type ReportPeriod = 7 | 30 | 90;
 
@@ -85,6 +86,36 @@ export function useRevenueByRange(fromIso: string, toIso: string, locationIds?: 
       const { data, error } = await q;
       if (error) throw error;
       return tallyRevenue((data ?? []) as unknown as RevenueRow[]);
+    },
+  });
+}
+
+/**
+ * Receita por dia do pagamento, para o Manager (ver `revenueByPaidDay.logic.ts`). O recorte é pela
+ * data em que o pagamento da reserva caiu, não pelo check-in. `from` inclusivo, `to` exclusivo.
+ */
+export function useRevenueByPaymentDay(
+  fromIso: string,
+  toIso: string,
+  locationIds?: string[],
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["reports", "revenue-paid-day", fromIso, toIso, locationIds],
+    enabled,
+    queryFn: async (): Promise<DailyRevenueRow[]> => {
+      let q = supabase
+        .from("booking")
+        .select("total_amount, payments:payment!inner(paid_at)")
+        .in("status", ["confirmed", "checked_in", "completed"])
+        .eq("payments.kind", "booking")
+        .in("payments.status", ["paid", "refunded"])
+        .gte("payments.paid_at", fromIso)
+        .lt("payments.paid_at", toIso);
+      if (locationIds?.length) q = q.in("location_id", locationIds);
+      const { data, error } = await q;
+      if (error) throw error;
+      return tallyRevenueByPaidDay((data ?? []) as unknown as PaidDayRow[]);
     },
   });
 }

@@ -189,6 +189,58 @@ describe("ManagerDashboard", () => {
     by_company: [{ company_id: "c1", company_name: "Virapark", created: 8, paid: 6, paid_amount: 300 }],
   };
 
+  // Gráfico por dia do pagamento (09/11/2026): o recorte muda, o card de cima segue por check-in.
+  it("por pagamento: o gráfico soma quem pagou no período e o card segue por check-in", async () => {
+    const pedidos: string[] = [];
+    server.use(
+      http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
+        const url = new URL(request.url);
+        pedidos.push(url.search);
+        if (url.searchParams.get("select")?.includes("payment!inner")) {
+          return HttpResponse.json([
+            { total_amount: 200, payments: [{ paid_at: "2026-07-28T15:00:00Z" }] },
+            { total_amount: 50, payments: [{ paid_at: "2026-07-29T15:00:00Z" }] },
+          ]);
+        }
+        return HttpResponse.json([]);
+      }),
+    );
+    renderDashboard(undefined, "/manager?origem=hub&data=pagamento");
+    expect(await screen.findByText("Receita por dia do pagamento,")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("total-grafico-receita")).toHaveTextContent("R$ 250,00"),
+    );
+    // O card do período não muda de base.
+    expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40");
+    const pedidoPago = pedidos.find((s) => s.includes("payment"));
+    expect(pedidoPago).toContain("payments.paid_at=gte.");
+    expect(pedidoPago).toContain("payments.kind=eq.booking");
+  });
+
+  it("por pagamento com o white-label na tela: o site entra pela data da compra", async () => {
+    const camposDeData: unknown[] = [];
+    renderDashboard(undefined, "/manager?data=pagamento");
+    // Registrado depois do render padrão para ganhar dele (o último handler vence no MSW).
+    server.use(
+      http.post(`${SUPABASE_URL}/rest/v1/rpc/wl_revenue`, async ({ request }) => {
+        camposDeData.push(((await request.json()) as Record<string, unknown>).p_date_field);
+        return HttpResponse.json({
+          total: { created: 2, paid: 2, paid_amount: 90 },
+          by_day: [{ day: "2026-07-29", paid: 2, paid_amount: 90 }],
+          by_company: [],
+        });
+      }),
+    );
+    expect(await screen.findByText("No white-label, vale a data da compra.")).toBeInTheDocument();
+    await waitFor(() => expect(camposDeData).toContain("created_at"));
+  });
+
+  it("por check-in (padrão), o título diz check-in", async () => {
+    renderDashboard();
+    expect(await screen.findByText("Receita por dia de check-in,")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Check-in" })).toHaveAttribute("aria-selected", "true");
+  });
+
   it("origem Hub: receita só do Hub, sem quebra nem nada do site", async () => {
     renderDashboard(SITE, "/manager?origem=hub");
     expect(await screen.findByText("Receita do Hub")).toBeInTheDocument();

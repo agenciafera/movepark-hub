@@ -136,6 +136,12 @@ qual unidade está parada.
 #### Linha 2
 
 - **Receita por dia de check-in:** área no período, com o melhor dia no cabeçalho.
+  Alternância **Check-in | Pagamento** (09/11/2026, `?data=pagamento` no endereço). Por pagamento,
+  a reserva conta no dia em que o pagamento dela caiu (`payment.paid_at` com `kind = 'booking'`,
+  fuso de Brasília), com o mesmo valor da visão por check-in (`total_amount`); cobrança em dobro
+  conta uma vez, no primeiro pagamento. É a visão que bate com o extrato do gateway. O total do
+  gráfico sai do próprio gráfico; o card "Receita da rede" segue por check-in. No white-label não
+  há data de pagamento e vale a da compra (`wl_revenue` com `p_date_field = 'created_at'`).
 - **Concentração:** participação da unidade líder, barra de participação e o top 3.
   `headCount` responde "quantas unidades somam 80% da receita", que é a leitura de
   risco: se uma cair, quanto do período vai junto.
