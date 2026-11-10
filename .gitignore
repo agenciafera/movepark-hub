@@ -88,3 +88,8 @@ beast-bots/
 # public/ ela vira página pública e entra no sitemap: foram 40 em 05/10/2026, achadas pela
 # auditoria do site (scripts/auditoria-site.mjs).
 public/images/**/*.html
+
+# Documentos comerciais confidenciais (proposta da Pagar.me, contratos com cláusula de sigilo).
+# O repo é PÚBLICO: o que entra aqui fica só na máquina. Os números que o código precisa vivem
+# na spec, medidos no gateway, não copiados do documento.
+docs/privado/
