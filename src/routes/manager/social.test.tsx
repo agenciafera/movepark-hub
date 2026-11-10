@@ -105,6 +105,7 @@ function post(over: Partial<SocialPost> = {}): SocialPost {
     story_error: null,
     story_published_at: null,
     story_claimed_at: null,
+    video: null,
     ...over,
   };
 }
@@ -812,6 +813,69 @@ describe("ManagerSocial", () => {
       } finally {
         vi.unstubAllGlobals();
       }
+    });
+  });
+  describe("reel", () => {
+    const REEL: Partial<SocialPost> = {
+      kind: "reel",
+      slides: [
+        {
+          url: "https://exemplo.co/capa.jpg",
+          path: "social/confins/capa.jpg",
+          alt: null,
+          texto: null,
+        },
+      ],
+      video: {
+        url: "https://exemplo.co/social-video/reel-confins.mp4",
+        path: "social/confins/reel-confins.mp4",
+        bytes: 44_286_644,
+        duracao_s: 47.5,
+        largura: 1080,
+        altura: 1920,
+      },
+    };
+    const abrir = (over: Partial<SocialPost> = {}) =>
+      renderWithProviders(
+        <SocialPostDetail post={post({ ...REEL, ...over })} onClose={() => {}} />,
+      );
+
+    it("mostra o vídeo com a capa, sem a aba de stories e sem escolher onde sai", async () => {
+      abrir();
+      expect(await screen.findByRole("tab", { name: "Vídeo" })).toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "Stories" })).not.toBeInTheDocument();
+      const video = screen.getByRole("region", { name: "Vídeo" }).querySelector("video")!;
+      expect(video.getAttribute("src")).toBe("https://exemplo.co/social-video/reel-confins.mp4");
+      expect(video.getAttribute("poster")).toBe("https://exemplo.co/capa.jpg");
+      expect(screen.getByText(/48 s · 1080x1920 · 42\.2 MB/)).toBeInTheDocument();
+      expect(screen.getByText("Feed e aba de reels")).toBeInTheDocument();
+      expect(screen.queryByRole("checkbox", { name: "Stories" })).not.toBeInTheDocument();
+    });
+
+    it("Publicar agora com o vídeo ainda em processamento avisa para tentar de novo, sem dizer que publicou", async () => {
+      vi.stubGlobal(
+        "confirm",
+        vi.fn(() => true),
+      );
+      publishNow.mockResolvedValue({ acao: "processando", permalink: null, stories: null });
+      try {
+        abrir();
+        await userEvent.click(await screen.findByRole("button", { name: "Publicar agora" }));
+        await waitFor(() =>
+          expect(toast.info).toHaveBeenCalledWith(
+            "A Meta ainda está processando o vídeo. Espere um minuto e clique em Publicar agora de novo.",
+          ),
+        );
+        expect(toast.success).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("na fila, a linha diz que é reel e a duração", () => {
+      postsHook.current = { isLoading: false, isError: false, data: [post({ ...REEL })] };
+      renderWithProviders(<ManagerSocial />);
+      expect(screen.getByText(/reel de 48 s · Feed e aba de reels/)).toBeInTheDocument();
     });
   });
 });

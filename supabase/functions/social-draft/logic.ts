@@ -12,7 +12,27 @@ export type Lugar = "feed" | "story";
 /** Padrão de post novo (decisão do Kallef, 22/10/2026): feed e stories. */
 export const LUGARES_PADRAO: Lugar[] = ["feed", "story"];
 
+/**
+ * O MP4 do reel, que o script já subiu para o bucket `social-video` pela URL assinada. O que vem
+ * aqui é o que o ffprobe mediu na máquina de quem enviou; o servidor confere o tamanho no bucket.
+ */
+export interface VideoRascunho {
+  arquivo: string;
+  /** Os 16 primeiros caracteres hex do SHA-256 do arquivo: o endereço dele no bucket. */
+  hash: string;
+  bytes: number;
+  duracaoS: number;
+  largura: number;
+  altura: number;
+  fps: number;
+  codec: string;
+  /** Codec do áudio, ou nulo sem faixa de áudio. */
+  audio: string | null;
+}
+
 export interface Rascunho {
+  /** Foto ou carrossel (pelo número de slides) ou reel. */
+  tipo: "post" | "reel";
   origem: string;
   corte: number | null;
   destination: string | null;
@@ -27,10 +47,14 @@ export interface Rascunho {
   placements: Lugar[];
   /** As imagens 9:16 dos stories, uma por story. Vazia quando o post não vai para stories. */
   stories: { arquivo: string }[];
+  /** Só no reel. A capa vai em `slides`, como slide único. */
+  video: VideoRascunho | null;
 }
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ARQUIVO = /^[a-z0-9]+(?:-[a-z0-9]+)*\.jpe?g$/;
+const ARQUIVO_VIDEO = /^[a-z0-9]+(?:-[a-z0-9]+)*\.mp4$/;
+const HASH = /^[0-9a-f]{16}$/;
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const COM_FUSO = /(?:[zZ]|[+-]\d{2}:\d{2})$/;
 const INICIO_ISO = /^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}/;
@@ -47,6 +71,39 @@ function dataExiste(s: string): boolean {
 }
 
 const texto = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+const numero = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : Number.NaN);
+
+/** O nome e o endereço do MP4. Valem também para o pedido da URL de envio, antes do rascunho. */
+export function erroDoArquivoDeVideo(arquivo: unknown, hash: unknown): string | null {
+  if (typeof arquivo !== "string" || !ARQUIVO_VIDEO.test(arquivo)) {
+    return "O vídeo precisa estar em kebab-case e terminar em .mp4.";
+  }
+  if (typeof hash !== "string" || !HASH.test(hash)) return "O hash do vídeo precisa ter 16 caracteres hexadecimais.";
+  return null;
+}
+
+function lerVideo(bruto: unknown, erros: string[]): VideoRascunho | null {
+  const v = (bruto && typeof bruto === "object" ? bruto : {}) as Record<string, unknown>;
+  const erroDoArquivo = erroDoArquivoDeVideo(v.arquivo, v.hash);
+  if (erroDoArquivo) erros.push(erroDoArquivo);
+  const video: VideoRascunho = {
+    arquivo: String(v.arquivo ?? ""),
+    hash: String(v.hash ?? ""),
+    bytes: numero(v.bytes),
+    duracaoS: numero(v.duracao_s),
+    largura: numero(v.largura),
+    altura: numero(v.altura),
+    fps: numero(v.fps),
+    codec: texto(v.codec) ?? "",
+    audio: texto(v.audio),
+  };
+  if (!Number.isInteger(video.bytes) || video.bytes <= 0) erros.push("O tamanho do vídeo (bytes) está faltando.");
+  for (const [campo, valor] of [["duracao_s", video.duracaoS], ["largura", video.largura], ["altura", video.altura], ["fps", video.fps]] as const) {
+    if (!(valor > 0)) erros.push(`O vídeo veio sem ${campo}. O script mede com o ffprobe antes de enviar.`);
+  }
+  if (!video.codec) erros.push("O vídeo veio sem o codec.");
+  return erroDoArquivo ? null : video;
+}
 
 export function lerRascunho(
   bruto: unknown,
@@ -78,8 +135,11 @@ export function lerRascunho(
   const caption = typeof m.caption === "string" ? m.caption.trim() : "";
   if (!caption) erros.push("A legenda (caption) está vazia.");
 
+  const tipo = m.tipo === "reel" ? "reel" : "post";
   const brutos = Array.isArray(m.slides) ? m.slides : [];
-  if (brutos.length < 1 || brutos.length > 10) erros.push("O post precisa de 1 a 10 slides.");
+  if (tipo === "reel") {
+    if (brutos.length !== 1) erros.push("O reel leva a capa como slide único.");
+  } else if (brutos.length < 1 || brutos.length > 10) erros.push("O post precisa de 1 a 10 slides.");
   const slides: SlideRascunho[] = brutos.map((s) => {
     const o = (s && typeof s === "object" ? s : {}) as Record<string, unknown>;
     return { arquivo: texto(o.arquivo) ?? "", alt: texto(o.alt), texto: texto(o.texto) };
@@ -89,12 +149,16 @@ export function lerRascunho(
   });
   if (new Set(slides.map((s) => s.arquivo)).size < slides.length) erros.push("Dois slides usam o mesmo arquivo.");
 
-  // Onde sai. Sem o campo, o padrão: feed e stories.
-  const brutosLugares = m.placements === undefined || m.placements === null ? LUGARES_PADRAO : m.placements;
+  // Onde sai. Sem o campo, o padrão: feed e stories. O reel sai só no feed (e na aba de reels).
+  const padrao: Lugar[] = tipo === "reel" ? ["feed"] : LUGARES_PADRAO;
+  const brutosLugares = m.placements === undefined || m.placements === null ? padrao : m.placements;
   const lista = Array.isArray(brutosLugares) ? brutosLugares.map(String) : [];
   const placements = (["feed", "story"] as Lugar[]).filter((l) => lista.includes(l));
   if (lista.some((l) => l !== "feed" && l !== "story")) erros.push("Os lugares aceitos são feed e story.");
   else if (!placements.length) erros.push("Escolha pelo menos um lugar: feed ou story.");
+  else if (tipo === "reel" && placements.join() !== "feed") erros.push("O reel sai só no feed. Tire story de onde ele sai.");
+
+  const video = tipo === "reel" ? lerVideo(m.video, erros) : null;
 
   const brutosStories = Array.isArray(m.stories) ? m.stories : [];
   const stories = placements.includes("story")
@@ -113,6 +177,7 @@ export function lerRascunho(
   return {
     ok: true,
     rascunho: {
+      tipo,
       origem: origem!,
       corte,
       destination: texto(m.destination),
@@ -124,6 +189,7 @@ export function lerRascunho(
       slides,
       placements,
       stories,
+      video,
     },
   };
 }
@@ -189,9 +255,12 @@ export const rotuloStatus = (status: string): string => ROTULOS_STATUS[status] ?
 export const ehUuid = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 
 /** O caminho já carrega o hash do conteúdo, então a URL não precisa de versão na query. */
-export function urlPublica(supabaseUrl: string, caminho: string): string {
-  return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/assets-public/${caminho}`;
+export function urlPublica(supabaseUrl: string, caminho: string, bucket = "assets-public"): string {
+  return `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${bucket}/${caminho}`;
 }
+
+/** O bucket do MP4 do reel. O `assets-public` aceita só imagem e até 10 MB. */
+export const BUCKET_VIDEO = "social-video";
 
 export function chaveConfere(esperada: string | undefined, recebida: string | null): boolean {
   return Boolean(esperada) && esperada === recebida;

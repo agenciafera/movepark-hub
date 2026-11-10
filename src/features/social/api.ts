@@ -128,8 +128,11 @@ export async function mensagemDaEdge(error: unknown): Promise<string> {
 
 /** O que a `social-dispatch` responde no modo forçado quando dá certo (200). */
 export type ResultadoPublicarAgora = {
-  /** `stories`: o post já tinha saído no feed, e só os stories saíram agora. */
-  acao: "publicado" | "reconciliado" | "outra_rodada" | "stories";
+  /**
+   * `stories`: o post já tinha saído no feed, e só os stories saíram agora. `processando`: reel que
+   * a Meta ainda processa; o envio ficou guardado e o próximo clique publica.
+   */
+  acao: "publicado" | "reconciliado" | "outra_rodada" | "stories" | "processando";
   permalink: string | null;
   /** Os stories desta chamada, quando o post vai para stories. */
   stories: { publicados: number; faltam: number; erro?: string } | null;
@@ -171,7 +174,8 @@ export function usePublishSocialPostNow() {
         (r.acao === "publicado" ||
           r.acao === "reconciliado" ||
           r.acao === "outra_rodada" ||
-          r.acao === "stories")
+          r.acao === "stories" ||
+          r.acao === "processando")
       ) {
         return { acao: r.acao, permalink: r.permalink ?? null, stories: r.stories ?? null };
       }

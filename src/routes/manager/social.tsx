@@ -16,6 +16,7 @@ import {
   formatarQuando,
   mensagemDoErro,
   ROTULO_STATUS,
+  rotuloDoConteudo,
   rotuloDosLugares,
   type SocialAba,
   TOM_STATUS,
@@ -139,9 +140,8 @@ export default function ManagerSocial() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">{p.caption.split("\n")[0]}</p>
                           <p className="text-sm text-muted">
-                            {formatarQuando(p.scheduled_at)} · {p.slides.length}{" "}
-                            {p.slides.length > 1 ? "slides" : "imagem"} ·{" "}
-                            {rotuloDosLugares(p.placements)}
+                            {formatarQuando(p.scheduled_at)} · {rotuloDoConteudo(p)} ·{" "}
+                            {rotuloDosLugares(p.placements, p.kind)}
                           </p>
                         </div>
                         <Badge tone={TOM_STATUS[p.status]}>{ROTULO_STATUS[p.status]}</Badge>

@@ -35,6 +35,13 @@
 // `pending`, e a rodada sem feed para sair publica os stories que ficaram para trás (só com a chave
 // ligada). Post só de stories: os stories são a publicação, e `published` quer dizer que saíram.
 //
+// Reel (10/11/2026): `kind = 'reel'` publica o vídeo de `video` com a capa de `slides[0]`, só no
+// feed. A Meta demora para processar vídeo: se ela não termina dentro da chamada, o post volta de
+// `publishing` para `approved` com o envio guardado em `ig_container_id`, o evento
+// `reel_processing` explica, e a resposta é `acao: "processando"`. A próxima tentativa (a rodada
+// seguinte, com a chave ligada, ou outro clique em "Publicar agora") consulta esse envio: pronto
+// ou ainda processando, ele é publicado sem criar outro; com erro ou vencido, nasce um novo.
+//
 // Toda chamada à Graph API vira linha em `social_post_event`, sem o token.
 //
 // "Publicar agora" (modo forçado, 21/10/2026): o Manager chama a RPC `social_post_publish_now`,
@@ -48,7 +55,7 @@
 // cron_key_matches: o valor não passa por terminal nem por secret de Edge)
 // → 200 { ok, acao, post?, permalink?, posts?, ligada?, stories?: { publicados, faltam, erro? } }
 //   acao: nada | ja_publicou_hoje | em_andamento | reconciliou | dry_run | outra_rodada |
-//         reconciliado | publicado
+//         reconciliado | publicado | processando (reel que a Meta ainda processa)
 // → 502 { ok: false, acao: "falhou", post, erro }  (a Meta recusou ou a reconciliação falhou)
 // → 500 { ok: false, error }  (banco), 503 (sem secrets da Meta), 401 (chave), 405
 //   Caso raro: `ok: false` com `acao: "publicado"` e 500 quer dizer que a Meta publicou e a rodada
@@ -56,7 +63,7 @@
 //
 // POST /functions/v1/social-dispatch  (modo forçado: Authorization: Bearer <JWT> e
 // { "post_id": "<uuid>" }; sem os dois, o pedido segue o caminho do cron acima)
-// → 200 { ok, acao: outra_rodada | reconciliado | publicado | stories, post, permalink?, stories? }
+// → 200 { ok, acao: outra_rodada | reconciliado | publicado | stories | processando, post, permalink?, stories? }
 //   (post já publicado no feed com stories pendentes: acao "stories", sai só o que falta deles)
 // → 502 { ok: false, acao: "falhou", post, erro }
 // → 409 { ok: false, post, error }  (o post não está aprovado para agora; texto pt-BR)
@@ -77,6 +84,7 @@ import {
   lerPermalink,
   type Opcoes,
   publicar,
+  publicarContainer,
   publicarEnvio,
   statusDoContainer,
 } from "../_shared/instagram.ts";
@@ -111,7 +119,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** As colunas que a publicação lê do post. */
 const CAMPOS =
-  "id, status, scheduled_at, published_at, updated_at, caption, slides, ig_container_id, attempts, " +
+  "id, status, kind, scheduled_at, published_at, updated_at, caption, slides, video, ig_container_id, attempts, " +
   "placements, story_slides, story_status, story_items, story_claimed_at";
 
 /**
@@ -134,8 +142,12 @@ interface ItemDeStory {
 }
 
 type PostCompleto = PostFila & {
+  /** Sem a coluna (teste antigo), é foto ou carrossel. */
+  kind?: string | null;
   caption: string;
   slides: Array<{ url: string; alt: string | null }>;
+  /** Só no reel: o MP4 no bucket `social-video`. */
+  video?: { url: string } | null;
   ig_container_id: string | null;
   attempts: number;
   placements?: string[] | null;
@@ -157,6 +169,8 @@ export interface RodadaDeps {
   relogio?: () => Date;
   /** Cliente HTTP da Graph API. Nos testes é o de mentira; na Edge é o `fetch`. */
   fetcher?: typeof fetch;
+  /** Intervalo entre as consultas do envio na Meta. Nos testes é zero; na Edge, o padrão. */
+  esperaMs?: number;
 }
 
 export interface Resultado {
@@ -169,6 +183,7 @@ interface Ctx {
   cfg: IgConfig;
   fetcher?: typeof fetch;
   relogio: () => Date;
+  esperaMs?: number;
 }
 
 /** Tira o token de um texto antes de ele ir para o log ou para o banco. */
@@ -206,6 +221,7 @@ async function registrar(ctx: Ctx, postId: string, kind: string, extra: Record<s
 function opcoes(ctx: Ctx, postId: string): Opcoes {
   return {
     fetcher: ctx.fetcher,
+    esperaMs: ctx.esperaMs,
     onCall: async (c: GraphCall) => {
       await registrar(ctx, postId, c.kind, {
         http_status: c.result.status || null,
@@ -494,7 +510,7 @@ async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date, prazo: 
     .eq("status", "approved")
     .lte("scheduled_at", agora.toISOString())
     .is("deleted_at", null)
-    .select("id, scheduled_at, caption, slides, ig_container_id, attempts, placements, story_slides, story_status, story_items");
+    .select("id, kind, scheduled_at, caption, slides, video, ig_container_id, attempts, placements, story_slides, story_status, story_items");
   if (ePega) {
     console.error("social-dispatch: a pega do post falhou", limpar(ctx.cfg, String(ePega.message)));
     return erroDeBanco("Não consegui pegar o post para publicar.");
@@ -514,9 +530,30 @@ async function pegarEPublicar(ctx: Ctx, lido: PostCompleto, agora: Date, prazo: 
   return r;
 }
 
-/** O feed do post já pego: carrossel ou imagem única, com a reconciliação de sempre. */
-async function publicarFeed(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
+/**
+ * Reel que a Meta ainda processa: o post volta de `publishing` para `approved`, com o envio
+ * guardado, e a próxima tentativa publica esse mesmo envio. Não é falha: o vídeo ainda vai sair.
+ */
+async function voltarParaAFila(ctx: Ctx, id: string, resposta: unknown): Promise<Resultado> {
+  const note = "A Meta ainda está processando o vídeo. O envio ficou guardado e sai na próxima tentativa.";
+  if (await escrever(ctx, id, "publishing", { status: "approved", last_error: null })) {
+    await registrar(ctx, id, "reel_processing", { note, response: resposta });
+  }
+  return ok({ acao: "processando", post: id });
+}
 
+/** O feed do post já pego: carrossel, imagem única ou reel, com a reconciliação de sempre. */
+async function publicarFeed(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
+  const reel = post.kind === "reel";
+  if (reel && !post.video?.url) {
+    const msg = "O reel não tem o vídeo. Reenvie pela skill.";
+    await marcarFalha(ctx, post.id, msg);
+    return falhou(post.id, msg);
+  }
+
+  // No reel, um envio de tentativa anterior que está pronto ou ainda processando é publicado em vez
+  // de criar outro: vídeo leva minutos na Meta, e cada envio novo recomeçaria a espera.
+  let envioAproveitavel: string | null = null;
   if (post.ig_container_id) {
     const st = await statusDoContainer(ctx.cfg, post.ig_container_id, opcoes(ctx, post.id));
     if (jaPublicado(st)) {
@@ -530,13 +567,20 @@ async function publicarFeed(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
       await marcarFalha(ctx, post.id, msg);
       return falhou(post.id, msg);
     }
+    if (reel && (st === "FINISHED" || st === "IN_PROGRESS")) envioAproveitavel = post.ig_container_id;
   }
 
   let res;
   try {
-    res = await publicar(
+    res = envioAproveitavel
+      ? await publicarContainer(ctx.cfg, envioAproveitavel, { ...opcoes(ctx, post.id), reel: true })
+      : await publicar(
       ctx.cfg,
-      { caption: post.caption, images: post.slides.map((s) => ({ url: s.url, alt: s.alt })) },
+      {
+        caption: post.caption,
+        images: post.slides.map((s) => ({ url: s.url, alt: s.alt })),
+        video: reel ? { url: post.video!.url, capaUrl: post.slides[0]?.url ?? null } : null,
+      },
       {
         ...opcoes(ctx, post.id),
         // Sem o container gravado, a nova tentativa não teria como saber que ele existe e
@@ -556,6 +600,7 @@ async function publicarFeed(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
     return falhou(post.id, msg);
   }
   if (!res.ok) {
+    if (res.etapa === "processando") return await voltarParaAFila(ctx, post.id, res.resposta);
     // A Meta às vezes publica e responde 5xx ou estoura o tempo. Antes de dar o post por falho,
     // olha o container uma vez: PUBLISHED é post no ar, e reconcilia em vez de falhar.
     if (res.etapa === "media_publish" && res.containerId) {
@@ -565,7 +610,7 @@ async function publicarFeed(ctx: Ctx, post: PostCompleto): Promise<Resultado> {
         return r.ok ? ok({ acao: "reconciliado", post: post.id }) : falhou(post.id, r.erro);
       }
     }
-    const msg = textoDaFalha(res.etapa, res.resposta);
+    const msg = textoDaFalha(res.etapa, res.resposta, reel);
     await marcarFalha(ctx, post.id, msg, res.resposta);
     return falhou(post.id, msg);
   }
@@ -618,7 +663,7 @@ async function rodadaDeStories(ctx: Ctx, agora: Date, prazo: number): Promise<Re
 
 export async function rodada(deps: RodadaDeps): Promise<Resultado> {
   const { admin, cfg, agora } = deps;
-  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()) };
+  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()), esperaMs: deps.esperaMs };
   const prazo = ctx.relogio().getTime() + PRAZO_STORIES_MS;
 
   const { data: chave, error: eChave } = await admin
@@ -714,7 +759,7 @@ export async function rodada(deps: RodadaDeps): Promise<Resultado> {
  */
 export async function publicarAgora(deps: RodadaDeps, postId: string): Promise<Resultado> {
   const { admin, cfg, agora } = deps;
-  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()) };
+  const ctx: Ctx = { admin, cfg, fetcher: deps.fetcher, relogio: deps.relogio ?? (() => new Date()), esperaMs: deps.esperaMs };
 
   const { data: lido, error } = await admin
     .from("social_post")

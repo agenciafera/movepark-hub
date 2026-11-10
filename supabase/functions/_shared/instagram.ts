@@ -3,7 +3,10 @@
 // Usado pela `publish-instagram` (diagnóstico e publicação manual) e pela `social-dispatch`
 // (publicação agendada). O fluxo da Meta é sempre de dois passos: container e media_publish. No
 // carrossel, cada slide vira um container com is_carousel_item, e um pai com media_type=CAROUSEL
-// amarra todos. Detalhe em .claude/skills/instagram/references/api-instagram.md.
+// amarra todos. No reel, um container só, com media_type=REELS e o vídeo por URL; a Meta leva mais
+// tempo para processar vídeo, e quando ela não termina dentro da espera a etapa é "processando",
+// com o container devolvido para quem chama publicá-lo depois (`publicarContainer`). Detalhe em
+// .claude/skills/instagram/references/api-instagram.md.
 //
 // Toda chamada passa por `onCall` com o caminho, o método e os campos SEM o token, para quem
 // chama gravar o rastro. O token nunca sai deste arquivo.
@@ -133,19 +136,69 @@ export interface Imagem {
   alt?: string | null;
 }
 
+/** O vídeo do reel e a capa, os dois por URL pública. */
+export interface Video {
+  url: string;
+  capaUrl?: string | null;
+}
+
+/**
+ * Espera de reel: 40 consultas a cada 2,5 s, cerca de 100 s. É o que cabe no relógio da Edge
+ * depois do envio; se a Meta não terminar, a etapa é "processando" e o envio fica guardado.
+ */
+export const TENTATIVAS_REEL = 40;
+
 export type ResultadoPublicacao =
   | { ok: true; mediaId: string; containerId: string }
   | { ok: false; etapa: string; resposta: unknown; containerId?: string };
 
+/**
+ * Espera um container ficar pronto e publica. `reel` muda só o que o tempo esgotado quer dizer:
+ * no reel é "processando" (o vídeo ainda pode ficar pronto, e o envio é reaproveitado depois); na
+ * imagem é falha, porque imagem pronta não demora tanto.
+ */
+export async function publicarContainer(
+  cfg: IgConfig,
+  containerId: string,
+  opts: Opcoes & { reel?: boolean } = {},
+): Promise<ResultadoPublicacao> {
+  const espera = await esperarContainer(cfg, containerId, {
+    ...opts,
+    tentativas: opts.tentativas ?? (opts.reel ? TENTATIVAS_REEL : undefined),
+  });
+  if (!espera.pronto) {
+    const processando = opts.reel && (espera.status === "TIMEOUT" || espera.status === "IN_PROGRESS");
+    return { ok: false, etapa: processando ? "processando" : "container não ficou pronto", resposta: espera, containerId };
+  }
+  const pub = await graph(cfg, `${cfg.igUserId}/media_publish`, "POST", { creation_id: containerId }, opts, "media_publish");
+  if (!pub.ok || !pub.body.id) return { ok: false, etapa: "media_publish", resposta: pub.body, containerId };
+  return { ok: true, mediaId: String(pub.body.id), containerId };
+}
+
 export async function publicar(
   cfg: IgConfig,
-  entrada: { caption: string; images: Imagem[] },
+  entrada: { caption: string; images: Imagem[]; video?: Video | null },
   opts: Opcoes & { onContainer?: (id: string) => void | Promise<void> } = {},
 ): Promise<ResultadoPublicacao> {
-  const { caption, images } = entrada;
-  if (images.length === 0) return { ok: false, etapa: "sem imagem", resposta: null };
+  const { caption, images, video } = entrada;
   let containerId: string;
 
+  if (video) {
+    // share_to_feed põe o reel também na grade do perfil, e não só na aba de reels.
+    const c = await graph(cfg, `${cfg.igUserId}/media`, "POST", {
+      media_type: "REELS",
+      video_url: video.url,
+      caption,
+      share_to_feed: "true",
+      ...(video.capaUrl ? { cover_url: video.capaUrl } : {}),
+    }, opts, "container_parent");
+    if (!c.ok || !c.body.id) return { ok: false, etapa: "container do reel", resposta: c.body };
+    containerId = String(c.body.id);
+    await opts.onContainer?.(containerId);
+    return await publicarContainer(cfg, containerId, { ...opts, reel: true });
+  }
+
+  if (images.length === 0) return { ok: false, etapa: "sem imagem", resposta: null };
   if (images.length > 1) {
     const filhos: string[] = [];
     for (const [i, img] of images.entries()) {
@@ -176,13 +229,7 @@ export async function publicar(
   }
 
   await opts.onContainer?.(containerId);
-
-  const espera = await esperarContainer(cfg, containerId, opts);
-  if (!espera.pronto) return { ok: false, etapa: "container não ficou pronto", resposta: espera, containerId };
-
-  const pub = await graph(cfg, `${cfg.igUserId}/media_publish`, "POST", { creation_id: containerId }, opts, "media_publish");
-  if (!pub.ok || !pub.body.id) return { ok: false, etapa: "media_publish", resposta: pub.body, containerId };
-  return { ok: true, mediaId: String(pub.body.id), containerId };
+  return await publicarContainer(cfg, containerId, opts);
 }
 
 /**

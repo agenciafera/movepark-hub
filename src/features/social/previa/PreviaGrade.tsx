@@ -1,4 +1,4 @@
-import { Copy } from "@phosphor-icons/react";
+import { Copy, FilmReel } from "@phosphor-icons/react";
 import {
   AVATAR,
   CELULAS_DA_GRADE,
@@ -9,7 +9,7 @@ import {
   USUARIO,
 } from "./previa.logic";
 
-type Celula = { chave: string; url: string | null; alt: string; carrossel: boolean };
+type Celula = { chave: string; url: string | null; alt: string; carrossel: boolean; reel: boolean };
 
 /**
  * A grade do perfil: 3 colunas, células 3:4 com recorte central (o formato da grade desde 2025).
@@ -21,7 +21,7 @@ export function PreviaGrade({
   post,
   fila = [],
 }: {
-  post: Pick<PostDaPrevia, "id" | "slides">;
+  post: Pick<PostDaPrevia, "id" | "slides"> & Pick<PostDaGrade, "kind">;
   fila?: PostDaGrade[];
 }) {
   const outros = postsDaGrade(post.id, fila);
@@ -34,15 +34,17 @@ export function PreviaGrade({
         url: capa?.url ?? null,
         alt: capa?.alt ?? "Capa deste post",
         carrossel: post.slides.length > 1,
+        reel: post.kind === "reel",
       };
     }
     const outro = outros[i - 1];
-    if (!outro) return { chave: `vazia-${i}`, url: null, alt: "", carrossel: false };
+    if (!outro) return { chave: `vazia-${i}`, url: null, alt: "", carrossel: false, reel: false };
     return {
       chave: outro.id,
       url: outro.slides[0]?.url ?? null,
       alt: outro.slides[0]?.alt ?? "",
       carrossel: outro.slides.length > 1,
+      reel: outro.kind === "reel",
     };
   });
 
@@ -77,6 +79,15 @@ export function PreviaGrade({
                   className="absolute right-1.5 top-1.5 text-white drop-shadow"
                 >
                   <Copy aria-hidden="true" size={18} weight="fill" />
+                </span>
+              )}
+              {c.reel && (
+                <span
+                  role="img"
+                  aria-label="Reel"
+                  className="absolute right-1.5 top-1.5 text-white drop-shadow"
+                >
+                  <FilmReel aria-hidden="true" size={18} weight="fill" />
                 </span>
               )}
             </div>

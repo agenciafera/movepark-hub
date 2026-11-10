@@ -1,6 +1,6 @@
 // Regras da entrada da fila do Instagram. O que passa daqui vira linha em social_post.
 import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { corrigirLegenda, submeter } from "./index.ts";
+import { corrigirLegenda, submeter, urlDeEnvioDoVideo } from "./index.ts";
 import {
   caminhoNoBucket,
   chaveConfere,
@@ -208,10 +208,19 @@ type Resposta = { data: unknown; error: { code?: string; message: string } | nul
 
 function admin(
   responder: (c: Chamada) => Resposta,
-  opts: { usuario?: { id: string } | null; erroUpload?: { message: string; statusCode?: string } } = {},
+  opts: {
+    usuario?: { id: string } | null;
+    erroUpload?: { message: string; statusCode?: string };
+    /** Objetos do bucket social-video: caminho → tamanho em bytes. */
+    videos?: Record<string, number>;
+    /** O segredo `social_draft_key` do Vault. Sem ele, a RPC responde false. */
+    chaveDoVault?: string;
+  } = {},
 ) {
   const chamadas: Chamada[] = [];
   const uploads: string[] = [];
+  const assinadas: string[] = [];
+  const listagens: string[] = [];
   const opcoesDoUpload: Record<string, unknown>[] = [];
   const consulta = (tabela: string) => {
     const c: Chamada = { tabela, op: "select", filtros: [] };
@@ -238,14 +247,34 @@ function admin(
   const cliente = {
     from: consulta,
     storage: {
-      from: (_bucket: string) => ({
+      from: (bucket: string) => ({
         upload: (caminho: string, _bytes: Uint8Array, opcoes: Record<string, unknown>) => {
           uploads.push(caminho);
           opcoesDoUpload.push(opcoes);
           return Promise.resolve({ error: opts.erroUpload ?? null });
         },
+        list: (pasta: string, o: { search: string }) => {
+          listagens.push(`${bucket}:${pasta}`);
+          const achados = Object.entries(bucket === "social-video" ? opts.videos ?? {} : {})
+            .filter(([c]) => c === `${pasta}/${o.search}`)
+            .map(([c, size]) => ({ name: c.split("/").pop(), metadata: { size } }));
+          return Promise.resolve({ data: achados, error: null });
+        },
+        createSignedUploadUrl: (caminho: string) => {
+          assinadas.push(`${bucket}:${caminho}`);
+          return Promise.resolve({
+            data: { signedUrl: `${URL_BASE}/storage/v1/object/upload/sign/${bucket}/${caminho}?token=t`, token: "t", path: caminho },
+            error: null,
+          });
+        },
       }),
     },
+    rpc: (nome: string, args: { p_name: string; p_key: string }) =>
+      Promise.resolve({
+        data: nome === "cron_key_matches" && args.p_name === "social_draft_key" && !!opts.chaveDoVault &&
+          args.p_key === opts.chaveDoVault,
+        error: null,
+      }),
     auth: {
       getUser: (_token: string) =>
         Promise.resolve(
@@ -256,7 +285,7 @@ function admin(
     },
   };
   const de = (tabela: string, op: Chamada["op"]) => chamadas.filter((c) => c.tabela === tabela && c.op === op);
-  return { cliente, chamadas, uploads, opcoesDoUpload, de };
+  return { cliente, chamadas, uploads, opcoesDoUpload, de, assinadas, listagens };
 }
 
 const ok = (data: unknown): Resposta => ({ data, error: null });
@@ -799,4 +828,161 @@ Deno.test("submeter com story que não é 9:16, ou faltando, é 422 e nada sobe 
     assertEquals(a.uploads.length, 0);
     assertEquals(a.de("social_post", "insert").length, 0);
   }
+});
+
+// ── Reel (10/11/2026) ─────────────────────────────────────────────────────────────────────
+
+const HASH_VIDEO = "0123456789abcdef";
+const VIDEO = {
+  arquivo: "reel-estacionamento-confins.mp4",
+  hash: HASH_VIDEO,
+  bytes: 44_286_644,
+  duracao_s: 47.5,
+  largura: 1080,
+  altura: 1920,
+  fps: 29.97,
+  codec: "h264",
+  audio: "aac",
+};
+const CAMINHO_VIDEO = `social/teste-fila/2/${HASH_VIDEO}/${VIDEO.arquivo}`;
+const REEL = {
+  ...POST_VALIDO,
+  tipo: "reel",
+  placements: undefined,
+  slides: [{ arquivo: "slide-01.jpg" }],
+  video: VIDEO,
+};
+
+Deno.test("lerRascunho: reel lê o vídeo, sai só no feed e leva a capa como slide único", () => {
+  const r = lerRascunho(REEL);
+  if (!r.ok) throw new Error(r.erros.join(" | "));
+  assertEquals(r.rascunho.tipo, "reel");
+  assertEquals(r.rascunho.placements, ["feed"]);
+  assertEquals(r.rascunho.stories, []);
+  assertEquals(r.rascunho.video?.duracaoS, 47.5);
+  assertEquals(r.rascunho.video?.audio, "aac");
+});
+
+Deno.test("lerRascunho: reel com story, sem capa, com dois slides ou com vídeo mal descrito é recusado", () => {
+  const erros = (m: unknown) => {
+    const r = lerRascunho(m);
+    return r.ok ? [] : r.erros;
+  };
+  assertStringIncludes(erros({ ...REEL, placements: ["feed", "story"] }).join(), "só no feed");
+  assertStringIncludes(erros({ ...REEL, slides: [] }).join(), "slide único");
+  assertStringIncludes(erros({ ...REEL, slides: [{ arquivo: "a.jpg" }, { arquivo: "b.jpg" }] }).join(), "slide único");
+  assertStringIncludes(erros({ ...REEL, video: { ...VIDEO, arquivo: "Reel.mov" } }).join(), ".mp4");
+  assertStringIncludes(erros({ ...REEL, video: { ...VIDEO, hash: "xyz" } }).join(), "hash");
+  assertStringIncludes(erros({ ...REEL, video: { ...VIDEO, fps: undefined } }).join(), "fps");
+  assertStringIncludes(erros({ ...REEL, video: undefined }).join(), ".mp4");
+});
+
+Deno.test("lerRascunho: post comum continua sem vídeo", () => {
+  const r = lerRascunho(POST_VALIDO);
+  if (!r.ok) throw new Error(r.erros.join(" | "));
+  assertEquals([r.rascunho.tipo, r.rascunho.video], ["post", null]);
+});
+
+const pedidoDeEnvio = (corpo: Record<string, unknown>, chave = "chave-de-teste") =>
+  new Request(`${URL_BASE}/functions/v1/social-draft`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-social-draft-key": chave },
+    body: JSON.stringify({ action: "video_upload_url", origem: "teste-fila", corte: 2, arquivo: VIDEO.arquivo, hash: HASH_VIDEO, bytes: VIDEO.bytes, ...corpo }),
+  });
+
+Deno.test("URL de envio do vídeo: sem a chave é 401 e nada é assinado", async () => {
+  const a = admin(() => ok(null));
+  const res = await comChave(() => urlDeEnvioDoVideo(pedidoDeEnvio({}, "errada"), a.cliente));
+  assertEquals(res.status, 401);
+  assertEquals(a.assinadas.length, 0);
+});
+
+Deno.test("URL de envio do vídeo: assina o caminho com o hash no bucket social-video", async () => {
+  const a = admin(() => ok(null));
+  const res = await comChave(() => urlDeEnvioDoVideo(pedidoDeEnvio({}), a.cliente));
+  const corpo = await res.json();
+  assertEquals(res.status, 200);
+  assertEquals([corpo.path, corpo.ja_existe], [CAMINHO_VIDEO, false]);
+  assertEquals(a.assinadas, [`social-video:${CAMINHO_VIDEO}`]);
+  assertStringIncludes(corpo.signed_url, "/upload/sign/social-video/");
+});
+
+Deno.test("URL de envio do vídeo: o mesmo arquivo já no bucket não pede envio de novo", async () => {
+  const a = admin(() => ok(null), { videos: { [CAMINHO_VIDEO]: VIDEO.bytes } });
+  const corpo = await (await comChave(() => urlDeEnvioDoVideo(pedidoDeEnvio({}), a.cliente))).json();
+  assertEquals([corpo.ok, corpo.ja_existe, corpo.signed_url], [true, true, undefined]);
+  assertEquals(a.assinadas.length, 0);
+});
+
+Deno.test("URL de envio do vídeo: nome, hash e tamanho errados são 422", async () => {
+  const a = admin(() => ok(null));
+  for (const ruim of [{ arquivo: "video.mov" }, { hash: "abc" }, { bytes: 400 * 1024 * 1024 }, { bytes: 0 }, { origem: "Com Acento" }]) {
+    const res = await comChave(() => urlDeEnvioDoVideo(pedidoDeEnvio(ruim), a.cliente));
+    assertEquals(res.status, 422, JSON.stringify(ruim));
+  }
+  assertEquals(a.assinadas.length, 0);
+});
+
+Deno.test("a chave do Vault também vale, para o envio e para o rascunho", async () => {
+  Deno.env.delete("SOCIAL_DRAFT_KEY");
+  const a = admin(() => ok(null), { chaveDoVault: "chave-do-vault" });
+  assertEquals((await urlDeEnvioDoVideo(pedidoDeEnvio({}, "chave-do-vault"), a.cliente)).status, 200);
+  assertEquals((await urlDeEnvioDoVideo(pedidoDeEnvio({}, "outra"), a.cliente)).status, 401);
+});
+
+/** O reel: a capa 9:16 anexada como slide-01.jpg, e o vídeo já no bucket (ou não). */
+const envioDeReel = (post: unknown = REEL) => envio(post, { arquivo: jpeg(1080, 1920) });
+
+Deno.test("submeter reel: grava kind reel, o vídeo do bucket social-video e só o feed", async () => {
+  const a = admin((c) => (c.tabela === "social_post" && c.op === "insert" ? ok({ id: ID_POST }) : ok(null)), {
+    videos: { [CAMINHO_VIDEO]: VIDEO.bytes },
+  });
+  const res = await comChave(() => submeter(envioDeReel(), a.cliente, URL_BASE));
+  const corpo = await res.json();
+  assertEquals(res.status, 200, JSON.stringify(corpo));
+  const linha = a.de("social_post", "insert")[0].payload as Record<string, unknown>;
+  assertEquals(linha.kind, "reel");
+  assertEquals(linha.placements, ["feed"]);
+  assertEquals(linha.story_status, null);
+  assertEquals(linha.video, {
+    url: `${URL_BASE}/storage/v1/object/public/social-video/${CAMINHO_VIDEO}`,
+    path: CAMINHO_VIDEO,
+    bytes: VIDEO.bytes,
+    duracao_s: 47.5,
+    largura: 1080,
+    altura: 1920,
+  });
+  // A capa sobe para o assets-public, como os slides; o vídeo não passa pela Edge.
+  assertEquals(a.uploads.length, 1);
+  // Reel não aceita texto alternativo: a capa sem alt não vira aviso.
+  assertEquals((linha.validation as { warnings: string[] }).warnings.some((w) => w.includes("alternativo")), false);
+  const evento = a.de("social_post_event", "insert")[0].payload as Record<string, unknown>;
+  assertEquals(evento.note, "Reel de 48 s");
+});
+
+Deno.test("submeter reel: vídeo fora do bucket ou com outro tamanho é 422 e nada é gravado", async () => {
+  for (const videos of [{}, { [CAMINHO_VIDEO]: 123 }]) {
+    const a = admin(() => ok(null), { videos });
+    const res = await comChave(() => submeter(envioDeReel(), a.cliente, URL_BASE));
+    assertEquals(res.status, 422);
+    assertEquals(a.de("social_post", "insert").length, 0);
+    assertEquals(a.uploads.length, 0);
+  }
+});
+
+Deno.test("submeter reel: capa que não é 9:16 é 422", async () => {
+  const a = admin(() => ok(null), { videos: { [CAMINHO_VIDEO]: VIDEO.bytes } });
+  const res = await comChave(() => submeter(envio(REEL, { arquivo: jpeg(1080, 1350) }), a.cliente, URL_BASE));
+  assertEquals(res.status, 422);
+  assertStringIncludes((await res.json()).erros.join(), "9:16");
+});
+
+Deno.test("submeter reel: vídeo fora da especificação da Meta entra com bloqueio, e não é aprovável", async () => {
+  const a = admin((c) => (c.tabela === "social_post" && c.op === "insert" ? ok({ id: ID_POST }) : ok(null)), {
+    videos: { [CAMINHO_VIDEO]: VIDEO.bytes },
+  });
+  const res = await comChave(() => submeter(envioDeReel({ ...REEL, video: { ...VIDEO, codec: "vp9", fps: 15 } }), a.cliente, URL_BASE));
+  const corpo = await res.json();
+  assertEquals(res.status, 200);
+  assertEquals(corpo.validation.blockers.length, 2);
 });

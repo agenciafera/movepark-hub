@@ -136,12 +136,19 @@ describe("enviar-rascunho: modo seco", () => {
     expect(r.stderr).toContain("render-story.mjs");
   });
 
-  it("reel não vai para a fila e o erro diz onde publicar", () => {
+  it("reel sem vídeo e sem capa aborta antes de medir, dizendo o que falta", () => {
     const r = enviar({ meta: { ...META_BLOG, tipo: "reel" }, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG });
     expect(r.status).toBe(1);
     expect(r.stdout).toBe("");
-    expect(r.stderr).toContain("não publica reel");
-    expect(r.stderr).toContain("app do Instagram");
+    expect(r.stderr).toContain("Reel sem `video`");
+    expect(r.stderr).toContain("Reel sem `capa`");
+  });
+
+  it("reel com story em onde aborta: reel sai só no feed", () => {
+    const meta = { ...META_BLOG, tipo: "reel", video: "reel-confins.mp4", capa: "reel-confins-capa.jpg", onde: "[feed, story]" };
+    const r = enviar({ meta, slide: SLIDE_BLOG, legenda: LEGENDA_BLOG });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("só no feed");
   });
 
   it("lugar desconhecido em onde aborta", () => {

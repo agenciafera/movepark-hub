@@ -99,13 +99,16 @@ function frase(prefixo: string, detalhe: string | null, fim = ""): string {
  * etapa e a mensagem da Meta quando houver. O JSON cru fica no evento, não aqui. A falha do
  * `media_publish` pede para conferir no Instagram, porque a Meta às vezes publica e responde erro.
  */
-export function textoDaFalha(etapa: string, resposta: unknown): string {
+export function textoDaFalha(etapa: string, resposta: unknown, reel = false): string {
   const msg = mensagemDaMeta(resposta);
   const slide = /^container do slide (\d+)$/.exec(etapa);
   if (slide) return frase(`Falhou ao enviar o slide ${slide[1]} à Meta`, msg);
+  const oQue = reel ? "o vídeo" : "as imagens";
   switch (etapa) {
     case "container do carrossel":
       return frase("Falhou ao montar o carrossel na Meta", msg);
+    case "container do reel":
+      return frase("Falhou ao enviar o vídeo à Meta", msg);
     case "container":
       return frase("Falhou ao enviar a imagem à Meta", msg);
     case "sem imagem":
@@ -115,9 +118,9 @@ export function textoDaFalha(etapa: string, resposta: unknown): string {
     case "container não ficou pronto": {
       const r = objeto(resposta);
       const status = typeof r?.status === "string" ? r.status : "";
-      if (status === "TIMEOUT") return frase("A Meta demorou demais para processar as imagens", null);
+      if (status === "TIMEOUT") return frase(`A Meta demorou demais para processar ${oQue}`, null);
       const detalhe = typeof r?.detalhe === "string" && r.detalhe.trim() ? r.detalhe.replace(/\s+/g, " ").trim() : null;
-      return frase(`A Meta recusou as imagens${status ? ` (${status})` : ""}`, detalhe);
+      return frase(`A Meta recusou ${oQue}${status ? ` (${status})` : ""}`, detalhe);
     }
     default:
       return frase(`Falhou na publicação (${etapa})`, msg);

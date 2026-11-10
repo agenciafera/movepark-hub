@@ -21,7 +21,8 @@ export type PostDaPrevia = Pick<SocialPost, "id" | "caption" | "slides" | "sched
 export type PostDaGrade = Pick<
   SocialPost,
   "id" | "status" | "slides" | "scheduled_at" | "published_at"
->;
+> &
+  Partial<Pick<SocialPost, "kind">>;
 
 /** FNV-1a de 32 bits: simples, sem dependência, e o mesmo texto dá sempre o mesmo número. */
 function hash(texto: string): number {

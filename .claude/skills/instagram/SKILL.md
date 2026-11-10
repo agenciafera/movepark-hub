@@ -542,19 +542,38 @@ Publicar à mão pelo app continua possível, mas aí nada fica registrado na pl
 Detalhe da API em [`references/api-instagram.md`](references/api-instagram.md) e da fila em
 [`docs/specs/instagram-fila-de-publicacao.md`](../../../docs/specs/instagram-fila-de-publicacao.md).
 
-## Passo 12: reel sai pelo app, e o registro mora no repo
+## Passo 12: reel também sai pela fila
 
-**A fila não publica reel** (decisão 4 da spec da fila, mantida em 26/10/2026), e o
-`enviar-rascunho.mjs` recusa `tipo: reel` dizendo isso. O reel sai pelo app do Instagram, à mão,
-e como a plataforma não guarda nada dele, o registro é o repositório:
+**Desde 10/11/2026 o reel passa pela fila** (decisão 11 da spec), com aprovação, agenda e rastro
+como o carrossel. Vale para o reel de número (`render-reel.mjs`) e para o vídeo editado com a
+skill `video-use`. O rascunho troca `slides` por:
 
-1. Crie `docs/social/<atividade>/` com o rascunho `.md`, as cenas HTML (apontando as fotos de
-   `public/images/blog/`, sem copiar binário) e um README com o comando do render, o passo a
-   passo do app e a tabela "Publicados". Modelo em
-   [`docs/social/conteudo-49-reels-confins/`](../../../docs/social/conteudo-49-reels-confins/).
-2. O MP4 e a capa não vão para o git: saem da fonte com o `render-reel.mjs`. Entregue os dois a
-   quem publica (anexo na atividade do ClickUp).
-3. Depois de publicado, a data e o link entram na tabela do README e num comentário na atividade.
+```yaml
+tipo: reel
+video: reel-estacionamento-aeroporto-confins.mp4   # kebab-case, .mp4, na pasta do .md
+capa: reel-estacionamento-aeroporto-confins-capa.jpg   # JPEG 9:16, obrigatória
+```
+
+A capa de vídeo editado sai de um quadro, conferida nos três recortes (9:16, 3:4 e 1:1):
+
+```bash
+ffmpeg -ss 1.5 -i reel.mp4 -frames:v 1 -q:v 2 reel-estacionamento-aeroporto-confins-capa.jpg
+```
+
+Depois, o mesmo `enviar-rascunho.mjs`. Ele faz o remux sem recodificar (`moov` no início, sem edit
+list), mede o MP4 com o ffprobe, bloqueia o que a Meta recusaria, sobe o vídeo direto para o
+bucket `social-video` e manda o rascunho com a capa. Precisa do ffmpeg no PATH. O reel sai **só no
+feed** (e na aba de reels); `onde: [story]` é recusado.
+
+Na hora de publicar, a Meta leva mais tempo com vídeo. Se ela não terminar dentro da chamada, o
+post volta para "Agendado" com o envio guardado e sai na tentativa seguinte, sem duplicar.
+
+**Quando publicar pelo app, e não pela fila:** reel que depende de música da biblioteca do
+Instagram, sticker ou legenda automática, que a API não oferece. Nesse caso, como a plataforma não
+guarda nada, o registro é o repositório: `docs/social/<atividade>/` com o rascunho, as cenas e um
+README com a tabela "Publicados", no modelo de
+[`docs/social/conteudo-49-reels-confins/`](../../../docs/social/conteudo-49-reels-confins/). O MP4
+e a capa não vão para o git.
 
 ## O arquivo de trabalho
 
@@ -620,6 +639,6 @@ Antes de dizer que está pronto:
 12. Post de notícia: passou nas três portas, cita a fonte e a data na legenda,
     está dentro da `validade` e a fonte foi reaberta no dia de publicar.
 13. Enviado pela fila (`enviar-rascunho.mjs`), com `price_date` quando houver R$.
-14. Reel: MP4 do `render-reel.mjs` sem bloqueio, capa olhada nos três recortes (9:16, 3:4 e
-    1:1), todo R$ da tela escrito na legenda, e a fonte em `docs/social/` (Passo 12), porque
-    reel não passa pela fila.
+14. Reel: MP4 sem bloqueio no `enviar-rascunho.mjs`, capa 9:16 olhada nos três recortes (9:16,
+    3:4 e 1:1), todo R$ da tela escrito na legenda, e enviado pela fila (Passo 12). Só vai pelo
+    app o reel que depende de música da biblioteca do Instagram.

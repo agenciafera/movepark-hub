@@ -24,17 +24,32 @@
 //   pisa numa legenda que outra pessoa mudou depois.
 //   `aviso` aparece quando o post foi salvo mas o evento do rastro não foi gravado.
 //
+// Reel (10/11/2026): `tipo: "reel"` no post, a capa como slide único (JPEG 9:16) e `video` com o
+//   que o ffprobe mediu ({ arquivo, hash, bytes, duracao_s, largura, altura, fps, codec, audio }).
+//   O MP4 não passa por aqui: ele sobe antes, direto para o bucket `social-video`, pela URL
+//   assinada do pedido abaixo. Na hora do rascunho, a Edge confere que o objeto está no bucket com
+//   o tamanho declarado; senão, 422. Reel sai só no feed.
+//
+// POST JSON { action: "video_upload_url", origem, corte, arquivo, hash, bytes }  (header x-social-draft-key)
+//   → 200 { ok, path, signed_url?, token?, ja_existe } | 401 | 422 { erros }
+//   O caminho é social/<origem>/<corte>/<hash>/<arquivo>.mp4, com upsert desligado: o mesmo hash é
+//   o mesmo arquivo, e aí `ja_existe` vem true e não há URL (o script pula o envio).
+//
 // verify_jwt = false: o script da skill não tem JWT, e a chave basta para criar rascunho, que não
 // publica nem aprova nada. A correção de legenda confere hub_admin aqui dentro.
-// Secrets: SOCIAL_DRAFT_KEY. Ver docs/specs/instagram-fila-de-publicacao.md.
+// A chave vale se bater com o secret SOCIAL_DRAFT_KEY ou com `social_draft_key` no Vault (conferida
+// por cron_key_matches, como a do disparo): a do Vault dá para criar e trocar pelo banco, sem CLI.
+// Ver docs/specs/instagram-fila-de-publicacao.md.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { conferirImagem, conferirStory, conferirTexto, lerJpeg } from "../_shared/instagram-validate.ts";
+import { conferirImagem, conferirStory, conferirTexto, conferirVideo, LIMITES_REEL, lerJpeg } from "../_shared/instagram-validate.ts";
 import {
+  BUCKET_VIDEO,
   caminhoNoBucket,
   chaveConfere,
   draftKey,
   ehUuid,
+  erroDoArquivoDeVideo,
   lerRascunho,
   motivoDoReenvioRecusado,
   objetoJaExiste,
@@ -85,10 +100,67 @@ async function registrar(admin: Admin, evento: Record<string, unknown>): Promise
   return false;
 }
 
-export async function submeter(req: Request, admin: Admin, supabaseUrl: string): Promise<Response> {
-  if (!chaveConfere(env("SOCIAL_DRAFT_KEY"), req.headers.get("x-social-draft-key"))) {
-    return json({ error: "unauthorized" }, 401);
+/** A chave do script: o secret da Edge ou o segredo `social_draft_key` do Vault. */
+async function chaveValida(admin: Admin, req: Request): Promise<boolean> {
+  const recebida = req.headers.get("x-social-draft-key");
+  if (chaveConfere(env("SOCIAL_DRAFT_KEY"), recebida)) return true;
+  if (!recebida) return false;
+  const { data, error } = await admin.rpc("cron_key_matches", { p_name: "social_draft_key", p_key: recebida });
+  if (error) {
+    console.error("social-draft: não consegui conferir a chave no Vault", error.message);
+    return false;
   }
+  return data === true;
+}
+
+/** O objeto do vídeo no bucket, com o tamanho, ou nulo se ele não está lá. */
+async function videoNoBucket(admin: Admin, caminho: string): Promise<{ bytes: number } | null> {
+  const corte = caminho.lastIndexOf("/");
+  const nome = caminho.slice(corte + 1);
+  const { data, error } = await admin.storage.from(BUCKET_VIDEO).list(caminho.slice(0, corte), { search: nome });
+  if (error) throw new Error(error.message);
+  const obj = (data ?? []).find((o: { name: string }) => o.name === nome);
+  return obj ? { bytes: Number(obj.metadata?.size ?? 0) } : null;
+}
+
+/** A URL assinada para o script subir o MP4 do reel direto para o bucket. */
+export async function urlDeEnvioDoVideo(req: Request, admin: Admin): Promise<Response> {
+  if (!(await chaveValida(admin, req))) return json({ error: "unauthorized" }, 401);
+  const lido = await req.json().catch(() => null);
+  const m = (lido && typeof lido === "object" ? lido : {}) as Record<string, unknown>;
+  if (m.action !== "video_upload_url") return json({ error: `Ação desconhecida: ${String(m.action)}.` }, 400);
+
+  const erros: string[] = [];
+  const origem = typeof m.origem === "string" ? m.origem.trim() : "";
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(origem)) erros.push("A origem é obrigatória e vai em kebab-case, sem acento.");
+  const corte = m.corte === undefined || m.corte === null || m.corte === "" ? null : Number(m.corte);
+  if (corte !== null && (!Number.isInteger(corte) || corte < 1 || corte > 4)) erros.push("O corte vai de 1 a 4.");
+  const erroDoArquivo = erroDoArquivoDeVideo(m.arquivo, m.hash);
+  if (erroDoArquivo) erros.push(erroDoArquivo);
+  const bytes = Number(m.bytes);
+  if (!Number.isInteger(bytes) || bytes <= 0) erros.push("Diga o tamanho do vídeo em bytes.");
+  else if (bytes > LIMITES_REEL.bytes) erros.push(`O vídeo tem ${(bytes / 1048576).toFixed(0)} MB. O limite é 300 MB.`);
+  if (erros.length) return json({ ok: false, erros }, 422);
+
+  const caminho = caminhoNoBucket(origem, corte, String(m.hash), String(m.arquivo));
+  try {
+    const existente = await videoNoBucket(admin, caminho);
+    if (existente) {
+      if (existente.bytes !== bytes) {
+        return json({ ok: false, erros: ["Já existe um vídeo com esse hash e outro tamanho. Confira o arquivo."] }, 422);
+      }
+      return json({ ok: true, path: caminho, ja_existe: true });
+    }
+  } catch (e) {
+    return json({ error: `Não consegui consultar o bucket: ${String(e)}` }, 500);
+  }
+  const { data, error } = await admin.storage.from(BUCKET_VIDEO).createSignedUploadUrl(caminho);
+  if (error || !data) return json({ error: `Não consegui gerar a URL de envio: ${error?.message ?? "sem resposta"}` }, 500);
+  return json({ ok: true, path: caminho, signed_url: data.signedUrl, token: data.token, ja_existe: false });
+}
+
+export async function submeter(req: Request, admin: Admin, supabaseUrl: string): Promise<Response> {
+  if (!(await chaveValida(admin, req))) return json({ error: "unauthorized" }, 401);
   const form = await req.formData().catch(() => null);
   if (!form) return json({ ok: false, erros: ["O envio não é um multipart válido."] }, 422);
 
@@ -111,7 +183,9 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
       continue;
     }
     const bytes = new Uint8Array(await f.arrayBuffer());
-    erros.push(...conferirImagem(lerJpeg(bytes), s.arquivo));
+    // A capa do reel é vertical como o vídeo: a mesma régua do story.
+    const info = lerJpeg(bytes);
+    erros.push(...(r.tipo === "reel" ? conferirStory(info, s.arquivo) : conferirImagem(info, s.arquivo)));
     arquivos.push({ nome: s.arquivo, bytes });
   }
   const arquivosDeStory: { nome: string; bytes: Uint8Array }[] = [];
@@ -124,6 +198,29 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
     const bytes = new Uint8Array(await f.arrayBuffer());
     erros.push(...conferirStory(lerJpeg(bytes), s.arquivo));
     arquivosDeStory.push({ nome: s.arquivo, bytes });
+  }
+  // O MP4 subiu antes, pela URL assinada. Aqui só se confere que ele está lá, inteiro.
+  let video: Record<string, unknown> | null = null;
+  if (r.video) {
+    const caminho = caminhoNoBucket(r.origem, r.corte, r.video.hash, r.video.arquivo);
+    let noBucket: { bytes: number } | null;
+    try {
+      noBucket = await videoNoBucket(admin, caminho);
+    } catch (e) {
+      return json({ error: `Não consegui consultar o bucket: ${String(e)}` }, 500);
+    }
+    if (!noBucket) erros.push(`O vídeo ${r.video.arquivo} não está no bucket. Suba o MP4 pela URL de envio antes do rascunho.`);
+    else if (noBucket.bytes !== r.video.bytes) {
+      erros.push(`O vídeo no bucket tem ${noBucket.bytes} bytes, e o rascunho diz ${r.video.bytes}. Envie de novo.`);
+    }
+    video = {
+      url: urlPublica(supabaseUrl, caminho, BUCKET_VIDEO),
+      path: caminho,
+      bytes: r.video.bytes,
+      duracao_s: r.video.duracaoS,
+      largura: r.video.largura,
+      altura: r.video.altura,
+    };
   }
   if (erros.length) return json({ ok: false, erros }, 422);
 
@@ -168,7 +265,12 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
   }
   const comStories = r.placements.includes("story");
 
-  const validation = conferirTexto({ caption: r.caption, slides, keyphrase: r.keyphrase, priceDate: r.priceDate });
+  const texto = conferirTexto({ caption: r.caption, slides, keyphrase: r.keyphrase, priceDate: r.priceDate, reel: r.tipo === "reel" });
+  const doVideo = r.video ? conferirVideo(r.video) : { blockers: [], warnings: [] };
+  const validation = {
+    blockers: [...texto.blockers, ...doVideo.blockers],
+    warnings: [...texto.warnings, ...doVideo.warnings],
+  };
 
   const { data: post } = await admin
     .from("blog_post")
@@ -183,7 +285,8 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
   const linha = {
     draft_key: chave,
     status: "pending_review",
-    kind: slides.length > 1 ? "carousel" : "image",
+    kind: r.tipo === "reel" ? "reel" : slides.length > 1 ? "carousel" : "image",
+    video,
     caption: r.caption,
     slides,
     keyphrase: r.keyphrase,
@@ -236,9 +339,9 @@ export async function submeter(req: Request, admin: Admin, supabaseUrl: string):
   const rastro = await registrar(admin, {
     social_post_id: id,
     kind: "draft_received",
-    note: reenvioDeRecusado
-      ? `${slides.length} slide(s). Reenviado depois de uma recusa.`
-      : `${slides.length} slide(s)`,
+    note: `${r.video ? `Reel de ${Math.round(r.video.duracaoS)} s` : `${slides.length} slide(s)`}${
+      reenvioDeRecusado ? ". Reenviado depois de uma recusa." : ""
+    }`,
     response: validation,
   });
   return json({ ok: true, id, status: "pending_review", validation, ...(rastro ? {} : { aviso: AVISO_RASTRO }) });
@@ -307,6 +410,8 @@ export async function handler(req: Request): Promise<Response> {
   const admin = createClient(supabaseUrl, env("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
   const tipo = req.headers.get("content-type") ?? "";
   if (tipo.includes("multipart/form-data")) return await submeter(req, admin, supabaseUrl);
+  // JSON com a chave do script é o pedido da URL de envio do vídeo; com JWT, a correção de legenda.
+  if (req.headers.get("x-social-draft-key")) return await urlDeEnvioDoVideo(req, admin);
   return await corrigirLegenda(req, admin);
 }
 

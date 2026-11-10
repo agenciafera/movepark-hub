@@ -23,6 +23,7 @@ import {
   useUpdateSocialCaption,
 } from "./api";
 import {
+  AVISO_REEL_PROCESSANDO,
   dataNoFuturo,
   deCampoDeData,
   formatarDia,
@@ -103,6 +104,7 @@ function Corpo({
   const reagendavel = REAGENDAVEIS.includes(post.status);
   const editavel = post.status === "pending_review" || post.status === "approved";
   const lugaresEditaveis = LUGARES_EDITAVEIS.includes(post.status);
+  const ehReel = post.kind === "reel";
   const temStories = post.story_slides.length > 0;
   const lugaresMudaram = [...lugares].sort().join() !== [...post.placements].sort().join();
   const situacaoStories = situacaoDosStories(post);
@@ -174,6 +176,7 @@ function Corpo({
         p_expected_updated_at: post.updated_at,
       });
       if (r.acao === "outra_rodada") toast.info("Outra rodada já está publicando este post.");
+      else if (r.acao === "processando") toast.info(AVISO_REEL_PROCESSANDO);
       else toast.success("Post publicado no Instagram.");
     } catch (e) {
       toast.error(mensagemDoErro(e));
@@ -199,33 +202,53 @@ function Corpo({
 
         <Tabs defaultValue="slides">
           <TabsList aria-label="Como o post aparece" className="max-w-full overflow-x-auto">
-            <TabsTrigger value="slides">Slides</TabsTrigger>
+            <TabsTrigger value="slides">{ehReel ? "Vídeo" : "Slides"}</TabsTrigger>
             <TabsTrigger value="feed">Feed</TabsTrigger>
-            <TabsTrigger value="stories">Stories</TabsTrigger>
+            {!ehReel && <TabsTrigger value="stories">Stories</TabsTrigger>}
             <TabsTrigger value="grade">Grade do perfil</TabsTrigger>
           </TabsList>
           <TabsContent value="slides">
-            <section aria-label="Slides" className="flex gap-3 overflow-x-auto pb-2">
-              {post.slides.map((s, i) => (
-                <figure key={s.path} className="w-40 shrink-0">
-                  <img
-                    src={s.url}
-                    alt={s.alt ?? ""}
-                    className="aspect-[4/5] w-full rounded object-cover"
-                  />
-                  <figcaption className="mt-1 text-xs text-muted">
-                    {i + 1}. {s.alt ?? "Sem texto alternativo"}
-                  </figcaption>
-                </figure>
-              ))}
-            </section>
+            {ehReel && post.video ? (
+              <section aria-label="Vídeo" className="flex flex-wrap items-start gap-3">
+                {/* O vídeo do bucket, como a Meta vai buscar. A capa abre antes do play. */}
+                <video
+                  src={post.video.url}
+                  poster={post.slides[0]?.url}
+                  controls
+                  preload="metadata"
+                  className="aspect-[9/16] w-56 rounded bg-black"
+                />
+                <p className="text-pretty text-sm text-muted">
+                  {Math.round(post.video.duracao_s)} s · {post.video.largura}x{post.video.altura} ·{" "}
+                  {(post.video.bytes / 1048576).toFixed(1)} MB. A capa aparece antes do play e na
+                  grade do perfil.
+                </p>
+              </section>
+            ) : (
+              <section aria-label="Slides" className="flex gap-3 overflow-x-auto pb-2">
+                {post.slides.map((s, i) => (
+                  <figure key={s.path} className="w-40 shrink-0">
+                    <img
+                      src={s.url}
+                      alt={s.alt ?? ""}
+                      className="aspect-[4/5] w-full rounded object-cover"
+                    />
+                    <figcaption className="mt-1 text-xs text-muted">
+                      {i + 1}. {s.alt ?? "Sem texto alternativo"}
+                    </figcaption>
+                  </figure>
+                ))}
+              </section>
+            )}
           </TabsContent>
           <TabsContent value="feed">
             <PreviaFeed post={post} />
           </TabsContent>
-          <TabsContent value="stories">
-            <PreviaStories post={post} />
-          </TabsContent>
+          {!ehReel && (
+            <TabsContent value="stories">
+              <PreviaStories post={post} />
+            </TabsContent>
+          )}
           <TabsContent value="grade">
             <PreviaGrade post={post} fila={fila} />
           </TabsContent>
@@ -323,7 +346,9 @@ function Corpo({
 
         <section aria-label="Onde sai" className="space-y-2">
           <h3 className="font-semibold">Onde sai</h3>
-          {lugaresEditaveis ? (
+          {ehReel ? (
+            <p className="text-sm">{rotuloDosLugares(post.placements, post.kind)}</p>
+          ) : lugaresEditaveis ? (
             <div className="flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
@@ -354,7 +379,7 @@ function Corpo({
           ) : (
             <p className="text-sm">{rotuloDosLugares(post.placements)}</p>
           )}
-          {lugaresEditaveis && !temStories && (
+          {lugaresEditaveis && !temStories && !ehReel && (
             <p className="text-pretty text-sm text-muted">
               Este post não tem as imagens dos stories. Para sair nos stories, reenvie pela skill.
             </p>

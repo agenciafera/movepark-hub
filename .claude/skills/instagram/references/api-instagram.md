@@ -104,8 +104,10 @@ pelo centro (1:1 segundo a referência; a grade do perfil usa 3:4), então o tex
 meio. O envio é `media_type=REELS` com `video_url` público e `share_to_feed`. Reel **não** aceita
 `alt_text` nem trilha da biblioteca de música do Instagram pela API.
 
-A fila da plataforma não publica reel (decisão 4 da spec da fila): ele sai pelo app, e a fonte
-fica em `docs/social/` (Passo 12 do `SKILL.md`).
+Desde 10/11/2026 a fila da plataforma publica reel (decisão 11 da spec da fila): o MP4 vai para o
+bucket `social-video` e a `social-dispatch` manda `media_type=REELS` com `video_url`, `cover_url`,
+`caption` e `share_to_feed=true`. Vídeo demora para ficar pronto na Meta; quando não fica dentro da
+chamada, o envio é guardado e publicado na tentativa seguinte (Passo 12 do `SKILL.md`).
 
 `user_tags` pede coordenada x/y de 0.0 a 1.0 em imagem. `location_id` **não
 funciona** em item de carrossel.

@@ -1054,7 +1054,18 @@ export type SocialPostStatus =
   | "rejected"
   | "overdue";
 
-export type SocialPostKind = "image" | "carousel";
+/** `reel` desde 10/11/2026: o vídeo vai em `video` e a capa é o slide único. */
+export type SocialPostKind = "image" | "carousel" | "reel";
+
+/** O MP4 do reel no bucket `social-video`. */
+export type SocialPostVideo = {
+  url: string;
+  path: string;
+  bytes: number;
+  duracao_s: number;
+  largura: number;
+  altura: number;
+};
 
 export type SocialPostSlide = { url: string; path: string; alt: string | null; texto: string | null };
 
@@ -1105,6 +1116,8 @@ export type SocialPost = {
   story_error: string | null;
   story_published_at: string | null;
   story_claimed_at: string | null;
+  /** Só no reel. */
+  video: SocialPostVideo | null;
 };
 
 export type SocialPostEvent = {

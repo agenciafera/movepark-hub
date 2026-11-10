@@ -84,6 +84,7 @@ export const ROTULO_EVENTO: Record<string, string> = {
   story_published: "Stories publicados",
   story_failed: "Stories falharam",
   placements_edited: "Lugares alterados",
+  reel_processing: "A Meta ainda processa o vídeo",
 };
 
 /** Estados em que a data ainda pode mudar. Em `failed`, reagendar é o "tentar de novo". */
@@ -223,8 +224,12 @@ export function mensagemDoErro(e: unknown, padrao = "Não deu certo. Tente de no
 
 // ── Stories (22/10/2026) ─────────────────────────────────────────────────────────────
 
-/** Onde o post sai, numa frase curta. */
-export function rotuloDosLugares(placements: SocialPostPlacement[]): string {
+/** Onde o post sai, numa frase curta. O reel sai no feed e na aba de reels. */
+export function rotuloDosLugares(
+  placements: SocialPostPlacement[],
+  kind?: SocialPost["kind"],
+): string {
+  if (kind === "reel") return "Feed e aba de reels";
   const feed = placements.includes("feed");
   const story = placements.includes("story");
   if (feed && story) return "Feed e stories";
@@ -279,3 +284,15 @@ export function perguntaDePublicarStories(n: number): string {
     ? "Publicar agora o story no Instagram? Ele fica 24 horas no ar."
     : `Publicar agora os ${n} stories no Instagram? Eles ficam 24 horas no ar.`;
 }
+
+// ── Reel (10/11/2026) ────────────────────────────────────────────────────────────────
+
+/** O que a linha da fila diz do conteúdo: "3 slides", "imagem" ou "reel de 48 s". */
+export function rotuloDoConteudo(p: Pick<SocialPost, "kind" | "slides" | "video">): string {
+  if (p.kind === "reel") return p.video ? `reel de ${Math.round(p.video.duracao_s)} s` : "reel";
+  return p.slides.length > 1 ? `${p.slides.length} slides` : "1 imagem";
+}
+
+/** O aviso do "Publicar agora" quando a Meta não terminou de processar o vídeo. */
+export const AVISO_REEL_PROCESSANDO =
+  "A Meta ainda está processando o vídeo. Espere um minuto e clique em Publicar agora de novo.";

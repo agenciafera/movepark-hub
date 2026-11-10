@@ -32,13 +32,14 @@ sozinha na hora marcada, com registro do que saiu.
 | 1 | Quem produz o post (texto, foto, slide) | **O Claude, pela skill `instagram`**, com a foto gerada no Higgsfield pelo MCP, que gasta os créditos da assinatura. A plataforma não gera conteúdo |
 | 2 | O que a plataforma faz | **Só o Instagram:** receber o rascunho pronto, guardar, mostrar para aprovação, publicar na hora marcada e registrar o que saiu |
 | 3 | Toda publicação passa por aprovação humana | **Sim.** Nada sai sem um `hub_admin` aprovar |
-| 4 | Formatos | **Foto única e carrossel no feed, e stories** (ver decisão 10). Reel fica fora. Mantida em 26/10/2026, no Conteúdo 49: os dois reels de Confins saem pelo app, com a fonte e o registro do que foi ao ar em `docs/social/`, e o `enviar-rascunho.mjs` recusa `tipo: reel` com essa orientação. Estender a fila para reel é atividade à parte |
+| 4 | Formatos | **Foto única e carrossel no feed, stories (decisão 10) e reel (decisão 11).** Até 10/11/2026 o reel ficava fora e saía pelo app, com a fonte em `docs/social/` (Conteúdo 49). A decisão 11 o trouxe para a fila |
 | 5 | O disparo | **Nasce desligado** (`app_setting.social_dispatch_enabled = false`), no padrão do `marketing_dispatch_enabled` |
 | 6 | App Review da Meta | **Não é necessário.** Para app que serve só a negócio próprio, o acesso padrão basta ([doc oficial](https://developers.facebook.com/documentation/instagram-platform/app-review), atualizada em 30/06/2026) |
 | 7 | Upload manual de arte no Manager | **Fora desta entrega** |
 | 8 | Marcar as fotos de IA para a Meta (`is_ai_generated`) | **Não marcar** (Kallef, 21/10/2026). O parâmetro não é enviado; se a Meta detectar pelo metadado da imagem e rotular sozinha, o rótulo dela vale |
 | 9 | "Publicar agora", além do agendamento | **Sim** (Kallef, 21/10/2026). O botão funciona **mesmo com `social_dispatch_enabled` desligada**: a chave segura o agendador automático, e "Publicar agora" é um clique humano, post a post, com confirmação. **Ignora a regra de um post por dia**, mas a confirmação avisa quando já saiu post hoje, porque os dois disputam alcance. Continua valendo: só sai post sem bloqueio da conferência, a aprovação vale só para a versão que a pessoa viu, o mesmo post nunca sai duas vezes, tudo fica no rastro e a `social-dispatch` segue sendo o único código que publica |
 | 10 | Stories (22/10/2026) | **Sim.** O post de Viracopos saiu no feed e não nos stories, porque a fila nunca publicou story (decisão 4 antiga). Decisões do Kallef: **cada slide vira um story 9:16** (o slide 4:5 inteiro no centro, sobre a própria imagem desfocada, gerado pela skill com `render-story.mjs`), um carrossel de 6 vira 6 stories em sequência; **o padrão de post novo é feed e stories**, e o Manager troca post a post ("Onde sai"); os stories de um post já publicado podem sair depois. A API não aceita sticker de link, `alt_text` nem carrossel em story, então cada story é um envio `STORIES` e um `media_publish`, e o CTA continua sendo o link da bio. Os 6 stories de Viracopos saíram em 22/10 às 13:04 |
+| 11 | Reel (10/11/2026) | **Sim, pela fila** (Diego, 10/11/2026), para os reels editados com a skill `video-use` terem aprovação, agenda e rastro como os outros posts. O reel sai **só no feed** (e na aba de reels, `share_to_feed=true`); story de vídeo fica fora. A capa (JPEG 9:16) é obrigatória e vai em `slides` como slide único. O MP4 vai para o bucket público **`social-video`** (até 300 MB, só vídeo), porque o `assets-public` aceita só imagem e até 10 MB, e **não passa pela Edge**: o script pede uma URL assinada e sobe direto. O que se perde em relação ao app: música da biblioteca do Instagram, stickers, legenda automática e o ajuste do recorte da capa na grade. Reel que depende de áudio em alta sai pelo app, com o registro em `docs/social/` |
 
 ### O que mudou em relação ao texto da E3.6
 
@@ -174,8 +175,11 @@ ele) e o update só vale se a linha ainda estiver nessa versão; senão, 409 com
 
 `POST /functions/v1/social-draft`, `verify_jwt = false`, duas formas de autenticar:
 
-- **`x-social-draft-key`** (segredo `SOCIAL_DRAFT_KEY`): usada pelo script da skill. Cria e atualiza
-  rascunho, e nada mais. Não publica e não aprova.
+- **`x-social-draft-key`**: usada pelo script da skill. Cria e atualiza rascunho e assina o envio
+  do vídeo do reel, e nada mais. Não publica e não aprova. Vale se bater com o secret
+  `SOCIAL_DRAFT_KEY` da Edge **ou** com o segredo `social_draft_key` do Vault (conferido por
+  `cron_key_matches`, como a chave do disparo). A do Vault existe desde 10/11/2026 porque dá para
+  criar e trocar pelo banco, sem a CLI do Supabase; a do secret continua valendo.
 - **JWT de `hub_admin`**: usada pelo Manager, só para `update_caption`.
 
 ### Ação `submit` (multipart)
@@ -246,6 +250,27 @@ o script. O código mora em `supabase/functions/_shared/instagram-validate.ts`, 
 | Frase-chave fora dos primeiros 125 caracteres | É o trecho que aparece antes do "mais" e que o Google mostra |
 | Slide sem alt, ou alt repetido | Acessibilidade e indexação |
 | `price_date` com mais de 30 dias | Preço envelhecido |
+
+### Reel (10/11/2026)
+
+Duas chamadas, nesta ordem:
+
+1. **`{ action: "video_upload_url", origem, corte, arquivo, hash, bytes }`** (JSON, com a chave).
+   Devolve a URL assinada para `social/<origem>/<corte>/<hash>/<arquivo>.mp4` no bucket
+   `social-video`, com upsert desligado, como as imagens. O mesmo hash já no bucket com o mesmo
+   tamanho devolve `ja_existe: true` e nenhuma URL. Nome fora de kebab-case `.mp4`, hash que não
+   tem 16 caracteres hex ou mais de 300 MB: 422.
+2. **O `submit` de sempre**, com `tipo: "reel"`, a capa como slide único (JPEG 9:16, a régua do
+   story) e `video: { arquivo, hash, bytes, duracao_s, largura, altura, fps, codec, audio }`, o que
+   o ffprobe mediu na máquina de quem enviou. A Edge confere que o objeto está no bucket com o
+   tamanho declarado (senão 422), grava `kind = 'reel'` e `video = { url, path, bytes, duracao_s,
+   largura, altura }`, e soma à conferência de texto a do vídeo (`conferirVideo`): codec fora de
+   H.264/HEVC, áudio fora de AAC, menos de 3 s ou mais de 15 min, mais de 1920 px de largura, fora
+   de 23 a 60 quadros e mais de 300 MB são bloqueio; fora de 9:16 e sem áudio, aviso. A capa sem
+   texto alternativo não vira aviso, porque reel não aceita o campo.
+
+No banco, `social_post_kind_bate` amarra o tipo ao conteúdo: foto tem 1 slide e nenhum vídeo,
+carrossel tem mais de 1 e nenhum vídeo, reel tem 1 slide (a capa), vídeo e `placements = {feed}`.
 
 ## 3. Publicação: Edge `social-dispatch`
 
@@ -365,6 +390,22 @@ do cron o reconcilia em até 30 minutos, com a chave desligada também.
 - **Publicar agora** em post já publicado com stories `pending` ou `failed`: a RPC os deixa
   `pending` e a Edge publica só eles (`acao: "stories"`), sem tocar no feed.
 
+### Reel (10/11/2026)
+
+- **Um envio.** `POST /{ig-user-id}/media` com `media_type=REELS`, `video_url` (o bucket),
+  `cover_url` (a capa), `caption` e `share_to_feed=true`, gravado em `ig_container_id` antes do
+  `media_publish`, como o container pai do carrossel.
+- **Espera maior.** A Meta processa vídeo mais devagar: 40 consultas a cada 2,5 s, cerca de 100 s.
+- **Processando não é falha.** Se a Meta não termina dentro da espera, o post volta de
+  `publishing` para `approved`, com o envio guardado e `last_error` limpo; o rastro ganha
+  `reel_processing` e a resposta é `acao: "processando"`. Com a chave ligada, a rodada seguinte
+  (até 15 minutos depois, dentro das 6 h do atraso) tenta de novo; com ela desligada, o próximo
+  clique em "Publicar agora", e a tela diz isso.
+- **Nova tentativa aproveita o envio.** Com `ig_container_id`, o envio antigo é consultado:
+  `PUBLISHED` reconcilia como sempre; `FINISHED` ou `IN_PROGRESS` é publicado (com espera) sem criar
+  outro; `ERROR` ou `EXPIRED` dá lugar a um novo.
+- **Falha fala de vídeo.** "Falhou ao enviar o vídeo à Meta", "A Meta recusou o vídeo (ERROR)".
+
 ## 4. Tela `/manager/social`
 
 Rota em `src/routes.tsx` sob `RequireRole roles={["hub_admin"]}`, item **Instagram** no menu do
@@ -419,6 +460,11 @@ Manager, ao lado de Blog (`src/components/shared/nav-items.ts`). Dados em
 Toda copy da tela passa pela skill `revisar-texto`. A tela segue o shell do Manager, e não o
 contrato `harmonizar-paginas`, que é do consumer.
 
+**Reel (10/11/2026).** A aba "Slides" vira "Vídeo", com o player do bucket e a capa antes do play;
+a aba de stories some e "Onde sai" mostra "Feed e aba de reels", sem escolha. A linha da fila diz
+"reel de 48 s", a grade marca a célula com o ícone de reel e o "Publicar agora" que volta
+`processando` avisa para esperar um minuto e clicar de novo.
+
 ## 5. A skill
 
 - **`scripts/enviar-rascunho.mjs <rascunho.md>`**: lê o front matter, roda o analisador e aborta se
@@ -431,6 +477,12 @@ contrato `harmonizar-paginas`, que é do consumer.
   novo sem a dica "arraste", que no story engana (arrastar para o lado pula para a próxima conta).
   O envio procura o story do slide `x.jpg` como `x-story.jpg` e lê `onde: [feed, story]` do front
   matter (sem o campo, os dois).
+- **Reel (10/11/2026).** Com `tipo: reel`, `video` e `capa` no front matter, o
+  `enviar-rascunho.mjs` faz o remux sem recodificar (`moov` no início, sem edit list, as duas
+  exigências da Meta que um vídeo editado fora do `render-reel.mjs` nem sempre cumpre), mede com o
+  ffprobe, bloqueia o que a Meta recusaria (`conferirVideo` do `render-reel.mjs`), pede a URL
+  assinada, sobe o MP4 e manda o rascunho com a capa. As peças puras ficam em
+  `scripts/reel-envio.mjs`. Precisa do ffmpeg no PATH.
 - **`references/api-instagram.md`** é corrigido: App Review não é exigido para conta própria, o
   carrossel aceita 20 pela API, a legenda publicada não se edita, a exclusão de mídia existe desde
   dez/2025 e existe o parâmetro `is_ai_generated`, que a Movepark não usa (decisão 8).
@@ -456,6 +508,8 @@ contrato `harmonizar-paginas`, que é do consumer.
 | pgTAP `social_post_publish_now.test.sql` | "Publicar agora": anon não executa, não-admin 42501, versão velha ou nula recusa, bloqueio recusa, `pending_review` com data futura vira `approved` para agora mesmo com outro post publicado hoje, `failed` com container volta guardando o container e quem aprovou antes, `overdue` volta, publicado/publicando/recusado recusam, evento `publish_now` com quem pediu |
 | `deno test` `social-dispatch/index.test.ts`, seção (h) | modo forçado: não-admin 403, sessão inválida 401, sem `post_id` segue o cron, `post_id` inválido 400, post fora de `approved` para agora 409, 404, publica com a chave desligada (e o cron na mesma fila só faz `dry_run`), publica com post já publicado hoje, pega vazia é `outra_rodada` sem Meta, não toca em atrasado nem parado, `failed` com container reconcilia sem POST, 502 em português, 503, CORS |
 | Vitest `src/routes/manager/social.test.tsx` | Aprovar travado com bloqueio, aprovar e corrigir legenda mandando a versão aberta, editor reabrindo com a legenda de agora, legenda com destaque dos 125 caracteres, aba certa por estado; "Publicar agora" nos estados certos e escondido com bloqueio, desistir não chama nada, confirmar manda a versão aberta, aviso de post já publicado hoje, "Publicando…" travado, toasts de cada resultado |
+| `deno test` reel (10/11/2026) | `social-draft`: `lerRascunho` do reel (só feed, capa única, vídeo bem descrito), URL de envio (401, 422, caminho com hash no `social-video`, arquivo que já existe), chave do Vault, `submit` do reel (grava `kind`/`video`, vídeo fora do bucket ou de outro tamanho é 422, capa fora de 9:16 é 422, vídeo fora da especificação entra com bloqueio). `social-dispatch`: envio REELS com vídeo, capa e `share_to_feed`; processando volta para `approved` com o envio guardado; nova tentativa publica o envio pronto ou em processamento sem criar outro; envio com erro ou vencido dá lugar a um novo; textos de falha do vídeo |
+| pgTAP `social_post_reel.test.sql` | reel exige vídeo, capa única e só feed; foto e carrossel sem vídeo; o rastro aceita `reel_processing`; o bucket `social-video` é público, só vídeo, até 300 MB |
 | Vitest `src/features/social/api.test.ts` | `usePublishSocialPostNow`: RPC com a versão e depois a Edge só com `post_id`, RPC recusada não chama a Edge, 502 e 409 viram o texto do servidor, a fila recarrega no sucesso e no erro |
 
 ## Ordem de entrega

@@ -33,6 +33,8 @@ export interface PostTexto {
   /** AAAA-MM-DD: a data em que os preços do post foram conferidos. */
   priceDate?: string | null;
   hoje?: Date;
+  /** Reel: o slide único é a capa, e reel não aceita texto alternativo. */
+  reel?: boolean;
 }
 
 export interface Conferencia {
@@ -101,7 +103,7 @@ export function conferirTexto(p: PostTexto): Conferencia {
   slides.forEach((s, i) => {
     const n = i + 1;
     const alt = (s?.alt ?? "").trim();
-    if (!alt) warnings.push(`O slide ${n} está sem texto alternativo.`);
+    if (!alt && !p.reel) warnings.push(`O slide ${n} está sem texto alternativo.`);
     if (alt.length > LIMITES.alt) {
       blockers.push(`O texto alternativo do slide ${n} tem ${alt.length} caracteres. O limite é ${LIMITES.alt}.`);
     }
@@ -224,4 +226,48 @@ export function conferirStory(info: ImagemInfo, nome: string): string[] {
     erros.push(`${nome} tem ${(info.bytes / 1048576).toFixed(1)} MB. O limite é 8 MB.`);
   }
   return erros;
+}
+
+/** Limites do reel na Meta (referência IG User Media, "Reel Specifications", conferida em 23/10/2026). */
+export const LIMITES_REEL = {
+  duracaoMin: 3,
+  duracaoMax: 15 * 60,
+  larguraMax: 1920,
+  fpsMin: 23,
+  fpsMax: 60,
+  bytes: 300 * 1024 * 1024,
+} as const;
+
+export interface VideoInfo {
+  bytes: number;
+  duracaoS: number;
+  largura: number;
+  altura: number;
+  fps: number;
+  codec: string;
+  audio: string | null;
+}
+
+/**
+ * O MP4 do reel contra a especificação da Meta. Os números são os que o ffprobe mediu na máquina
+ * de quem enviou (o servidor não decodifica vídeo); o tamanho, o servidor confere no bucket.
+ */
+export function conferirVideo(v: VideoInfo): Conferencia {
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  if (!["h264", "hevc"].includes(v.codec)) blockers.push(`O vídeo está em ${v.codec}. A Meta aceita H.264 ou HEVC.`);
+  if (v.audio && v.audio !== "aac") blockers.push(`O áudio está em ${v.audio}. A Meta pede AAC.`);
+  if (v.duracaoS < LIMITES_REEL.duracaoMin) blockers.push(`O vídeo tem ${v.duracaoS.toFixed(1)} s. O reel tem no mínimo 3 s.`);
+  if (v.duracaoS > LIMITES_REEL.duracaoMax) blockers.push(`O vídeo tem ${Math.round(v.duracaoS)} s. O reel tem no máximo 15 min.`);
+  if (v.largura > LIMITES_REEL.larguraMax) blockers.push(`O vídeo tem ${v.largura} px de largura. O máximo é 1920.`);
+  if (v.fps < LIMITES_REEL.fpsMin || v.fps > LIMITES_REEL.fpsMax) {
+    blockers.push(`O vídeo está a ${v.fps.toFixed(2)} quadros por segundo. A Meta aceita de 23 a 60.`);
+  }
+  if (v.bytes > LIMITES_REEL.bytes) blockers.push(`O vídeo tem ${(v.bytes / 1048576).toFixed(0)} MB. O limite é 300 MB.`);
+  const proporcao = v.altura ? v.largura / v.altura : 0;
+  if (Math.abs(proporcao - 9 / 16) > 0.01) {
+    warnings.push(`O vídeo está em ${v.largura}x${v.altura}. O reel ocupa a tela inteira em 9:16, como 1080x1920.`);
+  }
+  if (!v.audio) warnings.push("O vídeo não tem faixa de áudio.");
+  return { blockers, warnings };
 }

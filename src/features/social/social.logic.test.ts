@@ -17,6 +17,7 @@ import {
   rotuloDosLugares,
   situacaoDosStories,
   sugestaoDeData,
+  rotuloDoConteudo,
 } from "./social.logic";
 
 const AGORA = new Date("2026-10-21T15:00:00Z");
@@ -164,6 +165,7 @@ describe("ROTULO_EVENTO", () => {
       "story_published",
       "story_failed",
       "placements_edited",
+      "reel_processing",
     ];
     for (const k of tipos) expect(ROTULO_EVENTO[k], k).toBeTruthy();
     expect(Object.keys(ROTULO_EVENTO).sort()).toEqual([...tipos].sort());
@@ -265,5 +267,34 @@ describe("stories", () => {
     for (const k of ["story_container", "story_publish", "story_published", "story_failed", "placements_edited"]) {
       expect(ROTULO_EVENTO[k]).toBeTruthy();
     }
+  });
+});
+
+describe("reel", () => {
+  const base = { slides: [{ url: "c.jpg", path: "c.jpg", alt: null, texto: null }] };
+  it("a linha da fila diz o tipo e, no reel, a duração", () => {
+    expect(rotuloDoConteudo({ ...base, kind: "image", video: null })).toBe("1 imagem");
+    expect(
+      rotuloDoConteudo({ kind: "carousel", slides: [...base.slides, ...base.slides], video: null }),
+    ).toBe("2 slides");
+    expect(
+      rotuloDoConteudo({
+        ...base,
+        kind: "reel",
+        video: {
+          url: "v.mp4",
+          path: "v.mp4",
+          bytes: 1,
+          duracao_s: 47.5,
+          largura: 1080,
+          altura: 1920,
+        },
+      }),
+    ).toBe("reel de 48 s");
+  });
+
+  it("o reel sai no feed e na aba de reels", () => {
+    expect(rotuloDosLugares(["feed"], "reel")).toBe("Feed e aba de reels");
+    expect(rotuloDosLugares(["feed"], "image")).toBe("Só no feed");
   });
 });

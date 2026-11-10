@@ -1843,3 +1843,109 @@ Deno.test("Publicar agora num post publicado com stories pendentes publica só o
   assertEquals(db.linhaDo().story_status, "published");
   assertEquals(db.linhaDo().ig_media_id, "midia-1");
 });
+
+// ── Reel (10/11/2026) ─────────────────────────────────────────────────────────────────────
+
+const VIDEO = "https://x.supabase.co/storage/v1/object/public/social-video/social/o/1/bbbb/reel-confins.mp4";
+const CAPA = { url: `${BASE}/reel-confins-capa.jpg`, path: "social/o/1/aaaa/reel-confins-capa.jpg", alt: null, texto: null };
+const reelBanco = (over: Linha = {}) =>
+  postBanco({ kind: "reel", slides: [CAPA], video: { url: VIDEO, path: "social/o/1/bbbb/reel-confins.mp4" }, placements: ["feed"], ...over });
+
+/** O reel: um envio REELS, que fica pronto no status `pronto`, e a publicação. */
+function roteiroDoReel(pronto: string, publicado = "midia-reel") {
+  return (c: ChamadaGraph): Rota => {
+    if (c.metodo === "POST" && c.caminho === `${IG}/media`) return { body: { id: "reel-novo" } };
+    if (c.metodo === "GET" && (c.caminho === "reel-novo" || c.caminho === "reel-antigo")) {
+      return { body: { status_code: c.caminho === "reel-antigo" ? pronto : "FINISHED" } };
+    }
+    if (c.metodo === "POST" && c.caminho === `${IG}/media_publish`) return { body: { id: publicado } };
+    if (c.metodo === "GET" && c.caminho === publicado) return { body: { permalink: "https://www.instagram.com/reel/XYZ/" } };
+    return undefined;
+  };
+}
+
+const rodarReel = (db: ReturnType<typeof banco>, g: ReturnType<typeof graphFalso>) =>
+  rodada({ admin: db.cliente, cfg: CFG, agora: AGORA, relogio: () => AGORA, fetcher: g.fetcher, esperaMs: 0 });
+
+Deno.test("reel: um envio REELS com o vídeo, a capa e a legenda, e sai no feed", async () => {
+  const db = banco({ social_post: [reelBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso(roteiroDoReel("FINISHED"));
+
+  const r = await rodarReel(db, g);
+  assertEquals(r.body, { ok: true, acao: "publicado", post: ID, permalink: "https://www.instagram.com/reel/XYZ/" });
+  const envios = g.quais("POST", `${IG}/media`);
+  assertEquals(envios.length, 1);
+  assertEquals(envios[0].params.get("media_type"), "REELS");
+  assertEquals(envios[0].params.get("video_url"), VIDEO);
+  assertEquals(envios[0].params.get("cover_url"), CAPA.url);
+  assertEquals(envios[0].params.get("share_to_feed"), "true");
+  assertEquals(envios[0].params.get("caption"), LEGENDA);
+  assertEquals(envios[0].params.has("image_url"), false);
+  assertEquals(g.quais("POST", `${IG}/media_publish`)[0].params.get("creation_id"), "reel-novo");
+  const l = db.linhaDo();
+  assertEquals([l.status, l.ig_container_id, l.ig_media_id], ["published", "reel-novo", "midia-reel"]);
+});
+
+Deno.test("reel que a Meta ainda processa volta para a fila com o envio guardado, sem falhar", async () => {
+  const db = banco({ social_post: [reelBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso((c) =>
+    c.metodo === "GET" && c.caminho === "reel-novo" ? { body: { status_code: "IN_PROGRESS" } } : roteiroDoReel("FINISHED")(c)
+  );
+
+  const r = await rodarReel(db, g);
+  assertEquals(r.body, { ok: true, acao: "processando", post: ID });
+  assertEquals(g.quais("POST", `${IG}/media_publish`).length, 0);
+  const l = db.linhaDo();
+  assertEquals([l.status, l.ig_container_id, l.last_error], ["approved", "reel-novo", null]);
+  assertEquals(db.eventos("reel_processing").length, 1);
+  assertEquals(db.eventos("failed").length, 0);
+});
+
+Deno.test("reel: nova tentativa publica o envio antigo pronto ou em processamento, sem criar outro", async () => {
+  for (const pronto of ["FINISHED", "IN_PROGRESS"]) {
+    const db = banco({ social_post: [reelBanco({ ig_container_id: "reel-antigo" })], app_setting: chaveLigada("true") });
+    // IN_PROGRESS na primeira consulta, pronto na segunda: a espera continua no envio antigo.
+    let consultas = 0;
+    const g = graphFalso((c) => {
+      if (c.metodo === "GET" && c.caminho === "reel-antigo") {
+        consultas++;
+        return { body: { status_code: consultas === 1 ? pronto : "FINISHED" } };
+      }
+      return roteiroDoReel(pronto)(c);
+    });
+
+    const r = await rodarReel(db, g);
+    assertEquals(r.body.acao, "publicado", pronto);
+    assertEquals(g.quais("POST", `${IG}/media`).length, 0, pronto);
+    assertEquals(g.quais("POST", `${IG}/media_publish`)[0].params.get("creation_id"), "reel-antigo", pronto);
+  }
+});
+
+Deno.test("reel: envio antigo com erro ou vencido dá lugar a um novo", async () => {
+  for (const ruim of ["ERROR", "EXPIRED"]) {
+    const db = banco({ social_post: [reelBanco({ ig_container_id: "reel-antigo" })], app_setting: chaveLigada("true") });
+    const g = graphFalso(roteiroDoReel(ruim));
+    const r = await rodarReel(db, g);
+    assertEquals(r.body.acao, "publicado", ruim);
+    assertEquals(g.quais("POST", `${IG}/media`).length, 1, ruim);
+    assertEquals(db.linhaDo().ig_container_id, "reel-novo", ruim);
+  }
+});
+
+Deno.test("reel: a Meta recusa o vídeo e a falha fala de vídeo, não de imagem", async () => {
+  const db = banco({ social_post: [reelBanco()], app_setting: chaveLigada("true") });
+  const g = graphFalso((c) =>
+    c.metodo === "GET" && c.caminho === "reel-novo"
+      ? { body: { status_code: "ERROR", status: "Error: video codec" } }
+      : roteiroDoReel("FINISHED")(c)
+  );
+  const r = await rodarReel(db, g);
+  assertEquals(r.status, 502);
+  assertEquals(db.linhaDo().status, "failed");
+  assertEquals(db.linhaDo().last_error, "A Meta recusou o vídeo (ERROR): Error: video codec.");
+});
+
+Deno.test("textoDaFalha: no reel, o envio e o processamento falam do vídeo", () => {
+  assertEquals(textoDaFalha("container do reel", { error: { message: "Bad url" } }, true), "Falhou ao enviar o vídeo à Meta: Bad url.");
+  assertEquals(textoDaFalha("container não ficou pronto", { status: "TIMEOUT" }, true), "A Meta demorou demais para processar o vídeo.");
+});
