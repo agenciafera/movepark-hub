@@ -34,6 +34,17 @@ export interface WithdrawalEmailRow {
 
 export type WithdrawalEmailKind = "requested" | "settled";
 
+/**
+ * Colunas que o e-mail precisa. Uma lista só para os dois caminhos que mandam (a Edge do saque e a
+ * varredura da conciliação): em 10/11/2026 a varredura lia sem `origin`, e o "enviado ao seu
+ * banco" do primeiro repasse automático saiu com o texto do saque manual ("Taxa de saque: R$ 3,67").
+ */
+export const WITHDRAWAL_EMAIL_COLUMNS =
+  "id, company_id, amount_cents, fee_cents, status, expected_at, paid_at, failure_reason, requested_email_sent_at, settled_email_sent_at, raw, origin, fee_borne_by";
+
+/** Escopo de quem recebe o aviso de saque na equipe (ADR-005: Dono, Gerente e Financeiro). */
+export const WITHDRAWAL_EMAIL_SCOPE = "payouts:read";
+
 const DESFECHOS = new Set(["paid", "failed", "canceled"]);
 
 /** Quais e-mails este saque ainda deve, na ordem em que saem. Puro, para teste. */
@@ -52,6 +63,15 @@ export function accountTailFromRaw(raw: unknown): string | null {
   if (!conta) return null;
   const dv = typeof ba.conta_dv === "string" && ba.conta_dv ? `-${ba.conta_dv}` : "";
   return `${conta.slice(-4)}${dv}`;
+}
+
+/**
+ * Destinatários do aviso de saque: a equipe com `payouts:read` mais o contato da ficha (KYC ou
+ * onboarding), sem repetir. Até 10/11/2026 ia só para o contato da ficha, um endereço por empresa.
+ */
+export function withdrawalRecipients(team: string[] | null | undefined, contact: string | null | undefined): string[] {
+  const lista = [...(team ?? []), ...(contact ? [contact] : [])].map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return [...new Set(lista)];
 }
 
 /** Contato do parceiro: e-mail da ficha de KYC, com o contato do onboarding como reserva. */
@@ -98,8 +118,10 @@ export async function sendWithdrawalEmails(admin: any, row: WithdrawalEmailRow):
       if (!claimed) continue;
 
       const contato = await partnerContact(admin, row.company_id);
+      const { data: equipe } = await admin.rpc("company_scope_emails", { p_company_id: row.company_id, p_scope: WITHDRAWAL_EMAIL_SCOPE });
+      const para = withdrawalRecipients(equipe as string[] | null, contato.to);
       const { from } = await getEmailConfig(admin);
-      if (!contato.to || !from) {
+      if (para.length === 0 || !from) {
         console.warn("[withdrawal-email] sem destinatário ou remetente; e-mail não enviado:", row.id, kind);
         continue;
       }
@@ -119,7 +141,7 @@ export async function sendWithdrawalEmails(admin: any, row: WithdrawalEmailRow):
         : row.status === "paid"
           ? tplWithdrawalPaid(dados)
           : tplWithdrawalFailed(dados);
-      const r = await sendPartnerEmail(admin, { companyId: row.company_id, from, to: contato.to, subject: mail.subject, html: mail.html });
+      const r = await sendPartnerEmail(admin, { companyId: row.company_id, from, to: para, subject: mail.subject, html: mail.html });
       if (r.ok) {
         sent.push(kind);
       } else if (!r.silenced) {
@@ -141,7 +163,7 @@ export const SWEEP_LIMIT = 20;
 export async function sweepWithdrawalEmails(admin: any): Promise<{ checked: number; sent: number }> {
   const { data, error } = await admin
     .from("payout_withdrawal")
-    .select("id, company_id, amount_cents, fee_cents, status, expected_at, paid_at, failure_reason, requested_email_sent_at, settled_email_sent_at, raw")
+    .select(WITHDRAWAL_EMAIL_COLUMNS)
     .is("deleted_at", null)
     .or("requested_email_sent_at.is.null,and(status.in.(paid,failed,canceled),settled_email_sent_at.is.null)")
     .order("created_at", { ascending: true })

@@ -225,8 +225,12 @@ traz a mesma informação na coluna Liberação (`release_at`/`release_status` d
 **E-mails ao parceiro (17/09/2026).** Dois por saque, sempre pela guarda de silêncio
 (`sendPartnerEmail`): "Seu saque está a caminho" quando o saque é pedido (valor que cai, taxa,
 previsão da Pagar.me, conta final) e "Transferência enviada ao seu banco" quando o gateway confirma, ou "O saque não
-foi concluído" com o motivo do banco. Destinatário: e-mail da ficha de KYC, com o contato do
-onboarding como reserva. A unicidade vem de `payout_withdrawal.requested_email_sent_at` e
+foi concluído" com o motivo do banco. Destinatários (desde 10/11/2026): a equipe com
+`payouts:read` (Dono, Gerente e Financeiro, pela RPC `company_scope_emails`, só service role) mais
+o e-mail da ficha de KYC, com o contato do onboarding como reserva, sem repetir. Até ali ia só para
+o contato da ficha. As duas rotas que mandam leem as mesmas colunas (`WITHDRAWAL_EMAIL_COLUMNS`):
+no primeiro repasse automático a varredura lia sem `origin`, e o segundo e-mail saiu com o texto
+do saque manual ("Taxa de saque: R$ 3,67") depois de o primeiro dizer "sem taxa para você". A unicidade vem de `payout_withdrawal.requested_email_sent_at` e
 `settled_email_sent_at`, reivindicados por UPDATE condicional antes do envio (migration
 `20261120110000_email_de_saque.sql`); falha de transporte devolve o marcador para a próxima
 varredura. Quem manda: a Edge do saque (o primeiro) e a conciliação a cada 15 min
@@ -234,7 +238,8 @@ varredura. Quem manda: a Edge do saque (o primeiro) e a conciliação a cada 15 
 `_shared/email.ts` (ADR-007), lógica em `_shared/withdrawal-email.ts`.
 
 **Testes.** Deno `withdrawal.test.ts` (regra das 15h, patch, terminal), `withdrawal-email.test.ts`
-(quais e-mails o saque deve, final da conta, reivindicação perdida não manda), `email.test.ts`
+(quais e-mails o saque deve, final da conta, reivindicação perdida não manda, a varredura lê
+`origin`, destinatários sem repetir), pgTAP `company_scope_emails.test.sql` (4), `email.test.ts`
 (os três templates); pgTAP
 `partner_account_statement.test.sql` (15: saque pago, em curso com previsão, falhado com motivo);
 Vitest `withdrawal.logic.test.ts`, `WithdrawalsCard.test.tsx`.

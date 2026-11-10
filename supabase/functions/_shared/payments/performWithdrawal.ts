@@ -8,7 +8,7 @@
 import type { PaymentGateway } from "./types.ts";
 import { withdrawalPatch } from "./withdrawal.ts";
 import { logGatewayEvent } from "./trail.ts";
-import { sendWithdrawalEmails } from "../withdrawal-email.ts";
+import { sendWithdrawalEmails, WITHDRAWAL_EMAIL_COLUMNS } from "../withdrawal-email.ts";
 import { withdrawCap, withdrawPreflight } from "./withdraw-logic.ts";
 
 export interface PerformWithdrawalArgs {
@@ -105,7 +105,7 @@ export async function performWithdrawal(admin: any, gateway: PaymentGateway, arg
       },
       { onConflict: "provider,external_transfer_id" },
     )
-    .select("id, company_id, amount_cents, fee_cents, status, expected_at, paid_at, failure_reason, requested_email_sent_at, settled_email_sent_at, raw, origin, fee_borne_by")
+    .select(WITHDRAWAL_EMAIL_COLUMNS)
     .maybeSingle();
   if (rowErr) console.error("[performWithdrawal] saque pedido mas a linha não gravou:", rowErr.message);
   if (row) await sendWithdrawalEmails(admin, row);

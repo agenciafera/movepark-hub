@@ -1,5 +1,12 @@
 import { assertEquals } from "jsr:@std/assert";
-import { accountTailFromRaw, sendWithdrawalEmails, withdrawalEmailsDue } from "./withdrawal-email.ts";
+import {
+  accountTailFromRaw,
+  sendWithdrawalEmails,
+  sweepWithdrawalEmails,
+  WITHDRAWAL_EMAIL_COLUMNS,
+  withdrawalEmailsDue,
+  withdrawalRecipients,
+} from "./withdrawal-email.ts";
 
 Deno.test("quais e-mails o saque deve: pedido, desfecho, ou nada", () => {
   assertEquals(withdrawalEmailsDue({ status: "processing", requested_email_sent_at: null, settled_email_sent_at: null }), ["requested"]);
@@ -31,4 +38,28 @@ Deno.test("quem perde a reivindicação não manda: dois gatilhos, um e-mail", a
   });
   assertEquals(sent, []);
   assertEquals(leituras, 0);
+});
+
+Deno.test("regressão 10/11/2026: a varredura lê origin e fee_borne_by (repasse automático com o texto certo)", async () => {
+  let colunas = "";
+  const admin = {
+    from: () => ({
+      select: (cols: string) => {
+        colunas = cols;
+        const chain = { is: () => chain, or: () => chain, order: () => chain, limit: () => Promise.resolve({ data: [], error: null }) };
+        return chain;
+      },
+    }),
+  };
+  await sweepWithdrawalEmails(admin);
+  assertEquals(colunas, WITHDRAWAL_EMAIL_COLUMNS);
+  assertEquals(WITHDRAWAL_EMAIL_COLUMNS.includes("origin"), true);
+  assertEquals(WITHDRAWAL_EMAIL_COLUMNS.includes("fee_borne_by"), true);
+});
+
+Deno.test("destinatários do saque: equipe com payouts:read mais o contato da ficha, sem repetir", () => {
+  assertEquals(withdrawalRecipients(["Dono@x.com", "fin@x.com"], "dono@x.com"), ["dono@x.com", "fin@x.com"]);
+  assertEquals(withdrawalRecipients([], "kyc@x.com"), ["kyc@x.com"]);
+  assertEquals(withdrawalRecipients(null, null), []);
+  assertEquals(withdrawalRecipients(["a@x.com", " "], ""), ["a@x.com"]);
 });
