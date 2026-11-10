@@ -466,7 +466,7 @@ Então **carro e cenário entram no prompt já datados**, nunca no genérico:
   headlights and daytime running lights`. Frota variada em cor (branco, prata,
   cinza, um azul ou vermelho), não o mesmo modelo repetido em fila.
 - **Cenário:** `modern parking facility, fresh painted line markings, LED
-  lighting, clean concrete or new asphalt, current signage, well-kept
+  lighting, clean concrete or new asphalt, no signage in frame, well-kept
   landscaping, contemporary architecture`. Em imagem de traslado, van recente de
   passageiros; em imagem de portaria, cancela e leitor atuais, não guarita de
   madeira.
@@ -485,6 +485,68 @@ novo com o termo reforçado em vez de seguir com o que veio: a imagem fica no po
 por anos e uma foto que contradiz o texto custa mais do que um segundo
 processamento.
 
+#### A capa: Brasil real ou peça comercial, nunca o pátio genérico
+
+Em 10/11/2026 o painel das 92 capas mostrou o problema: umas 60 eram a mesma foto
+(pátio cheio de carro visto do alto, céu azul ou pôr do sol, ninguém em cena), e
+boa parte tinha cara de Estados Unidos (avenida de palmeira com torre de controle,
+asfalto enorme e vazio, SUV e picape de lá, avião voando baixo sobre o pátio) ou de
+imagem falsa (letreiro embaralhado, avião parado dentro do estacionamento, maquete
+aérea). Na listagem do blog elas viram uma parede igual, e ninguém clica. O
+usuário pediu capa com cara de Brasil e capa mais comercial. Toda capa nova sai
+de uma destas duas linhas, e o blog alterna as duas na listagem:
+
+**Linha 1, foto Brasil real** (`soul_2`, 16:9, `quality: "2k"`). Documental, na
+altura do olho, sem pose, como foto de celular bem feita.
+
+- **Gente fazendo algo concreto:** pondo a mala no porta-malas, descendo da van no
+  desembarque, andando no pátio. Pessoas brasileiras de etnias variadas, roupa do
+  dia a dia. Peça "two adults" ou "a couple"; "family" e criança disparam o
+  filtro do gerador.
+- **Carro que roda aqui, pelo nome:** Volkswagen T-Cross, Polo, Nivus; Chevrolet
+  Onix, Tracker; Hyundai HB20, Creta; Fiat Strada, Pulse; Jeep Renegade; Toyota
+  Corolla Cross; Renault Kwid. Van de traslado: `white Renault Master`. Nada de
+  muscle car, picape americana ou SUV grande.
+- **Entorno que o brasileiro reconhece:** fiação emaranhada no poste, muro com
+  grade, calçada irregular, prédio baixo, ipê; morro verde e terra vermelha em
+  Minas; canavial em Campinas; terra roxa no Paraná; garoa e céu fechado em São
+  Paulo; marquise de concreto do terminal. Coqueiro só no Nordeste.
+- **Luz variada:** nublado, garoa, sol a pino, fim de tarde. Pôr do sol dourado
+  não é o padrão, é uma opção entre várias.
+
+**Linha 2, peça comercial** (`gpt_image_2_6`, 16:9). Carrinho em miniatura e
+objetos de viagem em fundo de cor chapada da marca: violeta `#5D5FEF`, navy
+`#29263F` ou azul claro `#E4F2FF`. Luz dura de estúdio, sombra marcada, muito
+espaço vazio, tom de campanha de fintech. Cada intenção tem a sua metáfora:
+
+| Intenção | Metáfora |
+|---|---|
+| preço | carrinho numa vaga desenhada com fita, pilha de moedas lisas, avião de papel |
+| comparativo | tela dividida violeta e navy, um carrinho de cada lado, frente a frente |
+| vaga coberta | carrinho na sombra de um telhado de papel dobrado, sol forte |
+| estadia longa ou mensal | carrinho ao lado de ampulheta ou de grade de 30 quadradinhos sem número |
+| ranking (top 3, top 5) | carrinhos num pódio de papel em degraus |
+| calendário (fim de ano, carnaval, férias) | flat lay com mala, chave, óculos e um objeto da data |
+| praça | um objeto local no flat lay: pão de queijo em Minas, pinhão em Curitiba |
+
+O carrinho também é atual: `die-cast toy of a modern 2024 compact crossover or
+hatchback, no badges`, igual aos carros da Linha 1. Sem pedir isso o modelo
+devolve Mustang, Porsche antigo e Mini clássico.
+
+**O que o gerador não acerta, e como contornar:**
+
+- **Letreiro e logo saem embaralhados sempre.** Tire a sinalização do
+  enquadramento ("plain blank walls, no signs") e desfoque o que escapar.
+- **Placa inventada** aparece mesmo com o negativo. Desfoque antes de converter.
+- **Araucária não sai.** Em duas tentativas veio pinheiro mediterrâneo e depois
+  árvore em forquilha. Curitiba vai de Linha 2 (pinhão) ou de foto real.
+- **Marca de terceiro** (logo da Azul, da GOL, do aeroporto) nunca entra, nem no
+  prompt.
+
+Antes de trocar capa em lote, monte um painel com as capas atuais lado a lado e
+compare com o lote novo: repetição só aparece em conjunto, nunca numa capa
+sozinha.
+
 ### 4. Converter para `.webp`
 
 Formato sempre `.webp`, largura máxima 1600px. O Higgsfield devolve PNG/JPEG;
@@ -493,6 +555,10 @@ baixe e converta antes de subir, já salvando com o nome planejado:
 ```bash
 cwebp -q 82 -resize 1600 0 entrada.png -o estacionamento-viracopos-vaga-coberta.webp
 ```
+
+Sem `cwebp` na máquina, o `sharp` do projeto faz o mesmo e também desfoca placa e
+letreiro por região: `sharp(src).resize({ width: 1600 }).webp({ quality: 82 })`,
+rodado com `bun` a partir da raiz do repo.
 
 ### 5. Alt em toda imagem, com a mesma variação do nome
 
