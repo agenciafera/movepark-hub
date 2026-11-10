@@ -8,8 +8,8 @@
 
 begin;
 -- 11 = 8 originais + 3 do caso de tarifa. O plano estava em 9 com 8 asserções (Bad plan
--- pré-existente, mesma classe do retroactive_check_in relatado em 86ajmx4yc). +4 do segundo carro.
-select plan(15);
+-- pré-existente, mesma classe do retroactive_check_in relatado em 86ajmx4yc). +4 do segundo carro, +2 do EXECUTE.
+select plan(17);
 
 -- ── fixture: customer + um tipo de vaga do seed, capacidade folgada ─────────
 do $$
@@ -156,5 +156,15 @@ select is(current_setting('test.car_r2_replay'), 'false',
 select is(
   (select vehicle_id::text from public.booking where id = current_setting('test.car_r1')::uuid),
   current_setting('test.carro1'), 'a 1ª reserva segue com o carro 1');
+
+-- ── 7) Só a Edge cria reserva (20261201231000) ──────────────────────────────
+-- As duas funções recebem o profile_id por parâmetro. Com EXECUTE para o usuário logado, ele
+-- reservava na conta de outra pessoa chamando a RPC direto.
+select ok(not has_function_privilege('authenticated',
+  'public.create_booking_atomic(uuid, uuid, timestamptz, timestamptz, integer, boolean, uuid, uuid[], text, text, public.fare_tier)',
+  'execute'), 'usuário logado não executa create_booking_atomic direto');
+select ok(not has_function_privilege('authenticated',
+  'public._create_booking_core(uuid, uuid, text, text, text, uuid, timestamptz, timestamptz, integer, boolean, uuid, uuid[], text, text, public.fare_tier)',
+  'execute'), 'usuário logado não executa _create_booking_core direto');
 
 rollback;

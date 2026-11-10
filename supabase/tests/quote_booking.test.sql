@@ -96,10 +96,14 @@ select ok((select (basica ->> 'quote')::boolean and not (basica ? 'code') and no
 select is((select (basica ->> 'days')::int from _q), 3, 'diárias contadas com a tolerância da unidade');
 
 -- ── 1. Mesmo total da reserva ───────────────────────────────────────────────
+-- A reserva sai da Edge com a chave de serviço, não da sessão do usuário (20261201231000).
+reset role;
 
 create temp table _b as
 select public.create_booking_atomic('00000000-0000-4000-8000-0000000000b1', current_setting('test.lpt')::uuid,
          current_setting('test.in')::timestamptz, current_setting('test.out')::timestamptz) as r;
+-- Criada fora da sessão do usuário: ele lê `_b` mais adiante.
+grant select on _b to authenticated;
 
 select is((select (r ->> 'total_amount')::numeric from _b), (select (basica ->> 'total_amount')::numeric from _q),
   'Básica: o total da cotação é o total que a reserva grava');
@@ -115,6 +119,8 @@ select is(
   (select (flex ->> 'fare_price')::numeric from _q),
   'Flex: a diferença para a Básica é o preço da tarifa'
 );
+
+set local role authenticated;
 
 -- ── 4. Erro do motor sobe como está ─────────────────────────────────────────
 

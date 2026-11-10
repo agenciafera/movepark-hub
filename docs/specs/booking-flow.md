@@ -57,6 +57,15 @@
 > agente a vincular a placa da primeira antes de criar a segunda. O white-label não tinha a trava:
 > a regra dele (`getHasDuplicateOrder`) já compara a placa. Teste:
 > `consumer_booking_idempotency.test.sql` (casos 12 a 15).
+>
+> **Só a Edge cria reserva (09/11/2026).** `create_booking_atomic` e `_create_booking_core` recebem o
+> `profile_id` por parâmetro e não conferem `auth.uid()`; quem confere o JWT é a Edge
+> `create-booking`, que chama a RPC com a chave de serviço. Até `20261201231000_reserva_so_pela_edge.sql`
+> o papel `authenticated` também executava as duas, e qualquer cliente logado criava reserva
+> pendente na conta de outra pessoa chamando `/rest/v1/rpc/create_booking_atomic` direto. Agora só
+> `service_role` executa. **Não devolva esse EXECUTE ao `authenticated`**: se um dia o front precisar
+> chamar a RPC sem a Edge, a função tem que passar a usar `auth.uid()` no lugar do parâmetro.
+> Teste: `consumer_booking_idempotency.test.sql` (casos 16 e 17).
 
 ## State Machine
 

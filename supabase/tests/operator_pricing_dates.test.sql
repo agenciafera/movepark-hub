@@ -92,8 +92,9 @@ select lives_ok(
 reset role;
 
 -- reserva cobrindo a data bloqueada → rejeitada (a checagem roda antes do preço)
-set local role authenticated;
-select pg_temp.as_user(current_setting('test.cust'));
+-- A reserva é criada pela Edge com a chave de serviço (o usuário logado não executa a RPC desde
+-- 20261201231000).
+set local role service_role;
 select throws_ok(
   format($$ select public.create_booking_atomic(%L::uuid, %L::uuid,
     %L::timestamptz, %L::timestamptz) $$,
@@ -109,8 +110,7 @@ select pg_temp.as_user(current_setting('test.op_a'));
 select public.operator_set_date_blocked(current_setting('test.lpt')::uuid, current_setting('test.dia')::date, false);
 reset role;
 
-set local role authenticated;
-select pg_temp.as_user(current_setting('test.cust'));
+set local role service_role;
 select ok(
   (public.create_booking_atomic(current_setting('test.cust')::uuid, current_setting('test.lpt')::uuid,
     (current_setting('test.dia') || 'T12:00:00Z')::timestamptz,
