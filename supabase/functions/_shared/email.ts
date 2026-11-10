@@ -765,6 +765,147 @@ export function tplPartnerDailyDigest(d: {
   };
 }
 
+/** Números comparáveis de um dia (`team_digest_numbers`). Dinheiro em centavos. */
+export interface TeamDigestNumbers {
+  hub_reservas: number;
+  hub_receita_cents: number;
+  hub_comissao_cents: number;
+  hub_cartao: number;
+  hub_pix: number;
+  wl_reservas: number;
+  wl_receita_cents: number;
+  clientes_novos: number;
+  cancelamentos: number;
+  estornos_cents: number;
+}
+
+/** O resumo inteiro (`team_daily_digest`). */
+export interface TeamDigest {
+  day: string;
+  atual: TeamDigestNumbers;
+  semana_passada: TeamDigestNumbers;
+  canais: { canal: string; reservas: number; receita_cents: number }[];
+  compradores: { primeira: number; recompra: number };
+  repasses: { empresa: string; valor_cents: number; origem: string | null; status: string }[];
+  divida_cents: number;
+  hoje: { entradas: number; saidas: number };
+  chamados: { novos: number; abertos: number };
+  avaliacoes: { n: number; media: number | null; baixas: { unidade: string; nota: number; comentario: string | null }[] };
+  alertas: {
+    leads_parceiro: { empresa: string | null; cidade: string | null }[];
+    integracao_falhas: number;
+    cartao_recusado: number;
+    publicacao_ok: boolean;
+    publicacao_motivo: string | null;
+  };
+}
+
+/** Variação contra o mesmo dia da semana anterior, para o rodapé de cada número. Puro, para teste. */
+export function teamDigestDelta(atual: number, antes: number, dinheiro = false): string {
+  const fmt = (v: number) => (dinheiro ? cents(v) : String(v));
+  if (antes === 0 && atual === 0) return "igual à semana passada";
+  if (antes === 0) return `semana passada: ${fmt(0)}`;
+  const pct = Math.round(((atual - antes) / antes) * 100);
+  const sinal = pct > 0 ? "+" : "";
+  return `${sinal}${pct}% contra ${fmt(antes)} na semana passada`;
+}
+
+const CANAL_ROTULO: Record<string, string> = { hub: "Movepark", direto: "Sem canal" };
+
+/**
+ * Resumo diário da equipe Movepark (10/11/2026): o dia anterior inteiro, às 7h de Brasília, para a
+ * lista `app_setting.team_daily_digest_recipients`. Ver docs/specs/resumo-diario-equipe.md.
+ */
+export function tplTeamDailyDigest(d: TeamDigest): { subject: string; html: string } {
+  const a = d.atual;
+  const b = d.semana_passada;
+  const dia = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })
+    .format(new Date(`${d.day}T12:00:00Z`));
+  const diaCurto = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "2-digit" })
+    .format(new Date(`${d.day}T12:00:00Z`)).replace(".", "");
+
+  const muted = `color:${BRAND.muted};font-size:13px`;
+  const linha = (rotulo: string, valor: string, nota?: string) =>
+    `<tr><td style="padding:8px 0;border-bottom:1px solid ${BRAND.hairline}">${escapeHtml(rotulo)}${nota ? `<br><span style="${muted}">${escapeHtml(nota)}</span>` : ""}</td>` +
+    `<td style="padding:8px 0;border-bottom:1px solid ${BRAND.hairline};text-align:right;font-weight:600;white-space:nowrap">${escapeHtml(valor)}</td></tr>`;
+  const tabela = (linhas: string[]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${linhas.join("")}</table>`;
+  const titulo = (t: string) => `<h2 style="margin:28px 0 4px;font-size:16px">${escapeHtml(t)}</h2>`;
+  const paragrafo = (t: string) => `<p style="margin:8px 0 0">${escapeHtml(t)}</p>`;
+
+  const vendas = tabela([
+    linha("Reservas no Hub", String(a.hub_reservas), teamDigestDelta(a.hub_reservas, b.hub_reservas)),
+    linha("Vendido no Hub", cents(a.hub_receita_cents), teamDigestDelta(a.hub_receita_cents, b.hub_receita_cents, true)),
+    linha("Comissão da Movepark", cents(a.hub_comissao_cents), teamDigestDelta(a.hub_comissao_cents, b.hub_comissao_cents, true)),
+    linha("Cartão e PIX", `${a.hub_cartao} / ${a.hub_pix}`),
+    linha("Reservas no white-label", String(a.wl_reservas), teamDigestDelta(a.wl_reservas, b.wl_reservas)),
+    linha("Vendido no white-label", cents(a.wl_receita_cents), teamDigestDelta(a.wl_receita_cents, b.wl_receita_cents, true)),
+  ]);
+
+  const canais = d.canais.length
+    ? tabela(d.canais.map((c) => linha(CANAL_ROTULO[c.canal] ?? c.canal, cents(c.receita_cents), contagem(c.reservas, "reserva", "reservas"))))
+    : paragrafo("Nenhuma venda no Hub.");
+
+  const clientes = tabela([
+    linha("Cadastros novos", String(a.clientes_novos), teamDigestDelta(a.clientes_novos, b.clientes_novos)),
+    linha("Compraram pela primeira vez", String(d.compradores.primeira)),
+    linha("Voltaram a comprar", String(d.compradores.recompra)),
+  ]);
+
+  const repasses = d.repasses.length
+    ? d.repasses.map((r) => linha(r.empresa, cents(r.valor_cents), `${r.origem === "automatic" ? "repasse automático" : "saque pedido pelo parceiro"} · ${r.status}`))
+    : [];
+  const dinheiro = tabela([
+    ...repasses,
+    ...(repasses.length ? [] : [linha("Repasses", "nenhum")]),
+    linha("Cancelamentos", String(a.cancelamentos), teamDigestDelta(a.cancelamentos, b.cancelamentos)),
+    linha("Estornado", cents(a.estornos_cents)),
+    linha("Dívida de parceiros em aberto", cents(d.divida_cents)),
+  ]);
+
+  const hoje = tabela([
+    linha("Entram pelo Hub", String(d.hoje.entradas)),
+    linha("Saem pelo Hub", String(d.hoje.saidas)),
+    linha("Chamados abertos", String(d.chamados.abertos), d.chamados.novos ? `${contagem(d.chamados.novos, "novo", "novos")} ontem` : undefined),
+  ]);
+
+  const av = d.avaliacoes;
+  const avaliacoes = av.n === 0
+    ? paragrafo("Nenhuma avaliação nova.")
+    : tabela([
+      linha("Avaliações novas", String(av.n), av.media != null ? `média ${String(av.media).replace(".", ",")}` : undefined),
+      ...av.baixas.map((x) => linha(x.unidade, `nota ${x.nota}`, x.comentario ?? undefined)),
+    ]);
+
+  const al = d.alertas;
+  const alertas: string[] = [];
+  if (!al.publicacao_ok) alertas.push(`A publicação do site está parada${al.publicacao_motivo ? `: ${al.publicacao_motivo}` : "."}`);
+  if (al.integracao_falhas) alertas.push(al.integracao_falhas === 1
+    ? "1 entrega para integração de parceiro falhou."
+    : `${al.integracao_falhas} entregas para integração de parceiro falharam.`);
+  if (al.cartao_recusado) alertas.push(`${contagem(al.cartao_recusado, "cartão recusado", "cartões recusados")} no checkout.`);
+  for (const l of al.leads_parceiro) alertas.push(`Lead de parceiro: ${l.empresa ?? "sem nome"}${l.cidade ? `, ${l.cidade}` : ""}.`);
+  const blocoAlertas = alertas.length
+    ? `<ul style="margin:8px 0 0;padding-left:20px">${alertas.map((t) => `<li style="margin:4px 0">${escapeHtml(t)}</li>`).join("")}</ul>`
+    : paragrafo("Nada pedindo atenção.");
+
+  const subject = `Movepark ${diaCurto}: ${contagem(a.hub_reservas, "reserva", "reservas")} no Hub (${cents(a.hub_receita_cents)}) e ${a.wl_reservas} no white-label`;
+  return {
+    subject,
+    html: shell("Resumo de ontem", `
+      <p style="margin:0">Bom dia. Este é o resumo de ${escapeHtml(dia)}, de 0h às 24h de Brasília.</p>
+      ${titulo("Vendas")}${vendas}
+      ${titulo("Canais do Hub")}${canais}
+      ${titulo("Clientes")}${clientes}
+      ${titulo("Dinheiro")}${dinheiro}
+      ${titulo("Hoje")}${hoje}
+      ${titulo("Avaliações")}${avaliacoes}
+      ${titulo("Atenção")}${blocoAlertas}
+      <p style="margin:28px 0 0;text-align:center">${button(`${siteUrl()}/manager`, "Abrir o Manager")}</p>
+      <p style="margin:24px 0 0;${muted}">Comparações com o mesmo dia da semana anterior. Comissão é a parte da Movepark no split, antes da taxa da Pagar.me. Para mudar quem recebe, edite team_daily_digest_recipients no app_setting.</p>`,
+      { preheader: escapeHtml(`${cents(a.hub_comissao_cents)} de comissão, ${contagem(a.clientes_novos, "cadastro novo", "cadastros novos")}`) }),
+  };
+}
+
 export function tplReviewRequest(
   contactName: string,
   locationName: string,

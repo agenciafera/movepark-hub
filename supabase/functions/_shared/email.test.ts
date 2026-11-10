@@ -7,6 +7,8 @@ import {
   tplApprovalInvite,
   tplDuplicatePaymentTeam,
   tplPartnerDailyDigest,
+  teamDigestDelta,
+  tplTeamDailyDigest,
   tplBookingConfirmation,
   tplLeadAlert,
   tplLeadReceived,
@@ -435,4 +437,60 @@ Deno.test("tplIntegrationAlert: reserva, placa, motivo e a ação certa para cad
   assertEquals(parou.html.includes("Motivo"), false);
   assertEquals(parou.html.includes("placa"), false);
   for (const m of [tentando, parou]) assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
+});
+
+const resumoEquipe = {
+  day: "2026-11-09",
+  atual: { hub_reservas: 10, hub_receita_cents: 178210, hub_comissao_cents: 30077, hub_cartao: 7, hub_pix: 3,
+    wl_reservas: 389, wl_receita_cents: 7687369, clientes_novos: 25, cancelamentos: 0, estornos_cents: 0 },
+  semana_passada: { hub_reservas: 5, hub_receita_cents: 0, hub_comissao_cents: 0, hub_cartao: 0, hub_pix: 0,
+    wl_reservas: 270, wl_receita_cents: 5682381, clientes_novos: 13, cancelamentos: 0, estornos_cents: 0 },
+  canais: [{ canal: "Site do Pare Seguro", reservas: 6, receita_cents: 111150 }, { canal: "hub", reservas: 4, receita_cents: 67060 }],
+  compradores: { primeira: 10, recompra: 0 },
+  repasses: [{ empresa: "Abbapark", valor_cents: 115785, origem: "automatic", status: "paid" }],
+  divida_cents: 0,
+  hoje: { entradas: 3, saidas: 3 },
+  chamados: { novos: 0, abertos: 0 },
+  avaliacoes: { n: 1, media: 2, baixas: [{ unidade: "Unidade <X>", nota: 2, comentario: "Demorou" }] },
+  alertas: { leads_parceiro: [{ empresa: "Lead Park", cidade: "Campinas/SP" }], integracao_falhas: 1, cartao_recusado: 2,
+    publicacao_ok: false, publicacao_motivo: "sem deploy hook" },
+};
+
+Deno.test("teamDigestDelta: percentual contra a semana passada, e sem divisão por zero", () => {
+  assertEquals(teamDigestDelta(10, 5), "+100% contra 5 na semana passada");
+  assertEquals(teamDigestDelta(389, 270), "+44% contra 270 na semana passada");
+  assertEquals(teamDigestDelta(3, 4), "-25% contra 4 na semana passada");
+  assertEquals(teamDigestDelta(0, 0), "igual à semana passada");
+  assertEquals(teamDigestDelta(178210, 0, true).startsWith("semana passada: R$"), true);
+});
+
+Deno.test("tplTeamDailyDigest: assunto com Hub e white-label, blocos, alertas e escape", () => {
+  const m = tplTeamDailyDigest(resumoEquipe);
+  assertEquals(m.subject.includes("10 reservas no Hub"), true);
+  assertEquals(m.subject.includes("389 no white-label"), true);
+  for (const t of ["Vendas", "Canais do Hub", "Clientes", "Dinheiro", "Hoje", "Avaliações", "Atenção"]) {
+    assertEquals(m.html.includes(t), true, t);
+  }
+  assertEquals(m.html.includes("Site do Pare Seguro"), true);
+  assertEquals(m.html.includes(">Movepark<"), true, "canal hub vira Movepark");
+  assertEquals(m.html.includes("Abbapark"), true);
+  assertEquals(m.html.includes("repasse automático"), true);
+  assertEquals(m.html.includes("A publicação do site está parada: sem deploy hook"), true);
+  assertEquals(m.html.includes("1 entrega para integração de parceiro falhou."), true);
+  assertEquals(m.html.includes("2 cartões recusados no checkout."), true);
+  assertEquals(m.html.includes("Lead de parceiro: Lead Park, Campinas/SP."), true);
+  assertEquals(m.html.includes("Unidade &lt;X&gt;"), true, "escapa HTML vindo do banco");
+  assertEquals(/[–—]/.test(m.subject + m.html), false, "sem travessão");
+});
+
+Deno.test("tplTeamDailyDigest: dia sem nada mostra 'nenhum' e 'Nada pedindo atenção'", () => {
+  const vazio = {
+    ...resumoEquipe, canais: [], repasses: [], compradores: { primeira: 0, recompra: 0 },
+    avaliacoes: { n: 0, media: null, baixas: [] },
+    alertas: { leads_parceiro: [], integracao_falhas: 0, cartao_recusado: 0, publicacao_ok: true, publicacao_motivo: null },
+  };
+  const m = tplTeamDailyDigest(vazio);
+  assertEquals(m.html.includes("Nenhuma venda no Hub."), true);
+  assertEquals(m.html.includes("Nada pedindo atenção."), true);
+  assertEquals(m.html.includes("Nenhuma avaliação nova."), true);
 });
