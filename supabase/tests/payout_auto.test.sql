@@ -1,7 +1,7 @@
 -- pgTAP: repasse automático mensal (E0.3.13, 26/09/2026). Spec: docs/specs/repasse-automatico-mensal.md.
 -- Transação com rollback.
 begin;
-select plan(27);
+select plan(33);
 
 select is((select value from public.app_setting where key = 'payout_auto_day'), '10', 'dia padrão nasce em 10');
 select is((select value from public.app_setting where key = 'payout_auto_min_cents'), '5000', 'mínimo nasce em R$ 50');
@@ -84,6 +84,15 @@ select is((select amount_cents from public.payout_fee_credit_reserve(current_set
 select is(public.payout_fee_credit_cents(current_setting('test.cid')::uuid), 167::bigint, 'reserva viva sai do crédito');
 select is((select amount_cents from public.payout_fee_credit_reserve(current_setting('test.cid2')::uuid, 500)), 0::bigint, 'sem crédito, reserva zero');
 
+-- Ciclo fechado também no mês do próximo repasse: a previsão olha o dia 10 do mês seguinte, pelo
+-- menos 20 dias à frente, e a venda b2 (libera em 3 dias) entra com folga em qualquer dia do mês.
+-- Sem isso o caso 24 falhava entre os dias 8 e 10 (em 10/11/2026 o próximo repasse era o do dia).
+insert into public.payout_auto_cycle(company_id, cycle_month, scheduled_for, outcome)
+values (current_setting('test.cid')::uuid,
+        date_trunc('month', public.payout_next_auto_at(current_setting('test.cid')::uuid))::date,
+        public.payout_next_auto_at(current_setting('test.cid')::uuid), 'paid')
+on conflict do nothing;
+
 -- previsão como o Dono (RLS)
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.op'), 'role', 'authenticated')::text, true);
@@ -95,6 +104,17 @@ select is((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'bel
 select throws_ok(format('select public.payout_auto_forecast(%L::uuid)', current_setting('test.cid2')), '42501', null, 'Dono de outra empresa não lê');
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
 select throws_ok(format('select public.company_set_payout_schedule(%L::uuid, 5, true)', current_setting('test.cid')), 'P0001', null, 'cliente não muda o dia');
+
+-- Previsão no horário do repasse (10/11/2026): a regra única avaliada às 9h de Brasília do dia.
+-- Casos reais da Abbapark no repasse de 10/11/2026.
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select is(public.payout_auto_run_at(date '2026-11-10'), timestamptz '2026-11-10 12:00:00+00', 'repasse roda às 9h de Brasília (12:00 UTC)');
+select is(public.payout_sale_released(timestamptz '2026-10-05 10:25:07+00', timestamptz '2026-10-05 03:00+00', 30, public.payout_auto_run_at(date '2026-11-10')), true, 'PIX de 05/10: liberado no repasse de 10/11');
+select is(public.payout_sale_released(timestamptz '2026-10-11 23:40:16+00', timestamptz '2026-10-11 03:00+00', 30, public.payout_auto_run_at(date '2026-11-10')), false, 'PIX de 11/10 às 20h40: completa 30 dias depois das 9h de 10/11, fica para o mês seguinte');
+select is(public.payout_sale_released(timestamptz '2026-10-11 22:56:30+00', timestamptz '2026-11-11 03:00+00', 30, public.payout_auto_run_at(date '2026-11-10')), false, 'cartão com recebível solto só em 11/11 não entra em 10/11');
+select is(public.payout_sale_released(timestamptz '2026-09-01 12:00+00', null, 30, public.payout_auto_run_at(date '2026-11-10')), false, 'sem data do recebível não libera');
+select is((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'run_at')::timestamptz,
+          public.payout_auto_run_at((public.payout_auto_forecast(current_setting('test.cid')::uuid)->>'next_at')::date), 'previsão expõe o instante do repasse');
 
 select * from finish();
 rollback;

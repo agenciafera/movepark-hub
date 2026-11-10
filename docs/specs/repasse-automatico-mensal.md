@@ -156,3 +156,39 @@ teste Deno (`split.test.ts`) e pgTAP (`payout_auto.test.sql`). A primeira prova 
 de 10/10/2026, ou antes se uma compra de teste na Agência Fera levar o disponível acima de R$ 50:
 conferir com `select * from public.payout_auto_cycle where cycle_month = date '2026-10-01';` e, na
 venda seguinte, `payment.fee_credit_returned_cents = 367`.
+
+
+## Primeiro repasse real (10/11/2026) e as duas correções
+
+O ciclo de novembro foi o primeiro com dinheiro: **Abbapark** R$ 1.161,52 disponíveis (transfer
+543406174) e **Nationpark** R$ 204,16 (transfer 543406170), as duas marcadas `transferred` pela
+Pagar.me em menos de 2 minutos, e-mails de pedido e de queda enviados. A Pagar.me cobrou a taxa
+de R$ 3,67 do saldo de cada recebedor (o campo `charge_transfer_fees: false` da conta bancária não
+muda isso). O crédito da taxa voltou na Nationpark na primeira venda depois do repasse, no mesmo
+dia; na Abbapark espera a próxima venda. Duas falhas apareceram, e as duas foram corrigidas no
+mesmo dia:
+
+1. **O TED saiu com a taxa descontada.** O automático usava a mesma conta do saque manual
+   (disponível − taxa), então a Abbapark recebeu R$ 1.157,85 com o e-mail dizendo "sem taxa para
+   você", e os R$ 3,67 só voltariam no repasse do mês seguinte, pelo crédito. Agora
+   `withdrawCap` recebe `feeBorneBy`: com a taxa da Movepark e o saldo do gateway cobrindo valor +
+   taxa, **cai no banco o disponível inteiro**, e a taxa sai do dinheiro ainda retido pelo prazo,
+   reposto pelo crédito na venda seguinte. Só quando o gateway tem exatamente o disponível (nada
+   retido) a taxa ainda sai de dentro e volta pelo crédito no repasse seguinte. O razão não muda:
+   o automático desconta só `amount_cents`.
+2. **A previsão prometia mais do que saía.** O card da Abbapark mostrava R$ 1.679,52 e saíram
+   R$ 1.161,52: a previsão contava as vendas liberadas até o **fim** do dia 10, mas o cron roda às
+   **9h de Brasília**. Duas vendas pagas em 11/10 (uma no cartão, uma no PIX) às 19h56 e 20h40 (R$ 518,00) só
+   completavam 30 dias na noite de 10/11 e ficaram para 10/12; na Nationpark, R$ 105,12 de um
+   cartão cujo recebível a Pagar.me solta em 11/11. Migration `20261201233000`: a regra de
+   liberação virou uma função só, `payout_sale_released(paid_at, partner_release_at, dias, instante)`,
+   usada por `payout_withdrawable` (com `now()`) e por `payout_auto_forecast` (com
+   `payout_auto_run_at(dia)` = dia às 9h de Brasília, espelho do cron `0 12 * * *`). A previsão
+   devolve também `run_at`. Conferido no vivo: a regra nova no instante do repasse de 10/11 dá
+   exatamente os R$ 1.161,52 e R$ 204,16 que saíram. **Mudou o horário do cron, muda
+   `payout_auto_run_at`.**
+
+Testes: `recipient-withdraw/logic.test.ts` e `performWithdrawal.test.ts` (valor inteiro com folga
+no gateway, valor − taxa sem folga, manual inalterado); `payout_auto.test.sql` (instante do repasse,
+os casos reais da Abbapark, previsão com `run_at`). O caso "previsão inclui a venda que libera até a
+data" dependia do dia do mês (falhava entre os dias 8 e 10) e ganhou ciclo fixo.

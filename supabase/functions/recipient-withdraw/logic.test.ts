@@ -30,3 +30,15 @@ Deno.test("withdrawCap: a taxa sai de dentro do valor pedido; o que vai ao banco
   assertEquals(withdrawCap({ ...base, amountCents: 6000, isHubAdmin: true, force: false }).ok, false, "hub_admin sem force respeita o teto");
   assertEquals(withdrawCap({ ...base, amountCents: 6000, isHubAdmin: true, force: true }).ok, true);
 });
+
+Deno.test("withdrawCap: taxa da Movepark manda o valor inteiro quando o gateway cobre valor + taxa", () => {
+  // Abbapark em 10/11/2026: disponível 116152, gateway 224684. Saiu 115785; o certo é 116152.
+  const abba = withdrawCap({ amountCents: 116152, availableCents: 116152, feeCents: 367, gatewayAvailableCents: 224684, isHubAdmin: false, force: false, feeBorneBy: "movepark" });
+  assertEquals(abba.ok && abba.toBankCents, 116152);
+  const justo = withdrawCap({ amountCents: 5000, availableCents: 5000, feeCents: 367, gatewayAvailableCents: 5367, isHubAdmin: false, force: false, feeBorneBy: "movepark" });
+  assertEquals(justo.ok && justo.toBankCents, 5000, "gateway cobre exatamente valor + taxa");
+  const curto = withdrawCap({ amountCents: 5000, availableCents: 5000, feeCents: 367, gatewayAvailableCents: 5366, isHubAdmin: false, force: false, feeBorneBy: "movepark" });
+  assertEquals(curto.ok && curto.toBankCents, 4633, "sem folga no gateway, a taxa sai de dentro e volta pelo crédito");
+  const manual = withdrawCap({ amountCents: 5000, availableCents: 5000, feeCents: 367, gatewayAvailableCents: 224684, isHubAdmin: false, force: false, feeBorneBy: "partner" });
+  assertEquals(manual.ok && manual.toBankCents, 4633, "saque manual: taxa do parceiro, sempre de dentro");
+});

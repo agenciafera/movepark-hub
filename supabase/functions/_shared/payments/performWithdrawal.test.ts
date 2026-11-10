@@ -30,7 +30,19 @@ Deno.test("performWithdrawal grava origem, quem paga a taxa e o ciclo", async ()
   });
   assertEquals(r.ok, true);
   const row = state.rows.find((x) => x.external_transfer_id === "tr_1")!;
-  assertEquals([row.origin, row.fee_borne_by, row.cycle_id, row.amount_cents, row.fee_cents], ["automatic", "movepark", "cy1", 4633, 367]);
+  // Gateway com 10000 cobre 5000 + 367: o automático manda o disponível inteiro ao banco
+  // (regressão do repasse de 10/11/2026, que mandou 4633).
+  assertEquals([row.origin, row.fee_borne_by, row.cycle_id, row.amount_cents, row.fee_cents], ["automatic", "movepark", "cy1", 5000, 367]);
+});
+
+Deno.test("performWithdrawal manual segue mandando valor menos taxa", async () => {
+  const state = { recipient: { id: "r1", external_recipient_id: "re_1", status: "active", gateway_missing_at: null }, teto: { available_cents: 5000, withdrawal_fee_cents: 367 }, rows: [] as Record<string, unknown>[] };
+  const r = await performWithdrawal(fakeAdmin(state), gateway, {
+    companyId: "d5337b66-7fab-4704-b746-26654024ae25", amountCents: 5000, force: false, isHubAdmin: false,
+    requestedBy: "u1", origin: "manual", feeBorneBy: "partner",
+  });
+  assertEquals(r.ok, true);
+  assertEquals(state.rows.find((x) => x.external_transfer_id === "tr_1")!.amount_cents, 4633);
 });
 
 Deno.test("performWithdrawal recusa recebedor ausente no gateway com 409", async () => {

@@ -50,6 +50,14 @@ export function withdrawPreflight(
  * a taxa do saldo, e o recebedor sai exatamente A. Na conta bancária cai A − taxa, e a tela avisa
  * isso antes de confirmar. O teto físico é o saldo real do gateway. hub_admin passa do teto nosso
  * só com `force`.
+ *
+ * Repasse automático (taxa da Movepark, E0.3.13, corrigido em 10/11/2026): cai no banco o A
+ * INTEIRO sempre que o saldo do gateway cobre A + taxa. A Pagar.me debita a taxa do saldo do
+ * recebedor de qualquer jeito, então ela sai do dinheiro ainda retido pelo prazo, e o crédito da
+ * taxa devolve esse valor na venda seguinte. Antes o automático também mandava A − taxa: o TED da
+ * Abbapark de 10/11 chegou R$ 3,67 menor que o disponível, com o e-mail dizendo "sem taxa para
+ * você". Só quando o gateway tem exatamente A (nada retido) a taxa ainda sai de dentro, e volta
+ * pelo crédito no repasse seguinte.
  */
 export function withdrawCap(
   args: {
@@ -59,6 +67,8 @@ export function withdrawCap(
     gatewayAvailableCents: number | null;
     isHubAdmin: boolean;
     force: boolean;
+    /** Quem paga a taxa. Padrão: o parceiro (saque manual). */
+    feeBorneBy?: "partner" | "movepark";
   },
 ): { ok: true; toBankCents: number } | { ok: false; reason: string; status: number } {
   const fee = Math.max(0, args.feeCents);
@@ -78,6 +88,12 @@ export function withdrawCap(
       reason: `Disponível para saque é ${args.availableCents} centavos; o pedido foi de ${args.amountCents}.`,
       status: 409,
     };
+  }
+  if (
+    args.feeBorneBy === "movepark" && args.gatewayAvailableCents != null &&
+    args.gatewayAvailableCents >= args.amountCents + fee
+  ) {
+    return { ok: true, toBankCents: args.amountCents };
   }
   return { ok: true, toBankCents: args.amountCents - fee };
 }

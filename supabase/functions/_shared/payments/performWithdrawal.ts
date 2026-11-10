@@ -63,6 +63,7 @@ export async function performWithdrawal(admin: any, gateway: PaymentGateway, arg
     gatewayAvailableCents: saldo.availableCents,
     isHubAdmin: args.isHubAdmin,
     force: args.force,
+    feeBorneBy: args.feeBorneBy,
   });
   if (!cap.ok) {
     return { ok: false, status: cap.status, error: cap.reason, available_cents: Number(tetoJson.available_cents ?? 0), withdrawal_fee_cents: feeCents };
