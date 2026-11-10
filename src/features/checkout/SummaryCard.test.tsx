@@ -32,6 +32,8 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
     passenger_phone: null,
     fare_tier: "flex",
     flight_number: null,
+    commission_installments_max: null,
+    commission_installments_interest_free: null,
     location: {
       id: "l1",
       slug: "gru",

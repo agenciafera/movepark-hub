@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyInstallmentOverride,
   computeInstallmentPlan,
   DEFAULT_INSTALLMENT_POLICY,
   parseInstallmentPolicy,
@@ -71,5 +72,31 @@ describe("coerência da política default", () => {
     if (d.absorb === "customer" && d.maxInstallments > d.interestFreeUpTo) {
       expect(d.monthlyInterestPct).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("applyInstallmentOverride (parcelamento por regra, 09/11/2026)", () => {
+  const base = parseInstallmentPolicy(null);
+
+  it("sem override, a política da plataforma fica igual", () => {
+    expect(applyInstallmentOverride(base, null)).toEqual(base);
+    expect(applyInstallmentOverride(base, { max: null, interestFree: null })).toEqual(base);
+  });
+
+  it("máximo 1 deixa só a opção à vista", () => {
+    const p = applyInstallmentOverride(base, { max: 1, interestFree: 1 });
+    expect(computeInstallmentPlan(30000, p).map((o) => o.installments)).toEqual([1]);
+  });
+
+  it("sem juros até 1: a 2ª parcela já tem juros, pagos pelo cliente", () => {
+    const p = applyInstallmentOverride({ ...base, absorb: "movepark" }, { max: 12, interestFree: 1 });
+    expect(p.absorb).toBe("customer");
+    const plano = computeInstallmentPlan(30000, p);
+    expect(plano[0]).toMatchObject({ installments: 1, hasInterest: false });
+    expect(plano[1]).toMatchObject({ installments: 2, hasInterest: true });
+  });
+
+  it("sem juros nunca passa do máximo", () => {
+    expect(applyInstallmentOverride(base, { max: 2, interestFree: 6 }).interestFreeUpTo).toBe(2);
   });
 });

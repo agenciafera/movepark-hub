@@ -8,6 +8,7 @@ Deno.test("reserva sem pacote gravado cai no padrão do Hub, com o take_rate da 
     takeRateBps: 2000,
     feePayer: "movepark",
     chargebackBearer: "each",
+    installments: null,
   });
   assertEquals(needsCommissionFreeze({}), true);
   assertEquals(commissionForCharge({}, null).takeRateBps, 0);
@@ -30,7 +31,22 @@ Deno.test("pacote gravado vence o take_rate atual da empresa: é isso que congel
     takeRateBps: 500,
     feePayer: "partner",
     chargebackBearer: "partner",
+    installments: null,
   });
+});
+
+Deno.test("parcelamento congelado na reserva vai junto no pacote (09/11/2026)", () => {
+  const b = {
+    commission_channel: "Site do parceiro",
+    commission_take_rate_bps: 1000,
+    commission_fee_payer: "partner",
+    commission_chargeback_bearer: "each",
+    commission_installments_max: 12,
+    commission_installments_interest_free: 1,
+  };
+  assertEquals(commissionForCharge(b, 2000).installments, { max: 12, interestFree: 1 });
+  // Par incompleto não é override: a cobrança segue a política da plataforma.
+  assertEquals(commissionForCharge({ ...b, commission_installments_interest_free: null }, 2000).installments, null);
 });
 
 Deno.test("comissão zero gravada é zero, não 'sem pacote'", () => {
@@ -50,13 +66,18 @@ Deno.test("valor desconhecido nas colunas cai no lado seguro (Movepark paga a ta
 
 Deno.test("columnsFromRpc lê o jsonb do banco e ignora tipo errado", () => {
   assertEquals(
-    columnsFromRpc({ rule_id: "r1", channel: "Site", take_rate_bps: 500, fee_payer: "partner", chargeback_bearer: "movepark", changed: true }),
+    columnsFromRpc({
+      rule_id: "r1", channel: "Site", take_rate_bps: 500, fee_payer: "partner", chargeback_bearer: "movepark",
+      installments_max: 6, installments_interest_free: 1, changed: true,
+    }),
     {
       commission_rule_id: "r1",
       commission_channel: "Site",
       commission_take_rate_bps: 500,
       commission_fee_payer: "partner",
       commission_chargeback_bearer: "movepark",
+      commission_installments_max: 6,
+      commission_installments_interest_free: 1,
     },
   );
   assertEquals(needsCommissionFreeze(columnsFromRpc(null)), true);

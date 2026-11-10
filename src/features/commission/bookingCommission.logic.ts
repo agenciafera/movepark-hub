@@ -1,7 +1,13 @@
 // O canal da venda e o pacote de comissão congelado numa reserva (E0.3.12), prontos para a tela.
 // Lógica pura. Quem decide o pacote é o banco; aqui só se lê o que está gravado na reserva.
 
-import { CHARGEBACK_LABEL, FEE_PAYER_LABEL, type ChargebackBearer, type FeePayer } from "./rule.logic";
+import {
+  CHARGEBACK_LABEL,
+  FEE_PAYER_LABEL,
+  installmentsLabel,
+  type ChargebackBearer,
+  type FeePayer,
+} from "./rule.logic";
 
 export type BookingCommissionLike = {
   commission_channel?: string | null;
@@ -9,6 +15,8 @@ export type BookingCommissionLike = {
   commission_take_rate_bps?: number | null;
   commission_fee_payer?: string | null;
   commission_chargeback_bearer?: string | null;
+  commission_installments_max?: number | null;
+  commission_installments_interest_free?: number | null;
   commission_locked?: boolean | null;
   attribution?: unknown;
   origin?: string | null;
@@ -25,6 +33,8 @@ export type CommissionView = {
   takeRatePct: number | null;
   feePayer: string | null;
   chargeback: string | null;
+  /** Parcelamento congelado na reserva (09/11/2026). "Política da plataforma" quando herdou. */
+  installments: string | null;
   locked: boolean;
   proof: { label: string; value: string }[];
 };
@@ -64,6 +74,11 @@ export function commissionView(b: BookingCommissionLike, formatDateTime: (iso: s
     takeRatePct: legacy ? null : (b.commission_take_rate_bps as number) / 100,
     feePayer: legacy ? null : (FEE_PAYER_LABEL[b.commission_fee_payer as FeePayer] ?? null),
     chargeback: legacy ? null : (CHARGEBACK_LABEL[b.commission_chargeback_bearer as ChargebackBearer] ?? null),
+    installments: legacy
+      ? null
+      : b.commission_installments_max == null
+        ? "Política da plataforma"
+        : installmentsLabel(b.commission_installments_max, b.commission_installments_interest_free),
     locked: b.commission_locked === true,
     proof,
   };

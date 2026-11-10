@@ -2,6 +2,8 @@
 // Cria uma cobrança com CARTÃO de crédito (parcelado) + SPLIT (E0.1.3, ADR-004) para uma reserva.
 // Server-authoritative: a parcela escolhida é revalidada contra a política (app_setting,
 // card_installment_policy) e o valor financiado é RECALCULADO aqui — o cliente nunca informa o valor.
+// O parcelamento congelado na reserva (regra de repasse > padrão da empresa) vai por cima da política
+// da plataforma: máximo de parcelas e até quantas sem juros (09/11/2026).
 // Tokenização é client-side (nunca trafega o PAN). Confirmação chega pela Edge `pagarme-webhook`.
 //
 // POST /functions/v1/create-card-charge
@@ -21,7 +23,11 @@ import {
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
 import { appliedFeeCreditCents, debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
-import { computeInstallmentPlan, parseInstallmentPolicy } from "../_shared/payments/installments.ts";
+import {
+  applyInstallmentOverride,
+  computeInstallmentPlan,
+  parseInstallmentPolicy,
+} from "../_shared/payments/installments.ts";
 import {
   ANTIFRAUD_MESSAGE,
   ANTIFRAUD_NOTE,
@@ -119,6 +125,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, " +
         "price_breakdown, " +
         "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
+        "commission_installments_max, commission_installments_interest_free, " +
         "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id",
     )
     .eq("code", input.bookingCode)
@@ -224,11 +231,28 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     return await recusar(409, "O estacionamento ainda não tem recebedor ativo no gateway.");
   }
 
-  const policy = parseInstallmentPolicy(settingMap.card_installment_policy);
-  if (!policy.enabled) return await recusar(422, "Pagamento com cartão indisponível.");
+  const platformPolicy = parseInstallmentPolicy(settingMap.card_installment_policy);
+  if (!platformPolicy.enabled) return await recusar(422, "Pagamento com cartão indisponível.");
 
-  // 4. Parcela escolhida revalidada contra a política (server-authoritative). O cliente parcela o
-  // TOTAL (vaga + tarifa); os juros incidem sobre esse total.
+  // Comissão por origem (E0.3.12): o pacote foi congelado na reserva quando ela nasceu. Reserva
+  // sem pacote (criada por MCP/API, ou cujo congelamento falhou) é congelada AGORA, antes do split,
+  // pela mesma função do banco, para nunca cobrar 20% de uma venda que o parceiro trouxe. Vem antes
+  // das parcelas porque o pacote também decide o parcelamento (09/11/2026).
+  let commissionCols = booking as unknown as BookingCommissionColumns;
+  if (needsCommissionFreeze(commissionCols)) {
+    const { data: frozen, error: freezeErr } = await admin.rpc("booking_apply_commission", {
+      p_booking_id: (booking as unknown as { id: string }).id,
+    });
+    if (freezeErr) console.error("[%s] booking_apply_commission falhou:", EDGE_NAME, freezeErr.message);
+    else commissionCols = columnsFromRpc(frozen);
+  }
+  const commission = commissionForCharge(commissionCols, company?.take_rate_bps);
+
+  // 4. Parcela escolhida revalidada contra a política (server-authoritative). A política é a da
+  // plataforma com o parcelamento da reserva por cima (regra de repasse > padrão da empresa): em
+  // estacionamento que não aceita 3x sem juros, a 3x sem juros não existe aqui e é recusada. O
+  // cliente parcela o TOTAL (vaga + tarifa); os juros incidem sobre esse total.
+  const policy = applyInstallmentOverride(platformPolicy, commission.installments);
   const baseCents = reaisToCents(Number(booking.total_amount));
   const plan = computeInstallmentPlan(baseCents, policy);
   const chosen = plan.find((o) => o.installments === input.installments);
@@ -240,18 +264,6 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   // Movepark) e o excedente de juros vão pra perna da Movepark.
   const fareCents = booking.fare_price_cents ?? 0;
   const partnerBaseCents = baseCents - fareCents;
-  // Comissão por origem (E0.3.12): o pacote foi congelado na reserva quando ela nasceu. Reserva
-  // sem pacote (criada por MCP/API, ou cujo congelamento falhou) é congelada AGORA, antes do split,
-  // pela mesma função do banco, para nunca cobrar 20% de uma venda que o parceiro trouxe.
-  let commissionCols = booking as unknown as BookingCommissionColumns;
-  if (needsCommissionFreeze(commissionCols)) {
-    const { data: frozen, error: freezeErr } = await admin.rpc("booking_apply_commission", {
-      p_booking_id: (booking as unknown as { id: string }).id,
-    });
-    if (freezeErr) console.error("[%s] booking_apply_commission falhou:", EDGE_NAME, freezeErr.message);
-    else commissionCols = columnsFromRpc(frozen);
-  }
-  const commission = commissionForCharge(commissionCols, company?.take_rate_bps);
   let split;
   try {
     split = buildSplit({
@@ -484,6 +496,8 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       split: splitEnabled ? gatewaySplit : null,
       // De onde veio a comissão desta venda (E0.3.12): canal, percentual e quem paga a taxa.
       commission: { channel: commission.channel, take_rate_bps: commission.takeRateBps, fee_payer: commission.feePayer },
+      // Parcelamento que valeu nesta cobrança: nulo = política da plataforma (09/11/2026).
+      installments_override: commission.installments,
     },
     response: result.raw,
   });

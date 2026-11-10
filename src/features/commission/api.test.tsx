@@ -20,6 +20,8 @@ const REGRA: RulePayload = {
   is_active: true,
   valid_from: null,
   valid_until: null,
+  installments_max: null,
+  installments_interest_free: null,
 };
 
 describe("useSaveCommissionRule", () => {
@@ -78,3 +80,4 @@ describe("useSetBookingCommission", () => {
     await expect(result.current.mutateAsync({ bookingId: "b1", ruleId: null, reason: "x" })).rejects.toThrow(/já foi paga/);
   });
 });
+

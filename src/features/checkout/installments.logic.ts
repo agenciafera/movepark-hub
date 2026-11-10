@@ -82,3 +82,35 @@ export function summarizeInstallmentOption(
     `Juros ${juros} a.m., CET ${juros} a.m. (${cetAno} a.a.).`
   );
 }
+
+/**
+ * Até quantas parcelas saem sem juros para o cliente. Se quem paga o juros não é o cliente
+ * (`absorb` movepark/partner) ou a taxa é zero, toda parcela é sem juros para ele.
+ */
+export function interestFreeForCustomer(
+  policy: Pick<InstallmentPolicy, "maxInstallments" | "interestFreeUpTo" | "absorb" | "monthlyInterestPct">,
+): number {
+  if (policy.absorb !== "customer" || policy.monthlyInterestPct <= 0) return policy.maxInstallments;
+  return Math.min(policy.interestFreeUpTo, policy.maxInstallments);
+}
+
+/**
+ * A frase dos meios de pagamento no topo do checkout. Sai da política que vale PARA ESTA RESERVA
+ * (a da plataforma com o parcelamento da regra de repasse por cima): estacionamento que não
+ * parcela não ouve "parcelado", e o que parcela com juros não ouve "sem juros" (ADR-009).
+ */
+export function paymentMethodsLine(
+  policy:
+    | Pick<InstallmentPolicy, "enabled" | "maxInstallments" | "interestFreeUpTo" | "absorb" | "monthlyInterestPct">
+    | undefined,
+): string {
+  const pix = "PIX com confirmação automática";
+  if (!policy) return `${pix} ou cartão de crédito.`;
+  if (!policy.enabled) return `${pix}.`;
+  const max = policy.maxInstallments;
+  if (max <= 1) return `${pix} ou cartão de crédito à vista.`;
+  const free = interestFreeForCustomer(policy);
+  if (free >= max) return `${pix} ou cartão de crédito em até ${max}x sem juros.`;
+  if (free <= 1) return `${pix} ou cartão de crédito em até ${max}x, com juros a partir da 2ª parcela.`;
+  return `${pix} ou cartão de crédito em até ${max}x, sendo até ${free}x sem juros.`;
+}

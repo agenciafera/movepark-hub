@@ -38,6 +38,9 @@ export type RuleForm = {
   /** yyyy-mm-dd, ou "" para sem limite. */
   validFrom: string;
   validUntil: string;
+  /** Parcelamento no cartão (09/11/2026). Os dois "" = herda o padrão da empresa. */
+  installmentsMax: string;
+  installmentsInterestFree: string;
 };
 
 export const EMPTY_RULE_FORM: RuleForm = {
@@ -53,6 +56,8 @@ export const EMPTY_RULE_FORM: RuleForm = {
   isActive: true,
   validFrom: "",
   validUntil: "",
+  installmentsMax: "",
+  installmentsInterestFree: "",
 };
 
 /** "Abbapark, abbapark-insta\nsite" → ["abbapark", "abbapark-insta", "site"]: igual ao trigger do banco. */
@@ -79,6 +84,8 @@ export type RulePayload = {
   is_active: boolean;
   valid_from: string | null;
   valid_until: string | null;
+  installments_max: number | null;
+  installments_interest_free: number | null;
 };
 
 function dayStart(d: string): string | null {
@@ -109,6 +116,8 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
   const from = dayStart(f.validFrom);
   const until = dayStart(f.validUntil);
   if (from && until && until <= from) return { ok: false, error: "O fim da vigência tem que ser depois do início." };
+  const parcelas = parseInstallmentsPair(f.installmentsMax, f.installmentsInterestFree);
+  if ("error" in parcelas) return { ok: false, error: parcelas.error };
   return {
     ok: true,
     payload: {
@@ -125,6 +134,8 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
       is_active: f.isActive,
       valid_from: from,
       valid_until: until,
+      installments_max: parcelas.max,
+      installments_interest_free: parcelas.interestFree,
     },
   };
 }
@@ -146,6 +157,8 @@ export function formFromRule(r: CommissionRule): RuleForm {
     isActive: r.is_active,
     validFrom: day(r.valid_from),
     validUntil: day(r.valid_until),
+    installmentsMax: r.installments_max == null ? "" : String(r.installments_max),
+    installmentsInterestFree: r.installments_interest_free == null ? "" : String(r.installments_interest_free),
   };
 }
 
@@ -193,4 +206,46 @@ export function trackedLink(pageUrl: string, utmSource: string, utmMedium = "par
   u.searchParams.set("utm_source", utmSource);
   u.searchParams.set("utm_medium", utmMedium);
   return u.toString();
+}
+
+// ── Parcelamento no cartão (09/11/2026) ─────────────────────────────────────
+// A regra e a empresa podem definir o parcelamento. As MESMAS regras das constraints do banco:
+// os dois juntos ou nenhum, máximo de 1 a 24, sem juros de 1 até o máximo.
+
+export type InstallmentsPair = { max: number | null; interestFree: number | null };
+
+export function parseInstallmentsPair(maxText: string, freeText: string): InstallmentsPair | { error: string } {
+  const maxRaw = maxText.trim();
+  const freeRaw = freeText.trim();
+  if (maxRaw === "" && freeRaw === "") return { max: null, interestFree: null };
+  if (maxRaw === "" || freeRaw === "") {
+    return { error: "Preencha o máximo de parcelas e até quantas sem juros, ou deixe os dois vazios para herdar." };
+  }
+  const max = Number(maxRaw);
+  const free = Number(freeRaw);
+  if (!Number.isInteger(max) || max < 1 || max > 24) {
+    return { error: "O máximo de parcelas é um número inteiro de 1 a 24. Use 1 para só à vista." };
+  }
+  if (!Number.isInteger(free) || free < 1 || free > max) {
+    return { error: `As parcelas sem juros vão de 1 até ${max}. Use 1 para cobrar juros desde a 2ª parcela.` };
+  }
+  return { max, interestFree: free };
+}
+
+/** Como o parcelamento aparece na tabela e no aviso: o que o cliente vai ver no checkout. */
+export function installmentsLabel(max: number | null | undefined, free: number | null | undefined): string {
+  if (max == null || free == null) return "Herda";
+  if (max <= 1) return "Só à vista";
+  if (free >= max) return `Até ${max}x sem juros`;
+  if (free <= 1) return `Até ${max}x, juros desde a 2ª`;
+  return `Até ${max}x, ${free}x sem juros`;
+}
+
+/** A prévia do formulário: o que o cliente verá, ou o que falta corrigir. */
+export function installmentsPreview(maxText: string, freeText: string, inherited = "o padrão da empresa"): string {
+  const pair = parseInstallmentsPair(maxText, freeText);
+  if ("error" in pair) return "confira os dois números.";
+  if (pair.max == null) return `vale ${inherited}.`;
+  const label = installmentsLabel(pair.max, pair.interestFree);
+  return `${label.charAt(0).toLowerCase()}${label.slice(1)}.`;
 }

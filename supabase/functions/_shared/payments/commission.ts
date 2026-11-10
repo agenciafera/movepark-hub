@@ -15,6 +15,11 @@ export type CommissionPackage = {
   takeRateBps: number;
   feePayer: FeePayer;
   chargebackBearer: ChargebackBearer;
+  /**
+   * Parcelamento congelado na reserva (regra > empresa, 09/11/2026). Nulo = política da plataforma.
+   * A cobrança aplica com `applyInstallmentOverride`.
+   */
+  installments: { max: number; interestFree: number } | null;
 };
 
 /** As colunas `commission_*` da reserva, como vêm do select. */
@@ -24,6 +29,8 @@ export type BookingCommissionColumns = {
   commission_take_rate_bps?: number | null;
   commission_fee_payer?: string | null;
   commission_chargeback_bearer?: string | null;
+  commission_installments_max?: number | null;
+  commission_installments_interest_free?: number | null;
 };
 
 function feePayer(v: unknown): FeePayer {
@@ -56,6 +63,7 @@ export function commissionForCharge(
       takeRateBps: Math.max(0, Math.round(Number(companyTakeRateBps ?? 0)) || 0),
       feePayer: "movepark",
       chargebackBearer: "each",
+      installments: null,
     };
   }
   return {
@@ -64,7 +72,17 @@ export function commissionForCharge(
     takeRateBps: Math.max(0, Math.round(Number(b.commission_take_rate_bps)) || 0),
     feePayer: feePayer(b.commission_fee_payer),
     chargebackBearer: bearer(b.commission_chargeback_bearer),
+    installments: installmentsOf(b),
   };
+}
+
+/** O par só vale inteiro: máximo sem "sem juros até" (ou vice-versa) é tratado como sem override. */
+function installmentsOf(b: BookingCommissionColumns): { max: number; interestFree: number } | null {
+  const max = Number(b.commission_installments_max);
+  const free = Number(b.commission_installments_interest_free);
+  if (b.commission_installments_max == null || b.commission_installments_interest_free == null) return null;
+  if (!Number.isFinite(max) || !Number.isFinite(free)) return null;
+  return { max, interestFree: free };
 }
 
 /** Converte o jsonb devolvido por `booking_apply_commission` nas colunas da reserva. */
@@ -76,6 +94,9 @@ export function columnsFromRpc(json: unknown): BookingCommissionColumns {
     commission_take_rate_bps: typeof j.take_rate_bps === "number" ? j.take_rate_bps : null,
     commission_fee_payer: typeof j.fee_payer === "string" ? j.fee_payer : null,
     commission_chargeback_bearer: typeof j.chargeback_bearer === "string" ? j.chargeback_bearer : null,
+    commission_installments_max: typeof j.installments_max === "number" ? j.installments_max : null,
+    commission_installments_interest_free:
+      typeof j.installments_interest_free === "number" ? j.installments_interest_free : null,
   };
 }
 

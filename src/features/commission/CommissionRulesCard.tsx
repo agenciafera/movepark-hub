@@ -44,6 +44,8 @@ import {
   RULE_STATUS_LABEL,
   feeCoverageWarning,
   formFromRule,
+  installmentsLabel,
+  installmentsPreview,
   parseUtmSources,
   ruleStatus,
   splitExample,
@@ -124,6 +126,7 @@ export function CommissionRulesCard() {
                   <TableHead>Taxa do gateway</TableHead>
                   <TableHead>Chargeback</TableHead>
                   <TableHead>Janela</TableHead>
+                  <TableHead>Parcelamento</TableHead>
                   <TableHead>Situação</TableHead>
                   <TableHead className="w-40" />
                 </TableRow>
@@ -150,6 +153,9 @@ export function CommissionRulesCard() {
                       <TableCell>{CHARGEBACK_LABEL[r.chargeback_bearer as ChargebackBearer] ?? r.chargeback_bearer}</TableCell>
                       <TableCell className="tabular-nums text-muted">
                         {r.attribution_window_days ?? globalWindow} dias{r.attribution_window_days == null ? " (padrão)" : ""}
+                      </TableCell>
+                      <TableCell className="text-muted" data-testid="regra-parcelamento">
+                        {installmentsLabel(r.installments_max, r.installments_interest_free)}
                       </TableCell>
                       <TableCell>
                         <Badge tone={STATUS_TONE[st]}>{RULE_STATUS_LABEL[st]}</Badge>
@@ -375,6 +381,39 @@ function RuleDialog({
               {warning}
             </p>
           )}
+
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-body-sm font-medium text-ink">Parcelamento no cartão</legend>
+            <div className="grid gap-4 tablet:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="rule-inst-max">Máximo de parcelas</Label>
+                <Input
+                  id="rule-inst-max"
+                  inputMode="numeric"
+                  value={form.installmentsMax}
+                  onChange={(e) => set("installmentsMax", e.target.value)}
+                  placeholder="Herda"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="rule-inst-free">Sem juros até</Label>
+                <Input
+                  id="rule-inst-free"
+                  inputMode="numeric"
+                  value={form.installmentsInterestFree}
+                  onChange={(e) => set("installmentsInterestFree", e.target.value)}
+                  placeholder="Herda"
+                />
+              </div>
+            </div>
+            <span className="text-caption text-muted">
+              Vazio herda o padrão da empresa. Máximo 1 deixa só à vista. Sem juros até 1 cobra juros do
+              cliente desde a 2ª parcela, na taxa da plataforma.
+            </span>
+            <span className="text-caption text-ink" data-testid="previa-parcelamento">
+              No checkout: {installmentsPreview(form.installmentsMax, form.installmentsInterestFree)}
+            </span>
+          </fieldset>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="rule-window">Janela de atribuição (dias)</Label>

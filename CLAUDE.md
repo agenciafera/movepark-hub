@@ -128,6 +128,10 @@ Regras **fixas** do projeto, não sugestões. Se algo conflitar com elas, **siga
   tokenização é **client-side** (`POST api.pagar.me/.../tokens` com a public key). **Parcelamento é
   config dinâmica**, não código: `app_setting.card_installment_policy` (JSON), editável no Manager;
   a Edge `create-card-charge` é **server-authoritative** (revalida parcela + recalcula o financiado).
+  A regra de repasse e o padrão da empresa podem trocar o máximo de parcelas e até quantas sem juros
+  (09/11/2026); o par fica **congelado na reserva** com o pacote de comissão e é aplicado por cima da
+  política nos dois lados (`applyInstallmentOverride`). Nenhum texto promete parcelamento fixo: a
+  condição é a que o checkout da reserva mostra.
   Implementado em `supabase/migrations/20260627000000_payout_recipients.sql` + Edge `sync-recipient`
   (recebedores) e `..._card_charges.sql` + Edges `create-card-charge`/`get-payment-config` (cartão); ver
   [`docs/specs/payment-split.md`](docs/specs/payment-split.md).

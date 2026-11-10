@@ -711,6 +711,8 @@ export type Database = {
           commission_channel: string | null
           commission_chargeback_bearer: string | null
           commission_fee_payer: string | null
+          commission_installments_interest_free: number | null
+          commission_installments_max: number | null
           commission_locked: boolean
           commission_rule_id: string | null
           commission_take_rate_bps: number | null
@@ -769,6 +771,8 @@ export type Database = {
           commission_channel?: string | null
           commission_chargeback_bearer?: string | null
           commission_fee_payer?: string | null
+          commission_installments_interest_free?: number | null
+          commission_installments_max?: number | null
           commission_locked?: boolean
           commission_rule_id?: string | null
           commission_take_rate_bps?: number | null
@@ -827,6 +831,8 @@ export type Database = {
           commission_channel?: string | null
           commission_chargeback_bearer?: string | null
           commission_fee_payer?: string | null
+          commission_installments_interest_free?: number | null
+          commission_installments_max?: number | null
           commission_locked?: boolean
           commission_rule_id?: string | null
           commission_take_rate_bps?: number | null
@@ -1345,6 +1351,8 @@ export type Database = {
           deleted_at: string | null
           gateway_fee_payer: string
           id: string
+          installments_interest_free: number | null
+          installments_max: number | null
           is_active: boolean
           match_white_label: boolean
           name: string
@@ -1364,6 +1372,8 @@ export type Database = {
           deleted_at?: string | null
           gateway_fee_payer: string
           id?: string
+          installments_interest_free?: number | null
+          installments_max?: number | null
           is_active?: boolean
           match_white_label?: boolean
           name: string
@@ -1383,6 +1393,8 @@ export type Database = {
           deleted_at?: string | null
           gateway_fee_payer?: string
           id?: string
+          installments_interest_free?: number | null
+          installments_max?: number | null
           is_active?: boolean
           match_white_label?: boolean
           name?: string
@@ -1422,6 +1434,8 @@ export type Database = {
           gateway_split_enabled: boolean
           hub_relationship: string
           id: string
+          installments_interest_free: number | null
+          installments_max: number | null
           legal_name: string | null
           logo_url: string | null
           monthly_revenue_goal_cents: number | null
@@ -1454,6 +1468,8 @@ export type Database = {
           gateway_split_enabled?: boolean
           hub_relationship?: string
           id?: string
+          installments_interest_free?: number | null
+          installments_max?: number | null
           legal_name?: string | null
           logo_url?: string | null
           monthly_revenue_goal_cents?: number | null
@@ -1486,6 +1502,8 @@ export type Database = {
           gateway_split_enabled?: boolean
           hub_relationship?: string
           id?: string
+          installments_interest_free?: number | null
+          installments_max?: number | null
           legal_name?: string | null
           logo_url?: string | null
           monthly_revenue_goal_cents?: number | null
@@ -10391,6 +10409,14 @@ export type Database = {
       seo_label_primary: { Args: { p_label: string }; Returns: string }
       set_booking_addons: {
         Args: { p_add_on_ids: string[]; p_code: string }
+        Returns: Json
+      }
+      set_company_installments: {
+        Args: {
+          p_company_id: string
+          p_installments_interest_free: number
+          p_installments_max: number
+        }
         Returns: Json
       }
       set_company_take_rate: {

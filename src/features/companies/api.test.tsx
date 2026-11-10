@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { falha, renderMutation, rpc } from "@/test/msw/supabase";
-import { useSetCompanyTakeRate } from "./api";
+import { useSetCompanyInstallments, useSetCompanyTakeRate } from "./api";
 
 /**
  * Contrato de rede da comissão da Movepark (ADR-004). O `take_rate_bps` é por empresa
@@ -62,5 +62,21 @@ describe("useSetCompanyTakeRate", () => {
     await expect(
       result.current.mutateAsync({ companyId: "c1", takeRateBps: 1500 }),
     ).rejects.toThrow();
+  });
+});
+
+describe("useSetCompanyInstallments (parcelamento por empresa, 09/11/2026)", () => {
+  it("manda o par para a RPC que só hub_admin executa", async () => {
+    const espiao = rpc("set_company_installments", { json: { id: "c1", installments_max: 1, installments_interest_free: 1 } });
+    const { result } = renderMutation(() => useSetCompanyInstallments());
+    await result.current.mutateAsync({ companyId: "c1", max: 1, interestFree: 1 });
+    expect(espiao.ultimoBody).toEqual({ p_company_id: "c1", p_installments_max: 1, p_installments_interest_free: 1 });
+  });
+
+  it("os dois nulos voltam a empresa para a política da plataforma", async () => {
+    const espiao = rpc("set_company_installments", { json: { id: "c1", installments_max: null, installments_interest_free: null } });
+    const { result } = renderMutation(() => useSetCompanyInstallments());
+    await result.current.mutateAsync({ companyId: "c1", max: null, interestFree: null });
+    expect(espiao.ultimoBody).toEqual({ p_company_id: "c1", p_installments_max: null, p_installments_interest_free: null });
   });
 });

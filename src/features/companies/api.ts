@@ -17,7 +17,7 @@ export const COMPANY_COLUMNS =
   "onboarding_status, logo_url, wl_domain, wl_sync_enabled, wl_public_domain, hub_relationship, " +
   "wps_webhook_url, wps_webhook_enabled, contract_accepted_at, contract_version, contract_sha256, " +
   "contract_accepted_by, monthly_revenue_goal_cents, gateway_split_enabled, payout_release_days, " +
-  "payout_auto_day, payout_auto_enabled";
+  "payout_auto_day, payout_auto_enabled, installments_max, installments_interest_free";
 
 /** Empresa como o Manager a vê: com os campos restritos e só a PRESENÇA do segredo do WPS. */
 export type ManagedCompany = Company & { has_wps_webhook_secret?: boolean };
@@ -150,6 +150,36 @@ export function useUpdateCompany() {
         .single();
       if (error) throw error;
       return data as unknown as Company;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: companiesKeys.all }),
+  });
+}
+
+/**
+ * Define o parcelamento padrão do estacionamento (09/11/2026): máximo de parcelas e até quantas sem
+ * juros, para toda venda dele que não casa com uma regra de repasse. Os dois nulos = política da
+ * plataforma. Via RPC `set_company_installments` (só hub_admin, valida o par como o banco).
+ */
+export function useSetCompanyInstallments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      companyId,
+      max,
+      interestFree,
+    }: {
+      companyId: string;
+      max: number | null;
+      interestFree: number | null;
+    }) => {
+      const { data, error } = await supabase.rpc("set_company_installments", {
+        p_company_id: companyId,
+        // A RPC aceita nulo nos dois para "herdar"; o tipo gerado não sabe disso.
+        p_installments_max: max as number,
+        p_installments_interest_free: interestFree as number,
+      });
+      if (error) throw error;
+      return data as unknown as { id: string; installments_max: number | null; installments_interest_free: number | null };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: companiesKeys.all }),
   });

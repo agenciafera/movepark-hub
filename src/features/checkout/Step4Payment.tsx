@@ -21,9 +21,10 @@ import {
   useUpdateBookingCustomer,
 } from "./api";
 import { toSvgString } from "@/lib/qr";
-import { computeInstallmentPlan } from "@/lib/installments";
+import { applyInstallmentOverride, computeInstallmentPlan } from "@/lib/installments";
 import {
   describeInstallmentOption,
+  paymentMethodsLine,
   summarizeInstallmentOption,
 } from "@/features/checkout/installments.logic";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
@@ -212,7 +213,19 @@ export function Step4Payment({
     };
   }, [cepDigits]);
 
-  const policy = config.data?.installment_policy;
+  // A política da plataforma com o parcelamento da reserva por cima (regra de repasse > padrão da
+  // empresa, 09/11/2026). É o mesmo cálculo da Edge de cobrança: o que aparece aqui é o que ela aceita.
+  const platformPolicy = config.data?.installment_policy;
+  const policy = React.useMemo(
+    () =>
+      platformPolicy
+        ? applyInstallmentOverride(platformPolicy, {
+            max: bookingForTracking?.commission_installments_max,
+            interestFree: bookingForTracking?.commission_installments_interest_free,
+          })
+        : undefined,
+    [platformPolicy, bookingForTracking?.commission_installments_max, bookingForTracking?.commission_installments_interest_free],
+  );
   const totalCents = Math.round(totalAmount * 100);
   const options = React.useMemo(
     () =>
@@ -375,8 +388,8 @@ export function Step4Payment({
 
       <div className="space-y-2">
         <h2 className="text-display-sm text-ink">Pagamento</h2>
-        <p className="text-body-md text-muted">
-          PIX com confirmação automática ou cartão de crédito (parcelado).
+        <p className="text-body-md text-muted" data-testid="meios-de-pagamento">
+          {paymentMethodsLine(policy)}
         </p>
       </div>
 

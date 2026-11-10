@@ -262,6 +262,51 @@ regra, e numa já paga não muda nada (rodado em transação revertida).
 
 Chargeback não dá para provocar em produção; fica coberto por pgTAP e pelo teste do webhook.
 
+## Parcelamento por origem (09/11/2026)
+
+Há estacionamento que não aceita o 3x sem juros da plataforma: ou não parcela, ou parcela com os
+juros pagos pelo cliente. E isso pode mudar pela origem da venda. Decisões do Kallef em 09/11/2026:
+
+| # | Pergunta | Decisão |
+|---|---|---|
+| 1 | Onde configura | Na **regra de repasse** e num **padrão por empresa** (para a venda que não casa com regra nenhuma). A regra vence a empresa, a empresa vence a plataforma |
+| 2 | O que configura | Dois números opcionais: **máximo de parcelas** e **até quantas sem juros**. Os dois vazios = herda. Máximo 1 = só à vista. Sem juros até 1 = juros desde a 2ª, pagos pelo cliente. A taxa de juros segue a da plataforma |
+| 3 | Os Termos de uso | **Nova versão (v4) publicada em 09/11/2026**: o 5.3 deixa de prometer "até 3 vezes sem juros" e remete à condição do checkout da reserva |
+
+**Modelo.** `commission_rule.installments_max` / `installments_interest_free` e as mesmas colunas em
+`company` (escrita só pela RPC `set_company_installments`, hub_admin). A reserva congela o par em
+`booking.commission_installments_max` / `commission_installments_interest_free`, junto com o resto
+do pacote (`resolve_commission` devolve `installments_max` e `installments_interest_free`;
+`booking_apply_commission` e `admin_set_booking_commission` gravam). O par vem sempre junto e "sem
+juros até" nunca passa do máximo, por constraint nas três tabelas. A guarda `booking_guard_commission`
+recusa PATCH do cliente nessas colunas: sem ela, quem reservou parcelava sem juros onde o
+estacionamento não aceita.
+
+**Cobrança e checkout.** `applyInstallmentOverride` (em `_shared/payments/installments.ts`, com
+espelho em `src/lib/installments.ts`) aplica o par sobre `app_setting.card_installment_policy`: o teto
+de parcelas e as sem juros vêm da reserva, e acima delas o juros é do cliente. A Edge
+`create-card-charge` resolve o pacote **antes** de calcular as parcelas e recusa a parcela que a
+condição da reserva não oferece; o rastro do gateway grava `installments_override`. O checkout usa o
+mesmo cálculo, e a frase do topo (`paymentMethodsLine`) sai da política da reserva: quem não parcela
+lê "cartão de crédito à vista", e quem parcela com juros não lê "sem juros" (ADR-009).
+
+**Telas.** Manager › Comissões: a regra ganhou "Parcelamento no cartão" (com prévia do que o cliente
+verá) e a coluna "Parcelamento" na tabela; a tabela por empresa ganhou o parcelamento padrão. O card
+"Canal da venda" da reserva mostra o parcelamento que valeu.
+
+**Onde a promessa morava.** Em 09/11/2026 o único texto público que prometia "3x sem juros" era o
+item 5.3 dos Termos (e o 4.2 (b), que remetia a ele). O código não tinha a promessa fixa, o FAQ e o
+blog não falam de parcelamento no pagamento ("parcela" nos posts é parcela de conta), e a Mia (repo
+beast-bots) não promete parcelamento.
+
+**Testes.** pgTAP `parcelamento_por_regra.test.sql` (18); Deno `installments.test.ts`,
+`commission.test.ts`; Vitest `installments.test.ts`, `installments.logic.test.ts` (frase),
+`Step4Payment.test.tsx` (checkout só à vista e com juros desde a 2ª), `rule.logic.test.ts`,
+`CompanyInstallmentsCell.test.tsx`, `api.test.tsx`, `bookingCommission.logic.test.ts`.
+
+**Fora deste corte.** O painel do parceiro (`my_commission_channels`) não mostra o parcelamento dos
+canais dele.
+
 ## Fora do escopo
 
 - Afiliado terceiro recebendo comissão.

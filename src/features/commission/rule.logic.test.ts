@@ -3,6 +3,9 @@ import {
   EMPTY_RULE_FORM,
   feeCoverageWarning,
   formFromRule,
+  installmentsLabel,
+  installmentsPreview,
+  parseInstallmentsPair,
   parseUtmSources,
   ruleStatus,
   splitExample,
@@ -38,6 +41,8 @@ describe("validateRuleForm", () => {
         is_active: true,
         valid_from: null,
         valid_until: null,
+        installments_max: null,
+        installments_interest_free: null,
       },
     });
   });
@@ -89,6 +94,7 @@ describe("formFromRule", () => {
       id: "r1", company_id: "c1", name: "Site", utm_sources: ["abbapark", "abbapark-insta"], match_white_label: true,
       take_rate_bps: 750, gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, attribution_window_days: 14, is_active: true,
       valid_from: "2026-10-01T03:00:00.000Z", valid_until: null,
+      installments_max: null, installments_interest_free: null,
       created_at: "", updated_at: "", created_by: null, deleted_at: null,
     } satisfies CommissionRule;
     const v = validateRuleForm(formFromRule(rule));
@@ -129,5 +135,35 @@ describe("splitExample e trackedLink", () => {
     expect(trackedLink("https://movepark.co/p/abbapark?dest=GRU", "abbapark")).toBe(
       "https://movepark.co/p/abbapark?dest=GRU&utm_source=abbapark&utm_medium=parceiro",
     );
+  });
+});
+
+describe("parcelamento na regra (09/11/2026)", () => {
+  it("os dois vazios herdam", () => {
+    expect(parseInstallmentsPair("", " ")).toEqual({ max: null, interestFree: null });
+  });
+  it("só um preenchido é recusado, como no banco", () => {
+    expect(parseInstallmentsPair("6", "")).toHaveProperty("error");
+  });
+  it("sem juros não passa do máximo e o máximo vai até 24", () => {
+    expect(parseInstallmentsPair("2", "3")).toHaveProperty("error");
+    expect(parseInstallmentsPair("25", "1")).toHaveProperty("error");
+    expect(parseInstallmentsPair("12", "1")).toEqual({ max: 12, interestFree: 1 });
+  });
+  it("o rótulo diz o que o cliente vai ver", () => {
+    expect(installmentsLabel(null, null)).toBe("Herda");
+    expect(installmentsLabel(1, 1)).toBe("Só à vista");
+    expect(installmentsLabel(12, 1)).toBe("Até 12x, juros desde a 2ª");
+    expect(installmentsLabel(12, 3)).toBe("Até 12x, 3x sem juros");
+    expect(installmentsLabel(6, 6)).toBe("Até 6x sem juros");
+  });
+  it("a prévia do formulário", () => {
+    expect(installmentsPreview("", "")).toBe("vale o padrão da empresa.");
+    expect(installmentsPreview("1", "1")).toBe("só à vista.");
+    expect(installmentsPreview("6", "")).toBe("confira os dois números.");
+  });
+  it("o formulário leva o par ao payload", () => {
+    const r = validateRuleForm({ ...EMPTY_RULE_FORM, name: "Site", utmSourcesText: "x", takeRatePct: "10", installmentsMax: "6", installmentsInterestFree: "1" });
+    expect(r.ok && r.payload).toMatchObject({ installments_max: 6, installments_interest_free: 1 });
   });
 });

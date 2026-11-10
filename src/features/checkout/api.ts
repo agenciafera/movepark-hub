@@ -52,6 +52,12 @@ export type BookingForCheckout = {
   fare_tier: string | null;
   /** Número do voo (opcional, Superflex): prova da proteção contra atraso. */
   flight_number: string | null;
+  /**
+   * Parcelamento congelado na reserva (regra de repasse > padrão da empresa, 09/11/2026). Os dois
+   * nulos = política da plataforma. O servidor aplica o mesmo par em `create-card-charge`.
+   */
+  commission_installments_max: number | null;
+  commission_installments_interest_free: number | null;
   location: {
     id: string;
     slug: string;
@@ -114,6 +120,7 @@ export function useCheckoutBooking(code: string | undefined) {
            fare_cancel_until, expires_at, created_at, passenger_count, has_pcd, vehicle_id, profile_id,
            customer_name, customer_first_name, customer_last_name, customer_phone, customer_email,
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone, fare_tier, flight_number,
+           commission_installments_max, commission_installments_interest_free,
            location:location!inner(id, slug, name, address, photos, checkout_mode, public_name,
              ads_conversion_id, ads_conversion_label,
              company:company!inner(slug, name),
@@ -164,6 +171,8 @@ export function useCheckoutBooking(code: string | undefined) {
         passenger_phone: row.passenger_phone,
         fare_tier: row.fare_tier ?? null,
         flight_number: row.flight_number ?? null,
+        commission_installments_max: row.commission_installments_max ?? null,
+        commission_installments_interest_free: row.commission_installments_interest_free ?? null,
         location: {
           ...row.location,
           // `photos` é jsonb no banco: normaliza pra array antes de sair daqui,

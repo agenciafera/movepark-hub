@@ -105,3 +105,26 @@ export function computeInstallmentPlan(baseCents: number, policy: InstallmentPol
   }
   return options;
 }
+
+/**
+ * Parcelamento congelado na reserva (regra de repasse > padrão da empresa, 09/11/2026), aplicado
+ * sobre a política da plataforma. Sem override (`max` nulo) a política fica como está. Com override:
+ * o teto de parcelas é o da reserva, as sem juros vão até o que ela diz, e acima disso quem paga o
+ * juros é o CLIENTE, na taxa da plataforma. É o que "parcela com juros" quer dizer para o
+ * estacionamento que não aceita o 3x sem juros. Máximo 1 = só à vista.
+ */
+export function applyInstallmentOverride(
+  policy: InstallmentPolicy,
+  override: { max?: number | null; interestFree?: number | null } | null | undefined,
+): InstallmentPolicy {
+  const max = override?.max;
+  if (max == null || !Number.isFinite(max)) return policy;
+  const maxInstallments = Math.min(24, Math.max(1, Math.trunc(max)));
+  const free = override?.interestFree ?? maxInstallments;
+  return {
+    ...policy,
+    maxInstallments,
+    interestFreeUpTo: Math.min(maxInstallments, Math.max(1, Math.trunc(free))),
+    absorb: "customer",
+  };
+}

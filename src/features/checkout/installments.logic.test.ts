@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { computeInstallmentPlan, DEFAULT_INSTALLMENT_POLICY } from "@/lib/installments";
+import {
+  applyInstallmentOverride,
+  computeInstallmentPlan,
+  DEFAULT_INSTALLMENT_POLICY,
+} from "@/lib/installments";
 import {
   cetAnualPct,
   describeInstallmentOption,
   formatPct,
+  paymentMethodsLine,
   priceInstallmentCents,
   summarizeInstallmentOption,
 } from "./installments.logic";
@@ -90,5 +95,39 @@ describe("resumo da opção escolhida", () => {
     expect(norm(summarizeInstallmentOption(opcao, policy))).toBe(
       "12x de R$ 100,40. Total R$ 1.204,80, acréscimo de R$ 204,80. Juros 2,99% a.m., CET 2,99% a.m. (42,41% a.a.).",
     );
+  });
+});
+
+// A frase do topo do checkout sai da política da reserva (parcelamento por regra, 09/11/2026).
+describe("frase dos meios de pagamento", () => {
+  const plataforma = DEFAULT_INSTALLMENT_POLICY; // 12x, 3x sem juros, juros do cliente
+
+  it("plataforma: até 12x, sendo até 3x sem juros", () => {
+    expect(paymentMethodsLine(plataforma)).toBe(
+      "PIX com confirmação automática ou cartão de crédito em até 12x, sendo até 3x sem juros.",
+    );
+  });
+
+  it("estacionamento que não parcela: à vista, sem falar em parcelas", () => {
+    const texto = paymentMethodsLine(applyInstallmentOverride(plataforma, { max: 1, interestFree: 1 }));
+    expect(texto).toBe("PIX com confirmação automática ou cartão de crédito à vista.");
+    expect(texto).not.toMatch(/parcel|sem juros/);
+  });
+
+  it("parcela com juros desde a 2ª: não promete sem juros", () => {
+    const texto = paymentMethodsLine(applyInstallmentOverride(plataforma, { max: 6, interestFree: 1 }));
+    expect(texto).toBe(
+      "PIX com confirmação automática ou cartão de crédito em até 6x, com juros a partir da 2ª parcela.",
+    );
+  });
+
+  it("todas sem juros quando quem paga o juros não é o cliente", () => {
+    expect(paymentMethodsLine({ ...plataforma, absorb: "movepark" })).toBe(
+      "PIX com confirmação automática ou cartão de crédito em até 12x sem juros.",
+    );
+  });
+
+  it("cartão desligado: só PIX", () => {
+    expect(paymentMethodsLine({ ...plataforma, enabled: false })).toBe("PIX com confirmação automática.");
   });
 });

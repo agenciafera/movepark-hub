@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  applyInstallmentOverride,
   computeInstallmentPlan,
   DEFAULT_INSTALLMENT_POLICY,
   parseInstallmentPolicy,
@@ -91,4 +92,29 @@ Deno.test("default não oferece parcela longa sem juros dizendo que o cliente pa
         `absorb 'customer', mas monthlyInterestPct é ${d.monthlyInterestPct}: ninguém paga o juros`,
     );
   }
+});
+
+// Parcelamento por regra de repasse (09/11/2026). Mesmos casos do espelho do front.
+Deno.test("applyInstallmentOverride: sem override a política fica igual", () => {
+  const base = parseInstallmentPolicy(null);
+  assertEquals(applyInstallmentOverride(base, null), base);
+  assertEquals(applyInstallmentOverride(base, { max: null, interestFree: null }), base);
+});
+
+Deno.test("applyInstallmentOverride: máximo 1 = só à vista", () => {
+  const p = applyInstallmentOverride(parseInstallmentPolicy(null), { max: 1, interestFree: 1 });
+  assertEquals(computeInstallmentPlan(30000, p).map((o) => o.installments), [1]);
+});
+
+Deno.test("applyInstallmentOverride: sem juros até 1 cobra juros do cliente desde a 2ª", () => {
+  const base = { ...parseInstallmentPolicy(null), absorb: "movepark" as const };
+  const p = applyInstallmentOverride(base, { max: 12, interestFree: 1 });
+  assertEquals(p.absorb, "customer");
+  const plano = computeInstallmentPlan(30000, p);
+  assertEquals(plano[0].hasInterest, false);
+  assertEquals(plano[1].hasInterest, true);
+});
+
+Deno.test("applyInstallmentOverride: sem juros nunca passa do máximo", () => {
+  assertEquals(applyInstallmentOverride(parseInstallmentPolicy(null), { max: 2, interestFree: 6 }).interestFreeUpTo, 2);
 });

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CommissionRulesCard } from "@/features/commission/CommissionRulesCard";
 import { ChannelReportCard } from "@/features/commission/ChannelReportCard";
+import { CompanyInstallmentsCell } from "@/features/commission/CompanyInstallmentsCell";
 import {
   bpsToPctString,
   isCommissionDirty,
@@ -63,9 +64,11 @@ export default function ManagerFinanceCommissions() {
       <CommissionRulesCard />
 
       <div>
-        <h2 className="text-title-md text-ink">Comissão padrão por empresa</h2>
+        <h2 className="text-title-md text-ink">Comissão e parcelamento padrão por empresa</h2>
         <p className="text-body-sm text-muted">
           Vale para toda venda que não casa com nenhuma regra acima, como a busca no site da Movepark.
+          No parcelamento, deixe os dois campos vazios para seguir a política da plataforma, ou use
+          máximo 1 para só à vista e sem juros até 1 para cobrar juros desde a 2ª parcela.
         </p>
       </div>
 
@@ -86,6 +89,7 @@ export default function ManagerFinanceCommissions() {
                   <TableHead>Empresa</TableHead>
                   <TableHead className="w-44 text-right">Comissão (%)</TableHead>
                   <TableHead className="w-32" />
+                  <TableHead>Parcelamento no cartão</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -126,6 +130,14 @@ export default function ManagerFinanceCommissions() {
                         >
                           {saving ? "Salvando…" : "Salvar"}
                         </Button>
+                      </TableCell>
+                      <TableCell>
+                        <CompanyInstallmentsCell
+                          companyId={c.id}
+                          companyName={c.name}
+                          max={c.installments_max ?? null}
+                          interestFree={c.installments_interest_free ?? null}
+                        />
                       </TableCell>
                     </TableRow>
                   );

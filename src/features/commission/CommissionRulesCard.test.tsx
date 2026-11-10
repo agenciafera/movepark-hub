@@ -34,6 +34,8 @@ const REGRA: CommissionRule = {
   is_active: true,
   valid_from: null,
   valid_until: null,
+  installments_max: null,
+  installments_interest_free: null,
   created_at: "2026-09-18T00:00:00Z",
   updated_at: "2026-09-18T00:00:00Z",
   created_by: null,

@@ -96,3 +96,19 @@ describe("rulesForCompany", () => {
     expect(rulesForCompany(rules, "c1").map((r) => r.id)).toEqual(["a", "b"]);
   });
 });
+
+describe("parcelamento na reserva (09/11/2026)", () => {
+  const fmt = (iso: string) => iso;
+  const base = { commission_channel: "Site", commission_rule_id: "r1", commission_take_rate_bps: 1000 };
+  it("herdou: política da plataforma", () => {
+    expect(commissionView(base, fmt).installments).toBe("Política da plataforma");
+  });
+  it("congelado: o que o cliente viu no checkout", () => {
+    expect(
+      commissionView({ ...base, commission_installments_max: 1, commission_installments_interest_free: 1 }, fmt).installments,
+    ).toBe("Só à vista");
+  });
+  it("reserva antiga, sem pacote: nada a dizer", () => {
+    expect(commissionView({}, fmt).installments).toBeNull();
+  });
+});

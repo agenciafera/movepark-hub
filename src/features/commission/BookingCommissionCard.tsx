@@ -92,6 +92,7 @@ export function BookingCommissionCard({ booking, companyId, payments, audience, 
             <Item label="Comissão da Movepark" value={`${view.takeRatePct}%`} />
             {manager && view.feePayer && <Item label="Taxa do gateway" value={view.feePayer} />}
             {manager && view.chargeback && <Item label="Chargeback" value={view.chargeback} />}
+            {view.installments && <Item label="Parcelamento no cartão" value={view.installments} />}
           </dl>
         )}
 

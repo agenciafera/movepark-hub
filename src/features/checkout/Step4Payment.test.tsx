@@ -534,3 +534,78 @@ describe("Step4Payment: parcelas com juros", () => {
     );
   });
 });
+
+/**
+ * Parcelamento por regra de repasse (09/11/2026): a reserva carrega o parcelamento do
+ * estacionamento e o checkout obedece. Quem não aceita 3x sem juros não vê 3x sem juros.
+ */
+describe("Step4Payment: parcelamento da reserva", () => {
+  const user = userEvent.setup();
+
+  function reservaCom(max: number | null, free: number | null) {
+    server.use(
+      http.get("http://localhost:54321/rest/v1/booking", () =>
+        HttpResponse.json({
+          id: "bk-1", code: "MP-ABC123", status: "pending", total_amount: 1000, currency: "BRL",
+          price_breakdown: null, check_in_at: "2026-12-10T12:00:00Z", check_out_at: "2026-12-12T12:00:00Z",
+          fare_cancel_until: null, expires_at: null, created_at: "2026-11-09T12:00:00Z",
+          passenger_count: null, has_pcd: false, vehicle_id: null, profile_id: "u1",
+          commission_installments_max: max, commission_installments_interest_free: free,
+          location: null, items: [], coupons: [], payments: [],
+        }),
+      ),
+    );
+  }
+
+  async function abrirCartao() {
+    renderWithProviders(
+      <Step4Payment
+        bookingId="bk-1"
+        bookingCode="MP-ABC123"
+        totalAmount={1000}
+        customerTaxId="04810388417"
+        paymentStatus={null}
+        onBack={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByLabelText("Parcelas");
+  }
+
+  beforeEach(() => {
+    policy.monthlyInterestPct = 2.99;
+  });
+
+  afterEach(() => {
+    policy.monthlyInterestPct = 0;
+  });
+
+  it("estacionamento só à vista: a frase não fala em parcelas e o seletor só tem 1x", async () => {
+    reservaCom(1, 1);
+    await abrirCartao();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("meios-de-pagamento")).toHaveTextContent(
+        "PIX com confirmação automática ou cartão de crédito à vista.",
+      ),
+    );
+    await user.click(screen.getByLabelText("Parcelas"));
+    const opcoes = await screen.findAllByRole("option");
+    expect(opcoes.map((o) => norm(o.textContent))).toEqual([expect.stringMatching(/^1x de R\$ 1\.000,00/)]);
+  });
+
+  it("parcela com juros desde a 2ª: a 2x já mostra a taxa, e não há 3x sem juros", async () => {
+    reservaCom(6, 1);
+    await abrirCartao();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("meios-de-pagamento")).toHaveTextContent(
+        "em até 6x, com juros a partir da 2ª parcela.",
+      ),
+    );
+    await user.click(screen.getByLabelText("Parcelas"));
+    const opcao2 = await screen.findByRole("option", { name: /2x de R\$/ });
+    expect(norm(opcao2.textContent)).toContain("juros de 2,99% a.m.");
+    expect(screen.queryByRole("option", { name: /7x de R\$/ })).not.toBeInTheDocument();
+  });
+});
