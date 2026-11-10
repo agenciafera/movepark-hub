@@ -455,6 +455,17 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   **"Estorno"** foi **removido** do Manager (`BookingModal`) e do Operator (`BookingDrawer`), assim
   como a Edge `refund-booking`; `paymentState()` agora só alimenta o **badge** de estado
   (Estornado / em processamento).
+- **Saída antecipada não devolve diária (10/11/2026):** quem retira o carro antes da data de saída
+  não recebe as diárias que sobraram. É o item 7.3 dos Termos (`legal_document`, slug `terms`: depois
+  do check-in ou do no-show não há reembolso, porque o serviço foi disponibilizado), e o sistema
+  acompanha: não existe estorno parcial por uso, e o estorno avulso do Manager devolve o pagamento
+  inteiro. Encurtar a estadia com devolução da diferença é alteração de data (Flex e Superflex, até
+  o horário do check-in, ver [booking-modifications.md](./booking-modifications.md) §8). A regra
+  nasceu do caso MP-34FB80 (Pare Seguro, 11 diárias pagas, carro retirado no terceiro dia) e está
+  publicada em três lugares que precisam andar juntos: a seção `saida-antecipada` de `/cancelamento`
+  (`src/features/content/pages.ts`), a FAQ global "Voltei antes do previsto. Recebo as diárias que
+  não usei?" (banco + `supabase/seed.sql`) e os Termos. Cortesia fora da regra é decisão comercial
+  caso a caso, feita por fora do painel.
 - **Exceção, estorno avulso pelo Manager (19/10/2026, decisão do Kallef):** a equipe (hub_admin)
   estorna UM pagamento sem cancelar a reserva, no rastro do gateway da reserva (botão
   "Estornar"). Caso de uso: cobrança em dobro (MP-07DAE9), cortesia, ajuste de valor. A Edge

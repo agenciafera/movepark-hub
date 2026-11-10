@@ -145,8 +145,23 @@ describe("structured data", () => {
   /** O Google penaliza schema que diverge do visível, então sai dos mesmos blocos. */
   it("o FAQPage junta os blocos de FAQ da página inteira", () => {
     const schema = faqJsonLd(CANCELAMENTO.sections);
-    expect(schema?.mainEntity).toHaveLength(4);
+    expect(schema?.mainEntity).toHaveLength(5);
     expect(schema?.mainEntity[0].name).toBe("Como cancelo minha reserva?");
+  });
+
+  /**
+   * Regressão da MP-34FB80: o cliente pagou 11 diárias, retirou o carro no terceiro dia e pediu
+   * o resto de volta. A regra estava só no item 7.3 dos Termos; a página de cancelamento não
+   * dizia nada sobre sair antes.
+   */
+  it("a política de cancelamento diz que saída antecipada não devolve diária", () => {
+    const secao = CANCELAMENTO.sections.find((s) => s.id === "saida-antecipada");
+    const texto = JSON.stringify(secao?.blocks ?? []);
+    expect(texto).toContain("Depois do check-in não há reembolso");
+    expect(texto).toContain("as diárias que sobraram não voltam");
+
+    const perguntas = faqJsonLd(CANCELAMENTO.sections)?.mainEntity.map((q) => q.name);
+    expect(perguntas).toContain("Voltei antes do previsto. Recebo as diárias que não usei?");
   });
 
   it("página sem FAQ não emite schema vazio", () => {

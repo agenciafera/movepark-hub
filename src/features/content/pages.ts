@@ -16,7 +16,7 @@ export const CANCELAMENTO: ContentPage = {
   title: "Política de cancelamento",
   intro:
     "Quando você reserva direto na Movepark, o cancelamento segue o prazo da sua Tarifa e o reembolso é integral dentro dele. Quando a reserva é concluída no site ou WhatsApp do estacionamento parceiro, vale a política que ele informou a você.",
-  updated: "2026-08-19",
+  updated: "2026-11-10",
   related: ["termos", "estacionamento-de-aeroporto-e-seguro", "faq"],
   sections: [
     {
@@ -66,11 +66,33 @@ export const CANCELAMENTO: ContentPage = {
       blocks: [
         {
           type: "p",
-          text: "Passado o prazo da sua Tarifa, o cancelamento passa pelo suporte.",
+          text: "Passado o prazo da sua Tarifa e antes do check-in, o cancelamento passa pelo suporte.",
         },
         {
           type: "p",
           text: "Não há reembolso parcial automático. O suporte avalia o seu caso pelo atendimento.",
+        },
+      ],
+    },
+    {
+      // Item 7.3 dos Termos de Uso (`legal_document`, slug `terms`). A página só
+      // tratava de cancelar antes do check-in, e o caso da MP-34FB80 (11 diárias
+      // pagas, carro retirado no terceiro dia) ficava sem resposta escrita aqui.
+      id: "saida-antecipada",
+      title: "Saída antes do fim da reserva",
+      blocks: [
+        {
+          type: "p",
+          text: "Depois do check-in não há reembolso. Se você retirar o carro antes da data de saída, as diárias que sobraram não voltam, porque a vaga ficou reservada para você pelo período inteiro.",
+        },
+        {
+          type: "p",
+          text: "Também não há reembolso para quem não aparece na data de entrada sem ter cancelado dentro do prazo.",
+        },
+        {
+          type: "note",
+          label: "Se os planos mudarem antes do check-in",
+          text: "Na Flex e na Superflex, você altera as datas em Minhas Reservas até o horário do check-in. Se o novo período ficar mais barato, a diferença volta no mesmo método de pagamento.",
         },
       ],
     },
@@ -88,6 +110,10 @@ export const CANCELAMENTO: ContentPage = {
             {
               q: "O reembolso vai para onde?",
               a: "Para reservas fechadas na Movepark, o reembolso vai para o mesmo método usado no pagamento: no PIX, o valor volta para a chave usada em até 1 dia útil; no cartão de crédito, aparece como estorno em até duas faturas, conforme o seu banco.",
+            },
+            {
+              q: "Voltei antes do previsto. Recebo as diárias que não usei?",
+              a: "Não. Depois do check-in não há reembolso, mesmo que você retire o carro antes da data de saída, porque a vaga ficou reservada para você pelo período inteiro. Se a reserva foi concluída no site ou WhatsApp do estacionamento parceiro, vale a regra que ele informou.",
             },
             {
               q: "Meu voo atrasou ou foi cancelado. E agora?",
