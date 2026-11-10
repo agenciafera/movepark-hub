@@ -265,7 +265,7 @@ export const CUSTOMER_TXN_TOOLS: ToolDef[] = [
   {
     name: "create_booking",
     description:
-      "Cria uma reserva pendente para o usuário logado e segura a vaga. Use os ids vindos de get_parking_types. Confirme os dados com o usuário antes de reservar.",
+      "Cria uma reserva pendente para o usuário logado e segura a vaga. Use os ids vindos de get_parking_types. Confirme os dados com o usuário antes de reservar. Cada reserva é de um carro. Para dois carros nas mesmas datas (o do cliente e o de um parente, por exemplo), crie a primeira, vincule a placa dela com set_booking_vehicle e só então crie a segunda: sem a placa na primeira, a segunda chamada devolve a mesma reserva.",
     inputSchema: obj(
       {
         location_parking_type_id: { type: "string", description: "id do tipo de vaga (location_parking_type)" },

@@ -45,6 +45,18 @@
 > A janela é a vida do hold: depois que a 1ª expira/confirma, a mesma reserva pode ser feita de novo.
 > A criação por parceiro (`api_create_booking`) segue idempotente por **chave explícita** (keyed em
 > `api_key`, header `Idempotency-Key`). Migration `20260825000000_consumer_booking_idempotency.sql`.
+>
+> **Segundo carro da mesma conta (09/11/2026).** O cliente pode reservar, na mesma conta, mais de
+> um carro para as mesmas datas e a mesma unidade (o dele e o de um parente). O site e a Mia criam
+> a reserva sem veículo e vinculam a placa depois, então as duas chamadas tinham a mesma chave e a
+> segunda recebia replay da primeira (pela Mia, vincular a placa do segundo carro trocava a da
+> primeira). Desde `20261201230000_dedup_respeita_segundo_carro.sql`, o replay exige que a pendente
+> esteja com o **mesmo veículo** pedido agora (`vehicle_id is not distinct from p_vehicle_id`): o
+> duplo-envio, que chega antes de qualquer placa, segue caindo na mesma reserva; a pendente que já
+> tem a placa de um carro não é devolvida a quem reserva outro. A tool `create_booking` orienta o
+> agente a vincular a placa da primeira antes de criar a segunda. O white-label não tinha a trava:
+> a regra dele (`getHasDuplicateOrder`) já compara a placa. Teste:
+> `consumer_booking_idempotency.test.sql` (casos 12 a 15).
 
 ## State Machine
 

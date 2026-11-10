@@ -8,8 +8,8 @@
 
 begin;
 -- 11 = 8 originais + 3 do caso de tarifa. O plano estava em 9 com 8 asserções (Bad plan
--- pré-existente, mesma classe do retroactive_check_in relatado em 86ajmx4yc).
-select plan(11);
+-- pré-existente, mesma classe do retroactive_check_in relatado em 86ajmx4yc). +4 do segundo carro.
+select plan(15);
 
 -- ── fixture: customer + um tipo de vaga do seed, capacidade folgada ─────────
 do $$
@@ -118,5 +118,43 @@ select is(current_setting('test.tier_replay'), 'false',
 select is(
   (select fare_tier::text from public.booking where id = current_setting('test.tier_super')::uuid),
   'superflex', 'a tarifa escolhida é a que fica persistida');
+
+-- ── 6) SEGUNDO CARRO da mesma conta, mesmas datas (09/11/2026) ──────────────
+-- O site e a Mia criam a reserva sem veículo e vinculam a placa depois. Antes, a 2ª reserva (do
+-- carro do parente) recebia replay da 1ª, e vincular a placa dela trocava a placa da 1ª.
+do $$
+declare r1 jsonb; r_dup jsonb; r2 jsonb; v_carro1 uuid;
+begin
+  insert into public.vehicle(profile_id, license_plate) values (current_setting('test.u')::uuid, 'AAA1A11')
+    returning id into v_carro1;
+  r1 := public.create_booking_atomic(
+    current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
+    '2027-09-01T12:00:00Z', '2027-09-03T12:00:00Z');
+  -- Duplo-envio antes de qualquer placa: ainda é a mesma compra.
+  r_dup := public.create_booking_atomic(
+    current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
+    '2027-09-01T12:00:00Z', '2027-09-03T12:00:00Z');
+  -- O cliente vincula o carro 1 (o que o checkout e o set_booking_vehicle fazem).
+  update public.booking set vehicle_id = v_carro1 where id = (r1 ->> 'booking_id')::uuid;
+  -- Agora reserva o carro do parente, mesmas datas e mesma vaga.
+  r2 := public.create_booking_atomic(
+    current_setting('test.u')::uuid, current_setting('test.lpt')::uuid,
+    '2027-09-01T12:00:00Z', '2027-09-03T12:00:00Z');
+  perform set_config('test.car_r1', r1 ->> 'booking_id', false);
+  perform set_config('test.car_dup', r_dup ->> 'booking_id', false);
+  perform set_config('test.car_r2', r2 ->> 'booking_id', false);
+  perform set_config('test.car_r2_replay', coalesce(r2 ->> 'idempotent_replay', 'false'), false);
+  perform set_config('test.carro1', v_carro1::text, false);
+end $$;
+
+select is(current_setting('test.car_dup'), current_setting('test.car_r1'),
+  'duplo-envio antes da placa continua caindo na mesma reserva');
+select isnt(current_setting('test.car_r2'), current_setting('test.car_r1'),
+  'segundo carro nas mesmas datas ganha reserva própria');
+select is(current_setting('test.car_r2_replay'), 'false',
+  'a reserva do segundo carro não é replay');
+select is(
+  (select vehicle_id::text from public.booking where id = current_setting('test.car_r1')::uuid),
+  current_setting('test.carro1'), 'a 1ª reserva segue com o carro 1');
 
 rollback;
