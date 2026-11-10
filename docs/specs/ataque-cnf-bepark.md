@@ -781,6 +781,13 @@ estacionamento" 9,0), e a cabeça piorou.
 4. **A URL morta do guia completo.** `guia-completo-estacionamento-aeroporto-confins` responde 404 e
    ainda tem impressão na cabeça. Vai para 301 na página da praça, em migration, como manda
    [blog.md](./blog.md).
+
+   **Feito em 10/11/2026**, no worker e não em migration: o 301 do blog mora nos mapas de
+   `src/worker.ts`, e o post entrou no `BLOG_RETIRED_TO_DESTINATION`, mapa novo para post
+   retirado cuja intenção mora na praça. `/blog/guia-completo-estacionamento-aeroporto-confins/`
+   (com e sem barra) vai para `/estacionamentos/aeroporto-confins`, e o `.md` vai para o `.md`
+   da praça. O teste de contrato (`src/blog-urls.contract.test.ts`) reprova se o slug voltar a
+   ser publicado sem sair do mapa.
 5. **O placar sem dono.** A rodada de 28/10 não rodou e ninguém viu. Precisa de dono com data
    (proposta da planilha: Léo Henrique, dia 28) e do Perplexity logado.
 

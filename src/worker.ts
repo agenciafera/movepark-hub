@@ -170,6 +170,21 @@ function applyIndexPolicy(response: Response, url: URL): Response {
 }
 
 /**
+ * Post retirado sem vencedor no blog: a intenção dele mora na página da praça, então o 301
+ * vai para `/estacionamentos/<destino>` em vez de outro post.
+ *
+ * Despublicar post é decisão de URL (docs/specs/blog.md): ou 301 para quem herda a consulta,
+ * ou 404 consciente. Entra aqui o post que o Google já indexou e que ainda recebe impressão
+ * numa consulta cuja dona é a praça. Reverter = republicar o post e tirar a entrada daqui.
+ */
+export const BLOG_RETIRED_TO_DESTINATION: Record<string, string> = {
+  // Publicado em 10/10/2026 e despublicado em 14/10 sem 301. Em quatro dias levou 944
+  // impressões de "estacionamento aeroporto confins", e de 17 a 31/10 ainda tinha 314
+  // respondendo 404 (docs/specs/ataque-cnf-bepark.md §5.1).
+  "guia-completo-estacionamento-aeroporto-confins": "aeroporto-confins",
+};
+
+/**
  * Categorias do blog no WordPress → destino no Hub.
  *
  * As categorias moram dentro do namespace `/blog/`, então `/blog/<categoria>/` e
@@ -698,6 +713,8 @@ export function blogRedirect(url: URL): Response | null {
       const destino = alvo.startsWith("/") ? alvo : `/blog/${alvo}`;
       return redirect301(`${destino.replace(/\/+$/, "")}.md${url.search}`);
     }
+    const praca = BLOG_RETIRED_TO_DESTINATION[ultimo.slice(0, -3)];
+    if (praca) return redirect301(`/estacionamentos/${praca}.md${url.search}`);
     return null;
   }
 
@@ -725,6 +742,11 @@ export function blogRedirect(url: URL): Response | null {
   // da canônica de barra, senão o perdedor sem barra faria dois saltos.
   if (segments[0] in BLOG_CONSOLIDATED_SLUGS) {
     return redirect301(`/blog/${BLOG_CONSOLIDATED_SLUGS[segments[0]]}/`);
+  }
+
+  // Post retirado cuja consulta é da praça: 301 direto para ela, também sem a barra.
+  if (segments[0] in BLOG_RETIRED_TO_DESTINATION) {
+    return redirect301(`/estacionamentos/${BLOG_RETIRED_TO_DESTINATION[segments[0]]}`);
   }
 
   if (segments[0] in BLOG_CATEGORY_TO_DESTINATION) {

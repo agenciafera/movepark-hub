@@ -160,7 +160,10 @@ Paulista e Salgado Filho), que estão sendo trocados pelo guia "padrão Viracopo
 da consolidação, que seguem em 301. O manifesto versionado voltou a ter os 90 publicados.
 
 **Como não repetir.** Despublicar post é decisão de URL, igual a renomear slug: vai em migration,
-com a lista de slugs e o destino de cada um (301 para o vencedor, ou 404 consciente). Um `update`
+com a lista de slugs e o destino de cada um (301 para o vencedor, ou 404 consciente). O 301 em
+si mora no `src/worker.ts`: `BLOG_CONSOLIDATED_SLUGS` quando o destino é outro post, e
+`BLOG_RETIRED_TO_DESTINATION` (desde 10/11/2026) quando a intenção mora na página da praça, como o
+`guia-completo-estacionamento-aeroporto-confins`, despublicado em 14/10 sem destino. Um `update`
 sem `where` em `blog_post` derruba o acervo inteiro, e o 404 não avisa ninguém. Para conferir o
 estado, compare `select count(*) from blog_post where is_published and deleted_at is null` com o
 `public/blog-slugs.json` do último commit.

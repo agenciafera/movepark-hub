@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker, { BLOG_CONSOLIDATED_SLUGS } from "./worker";
+import worker, { BLOG_CONSOLIDATED_SLUGS, BLOG_RETIRED_TO_DESTINATION } from "./worker";
 import legacySlugs from "./features/blog/legacy-slugs.json";
+import publicados from "../public/blog-slugs.json";
 
 /**
  * Contrato das URLs do blog migradas do WordPress.
@@ -93,6 +94,31 @@ describe("contrato de URL do blog", () => {
     }
 
     expect(errados).toEqual([]);
+  });
+
+  it("post retirado responde 301 para a praça, nas duas formas de URL e no .md", async () => {
+    for (const [slug, destino] of Object.entries(BLOG_RETIRED_TO_DESTINATION)) {
+      for (const path of [`/blog/${slug}/`, `/blog/${slug}`]) {
+        const { env } = makeEnv();
+        const res = await worker.fetch(req(path), env);
+        expect(res.status, path).toBe(301);
+        expect(res.headers.get("Location"), path).toBe(`/estacionamentos/${destino}`);
+      }
+      const { env } = makeEnv();
+      const md = await worker.fetch(req(`/blog/${slug}.md`), env);
+      expect(md.status).toBe(301);
+      expect(md.headers.get("Location")).toBe(`/estacionamentos/${destino}.md`);
+    }
+  });
+
+  it("post retirado não está publicado nem no contrato do WordPress", () => {
+    // Se alguém republicar o post, o 301 esconderia a página viva: a entrada tem que sair
+    // do mapa no mesmo commit. E slug herdado do WordPress tem contrato próprio.
+    for (const slug of Object.keys(BLOG_RETIRED_TO_DESTINATION)) {
+      expect(publicados, slug).not.toContain(slug);
+      expect(legacySlugs, slug).not.toContain(slug);
+      expect(consolidados.has(slug), slug).toBe(false);
+    }
   });
 
   it("o índice /blog/ responde 200", async () => {
