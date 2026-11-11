@@ -216,6 +216,29 @@ Levantado em 06/11/2026 a partir do export do container e do Tag Assistant. Regr
 
 Fica como está: `Remarketing - Google Ads` (Movepark), `Vinculador de Conversões`, `🟠GA4 Config`, `🔵00.01`/`🔵00.02`/`🔵00.03` (os acionadores batem com os nomes do Hub), `dLv - total`/`dLv - Ecommerce Product Items` (lêem `ecommerce.value`/`ecommerce.items`, certos), `[Cookie]_ga`/`_fbp`/`_fbc`, `[Confing] Event ID`, `[Dado] event_time_unix`.
 
+### 6.2 Vínculo entre domínios com o site do parceiro (Pare Seguro, 11/11/2026)
+
+**O problema.** Desde 07/11/2026 o site `pareseguro.com` (container `GTM-PHZRZ9JP`) manda o tráfego para a ficha da unidade no Hub, e isso virou a maior parte das compras da unidade. O anúncio do Google Ads cai no site dela, o `gclid` fica gravado no cookie `_gcl_aw` de `pareseguro.com`, e o link para `movepark.co` levava só UTM. A tag `[Parceiro] Compra - Google Ads` disparava no Hub sem identificador de clique, e o Ads não tinha como ligar a venda à campanha.
+
+**O conserto.** O Vinculador de conversões dos dois containers ficou com "vinculação entre domínios" ligada:
+
+| Container | Versão | Domínio vinculado | Papel |
+|---|---|---|---|
+| `GTM-PHZRZ9JP` (pareseguro.com) | 25 | `movepark.co` | acrescenta `_gl=...` nos links para o Hub, com o `gclid` dentro |
+| `GTM-KHBBZT9` (Hub) | 35 | `pareseguro.com` | lê o `_gl` na chegada e grava `_gcl_aw` em `movepark.co` |
+
+**O limite que não é do vínculo.** O site da Pare Seguro usa Consent Mode v2 com tudo negado por padrão (`ad_storage`, `analytics_storage` e os outros), liberado só quando o visitante aceita o aviso de cookies (`localStorage.ps_consent`). Sem aceite não existe `_gcl_aw` na origem, então não há o que carregar: a compra chega ao Ads sem clique. O vínculo resolve quem aceitou. O Hub não tem modo de consentimento.
+
+**Como foi testado.** Navegador isolado (Playwright, perfil descartável), entrando em `pareseguro.com/?gclid=<teste>` e clicando no botão de reservar:
+
+| Cenário | `_gl` na chegada | `_gcl_aw` em movepark.co |
+|---|---|---|
+| Antes da mudança, aviso aceito | não | não |
+| Depois, aviso aceito | sim | sim, com o `gclid` de teste |
+| Depois, aviso sem resposta | não | não |
+
+Efeito colateral conhecido: `booking.attribution.landing_url` passa a guardar o `_gl` de quem chegou com ele. Parceiro novo com site próprio e anúncio próprio precisa do mesmo par de configurações (o domínio dele na lista do Hub, `movepark.co` na dele). Conversão anterior a 11/11/2026 não é recuperável.
+
 ## 7. Como validar
 
 - **Local**: com `bun run dev`, o GTM carrega normalmente. No console, `window.dataLayer` mostra os pushes; o Tag Assistant (modo de visualização do GTM) mostra o que a tag montou.
