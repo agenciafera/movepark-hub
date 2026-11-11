@@ -1,16 +1,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { BookingFiltersPanel, FilterSelect } from "@/features/bookings/BookingFiltersPanel";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
@@ -25,7 +16,7 @@ import {
 } from "@/features/bookings/api";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
-import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
+import type { SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import {
   CHANNEL_LABEL,
   type ChannelFilter,
@@ -38,8 +29,8 @@ import { useCompanies } from "@/features/companies/api";
 import {
   ATTENDANCE_OPTIONS,
   PAYMENT_OPTIONS,
-  PCD_OPTIONS,
   addOnParam,
+  countActiveFilters,
   attendanceParam,
   pcdParam,
   yesNoParam,
@@ -190,135 +181,67 @@ export default function ManagerBookings() {
         }
       />
 
-      <Card>
-        <CardContent className="grid gap-4 p-6 tablet:grid-cols-2 desktop:grid-cols-4 desktop:items-end">
-          <div className="flex flex-col gap-1.5 desktop:col-span-2">
-            <Label htmlFor="search">Busca</Label>
-            <Input
-              id="search"
-              type="search"
-              placeholder="Código, nome, telefone, placa ou modelo"
-              value={search}
-              onChange={(e) => set({ q: e.target.value })}
+      <BookingFiltersPanel
+        search={search}
+        onSearch={(v) => set({ q: v })}
+        searchPlaceholder="Busque por código, nome, telefone, placa ou modelo"
+        source={source}
+        onSource={(v) => set({ origem: v })}
+        primaryClassName="desktop:grid-cols-5"
+        primary={
+          <>
+            <FilterSelect
+              id="booking-company"
+              label="Estacionamento"
+              value={companyId}
+              options={[
+                { value: "all", label: "Todos" },
+                ...(companies.data ?? []).map((c) => ({ value: c.id, label: c.name })),
+              ]}
+              onChange={(v) => set({ estacionamento: v })}
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-company">Estacionamento</Label>
-            <Select value={companyId} onValueChange={(v) => set({ estacionamento: v })}>
-              <SelectTrigger id="booking-company">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {(companies.data ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-status">Status</Label>
-            <Select value={status} onValueChange={(v) => set({ status: v })}>
-              <SelectTrigger id="booking-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-payment">Pagamento</Label>
-            <Select value={payment} onValueChange={(v) => set({ pagamento: v })}>
-              <SelectTrigger id="booking-payment">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-channel">Canal</Label>
-            <Select value={channel} onValueChange={(v) => set({ canal: v })}>
-              <SelectTrigger id="booking-channel">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {channelOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-attendance">Comparecimento</Label>
-            <Select value={f.comparecimento} onValueChange={(v) => set({ comparecimento: v })}>
-              <SelectTrigger id="booking-attendance">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ATTENDANCE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-pcd">PCD</Label>
-            <Select value={f.pcd} onValueChange={(v) => set({ pcd: v })}>
-              <SelectTrigger id="booking-pcd">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PCD_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="booking-source">Origem</Label>
-            <Select value={source} onValueChange={(v) => set({ origem: v })}>
-              <SelectTrigger id="booking-source">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SOURCE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <FilterSelect
+              id="booking-status"
+              label="Status"
+              value={status}
+              options={statusOptions}
+              onChange={(v) => set({ status: v })}
+            />
+            <FilterSelect
+              id="booking-attendance"
+              label="Comparecimento"
+              value={f.comparecimento}
+              options={ATTENDANCE_OPTIONS}
+              onChange={(v) => set({ comparecimento: v })}
+            />
+            <FilterSelect
+              id="booking-payment"
+              label="Pagamento"
+              value={payment}
+              options={PAYMENT_OPTIONS}
+              onChange={(v) => set({ pagamento: v })}
+            />
+            <FilterSelect
+              id="booking-channel"
+              label="Canal"
+              value={channel}
+              options={channelOptions}
+              onChange={(v) => set({ canal: v })}
+            />
+          </>
+        }
+        more={
           <ExtraBookingFilters
             values={f}
             onChange={set}
             showAffiliate
             companyIds={companyId === "all" ? undefined : [companyId]}
           />
-          <Button variant="secondary" onClick={limpar} disabled={!temFiltro}>
-            Limpar filtros
-          </Button>
-        </CardContent>
-      </Card>
+        }
+        moreActive={countActiveFilters(f)}
+        canClear={temFiltro}
+        onClear={limpar}
+      />
 
       {/* Total com a quebra por origem (D4): o site white-label só aparece quando tem reserva no recorte. */}
       {!isLoading && hub && wl && hub.total + wl.total > 0 && (

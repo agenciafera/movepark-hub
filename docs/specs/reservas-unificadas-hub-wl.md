@@ -119,6 +119,16 @@ legado) aparecem para quem tem white-label e se aplicam onde o dado existe. Desd
 adicional, campanha (UTM) e troca de placa existem nas duas origens e aparecem para todos;
 afiliado continua só para quem tem white-label (§ 10).
 
+**Arrumação do painel (11/11/2026).** O painel é um componente só nos dois lados
+(`BookingFiltersPanel`), em três andares. Em cima, a busca sozinha e larga, com a origem
+**Todas / Hub / White-label** ao lado em botões (antes era um select "Origem" perdido no meio e
+confundido com "Campanha (origem)", que virou **Campanha (UTM)**). No meio, os filtros do dia a dia:
+check-in, status, comparecimento, pagamento e unidade no Operator; estacionamento, status,
+comparecimento, pagamento e canal no Manager. Embaixo, **Mais filtros**, fechado, em dois grupos:
+"Detalhes da reserva" (PCD, adicional, troca de placa) e "Marketing" (campanha, afiliado). Ele abre
+sozinho quando o link já traz um desses filtros, e o botão mostra quantos estão ligados. Os campos
+do painel têm 40px de altura, e não os 56px de formulário.
+
 ### 3.4 Abrir uma reserva
 
 Reserva do Hub abre a tela de hoje (`/operator/bookings/:code`). Reserva do white-label abre uma

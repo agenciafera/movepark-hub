@@ -1,37 +1,33 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { useUrlFilters } from "@/lib/useUrlFilters";
 import { hasActiveFilters } from "@/lib/urlFilters.logic";
 import { useOperatorLocations } from "@/features/locations/api";
 import {
   ATTENDANCE_OPTIONS,
   PAYMENT_OPTIONS,
-  PCD_OPTIONS,
+  MORE_FILTER_KEYS,
   addOnParam,
+  countActiveFilters,
   attendanceParam,
   pcdParam,
   yesNoParam,
 } from "@/features/bookings/bookingFilterOptions";
 import { ExtraBookingFilters } from "@/features/bookings/ExtraBookingFilters";
 import type { PaymentMethodFilter } from "@/features/bookings/bookingList.logic";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+  BookingFiltersPanel,
+  COMPACT_FIELD,
+  FilterSelect,
+} from "@/features/bookings/BookingFiltersPanel";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
 import { BulkAttendanceBar } from "@/features/bookings/BulkAttendanceBar";
 import { useWlBookingActions } from "@/features/wl-bookings/api";
-import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
+import type { SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
 import { useHasWl } from "@/features/companies/useHasWl";
 import { useAuth } from "@/auth/context";
@@ -183,147 +179,92 @@ export default function OperatorBookings() {
         }
       />
 
-      <Card>
-        <CardContent className="flex flex-col gap-4 p-6 tablet:flex-row tablet:flex-wrap tablet:items-end">
-          <div className="flex flex-1 flex-col gap-1.5">
-            <Label htmlFor="search">Busca</Label>
-            <Input
-              id="search"
-              placeholder={
-                hasWl ? "Código, pedido, nome ou placa" : "Código, nome, e-mail ou telefone"
-              }
-              value={search}
-              onChange={(e) => set({ q: e.target.value })}
+      <BookingFiltersPanel
+        search={search}
+        onSearch={(v) => set({ q: v })}
+        searchPlaceholder={
+          hasWl
+            ? "Busque por código, pedido, nome ou placa"
+            : "Busque por código, nome, e-mail ou telefone"
+        }
+        source={hasWl ? source : undefined}
+        onSource={(v) => set({ origem: v })}
+        primaryClassName={unidades.length > 1 ? "desktop:grid-cols-6" : "desktop:grid-cols-5"}
+        primary={
+          <>
+            <fieldset className="col-span-2 flex min-w-0 flex-col gap-1">
+              <legend className="mb-1 text-caption text-muted">Check-in entre</legend>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="from"
+                  type="date"
+                  aria-label="Check-in de"
+                  value={from}
+                  onChange={(e) => set({ de: e.target.value })}
+                  className={`${COMPACT_FIELD} min-w-0 px-2`}
+                />
+                <span className="text-caption text-muted">e</span>
+                <Input
+                  id="to"
+                  type="date"
+                  aria-label="Check-in até"
+                  value={to}
+                  min={from || undefined}
+                  onChange={(e) => set({ ate: e.target.value })}
+                  className={`${COMPACT_FIELD} min-w-0 px-2`}
+                />
+              </div>
+            </fieldset>
+            <FilterSelect
+              id="booking-status"
+              label="Status"
+              value={status}
+              options={statusOptions}
+              onChange={(v) => set({ status: v })}
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="from">Check-in de</Label>
-            <Input
-              id="from"
-              type="date"
-              value={from}
-              onChange={(e) => set({ de: e.target.value })}
-              className="w-40"
+            <FilterSelect
+              id="booking-attendance"
+              label="Comparecimento"
+              value={f.comparecimento}
+              options={ATTENDANCE_OPTIONS}
+              onChange={(v) => set({ comparecimento: v })}
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="to">até</Label>
-            <Input
-              id="to"
-              type="date"
-              value={to}
-              min={from || undefined}
-              onChange={(e) => set({ ate: e.target.value })}
-              className="w-40"
+            <FilterSelect
+              id="booking-payment"
+              label="Pagamento"
+              value={f.pagamento}
+              options={PAYMENT_OPTIONS}
+              onChange={(v) => set({ pagamento: v })}
             />
-          </div>
-          <div className="flex w-full flex-col gap-1.5 tablet:w-48">
-            <Label htmlFor="booking-status">Status</Label>
-            <Select value={status} onValueChange={(v) => set({ status: v })}>
-              <SelectTrigger id="booking-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {hasWl && (
-            <div className="flex w-full flex-col gap-1.5 tablet:w-40">
-              <Label htmlFor="booking-source">Origem</Label>
-              <Select value={source} onValueChange={(v) => set({ origem: v })}>
-                <SelectTrigger id="booking-source">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOURCE_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="flex w-full flex-col gap-1.5 tablet:w-44">
-            <Label htmlFor="booking-payment">Pagamento</Label>
-            <Select value={f.pagamento} onValueChange={(v) => set({ pagamento: v })}>
-              <SelectTrigger id="booking-payment">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-full flex-col gap-1.5 tablet:w-44">
-            <Label htmlFor="booking-attendance">Comparecimento</Label>
-            <Select value={f.comparecimento} onValueChange={(v) => set({ comparecimento: v })}>
-              <SelectTrigger id="booking-attendance">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ATTENDANCE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-full flex-col gap-1.5 tablet:w-44">
-            <Label htmlFor="booking-pcd">PCD</Label>
-            <Select value={f.pcd} onValueChange={(v) => set({ pcd: v })}>
-              <SelectTrigger id="booking-pcd">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PCD_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {unidades.length > 1 && (
-            <div className="flex w-full flex-col gap-1.5 tablet:w-48">
-              <Label htmlFor="booking-unit">Unidade</Label>
-              <Select value={unidade} onValueChange={(v) => set({ unidade: v })}>
-                <SelectTrigger id="booking-unit">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {unidades.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            {unidades.length > 1 && (
+              <FilterSelect
+                id="booking-unit"
+                label="Unidade"
+                value={unidade}
+                options={[
+                  { value: "all", label: "Todas" },
+                  ...unidades.map((l) => ({ value: l.id, label: l.name })),
+                ]}
+                onChange={(v) => set({ unidade: v })}
+              />
+            )}
+          </>
+        }
+        more={
           <ExtraBookingFilters
             values={f}
             onChange={set}
             showAffiliate={hasWl}
             companyIds={scopedCompanyId ? [scopedCompanyId] : undefined}
-            itemClassName="flex w-full flex-col gap-1.5 tablet:w-48"
           />
-          <Button variant="secondary" onClick={clear} disabled={!temFiltro}>
-            Limpar filtros
-          </Button>
-        </CardContent>
-      </Card>
+        }
+        moreActive={countActiveFilters(
+          f,
+          hasWl ? MORE_FILTER_KEYS : MORE_FILTER_KEYS.filter((k) => k !== "afiliado"),
+        )}
+        canClear={temFiltro}
+        onClear={clear}
+      />
 
       {selecionadas.length > 0 && (
         <BulkAttendanceBar

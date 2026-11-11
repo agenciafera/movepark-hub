@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockAuth, renderWithProviders } from "@/test/utils";
 import OperatorBookings from "./bookings";
@@ -16,11 +16,19 @@ const wlMutate = vi.fn().mockResolvedValue({});
 const wlPerms = { data: { enabled: true, attendance: true, license_plate: true } };
 vi.mock("@/features/bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/bookings/api")>();
-  return { ...actual, useBookingsPage: vi.fn(), useUpdateBookingStatus: () => ({ mutateAsync: hubMutate }) };
+  return {
+    ...actual,
+    useBookingsPage: vi.fn(),
+    useUpdateBookingStatus: () => ({ mutateAsync: hubMutate }),
+  };
 });
 vi.mock("@/features/wl-bookings/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/wl-bookings/api")>();
-  return { ...actual, useWlBookingActions: () => wlPerms, useWlBookingAction: () => ({ mutateAsync: wlMutate }) };
+  return {
+    ...actual,
+    useWlBookingActions: () => wlPerms,
+    useWlBookingAction: () => ({ mutateAsync: wlMutate }),
+  };
 });
 vi.mock("@/features/companies/useHasWl", () => ({ useHasWl: vi.fn() }));
 const unidades = { data: [] as { id: string; name: string }[] };
@@ -67,10 +75,23 @@ const reservaHub = (code: string, origin: string | null = null) =>
     source: "hub",
     id: code,
     booking: {
-      id: code, code, status: "confirmed", origin, created_at: "2026-10-08T13:07:00Z",
-      check_in_at: "2026-10-10T08:30:00Z", check_out_at: "2026-10-14T01:00:00Z", total_amount: 136.5,
-      price_breakdown: { days: 4, line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", tier: "superflex", subtotal: 24.9 }] },
-      customer_name: "Cliente " + code, location: { name: "Abbapark" },
+      id: code,
+      code,
+      status: "confirmed",
+      origin,
+      created_at: "2026-10-08T13:07:00Z",
+      check_in_at: "2026-10-10T08:30:00Z",
+      check_out_at: "2026-10-14T01:00:00Z",
+      total_amount: 136.5,
+      price_breakdown: {
+        days: 4,
+        line_items: [
+          { kind: "parking", subtotal: 111.6 },
+          { kind: "fare", tier: "superflex", subtotal: 24.9 },
+        ],
+      },
+      customer_name: "Cliente " + code,
+      location: { name: "Abbapark" },
       payments: [{ status: "paid", method: "pix", created_at: "2026-10-08T13:10:00Z" }],
       fare_extensions: [],
     },
@@ -105,7 +126,7 @@ describe("OperatorBookings · estacionamento sem white-label", () => {
   it("a tela é a de sempre: sem aba, sem etiqueta, sem filtro de origem", () => {
     setup({ hasWl: false, rows: [reservaHub("MP-PAGA"), reservaHub("MP-VIA-WL", "white_label")] });
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Origem")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Origem da reserva" })).not.toBeInTheDocument();
     expect(screen.queryByText("Hub")).not.toBeInTheDocument();
     expect(screen.queryByText("White-label")).not.toBeInTheDocument();
     expect(screen.getByText("MP-VIA-WL")).toBeInTheDocument();
@@ -135,9 +156,10 @@ describe("OperatorBookings · estacionamento com white-label", () => {
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
     expect(screen.getByText("271001-0001")).toBeInTheDocument();
     expect(screen.getByText("MP-PAGA")).toBeInTheDocument();
-    expect(screen.getByText("White-label")).toBeInTheDocument();
-    expect(screen.getByText("Hub")).toBeInTheDocument();
-    expect(screen.getByLabelText("Origem")).toBeInTheDocument();
+    const tabela = screen.getByRole("table");
+    expect(within(tabela).getByText("White-label")).toBeInTheDocument();
+    expect(within(tabela).getByText("Hub")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Origem da reserva" })).toBeInTheDocument();
     expect(screen.getByText("Reserva online")).toBeInTheDocument();
     expect(screen.getByText(/150,50/)).toBeInTheDocument();
   });
@@ -166,16 +188,26 @@ describe("OperatorBookings · estacionamento com white-label", () => {
     expect(hubMutate).toHaveBeenCalledWith(
       expect.objectContaining({ bookingId: "MP-PAGA", status: "checked_in" }),
     );
-    expect(wlMutate).toHaveBeenCalledWith({ action: "attendance", wlBookingId: "w-1", status: "compareceu" });
+    expect(wlMutate).toHaveBeenCalledWith({
+      action: "attendance",
+      wlBookingId: "w-1",
+      status: "compareceu",
+    });
   });
 });
 
 describe("OperatorBookings · ação em massa sem permissão", () => {
   it("sem bookings:checkin nem :write, não há coluna de seleção", () => {
     vi.mocked(useHasWl).mockReturnValue({ hasWl: true, isLoading: false });
-    vi.mocked(useBookingsPage).mockReturnValue({ data: { rows: [site()], total: 1, summary: undefined }, isLoading: false } as never);
+    vi.mocked(useBookingsPage).mockReturnValue({
+      data: { rows: [site()], total: 1, summary: undefined },
+      isLoading: false,
+    } as never);
     renderWithProviders(<OperatorBookings />, {
-      auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: (s) => !s.startsWith("bookings:") }),
+      auth: mockAuth({
+        effectiveCompanyIds: ["company-1"],
+        hasScope: (s) => !s.startsWith("bookings:"),
+      }),
       route: "/operator/bookings",
     });
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
@@ -186,7 +218,11 @@ describe("OperatorBookings · filtros no endereço (13/10/2026)", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it("filtros e página vêm da URL: sobrevivem ao F5", () => {
-    setup({ hasWl: true, rows: [], route: "/operator/bookings?status=cancelled&origem=wl&pagina=3&q=ana" });
+    setup({
+      hasWl: true,
+      rows: [],
+      route: "/operator/bookings?status=cancelled&origem=wl&pagina=3&q=ana",
+    });
     const f = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
     // pagina=3 na URL é a terceira página (índice 2 na consulta).
     expect(f).toMatchObject({ status: ["cancelled"], source: "wl", page: 2, search: "ana" });
@@ -202,7 +238,10 @@ describe("OperatorBookings · filtros no endereço (13/10/2026)", () => {
   });
 
   it("filtro de unidade só aparece com mais de uma, e recorta pela escolhida", () => {
-    unidades.data = [{ id: "loc-1", name: "Afonso Pena" }, { id: "loc-2", name: "Congonhas" }];
+    unidades.data = [
+      { id: "loc-1", name: "Afonso Pena" },
+      { id: "loc-2", name: "Congonhas" },
+    ];
     setup({ hasWl: false, rows: [], route: "/operator/bookings?unidade=loc-2" });
     expect(screen.getByLabelText("Unidade")).toBeInTheDocument();
     expect(vi.mocked(useBookingsPage).mock.calls.at(-1)![0].locationIds).toEqual(["loc-2"]);
@@ -217,11 +256,47 @@ describe("OperatorBookings · filtros no endereço (13/10/2026)", () => {
   });
 
   it("pagamento, comparecimento e PCD vêm da URL e vão para a consulta (13/10/2026)", () => {
-    setup({ hasWl: true, rows: [], route: "/operator/bookings?pagamento=pix&comparecimento=compareceu&pcd=sim" });
+    setup({
+      hasWl: true,
+      rows: [],
+      route: "/operator/bookings?pagamento=pix&comparecimento=compareceu&pcd=sim",
+    });
     expect(vi.mocked(useBookingsPage).mock.calls.at(-1)![0]).toMatchObject({
       paymentMethod: "pix",
       attendance: "compareceu",
       pcd: true,
     });
+  });
+
+  it("Hub ou white-label ao lado da busca: um clique recorta e vai para o endereço (11/11/2026)", async () => {
+    setup({ hasWl: true, rows: [] });
+    const origem = screen.getByRole("group", { name: "Origem da reserva" });
+    const wl = within(origem).getByRole("button", { name: "White-label" });
+    expect(within(origem).getByRole("button", { name: "Todas" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await userEvent.click(wl);
+    expect(vi.mocked(useBookingsPage).mock.calls.at(-1)![0].source).toBe("wl");
+    expect(wl).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("'Mais filtros' começa fechado e abre sozinho quando o link traz um deles", async () => {
+    setup({ hasWl: true, rows: [] });
+    expect(screen.queryByLabelText("PCD")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Mais filtros/ }));
+    expect(screen.getByLabelText("PCD")).toBeInTheDocument();
+  });
+
+  it("com filtro escondido no link, o painel já vem aberto e o botão mostra quantos são", () => {
+    setup({ hasWl: true, rows: [], route: "/operator/bookings?pcd=sim&campanha=google" });
+    expect(screen.getByLabelText("PCD")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Menos filtros/ })).toHaveTextContent("2");
+  });
+
+  it("sem white-label, afiliado perdido no link não conta nem aparece", () => {
+    setup({ hasWl: false, rows: [], route: "/operator/bookings?afiliado=sim" });
+    expect(screen.getByRole("button", { name: /Mais filtros/ })).not.toHaveTextContent(/\d/);
+    expect(screen.queryByLabelText("Afiliado")).not.toBeInTheDocument();
   });
 });

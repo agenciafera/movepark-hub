@@ -80,3 +80,17 @@ export function utmOptions(sources: string[]): { value: string; label: string }[
     ...sources.filter((s) => s !== "all").map((s) => ({ value: s, label: s })),
   ];
 }
+
+/** Filtros que moram em "Mais filtros" (11/11/2026): contam no selo do botão e abrem o painel. */
+export const MORE_FILTER_KEYS = ["pcd", "adicional", "campanha", "placa", "afiliado"] as const;
+
+/**
+ * Quantos filtros de "Mais filtros" estão ligados. Quem não tem white-label passa as chaves sem
+ * `afiliado`, porque o filtro nem aparece e um `?afiliado=` perdido no link não pode contar.
+ */
+export function countActiveFilters(
+  values: Record<string, string>,
+  keys: readonly string[] = MORE_FILTER_KEYS,
+): number {
+  return keys.filter((k) => values[k] !== undefined && values[k] !== "all").length;
+}
