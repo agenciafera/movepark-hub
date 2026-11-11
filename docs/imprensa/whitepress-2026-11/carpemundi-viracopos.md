@@ -1,10 +1,12 @@
 ---
-portal: maladeaventuras.com
+portal: carpemundi.com.br
 projeto_whitepress: Virapark (199716)
-rascunho_whitepress: (a criar)
-atividade: Conteúdo 87
-oferta: guest post, R$ 1.932,00, dofollow, longo prazo (12 meses ou mais), máximo de 1 link para a Virapark e 1 para outro domínio, publicação na página inicial por 13 dias, foto principal fornecida pelo anunciante, sem limite de tamanho, conferida em 10/11/2026
-metricas_no_dia: AS 39 e 64,4 mil de tráfego orgânico no Semrush (BR, 09/11/2026); 126 mil usuários ativos, 17,7 mil de tráfego Ahrefs, DA 48 e Trust Flow 17 no WhitePress (10/11/2026)
+pedido_whitepress: 1909253 (pago em 11/11/2026, R$ 1.432,90, com "Selecione mais tarde"; o artigo entra quando a verificação do WhitePress liberar)
+rascunho_whitepress: 1756704 (em verificação desde 11/11/2026)
+atividade: Conteúdo 78 (era dezembro, antecipada para novembro)
+oferta: guest post, R$ 1.432,90, dofollow, longo prazo (12 meses ou mais), até 3 links para a Virapark e 1 para outro domínio, sem destaque na página inicial, foto principal fornecida pelo anunciante, sem limite de tamanho, conferida em 11/11/2026
+metricas_no_dia: AS 38 e 64,9 mil de tráfego orgânico no Semrush (BR, 10/11/2026); 133 mil usuários ativos no WhitePress (11/11/2026)
+historico: escrito para o maladeaventuras.com (R$ 1.932,00), descartado em 11/11/2026 porque a oferta só aceita redação do publicador; o texto serve sem mudança no carpemundi.com.br
 ancoras_aceitas: todas
 palavra_chave: estacionamento em Viracopos para viagem longa
 slug_sugerido: estacionamento-viracopos-viagem-longa

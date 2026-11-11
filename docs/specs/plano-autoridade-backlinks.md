@@ -644,6 +644,20 @@ que é o que a compra paga, ficou certo nos quatro. Decisão do Diego: não pedi
 `obutecodanet.ig.com.br` e não comprar mais nele (entrou na lista de exclusão, seção 4.2). O `viagensecaminhos.com` seguia "Em andamento", com
 prazo em 19/10/2026. O registro de cada um está na planilha de controle.
 
+**Novembro, metade Virapark ([Conteúdo 78](https://app.clickup.com/t/17tn9e9hy7t)), R$ 1.432,90.** O crédito
+do mês foi de R$ 2.000 e era da Virapark, então o lote de novembro saiu só na metade Virapark e em
+Viracopos. O primeiro escolhido foi o `maladeaventuras.com` (R$ 1.932,00, AS 39), descartado em 11/11/2026
+porque a oferta dele só aceita artigo escrito pelo publicador. Entrou o `carpemundi.com.br`, antecipado de
+dezembro: AS 38 e 64,9 mil de tráfego orgânico no Semrush, artigo próprio, dofollow, longo prazo, até 3
+links para a Virapark e 1 para outro domínio. **Pedido 1909253, pago em 11/11/2026** pelo projeto 199716.
+O artigo (viagem longa saindo de Viracopos, preços do motor e tarifa oficial de 10/11/2026) está em
+[`docs/imprensa/whitepress-2026-11/`](../imprensa/whitepress-2026-11/), e o rascunho 1756704 ficou em
+verificação manual do WhitePress; o pedido foi pago com "Selecione mais tarde" e recebe o artigo quando a
+verificação liberar. Links: "Virapark" para o `virapark.com.br` e "Movepark" para
+`/estacionamentos/aeroporto-viracopos`. A metade Movepark de novembro (Conteúdo 81 e 82) não teve verba, e
+a metade Virapark de dezembro perdeu o `carpemundi.com.br`: as opções passam a ser o `maladeaventuras.com`
+com redação do publicador ou o `sampi.net.br`, que passa da metade.
+
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
 (Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
 R$ 6.423,90 e R$ 4.974,90) e precisam ser enxugados. A referência: Guarulhos, Confins e Curitiba
