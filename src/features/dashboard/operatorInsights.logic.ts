@@ -175,15 +175,81 @@ export function greeting(hour: number): string {
 }
 
 /**
- * Faixa de horas a mostrar na agenda: da primeira à última hora com evento, com
- * uma folga de uma hora de cada lado. Sem evento, mostra o comercial (8h às 20h).
+ * Status que entram na agenda (11/11/2026). A agenda é o que vai acontecer no pátio: só reserva
+ * que virou venda e não foi cancelada. Pendente e expirada nunca viraram venda (o parceiro nem as
+ * vê na lista, ver `partnerSeesBooking`) e cancelada não vai chegar; mostrar qualquer uma delas
+ * fazia o balcão esperar carro que não vem. No-show fica: é a chegada que não aconteceu, e o
+ * balcão precisa vê-la no dia.
  */
-export function agendaHours(hours: number[]): number[] {
-  const valid = hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
-  if (valid.length === 0) return Array.from({ length: 13 }, (_, i) => i + 8);
-  const from = Math.max(0, Math.min(...valid) - 1);
-  const to = Math.min(23, Math.max(...valid) + 1);
-  return Array.from({ length: to - from + 1 }, (_, i) => from + i);
+export const AGENDA_STATUSES = ["confirmed", "checked_in", "completed", "no_show"] as const;
+
+export type AgendaKind = "arrival" | "departure";
+
+export type AgendaItem<T> = {
+  key: string;
+  kind: AgendaKind;
+  at: Date;
+  booking: T;
+};
+
+/** `yyyy-MM-dd` no fuso de quem está olhando (e não o UTC do `toISOString`). */
+export function localIsoDate(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * Os eventos do dia: cada reserva vira uma chegada (check-in no dia) e/ou uma saída (check-out no
+ * dia), cada uma no SEU horário. Antes a saída aparecia no horário da chegada, com o rótulo
+ * "Chegada", e a data era comparada em UTC: chegada às 22h caía no dia seguinte.
+ * Ordem: pelo horário; no mesmo minuto, chegada antes de saída.
+ */
+export function agendaItems<T extends { id: string; check_in_at: string; check_out_at: string }>(
+  bookings: T[],
+  dateIso: string,
+): AgendaItem<T>[] {
+  const out: AgendaItem<T>[] = [];
+  for (const b of bookings) {
+    const ci = new Date(b.check_in_at);
+    const co = new Date(b.check_out_at);
+    if (localIsoDate(ci) === dateIso)
+      out.push({ key: `${b.id}:in`, kind: "arrival", at: ci, booking: b });
+    if (localIsoDate(co) === dateIso)
+      out.push({ key: `${b.id}:out`, kind: "departure", at: co, booking: b });
+  }
+  return out.sort(
+    (a, b) =>
+      a.at.getTime() - b.at.getTime() || (a.kind === b.kind ? 0 : a.kind === "arrival" ? -1 : 1),
+  );
+}
+
+/** Agrupa por hora cheia, só as horas que têm evento (hora vazia era o scroll comprido). */
+export function groupAgendaByHour<T>(
+  items: AgendaItem<T>[],
+): { hour: number; items: AgendaItem<T>[] }[] {
+  const groups: { hour: number; items: AgendaItem<T>[] }[] = [];
+  for (const it of items) {
+    const h = it.at.getHours();
+    const last = groups[groups.length - 1];
+    if (last && last.hour === h) last.items.push(it);
+    else groups.push({ hour: h, items: [it] });
+  }
+  return groups;
+}
+
+/**
+ * Para onde a agenda rola ao abrir: hoje, a primeira hora que ainda não passou (o que vem a
+ * seguir); outro dia, o topo. `null` quando é para ficar no topo.
+ */
+export function agendaFocusHour(
+  hours: number[],
+  dateIso: string,
+  now: Date = new Date(),
+): number | null {
+  if (dateIso !== localIsoDate(now)) return null;
+  const next = hours.find((h) => h >= now.getHours());
+  return next ?? null;
 }
 
 /**

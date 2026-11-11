@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  agendaHours,
+  agendaItems,
+  groupAgendaByHour,
+  agendaFocusHour,
+  localIsoDate,
   agendaStrip,
   bestRevenueDay,
   concentrationWindow,
@@ -177,21 +180,6 @@ describe("greeting", () => {
   });
 });
 
-describe("agendaHours", () => {
-  it("abre uma hora antes e fecha uma depois do movimento", () => {
-    expect(agendaHours([9, 14])).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
-  });
-
-  it("não estoura os limites do dia", () => {
-    expect(agendaHours([0])).toEqual([0, 1]);
-    expect(agendaHours([23])).toEqual([22, 23]);
-  });
-
-  it("dia sem evento mostra o comercial", () => {
-    expect(agendaHours([])).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
-  });
-});
-
 describe("agendaStrip", () => {
   it("põe o dia escolhido no meio, com três de cada lado", () => {
     const strip = agendaStrip("2026-07-29");
@@ -203,5 +191,51 @@ describe("agendaStrip", () => {
 
   it("atravessa a virada do mês sem quebrar", () => {
     expect(agendaStrip("2026-03-01")[0]).toBe("2026-02-26");
+  });
+});
+
+describe("agenda do dia", () => {
+  // Datas montadas no fuso local, como a tela faz.
+  const at = (d: number, h: number, m = 0) => new Date(2026, 10, d, h, m).toISOString();
+  const b = (id: string, ci: string, co: string) => ({ id, check_in_at: ci, check_out_at: co });
+
+  it("a saída aparece no horário da saída, não no da chegada", () => {
+    const items = agendaItems([b("x", at(9, 8), at(11, 16, 30))], "2026-11-11");
+    expect(items).toHaveLength(1);
+    expect(items[0]!.kind).toBe("departure");
+    expect(items[0]!.at.getHours()).toBe(16);
+  });
+
+  it("chegada e saída no mesmo dia viram dois eventos, em ordem de horário", () => {
+    const items = agendaItems([b("x", at(11, 18), at(11, 7))], "2026-11-11");
+    expect(items.map((i) => i.kind)).toEqual(["departure", "arrival"]);
+  });
+
+  it("compara a data no fuso local (chegada às 23h fica no próprio dia)", () => {
+    const items = agendaItems([b("x", at(11, 23, 30), at(15, 10))], "2026-11-11");
+    expect(items.map((i) => i.kind)).toEqual(["arrival"]);
+    expect(localIsoDate(new Date(2026, 10, 11, 23, 30))).toBe("2026-11-11");
+  });
+
+  it("agrupa só as horas que têm evento", () => {
+    const items = agendaItems(
+      [
+        b("a", at(11, 6), at(13, 9)),
+        b("c", at(11, 6, 40), at(14, 9)),
+        b("d", at(11, 16), at(12, 9)),
+      ],
+      "2026-11-11",
+    );
+    expect(groupAgendaByHour(items).map((g) => [g.hour, g.items.length])).toEqual([
+      [6, 2],
+      [16, 1],
+    ]);
+  });
+
+  it("hoje rola para a próxima hora com evento; outro dia fica no topo", () => {
+    const now = new Date(2026, 10, 11, 10, 15);
+    expect(agendaFocusHour([6, 10, 16], "2026-11-11", now)).toBe(10);
+    expect(agendaFocusHour([6, 8], "2026-11-11", now)).toBeNull();
+    expect(agendaFocusHour([6, 16], "2026-11-12", now)).toBeNull();
   });
 });

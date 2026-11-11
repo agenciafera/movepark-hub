@@ -21,7 +21,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { RecipientKycBanner } from "@/features/payouts/RecipientKycBanner";
-import { bookingCustomerName } from "@/features/bookings/bookings.logic";
 import { useRevenueByRange, useStatusFunnelRange } from "@/features/reports/api";
 import { useWlRevenue } from "@/features/finance/wlRevenue";
 import { useHasWl } from "@/features/companies/useHasWl";
@@ -40,10 +39,11 @@ import { usePayoutBalance } from "@/features/payouts/api";
 import { useOperatorReviews } from "@/features/reviews/operatorApi";
 import { useOperatorLocations } from "@/features/locations/api";
 import { useAuth } from "@/auth/context";
+import { DayAgendaPanel } from "./DayAgendaPanel";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { cn } from "@/lib/utils";
-import { formatBRL, formatTime } from "@/lib/format";
-import type { BookingStatus, BookingWithRelations } from "@/types/domain";
+import { formatBRL } from "@/lib/format";
+import type { BookingStatus } from "@/types/domain";
 import {
   useOperatorPeriodSummary,
   useUpcomingBookingsCount,
@@ -51,8 +51,6 @@ import {
   useOccupancyAgg,
   useCompanyRevenueGoal,
   useSetRevenueGoal,
-  useDayAgenda,
-  todayIsoDate,
 } from "./api";
 import {
   cancellationRate,
@@ -64,8 +62,6 @@ import {
   revpar,
 } from "./dashboardMetrics.logic";
 import {
-  agendaHours,
-  agendaStrip,
   bestRevenueDay,
   conversion,
   goalProgress,
@@ -232,7 +228,6 @@ export default function OperatorDashboard() {
   const companyId = effectiveCompanyIds[0];
 
   const [period, setPeriod] = React.useState<PeriodState>(DEFAULT_PERIOD);
-  const [agendaDate, setAgendaDate] = React.useState(todayIsoDate);
   const [goalOpen, setGoalOpen] = React.useState(false);
 
   const range = resolvePeriod(period);
@@ -260,7 +255,6 @@ export default function OperatorDashboard() {
   const balance = usePayoutBalance(companyId);
   const reviews = useOperatorReviews(companyId);
   const goal = useCompanyRevenueGoal(canFinance ? companyId : undefined);
-  const agenda = useDayAgenda(agendaDate, scopedLocationIds);
 
   // Ocupação é por unidade (RPC por location_id), então precisa dos ids reais da empresa:
   // scopedLocationIds vem undefined para o operador real (a RLS resolve o resto).
@@ -317,11 +311,6 @@ export default function OperatorDashboard() {
   const label = periodLabel(period, range);
 
   const firstName = session?.firstName ?? "";
-  const strip = agendaStrip(agendaDate);
-  const events = agenda.data ?? [];
-  const hours = agendaHours(events.map((b) => new Date(b.check_in_at).getHours()));
-  const arrivals = events.filter((b) => b.check_in_at.slice(0, 10) === agendaDate).length;
-  const departures = events.filter((b) => b.check_out_at.slice(0, 10) === agendaDate).length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -738,86 +727,7 @@ export default function OperatorDashboard() {
           </Panel>
         </div>
 
-        {/* Agenda do dia */}
-        <Panel>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-title-md text-ink">Agenda do dia</div>
-              <p className="mt-1.5 text-body-sm capitalize text-muted">
-                {format(new Date(`${agendaDate}T12:00:00`), "EEEE, d 'de' MMMM", { locale: ptBR })}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
-              <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
-                {int(arrivals)} {arrivals === 1 ? "chegada" : "chegadas"}
-              </span>
-              <span className="whitespace-nowrap rounded-full bg-surface-soft px-3 py-1.5 text-caption font-bold text-muted">
-                {int(departures)} {departures === 1 ? "saída" : "saídas"}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-5 flex gap-1.5">
-            {strip.map((iso) => {
-              const day = new Date(`${iso}T12:00:00`);
-              const active = iso === agendaDate;
-              return (
-                <button
-                  key={iso}
-                  type="button"
-                  onClick={() => setAgendaDate(iso)}
-                  aria-pressed={active}
-                  className={cn(
-                    "min-w-0 flex-1 rounded-md py-2.5 transition-colors",
-                    active
-                      ? "bg-mp-primary text-white"
-                      : "bg-surface-soft text-ink hover:bg-surface-strong",
-                  )}
-                >
-                  <span className="block text-caption-sm font-medium opacity-70">
-                    {format(day, "EEEEEE", { locale: ptBR })}
-                  </span>
-                  <span className="mt-0.5 block text-body-sm font-bold tabular-nums">
-                    {format(day, "dd")}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 max-h-[326px] overflow-y-auto pr-1">
-            {agenda.isLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
-                ))}
-              </div>
-            ) : events.length === 0 ? (
-              <EmptyState
-                title="Nenhuma reserva nesse dia"
-                description="Escolha outro dia acima."
-              />
-            ) : (
-              <ol>
-                {hours.map((hour) => {
-                  const atHour = events.filter((b) => new Date(b.check_in_at).getHours() === hour);
-                  return (
-                    <li key={hour} className="flex min-h-[56px] gap-3.5">
-                      <div className="w-11 shrink-0 pt-2.5 text-caption-sm font-bold text-muted-soft">
-                        {String(hour).padStart(2, "0")}:00
-                      </div>
-                      <div className="min-w-0 flex-1 border-t border-dashed border-hairline py-2">
-                        {atHour.map((b) => (
-                          <AgendaEvent key={b.id} booking={b} />
-                        ))}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </div>
-        </Panel>
+        <DayAgendaPanel locationIds={scopedLocationIds} />
       </div>
 
       <GoalDialog
@@ -835,30 +745,6 @@ function QualityTile({ label, value }: { label: string; value: string }) {
     <div className="rounded-md bg-surface-soft p-3.5">
       <div className="text-caption text-muted">{label}</div>
       <div className="mt-1.5 text-display-sm tabular-nums text-ink">{value}</div>
-    </div>
-  );
-}
-
-function AgendaEvent({ booking }: { booking: BookingWithRelations }) {
-  return (
-    <div className="rounded-md bg-canvas p-3.5 ring-1 ring-inset ring-hairline">
-      <div className="flex items-center gap-2.5">
-        <span className="h-2 w-2 shrink-0 rounded-full bg-mp-primary" aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-body-sm font-medium text-ink">
-          {bookingCustomerName(booking) ?? "Sem nome"}
-        </span>
-        <span className="shrink-0 rounded-full bg-surface-soft px-2.5 py-1 text-caption-sm font-bold text-muted">
-          {BOOKING_STATUS_LABELS[booking.status] ?? booking.status}
-        </span>
-      </div>
-      <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
-        <span className="shrink-0 rounded-sm bg-surface-soft px-2 py-1 font-mono text-caption-sm font-medium text-body">
-          {booking.code}
-        </span>
-        <span className="min-w-0 text-body-sm text-muted">
-          Chegada {formatTime(booking.check_in_at)} · {booking.location?.name}
-        </span>
-      </div>
     </div>
   );
 }

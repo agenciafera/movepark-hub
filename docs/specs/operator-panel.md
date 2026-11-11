@@ -135,9 +135,15 @@ receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera
 - **Cards de apoio:** RevPAR, reservas futuras, saldo a repassar e avaliações, cada um sob
   o seu escopo.
 - **Origem das reservas:** site x API.
-- **Agenda do dia:** tira de 7 dias navegável e a linha do tempo por hora. A faixa de horas
-  se ajusta ao movimento (uma hora de folga de cada lado); dia sem reserva mostra o horário
-  comercial.
+- **Agenda do dia (refeita em 11/11/2026, `DayAgendaPanel`):** tira de 7 dias navegável e a
+  lista do dia agrupada por hora, **só nas horas que têm evento** (a grade de hora em hora vazia
+  era o scroll comprido). Entra só o que vai acontecer no pátio: `confirmed`, `checked_in`,
+  `completed` e `no_show` (`AGENDA_STATUSES`); pendente, expirada e cancelada ficam fora.
+  Chegada e saída são eventos separados, cada um no seu horário e com ícone próprio (antes a
+  saída aparecia no horário da chegada, com o rótulo "Chegada"), e a data é comparada no fuso
+  local (chegada às 22h não cai mais no dia seguinte). Os contadores de chegadas e saídas filtram
+  a lista; hoje, ela abre rolada na próxima hora; cada linha abre a reserva, e o rodapé leva à
+  lista de reservas com as chegadas do dia.
 
 #### Meta de receita
 
@@ -191,7 +197,19 @@ avisa que é com a equipe da Movepark, sem ação para ele.
 
 #### Tabela de Reservas
 
-Colunas: `#ID` · `Cliente` · `Localização` · `Tipo de Vaga` · `Check-in` · `Check-out` · `Dias` · `Valor` · `Status` · `Ações`
+Colunas padrão: `Reserva` · `Criada em` · `Cliente` · `Unidade` · `Estadia` · `Pagamento` ·
+`Diárias` · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
+
+- **Colunas por pessoa (11/11/2026).** O botão **Colunas** liga, desliga e reordena as colunas
+  (`Reserva` não sai). A escolha fica **no usuário, no banco** (`profiles.preferences.ui`, chave
+  `bookings_table.operator`; no Manager, `bookings_table.manager`), gravada pela RPC
+  `set_my_ui_preference`, que mexe só nessa chave e não apaga o resto do JSON. Vale em qualquer
+  navegador. Coluna que deixar de existir é descartada; coluna nova entra no fim com o padrão
+  dela. "Restaurar padrão" apaga a escolha. Regra pura em `bookingColumns.logic.ts`.
+- **Voucher na lista (11/11/2026).** Botão **Abrir** na coluna Voucher, nos mesmos status do
+  detalhe (`canDownloadVoucher`). Reserva do Hub gera o PDF na Edge `voucher-pdf`; reserva do
+  site abre o PDF que o site emitiu (buscado no clique por `wl_booking_detail`). A aba abre no
+  clique, antes do PDF ficar pronto, para o navegador não bloquear como popup.
 
 - **Ordem fixa: data da compra, mais recente primeiro** (`created_at desc`, 05/10/2026). O filtro de
   período continua recortando pelo check-in; só a ordem segue a compra, para a reserva recém-feita

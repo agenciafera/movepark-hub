@@ -25,6 +25,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { BookingTable } from "@/features/bookings/BookingTable";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
+import { BookingColumnsPicker } from "@/features/bookings/BookingColumnsPicker";
+import { useBookingColumns } from "@/features/bookings/useBookingColumns";
+import { columnHeader } from "@/features/bookings/bookingColumns.logic";
 import { BulkAttendanceBar } from "@/features/bookings/BulkAttendanceBar";
 import { useWlBookingActions } from "@/features/wl-bookings/api";
 import type { SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
@@ -83,6 +86,7 @@ export default function OperatorBookings() {
   const page = Math.max(0, (Number(f.pagina) || 1) - 1);
   const temFiltro = hasActiveFilters(f, FILTROS, ["pagina"]);
   const navigate = useNavigate();
+  const colunas = useBookingColumns("operator");
   const { hasWl } = useHasWl();
   const { scopedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
   const companyId = effectiveCompanyIds[0];
@@ -171,11 +175,19 @@ export default function OperatorBookings() {
         title="Reservas"
         description="Gestão das reservas da sua empresa."
         actions={
-          <ExportBookingsButton
-            filters={filters}
-            options={{ showSource: hasWl, showCompany: false, valueMode: "parking" }}
-            filePrefix="reservas"
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportBookingsButton
+              filters={filters}
+              options={{ showSource: hasWl, showCompany: false, valueMode: "parking" }}
+              filePrefix="reservas"
+            />
+            <BookingColumnsPicker
+              settings={colunas.settings}
+              save={colunas.save}
+              canSave={colunas.canSave}
+              labelFor={(id) => columnHeader(id, { showCompany: false, valueMode: "parking" })}
+            />
+          </div>
         }
       />
 
@@ -280,6 +292,7 @@ export default function OperatorBookings() {
         showCompany={false}
         showSource={hasWl}
         valueMode="parking"
+        columns={colunas.visible}
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
         onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
         selected={canCheckin ? selected : undefined}

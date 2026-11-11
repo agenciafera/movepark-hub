@@ -16,6 +16,9 @@ import {
 } from "@/features/bookings/api";
 import { BookingsPager } from "@/features/bookings/BookingsPager";
 import { ExportBookingsButton } from "@/features/bookings/ExportBookingsButton";
+import { BookingColumnsPicker } from "@/features/bookings/BookingColumnsPicker";
+import { useBookingColumns } from "@/features/bookings/useBookingColumns";
+import { columnHeader } from "@/features/bookings/bookingColumns.logic";
 import type { SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import {
   CHANNEL_LABEL,
@@ -101,6 +104,7 @@ export default function ManagerBookings() {
   const page = Math.max(0, (Number(f.pagina) || 1) - 1);
   const companies = useCompanies();
   const navigate = useNavigate();
+  const colunas = useBookingColumns("manager");
   const { period, range, scopedLocationIds } = useManagerFilters();
 
   // Buscar atravessa o período: quem digita um código ou o nome do cliente quer AQUELA
@@ -176,6 +180,12 @@ export default function ManagerBookings() {
               filters={filters}
               options={{ showSource: true, showCompany: true, valueMode: "total" }}
               filePrefix="reservas-rede"
+            />
+            <BookingColumnsPicker
+              settings={colunas.settings}
+              save={colunas.save}
+              canSave={colunas.canSave}
+              labelFor={(id) => columnHeader(id, { showCompany: true, valueMode: "total" })}
             />
           </div>
         }
@@ -293,6 +303,7 @@ export default function ManagerBookings() {
         rows={data?.rows}
         isLoading={isLoading}
         showSource
+        columns={colunas.visible}
         emptyDescription={
           temFiltro
             ? "Nenhuma reserva bate com esses filtros. Limpe os filtros ou mude o período."

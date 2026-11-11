@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import { bookingParkingAmount, type PriceBreakdownLike } from "@/features/bookings/bookingMoney.logic";
+import {
+  bookingParkingAmount,
+  type PriceBreakdownLike,
+} from "@/features/bookings/bookingMoney.logic";
+import { AGENDA_STATUSES } from "./operatorInsights.logic";
 import type {
   BookingWithRelations,
   DailyFlow,
@@ -130,8 +134,10 @@ export function useDayAgenda(dateIso: string, locationIds?: string[]) {
         .or(
           `and(check_in_at.gte.${dayStart},check_in_at.lt.${dayEnd}),and(check_out_at.gte.${dayStart},check_out_at.lt.${dayEnd})`,
         )
+        // Só o que vai acontecer no pátio: sem pendente, expirada nem cancelada (AGENDA_STATUSES).
+        .in("status", [...AGENDA_STATUSES])
         .order("check_in_at", { ascending: true })
-        .limit(80);
+        .limit(200);
       if (locationIds?.length) q = q.in("location_id", locationIds);
       const { data, error } = await q;
       if (error) throw error;
@@ -163,7 +169,9 @@ async function fetchPaidBookings(
 ): Promise<PaidBookingRow[]> {
   let q = supabase
     .from("booking")
-    .select("check_in_at, check_out_at, total_amount, price_breakdown, created_at, created_via_api_key_id")
+    .select(
+      "check_in_at, check_out_at, total_amount, price_breakdown, created_at, created_via_api_key_id",
+    )
     .gte("check_in_at", from)
     .lt("check_in_at", to)
     .in("status", ["confirmed", "checked_in", "completed"]);
@@ -174,7 +182,10 @@ async function fetchPaidBookings(
   // Movepark e inflava o faturamento dele aqui, sem bater com o repasse.
   return (data ?? []).map((r) => ({
     ...r,
-    total_amount: bookingParkingAmount(r.price_breakdown as PriceBreakdownLike | null, Number(r.total_amount ?? 0)),
+    total_amount: bookingParkingAmount(
+      r.price_breakdown as PriceBreakdownLike | null,
+      Number(r.total_amount ?? 0),
+    ),
   })) as PaidBookingRow[];
 }
 

@@ -43,6 +43,17 @@ export function useWlBookingDetail(id: string | undefined) {
   });
 }
 
+/**
+ * Link do voucher que o site emitiu, para o botão da lista (11/11/2026). A lista não carrega o
+ * link (cada linha pesaria mais para um botão que quase ninguém clica), então ele vem no clique,
+ * pela mesma RPC do detalhe, que recorta pela permissão de quem chama.
+ */
+export async function fetchWlVoucherUrl(id: string): Promise<string | null> {
+  const { data, error } = await rpc("wl_booking_detail", { p_id: id });
+  if (error) throw new Error(error.message);
+  return ((data ?? null) as WlBookingDetailData | null)?.voucher_url ?? null;
+}
+
 /** O que quem está logado pode fazer nas reservas do site da empresa. A Edge confere de novo. */
 export type WlBookingActions = { enabled: boolean; attendance: boolean; license_plate: boolean };
 
@@ -54,7 +65,11 @@ export function useWlBookingActions(companyId: string | undefined) {
       const { data, error } = await rpc("wl_booking_my_actions", { p_company_id: companyId });
       if (error) throw new Error(error.message);
       const d = (data ?? {}) as Partial<WlBookingActions>;
-      return { enabled: d.enabled === true, attendance: d.attendance === true, license_plate: d.license_plate === true };
+      return {
+        enabled: d.enabled === true,
+        attendance: d.attendance === true,
+        license_plate: d.license_plate === true,
+      };
     },
   });
 }
@@ -94,15 +109,18 @@ export function useWlBookingAction() {
               model: args.model,
               color: args.color,
             };
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wl-booking-action`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wl-booking-action`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      });
+      );
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? `Não deu para concluir (HTTP ${res.status}).`);
       return json as Record<string, unknown>;

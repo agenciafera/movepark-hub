@@ -29,6 +29,9 @@ export type UnifiedRowView = {
   value: number | null;
   status: BookingStatus;
   flightProtection: boolean;
+  plate: string | null;
+  phone: string | null;
+  email: string | null;
 };
 
 /** Canal da reserva do site: o legado grava `reserva-online` para a compra feita no próprio site. */
@@ -65,6 +68,9 @@ export function unifiedRowView(
       value: centavos(w.paid_total_cents ?? w.total_cents),
       status: w.status,
       flightProtection: false,
+      plate: w.license_plate,
+      phone: w.customer_phone,
+      email: w.customer_email,
     };
   }
 
@@ -85,10 +91,16 @@ export function unifiedRowView(
     payment: { method: paymentMethodLabel(b.payments), badge: paymentBadge(b.payments, b.status) },
     value:
       opts.valueMode === "parking"
-        ? bookingParkingAmount(b.price_breakdown as PriceBreakdownLike | null, Number(b.total_amount))
+        ? bookingParkingAmount(
+            b.price_breakdown as PriceBreakdownLike | null,
+            Number(b.total_amount),
+          )
         : Number(b.total_amount),
     status: b.status,
     flightProtection: !!b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at,
+    plate: b.vehicle?.license_plate ?? null,
+    phone: b.customer_phone ?? null,
+    email: b.customer_email ?? null,
   };
 }
 
