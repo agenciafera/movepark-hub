@@ -656,7 +656,21 @@ verificação manual do WhitePress; o pedido foi pago com "Selecione mais tarde"
 verificação liberar. Links: "Virapark" para o `virapark.com.br` e "Movepark" para
 `/estacionamentos/aeroporto-viracopos`. A metade Movepark de novembro (Conteúdo 81 e 82) não teve verba, e
 a metade Virapark de dezembro perdeu o `carpemundi.com.br`: as opções passam a ser o `maladeaventuras.com`
-com redação do publicador ou o `sampi.net.br`, que passa da metade.
+com redação do publicador ou o `sampi.net.br`, que passa da metade. Em 12/11/2026 o artigo foi enviado para
+verificação no pedido: o campo de projeto fica travado depois que o artigo passa para o pedido e o formulário
+recusa o envio com "projeto obrigatório", então o envio só passa com o projeto reenviado num campo oculto.
+
+**Novembro, metade Movepark ([Conteúdo 82](https://app.clickup.com/t/17tn9e9hy93)), R$ 1.606,55, exceção à seção 4.**
+O crédito da Movepark entrou em 12/11/2026 (saldo de R$ 2.999,27 somando as duas metades). O
+`odiariodemogi.net.br` (Alto Tietê, para Guarulhos) passa nas métricas no dia, AS 34 e 12,9 mil de tráfego
+orgânico (+17%), e aceita artigo próprio com até 3 links dofollow para o `movepark.co`. Mas publica conteúdo
+patrocinado de aposta ("Jogos de cassino online: descubra como jogar com inteligência", promoção da KTO) e vende
+oferta para casas de apostas, o perfil que a tabela da seção 4 deixa de fora. **Decisão do Diego em 12/11/2026:
+comprar como exceção**, por ser um jornal regional de verdade, vizinho de Guarulhos. Não vira precedente: o
+próximo portal com patrocinado de aposta volta a cair na regra. O artigo, sobre o estacionamento no aeroporto
+de Guarulhos para quem sai do Alto Tietê nas férias, está em
+[`docs/imprensa/whitepress-2026-11/odiariodemogi-guarulhos.md`](../imprensa/whitepress-2026-11/odiariodemogi-guarulhos.md),
+com âncora de marca para `/estacionamentos/aeroporto-guarulhos` e uma parcial para o post de fim de ano.
 
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
 (Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
