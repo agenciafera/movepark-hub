@@ -189,6 +189,10 @@ que fecham reserva, então não é saída para improvisar.
    o que resolve a exposição e a busca de uma vez.
 4. **Remover do DNS** `moveparking` e `estacionamentos`.
 
+> **O SEO das páginas que vendem tem spec própria.** O diagnóstico de 12/11/2026 e o plano de
+> otimização dos white-labels (limpeza do índice, conteúdo no servidor, JSON-LD, GEO) estão em
+> [`seo-white-label.md`](./seo-white-label.md).
+
 > **A borda tem spec própria.** Comportamento do worker, configuração de assets e a regra de
 > 404 estão em [`borda-cloudflare.md`](./borda-cloudflare.md), com as medições de produção.
 
