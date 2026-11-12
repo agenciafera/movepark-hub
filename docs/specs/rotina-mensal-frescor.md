@@ -332,6 +332,42 @@ cada praça, e em VCP ela depende de entender a perda do guia (passo 4) antes.
   outras), Hangar Vip em CWB (R$ 15,90 e R$ 36,00), FlyPark em GRU (R$ 40,80 e R$ 21,60).
 - **A perda da dona de preço de VCP** (passo 4).
 
+## Rodada extra de 12/11/2026: Garageinn volta ao FLAT
+
+A pedido do cliente, a vaga avulsa do Garageinn (VCP) voltou à tabela de antes de 20/10: R$ 59,99
+por um dia só e R$ 45,90 por dia a partir de 2 diárias, com balcão de R$ 59,99 por dia e sem data
+de fim ([card](https://app.clickup.com/t/17tn9ea05jg)). O WL virou em 12/11/2026, o espelho copiou
+às 13h48 e o build do site saiu às 13h56. O Virapark não mudou.
+
+O que estava escrito à mão e ficou para trás: 6 FAQs e 10 traduções, 12 posts e 4 traduções, 35
+campos no total (`20261203120000_frescor_garageinn_flat_novembro.sql`, 388 KB, aplicada por
+`pg_net` como as anteriores). A varredura procurou R$ 56,90, todo total de 56,90 × n (2 a 31
+diárias) e toda diferença entre esse total e o Virapark na mesma duração. Os resíduos que ficaram
+são falso positivo: R$ 270,00 é a condição da Azul na Garageinn, que não mudou, e R$ 120,00 é o
+balcão do Virapark e a semana da BePark.
+
+**O que mudou de sentido:**
+
+- **A distância entre os parceiros encolheu.** A semana no Garageinn passou de R$ 189,00 para
+  R$ 112,00 acima do Virapark, e o mês de R$ 810,00 para R$ 480,00. A escolha do pátio segue sendo
+  a maior alavanca em "como pagar mais barato" (R$ 112,00 contra R$ 70,70 da reserva online no
+  Virapark), mas "quem escolhe pela distância paga quase duas vezes" virou "paga 53,5% a mais".
+- **A reserva online voltou a render no Garageinn.** A queda contra o balcão passou de 5,2% para
+  23,5%, quase a do Virapark (25,3%). "O Garageinn baixa pouco" e "a diferença encolheu nos dois"
+  saíram; a menor diferença entre balcão e online na semana passa a ser a do Virapark (R$ 70,70).
+- **Contra o oficial.** O Garageinn fica R$ 259,70 abaixo do edifício garagem na semana (era
+  R$ 182,70) e 44,7% abaixo na diária (era 31,4%). O convênio da Azul ainda ganha da reserva online,
+  mas por R$ 51,30 (era R$ 128,30).
+- **No post do Garageinn**, a regra "perde em estadia longa" passou de "acima de 10 dias" para "a
+  partir de 19 diárias", que é quando a diferença para o Virapark passa de R$ 300,00.
+
+**Três erros antigos corrigidos de passagem:** a frase "R$ 59,99 na primeira e R$ 56,90 a partir
+da segunda" sugeria que duas diárias custam 59,99 + a segunda, quando o motor cobra o valor por dia
+em todas (2 diárias = 2 × R$ 45,90); virou "R$ 59,99 por um dia só e R$ 45,90 por dia a partir de
+duas diárias". A `meta_description` do post `garageinn-viracopos` dizia "Diária a partir de
+R$ 40,00", que é o preço do Virapark. E o post `virapark-viracopos` dizia que a diária avulsa do
+Virapark (R$ 40,00) "perde para o Garageinn" (R$ 59,99).
+
 ## O procedimento, para a próxima rodada
 
 1. `select d.short_name, f.* from destination d cross join lateral public.destination_price_freshness(d.slug) f ...`
