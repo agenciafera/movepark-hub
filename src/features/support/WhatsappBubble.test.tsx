@@ -136,4 +136,16 @@ describe("WhatsappBubble", () => {
       expect(el.className).not.toMatch(/(^|\s)duration-/);
     });
   });
+
+  /**
+   * Quem veio do site de um parceiro (Pare Seguro) não vê a bolinha da Movepark:
+   * ela puxaria a conversa no meio da venda dele. O script do `index.html` marca o
+   * <html> antes do paint (ver `src/test/canal-parceiro.contract.test.ts`), e a
+   * bolinha some por CSS. Este caso quebra se alguém tirar a variante.
+   */
+  it("some quando o <html> está marcado como canal de parceiro", () => {
+    renderWithProviders(<WhatsappBubble />);
+
+    expect(screen.getByRole("link").className).toContain("[[data-canal-parceiro]_&]:hidden");
+  });
 });

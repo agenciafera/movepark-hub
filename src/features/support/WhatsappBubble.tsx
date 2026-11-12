@@ -58,6 +58,10 @@ export function WhatsappBubble() {
         "bottom-[calc(1rem+var(--sticky-bar-space)+var(--safe-bottom))] tablet:bottom-[calc(1.5rem+var(--sticky-bar-space)+var(--safe-bottom))]",
         "flex h-14 items-center gap-1.5 rounded-full pl-1 pr-2.5 tablet:h-auto tablet:gap-3 tablet:py-3 tablet:pl-3 tablet:pr-5",
         "bg-mp-primary text-white shadow-lg ring-4 ring-white/70",
+        // Some quando o visitante veio do site de um parceiro (`data-canal-parceiro`
+        // no <html>, marcado pelo script do `index.html` antes do paint). Pedido da
+        // Pare Seguro: a bolinha da Movepark disputava a venda que ela trouxe.
+        "[[data-canal-parceiro]_&]:hidden",
         // O que flutua é `transform`, nunca `bottom`. Animar `bottom` aqui topou
         // com um bug de motor de renderização (ele depende de `--sticky-bar-space`,
         // um calc com var(), e a transição travava numa posição intermediária

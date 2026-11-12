@@ -54,6 +54,35 @@
         } catch (e) {}
       })();
     </script>
+    <!-- Canal de parceiro sem WhatsApp da Movepark. Quem chega pelo site de um
+         parceiro (utm_source na lista abaixo) é cliente que ele trouxe, e a bolinha
+         flutuante de WhatsApp puxaria a conversa para a Movepark no meio da venda
+         dele. Pedido da Pare Seguro (12/11/2026). O script marca o <html> com
+         `data-canal-parceiro` antes do paint, e a `WhatsappBubble` some por CSS:
+         decidir no React faria a bolinha aparecer no HTML pré-renderizado e sumir só
+         depois da hidratação. Segue a mesma atribuição de src/lib/utm.ts: vale a UTM
+         da URL e, sem ela, a guardada em `mp_utm` por até 30 dias (último clique, ou
+         seja, quem volta por outra campanha vê a bolinha de novo). Contrato em
+         src/test/canal-parceiro.contract.test.ts. -->
+    <script>
+      (function () {
+        try {
+          var canais = ["pareseguro"];
+          var q = new URLSearchParams(location.search);
+          var fonte = null;
+          if (q.get("utm_source") || q.get("utm_medium") || q.get("utm_campaign")) {
+            fonte = q.get("utm_source");
+          } else {
+            var salvo = JSON.parse(localStorage.getItem("mp_utm") || "null");
+            var quando = salvo && salvo.clicked_at ? new Date(salvo.clicked_at).getTime() : NaN;
+            if (Date.now() - quando <= 30 * 86400000) fonte = salvo.utm_source;
+          }
+          if (fonte && canais.indexOf(String(fonte).trim().toLowerCase()) !== -1) {
+            document.documentElement.setAttribute("data-canal-parceiro", "");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -307,6 +307,30 @@ beast-bots) não promete parcelamento.
 **Fora deste corte.** O painel do parceiro (`my_commission_channels`) não mostra o parcelamento dos
 canais dele.
 
+## Canal de parceiro sem o WhatsApp da Movepark (12/11/2026)
+
+**Pedido da Pare Seguro.** Quem chega ao Hub pelo site do parceiro é cliente que ele trouxe, e a
+bolinha flutuante de WhatsApp da Movepark (`WhatsappBubble`) puxava a conversa para o nosso
+atendimento no meio da venda dele. Para essas visitas a bolinha não aparece.
+
+- **Quem conta como canal:** a lista `canais` no script do `index.html`, hoje só `pareseguro`
+  (é o `utm_source` das 44 reservas da Pare Seguro até 12/11/2026). Comparação sem diferença de
+  caixa. Parceiro novo que peça o mesmo entra nessa lista.
+- **Atribuição:** a mesma da comissão, lida da chave `mp_utm` de `src/lib/utm.ts`. Vale a UTM da
+  URL; sem UTM na URL, vale a guardada, por até `MAX_AGE_DAYS` (30). Último clique: quem volta por
+  outra campanha vê a bolinha de novo.
+- **Por que no `index.html` e não no React:** a página é SSG e o HTML pré-renderizado já traz a
+  bolinha. Decidir depois da hidratação faria ela aparecer e sumir na tela do cliente do parceiro.
+  O script marca `<html data-canal-parceiro>` antes do paint e a bolinha some por CSS
+  (`[[data-canal-parceiro]_&]:hidden`).
+- **O que não muda:** só a bolinha flutuante some. A página de contato, o rodapé e o WhatsApp de
+  van da unidade continuam, porque o cliente foi atrás deles. O assistente web (`ChatWidget`, com
+  `VITE_WEB_ASSISTANT=on`) não está coberto.
+
+**Testes.** `src/test/canal-parceiro.contract.test.ts` roda o script do template (UTM na URL, caixa,
+atribuição guardada, último clique, janela vencida, storage ilegível);
+`WhatsappBubble.test.tsx` trava a variante de CSS.
+
 ## Fora do escopo
 
 - Afiliado terceiro recebendo comissão.
