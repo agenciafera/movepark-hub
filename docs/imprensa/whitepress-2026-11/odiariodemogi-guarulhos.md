@@ -1,8 +1,8 @@
 ---
 portal: odiariodemogi.net.br
 projeto_whitepress: Movepark (204794)
-pedido_whitepress: (a fazer)
-rascunho_whitepress: (a criar)
+pedido_whitepress: 1910400 (pago em 12/11/2026, R$ 1.606,55, com artigo próprio; em andamento com o publicador)
+rascunho_whitepress: 1758103 (verificado em 12/11/2026)
 atividade: Conteúdo 82
 oferta: guest post, R$ 1.606,55 com artigo próprio, dofollow, longo prazo (12 meses ou mais), até 3 links para o movepark.co, só foto principal (sem imagem no corpo), conferida em 12/11/2026
 metricas_no_dia: AS 34 e 12,9 mil de tráfego orgânico no Semrush (BR, 12/11/2026)

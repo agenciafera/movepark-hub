@@ -670,7 +670,7 @@ comprar como exceção**, por ser um jornal regional de verdade, vizinho de Guar
 próximo portal com patrocinado de aposta volta a cair na regra. O artigo, sobre o estacionamento no aeroporto
 de Guarulhos para quem sai do Alto Tietê nas férias, está em
 [`docs/imprensa/whitepress-2026-11/odiariodemogi-guarulhos.md`](../imprensa/whitepress-2026-11/odiariodemogi-guarulhos.md),
-com âncora de marca para `/estacionamentos/aeroporto-guarulhos` e uma parcial para o post de fim de ano.
+com âncora de marca para `/estacionamentos/aeroporto-guarulhos` e uma parcial para o post de fim de ano. **Pedido 1910400, pago em 12/11/2026** pelo projeto 204794, já com o artigo (rascunho 1758103, verificado na hora) e em andamento com o publicador. Saldo do WhitePress depois das duas compras de novembro: R$ 1.392,72.
 
 **De novembro a janeiro,** cada lote abre com o teto de R$ 4.000 e a divisão entre os projetos
 (Conteúdo 68, 69 e o de janeiro). Como está na seção 4.1, os três meses passam do teto (R$ 4.826,55,
