@@ -387,6 +387,35 @@ Calculado com o relógio, onde e quando for preciso, **nunca** persistido:
   AND check_in_at > now()` (mais os filtros de contato/consentimento), não uma coluna. Assim a lista
   está sempre certa no instante em que roda, e um abandono cujo check-in passou sai dela sozinho.
 
+- **Painel do parceiro (12/11/2026, ✅):** a RPC `operator_recoverable_bookings(p_company_id,
+  p_export)` devolve a lista "Não concluídas" do Operator (`/operator/recovery`) e do Manager
+  (`/manager/companies/:companyId/recovery`). Regras, todas no servidor:
+  - lê `expired` com `check_in_at > now()` **apesar do `deleted_at`** que a expiração grava (por
+    isso é SECURITY DEFINER: as telas de reserva filtram `deleted_at is null` e não mostram nenhuma
+    expirada);
+  - **uma linha por pessoa** (por `profile_id`; sem conta, por e-mail ou telefone), a tentativa mais
+    recente, com `attempts` = expiradas da pessoa na empresa desde a última compra dela ali;
+  - **sai quem comprou depois**: reserva `confirmed`/`checked_in`/`completed`/`cancelled`/`no_show`
+    criada depois da tentativa. Na **mesma empresa**, casa por `profile_id`, e-mail ou telefone (só
+    dígitos, sem o DDI 55, função `recovery_phone_key`). Em **outra empresa** com datas que se
+    sobrepõem (resolveu a mesma viagem), casa **só pela mesma conta**: e-mail e telefone do snapshot
+    são digitados livremente no checkout, e casar por eles deixaria um parceiro criar uma
+    reserva-isca com o contato de alguém e descobrir, pelo sumiço da linha, se e quando essa pessoa
+    comprou em outro lugar (achado do `/security-review`, travado no pgTAP). Na Pare Seguro, em
+    12/11/2026, 7 das 20 expiradas eram de gente que pagou minutos depois;
+  - contato do snapshot (`customer_*`); o que faltar vem do `auth.users` (ADR-006), nunca de
+    `profiles`;
+  - `stopped_at`: `dados` (snapshot sem contato, antes do passo 1), `veiculo` (antes do passo 2),
+    `pix` (PIX gerado e não pago), `cartao` (cartão tentado e recusado), `pagamento` (tudo
+    preenchido, sem tentativa de pagamento);
+  - ordenada pela entrada mais próxima. A origem sai crua; o front marca "Falou com a Mia" quando
+    é `whatsapp-bot` (a Mia não aborda quem abandona, e quem falou com ela já teve uma conversa).
+  - Escopo `bookings:recovery` (Dono e Gerente, não atribuível a chave de API, ADR-005). Com
+    `p_export = true` a RPC grava em `booking_recovery_export` quem baixou, quando e quantas linhas
+    (a contagem é a do servidor). No CSV, nome e e-mail que começam com `=`, `+`, `-` ou `@`
+    ganham um apóstrofo na frente para a planilha não executar como fórmula. Migration `20261203130000_reservas_recuperaveis.sql`, pgTAP
+    `reservas_recuperaveis.test.sql`.
+
 > **Não crie um status `recoverable`.** Se um dia o produto precisar marcar "já abordamos este
 > abandono", isso é um **evento de marketing** (ex.: `booking_recovery_attempt` com timestamp),
 > ortogonal ao ciclo de vida da reserva, e não um sétimo `booking_status`. O status diz o que a

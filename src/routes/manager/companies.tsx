@@ -101,6 +101,9 @@ export default function ManagerCompanies() {
                   <Button size="sm" variant="ghost" asChild>
                     <Link to={`/manager/companies/${c.id}/locations`}>Unidades</Link>
                   </Button>
+                  <Button size="sm" variant="ghost" asChild>
+                    <Link to={`/manager/companies/${c.id}/recovery`}>Não concluídas</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

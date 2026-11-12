@@ -1280,6 +1280,45 @@ export type Database = {
           },
         ]
       }
+      booking_recovery_export: {
+        Row: {
+          company_id: string
+          created_at: string
+          exported_by: string
+          id: string
+          row_count: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          exported_by: string
+          id?: string
+          row_count: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          exported_by?: string
+          id?: string
+          row_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_recovery_export_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recovery_export_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
       checkout_handoff: {
         Row: {
           access_token: string | null
@@ -7012,6 +7051,7 @@ export type Database = {
           story_status: string | null
           updated_at: string
           validation: Json
+          video: Json | null
         }
         Insert: {
           approved_at?: string | null
@@ -7046,6 +7086,7 @@ export type Database = {
           story_status?: string | null
           updated_at?: string
           validation?: Json
+          video?: Json | null
         }
         Update: {
           approved_at?: string | null
@@ -7080,6 +7121,7 @@ export type Database = {
           story_status?: string | null
           updated_at?: string
           validation?: Json
+          video?: Json | null
         }
         Relationships: [
           {
@@ -7227,6 +7269,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_digest_log: {
+        Row: {
+          created_at: string
+          digest_date: string
+          recipients: number
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          digest_date: string
+          recipients?: number
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          digest_date?: string
+          recipients?: number
+          sent_at?: string | null
+        }
+        Relationships: []
       }
       terms_acceptance: {
         Row: {
@@ -8843,6 +8906,10 @@ export type Database = {
         Args: { p_company_id: string; p_profile_id: string }
         Returns: undefined
       }
+      company_scope_emails: {
+        Args: { p_company_id: string; p_scope: string }
+        Returns: string[]
+      }
       company_set_gateway_split: {
         Args: { p_company_id: string; p_enabled: boolean }
         Returns: undefined
@@ -10054,6 +10121,26 @@ export type Database = {
         }
         Returns: Json
       }
+      operator_recoverable_bookings: {
+        Args: { p_company_id: string; p_export?: boolean }
+        Returns: {
+          attempts: number
+          booking_id: string
+          check_in_at: string
+          check_out_at: string
+          code: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          days: number
+          location_name: string
+          origin: string
+          parking_type: string
+          stopped_at: string
+          total_amount: number
+        }[]
+      }
       operator_respond_review: {
         Args: { p_response: string; p_review_id: string }
         Returns: undefined
@@ -10217,6 +10304,7 @@ export type Database = {
       payout_auto_expected_key: { Args: never; Returns: string }
       payout_auto_forecast: { Args: { p_company_id: string }; Returns: Json }
       payout_auto_min_cents: { Args: never; Returns: number }
+      payout_auto_run_at: { Args: { p_day: string }; Returns: string }
       payout_balance: {
         Args: { p_company_id: string; p_provider?: string }
         Returns: Json
@@ -10277,6 +10365,15 @@ export type Database = {
         Returns: undefined
       }
       payout_release_days: { Args: { p_company_id: string }; Returns: number }
+      payout_sale_released: {
+        Args: {
+          p_at: string
+          p_days: number
+          p_paid_at: string
+          p_partner_release_at: string
+        }
+        Returns: boolean
+      }
       payout_statement: {
         Args: {
           p_company_id?: string
@@ -10376,6 +10473,7 @@ export type Database = {
         Args: { p_booking_id: string; p_ip?: string }
         Returns: Json
       }
+      recovery_phone_key: { Args: { p_phone: string }; Returns: string }
       redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       referral_reward_amount: { Args: never; Returns: number }
       release_booking_capacity: {
@@ -10424,6 +10522,10 @@ export type Database = {
         Returns: Json
       }
       set_email_hint: { Args: { p_email: string }; Returns: undefined }
+      set_my_ui_preference: {
+        Args: { p_key: string; p_value: Json }
+        Returns: Json
+      }
       set_phone_hint: { Args: { p_phone: string }; Returns: undefined }
       simulate_price: {
         Args: {
@@ -10510,6 +10612,13 @@ export type Database = {
         Returns: string
       }
       support_ticket_code: { Args: never; Returns: string }
+      team_daily_digest: { Args: { p_day: string }; Returns: Json }
+      team_digest_expected_key: { Args: never; Returns: string }
+      team_digest_numbers: { Args: { p_day: string }; Returns: Json }
+      team_digest_window: {
+        Args: { p_day: string }
+        Returns: Record<string, unknown>
+      }
       unit_public_name: {
         Args: { p_brand: string; p_destination_id: string }
         Returns: string
@@ -10755,7 +10864,7 @@ export type Database = {
         | "paid"
         | "failed"
         | "canceled"
-      social_post_kind: "image" | "carousel"
+      social_post_kind: "image" | "carousel" | "reel"
       social_post_status:
         | "pending_review"
         | "approved"
@@ -10996,7 +11105,7 @@ export const Constants = {
         "failed",
         "canceled",
       ],
-      social_post_kind: ["image", "carousel"],
+      social_post_kind: ["image", "carousel", "reel"],
       social_post_status: [
         "pending_review",
         "approved",

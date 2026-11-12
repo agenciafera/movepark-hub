@@ -148,6 +148,7 @@ empresa, então o mesmo escopo esconde o item do menu, tira a rota do alcance e 
 | `payouts:write` | – | – | – |
 | `team:read` | ✔ | ✔ | ✔ |
 | `team:write` · `api-keys:write` | – | – | – |
+| `bookings:recovery` (não concluídas com contato, 12/11/2026) | ✔ | – | – |
 
 `payouts:write` (saque/KYC bancário) é **exclusivo do Dono**.
 
@@ -171,6 +172,13 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 > `bookings_list_page` (recorte de `wl_visible_company_ids`, que exige o escopo; a antiga `operator_wl_bookings` saiu em 13/10/2026). É dado do cliente do parceiro vindo de outro sistema
 > (contrato v2, Anexo A), e o escopo deixa explícito quem o lê. Não é atribuível a chave de API.
 > Ver `reservas-wl-no-hub.md` § 9.
+
+> **Outra exceção de leitura: `bookings:recovery` (12/11/2026).** A lista de reservas não
+> concluídas que ainda dá para recuperar traz nome, telefone e e-mail de quem **não** comprou, dado
+> que quem recebeu foi a Movepark. Só sai pela RPC `operator_recoverable_bookings` (SECURITY
+> DEFINER, porque a expirada tem `deleted_at`), que exige o escopo. Dono e Gerente têm; Operação e
+> Financeiro não. Não é atribuível a chave de API. Cada download fica em `booking_recovery_export`.
+> Ver `booking-flow.md` (Recuperável) e `operator-panel.md` § 4.2b.
 
 > **Leitura vs. escrita:** o gating de **escrita** é server-authoritative (RPC + RLS). A **leitura**
 > de dados da própria empresa segue a RLS por associação (qualquer membro lê); a UI é que esconde as

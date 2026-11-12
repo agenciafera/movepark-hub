@@ -139,6 +139,7 @@ import ManagerCompanies from "@/routes/manager/companies";
 import ManagerLocations from "@/routes/manager/locations";
 import ManagerUsers from "@/routes/manager/users";
 import ManagerCompanyAccount from "@/routes/manager/company-account";
+import ManagerCompanyRecovery from "@/routes/manager/company-recovery";
 import ManagerMia from "@/routes/manager/mia";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
@@ -172,6 +173,7 @@ import ManagerMarketingCupons from "@/routes/manager/marketing-cupons";
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
 import OperatorBookings from "@/routes/operator/bookings";
+import OperatorRecovery from "@/routes/operator/recovery";
 import OperatorLocations from "@/routes/operator/locations";
 import OperatorLocationEdit from "@/routes/operator/location-edit";
 import OperatorOccupancy from "@/routes/operator/occupancy";
@@ -1622,6 +1624,8 @@ export const routes: RouteRecord[] = [
               },
               // Conta do parceiro (E0.3.7): extrato estilo conta bancária, com saque e estorno.
               { path: "companies/:companyId/conta", element: <ManagerCompanyAccount /> },
+              // Reservas não concluídas que ainda dá para recuperar (12/11/2026).
+              { path: "companies/:companyId/recovery", element: <ManagerCompanyRecovery /> },
               { path: "users", element: <ManagerUsers /> },
               { path: "finance/billing", element: <ManagerFinanceBilling /> },
               { path: "finance/commissions", element: <ManagerFinanceCommissions /> },
@@ -1675,6 +1679,11 @@ export const routes: RouteRecord[] = [
               {
                 element: <RequireScope scope="occupancy:read" />,
                 children: [{ path: "occupancy", element: <OperatorOccupancy /> }],
+              },
+              // Contato de quem não comprou (LGPD): só Dono e Gerente (12/11/2026).
+              {
+                element: <RequireScope scope="bookings:recovery" />,
+                children: [{ path: "recovery", element: <OperatorRecovery /> }],
               },
               {
                 element: <RequireScope scope="addons:write" />,

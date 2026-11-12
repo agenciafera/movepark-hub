@@ -243,6 +243,25 @@ Layout em 2 colunas:
 
 ---
 
+### 4.2b Reservas não concluídas (`/operator/recovery`, 12/11/2026) ✅
+
+A lista de **Reservas** só mostra o que virou venda (`partnerSeesBooking`). Abandono fica numa tela
+à parte, pedida pela Pare Seguro: quem começou uma reserva, não pagou e ainda vai viajar, para o
+parceiro ligar. É a regra **Recuperável** de [booking-flow.md](./booking-flow.md), calculada na RPC
+`operator_recoverable_bookings`: uma linha por pessoa, sem quem comprou depois, ordenada pela entrada
+mais próxima.
+
+- **Colunas:** pessoa (nome, telefone com atalho do WhatsApp, e-mail), código, tipo de vaga e
+  diárias, tentativas, entrada, saída, valor, onde parou e origem (Site, Página do destino, Mia no
+  WhatsApp). Origem `whatsapp-bot` ganha o selo "Falou com a Mia".
+- **CSV:** "Baixar lista (CSV)" chama a RPC de novo com `p_export = true`, que registra a exportação
+  em `booking_recovery_export`. Mesmo formato dos outros CSVs (`;`, BOM, valor com vírgula).
+- **Aviso de uso** na tela: os contatos são de quem ainda não é cliente; uma conversa por pessoa,
+  só sobre a reserva que ela começou.
+- **Acesso:** escopo `bookings:recovery` (Dono e Gerente) na rota, no item "Não concluídas" da
+  sidebar e na RPC. O Manager vê a mesma lista em Empresas › "Não concluídas"
+  (`/manager/companies/:companyId/recovery`), com o código levando à tela da reserva.
+
 ### 4.3 Localizações
 
 **Rota:** `/operator/locations`
