@@ -11,6 +11,9 @@ item grátis, liberado com a cópia grátis da conta). O texto do prompt é
 material licenciado; aqui está só a estrutura e os princípios, com palavras
 nossas.
 
+O método virou a skill [`pagina-cinematica-movepark`](../../.claude/skills/pagina-cinematica-movepark/SKILL.md),
+que é a que se usa neste repositório.
+
 ## 1. O que é a biblioteca
 
 | Tipo | Quantos | Exemplos |

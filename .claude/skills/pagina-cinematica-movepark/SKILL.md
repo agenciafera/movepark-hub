@@ -1,7 +1,8 @@
 ---
-name: pagina-cinematica
+name: pagina-cinematica-movepark
 description: >
-  Método para criar página ou seção "cinematográfica" no site da Movepark: um conceito em uma
+  Versão Movepark do método de página cinematográfica (neste repositório, use esta e não a
+  genérica pagina-cinematica). Cria página ou seção "cinematográfica" no site da Movepark: um conceito em uma
   frase (objeto do mundo do estacionamento + ação presa ao scroll ou ao cursor + desfecho que vira
   conteúdo), um único efeito "uau" por página, especificação com números, dados finais travados,
   checklist observável e prints em pontos do scroll, tudo dentro do DESIGN.md, do SSG e do GSAP do
@@ -16,7 +17,12 @@ description: >
 user-invocable: true
 ---
 
-# Página cinematográfica
+# Página cinematográfica (Movepark)
+
+Esta é a aplicação, com as regras do Movepark Hub, de um método que também existe numa skill
+genérica `pagina-cinematica` (pasta pessoal `~/.claude/skills/`, fora do repo). Esta aqui é
+completa por conta própria, porque quem clona o repositório não tem a genérica. Se mudar o método
+numa, avalie levar a mudança para a outra.
 
 Origem: análise da biblioteca da ProfitizeBuild em 13/11/2026 (115 itens, um prompt lido por
 inteiro). O estudo completo, com a anatomia dos prompts deles, a tabela de conflitos com o
