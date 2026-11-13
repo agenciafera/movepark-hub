@@ -370,6 +370,10 @@ Virapark (R$ 40,00) "perde para o Garageinn" (R$ 59,99).
 
 ## O procedimento, para a próxima rodada
 
+> Desde 12/11/2026 o método mora na skill `.claude/skills/frescor-de-preco/SKILL.md`, que cobre
+> também a virada de um parceiro só (o caso que a motivou foi a Aeropark). Os passos abaixo são o
+> resumo; a skill traz as queries, o modelo de migration e as armadilhas.
+
 1. `select d.short_name, f.* from destination d cross join lateral public.destination_price_freshness(d.slug) f ...`
    e liste as praças que revisaram tabela desde a última rodada.
 2. Para cada praça que revisou, leia o `before` e o `after` de `pricing_mirror_run` desde a última

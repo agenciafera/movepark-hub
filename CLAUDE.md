@@ -488,6 +488,9 @@ Vale para **tudo que o projeto publica ou mostra**: copy de UI, landing pages, e
 | `manager-panel.md` / `operator-panel.md` | escopo de cada painel |
 | `destinations.md` | destinos (aeroportos): catálogo de busca, páginas SEO `/destinos/<slug>`, CRUD no Manager, RLS |
 | `design-tokens.md` + `docs/design-system/` | cores, tipografia, espaçamento, UI kit |
+| `rotina-mensal-frescor.md` + `espelhamento-preco-wl.md` | parceiro mudou a tabela de preço; valores vencidos em FAQ, blog e traduções; histórico das rodadas |
+
+**Parceiro mudou a tabela de preço → use a skill `frescor-de-preco`.** Ela fixa o método que as quatro rodadas de 2026 descobriram na marra: decidir se a unidade é espelhada do white-label ou nativa, confirmar que o Hub já tem a tabela nova (`destination_price_freshness`, `mirror_sampled_at`, `before`/`after` de `pricing_mirror_run`), varrer todo campo publicado pelos valores antigos e seus múltiplos de 1 a 31 diárias, reescrever com cifra que sai **só** do `simulate_price`, gravar por migration com troca do campo inteiro e trava de md5 (modelo `20261203120000_frescor_garageinn_flat_novembro.sql`), trocar o bloco "em números" por `bun run lint:bloco-fato -- --print <PRAÇA>`, conferir carimbo e `site_rebuild_health()`, e registrar a rodada na spec. Vale também para a rotina mensal.
 
 ## Pendências conhecidas (ver `docs/specs/README.md`)
 
