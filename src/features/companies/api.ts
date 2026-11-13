@@ -17,7 +17,7 @@ export const COMPANY_COLUMNS =
   "onboarding_status, logo_url, wl_domain, wl_sync_enabled, wl_public_domain, hub_relationship, " +
   "wps_webhook_url, wps_webhook_enabled, contract_accepted_at, contract_version, contract_sha256, " +
   "contract_accepted_by, monthly_revenue_goal_cents, gateway_split_enabled, payout_release_days, " +
-  "payout_auto_day, payout_auto_enabled, installments_max, installments_interest_free";
+  "payout_auto_day, payout_auto_enabled, installments_max, installments_interest_free, anticipation_fee_payer";
 
 /** Empresa como o Manager a vê: com os campos restritos e só a PRESENÇA do segredo do WPS. */
 export type ManagedCompany = Company & { has_wps_webhook_secret?: boolean };

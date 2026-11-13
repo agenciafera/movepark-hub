@@ -708,6 +708,7 @@ export type Database = {
           checked_in_at: string | null
           checked_out_at: string | null
           code: string
+          commission_anticipation_payer: string | null
           commission_channel: string | null
           commission_chargeback_bearer: string | null
           commission_fee_payer: string | null
@@ -768,6 +769,7 @@ export type Database = {
           checked_in_at?: string | null
           checked_out_at?: string | null
           code: string
+          commission_anticipation_payer?: string | null
           commission_channel?: string | null
           commission_chargeback_bearer?: string | null
           commission_fee_payer?: string | null
@@ -828,6 +830,7 @@ export type Database = {
           checked_in_at?: string | null
           checked_out_at?: string | null
           code?: string
+          commission_anticipation_payer?: string | null
           commission_channel?: string | null
           commission_chargeback_bearer?: string | null
           commission_fee_payer?: string | null
@@ -1382,6 +1385,7 @@ export type Database = {
       }
       commission_rule: {
         Row: {
+          anticipation_fee_payer: string | null
           attribution_window_days: number | null
           chargeback_bearer: string
           company_id: string | null
@@ -1403,6 +1407,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
+          anticipation_fee_payer?: string | null
           attribution_window_days?: number | null
           chargeback_bearer: string
           company_id?: string | null
@@ -1424,6 +1429,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
+          anticipation_fee_payer?: string | null
           attribution_window_days?: number | null
           chargeback_bearer?: string
           company_id?: string | null
@@ -1463,6 +1469,7 @@ export type Database = {
       }
       company: {
         Row: {
+          anticipation_fee_payer: string | null
           contract_accepted_at: string | null
           contract_accepted_by: string | null
           contract_accepted_ip: unknown
@@ -1497,6 +1504,7 @@ export type Database = {
           wps_webhook_url: string | null
         }
         Insert: {
+          anticipation_fee_payer?: string | null
           contract_accepted_at?: string | null
           contract_accepted_by?: string | null
           contract_accepted_ip?: unknown
@@ -1531,6 +1539,7 @@ export type Database = {
           wps_webhook_url?: string | null
         }
         Update: {
+          anticipation_fee_payer?: string | null
           contract_accepted_at?: string | null
           contract_accepted_by?: string | null
           contract_accepted_ip?: unknown
@@ -5094,6 +5103,11 @@ export type Database = {
       payment: {
         Row: {
           amount: number
+          anticipation_comp_cents: number | null
+          anticipation_credit_cents: number
+          anticipation_fee_movepark_cents: number | null
+          anticipation_fee_partner_cents: number | null
+          anticipation_reread_at: string | null
           booking_id: string
           chargeback_debt_cents: number | null
           created_at: string
@@ -5136,6 +5150,11 @@ export type Database = {
         }
         Insert: {
           amount: number
+          anticipation_comp_cents?: number | null
+          anticipation_credit_cents?: number
+          anticipation_fee_movepark_cents?: number | null
+          anticipation_fee_partner_cents?: number | null
+          anticipation_reread_at?: string | null
           booking_id: string
           chargeback_debt_cents?: number | null
           created_at?: string
@@ -5178,6 +5197,11 @@ export type Database = {
         }
         Update: {
           amount?: number
+          anticipation_comp_cents?: number | null
+          anticipation_credit_cents?: number
+          anticipation_fee_movepark_cents?: number | null
+          anticipation_fee_partner_cents?: number | null
+          anticipation_reread_at?: string | null
           booking_id?: string
           chargeback_debt_cents?: number | null
           created_at?: string
@@ -5415,6 +5439,78 @@ export type Database = {
           type?: string | null
         }
         Relationships: []
+      }
+      payout_anticipation: {
+        Row: {
+          amount_cents: number | null
+          anticipation_fee_cents: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          external_id: string | null
+          fee_borne_by: string
+          fee_cents: number | null
+          id: string
+          payment_date: string | null
+          provider: string
+          requested_cents: number
+          status: string
+          timeframe: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          anticipation_fee_cents?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_id?: string | null
+          fee_borne_by: string
+          fee_cents?: number | null
+          id?: string
+          payment_date?: string | null
+          provider?: string
+          requested_cents: number
+          status: string
+          timeframe?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number | null
+          anticipation_fee_cents?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          external_id?: string | null
+          fee_borne_by?: string
+          fee_cents?: number | null
+          id?: string
+          payment_date?: string | null
+          provider?: string
+          requested_cents?: number
+          status?: string
+          timeframe?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_anticipation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_anticipation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       payout_auto_cycle: {
         Row: {
@@ -10459,6 +10555,7 @@ export type Database = {
         }
         Returns: Json
       }
+      recipient_anticipation_expected_key: { Args: never; Returns: string }
       recompute_membership: {
         Args: { p_profile_id: string }
         Returns: undefined
@@ -10507,6 +10604,10 @@ export type Database = {
       seo_label_primary: { Args: { p_label: string }; Returns: string }
       set_booking_addons: {
         Args: { p_add_on_ids: string[]; p_code: string }
+        Returns: Json
+      }
+      set_company_anticipation: {
+        Args: { p_company_id: string; p_fee_payer: string }
         Returns: Json
       }
       set_company_installments: {
