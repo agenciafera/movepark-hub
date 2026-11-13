@@ -17,6 +17,7 @@ export type BookingCommissionLike = {
   commission_chargeback_bearer?: string | null;
   commission_installments_max?: number | null;
   commission_installments_interest_free?: number | null;
+  commission_anticipation_payer?: string | null;
   commission_locked?: boolean | null;
   attribution?: unknown;
   origin?: string | null;
@@ -35,6 +36,8 @@ export type CommissionView = {
   chargeback: string | null;
   /** Parcelamento congelado na reserva (09/11/2026). "Política da plataforma" quando herdou. */
   installments: string | null;
+  /** Quem paga a antecipação do cartão (E0.3.14). Reserva anterior lê como Movepark. */
+  anticipationPayer: string | null;
   locked: boolean;
   proof: { label: string; value: string }[];
 };
@@ -79,9 +82,35 @@ export function commissionView(b: BookingCommissionLike, formatDateTime: (iso: s
       : b.commission_installments_max == null
         ? "Política da plataforma"
         : installmentsLabel(b.commission_installments_max, b.commission_installments_interest_free),
+    anticipationPayer: legacy
+      ? null
+      : FEE_PAYER_LABEL[b.commission_anticipation_payer === "partner" ? "partner" : "movepark"],
     locked: b.commission_locked === true,
     proof,
   };
+}
+
+export type AnticipationPaymentLike = {
+  status: string;
+  anticipation_comp_cents?: number | null;
+  anticipation_fee_partner_cents?: number | null;
+  anticipation_credit_cents?: number | null;
+};
+
+/**
+ * Antecipação na cobrança paga (E0.3.14): o que a Movepark mandou a mais no split, a taxa que a
+ * Pagar.me descontou do estacionamento (depois da releitura) e o crédito que volta para ele.
+ */
+export function anticipationLines(payments: AnticipationPaymentLike[] | null | undefined): { label: string; cents: number }[] {
+  const p = (payments ?? []).find((x) => x.status === "paid" || x.status === "refunded");
+  if (!p) return [];
+  const out: { label: string; cents: number }[] = [];
+  if ((p.anticipation_comp_cents ?? 0) > 0) out.push({ label: "Compensação enviada", cents: p.anticipation_comp_cents! });
+  if ((p.anticipation_fee_partner_cents ?? 0) > 0) {
+    out.push({ label: "Taxa de antecipação do estacionamento", cents: p.anticipation_fee_partner_cents! });
+  }
+  if ((p.anticipation_credit_cents ?? 0) > 0) out.push({ label: "Crédito ao estacionamento", cents: p.anticipation_credit_cents! });
+  return out;
 }
 
 /** O canal só pode ser corrigido antes de a cobrança ser paga: depois o split já foi ao gateway. */

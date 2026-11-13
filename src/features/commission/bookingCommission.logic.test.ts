@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canFixChannel, commissionView, rulesForCompany } from "./bookingCommission.logic";
+import { anticipationLines, canFixChannel, commissionView, rulesForCompany } from "./bookingCommission.logic";
 
 const fmt = (iso: string) => `em ${iso.slice(0, 10)}`;
 
@@ -110,5 +110,31 @@ describe("parcelamento na reserva (09/11/2026)", () => {
   });
   it("reserva antiga, sem pacote: nada a dizer", () => {
     expect(commissionView({}, fmt).installments).toBeNull();
+  });
+});
+
+describe("antecipação na reserva (E0.3.14)", () => {
+  it("quem paga sai da reserva; reserva sem o campo é Movepark", () => {
+    const v = commissionView({ commission_channel: "hub", commission_take_rate_bps: 2000, commission_anticipation_payer: "partner" }, fmt);
+    expect(v.anticipationPayer).toBe("Estacionamento paga");
+    expect(commissionView({ commission_channel: "hub", commission_take_rate_bps: 2000 }, fmt).anticipationPayer).toBe("Movepark paga");
+    expect(commissionView({}, fmt).anticipationPayer).toBeNull();
+  });
+
+  it("valores da cobrança: compensação, taxa real e crédito, só os que existem", () => {
+    expect(
+      anticipationLines([
+        { status: "paid", anticipation_comp_cents: 437, anticipation_fee_partner_cents: 411, anticipation_credit_cents: 0 },
+      ]),
+    ).toEqual([
+      { label: "Compensação enviada", cents: 437 },
+      { label: "Taxa de antecipação do estacionamento", cents: 411 },
+    ]);
+    expect(anticipationLines([{ status: "paid", anticipation_credit_cents: 13, anticipation_fee_partner_cents: 450 }])).toEqual([
+      { label: "Taxa de antecipação do estacionamento", cents: 450 },
+      { label: "Crédito ao estacionamento", cents: 13 },
+    ]);
+    expect(anticipationLines([{ status: "failed", anticipation_comp_cents: 437 }])).toEqual([]);
+    expect(anticipationLines(null)).toEqual([]);
   });
 });

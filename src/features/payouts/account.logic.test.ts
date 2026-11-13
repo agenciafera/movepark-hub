@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  MOVEMENT_LABEL,
   channelBadge,
   maxWithdrawReason,
   negativeRecipientAlert,
@@ -171,5 +172,13 @@ describe("releaseLabel da venda", () => {
     expect(releaseLabel({ kind: "sale", release_status: "waiting", release_at: "2026-10-21T17:04:35Z" }, fmt)).toBe("libera em 2026-10-21");
     expect(releaseLabel({ kind: "sale", release_status: "released", release_at: "2026-08-31T13:00:00Z" }, fmt)).toBe("liberado");
     expect(releaseLabel({ kind: "sale", release_status: "unknown", release_at: "2026-08-31T13:00:00Z" }, fmt)).toBe("aguardando a Pagar.me");
+  });
+});
+
+describe("antecipação no extrato (E0.3.14)", () => {
+  it("as três linhas novas têm rótulo", () => {
+    expect(MOVEMENT_LABEL.anticipation_comp).toBe("Antecipação paga pela Movepark");
+    expect(MOVEMENT_LABEL.anticipation_fee).toBe("Taxa da antecipação do cartão");
+    expect(MOVEMENT_LABEL.anticipation_spot).toBe("Antecipação pedida");
   });
 });

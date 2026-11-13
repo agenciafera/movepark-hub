@@ -15,6 +15,12 @@ export const FEE_PAYER_LABEL: Record<FeePayer, string> = {
   partner: "Estacionamento paga",
 };
 
+/** Antecipação do cartão na regra (E0.3.14): vazio herda o padrão da empresa. */
+export function anticipationPayerLabel(v: string | null | undefined): string {
+  if (v === "movepark" || v === "partner") return FEE_PAYER_LABEL[v];
+  return "Herda a empresa";
+}
+
 export const CHARGEBACK_LABEL: Record<ChargebackBearer, string> = {
   each: "Cada um com a sua parte",
   partner: "Estacionamento arca com tudo",
@@ -41,6 +47,8 @@ export type RuleForm = {
   /** Parcelamento no cartão (09/11/2026). Os dois "" = herda o padrão da empresa. */
   installmentsMax: string;
   installmentsInterestFree: string;
+  /** Quem paga a antecipação do cartão nesta origem (E0.3.14). "inherit" = padrão da empresa. */
+  anticipationPayer: "inherit" | FeePayer;
 };
 
 export const EMPTY_RULE_FORM: RuleForm = {
@@ -58,6 +66,7 @@ export const EMPTY_RULE_FORM: RuleForm = {
   validUntil: "",
   installmentsMax: "",
   installmentsInterestFree: "",
+  anticipationPayer: "inherit",
 };
 
 /** "Abbapark, abbapark-insta\nsite" → ["abbapark", "abbapark-insta", "site"]: igual ao trigger do banco. */
@@ -86,6 +95,7 @@ export type RulePayload = {
   valid_until: string | null;
   installments_max: number | null;
   installments_interest_free: number | null;
+  anticipation_fee_payer: FeePayer | null;
 };
 
 function dayStart(d: string): string | null {
@@ -136,6 +146,7 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
       valid_until: until,
       installments_max: parcelas.max,
       installments_interest_free: parcelas.interestFree,
+      anticipation_fee_payer: f.anticipationPayer === "inherit" ? null : f.anticipationPayer,
     },
   };
 }
@@ -159,6 +170,8 @@ export function formFromRule(r: CommissionRule): RuleForm {
     validUntil: day(r.valid_until),
     installmentsMax: r.installments_max == null ? "" : String(r.installments_max),
     installmentsInterestFree: r.installments_interest_free == null ? "" : String(r.installments_interest_free),
+    anticipationPayer:
+      r.anticipation_fee_payer === "partner" || r.anticipation_fee_payer === "movepark" ? r.anticipation_fee_payer : "inherit",
   };
 }
 

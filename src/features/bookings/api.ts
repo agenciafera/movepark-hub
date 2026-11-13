@@ -222,7 +222,7 @@ export function useBookingsSummary(filters: Omit<BookingPageFilters, "page" | "p
  */
 const detailSelect = baseSelect.replace(
   "payments:payment(id, status, refunded_at, created_at, paid_at, method, installments)",
-  "payments:payment(id, status, refunded_at, created_at, paid_at, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents)",
+  "payments:payment(id, status, refunded_at, created_at, paid_at, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_credit_cents)",
 );
 
 /** Uma reserva pelo código, com as relações da lista e o pagamento completo (tela de detalhe). */

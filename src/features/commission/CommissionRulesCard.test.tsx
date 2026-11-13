@@ -70,6 +70,13 @@ describe("CommissionRulesCard", () => {
     expect(within(row).getByText("7 dias (padrão)")).toBeInTheDocument();
   });
 
+  it("mostra quem paga a antecipação: herda a empresa por padrão, ou o escolhido na regra (E0.3.14)", () => {
+    rulesData.current = [REGRA, { ...REGRA, id: "r2", name: "Outra", anticipation_fee_payer: "partner" }];
+    renderWithProviders(<CommissionRulesCard />);
+    expect(within(screen.getByText("Site do Abbapark").closest("tr")!).getByText("Herda a empresa")).toBeInTheDocument();
+    expect(within(screen.getByText("Outra").closest("tr")!).getAllByText("Estacionamento paga").length).toBe(2);
+  });
+
   it("regra com janela própria mostra a dela, e o formulário grava o número", async () => {
     rulesData.current = [{ ...REGRA, attribution_window_days: 30 }];
     renderWithProviders(<CommissionRulesCard />);

@@ -22,6 +22,7 @@ const REGRA: RulePayload = {
   valid_until: null,
   installments_max: null,
   installments_interest_free: null,
+  anticipation_fee_payer: null,
 };
 
 describe("useSaveCommissionRule", () => {

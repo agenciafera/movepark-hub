@@ -6,7 +6,7 @@
 -- para ele. Transação com rollback.
 
 begin;
-select plan(13);
+select plan(16);
 
 -- ── fixture ─────────────────────────────────────────────────────────────────
 do $$
@@ -100,6 +100,31 @@ select throws_ok(
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
 set local role authenticated;
 select is((select count(*) from public.payout_anticipation)::int, 0, 'cliente não vê antecipações');
+reset role;
+
+-- ── extrato do parceiro ─────────────────────────────────────────────────────
+insert into public.payment(booking_id, provider, method, amount, status, kind, paid_at, split, split_sent_to_gateway,
+                           installments, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_reread_at)
+  values ('00000000-0000-0000-0000-0000000ab001', 'pagarme', 'card', 150, 'paid', 'booking', now() - interval '1 day',
+          '[{"role":"partner","amount":12000,"chargeProcessingFee":false},{"role":"movepark","amount":3000,"chargeProcessingFee":true}]'::jsonb,
+          true, 3, 437, 411, now());
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.adm'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+select is(
+  (select (m ->> 'net_cents')::int from jsonb_array_elements(
+     public.partner_account_statement(current_setting('test.a')::uuid, now() - interval '30 days', now() + interval '1 day') -> 'movements') m
+    where m ->> 'kind' = 'anticipation_comp'),
+  437, 'extrato mostra a compensação que a Movepark mandou a mais');
+select is(
+  (select (m ->> 'net_cents')::int from jsonb_array_elements(
+     public.partner_account_statement(current_setting('test.a')::uuid, now() - interval '30 days', now() + interval '1 day') -> 'movements') m
+    where m ->> 'kind' = 'anticipation_fee'),
+  -411, 'extrato mostra a taxa de antecipação descontada do estacionamento');
+select is(
+  (select count(*)::int from jsonb_array_elements(
+     public.partner_account_statement(current_setting('test.a')::uuid, now() - interval '30 days', now() + interval '1 day') -> 'movements') m
+    where m ->> 'kind' = 'anticipation_spot'),
+  3, 'extrato lista as antecipações pontuais abertas e aprovadas');
 reset role;
 
 select * from finish();

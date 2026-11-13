@@ -19,11 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatDateTime } from "@/lib/format";
+import { formatBRL, formatDateTime } from "@/lib/format";
 import { useCommissionRules, useSetBookingCommission } from "./api";
 import {
   canFixChannel,
   commissionView,
+  anticipationLines,
+  type AnticipationPaymentLike,
   rulesForCompany,
   type BookingCommissionLike,
 } from "./bookingCommission.logic";
@@ -41,7 +43,7 @@ type Props = {
     created_via_api_key_id?: string | null;
   };
   companyId: string | null | undefined;
-  payments: { status: string }[] | null | undefined;
+  payments: AnticipationPaymentLike[] | null | undefined;
   audience: "manager" | "operator";
   /** Só hub_admin corrige o canal (a RPC confere de novo no servidor). */
   canFix: boolean;
@@ -93,6 +95,11 @@ export function BookingCommissionCard({ booking, companyId, payments, audience, 
             {manager && view.feePayer && <Item label="Taxa do gateway" value={view.feePayer} />}
             {manager && view.chargeback && <Item label="Chargeback" value={view.chargeback} />}
             {view.installments && <Item label="Parcelamento no cartão" value={view.installments} />}
+            {manager && view.anticipationPayer && <Item label="Antecipação do cartão" value={view.anticipationPayer} />}
+            {manager &&
+              anticipationLines(payments).map((l) => (
+                <Item key={l.label} label={l.label} value={formatBRL(l.cents / 100)} />
+              ))}
           </dl>
         )}
 

@@ -43,6 +43,7 @@ describe("validateRuleForm", () => {
         valid_until: null,
         installments_max: null,
         installments_interest_free: null,
+        anticipation_fee_payer: null,
       },
     });
   });
@@ -165,5 +166,25 @@ describe("parcelamento na regra (09/11/2026)", () => {
   it("o formulário leva o par ao payload", () => {
     const r = validateRuleForm({ ...EMPTY_RULE_FORM, name: "Site", utmSourcesText: "x", takeRatePct: "10", installmentsMax: "6", installmentsInterestFree: "1" });
     expect(r.ok && r.payload).toMatchObject({ installments_max: 6, installments_interest_free: 1 });
+  });
+});
+
+describe("pagador da antecipação na regra (E0.3.14)", () => {
+  const base = { ...EMPTY_RULE_FORM, name: "Site", utmSourcesText: "site", takeRatePct: "10" };
+  it("herdar vira null no payload; escolha explícita vai como está", () => {
+    const herda = validateRuleForm(base);
+    expect(herda.ok && herda.payload.anticipation_fee_payer).toBeNull();
+    const parceiro = validateRuleForm({ ...base, anticipationPayer: "partner" });
+    expect(parceiro.ok && parceiro.payload.anticipation_fee_payer).toBe("partner");
+  });
+  it("lê a regra do banco de volta no formulário", () => {
+    const rule = {
+      id: "r1", company_id: "c1", name: "Site", utm_sources: ["site"], match_white_label: false,
+      take_rate_bps: 1000, gateway_fee_payer: "movepark", chargeback_bearer: "each", priority: 0, attribution_window_days: null,
+      is_active: true, valid_from: null, valid_until: null, installments_max: null, installments_interest_free: null,
+      anticipation_fee_payer: "movepark", created_at: "", updated_at: "", created_by: null, deleted_at: null,
+    } satisfies CommissionRule;
+    expect(formFromRule(rule).anticipationPayer).toBe("movepark");
+    expect(formFromRule({ ...rule, anticipation_fee_payer: null }).anticipationPayer).toBe("inherit");
   });
 });

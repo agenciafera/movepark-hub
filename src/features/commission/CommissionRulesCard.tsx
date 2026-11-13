@@ -41,6 +41,7 @@ import {
   CHARGEBACK_LABEL,
   EMPTY_RULE_FORM,
   FEE_PAYER_LABEL,
+  anticipationPayerLabel,
   RULE_STATUS_LABEL,
   feeCoverageWarning,
   formFromRule,
@@ -125,6 +126,7 @@ export function CommissionRulesCard() {
                   <TableHead className="text-right">Comissão</TableHead>
                   <TableHead>Taxa do gateway</TableHead>
                   <TableHead>Chargeback</TableHead>
+                  <TableHead>Antecipação</TableHead>
                   <TableHead>Janela</TableHead>
                   <TableHead>Parcelamento</TableHead>
                   <TableHead>Situação</TableHead>
@@ -151,6 +153,7 @@ export function CommissionRulesCard() {
                       <TableCell className="text-right tabular-nums">{r.take_rate_bps / 100}%</TableCell>
                       <TableCell>{FEE_PAYER_LABEL[r.gateway_fee_payer as FeePayer] ?? r.gateway_fee_payer}</TableCell>
                       <TableCell>{CHARGEBACK_LABEL[r.chargeback_bearer as ChargebackBearer] ?? r.chargeback_bearer}</TableCell>
+                      <TableCell className="text-muted">{anticipationPayerLabel(r.anticipation_fee_payer)}</TableCell>
                       <TableCell className="tabular-nums text-muted">
                         {r.attribution_window_days ?? globalWindow} dias{r.attribution_window_days == null ? " (padrão)" : ""}
                       </TableCell>
@@ -373,6 +376,25 @@ function RuleDialog({
                   <SelectItem value="movepark">{CHARGEBACK_LABEL.movepark}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="rule-anticipation">Antecipação do cartão paga por</Label>
+              <Select
+                value={form.anticipationPayer}
+                onValueChange={(v) => set("anticipationPayer", v as RuleForm["anticipationPayer"])}
+              >
+                <SelectTrigger id="rule-anticipation">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inherit">{anticipationPayerLabel(null)}</SelectItem>
+                  <SelectItem value="movepark">{FEE_PAYER_LABEL.movepark}</SelectItem>
+                  <SelectItem value="partner">{FEE_PAYER_LABEL.partner}</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-caption text-muted">
+                Só vale quando o estacionamento recebe o cartão em 30 dias (repasse da empresa).
+              </span>
             </div>
           </div>
 
