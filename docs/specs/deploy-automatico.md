@@ -283,6 +283,31 @@ desligar, procure links para `/estacionamentos/<destino>/<lote>` em `faq.body_md
 fez com a BePark em 19/10). O diagnóstico é rodar `bun run build` localmente: o último script que
 falha diz o porquê.
 
+## O SWC recusou a pasta de cache do Cloudflare (13/11/2026)
+
+Desde a manhã de 13/11 todo build do Workers Builds parava no `vite-react-ssg` com
+`ERR_SWC_NATIVE_CACHE`. O último deploy bom era de 01:15 UTC. A partir da 1.16.12 (29/09/2026), o
+`@swc/core` (que entra pelo `@vitejs/plugin-react-swc`) publica o binário nativo compactado e o
+descompacta numa pasta de cache no primeiro uso, validando dono e permissão de cada pasta acima
+dela. O container do Cloudflare passou a ter um ancestral de `/opt/buildhome/.cache` e de `/tmp`
+que a validação considera gravável por outro usuário, e as duas tentativas falham. A 1.16.22, a
+mais nova, falha igual.
+
+**Correção:** `@swc/core` fixado em **1.16.2** nos `overrides` do `package.json`, a última versão
+que traz o binário inteiro (32 MB no Linux, contra 10 MB das compactadas) e carrega direto do
+`node_modules`, sem pasta de cache. **Não suba essa versão** sem antes confirmar que o build do
+Cloudflare passa com ela. A alternativa, se um dia for preciso subir, é a variável
+`SWC_NATIVE_BINDING_CACHE_SKIP_SECURITY_CHECK=1` no build (painel do Workers Builds), que desliga
+a checagem.
+
+Por que pareceu bug de código: o build local passava porque a cópia local ainda tinha a 1.15.40
+instalada, e o job `lighthouse` do CI (que roda `bun run build` em Linux) também passava, porque o
+runner do GitHub não tem o problema de permissão. O log que mostra a causa só abre no painel do
+Cloudflare, na conta `Financeiro@fera.ag`.
+
+O mesmo log mostrou que o Cloudflare roda **bun 1.2.15**, e não a 1.3.13 que o `CLAUDE.md` diz
+estar fixada em `BUN_VERSION`. Não causou esta falha.
+
 ## Testes
 
 `supabase/tests/pricing_mirror.test.sql` cobre o lado do espelho (seis casos): a porta aberta e

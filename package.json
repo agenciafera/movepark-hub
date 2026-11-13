@@ -139,6 +139,6 @@
     "fast-uri": "3.1.8",
     "source-map-js": "1.2.2",
     "prosemirror-view": "1.42.6",
-    "@swc/core": "1.16.22"
+    "@swc/core": "1.16.2"
   }
 }
