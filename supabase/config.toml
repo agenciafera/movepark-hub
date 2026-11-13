@@ -474,6 +474,10 @@ verify_jwt = false
 [functions.reconcile-gateway-fees]
 verify_jwt = false
 
+# E0.3.14: valida JWT de hub_admin ou a chave do Vault dentro do código (cron de status).
+[functions.recipient-anticipation]
+verify_jwt = false
+
 [functions.create-payout-transfer]
 verify_jwt = true
 
