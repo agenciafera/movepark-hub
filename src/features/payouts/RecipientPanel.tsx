@@ -7,6 +7,7 @@ import { useRecipient, useSyncRecipient, type PayoutRequirement } from "./api";
 import { payoutStatusTone, recipientStatusLabel } from "./status";
 import { PayoutKycDialog } from "./PayoutKycDialog";
 import { PayoutSettingsDialog } from "./PayoutSettingsDialog";
+import { AnticipateNowDialog } from "./AnticipateNowDialog";
 
 /**
  * Painel do recebedor (gateway de pagamento) para o Manager. Mostra status da ficha, link de
@@ -23,6 +24,7 @@ export function RecipientPanel({
   const sync = useSyncRecipient();
   const [kycOpen, setKycOpen] = React.useState(false);
   const [payoutOpen, setPayoutOpen] = React.useState(false);
+  const [anticipateOpen, setAnticipateOpen] = React.useState(false);
 
   const status: PayoutRecipientStatus = recipient?.status ?? "draft";
   const hasExternal = !!recipient?.external_recipient_id;
@@ -96,6 +98,11 @@ export function RecipientPanel({
             Repasse
           </Button>
         )}
+        {hasExternal && (
+          <Button size="sm" variant="secondary" onClick={() => setAnticipateOpen(true)}>
+            Antecipar agora
+          </Button>
+        )}
       </div>
 
       <PayoutKycDialog
@@ -105,6 +112,7 @@ export function RecipientPanel({
         onOpenChange={setKycOpen}
       />
       <PayoutSettingsDialog companyId={companyId} open={payoutOpen} onOpenChange={setPayoutOpen} />
+      <AnticipateNowDialog companyId={companyId} open={anticipateOpen} onOpenChange={setAnticipateOpen} />
     </div>
   );
 }

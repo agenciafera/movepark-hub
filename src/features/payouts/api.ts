@@ -1123,3 +1123,132 @@ export function useRevokeCompanyAccessLink() {
     onSuccess: () => qc.invalidateQueries({ queryKey: accessLinkKeys.all }),
   });
 }
+
+// ── Antecipação do cartão do parceiro (E0.3.14) ─────────────────────────────
+// Spec: docs/specs/antecipacao-do-parceiro.md
+
+const ANTICIPATION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recipient-anticipation`;
+const UPDATE_PAYOUT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-recipient-payout`;
+
+async function callEdgeAsAdmin<T>(url: string, body: unknown): Promise<T> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("Sessão expirada. Entre novamente.");
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? `Falha (HTTP ${res.status})`);
+  return data as T;
+}
+
+/** A antecipação está ligada no recebedor da empresa? Lê o espelho em `payout_recipient`. */
+export function useCompanyAnticipationEnabled(companyId: string | undefined) {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "anticipation-enabled", companyId ?? ""] as const,
+    enabled: !!companyId,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase
+        .from("payout_recipient")
+        .select("anticipation_enabled")
+        .eq("company_id", companyId!)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.anticipation_enabled === true;
+    },
+  });
+}
+
+/**
+ * Grava quem paga (RPC `set_company_anticipation`) e, se mudou, liga ou desliga a antecipação no
+ * recebedor pela Edge `update-recipient-payout`. Aviso do gateway volta como erro.
+ */
+export function useSetCompanyAnticipation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      company_id: string;
+      fee_payer: "movepark" | "partner" | null;
+      enabled?: boolean;
+      gateway?: Record<string, unknown>;
+    }) => {
+      const { error } = await supabase.rpc("set_company_anticipation", {
+        p_company_id: args.company_id,
+        p_fee_payer: args.fee_payer as string,
+      });
+      if (error) throw new Error(error.message);
+      if (args.gateway) {
+        const r = await callEdgeAsAdmin<{ ok: boolean; warning: string | null }>(UPDATE_PAYOUT_URL, {
+          company_id: args.company_id,
+          anticipation: args.gateway,
+        });
+        if (r.warning) throw new Error(r.warning);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: payoutKeys.all });
+      qc.invalidateQueries({ queryKey: ["companies"] });
+    },
+  });
+}
+
+export type AnticipationLimitsResult = { max_amount_cents: number | null; max_anticipation_fee_cents: number | null };
+export type AnticipationSimulation = { amount_cents: number | null; anticipation_fee_cents: number | null; payment_date: string | null };
+export type AnticipationCreated = { id: string; status: string | null; anticipation_fee_cents: number | null; fee_borne_by: "movepark" | "partner" };
+
+export function useAnticipationLimits(companyId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "anticipation-limits", companyId ?? ""] as const,
+    enabled: !!companyId && enabled,
+    staleTime: 0,
+    queryFn: () => callEdgeAsAdmin<AnticipationLimitsResult>(ANTICIPATION_URL, { action: "limits", company_id: companyId }),
+  });
+}
+
+export function useSimulateAnticipation() {
+  return useMutation({
+    mutationFn: (args: { company_id: string; requested_cents: number }) =>
+      callEdgeAsAdmin<AnticipationSimulation>(ANTICIPATION_URL, { action: "simulate", timeframe: "start", ...args }),
+  });
+}
+
+export function useCreateAnticipation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { company_id: string; requested_cents: number }) =>
+      callEdgeAsAdmin<AnticipationCreated>(ANTICIPATION_URL, { action: "create", timeframe: "start", ...args }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: payoutKeys.all }),
+  });
+}
+
+export type PayoutAnticipationRow = {
+  id: string;
+  requested_cents: number;
+  anticipation_fee_cents: number | null;
+  status: string;
+  fee_borne_by: "movepark" | "partner";
+  payment_date: string | null;
+  created_at: string;
+};
+
+export function useCompanyAnticipations(companyId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...payoutKeys.all, "anticipations", companyId ?? ""] as const,
+    enabled: !!companyId && enabled,
+    queryFn: async (): Promise<PayoutAnticipationRow[]> => {
+      const { data, error } = await supabase
+        .from("payout_anticipation")
+        .select("id, requested_cents, anticipation_fee_cents, status, fee_borne_by, payment_date, created_at")
+        .eq("company_id", companyId!)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as PayoutAnticipationRow[];
+    },
+  });
+}
