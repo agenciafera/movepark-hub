@@ -105,8 +105,7 @@ MDR):
 Exemplo: 3x, perna do parceiro de R$ 120,00 com MDR pago pela Movepark: `Σ d = 4 + 34 + 64 = 102`,
 com taxa de 3,1% ao mês, `f = 0,031 / 30 × 102 / 3 = 3,51%` e `δ = R$ 4,37`. Com a antecipação real
 (uns 2, 32 e 62 dias), a taxa sobre os R$ 124,37 fica em torno de R$ 4,11, e o parceiro termina com
-uns R$ 0,26 a mais
-que os R$ 120,00: é a folga que a Movepark paga.
+uns R$ 0,26 a mais que os R$ 120,00: é a folga que a Movepark paga.
 
 Limites: a perna da Movepark nunca fica abaixo de R$ 1,00 nem da taxa estimada do MDR quando ela
 paga o MDR (regras que já existem). O que não couber vira **crédito** na próxima venda (mesmo
@@ -126,13 +125,23 @@ paga há mais de 31 dias com `anticipation_reread_at` nulo:
 
 ## Crédito do parceiro (generalizado)
 
-`payout_fee_credit_cents(company)` passa a somar como "gerado", além dos saques com taxa da
-Movepark:
+**Regra (Kallef, 13/11/2026): toda taxa de antecipação que a Pagar.me descontar do estacionamento
+numa antecipação que a Movepark deveria pagar vira crédito do estacionamento**, e o crédito volta
+no split das vendas seguintes. O estacionamento nunca fica com essa taxa, nem por um mês.
 
-1. a taxa das antecipações pontuais com `fee_borne_by = movepark` e status `approved`;
-2. a falta apurada na releitura (taxa real do parceiro − compensação, quando positiva, em venda
-   com pagador `movepark`).
+Quanto vira crédito, por origem:
 
+| Origem | Pagador | Crédito gerado |
+|---|---|---|
+| Venda com antecipação automática (por cobrança, na releitura) | `booking.commission_anticipation_payer = movepark` | taxa real na perna do parceiro − `anticipation_comp_cents` já enviado no split, quando positiva |
+| Antecipação pontual ("Antecipar agora") | `payout_anticipation.fee_borne_by = movepark` | `anticipation_fee_cents` inteiro, quando `approved` |
+| Compensação que não coube no split (perna da Movepark pequena) | `movepark` | o que faltou, já na cobrança |
+
+Pagador `partner`: nada vira crédito, e a taxa aparece descontada no extrato.
+
+Cada origem gera **uma** linha (idempotente pela cobrança ou pelo `external_id` da pontual), visível
+no extrato do estacionamento como "Crédito de antecipação" e na reserva no Manager. A soma entra
+como "gerado" em `payout_fee_credit_cents(company)`, ao lado dos saques com taxa da Movepark.
 A devolução segue igual: `fee_credit_returned_cents` no split da próxima venda.
 
 ## Telas
