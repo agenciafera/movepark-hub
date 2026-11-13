@@ -20,6 +20,11 @@ export type CommissionPackage = {
    * A cobrança aplica com `applyInstallmentOverride`.
    */
   installments: { max: number; interestFree: number } | null;
+  /**
+   * Quem paga a antecipação da parte do parceiro (E0.3.14). Com `movepark`, a cobrança no cartão
+   * manda a estimativa a mais na perna dele quando o recebedor antecipa.
+   */
+  anticipationPayer: FeePayer;
 };
 
 /** As colunas `commission_*` da reserva, como vêm do select. */
@@ -31,6 +36,7 @@ export type BookingCommissionColumns = {
   commission_chargeback_bearer?: string | null;
   commission_installments_max?: number | null;
   commission_installments_interest_free?: number | null;
+  commission_anticipation_payer?: string | null;
 };
 
 function feePayer(v: unknown): FeePayer {
@@ -64,6 +70,7 @@ export function commissionForCharge(
       feePayer: "movepark",
       chargebackBearer: "each",
       installments: null,
+      anticipationPayer: "movepark",
     };
   }
   return {
@@ -73,6 +80,7 @@ export function commissionForCharge(
     feePayer: feePayer(b.commission_fee_payer),
     chargebackBearer: bearer(b.commission_chargeback_bearer),
     installments: installmentsOf(b),
+    anticipationPayer: feePayer(b.commission_anticipation_payer),
   };
 }
 
@@ -97,6 +105,7 @@ export function columnsFromRpc(json: unknown): BookingCommissionColumns {
     commission_installments_max: typeof j.installments_max === "number" ? j.installments_max : null,
     commission_installments_interest_free:
       typeof j.installments_interest_free === "number" ? j.installments_interest_free : null,
+    commission_anticipation_payer: typeof j.anticipation_payer === "string" ? j.anticipation_payer : null,
   };
 }
 

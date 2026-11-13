@@ -9,6 +9,7 @@ Deno.test("reserva sem pacote gravado cai no padrão do Hub, com o take_rate da 
     feePayer: "movepark",
     chargebackBearer: "each",
     installments: null,
+    anticipationPayer: "movepark",
   });
   assertEquals(needsCommissionFreeze({}), true);
   assertEquals(commissionForCharge({}, null).takeRateBps, 0);
@@ -32,6 +33,7 @@ Deno.test("pacote gravado vence o take_rate atual da empresa: é isso que congel
     feePayer: "partner",
     chargebackBearer: "partner",
     installments: null,
+    anticipationPayer: "movepark",
   });
 });
 
@@ -68,7 +70,7 @@ Deno.test("columnsFromRpc lê o jsonb do banco e ignora tipo errado", () => {
   assertEquals(
     columnsFromRpc({
       rule_id: "r1", channel: "Site", take_rate_bps: 500, fee_payer: "partner", chargeback_bearer: "movepark",
-      installments_max: 6, installments_interest_free: 1, changed: true,
+      installments_max: 6, installments_interest_free: 1, anticipation_payer: "movepark", changed: true,
     }),
     {
       commission_rule_id: "r1",
@@ -78,6 +80,7 @@ Deno.test("columnsFromRpc lê o jsonb do banco e ignora tipo errado", () => {
       commission_chargeback_bearer: "movepark",
       commission_installments_max: 6,
       commission_installments_interest_free: 1,
+      commission_anticipation_payer: "movepark",
     },
   );
   assertEquals(needsCommissionFreeze(columnsFromRpc(null)), true);
@@ -90,4 +93,12 @@ Deno.test("chargeback pela regra", () => {
   assertEquals(chargebackDebtCents("movepark", 20000, true), 0, "a Movepark absorve tudo");
   assertEquals(chargebackDebtCents("partner", 20000, true), 20000, "o parceiro devolve o valor inteiro");
   assertEquals(chargebackDebtCents("partner", 20000, false), null, "se o gateway já debitou o parceiro (ou custódia), não cria dívida");
+});
+
+Deno.test("pagador da antecipação (E0.3.14): gravado vale, ausente é Movepark", () => {
+  const cols = { commission_channel: "hub", commission_take_rate_bps: 2000, commission_anticipation_payer: "partner" };
+  assertEquals(commissionForCharge(cols, 2000).anticipationPayer, "partner");
+  assertEquals(commissionForCharge({ ...cols, commission_anticipation_payer: null }, 2000).anticipationPayer, "movepark");
+  assertEquals(commissionForCharge({}, 2000).anticipationPayer, "movepark");
+  assertEquals(columnsFromRpc({ channel: "hub", take_rate_bps: 2000, anticipation_payer: "partner" }).commission_anticipation_payer, "partner");
 });
