@@ -28,6 +28,7 @@ const REGRA: CommissionRule = {
   match_white_label: true,
   take_rate_bps: 500,
   gateway_fee_payer: "partner",
+  anticipation_fee_payer: null,
   chargeback_bearer: "partner",
   priority: 0,
   attribution_window_days: null,

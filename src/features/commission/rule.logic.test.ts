@@ -94,7 +94,7 @@ describe("formFromRule", () => {
       id: "r1", company_id: "c1", name: "Site", utm_sources: ["abbapark", "abbapark-insta"], match_white_label: true,
       take_rate_bps: 750, gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, attribution_window_days: 14, is_active: true,
       valid_from: "2026-10-01T03:00:00.000Z", valid_until: null,
-      installments_max: null, installments_interest_free: null,
+      installments_max: null, installments_interest_free: null, anticipation_fee_payer: null,
       created_at: "", updated_at: "", created_by: null, deleted_at: null,
     } satisfies CommissionRule;
     const v = validateRuleForm(formFromRule(rule));
