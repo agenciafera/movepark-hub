@@ -2,8 +2,10 @@
 
 **Épico:** E0.3.14 (continuação de [repasse-automatico-mensal.md](./repasse-automatico-mensal.md) e
 [comissao-por-origem.md](./comissao-por-origem.md)).
-**Estado:** desenhado em 13/11/2026 com o Kallef, em conversa (AskUserQuestion + mensagens). Falta a
-revisão desta spec e o plano de implementação.
+**Estado:** implementado em 13/11/2026 (plano em
+`docs/superpowers/plans/2026-11-13-antecipacao-do-parceiro.md`). No ar, a antecipação só está ligada
+na Agência Fera (empresa nossa, para os gates); as demais empresas seguem desligadas até ordem do
+Kallef. Gates G3 e G4 dependem de venda e estorno reais.
 
 ## O problema, medido
 
@@ -195,3 +197,27 @@ visível, regra de 11/09/2026).
 - Antecipação no dia seguinte à venda (custa o dobro: ~6,2% da parte antecipada num 3x).
 - Antecipação pedida pelo próprio parceiro no Operator.
 - Mudar o texto do contrato: a minuta 4.1 já promete 30 dias.
+
+## Como ficou implementado (13/11/2026)
+
+| Peça | Onde |
+|---|---|
+| Estimativa da compensação | `_shared/payments/anticipation.ts` (`estimateAnticipationCompCents`, `anticipationFeesByRecipient`), Deno `anticipation.test.ts` |
+| Compensação no split | `_shared/payments/split.ts` (`appliedAnticipationCompCents`, `splitForGateway` com o 5º argumento), depois do abatimento e do crédito, com piso de R$ 1,00 |
+| Pagador no pacote | `_shared/payments/commission.ts` (`anticipationPayer`); `resolve_commission`, `booking_apply_commission`, `admin_set_booking_commission` e `booking_guard_commission` na migration `20261203150000_antecipacao_do_parceiro.sql` |
+| Cobrança | `create-card-charge` lê `payout_recipient.anticipation_enabled`, `card_anticipation_rate_monthly_bps` e `card_anticipation_margin_days`; grava `payment.anticipation_comp_cents` e `anticipation_credit_cents` (o que não coube) |
+| Releitura | `reconcile-gateway-fees`, fase 2 (só cron): cartão pago há mais de 31 dias, uma vez; grava taxa total, antecipação por perna e a falta como crédito. Primeira volta em 13/11: 8 cobranças, antecipação só na perna da Movepark |
+| Antecipação pontual | Edge `recipient-anticipation` (settings, limits, simulate, create, sync); cron `recipient-anticipation-sync` dias úteis às 11h15 a 15h15 BRT (`20261203154000_cron_antecipacao.sql`); tabela `payout_anticipation` |
+| Crédito | `payout_fee_credit_cents` soma pontuais `approved` da Movepark e `payment.anticipation_credit_cents` |
+| Extrato | `partner_account_statement` ganha `anticipation_comp`, `anticipation_fee` e `anticipation_spot` (`20261203160000_extrato_antecipacao.sql`) |
+| Telas | Manager › Recebedores › Repasse: "Cartão em 30 dias" (`PayoutSettingsDialog`, `anticipation.logic.ts`); botão "Antecipar agora" (`AnticipateNowDialog`); Comissões: "Antecipação do cartão paga por"; card "Canal da venda" da reserva |
+| Configuração no banco | `app_setting.card_anticipation_rate_monthly_bps` gravado direto (fora de migration, repo público) |
+
+Medido na implementação: o `GET /bulk_anticipations/limits` exige `?timeframe=start|end` (sem ele,
+"tipo de antecipação inválido").
+
+Testes: Deno (`anticipation.test.ts`, `split.test.ts`, `commission.test.ts`, `pagarme.test.ts`,
+`recipient-anticipation/index.test.ts`, `reconcile-gateway-fees/logic.test.ts`); pgTAP
+`antecipacao_do_parceiro.test.sql` (16); Vitest `anticipation.logic.test.ts`,
+`PayoutSettingsDialog.test.tsx`, `AnticipateNowDialog.test.tsx`, `rule.logic.test.ts`,
+`CommissionRulesCard.test.tsx`, `bookingCommission.logic.test.ts`, `account.logic.test.ts`.

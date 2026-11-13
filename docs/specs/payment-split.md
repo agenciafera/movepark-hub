@@ -659,6 +659,12 @@ existindo para uso administrativo por API, sem tela. **Antecipação** segue des
 
 **Atualização de 26/09/2026 (E0.3.13):** o diálogo virou **Repasse** e edita também `company.payout_auto_day` e `company.payout_auto_enabled`; o saque deixou de ser só manual: existe o **repasse automático mensal** (nosso cron, dia 10 por padrão, sem taxa para o parceiro), e o manual continua com a taxa dele. A transferência automática nativa da Pagar.me segue desligada. Ver [repasse-automatico-mensal.md](./repasse-automatico-mensal.md).
 
+**Antecipação do cartão do parceiro (E0.3.14, 13/11/2026):** a antecipação automática deixou de ser
+só uma coluna sem uso. Ligada por empresa no Manager (Repasse › Cartão em 30 dias), com a mesma regra
+do recebedor da Movepark; quem paga a taxa vem do pacote da comissão e, quando é a Movepark, o split
+manda a estimativa a mais na perna do parceiro (`splitForGateway`, 5º argumento). Ver
+[antecipacao-do-parceiro.md](./antecipacao-do-parceiro.md).
+
 **Default global vigente (jul/2026): transferência automática DESLIGADA**, Mensal/dia 1
 (`app_setting.payout_transfer_enabled = 'false'`). O recebedor do parceiro **nasce sem repasse
 automático**: o saldo fica na Pagar.me e sai por **saque** (`payout_withdrawal`, escopo
