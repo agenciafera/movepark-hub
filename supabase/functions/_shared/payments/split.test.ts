@@ -1,5 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
 import {
+  appliedAnticipationCompCents,
   appliedFeeCreditCents,
   debtFloorCents,
   buildSplit,
@@ -495,4 +496,24 @@ Deno.test("appliedFeeCreditCents: quanto do crédito coube nesta venda", () => {
   const rules = buildSplit({ chargedCents: 1000, baseCents: 1000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p" });
   assertEquals(appliedFeeCreditCents(rules, 0, 367), 100);
   assertEquals(appliedFeeCreditCents(rules, 0, 50), 50);
+});
+
+Deno.test("compensação de antecipação: perna da Movepark cede ao parceiro, total intacto", () => {
+  const rules = buildSplit({ chargedCents: 15000, baseCents: 15000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p", method: "card" });
+  const out = splitForGateway(rules, 0, "re_mp", 0, 437)!;
+  assertEquals(partnerRule(out)!.amount, 12000 + 437);
+  assertEquals(out.reduce((a, r) => a + r.amount, 0), 15000);
+});
+
+Deno.test("compensação vem depois do crédito e respeita o piso de R$ 1,00", () => {
+  const rules = buildSplit({ chargedCents: 15000, baseCents: 15000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p", method: "card" });
+  // perna Movepark 3000; crédito 2500 deixa 500; piso 100 → cabem 400 de compensação
+  assertEquals(appliedAnticipationCompCents(rules, 0, 2500, 437), 400);
+  const out = splitForGateway(rules, 0, "re_mp", 2500, 437)!;
+  assertEquals(out.find((r) => r.role === "movepark")!.amount, 100);
+});
+
+Deno.test("sem compensação o split é o mesmo de antes", () => {
+  const rules = buildSplit({ chargedCents: 15000, baseCents: 15000, takeRateBps: 2000, moveparkRecipientId: "re_mp", partnerRecipientId: "re_p", method: "card" });
+  assertEquals(splitForGateway(rules, 0, "re_mp", 0, 0), splitForGateway(rules, 0, "re_mp", 0));
 });

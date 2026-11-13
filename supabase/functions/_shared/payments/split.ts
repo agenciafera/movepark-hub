@@ -272,17 +272,47 @@ export function appliedFeeCreditCents(rules: SplitRule[], debtRecoveryCents: num
 }
 
 /**
+ * Quanto da compensação de antecipação (E0.3.14) cabe nesta venda: o que sobra da perna da
+ * Movepark depois do abatimento e do crédito da taxa, respeitando o piso. O resto vira crédito.
+ */
+export function appliedAnticipationCompCents(
+  rules: SplitRule[],
+  debtRecoveryCents: number,
+  feeCreditCents: number,
+  compCents: number,
+): number {
+  const comp = Math.max(0, Math.floor(compCents || 0));
+  if (comp === 0) return 0;
+  let after: SplitRule[] | undefined;
+  try {
+    after = splitAfterDebt(rules, debtRecoveryCents, null);
+  } catch {
+    return 0;
+  }
+  if (!after) return 0;
+  const partner = partnerRule(after);
+  const movepark = after.find((r) => r !== partner);
+  if (!movepark) return 0;
+  const credit = appliedFeeCreditCents(rules, debtRecoveryCents, feeCreditCents);
+  return Math.max(0, Math.min(comp, movepark.amount - credit - MOVEPARK_LEG_FLOOR_CENTS));
+}
+
+/**
  * O que VAI ao gateway: perna do parceiro menos abatimento de dívida (E0.3.5), MAIS o crédito da
- * taxa do repasse automático que a Movepark devolve (E0.3.13). Total intacto.
+ * taxa do repasse automático (E0.3.13), MAIS a compensação da antecipação paga pela Movepark
+ * (E0.3.14). Total intacto.
  */
 export function splitForGateway(
   rules: SplitRule[],
   debtRecoveryCents: number,
   moveparkRecipientId: string | null,
   feeCreditCents = 0,
+  anticipationCompCents = 0,
 ): SplitRule[] | undefined {
   const base = splitAfterDebt(rules, debtRecoveryCents, moveparkRecipientId);
-  const applied = appliedFeeCreditCents(rules, debtRecoveryCents, feeCreditCents);
+  const applied =
+    appliedFeeCreditCents(rules, debtRecoveryCents, feeCreditCents) +
+    appliedAnticipationCompCents(rules, debtRecoveryCents, feeCreditCents, anticipationCompCents);
   if (!base || applied === 0) return base;
   const partner = partnerRule(base);
   const movepark = base.find((r) => r !== partner);
