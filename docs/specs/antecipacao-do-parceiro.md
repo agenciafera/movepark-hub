@@ -58,7 +58,7 @@ vista e 4,69% no parcelado, Pix 0,99%, antecipação de ~3,1% ao mês.
 
 | Onde | Coluna / chave | Conteúdo |
 |---|---|---|
-| `payout_recipient` (já existe) | `anticipation_enabled`, `anticipation_type`, `anticipation_volume_percentage`, `anticipation_delay` | Espelho do que está no recebedor do gateway. Ligar = `enabled true`, `type full`, `volume 100`, `delay` igual ao do recebedor da Movepark (gate G2) |
+| `payout_recipient` (já existe) | `anticipation_enabled`, `anticipation_type`, `anticipation_volume_percentage`, `anticipation_delay`, `anticipation_days` | Espelho do que está no recebedor do gateway. Ligar = a mesma regra do recebedor da Movepark (gate G2): `type 1025`, `volume 100`, `delay 29`, `days 1 a 31` |
 | `company` | `anticipation_fee_payer` text null | `movepark` / `partner`. Nulo herda o padrão. Escrita só pela RPC `set_company_anticipation` (hub_admin), que também aciona o ligar/desligar |
 | `commission_rule` | `anticipation_fee_payer` text null | Nulo herda a empresa. `CHECK` em (`movepark`, `partner`) |
 | `app_setting` | `commission_default_anticipation_payer` = `movepark` | Padrão do Hub |
@@ -173,8 +173,8 @@ visível, regra de 11/09/2026).
 
 | # | Pergunta | Como fechar |
 |---|---|---|
-| G1 | A Pagar.me aceita ligar a antecipação automática num recebedor de parceiro pela API, ou exige liberação do relacionamento? | `PATCH` no recebedor da Agência Fera (empresa nossa), lendo a resposta |
-| G2 | Qual `delay`/`type` está no recebedor da Movepark (para copiar o modelo de 30 dias)? | `GET /recipients/re_cms5cvguc2l2r0l9tncrmgrsm` |
+| G1 | A Pagar.me aceita ligar a antecipação automática num recebedor de parceiro pela API, ou exige liberação do relacionamento? | **Fechado em 13/11/2026: aceita.** `update-recipient-payout` na Agência Fera respondeu `ok` sem aviso, e a releitura do recebedor mostra `enabled: true` com a regra abaixo |
+| G2 | Qual `delay`/`type` está no recebedor da Movepark (para copiar o modelo de 30 dias)? | **Fechado em 13/11/2026:** `enabled: true`, `type: "1025"`, `volume_percentage: 100`, `delay: 29`, `days: 1 a 31`. É a regra que o Manager aplica ao ligar |
 | G3 | Ligar a automática pega recebíveis já existentes ou só vendas novas? | Ligar na Agência Fera com recebível pendente e reler no dia seguinte |
 | G4 | No estorno de parcela já antecipada, a taxa de antecipação volta? | Medir no primeiro estorno de cartão antecipado; até lá o razão não presume devolução |
 

@@ -151,7 +151,7 @@ Deno.serve(async (req: Request) => {
   if (!rid) return json({ error: "O estacionamento não tem recebedor no gateway." }, 409);
 
   if (input.action === "limits") {
-    const l = await gateway.getAnticipationLimits(rid);
+    const l = await gateway.getAnticipationLimits(rid, input.timeframe);
     await logGatewayEvent(admin, {
       paymentId: null,
       bookingId: null,

@@ -966,10 +966,11 @@ export class PagarmeGateway implements PaymentGateway {
     return buildPayablesResult(httpStatus, parsed);
   }
 
-  async getAnticipationLimits(recipientId: string): Promise<AnticipationLimits> {
+  /** O `timeframe` é obrigatório na consulta (medido em 13/11/2026: sem ele, 422). */
+  async getAnticipationLimits(recipientId: string, timeframe: "start" | "end" = "start"): Promise<AnticipationLimits> {
     const { httpStatus, parsed } = await this.rawFetch(
       "GET",
-      `/recipients/${encodeURIComponent(recipientId)}/bulk_anticipations/limits`,
+      `/recipients/${encodeURIComponent(recipientId)}/bulk_anticipations/limits?timeframe=${timeframe}`,
     );
     return buildAnticipationLimits(httpStatus, parsed);
   }

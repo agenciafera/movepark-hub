@@ -431,7 +431,7 @@ export interface PaymentGateway {
     settings: AnticipationSettings,
   ): Promise<RecipientResult>;
   /** Máximo antecipável agora (GET bulk_anticipations/limits). */
-  getAnticipationLimits(recipientId: string): Promise<AnticipationLimits>;
+  getAnticipationLimits(recipientId: string, timeframe?: "start" | "end"): Promise<AnticipationLimits>;
   /** Simula uma antecipação pontual sem criar (POST bulk_anticipations/simulate). */
   simulateAnticipation(input: AnticipationRequest): Promise<AnticipationResult>;
   /** Cria a antecipação pontual (POST bulk_anticipations). */
