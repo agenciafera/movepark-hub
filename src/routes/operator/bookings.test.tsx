@@ -151,17 +151,25 @@ describe("OperatorBookings · estacionamento sem white-label", () => {
 describe("OperatorBookings · estacionamento com white-label", () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  it("Hub e site na mesma lista, cada um com a sua etiqueta, e o filtro de origem", () => {
+  it("Hub e site na mesma lista, sem etiqueta na linha, com o filtro de origem", () => {
     setup({ hasWl: true, rows: [site(), reservaHub("MP-PAGA")] });
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
     expect(screen.getByText("271001-0001")).toBeInTheDocument();
     expect(screen.getByText("MP-PAGA")).toBeInTheDocument();
     const tabela = screen.getByRole("table");
-    expect(within(tabela).getByText("White-label")).toBeInTheDocument();
-    expect(within(tabela).getByText("Hub")).toBeInTheDocument();
+    // A etiqueta Hub / White-label saiu da linha (13/11/2026): quem diz a origem é o filtro.
+    expect(within(tabela).queryByText("White-label")).not.toBeInTheDocument();
+    expect(within(tabela).queryByText("Hub")).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Origem da reserva" })).toBeInTheDocument();
-    expect(screen.getByText("Reserva online")).toBeInTheDocument();
     expect(screen.getByText(/150,50/)).toBeInTheDocument();
+  });
+
+  it("data de criação e canal ficam em colunas separadas", () => {
+    setup({ hasWl: true, rows: [site()] });
+    const cabecalhos = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(cabecalhos.indexOf("Canal")).toBe(cabecalhos.indexOf("Criada em") + 1);
+    const celula = screen.getByText("Reserva online").closest("td")!;
+    expect(celula.textContent).toBe("Reserva online");
   });
 
   it("pagina pelo servidor", async () => {

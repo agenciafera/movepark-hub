@@ -37,7 +37,11 @@ type Props = {
   onRowClick?: (booking: BookingWithRelations) => void;
   onWlRowClick?: (wl: WlListRow) => void;
   showCompany?: boolean;
-  /** Etiqueta Hub / White-label. Só para quem tem white-label (reservas-unificadas-hub-wl.md § 2). */
+  /**
+   * A empresa tem white-label (reservas-unificadas-hub-wl.md § 2). Sem ele, o canal "White-label" de
+   * uma reserva do Hub não aparece. A etiqueta Hub / White-label saiu da linha em 13/11/2026: o
+   * filtro de origem e a coluna Canal já dizem de onde a reserva veio.
+   */
   showSource?: boolean;
   /** Texto do estado vazio quando há filtro ligado (a tela sabe; a tabela não). */
   emptyDescription?: string;
@@ -111,20 +115,16 @@ function BookingCell({
       return (
         <TableCell className="whitespace-nowrap">
           <div className="font-mono text-caption text-ink">{v.code}</div>
-          {v.sourceLabel && (
-            <Badge tone={v.source === "wl" ? "active" : "neutral"} className="mt-1">
-              {v.sourceLabel}
-            </Badge>
-          )}
         </TableCell>
       );
     case "created":
       return (
         <TableCell className="whitespace-nowrap">
-          <div className="tabular-nums text-ink">{formatDateTime(v.createdAt)}</div>
-          {v.channel && <div className="text-caption text-muted">{v.channel}</div>}
+          <span className="tabular-nums text-ink">{formatDateTime(v.createdAt)}</span>
         </TableCell>
       );
+    case "channel":
+      return <TableCell className="text-ink">{v.channel ?? "-"}</TableCell>;
     case "customer":
       return <TableCell className="text-ink">{v.customer ?? "-"}</TableCell>;
     case "parking":
@@ -241,9 +241,10 @@ function VoucherCell({ row, voucher }: { row: UnifiedBookingRow; voucher: Vouche
 }
 
 /**
- * A lista de reservas do Manager, do Operator e do dashboard (04/10/2026). Oito colunas em vez de
- * nove: empresa e unidade viram "Estacionamento", check-in, check-out e dias viram "Estadia", e
- * entram "Criada em" (com o canal da venda) e "Pagamento" (a forma e o estado do dinheiro).
+ * A lista de reservas do Manager, do Operator e do dashboard (04/10/2026). Empresa e unidade viram
+ * "Estacionamento", check-in, check-out e dias viram "Estadia", e entram "Criada em", "Canal" e
+ * "Pagamento" (a forma e o estado do dinheiro). Data e canal ficavam empilhados na mesma célula e
+ * confundiam quem lia; desde 13/11/2026 são colunas separadas.
  */
 export function BookingTable({
   bookings,

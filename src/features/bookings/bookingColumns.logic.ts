@@ -7,12 +7,15 @@
  * juntar a escolha salva com ele.
  *
  * A escolha salva é tratada como dado velho por natureza: coluna que deixou de existir é
- * descartada, e coluna nova (que a pessoa nunca viu) entra no fim com a visibilidade padrão dela.
+ * descartada, e coluna nova (que a pessoa nunca viu) entra logo depois da vizinha que vem antes
+ * dela no catálogo, com a visibilidade padrão dela. Foi o caso de "Canal" (13/11/2026), que saiu de
+ * dentro de "Criada em" e tem que aparecer ao lado dela, não no fim da tabela.
  */
 
 export type BookingColumnId =
   | "code"
   | "created"
+  | "channel"
   | "customer"
   | "parking"
   | "stay"
@@ -38,6 +41,7 @@ export type BookingColumnDef = {
 export const BOOKING_COLUMNS: BookingColumnDef[] = [
   { id: "code", label: "Reserva", defaultVisible: true, locked: true },
   { id: "created", label: "Criada em", defaultVisible: true },
+  { id: "channel", label: "Canal", defaultVisible: true },
   { id: "customer", label: "Cliente", defaultVisible: true },
   { id: "parking", label: "Estacionamento", defaultVisible: true },
   { id: "stay", label: "Estadia", defaultVisible: true },
@@ -85,10 +89,15 @@ export function resolveColumnSettings(saved: unknown): ColumnSetting[] {
     const visible = (item as { visible?: unknown }).visible;
     out.push({ id: cid, visible: def.locked ? true : visible !== false });
   }
-  // Coluna nova no catálogo: entra no fim, com a visibilidade padrão.
-  for (const c of BOOKING_COLUMNS) {
-    if (!seen.has(c.id)) out.push({ id: c.id, visible: c.defaultVisible });
-  }
+  // Coluna nova no catálogo: entra depois da vizinha anterior (ou no começo, se for a primeira),
+  // com a visibilidade padrão.
+  BOOKING_COLUMNS.forEach((c, i) => {
+    if (seen.has(c.id)) return;
+    const anterior = i > 0 ? BOOKING_COLUMNS[i - 1]!.id : null;
+    const pos = anterior ? out.findIndex((s) => s.id === anterior) + 1 : 0;
+    out.splice(pos, 0, { id: c.id, visible: c.defaultVisible });
+    seen.add(c.id);
+  });
   return out;
 }
 
@@ -144,6 +153,8 @@ export function columnHeader(
       return "Reserva";
     case "created":
       return "Criada em";
+    case "channel":
+      return "Canal";
     case "customer":
       return "Cliente";
     case "parking":

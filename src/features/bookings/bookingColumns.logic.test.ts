@@ -17,6 +17,7 @@ describe("colunas da lista de reservas", () => {
     expect(ids).toEqual([
       "code",
       "created",
+      "channel",
       "customer",
       "parking",
       "stay",
@@ -37,22 +38,52 @@ describe("colunas da lista de reservas", () => {
         { id: "created", visible: false },
       ],
     });
-    expect(visibleColumnIds(s).slice(0, 3)).toEqual(["status", "code", "plate"]);
+    const salvas = ["status", "code", "plate"];
+    expect(visibleColumnIds(s).filter((id) => salvas.includes(id))).toEqual(salvas);
     expect(visibleColumnIds(s)).not.toContain("created");
   });
 
-  it("coluna que não existe mais some; coluna nova entra no fim com o padrão dela", () => {
+  it("coluna que não existe mais some; as que faltam entram ao lado da vizinha do catálogo", () => {
     const s = resolveColumnSettings({
       columns: [
         { id: "sumiu", visible: true },
         { id: "status", visible: true },
       ],
     });
-    expect(s.map((c) => c.id)).toEqual([
-      "status",
-      ...BOOKING_COLUMNS.map((c) => c.id).filter((id) => id !== "status"),
-    ]);
+    expect(s.map((c) => c.id)).not.toContain("sumiu");
+    expect(s.map((c) => c.id).sort()).toEqual(BOOKING_COLUMNS.map((c) => c.id).sort());
     expect(s.find((c) => c.id === "plate")!.visible).toBe(false);
+  });
+
+  it("quem salvou antes de existir Canal ganha a coluna logo depois de Criada em", () => {
+    // Escolha gravada antes de 13/11/2026: todas as colunas de então, sem "channel", com a ordem
+    // mexida e a placa ligada.
+    const antigas = [
+      "code",
+      "customer",
+      "created",
+      "status",
+      "plate",
+      "parking",
+      "stay",
+      "payment",
+      "value",
+      "voucher",
+      "phone",
+      "email",
+    ];
+    const s = resolveColumnSettings({
+      version: 1,
+      columns: antigas.map((id) => ({ id, visible: !["phone", "email"].includes(id) })),
+    });
+    expect(s.map((c) => c.id)).toEqual([
+      "code",
+      "customer",
+      "created",
+      "channel",
+      ...antigas.slice(3),
+    ]);
+    expect(s.find((c) => c.id === "channel")!.visible).toBe(true);
   });
 
   it("preferência estragada vira o padrão, sem quebrar a tela", () => {
@@ -85,6 +116,12 @@ describe("colunas da lista de reservas", () => {
     expect(isDefaultSettings(d)).toBe(true);
     expect(isDefaultSettings(toggleColumn(d, "plate"))).toBe(false);
     expect(toPref(d)).toEqual({ version: 1, columns: d });
+  });
+
+  it("data e canal têm cabeçalhos próprios", () => {
+    const o = { showCompany: false, valueMode: "parking" as const };
+    expect(columnHeader("created", o)).toBe("Criada em");
+    expect(columnHeader("channel", o)).toBe("Canal");
   });
 
   it("o cabeçalho segue a tela: Unidade e Diárias no Operator", () => {

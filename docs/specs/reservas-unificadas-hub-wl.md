@@ -22,8 +22,10 @@ funcionalidades dele para cá, não acabar com a categoria.
 
 Três regras guiam tudo abaixo:
 
-1. **Uma lista só.** Reservas do Hub e do white-label aparecem juntas, com uma etiqueta de origem
-   (Hub / White-label). Não existe aba separada.
+1. **Uma lista só.** Reservas do Hub e do white-label aparecem juntas, com um filtro de origem
+   (Todas / Hub / White-label). Não existe aba separada. A etiqueta Hub / White-label embaixo do
+   código saiu da linha em 13/11/2026, porque confundia o parceiro: quem diz de onde a reserva veio
+   é o filtro e a coluna Canal. A origem continua na exportação (coluna "Origem").
 2. **Faturamento separado por origem.** Relatórios e indicadores sempre distinguem o que é
    faturamento do Hub e o que é do white-label.
 3. **Quem não tem white-label não vê nada dele.** Nem etiqueta, nem filtro, nem coluna, nem linha de
@@ -98,10 +100,10 @@ que enxergam. Etiqueta, filtro de origem, tooltip da ocupação, origem no card 
 
 | Coluna da lista | Reserva do Hub (`booking`) | Reserva do white-label (`wl_booking`) |
 |---|---|---|
-| Origem | etiqueta **Hub** | etiqueta **White-label** |
+| Origem | só no filtro e na exportação: **Hub** | só no filtro e na exportação: **White-label** |
 | Reserva | `code` (ex.: MP-8C497E) | `wl_order_number` (ex.: 261009-0025) |
 | Criada em | `created_at` | `wl_created_at` |
-| Canal | `origin` (site, WhatsApp, API) | `origin` do legado (reserva online, WhatsApp bot) |
+| Canal (coluna própria desde 13/11/2026; antes ficava embaixo da data, em "Criada em") | `origin` (site, WhatsApp, API) | `origin` do legado (reserva online, WhatsApp bot) |
 | Cliente | snapshot `customer_name` | `customer_name` |
 | Telefone | `customer_phone` | `customer_phone` |
 | Unidade / Vaga | `location`, tipo de vaga | via De/Para (`location_parking_type_id`); 32 sem vaga |
