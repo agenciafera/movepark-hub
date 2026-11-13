@@ -3,9 +3,11 @@
 **Épico:** E0.3.14 (continuação de [repasse-automatico-mensal.md](./repasse-automatico-mensal.md) e
 [comissao-por-origem.md](./comissao-por-origem.md)).
 **Estado:** implementado em 13/11/2026 (plano em
-`docs/superpowers/plans/2026-11-13-antecipacao-do-parceiro.md`). No ar, a antecipação só está ligada
-na Agência Fera (empresa nossa, para os gates); as demais empresas seguem desligadas até ordem do
-Kallef. Gates G3 e G4 dependem de venda e estorno reais.
+`docs/superpowers/plans/2026-11-13-antecipacao-do-parceiro.md`). **Ligada em 13/11/2026, por
+ordem do Kallef, em todas as empresas com recebedor no gateway:** Abbapark, BePark, Nationpark,
+Pare Seguro e Agência Fera, conferido na Pagar.me (`1025`, 100%, 29 dias, todos os dias). Quem paga
+segue o padrão (Movepark). A Virapark ficou de fora: o recebedor dela não existe na Pagar.me
+("Recipient not found"). Gates G3 e G4 dependem de venda e estorno reais.
 
 ## O problema, medido
 
