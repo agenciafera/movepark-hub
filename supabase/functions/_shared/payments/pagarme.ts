@@ -7,6 +7,9 @@
 // completos (endereço, sócios, nascimento, etc.) são coletados em E1.3.
 
 import type {
+  AnticipationLimits,
+  AnticipationRequest,
+  AnticipationResult,
   AnticipationSettings,
   CardChargeInput,
   ChargeResult,
@@ -281,6 +284,7 @@ export function buildRecipientResult(httpStatus: number, body: unknown): Recipie
     requirements,
     raw: body,
     httpStatus,
+    anticipationSettings: readAnticipationSettings(body),
   };
 }
 
@@ -490,6 +494,55 @@ export function buildRefundResult(httpStatus: number, body: unknown): RefundResu
     ...(txFailed ? { failureMessages } : {}),
     raw: body,
     httpStatus,
+  };
+}
+
+// ── Antecipação (E0.3.14) ───────────────────────────────────────────────────
+
+const numOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const strOrNull = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
+
+export function buildAnticipationResult(httpStatus: number, body: unknown): AnticipationResult {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  return {
+    id: strOrNull(b.id),
+    status: strOrNull(b.status),
+    type: strOrNull(b.type),
+    amountCents: numOrNull(b.amount),
+    anticipationFeeCents: numOrNull(b.anticipation_fee),
+    feeCents: numOrNull(b.fee),
+    paymentDate: strOrNull(b.payment_date),
+    timeframe: strOrNull(b.timeframe),
+    raw: body,
+    httpStatus,
+  };
+}
+
+export function buildAnticipationLimits(httpStatus: number, body: unknown): AnticipationLimits {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const max = (b.maximum && typeof b.maximum === "object" ? b.maximum : {}) as Record<string, unknown>;
+  return {
+    maxAmountCents: numOrNull(max.amount),
+    maxAnticipationFeeCents: numOrNull(max.anticipation_fee),
+    raw: body,
+    httpStatus,
+  };
+}
+
+/** Lê `automatic_anticipation_settings` da resposta do recebedor. A Pagar.me às vezes manda texto. */
+export function readAnticipationSettings(body: unknown): AnticipationSettings | null {
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const s = b.automatic_anticipation_settings as Record<string, unknown> | undefined;
+  if (!s || typeof s !== "object") return null;
+  const days = Array.isArray(s.days)
+    ? (s.days as unknown[]).filter((d): d is number => typeof d === "number")
+    : null;
+  return {
+    enabled: s.enabled === true || s.enabled === "true",
+    type: strOrNull(s.type) ?? "full",
+    volumePercentage: Number(s.volume_percentage ?? 0) || 0,
+    delay: s.delay == null || s.delay === "null" ? null : Number(s.delay),
+    days: days && days.length ? days : null,
   };
 }
 
@@ -911,5 +964,47 @@ export class PagarmeGateway implements PaymentGateway {
       `/payables?charge_id=${encodeURIComponent(chargeId)}&size=1000`,
     );
     return buildPayablesResult(httpStatus, parsed);
+  }
+
+  async getAnticipationLimits(recipientId: string): Promise<AnticipationLimits> {
+    const { httpStatus, parsed } = await this.rawFetch(
+      "GET",
+      `/recipients/${encodeURIComponent(recipientId)}/bulk_anticipations/limits`,
+    );
+    return buildAnticipationLimits(httpStatus, parsed);
+  }
+
+  async simulateAnticipation(input: AnticipationRequest): Promise<AnticipationResult> {
+    const { httpStatus, parsed } = await this.rawFetch(
+      "POST",
+      `/recipients/${encodeURIComponent(input.recipientId)}/bulk_anticipations/simulate`,
+      { timeframe: input.timeframe, requested_amount: input.requestedCents },
+    );
+    return buildAnticipationResult(httpStatus, parsed);
+  }
+
+  async createAnticipation(input: AnticipationRequest): Promise<AnticipationResult> {
+    const body: Record<string, unknown> = {
+      timeframe: input.timeframe,
+      requested_amount: input.requestedCents,
+      automatic_transfer: false,
+    };
+    if (input.paymentDate) body.payment_date = input.paymentDate;
+    const { httpStatus, parsed } = await this.rawFetch(
+      "POST",
+      `/recipients/${encodeURIComponent(input.recipientId)}/bulk_anticipations`,
+      body,
+    );
+    return buildAnticipationResult(httpStatus, parsed);
+  }
+
+  async listAnticipations(recipientId: string): Promise<AnticipationResult[]> {
+    const { httpStatus, parsed } = await this.rawFetch(
+      "GET",
+      `/recipients/${encodeURIComponent(recipientId)}/bulk_anticipations?size=100`,
+    );
+    const b = (parsed && typeof parsed === "object" ? parsed : {}) as Record<string, unknown>;
+    const rows = Array.isArray(b.data) ? (b.data as unknown[]) : [];
+    return rows.map((r) => buildAnticipationResult(httpStatus, r));
   }
 }

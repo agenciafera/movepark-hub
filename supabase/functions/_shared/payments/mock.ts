@@ -2,6 +2,9 @@
 // Útil para testes da camada de vínculo e para ambientes sem credencial de gateway.
 
 import type {
+  AnticipationLimits,
+  AnticipationRequest,
+  AnticipationResult,
   CardChargeInput,
   ChargeResult,
   PayablesResult,
@@ -110,6 +113,38 @@ export class MockGateway implements PaymentGateway {
   /** O mock não tem gateway, logo não tem recebível nem taxa. */
   listPayables(): Promise<PayablesResult> {
     return Promise.resolve({ payables: [], raw: null, httpStatus: 200 });
+  }
+
+  /** O mock não antecipa: limite zero e antecipação sintética aprovada sem taxa. */
+  getAnticipationLimits(): Promise<AnticipationLimits> {
+    return Promise.resolve({ maxAmountCents: 0, maxAnticipationFeeCents: 0, raw: { mock: true }, httpStatus: 200 });
+  }
+
+  private mockAnticipation(input: AnticipationRequest): AnticipationResult {
+    return {
+      id: "mock_ba",
+      status: "approved",
+      type: "spot",
+      amountCents: input.requestedCents,
+      anticipationFeeCents: 0,
+      feeCents: 0,
+      paymentDate: null,
+      timeframe: input.timeframe,
+      raw: { mock: true },
+      httpStatus: 200,
+    };
+  }
+
+  simulateAnticipation(input: AnticipationRequest): Promise<AnticipationResult> {
+    return Promise.resolve(this.mockAnticipation(input));
+  }
+
+  createAnticipation(input: AnticipationRequest): Promise<AnticipationResult> {
+    return Promise.resolve(this.mockAnticipation(input));
+  }
+
+  listAnticipations(): Promise<AnticipationResult[]> {
+    return Promise.resolve([]);
   }
 
 

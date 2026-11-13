@@ -125,6 +125,8 @@ export interface RecipientResult {
   raw: unknown;
   /** Status HTTP da chamada, para o evento de auditoria. */
   httpStatus: number | null;
+  /** Antecipação automática configurada no recebedor (E0.3.14), quando o gateway devolve. */
+  anticipationSettings?: AnticipationSettings | null;
 }
 
 // ── Cobrança (E0.1.2: PIX com split) ────────────────────────────────────────
@@ -355,6 +357,42 @@ export interface RecipientBalance {
   httpStatus: number | null;
 }
 
+// ── Antecipação pontual (E0.3.14) ───────────────────────────────────────────
+
+/** Antecipação pontual (bulk_anticipations) ou automática, normalizada. */
+export interface AnticipationResult {
+  id: string | null;
+  /** pending | pre_approved | approved | refused | canceled. */
+  status: string | null;
+  /** spot | automatic. */
+  type: string | null;
+  amountCents: number | null;
+  anticipationFeeCents: number | null;
+  feeCents: number | null;
+  paymentDate: string | null;
+  timeframe: string | null;
+  raw: unknown;
+  httpStatus: number | null;
+}
+
+/** Máximo antecipável agora. O mínimo foi descontinuado pela Pagar.me. */
+export interface AnticipationLimits {
+  maxAmountCents: number | null;
+  maxAnticipationFeeCents: number | null;
+  raw: unknown;
+  httpStatus: number | null;
+}
+
+export interface AnticipationRequest {
+  recipientId: string;
+  /** Valor líquido que se quer receber, em centavos. */
+  requestedCents: number;
+  /** start = recebíveis mais próximos; end = mais distantes. */
+  timeframe: "start" | "end";
+  /** ISO yyyy-mm-dd; ausente = o gateway decide. */
+  paymentDate?: string;
+}
+
 /** Contrato que todo gateway de pagamento deve implementar. */
 export interface PaymentGateway {
   readonly provider: string;
@@ -392,6 +430,14 @@ export interface PaymentGateway {
     externalId: string,
     settings: AnticipationSettings,
   ): Promise<RecipientResult>;
+  /** Máximo antecipável agora (GET bulk_anticipations/limits). */
+  getAnticipationLimits(recipientId: string): Promise<AnticipationLimits>;
+  /** Simula uma antecipação pontual sem criar (POST bulk_anticipations/simulate). */
+  simulateAnticipation(input: AnticipationRequest): Promise<AnticipationResult>;
+  /** Cria a antecipação pontual (POST bulk_anticipations). */
+  createAnticipation(input: AnticipationRequest): Promise<AnticipationResult>;
+  /** Lista as antecipações do recebedor, para conciliar status. */
+  listAnticipations(recipientId: string): Promise<AnticipationResult[]>;
 }
 
 /** Erro de configuração do gateway (ex.: secret ausente) — separado de erro de negócio. */

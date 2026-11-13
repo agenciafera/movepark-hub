@@ -702,3 +702,48 @@ Deno.test("invalidCardField: aponta o dado do cartão que o adquirente recusou",
   assertEquals(invalidCardField(["The item Code is required."]), null);
   assertEquals(invalidCardField(["At least one customer phone number is required"]), null);
 });
+
+// ── Antecipação (E0.3.14) ───────────────────────────────────────────────────
+import { buildAnticipationLimits, buildAnticipationResult, readAnticipationSettings } from "./pagarme.ts";
+
+Deno.test("antecipação pontual: normaliza a resposta da Pagar.me", () => {
+  const r = buildAnticipationResult(200, {
+    id: "ba_1",
+    status: "approved",
+    amount: 100000,
+    fee: 5000,
+    anticipation_fee: 3000,
+    type: "spot",
+    timeframe: "start",
+    payment_date: "2026-11-16T00:00:00.000Z",
+  });
+  assertEquals(r.id, "ba_1");
+  assertEquals(r.anticipationFeeCents, 3000);
+  assertEquals(r.paymentDate, "2026-11-16T00:00:00.000Z");
+});
+
+Deno.test("limites: lê só o máximo (o mínimo foi descontinuado)", () => {
+  const l = buildAnticipationLimits(200, { maximum: { amount: 79652, anticipation_fee: 2953, fee: 0 } });
+  assertEquals(l.maxAmountCents, 79652);
+  assertEquals(l.maxAnticipationFeeCents, 2953);
+});
+
+Deno.test("configuração do recebedor: enabled/type/volume/delay", () => {
+  assertEquals(
+    readAnticipationSettings({
+      automatic_anticipation_settings: { enabled: false, type: "full", volume_percentage: 0, delay: 365 },
+    }),
+    { enabled: false, type: "full", volumePercentage: 0, delay: 365, days: null },
+  );
+  assertEquals(readAnticipationSettings({}), null);
+});
+
+Deno.test("recebedor lido traz a configuração de antecipação", async () => {
+  const { buildRecipientResult } = await import("./pagarme.ts");
+  const r = buildRecipientResult(200, {
+    id: "re_1",
+    status: "active",
+    automatic_anticipation_settings: { enabled: true, type: "full", volume_percentage: 100, delay: 29 },
+  });
+  assertEquals(r.anticipationSettings?.delay, 29);
+});
