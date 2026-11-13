@@ -31,3 +31,23 @@ const RECUO_HORAS = 6;
 export function feeRetryCutoffIso(nowMs: number): string {
   return new Date(nowMs - RECUO_HORAS * 60 * 60_000).toISOString();
 }
+
+// ── Releitura depois da antecipação (E0.3.14) ───────────────────────────────
+
+/** A antecipação de 30 dias acontece um dia útil antes da 1ª parcela (~D+29); 31 dias dá folga. */
+export function rereadCutoffIso(nowMs: number): string {
+  return new Date(nowMs - 31 * 24 * 60 * 60_000).toISOString();
+}
+
+/**
+ * Crédito que a releitura lança (regra de 13/11/2026): toda taxa de antecipação da Movepark que
+ * caiu no estacionamento e a compensação enviada no split não cobriu.
+ */
+export function anticipationShortfallCents(a: {
+  payer: "movepark" | "partner";
+  partnerFeeCents: number;
+  compCents: number | null;
+}): number {
+  if (a.payer !== "movepark") return 0;
+  return Math.max(0, Math.floor(a.partnerFeeCents) - Math.max(0, Math.floor(a.compCents ?? 0)));
+}

@@ -14,16 +14,22 @@
 // a reserva, para apurar a taxa daquela cobrança na hora, sem esperar a volta do cron (30 min) nem
 // o atraso de 10 min da varredura: o recebível costuma existir segundos depois do `charge.paid`.
 //
+// Fase 2 (E0.3.14, só na porta do cron): relê UMA vez cada cobrança de cartão paga há mais de 31
+// dias (`anticipation_reread_at` nulo), depois da antecipação, e grava a taxa total real, a taxa de
+// antecipação por perna e o crédito do estacionamento quando a Movepark devia pagar e a
+// compensação do split não cobriu. Spec: docs/specs/antecipacao-do-parceiro.md
+//
 // POST /functions/v1/reconcile-gateway-fees   (header: x-reconcile-gateway-fees-key: <chave> | Authorization: Bearer <jwt hub_admin>)
 // { booking_id? }   só na porta do hub_admin
-// → { ok, checked, updated }
+// → { ok, checked, updated, reread }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { partnerReleaseAt, totalGatewayFeeCents } from "../_shared/payments/fees.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { partnerRule } from "../_shared/payments/split.ts";
-import { BATCH_LIMIT, feeRetryCutoffIso, feeWindowIso } from "./logic.ts";
+import { anticipationShortfallCents, BATCH_LIMIT, feeRetryCutoffIso, feeWindowIso, rereadCutoffIso } from "./logic.ts";
+import { anticipationFeesByRecipient } from "../_shared/payments/anticipation.ts";
 
 // CORS porque a porta do hub_admin é chamada do navegador.
 const corsHeaders = {
@@ -148,5 +154,65 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ ok: true, checked: payments?.length ?? 0, updated });
+  // Fase 2 (E0.3.14): releitura única depois da antecipação. A primeira leitura acontece segundos
+  // depois do pagamento, antes de a Pagar.me antecipar (~D+29), e por isso não traz essa taxa. Só
+  // na porta do cron: a do hub_admin é a leitura de uma reserva, na hora.
+  let reread = 0;
+  if (pelaChave) {
+    const { data: masterRow } = await admin
+      .from("app_setting")
+      .select("value")
+      .eq("key", "pagarme_movepark_recipient_id")
+      .maybeSingle();
+    const masterId = (masterRow?.value ?? "").trim();
+    const { data: antigas, error: antigasErr } = await admin
+      .from("payment")
+      .select("id, booking_id, provider_charge_id, anticipation_comp_cents, anticipation_credit_cents, booking:booking_id(commission_anticipation_payer)")
+      .eq("provider", "pagarme")
+      .eq("method", "card")
+      .eq("status", "paid")
+      .is("anticipation_reread_at", null)
+      .not("provider_charge_id", "is", null)
+      .lt("paid_at", rereadCutoffIso(Date.now()))
+      .order("paid_at", { ascending: true })
+      .limit(BATCH_LIMIT);
+    if (antigasErr) console.error("[reconcile-gateway-fees] releitura: select falhou", antigasErr.message);
+    for (const p of antigas ?? []) {
+      if (!p.provider_charge_id || !masterId) continue;
+      try {
+        const result = await gateway.listPayables(p.provider_charge_id);
+        const fee = totalGatewayFeeCents(result.payables);
+        const ant = anticipationFeesByRecipient(result.payables, masterId);
+        const bk = (Array.isArray(p.booking) ? p.booking[0] : p.booking) as { commission_anticipation_payer?: string | null } | null;
+        const payer = bk?.commission_anticipation_payer === "partner" ? "partner" : "movepark";
+        const falta = anticipationShortfallCents({ payer, partnerFeeCents: ant.partnerCents, compCents: p.anticipation_comp_cents });
+        await logGatewayEvent(admin, {
+          paymentId: p.id,
+          bookingId: p.booking_id ?? null,
+          kind: "payables",
+          httpStatus: result.httpStatus,
+          request: { charge_id: p.provider_charge_id, reread: true },
+          response: result.raw,
+          note: `releitura · antecipação parceiro ${ant.partnerCents} c, Movepark ${ant.moveparkCents} c · crédito ${falta} c`,
+        });
+        await admin
+          .from("payment")
+          .update({
+            ...(fee == null ? {} : { gateway_fee_cents: fee }),
+            anticipation_fee_partner_cents: ant.partnerCents,
+            anticipation_fee_movepark_cents: ant.moveparkCents,
+            // Soma à parte que não coube no split na cobrança; a trava de reread_at impede somar duas vezes.
+            anticipation_credit_cents: (p.anticipation_credit_cents ?? 0) + falta,
+            anticipation_reread_at: new Date().toISOString(),
+          })
+          .eq("id", p.id)
+          .is("anticipation_reread_at", null);
+        reread += 1;
+      } catch (e) {
+        console.error("[reconcile-gateway-fees] releitura falhou em", p.provider_charge_id, e);
+      }
+    }
+  }
+
+  return json({ ok: true, checked: payments?.length ?? 0, updated, reread });
 });

@@ -42,3 +42,18 @@ Deno.test("feeRetryCutoffIso: o recuo cabe dentro da janela de 90 dias", () => {
   const agora = Date.now();
   assertEquals(Date.parse(feeRetryCutoffIso(agora)) > Date.parse(feeWindowIso(agora).since), true);
 });
+
+// ── Releitura depois da antecipação (E0.3.14) ───────────────────────────────
+import { anticipationShortfallCents, rereadCutoffIso } from "./logic.ts";
+
+Deno.test("releitura: só cobrança paga há mais de 31 dias", () => {
+  const now = Date.parse("2026-11-13T12:00:00Z");
+  assertEquals(rereadCutoffIso(now), "2026-10-13T12:00:00.000Z");
+});
+
+Deno.test("falta da compensação vira crédito só com pagador Movepark", () => {
+  assertEquals(anticipationShortfallCents({ payer: "movepark", partnerFeeCents: 450, compCents: 437 }), 13);
+  assertEquals(anticipationShortfallCents({ payer: "movepark", partnerFeeCents: 400, compCents: 437 }), 0);
+  assertEquals(anticipationShortfallCents({ payer: "movepark", partnerFeeCents: 55, compCents: null }), 55);
+  assertEquals(anticipationShortfallCents({ payer: "partner", partnerFeeCents: 450, compCents: null }), 0);
+});
