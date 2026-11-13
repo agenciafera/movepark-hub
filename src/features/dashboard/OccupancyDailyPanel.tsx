@@ -1,8 +1,8 @@
 import {
-  Bar,
+  Area,
+  AreaChart,
   CartesianGrid,
-  ComposedChart,
-  Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,15 +19,15 @@ const int = (n: number) => n.toLocaleString("pt-BR");
 const pct = (n: number) => `${n.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`;
 const dia = (d: string) => new Date(`${d}T12:00:00`);
 
-const SERIE_NOME: Record<string, string> = {
-  hub: "Hub",
-  wl: "White-label",
-  capacity: "Capacidade",
+const SERIE: Record<string, { nome: string; carros: "hub" | "wl" }> = {
+  hubPct: { nome: "Hub", carros: "hub" },
+  wlPct: { nome: "White-label", carros: "wl" },
 };
 
 /**
- * Ocupação por dia (13/11/2026): os carros no pátio em cada dia do recorte, empilhados por origem,
- * contra a capacidade. Serve ao dashboard do parceiro e ao do Manager. A série vem pronta de
+ * Ocupação por dia (13/11/2026): no mesmo formato do gráfico de receita por dia, uma área por dia
+ * com a taxa de ocupação, Hub e site empilhados nas cores da receita, e a linha tracejada dos 100%
+ * marcando a capacidade. Serve ao dashboard do parceiro e ao do Manager. A série vem pronta de
  * `occupancyDaySeries`; `stacked` diz se a tela mostra as duas origens (com legenda) ou uma só.
  */
 export function OccupancyDailyPanel({
@@ -73,7 +73,7 @@ export function OccupancyDailyPanel({
           <Legenda cor="hsl(var(--mp-primary))">Hub</Legenda>
           <Legenda cor="hsl(var(--mp-teal))">White-label</Legenda>
           <Legenda cor="hsl(var(--muted-soft))" tracejado>
-            Capacidade
+            Capacidade (100%)
           </Legenda>
         </div>
       )}
@@ -95,7 +95,13 @@ export function OccupancyDailyPanel({
           />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="ocupacao-hub" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--mp-primary))" stopOpacity={0.22} />
+                  <stop offset="100%" stopColor="hsl(var(--mp-primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 stroke="hsl(var(--hairline-soft))"
                 strokeDasharray="4 4"
@@ -111,53 +117,60 @@ export function OccupancyDailyPanel({
                 axisLine={false}
               />
               <YAxis
-                allowDecimals={false}
-                tickFormatter={(v: number) => int(v)}
+                domain={[0, (max: number) => Math.max(100, Math.ceil(max / 10) * 10)]}
+                tickFormatter={(v: number) => pct(v)}
                 tick={{ fontSize: 11 }}
                 stroke="hsl(var(--muted-soft))"
                 width={48}
                 tickLine={false}
                 axisLine={false}
               />
+              <ReferenceLine
+                y={100}
+                stroke="hsl(var(--muted-soft))"
+                strokeDasharray="5 4"
+                strokeWidth={1.5}
+              />
               <Tooltip
-                formatter={(v: number, name: string) => [
-                  name === "capacity" ? `${int(v)} vagas` : `${int(v)} carros`,
-                  SERIE_NOME[name] ?? name,
-                ]}
+                formatter={(v: number, key: string, item: { payload?: OccupancyDayPoint }) => {
+                  const serie = SERIE[key];
+                  const carros = item.payload && serie ? item.payload[serie.carros] : 0;
+                  return [`${int(carros)} carros (${pct(v)})`, serie?.nome ?? key];
+                }}
                 labelFormatter={(d: string) => {
                   const p = points.find((x) => x.date === d);
                   const data = format(dia(d), "d 'de' MMMM", { locale: ptBR });
-                  return p?.rate != null ? `${data}, ${pct(p.rate)} ocupado` : data;
+                  return p?.rate != null
+                    ? `${data}: ${pct(p.rate)} ocupado, ${int(p.total)} de ${int(p.capacity)} vagas`
+                    : data;
                 }}
               />
-              <Bar
-                dataKey="hub"
+              <Area
+                type="monotone"
+                dataKey="hubPct"
                 stackId="origem"
-                fill="hsl(var(--mp-primary))"
-                radius={stacked ? undefined : [3, 3, 0, 0]}
-                maxBarSize={28}
+                stroke="hsl(var(--mp-primary))"
+                strokeWidth={2.5}
+                fill="url(#ocupacao-hub)"
+                dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
+                activeDot={{ r: 5 }}
+                connectNulls
               />
               {stacked && (
-                <Bar
-                  dataKey="wl"
+                <Area
+                  type="monotone"
+                  dataKey="wlPct"
                   stackId="origem"
+                  stroke="hsl(var(--mp-navy))"
+                  strokeWidth={2}
                   fill="hsl(var(--mp-teal))"
-                  radius={[3, 3, 0, 0]}
-                  maxBarSize={28}
-                />
-              )}
-              {s.hasCapacity && (
-                <Line
-                  type="stepAfter"
-                  dataKey="capacity"
-                  stroke="hsl(var(--muted-soft))"
-                  strokeWidth={1.5}
-                  strokeDasharray="5 4"
+                  fillOpacity={0.45}
                   dot={false}
-                  activeDot={false}
+                  activeDot={{ r: 4 }}
+                  connectNulls
                 />
               )}
-            </ComposedChart>
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>

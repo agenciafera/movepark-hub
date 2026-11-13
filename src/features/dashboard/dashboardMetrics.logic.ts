@@ -227,6 +227,9 @@ export type OccupancyDayPoint = {
   wl: number;
   total: number;
   rate: number | null;
+  /** Parte de cada origem na taxa do dia, para empilhar no gráfico (null sem capacidade). */
+  hubPct: number | null;
+  wlPct: number | null;
 };
 
 /**
@@ -242,13 +245,16 @@ export function occupancyDaySeries(
     const wl = show.wl ? Number(r.wl ?? 0) : 0;
     const capacity = Number(r.capacity ?? 0);
     const total = hub + wl;
+    const pct = (n: number) => (capacity > 0 ? Math.round((n / capacity) * 1000) / 10 : null);
     return {
       date: r.date,
       capacity,
       hub,
       wl,
       total,
-      rate: capacity > 0 ? Math.round((total / capacity) * 1000) / 10 : null,
+      rate: pct(total),
+      hubPct: pct(hub),
+      wlPct: pct(wl),
     };
   });
 }

@@ -238,8 +238,17 @@ describe("ocupação e RevPAR", () => {
       { date: "2026-11-03", capacity: 0, hub: 0, wl: 4 },
     ];
     const pts = occupancyDaySeries(rows);
-    expect(pts[1]).toEqual({ date: "2026-11-02", capacity: 150, hub: 3, wl: 117, total: 120, rate: 80 });
-    expect(pts[2]!.rate).toBeNull();
+    expect(pts[1]).toEqual({
+      date: "2026-11-02",
+      capacity: 150,
+      hub: 3,
+      wl: 117,
+      total: 120,
+      rate: 80,
+      hubPct: 2,
+      wlPct: 78,
+    });
+    expect(pts[2]).toMatchObject({ rate: null, hubPct: null, wlPct: null });
     const s = occupancySummary(pts);
     expect(s.peak).toEqual({ date: "2026-11-02", rate: 80, total: 120 });
     // Dia sem capacidade fica fora da taxa: 150 carros em 300 vagas-dia.
