@@ -9,7 +9,6 @@ import { AGENDA_STATUSES } from "./operatorInsights.logic";
 import type {
   BookingWithRelations,
   DailyFlow,
-  LocationOccupancyRow,
   ManagerOverview,
 } from "@/types/domain";
 import type { Range } from "@/features/manager-filters/managerFilters.logic";
@@ -17,7 +16,7 @@ import {
   summarizeRanges,
   averageLeadTimeDays,
   channelMix,
-  aggregateOccupancy,
+  type OccupancyDayRow,
 } from "./dashboardMetrics.logic";
 
 /**
@@ -258,31 +257,29 @@ export function useHighDemandToday(locationIds?: string[]) {
 }
 
 /**
- * Ocupação agregada das unidades no escopo, num intervalo de datas. Chama a RPC
- * `operator_location_occupancy` (já segura, por unidade) e soma no cliente. Serve pra
- * ocupação do dashboard e pra base do RevPAR (capacidade-dia).
+ * Ocupação por dia, Hub e site white-label (13/11/2026), pela RPC `location_occupancy_daily`, que
+ * conta das próprias reservas e por isso cobre todo white-label, com ou sem a sincronização de
+ * disponibilidade. Sem `locationIds`, vale tudo o que a pessoa vê (a RPC recorta pelo acesso).
+ * `from` e `to` são datas (yyyy-MM-dd), as duas inclusas.
  */
-export function useOccupancyAgg(locationIds: string[] | undefined, from: string, to: string) {
+export function useOccupancyDaily(
+  locationIds: string[] | undefined,
+  from: string,
+  to: string,
+  enabled = true,
+) {
   return useQuery({
-    queryKey: ["dashboard", "occupancy-agg", locationIds, from, to],
-    enabled: !!locationIds?.length,
+    queryKey: ["dashboard", "occupancy-daily", locationIds ?? "todas", from, to],
+    enabled,
     staleTime: 30_000,
-    queryFn: async (): Promise<{ capacityDays: number; bookedDays: number; days: number }> => {
-      const results = await Promise.all(
-        (locationIds ?? []).map((id) =>
-          supabase.rpc("operator_location_occupancy", {
-            p_location_id: id,
-            p_from: from,
-            p_to: to,
-          }),
-        ),
-      );
-      const rows: LocationOccupancyRow[] = [];
-      for (const res of results) {
-        if (res.error) throw res.error;
-        rows.push(...((res.data ?? []) as LocationOccupancyRow[]));
-      }
-      return aggregateOccupancy(rows);
+    queryFn: async (): Promise<OccupancyDayRow[]> => {
+      const { data, error } = await supabase.rpc("location_occupancy_daily", {
+        p_from: from,
+        p_to: to,
+        ...(locationIds ? { p_location_ids: locationIds } : {}),
+      });
+      if (error) throw error;
+      return (data ?? []) as OccupancyDayRow[];
     },
   });
 }

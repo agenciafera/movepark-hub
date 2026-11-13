@@ -12,7 +12,7 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,7 +29,12 @@ import { formatRangeLabel, periodLabel } from "@/features/manager-filters/manage
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useManagerOverview, useManagerDailyFlow, todayIsoDate } from "./api";
+import {
+  useManagerOverview,
+  useManagerDailyFlow,
+  useOccupancyDaily,
+  todayIsoDate,
+} from "./api";
 import { useWlRevenue } from "@/features/finance/wlRevenue";
 import { useUrlFilters } from "@/lib/useUrlFilters";
 import {
@@ -42,7 +47,8 @@ import {
 import { SOURCE_OPTIONS, type SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { mergeDailyByOrigin, originBreakdown } from "./revenueByOrigin.logic";
 import { bestRevenueDay } from "./operatorInsights.logic";
-import { flowTotals, hourLabel } from "./dashboardMetrics.logic";
+import { flowTotals, hourLabel, occupancyDaySeries } from "./dashboardMetrics.logic";
+import { OccupancyDailyPanel } from "./OccupancyDailyPanel";
 import {
   concentration,
   dominantStay,
@@ -153,6 +159,13 @@ export default function ManagerDashboard() {
     porPagamento && verSite,
   );
   const flow =useManagerDailyFlow(flowDate, scopedLocationIds);
+  // Ocupação por dia (13/11/2026): Hub e site contados das reservas, para toda unidade. Segue o
+  // filtro de origem como a receita: com uma origem só, o gráfico mostra só ela.
+  const occ = useOccupancyDaily(
+    scopedLocationIds,
+    format(range.from, "yyyy-MM-dd"),
+    format(subDays(range.to, 1), "yyyy-MM-dd"),
+  );
   const recent = useRecentBookings(20, scopedLocationIds);
 
   const cur = overview.data?.current;
@@ -605,6 +618,13 @@ export default function ManagerDashboard() {
           </Panel>
         )}
       </div>
+
+      <OccupancyDailyPanel
+        points={occupancyDaySeries(occ.data ?? [], { hub: verHub, wl: verSite })}
+        isLoading={occ.isLoading}
+        rangeLabel={formatRangeLabel(range)}
+        stacked={origem === "all"}
+      />
 
       {!verHub && (
         <p className="text-body-sm text-muted" data-testid="aviso-so-hub">

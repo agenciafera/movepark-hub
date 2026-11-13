@@ -48,7 +48,7 @@ import {
   useOperatorPeriodSummary,
   useUpcomingBookingsCount,
   useHighDemandToday,
-  useOccupancyAgg,
+  useOccupancyDaily,
   useCompanyRevenueGoal,
   useSetRevenueGoal,
 } from "./api";
@@ -57,10 +57,11 @@ import {
   cancellationBenchmark,
   averageRating,
   pendingReviews,
-  occupancyPerDay,
-  occupancyRate,
+  occupancyDaySeries,
+  occupancySummary,
   revpar,
 } from "./dashboardMetrics.logic";
+import { OccupancyDailyPanel } from "./OccupancyDailyPanel";
 import {
   bestRevenueDay,
   conversion,
@@ -263,11 +264,15 @@ export default function OperatorDashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
   // Hoje + 6 = 7 dias. O intervalo da RPC é fechado nas duas pontas; com +7 eram 8 dias.
   const in7 = format(addDays(new Date(), 6), "yyyy-MM-dd");
-  const occ7 = useOccupancyAgg(occLocationIds, today, in7);
-  const occPeriod = useOccupancyAgg(
+  // Ocupação conta das próprias reservas, Hub e site (13/11/2026): cobre todo white-label, com ou
+  // sem a sincronização de disponibilidade, que deixava a Aerovalet zerada.
+  const temUnidades = !!occLocationIds?.length;
+  const occ7 = useOccupancyDaily(occLocationIds, today, in7, temUnidades);
+  const occPeriod = useOccupancyDaily(
     occLocationIds,
     format(range.from, "yyyy-MM-dd"),
     format(subDays(range.to, 1), "yyyy-MM-dd"),
+    temUnidades,
   );
 
   const cur = summary.data?.current;
@@ -305,9 +310,12 @@ export default function OperatorDashboard() {
   // Pagas no site white-label no mesmo recorte (só para quem tem; senão a barra fica como era).
   const channelWl = hasWl ? (wl?.paid ?? 0) : 0;
   const channelTotal = channel.site + channel.api + channelWl;
-  const occ7Day = occupancyPerDay(occ7.data ?? { capacityDays: 0, bookedDays: 0, days: 0 });
-  const occ7Rate = occupancyRate(occ7.data?.bookedDays ?? 0, occ7.data?.capacityDays ?? 0);
-  const revparValue = revpar(totalRevenue, occPeriod.data?.capacityDays ?? 0);
+  const occ7Sum = occupancySummary(occupancyDaySeries(occ7.data ?? []));
+  const occ7Day = occ7Sum.perDay;
+  const occ7Rate = occ7Sum.rate;
+  const occDaily = occupancyDaySeries(occPeriod.data ?? []);
+  const occPeriodSum = occupancySummary(occDaily);
+  const revparValue = revpar(totalRevenue, occPeriodSum.capacityDays);
   const label = periodLabel(period, range);
 
   const firstName = session?.firstName ?? "";
@@ -428,7 +436,7 @@ export default function OperatorDashboard() {
               <OccupancyGauge
                 rate={occ7Rate}
                 caption={
-                  occ7.data?.capacityDays
+                  occ7Sum.hasCapacity
                     ? `${int(occ7Day.occupied)} de ${int(occ7Day.capacity)} vagas, média por dia`
                     : "sem capacidade cadastrada"
                 }
@@ -447,7 +455,7 @@ export default function OperatorDashboard() {
             ))}
           </div>
           <p className="mt-3 text-caption leading-relaxed text-muted">
-            {occ7.data?.capacityDays
+            {occ7Sum.hasCapacity
               ? `Sobram ${int(occ7Day.free)} vagas por dia, em média, na próxima semana.`
               : "Cadastre a capacidade das unidades para acompanhar a ocupação."}
           </p>
@@ -610,6 +618,14 @@ export default function OperatorDashboard() {
         </Panel>
       </div>
 
+      {/* ===== Ocupação por dia, Hub e site (13/11/2026) ===== */}
+      <OccupancyDailyPanel
+        points={occDaily}
+        isLoading={occPeriod.isLoading || locations.isLoading}
+        rangeLabel={formatRangeLabel(range)}
+        stacked={hasWl}
+      />
+
       {/* ===== Linha 3: qualidade, indicadores e agenda ===== */}
       <div className="grid grid-cols-1 items-start gap-5 desktop:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
         <div className="flex flex-col gap-5">
@@ -638,7 +654,7 @@ export default function OperatorDashboard() {
             {canFinance && (
               <StatPanel
                 label="RevPAR"
-                value={occPeriod.data?.capacityDays ? formatBRL(revparValue) : "-"}
+                value={occPeriodSum.hasCapacity ? formatBRL(revparValue) : "-"}
                 hint="receita por vaga-dia disponível"
                 isLoading={occPeriod.isLoading}
               />

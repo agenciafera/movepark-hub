@@ -142,6 +142,11 @@ qual unidade está parada.
   conta uma vez, no primeiro pagamento. É a visão que bate com o extrato do gateway. O total do
   gráfico sai do próprio gráfico; o card "Receita da rede" segue por check-in. No white-label não
   há data de pagamento e vale a da compra (`wl_revenue` com `p_date_field = 'created_at'`).
+- **Ocupação por dia** (13/11/2026): carros no pátio por dia, Hub e site empilhados, contra a
+  capacidade, com a ocupação média e o dia mais cheio. Segue o filtro de origem como a receita
+  (com uma origem só, mostra só ela) e vale para unidade que vende só pelo white-label, que antes
+  ficava com a tela vazia fora da receita. Fonte: RPC `location_occupancy_daily`, ver
+  [operator-panel.md](./operator-panel.md) (Ocupação).
 - **Concentração:** participação da unidade líder, barra de participação e o top 3.
   `headCount` responde "quantas unidades somam 80% da receita", que é a leitura de
   risco: se uma cair, quanto do período vai junto.

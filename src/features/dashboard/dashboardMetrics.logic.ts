@@ -201,34 +201,6 @@ export function channelMix(rows: { created_via_api_key_id: string | null }[]): {
 }
 
 /**
- * Soma capacidade e ocupação das linhas de ocupação (tipo de vaga × data), ignorando datas
- * bloqueadas. A ocupação é o vendido no Hub (`booked_count`) MAIS o vendido no site do
- * parceiro (`external_booked_count`), a mesma soma do anti-overbooking: sem o WL, a
- * Abbapark aparecia com 3% numa semana de quase 45%. `days` é o número de datas distintas,
- * base da média por dia.
- */
-export function aggregateOccupancy(
-  rows: {
-    date?: string;
-    capacity: number | null;
-    booked_count: number | null;
-    external_booked_count?: number | null;
-    blocked: boolean | null;
-  }[],
-): { capacityDays: number; bookedDays: number; days: number } {
-  let capacityDays = 0;
-  let bookedDays = 0;
-  const dates = new Set<string>();
-  for (const r of rows) {
-    if (r.date) dates.add(r.date);
-    if (r.blocked) continue;
-    capacityDays += Number(r.capacity ?? 0);
-    bookedDays += Number(r.booked_count ?? 0) + Number(r.external_booked_count ?? 0);
-  }
-  return { capacityDays, bookedDays, days: dates.size };
-}
-
-/**
  * Ocupação média por dia. O total do período é vaga-dia (capacidade de cada dia somada),
  * e "1.720 vaga-dia" lido no card parecia o tamanho do pátio. Por dia o número bate com o
  * que o parceiro conhece: as vagas que ele tem e quantas estão ocupadas.
@@ -242,6 +214,83 @@ export function occupancyPerDay(agg: { capacityDays: number; bookedDays: number;
   const capacity = Math.round(agg.capacityDays / agg.days);
   const occupied = Math.round(agg.bookedDays / agg.days);
   return { capacity, occupied, free: Math.max(capacity - occupied, 0) };
+}
+
+/** Uma linha da RPC `location_occupancy_daily`: o dia, as vagas e os carros de cada origem. */
+export type OccupancyDayRow = { date: string; capacity: number; hub: number; wl: number };
+
+/** O ponto do gráfico: as origens que a tela mostra, o total e a taxa do dia (null sem capacidade). */
+export type OccupancyDayPoint = {
+  date: string;
+  capacity: number;
+  hub: number;
+  wl: number;
+  total: number;
+  rate: number | null;
+};
+
+/**
+ * Série do gráfico "Ocupação por dia" (13/11/2026). Com uma origem escolhida no filtro, a outra
+ * zera, e o total e a taxa passam a ser só dela: é o que a tela está mostrando.
+ */
+export function occupancyDaySeries(
+  rows: OccupancyDayRow[],
+  show: { hub: boolean; wl: boolean } = { hub: true, wl: true },
+): OccupancyDayPoint[] {
+  return rows.map((r) => {
+    const hub = show.hub ? Number(r.hub ?? 0) : 0;
+    const wl = show.wl ? Number(r.wl ?? 0) : 0;
+    const capacity = Number(r.capacity ?? 0);
+    const total = hub + wl;
+    return {
+      date: r.date,
+      capacity,
+      hub,
+      wl,
+      total,
+      rate: capacity > 0 ? Math.round((total / capacity) * 1000) / 10 : null,
+    };
+  });
+}
+
+/**
+ * Resumo da série: as somas em vaga-dia (base da taxa média e do RevPAR), a média por dia que o
+ * parceiro reconhece (vagas e carros) e o dia mais cheio pela taxa. Dia sem capacidade não entra
+ * na taxa, para um tipo de vaga sem cadastro não puxar a média para zero.
+ */
+export function occupancySummary(points: OccupancyDayPoint[]): {
+  capacityDays: number;
+  bookedDays: number;
+  days: number;
+  rate: number;
+  perDay: { capacity: number; occupied: number; free: number };
+  peak: { date: string; rate: number; total: number } | null;
+  hasCapacity: boolean;
+  hasCars: boolean;
+} {
+  let capacityDays = 0;
+  let bookedDays = 0;
+  let peak: { date: string; rate: number; total: number } | null = null;
+  for (const p of points) {
+    if (p.capacity > 0) {
+      capacityDays += p.capacity;
+      bookedDays += p.total;
+    }
+    if (p.rate !== null && p.total > 0 && (peak === null || p.rate > peak.rate)) {
+      peak = { date: p.date, rate: p.rate, total: p.total };
+    }
+  }
+  const days = points.length;
+  return {
+    capacityDays,
+    bookedDays,
+    days,
+    rate: occupancyRate(bookedDays, capacityDays),
+    perDay: occupancyPerDay({ capacityDays, bookedDays, days }),
+    peak,
+    hasCapacity: capacityDays > 0,
+    hasCars: points.some((p) => p.total > 0),
+  };
 }
 
 /** Taxa de ocupação (%) = vagas ocupadas sobre a capacidade disponível no período. */

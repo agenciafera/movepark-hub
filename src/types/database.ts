@@ -9488,6 +9488,15 @@ export type Database = {
       }
       location_has_photo: { Args: { p_photos: Json }; Returns: boolean }
       location_hub_readiness: { Args: { p_location_id: string }; Returns: Json }
+      location_occupancy_daily: {
+        Args: { p_from: string; p_location_ids?: string[]; p_to: string }
+        Returns: {
+          capacity: number
+          date: string
+          hub: number
+          wl: number
+        }[]
+      }
       location_public_path: {
         Args: { l: Database["public"]["Tables"]["location"]["Row"] }
         Returns: string

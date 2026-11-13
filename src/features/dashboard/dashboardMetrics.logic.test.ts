@@ -12,7 +12,8 @@ import {
   fareMix,
   fareRevenueMix,
   channelMix,
-  aggregateOccupancy,
+  occupancyDaySeries,
+  occupancySummary,
   occupancyPerDay,
   occupancyRate,
   revpar,
@@ -216,65 +217,38 @@ describe("fareMix / channelMix", () => {
 });
 
 describe("ocupação e RevPAR", () => {
-  it("agrega capacidade e ocupação, ignorando datas bloqueadas", () => {
-    const rows = [
-      { capacity: 100, booked_count: 40, blocked: false },
-      { capacity: 100, booked_count: 30, blocked: false },
-      { capacity: 100, booked_count: 0, blocked: true }, // bloqueada: fora da conta
-    ];
-    expect(aggregateOccupancy(rows)).toEqual({ capacityDays: 200, bookedDays: 70, days: 0 });
+  // Regressão (Abbapark, 08/10/2026): o card mostrava "53 de 1.720 vaga-dia" (3%), só com o Hub.
+  // A média por dia soma as duas origens: 215 vagas e 117 carros por dia.
+  it("soma Hub e site e dá a média por dia", () => {
+    const pts = occupancyDaySeries([
+      { date: "2026-10-08", capacity: 215, hub: 5, wl: 112 },
+      { date: "2026-10-09", capacity: 215, hub: 7, wl: 109 },
+    ]);
+    const s = occupancySummary(pts);
+    expect(s).toMatchObject({ capacityDays: 430, bookedDays: 233, days: 2, hasCapacity: true });
+    expect(s.perDay).toEqual({ capacity: 215, occupied: 117, free: 98 });
+    expect(s.rate).toBeCloseTo(54.19, 2);
   });
 
-  // Regressão (Abbapark, 08/10/2026): o card mostrava "53 de 1.720 vaga-dia" (3%). Eram três
-  // tipos de vaga (80 + 120 + 15) somados em 8 dias, e só o vendido no Hub; o WL ficava fora.
-  it("soma o vendido no WL e dá a média por dia", () => {
+  // 13/11/2026: o Manager filtrado por uma unidade de white-label não tinha ocupação nenhuma.
+  it("ocupação por dia: taxa do dia, dia mais cheio e o filtro de origem", () => {
     const rows = [
-      {
-        date: "2026-10-08",
-        capacity: 80,
-        booked_count: 1,
-        external_booked_count: 59,
-        blocked: false,
-      },
-      {
-        date: "2026-10-08",
-        capacity: 120,
-        booked_count: 4,
-        external_booked_count: 47,
-        blocked: false,
-      },
-      {
-        date: "2026-10-08",
-        capacity: 15,
-        booked_count: 0,
-        external_booked_count: 6,
-        blocked: false,
-      },
-      {
-        date: "2026-10-09",
-        capacity: 80,
-        booked_count: 1,
-        external_booked_count: 62,
-        blocked: false,
-      },
-      {
-        date: "2026-10-09",
-        capacity: 120,
-        booked_count: 6,
-        external_booked_count: 42,
-        blocked: false,
-      },
-      {
-        date: "2026-10-09",
-        capacity: 15,
-        booked_count: 0,
-        external_booked_count: 5,
-        blocked: false,
-      },
+      { date: "2026-11-01", capacity: 150, hub: 0, wl: 30 },
+      { date: "2026-11-02", capacity: 150, hub: 3, wl: 117 },
+      { date: "2026-11-03", capacity: 0, hub: 0, wl: 4 },
     ];
-    const agg = aggregateOccupancy(rows);
-    expect(agg).toEqual({ capacityDays: 430, bookedDays: 233, days: 2 });
-    expect(occupancyPerDay(agg)).toEqual({ capacity: 215, occupied: 117, free: 98 });
+    const pts = occupancyDaySeries(rows);
+    expect(pts[1]).toEqual({ date: "2026-11-02", capacity: 150, hub: 3, wl: 117, total: 120, rate: 80 });
+    expect(pts[2]!.rate).toBeNull();
+    const s = occupancySummary(pts);
+    expect(s.peak).toEqual({ date: "2026-11-02", rate: 80, total: 120 });
+    // Dia sem capacidade fica fora da taxa: 150 carros em 300 vagas-dia.
+    expect(s.rate).toBe(50);
+
+    const soHub = occupancyDaySeries(rows, { hub: true, wl: false });
+    expect(soHub.map((p) => p.total)).toEqual([0, 3, 0]);
+    expect(occupancySummary(soHub).hasCars).toBe(true);
+    expect(occupancySummary(occupancyDaySeries([])).hasCapacity).toBe(false);
   });
 
   it("média por dia sem datas não divide por zero", () => {
