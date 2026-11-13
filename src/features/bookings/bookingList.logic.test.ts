@@ -3,6 +3,7 @@ import {
   bookingListSummary,
   bookingSearchOr,
   channelShortLabel,
+  partnerSiteLabel,
   paymentMethodLabel,
   sanitizeBookingSearch,
 } from "./bookingList.logic";
@@ -38,6 +39,73 @@ describe("channelShortLabel", () => {
     expect(channelShortLabel("webchat-bot")).toBe("Assistente do site");
     expect(channelShortLabel(null)).toBeNull();
     expect(channelShortLabel("novo_canal")).toBe("novo_canal");
+  });
+});
+
+describe("partnerSiteLabel", () => {
+  const pare = { name: "Pare Seguro", slug: "pare-seguro" };
+
+  it("UTM com o nome da empresa da unidade: Site da empresa, sem diferença de caixa nem espaço", () => {
+    expect(partnerSiteLabel({ origin: "hub_direct", utm_source: "pareseguro", company: pare })).toBe(
+      "Site Pare Seguro",
+    );
+    expect(partnerSiteLabel({ origin: "hub_search", utm_source: " PareSeguro ", company: pare })).toBe(
+      "Site Pare Seguro",
+    );
+    expect(partnerSiteLabel({ origin: "hub_direct", utm_source: "pare-seguro", company: pare })).toBe(
+      "Site Pare Seguro",
+    );
+  });
+
+  it("sem UTM na reserva, vale o do clique guardado ou o domínio do referrer", () => {
+    expect(
+      partnerSiteLabel({
+        origin: "hub_direct",
+        attribution: { utm_source: "pareseguro" },
+        company: pare,
+      }),
+    ).toBe("Site Pare Seguro");
+    expect(
+      partnerSiteLabel({
+        origin: "hub_direct",
+        attribution: { referrer: "https://www.pareseguro.com.br/reservar" },
+        company: pare,
+      }),
+    ).toBe("Site Pare Seguro");
+  });
+
+  it("regra de comissão cadastrada manda: o nome dela é o canal", () => {
+    expect(
+      partnerSiteLabel({
+        origin: "hub_direct",
+        utm_source: "agenciafera",
+        commission_rule_id: "r1",
+        commission_channel: "Site da Fera",
+        company: { name: "Agência Fera" },
+      }),
+    ).toBe("Site da Fera");
+    // Sem regra, "hub" é o padrão e não vira rótulo.
+    expect(
+      partnerSiteLabel({ origin: "hub_direct", commission_channel: "hub", company: pare }),
+    ).toBeNull();
+  });
+
+  it("UTM de outro lugar, de outra empresa ou fora do site da Movepark não muda o canal", () => {
+    expect(partnerSiteLabel({ origin: "hub_direct", utm_source: "google", company: pare })).toBeNull();
+    expect(
+      partnerSiteLabel({ origin: "hub_direct", utm_source: "pareseguro", company: { name: "Virapark" } }),
+    ).toBeNull();
+    expect(
+      partnerSiteLabel({ origin: "whatsapp-bot", utm_source: "pareseguro", company: pare }),
+    ).toBeNull();
+    expect(partnerSiteLabel({ origin: "hub_direct", utm_source: "pareseguro", company: null })).toBeNull();
+    expect(
+      partnerSiteLabel({
+        origin: "hub_direct",
+        attribution: { referrer: "nao-e-url" },
+        company: pare,
+      }),
+    ).toBeNull();
   });
 });
 

@@ -45,6 +45,70 @@ export function channelShortLabel(origin: string | null | undefined): string | n
   return origin;
 }
 
+/** O que a lista sabe da reserva do Hub para dizer se ela veio do site do próprio estacionamento. */
+export type PartnerSiteInput = {
+  origin: string | null;
+  utm_source?: string | null;
+  attribution?: unknown;
+  commission_rule_id?: string | null;
+  commission_channel?: string | null;
+  company?: { name: string | null; slug?: string | null } | null;
+};
+
+/** Só letras e números, sem acento e em minúsculas: "Pare Seguro" e "pare-seguro" viram "pareseguro". */
+function chaveDeNome(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function campoDoClique(attribution: unknown, campo: "utm_source" | "referrer"): string | null {
+  if (!attribution || typeof attribution !== "object") return null;
+  const v = (attribution as Record<string, unknown>)[campo];
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+/** Primeiro rótulo do domínio do referrer, sem "www." ("https://www.pareseguro.com.br/x" vira "pareseguro"). */
+function nomeDoDominio(referrer: string): string | null {
+  try {
+    const host = new URL(referrer).hostname.replace(/^www\./, "");
+    return host.split(".")[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Venda do site da Movepark que chegou pelo site do próprio estacionamento (13/11/2026). A Pare
+ * Seguro manda o cliente com `utm_source=pareseguro` e via "Site Movepark" em todas as reservas,
+ * como se o site dela não vendesse nada. Devolve o rótulo do canal ou null quando não é o caso:
+ *
+ * 1. A reserva casou uma regra de comissão cadastrada (`commission_rule_id`): vale o nome da regra,
+ *    que é o canal oficial da venda (comissao-por-origem.md).
+ * 2. Senão, o `utm_source` (da reserva ou do clique guardado) ou o domínio do `referrer` é o nome ou
+ *    o slug da empresa da unidade: "Site <empresa>". Só compara com a empresa da própria unidade, então
+ *    um UTM escrito à mão não rotula reserva de outro estacionamento.
+ */
+export function partnerSiteLabel(b: PartnerSiteInput): string | null {
+  if (!CHANNEL_ORIGINS.site.includes(b.origin ?? "")) return null;
+  const regra = b.commission_channel?.trim();
+  if (b.commission_rule_id && regra && regra !== "hub") return regra;
+
+  const empresa = b.company?.name?.trim();
+  if (!empresa) return null;
+  const nomes = new Set(
+    [empresa, b.company?.slug].filter((n): n is string => !!n).map(chaveDeNome),
+  );
+  nomes.delete("");
+  const utm = b.utm_source?.trim() || campoDoClique(b.attribution, "utm_source");
+  const referrer = campoDoClique(b.attribution, "referrer");
+  const dominio = referrer ? nomeDoDominio(referrer) : null;
+  const casa = [utm, dominio].some((v) => !!v && nomes.has(chaveDeNome(v)));
+  return casa ? `Site ${empresa}` : null;
+}
+
 /**
  * Forma de pagamento da reserva, pelo pagamento mais recente (qualquer status: um cartão recusado
  * também diz como o cliente tentou pagar). Null quando a reserva nunca chegou a ter pagamento.

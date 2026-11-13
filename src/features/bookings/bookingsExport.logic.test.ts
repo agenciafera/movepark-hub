@@ -25,6 +25,19 @@ const hub = {
 } as unknown as UnifiedBookingRow;
 
 describe("exportação da lista de reservas", () => {
+  it("a venda que veio do site do estacionamento sai com o canal dele na planilha", () => {
+    const doParceiro = {
+      source: "hub", id: "b2",
+      booking: {
+        ...(hub as { booking: Record<string, unknown> }).booking,
+        id: "b2", origin: "hub_direct", utm_source: "pareseguro",
+        location: { name: "Aeroporto de Guarulhos", company: { name: "Pare Seguro", slug: "pare-seguro" } },
+      },
+    } as unknown as UnifiedBookingRow;
+    const r = exportRow(doParceiro, { showSource: false, showCompany: true, valueMode: "total" });
+    expect(r["Canal"]).toBe("Site Pare Seguro");
+  });
+
   it("quem não tem white-label não ganha coluna Origem nem o canal White-label", () => {
     const o = { showSource: false, showCompany: false, valueMode: "parking" as const };
     expect(exportHeaders(o)).not.toContain("Origem");

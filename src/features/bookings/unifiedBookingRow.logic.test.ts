@@ -46,6 +46,24 @@ describe("unifiedRowView", () => {
   });
 });
 
+describe("canal da reserva que veio do site do estacionamento", () => {
+  it("UTM da Pare Seguro numa unidade dela: Site Pare Seguro, e não Site Movepark", () => {
+    const r = hub("hub_direct");
+    if (r.source !== "hub") throw new Error("fixture");
+    Object.assign(r.booking, {
+      utm_source: "pareseguro",
+      location: { name: "Aeroporto de Guarulhos", company: { id: "c1", name: "Pare Seguro", slug: "pare-seguro" } },
+    });
+    const v = unifiedRowView(r, { showSource: false, valueMode: "parking" });
+    expect(v.channel).toBe("Site Pare Seguro");
+  });
+
+  it("sem UTM do parceiro continua Site Movepark", () => {
+    const v = unifiedRowView(hub("hub_direct"), { showSource: false, valueMode: "parking" });
+    expect(v.channel).toBe("Site Movepark");
+  });
+});
+
 describe("wlListRowToBooking / wlOriginLabel", () => {
   it("o detalhe recebe o status do site, não o traduzido", () => {
     expect(wlListRowToBooking(wl).status).toBe("confirmed");

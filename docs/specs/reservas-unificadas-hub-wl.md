@@ -103,7 +103,7 @@ que enxergam. Etiqueta, filtro de origem, tooltip da ocupação, origem no card 
 | Origem | só no filtro e na exportação: **Hub** | só no filtro e na exportação: **White-label** |
 | Reserva | `code` (ex.: MP-8C497E) | `wl_order_number` (ex.: 261009-0025) |
 | Criada em | `created_at` | `wl_created_at` |
-| Canal (coluna própria desde 13/11/2026; antes ficava embaixo da data, em "Criada em") | `origin` (site, WhatsApp, API) | `origin` do legado (reserva online, WhatsApp bot) |
+| Canal (coluna própria desde 13/11/2026; antes ficava embaixo da data, em "Criada em") | `origin` (site, WhatsApp, API); venda do site com UTM ou referrer do próprio estacionamento sai como "Site <empresa>" (comissao-por-origem.md) | `origin` do legado (reserva online, WhatsApp bot) |
 | Cliente | snapshot `customer_name` | `customer_name` |
 | Telefone | `customer_phone` | `customer_phone` |
 | Unidade / Vaga | `location`, tipo de vaga | via De/Para (`location_parking_type_id`); 32 sem vaga |

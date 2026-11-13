@@ -331,6 +331,30 @@ atendimento no meio da venda dele. Para essas visitas a bolinha não aparece.
 atribuição guardada, último clique, janela vencida, storage ilegível);
 `WhatsappBubble.test.tsx` trava a variante de CSS.
 
+## "Site Pare Seguro" na lista de reservas (13/11/2026)
+
+**Pedido da Pare Seguro.** A coluna Canal da lista de reservas (e a planilha exportada) mostrava
+"Site Movepark" para toda venda que fechou no site da Movepark, inclusive as 44 que o site da Pare
+Seguro trouxe com `utm_source=pareseguro`. O parceiro leu isso como "meu site não vende".
+
+A regra mora em `partnerSiteLabel()` (`src/features/bookings/bookingList.logic.ts`) e só olha venda de
+origem `hub_*`:
+
+1. Reserva que casou regra de comissão (`commission_rule_id`): o Canal é o nome da regra.
+2. Senão, se o `utm_source` da reserva (ou o do clique em `attribution`) ou o primeiro rótulo do
+   domínio do `attribution.referrer` é o nome ou o slug da empresa da unidade, comparados só por
+   letras e números: **"Site <empresa>"**. Nada é fixo para a Pare Seguro; vale para qualquer
+   parceiro que mande o cliente com o próprio nome no UTM.
+3. Senão, "Site Movepark".
+
+Comparar só com a empresa da própria unidade é o que impede um UTM escrito à mão de rotular reserva
+de outro estacionamento. É rótulo de tela: não muda comissão, que continua na regra cadastrada.
+
+**Filtro.** O filtro de Canal continua por `booking.origin` no banco (`bookings_list_page`), então
+"Site Movepark" no filtro ainda inclui essas vendas. Para separar, use "Fonte da campanha" em Mais
+filtros (`p_utm_source`). Trazer "Site do estacionamento" para o filtro de Canal pede migration na
+RPC e ficou para depois.
+
 ## Fora do escopo
 
 - Afiliado terceiro recebendo comissão.

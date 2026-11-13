@@ -7,7 +7,12 @@
  */
 import { bookingCustomerName } from "./bookings.logic";
 import { paymentBadge, type PaymentBadge } from "./payment.logic";
-import { CHANNEL_ORIGINS, channelShortLabel, paymentMethodLabel } from "./bookingList.logic";
+import {
+  CHANNEL_ORIGINS,
+  channelShortLabel,
+  partnerSiteLabel,
+  paymentMethodLabel,
+} from "./bookingList.logic";
 import { bookingParkingAmount, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { wlPaymentMethodLabel } from "@/features/wl-bookings/wlBooking.logic";
 import type { BookingStatus, UnifiedBookingRow, WlBookingRow, WlListRow } from "@/types/domain";
@@ -82,7 +87,12 @@ export function unifiedRowView(
     sourceLabel: opts.showSource ? "Hub" : null,
     code: b.code,
     createdAt: b.created_at,
-    channel: veioDoSite && !opts.showSource ? null : channelShortLabel(b.origin),
+    // A venda que chegou pelo site do próprio estacionamento diz isso, e não "Site Movepark".
+    channel:
+      veioDoSite && !opts.showSource
+        ? null
+        : (partnerSiteLabel({ ...b, company: b.location?.company ?? null }) ??
+          channelShortLabel(b.origin)),
     customer: bookingCustomerName(b),
     companyName: b.location?.company?.name ?? null,
     unitName: b.location?.name ?? null,
