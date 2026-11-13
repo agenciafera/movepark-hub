@@ -78,7 +78,9 @@ export function OccupancyDailyPanel({
         </div>
       )}
 
-      <div className="mt-5 h-[240px] flex-1">
+      {/* Sem flex-1: o painel ocupa a linha sozinho, e numa coluna flex sem altura o flex-1 zera a
+          base e ignora o h-[240px] (o gráfico sumia em produção, 13/11/2026). */}
+      <div className="mt-5 h-[240px] shrink-0">
         {isLoading ? (
           <Skeleton className="h-full w-full" />
         ) : !s.hasCapacity && !s.hasCars ? (

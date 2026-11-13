@@ -40,3 +40,15 @@ describe("OccupancyDailyPanel", () => {
     expect(screen.queryByTestId("ocupacao-pico")).not.toBeInTheDocument();
   });
 });
+
+describe("OccupancyDailyPanel · altura do gráfico", () => {
+  // Regressão (13/11/2026): com flex-1 o gráfico ficava com altura zero no painel de linha inteira.
+  it("a área do gráfico tem altura fixa e não encolhe", () => {
+    const { container } = render(
+      <OccupancyDailyPanel points={soSite} isLoading={false} rangeLabel="1 a 2 nov" stacked />,
+    );
+    const area = container.querySelector(".h-\\[240px\\]");
+    expect(area).not.toBeNull();
+    expect(area!.className).not.toMatch(/\bflex-1\b/);
+  });
+});
