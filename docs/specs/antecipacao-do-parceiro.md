@@ -13,7 +13,7 @@ Em 13/11/2026 os recebíveis das cinco vendas de 3x com mais de 30 dias foram re
 - A parte da **Movepark** (recebedor master `re_cms5cvguc2l2r0l9tncrmgrsm`) foi **antecipada
   inteira** um dia útil antes da 1ª parcela, com `bulk_anticipation_id` e `anticipation_fee` em
   cada parcela. Taxa efetiva medida: **3,1% ao mês sobre o líquido da parcela, proporcional aos dias
-  corridos**, igual aos 3,11% contratados.
+  corridos**.
 - A parte do **parceiro** **não é antecipada**: cada parcela cai na data original (D+30, D+60,
   D+90). Todos os recebedores de parceiro foram criados pela nossa API com
   `automatic_anticipation_settings = { enabled: false, volume_percentage: 0, delay: 365 }`, porque o
@@ -23,9 +23,9 @@ A minuta do contrato do parceiro promete o valor inteiro liberado em 30 dias (cl
 repasse sobre o preço base, seja qual for a forma de pagamento (3.3). Com o cartão parcelado isso
 não acontece hoje: o "liberado" da nossa conta do parceiro fica maior que o saldo real na Pagar.me.
 
-Condições vigentes (painel "Taxas e prazos" + proposta atual): crédito à vista 3,79%, parcelado
-4,69%, **antecipação automática 3,11% ao mês**, CET para receber em 30 dias: à vista 3,79%, 2x
-6,34%, 3x 7,82%, 6x 12,27%, 12x 21,16%.
+As condições comerciais da Pagar.me ficam fora deste repositório, que é público (a proposta tem
+cláusula de sigilo). O que está aqui é o que medimos nos nossos próprios recebíveis: MDR de 3,79% à
+vista e 4,69% no parcelado, Pix 0,99%, antecipação de ~3,1% ao mês.
 
 ## Restrições do gateway (não mudam)
 
@@ -49,7 +49,7 @@ Condições vigentes (painel "Taxas e prazos" + proposta atual): crédito à vis
 | 2 | Padrão | **Movepark paga** (`app_setting.commission_default_anticipation_payer = 'movepark'`). O parceiro só paga quando a Movepark decidir no Manager |
 | 3 | Como a Movepark paga, se o gateway desconta do parceiro | **Ajuste no split da venda**: a perna do parceiro recebe, na cobrança, a estimativa da taxa com folga, tirada da perna da Movepark. O parceiro nunca recebe menos que o prometido |
 | 4 | Liga para todos ou empresa a empresa | **Desligada por padrão; liga empresa a empresa no Manager.** Desligada, nada muda: o parceiro recebe mês a mês e ninguém paga taxa |
-| 5 | Prazo | **30 dias**, o mesmo modelo que já vale no recebedor da Movepark e o da tabela de CET contratada |
+| 5 | Prazo | **30 dias**, o mesmo modelo que já vale no recebedor da Movepark |
 | 6 | Vendas já feitas | Botão **"Antecipar agora"** no repasse da empresa: antecipação pontual com simulação do custo antes de confirmar. Se quem paga é a Movepark, a taxa volta ao parceiro como crédito na próxima venda |
 
 ## Modelo de dados
@@ -62,7 +62,7 @@ Condições vigentes (painel "Taxas e prazos" + proposta atual): crédito à vis
 | `company` | `anticipation_fee_payer` text null | `movepark` / `partner`. Nulo herda o padrão. Escrita só pela RPC `set_company_anticipation` (hub_admin), que também aciona o ligar/desligar |
 | `commission_rule` | `anticipation_fee_payer` text null | Nulo herda a empresa. `CHECK` em (`movepark`, `partner`) |
 | `app_setting` | `commission_default_anticipation_payer` = `movepark` | Padrão do Hub |
-| `app_setting` | `card_anticipation_rate_monthly_bps` = `311` | Taxa contratada, usada só na estimativa |
+| `app_setting` | `card_anticipation_rate_monthly_bps` | Taxa mensal de antecipação, usada só na estimativa. O valor é gravado direto no banco (não em migration) |
 | `app_setting` | `card_anticipation_margin_days` = `4` | Folga em dias por parcela na estimativa |
 
 ### Congelado na reserva
@@ -103,8 +103,9 @@ MDR):
 - compensação `δ = ceil( f × (L − m) / (1 − f) )`.
 
 Exemplo: 3x, perna do parceiro de R$ 120,00 com MDR pago pela Movepark: `Σ d = 4 + 34 + 64 = 102`,
-`f = 0,0311 / 30 × 102 / 3 = 3,52%`, `δ = R$ 4,39`. Com a antecipação real (uns 2, 32 e 62 dias),
-a taxa sobre os R$ 124,39 fica em torno de R$ 4,13, e o parceiro termina com uns R$ 0,26 a mais
+com taxa de 3,1% ao mês, `f = 0,031 / 30 × 102 / 3 = 3,51%` e `δ = R$ 4,37`. Com a antecipação real
+(uns 2, 32 e 62 dias), a taxa sobre os R$ 124,37 fica em torno de R$ 4,11, e o parceiro termina com
+uns R$ 0,26 a mais
 que os R$ 120,00: é a folga que a Movepark paga.
 
 Limites: a perna da Movepark nunca fica abaixo de R$ 1,00 nem da taxa estimada do MDR quando ela
@@ -138,8 +139,8 @@ A devolução segue igual: `fee_credit_returned_cents` no split da próxima vend
 
 - **Manager › Recebedores › Repasse** (`PayoutSettingsDialog`): seção "Cartão em 30 dias" com o
   interruptor (liga a antecipação automática no recebedor pela Edge `update-recipient-payout`) e
-  "Quem paga a antecipação" (herdar / Movepark / parceiro). Mostra o custo de referência (3x =
-  7,82% contra 4,69% sem antecipar).
+  "Quem paga a antecipação" (herdar / Movepark / parceiro). Mostra o custo de referência de um 3x
+  calculado a partir de `card_anticipation_rate_monthly_bps`.
 - **Manager › Comissões** (`CommissionRulesCard`): campo "Antecipação paga por" (herdar / Movepark /
   parceiro) na regra, e coluna na tabela.
 - **Botão "Antecipar agora"** no repasse da empresa: mostra o máximo antecipável (`limits`), simula
