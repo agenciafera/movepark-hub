@@ -268,6 +268,9 @@ export default function OperatorDashboard() {
   // sem a sincronização de disponibilidade, que deixava a Aerovalet zerada.
   const temUnidades = !!occLocationIds?.length;
   const occ7 = useOccupancyDaily(occLocationIds, today, in7, temUnidades);
+  // Enquanto a lista de unidades carrega, a consulta fica desligada e não conta como carregando:
+  // sem isto o card dizia "Cadastre a capacidade" por um instante antes de mostrar a ocupação.
+  const occ7Carregando = locations.isLoading || occ7.isLoading;
   const occPeriod = useOccupancyDaily(
     occLocationIds,
     format(range.from, "yyyy-MM-dd"),
@@ -430,7 +433,7 @@ export default function OperatorDashboard() {
         <Panel className="flex flex-col">
           <PanelTitle aside="próx. 7 dias">Ocupação</PanelTitle>
           <div className="my-5">
-            {occ7.isLoading ? (
+            {occ7Carregando ? (
               <Skeleton className="mx-auto h-28 w-full max-w-[212px]" />
             ) : (
               <OccupancyGauge
@@ -455,9 +458,11 @@ export default function OperatorDashboard() {
             ))}
           </div>
           <p className="mt-3 text-caption leading-relaxed text-muted">
-            {occ7Sum.hasCapacity
-              ? `Sobram ${int(occ7Day.free)} vagas por dia, em média, na próxima semana.`
-              : "Cadastre a capacidade das unidades para acompanhar a ocupação."}
+            {occ7Carregando
+              ? ""
+              : occ7Sum.hasCapacity
+                ? `Sobram ${int(occ7Day.free)} vagas por dia, em média, na próxima semana.`
+                : "Cadastre a capacidade das unidades para acompanhar a ocupação."}
           </p>
         </Panel>
       </div>
