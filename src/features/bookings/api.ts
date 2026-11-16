@@ -186,10 +186,11 @@ export function useBookingHistory(bookingId: string | undefined) {
   });
 }
 
-export function useBookingsPage(filters: BookingPageFilters) {
+export function useBookingsPage(filters: BookingPageFilters, enabled = true) {
   return useQuery({
     queryKey: [...bookingsKeys.all, "page", filters] as const,
     queryFn: () => fetchBookingsPage(filters),
+    enabled,
     placeholderData: (prev) => prev,
   });
 }

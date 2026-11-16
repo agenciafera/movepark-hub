@@ -53,9 +53,21 @@ import {
   share,
   shortStayShare,
   stayBars,
+  unitInsight,
+  compareNoun,
 } from "./managerInsights.logic";
 
 const int = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("pt-BR");
+
+/** Linha com o card largo (gráfico) e o card estreito ao lado. */
+const DUAS_COLUNAS = "grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]";
+
+/** Grade de cards iguais, com tantas colunas quanto cards (até 3). */
+function colunas(n: number): string {
+  if (n >= 3) return "grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3";
+  if (n === 2) return "grid grid-cols-1 gap-5 desktop:grid-cols-2";
+  return "grid grid-cols-1 gap-5";
+}
 const oneDecimal = (n: number) =>
   Number(n ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -154,7 +166,10 @@ export default function ManagerDashboard() {
     },
     porPagamento && verSite,
   );
-  const flow = useManagerDailyFlow(flowDate, scopedLocationIds, origem);
+  // Uma unidade filtrada: a tela vira a da unidade (16/11/2026). Fluxo por hora e reservas
+  // recentes são da operação de um pátio e só são buscados nessa tela.
+  const umaUnidade = scopedLocationIds?.length === 1;
+  const flow = useManagerDailyFlow(flowDate, scopedLocationIds, origem, umaUnidade);
   // Ocupação por dia (13/11/2026): Hub e site contados das reservas, para toda unidade. Segue o
   // filtro de origem como a receita: com uma origem só, o gráfico mostra só ela.
   const occ = useOccupancyDaily(
@@ -163,12 +178,15 @@ export default function ManagerDashboard() {
     format(subDays(range.to, 1), "yyyy-MM-dd"),
   );
   // Lista única (Hub + site), as 20 compras mais recentes da origem escolhida.
-  const recent = useBookingsPage({
-    source: origem,
-    locationIds: scopedLocationIds,
-    page: 0,
-    pageSize: 20,
-  });
+  const recent = useBookingsPage(
+    {
+      source: origem,
+      locationIds: scopedLocationIds,
+      page: 0,
+      pageSize: 20,
+    },
+    umaUnidade,
+  );
 
   const cur = overview.data?.current;
   const network = overview.data?.network ?? { locations_total: 0, locations_with_revenue: 0 };
@@ -239,13 +257,752 @@ export default function ManagerDashboard() {
     saidas: flow.data?.exits[i]?.vehicles ?? 0,
   }));
 
+  const unidade = umaUnidade ? overview.data?.top_locations?.[0] : undefined;
+  const variosDestinos = destinations.length > 1;
+  const leitura = umaUnidade
+    ? unitInsight({
+        revenue: cur?.revenue ?? 0,
+        previousRevenue: overview.data?.previous.revenue ?? 0,
+        bookings: cur?.bookings ?? 0,
+        vehicleDays: cur?.vehicle_days ?? 0,
+        ticket: cur?.ticket ?? 0,
+        customers,
+        compareLabel: compareNoun(period.compare),
+        money: formatBRL,
+      })
+    : insight;
+
+  const card_leitura = (
+    <section className="bg-dashboard-hero flex flex-col overflow-hidden rounded-lg p-7 text-white">
+      <span className="self-start rounded-full bg-white/20 px-3 py-1.5 text-caption font-bold">
+        Leitura do período
+      </span>
+      {leitura ? (
+        <div className="mt-auto pt-6">
+          <p className="text-display-md leading-tight text-white">{leitura.title}</p>
+          <p className="mt-2.5 text-body-sm leading-relaxed text-white/80">{leitura.detail}</p>
+        </div>
+      ) : (
+        <p className="mt-6 text-body-md text-white/80">
+          Sem unidade ativa no recorte escolhido. A leitura aparece assim que entrar movimento.
+        </p>
+      )}
+    </section>
+  );
+  const card_receita = (
+    <section className="flex flex-col overflow-hidden rounded-lg bg-mp-primary p-7 text-white">
+      <div>
+        <div className="text-body-sm font-medium text-white/90">{tituloReceita}</div>
+        <div className="mt-1 text-caption text-white/70">realizado no período</div>
+      </div>
+      {overview.isLoading || wlQ.isLoading ? (
+        <Skeleton className="mt-5 h-10 w-44 bg-white/20" />
+      ) : (
+        <div
+          className="mt-5 whitespace-nowrap text-display-2xl tabular-nums leading-none text-white"
+          data-testid="receita-rede"
+        >
+          {formatBRL(receitaTotal)}
+        </div>
+      )}
+      {temSite && (
+        <div className="mt-2 text-caption text-white/80" data-testid="receita-por-origem">
+          {originBreakdown(hubRevenue, wl.paid_amount, formatBRL)}
+        </div>
+      )}
+      <div className="mt-2 text-caption text-white/80">
+        {verHub ? (
+          <>
+            {int(hubBookings)} {hubBookings === 1 ? "reserva paga" : "reservas pagas"}
+            {temSite ? " no Hub" : ""} · {int(hubVehicleDays)}{" "}
+            {hubVehicleDays === 1 ? "diária" : "diárias"}
+            {temSite ? ` · ${int(wl.paid)} no white-label` : ""}
+          </>
+        ) : (
+          `${int(wl.paid)} ${wl.paid === 1 ? "reserva paga" : "reservas pagas"} no site`
+        )}
+      </div>
+
+      {verHub && (
+        <div className="mt-auto space-y-2 pt-6">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-caption text-white/75">A repassar aos parceiros</span>
+            <span className="text-body-sm font-bold tabular-nums text-white">
+              {formatBRL(money.payout)}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-caption text-white/75">Comissão retida</span>
+            <span className="text-body-sm font-bold tabular-nums text-white">
+              {formatBRL(money.commission)}
+            </span>
+          </div>
+        </div>
+      )}
+      {!verHub && (
+        <p className="mt-auto pt-6 text-caption leading-relaxed text-white/75">
+          O dinheiro do site cai direto na conta do estacionamento; repasse e comissão são só da
+          venda pelo Hub.
+        </p>
+      )}
+    </section>
+  );
+  const card_rede = (
+    <Panel className="flex flex-col">
+      <PanelTitle aside={label.toLowerCase()}>Rede com receita</PanelTitle>
+      <div className="my-5">
+        {overview.isLoading ? (
+          <Skeleton className="mx-auto h-28 w-full max-w-[212px]" />
+        ) : (
+          <NetworkGauge earning={network.locations_with_revenue} total={network.locations_total} />
+        )}
+      </div>
+      <div className="mt-auto flex flex-wrap gap-1">
+        {Array.from({ length: Math.min(network.locations_total, 40) }).map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "h-4 w-4 rounded-xs",
+              i < network.locations_with_revenue ? "bg-mp-primary" : "bg-surface-strong",
+            )}
+          />
+        ))}
+      </div>
+      <p
+        className={cn(
+          "mt-3 text-caption leading-relaxed",
+          idle > 0 ? "font-medium text-error" : "text-muted",
+        )}
+      >
+        {network.locations_total === 0
+          ? "Nenhuma unidade ativa no recorte escolhido."
+          : idle > 0
+            ? `${int(idle)} ${idle === 1 ? "unidade sem nenhuma reserva paga" : "unidades sem nenhuma reserva paga"}.`
+            : "Toda a rede gerou receita no período."}
+      </p>
+    </Panel>
+  );
+  const card_receitaDia = (
+    <Panel className="flex flex-col">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-title-md text-ink" data-testid="titulo-grafico-receita">
+            {porPagamento ? "Receita por dia do pagamento," : "Receita por dia de check-in,"}{" "}
+            <span className="text-mp-primary">{formatRangeLabel(range)}</span>
+          </div>
+          <p className="mt-1.5 text-body-sm text-muted" data-testid="total-grafico-receita">
+            Total do período {formatBRL(chartTotal)}
+            {chartTemSite ? ` (${originBreakdown(chartHub, chartSite, formatBRL)})` : ""}
+          </p>
+          {porPagamento && verSite && (
+            <p className="mt-1 text-caption text-muted-soft">
+              No white-label, vale a data da compra.
+            </p>
+          )}
+          <Tabs
+            value={porPagamento ? "pagamento" : "checkin"}
+            onValueChange={(v) => setFiltro({ data: v })}
+            className="mt-3"
+          >
+            <TabsList aria-label="Agrupar a receita por">
+              <TabsTrigger value="checkin">Check-in</TabsTrigger>
+              <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        {best && (
+          <div className="shrink-0 text-right">
+            <div className="text-caption text-muted">Melhor dia</div>
+            <div className="text-display-sm tabular-nums text-mp-primary">
+              {formatBRL(best.total)}
+            </div>
+            <div className="text-caption-sm text-muted-soft">
+              {format(new Date(`${best.date}T12:00:00`), "d 'de' MMM", { locale: ptBR })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 h-[220px] min-h-[220px] flex-1">
+        {chartLoading ? (
+          <Skeleton className="h-full w-full" />
+        ) : daily.length === 0 ? (
+          <EmptyState
+            title="Sem receita no período"
+            description="As reservas pagas aparecem aqui assim que entrarem."
+          />
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={daily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="mgr-rev" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--mp-primary))" stopOpacity={0.22} />
+                  <stop offset="100%" stopColor="hsl(var(--mp-primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                stroke="hsl(var(--hairline-soft))"
+                strokeDasharray="4 4"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(d: string) =>
+                  format(new Date(`${d}T12:00:00`), "dd MMM", { locale: ptBR })
+                }
+                tick={{ fontSize: 11 }}
+                stroke="hsl(var(--muted-soft))"
+                minTickGap={32}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tickFormatter={(v: number) => formatBRL(v)}
+                tick={{ fontSize: 11 }}
+                stroke="hsl(var(--muted-soft))"
+                width={86}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                formatter={(v: number, name: string) => [
+                  formatBRL(v),
+                  name === "wl" ? "White-label" : temSite || origem === "hub" ? "Hub" : "Receita",
+                ]}
+                labelFormatter={(d: string) =>
+                  format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
+                }
+              />
+              {verHub && (
+                <Area
+                  type="monotone"
+                  dataKey="hub"
+                  stackId="origem"
+                  stroke="hsl(var(--mp-primary))"
+                  strokeWidth={2.5}
+                  fill="url(#mgr-rev)"
+                  dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
+                  activeDot={{ r: 5 }}
+                />
+              )}
+              {(chartTemSite || origem === "wl") && (
+                <Area
+                  type="monotone"
+                  dataKey="wl"
+                  stackId="origem"
+                  stroke="hsl(var(--mp-navy))"
+                  strokeWidth={2}
+                  fill="hsl(var(--mp-teal))"
+                  fillOpacity={0.45}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </Panel>
+  );
+  const card_concentracao = (
+    <Panel className="flex flex-col">
+      <div className="min-w-0">
+        <div className="text-title-md text-ink">Concentração</div>
+        <div className="mt-1 text-body-sm text-muted">participação na receita{deQuem}</div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
+        <span className="text-display-2xl tabular-nums leading-none text-ink">
+          {conc.topShare}%
+        </span>
+        {conc.leader && (
+          <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
+            só a {conc.leader.name}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-5 flex h-2.5 gap-1">
+        {ranking
+          .filter((r) => r.revenue > 0)
+          .slice(0, 4)
+          .map((r, i) => (
+            <div
+              key={r.id}
+              className={cn("rounded-full", i === 0 ? "bg-mp-primary" : "bg-mp-indigo")}
+              style={{ width: `${r.share}%` }}
+            />
+          ))}
+        {conc.withRevenue === 0 && <div className="w-full rounded-full bg-surface-strong" />}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-0.5">
+        {ranking.slice(0, 3).map((r, i) => (
+          <div key={r.id} className="flex items-center gap-2.5 rounded-md px-2 py-2.5">
+            <span
+              className={cn(
+                "h-2.5 w-2.5 shrink-0 rounded-full",
+                r.revenue === 0 ? "bg-surface-strong" : i === 0 ? "bg-mp-primary" : "bg-mp-indigo",
+              )}
+              aria-hidden
+            />
+            <span className="min-w-0 truncate text-body-sm text-body">{r.name}</span>
+            <span
+              className={cn(
+                "ml-auto text-body-sm font-bold tabular-nums",
+                r.revenue === 0 ? "text-muted-soft" : "text-ink",
+              )}
+            >
+              {r.share}%
+            </span>
+          </div>
+        ))}
+        {ranking.length === 0 && (
+          <p className="py-4 text-body-sm text-muted">Nenhuma unidade ativa no recorte.</p>
+        )}
+      </div>
+
+      <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
+        {conc.withRevenue === 0
+          ? "Nenhuma unidade da rede registrou receita no período."
+          : conc.headCount === 1
+            ? `Uma única unidade responde por 80% da receita${deQuem} do período.`
+            : `${conc.headCount} unidades respondem por 80% da receita${deQuem} do período.`}
+      </p>
+    </Panel>
+  );
+  const card_ocupacao = (
+    <OccupancyDailyPanel
+      points={occupancyDaySeries(occ.data ?? [], { hub: verHub, wl: verSite })}
+      isLoading={occ.isLoading}
+      rangeLabel={formatRangeLabel(range)}
+      stacked={origem === "all"}
+    />
+  );
+  const card_tarifas = (
+    <Panel>
+      <PanelTitle aside={label.toLowerCase()}>Receita de tarifas</PanelTitle>
+      <div className="mt-4 whitespace-nowrap text-display-xl tabular-nums text-ink">
+        {formatBRL(fareTotal)}
+      </div>
+      <div className="mt-1.5 text-body-sm text-muted">
+        {share(fareTotal, hubRevenue)}% da receita do Hub
+      </div>
+      <div className="mt-5 flex flex-col gap-0.5">
+        {fares.map((f) => (
+          <div key={f.tier} className="flex items-center gap-3 py-2.5">
+            <span
+              className={cn(
+                "h-2.5 w-2.5 shrink-0 rounded-full",
+                Number(f.revenue) > 0 ? "bg-mp-primary" : "bg-surface-strong",
+              )}
+              aria-hidden
+            />
+            <span className="text-body-sm text-body">
+              {FARE_TIER_LABEL[f.tier as keyof typeof FARE_TIER_LABEL] ?? f.tier}
+            </span>
+            <span className="text-caption text-muted-soft">
+              {int(f.bookings)} {f.bookings === 1 ? "reserva" : "reservas"}
+            </span>
+            <span
+              className={cn(
+                "ml-auto text-body-sm font-bold tabular-nums",
+                Number(f.revenue) > 0 ? "text-ink" : "text-muted-soft",
+              )}
+            >
+              {formatBRL(Number(f.revenue))}
+            </span>
+          </div>
+        ))}
+        {fares.length === 0 && (
+          <p className="py-4 text-body-sm text-muted">Sem reserva com tarifa no período.</p>
+        )}
+      </div>
+    </Panel>
+  );
+  const card_ticket = (
+    <Panel className="flex flex-col">
+      <div className="text-title-md text-ink">Ticket médio</div>
+      <div className="mt-4 whitespace-nowrap text-display-xl tabular-nums text-ink">
+        {formatBRL(cur?.ticket ?? 0)}
+      </div>
+      <div className="mb-5 mt-1.5 text-body-sm text-muted">
+        {formatBRL(cur?.revenue_per_vehicle_day ?? 0)} por diária vendida
+      </div>
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
+        <span className="min-w-0 text-body-sm text-muted">Reservas pagas</span>
+        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+          {int(cur?.bookings)}
+        </span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <span className="min-w-0 text-body-sm text-muted">Diárias vendidas</span>
+        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+          {int(cur?.vehicle_days)}
+        </span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <span className="min-w-0 text-body-sm text-muted">Permanência média</span>
+        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+          {oneDecimal(cur?.avg_stay_days ?? 0)} dias
+        </span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <span className="min-w-0 text-body-sm text-muted">Passageiros transportados</span>
+        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+          {int(cur?.passengers)}
+        </span>
+      </div>
+    </Panel>
+  );
+  const card_ranking = (
+    <Panel className="flex flex-col">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-title-md text-ink">Ranking do período</div>
+          <p className="mt-1.5 text-body-sm text-muted">
+            {int(ranking.length)} de {int(network.locations_total)}{" "}
+            {network.locations_total === 1 ? "unidade" : "unidades"}
+          </p>
+        </div>
+        <Link
+          to="/manager/locations"
+          className="shrink-0 text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+        >
+          Ver todas
+        </Link>
+      </div>
+
+      <div className="mt-5 max-h-[392px] overflow-y-auto pr-1">
+        {overview.isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : ranking.length === 0 ? (
+          <EmptyState
+            title="Nenhuma unidade ativa"
+            description="O ranking aparece quando houver unidade no recorte."
+          />
+        ) : (
+          <ol className="flex flex-col gap-0.5">
+            {ranking.map((r) => (
+              <li key={r.id} className="flex items-center gap-4 rounded-md px-2.5 py-3.5">
+                <span
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-caption font-bold tabular-nums",
+                    r.position === 1 && r.revenue > 0
+                      ? "bg-mp-primary text-white"
+                      : r.revenue > 0
+                        ? "bg-mp-pale text-mp-indigo"
+                        : "bg-surface-soft text-muted-soft",
+                  )}
+                >
+                  {r.position}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-body-sm font-medium text-ink">{r.name}</div>
+                  <div className="mt-0.5 truncate text-caption text-muted">{rankDetail(r)}</div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-strong">
+                    <div
+                      className={cn(
+                        "h-full rounded-full",
+                        r.position === 1 ? "bg-mp-primary" : "bg-mp-indigo",
+                      )}
+                      style={{ width: r.width }}
+                    />
+                  </div>
+                </div>
+                <span
+                  className={cn(
+                    "shrink-0 text-body-sm font-bold tabular-nums",
+                    r.revenue > 0 ? "text-ink" : "text-muted-soft",
+                  )}
+                >
+                  {formatBRL(r.revenue)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      {idle > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
+          <span className="min-w-0 text-body-sm text-muted">
+            {int(idle)} {idle === 1 ? "unidade sem receita" : "unidades sem receita"} no período
+          </span>
+          <Link
+            to="/manager/locations"
+            className="shrink-0 text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+          >
+            Revisar unidades
+          </Link>
+        </div>
+      )}
+    </Panel>
+  );
+  const card_permanencia = (
+    <Panel className="flex flex-col">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-title-md text-ink">Permanência das reservas</div>
+          <p className="mt-1.5 text-body-sm text-muted">
+            {int(cur?.bookings)} {cur?.bookings === 1 ? "reserva paga" : "reservas pagas"} no
+            período
+          </p>
+        </div>
+        {dominant && (
+          <div className="shrink-0 text-right">
+            <div className="text-caption text-muted">Faixa dominante</div>
+            <div className="text-display-sm text-mp-primary">{dominant.label}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3.5">
+        {bars.map((b) => (
+          <div key={b.sort} className="flex items-center gap-3.5">
+            <span className="w-[78px] shrink-0 text-body-sm text-body">{b.label}</span>
+            <span className="block h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-strong">
+              <span
+                className={cn(
+                  "block h-full rounded-full",
+                  b.top ? "bg-mp-primary" : "bg-mp-indigo",
+                )}
+                style={{ width: b.width }}
+              />
+            </span>
+            <span
+              className={cn(
+                "w-9 shrink-0 text-right text-body-sm font-bold tabular-nums",
+                b.bookings > 0 ? "text-ink" : "text-muted-soft",
+              )}
+            >
+              {int(b.bookings)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
+        {(cur?.bookings ?? 0) === 0
+          ? "Sem reserva paga no período para medir a permanência."
+          : `${shortStay}% das reservas ficam até 3 diárias.`}
+      </p>
+    </Panel>
+  );
+  const card_clientes = (
+    <Panel className="flex flex-col">
+      <div className="min-w-0">
+        <div className="text-title-md text-ink">Clientes</div>
+        <div className="mt-1 text-body-sm text-muted">novos e recorrentes</div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
+        <span className="text-display-2xl tabular-nums leading-none text-ink">
+          {share(customers.returning, customersTotal)}%
+        </span>
+        {customersTotal > 0 && (
+          <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
+            já eram clientes
+          </span>
+        )}
+      </div>
+
+      <div className="mt-5 flex h-2.5 gap-1">
+        <div
+          className="rounded-full bg-mp-primary"
+          style={{ width: `${share(customers.returning, customersTotal)}%` }}
+        />
+        <div
+          className="rounded-full bg-mp-indigo"
+          style={{ width: `${share(customers.new, customersTotal)}%` }}
+        />
+        {customersTotal === 0 && <div className="w-full rounded-full bg-surface-strong" />}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-0.5">
+        <div className="flex items-center gap-2.5 py-2.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mp-primary" aria-hidden />
+          <span className="min-w-0 flex-1 text-body-sm text-body">Já tinham reservado</span>
+          <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+            {int(customers.returning)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 py-2.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mp-indigo" aria-hidden />
+          <span className="min-w-0 flex-1 text-body-sm text-body">Primeira reserva</span>
+          <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
+            {int(customers.new)}
+          </span>
+        </div>
+      </div>
+
+      <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
+        {customersTotal === 0
+          ? "Sem reserva paga no período para separar novos de recorrentes."
+          : `${int(customers.new)} ${customers.new === 1 ? "cliente novo" : "clientes novos"} no período.`}
+      </p>
+    </Panel>
+  );
+  const card_destino = (
+    <Panel className="flex flex-col">
+      <PanelTitle aside={label.toLowerCase()}>Por destino</PanelTitle>
+      <div className="mt-5">
+        {overview.isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : destinations.length === 0 ? (
+          <EmptyState
+            title="Sem reservas no período"
+            description="A quebra por aeroporto aparece aqui."
+          />
+        ) : (
+          <ul className="flex max-h-[392px] flex-col gap-3.5 overflow-y-auto pr-1">
+            {destinations.map((d) => {
+              const pct = share(Number(d.revenue), destinationRevenue);
+              return (
+                <li key={`${d.code}-${d.name}`} className="flex flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between gap-3 text-body-sm">
+                    <span className="truncate text-ink">{d.name}</span>
+                    <span className="shrink-0 tabular-nums text-ink">
+                      {formatBRL(Number(d.revenue))}
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-surface-strong">
+                    <div className="h-full bg-mp-primary" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3 text-caption-sm text-muted-soft">
+                    <span>
+                      {int(d.bookings)} reservas · {int(d.vehicle_days)} diárias
+                    </span>
+                    <span className="tabular-nums">{pct}%</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </Panel>
+  );
+  const card_fluxo = (
+    <Panel className="flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-title-md text-ink">Fluxo de veículos por hora</div>
+        <Input
+          type="date"
+          aria-label="Dia do fluxo de veículos"
+          value={flowDate}
+          onChange={(e) => setFlowDate(e.target.value)}
+          className="h-10 w-[170px]"
+        />
+      </div>
+      <div className="mt-5">
+        {flow.isLoading ? (
+          <Skeleton className="h-56 w-full" />
+        ) : entries.vehicles === 0 && exits.vehicles === 0 ? (
+          <EmptyState
+            title="Nenhum movimento nesse dia"
+            description="Escolha outra data para ver as entradas e saídas hora a hora."
+          />
+        ) : (
+          <>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={flowChart}>
+                  <CartesianGrid
+                    stroke="hsl(var(--hairline-soft))"
+                    strokeDasharray="4 4"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="hour"
+                    tick={{ fontSize: 11 }}
+                    interval={1}
+                    stroke="hsl(var(--muted-soft))"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fontSize: 11 }}
+                    stroke="hsl(var(--muted-soft))"
+                    width={32}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                  <Bar
+                    dataKey="entradas"
+                    name="Entradas"
+                    fill="hsl(var(--mp-primary))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="saidas"
+                    name="Saídas"
+                    fill="hsl(var(--mp-indigo))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="mt-4 text-caption text-muted">
+              {int(entries.vehicles)} entradas, {int(exits.vehicles)} saídas e{" "}
+              {int(entries.passengers)} passageiros.
+              {entries.peakHour !== null
+                ? ` Pico de chegada às ${hourLabel(entries.peakHour)}.`
+                : ""}
+            </p>
+          </>
+        )}
+      </div>
+    </Panel>
+  );
+  const card_recentes = (
+    <Panel>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-title-md text-ink">Reservas recentes</div>
+        <Link
+          to="/manager/attribution"
+          className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+        >
+          Ver a origem das reservas
+        </Link>
+      </div>
+      <div className="mt-5">
+        <BookingTable
+          rows={recent.data?.rows}
+          isLoading={recent.isLoading}
+          showSource
+          onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
+          onWlRowClick={(w) => navigate(`/manager/bookings/site/${w.id}`)}
+        />
+      </div>
+    </Panel>
+  );
+  // Última linha da rede: permanência, clientes (quando não couberam ao lado do ranking) e
+  // tarifas (só existem no Hub). A grade acompanha quantos cards sobraram, sem buraco.
+  const linhaFinal = [
+    <React.Fragment key="permanencia">{card_permanencia}</React.Fragment>,
+    variosDestinos ? <React.Fragment key="clientes">{card_clientes}</React.Fragment> : null,
+    verHub ? <React.Fragment key="tarifas">{card_tarifas}</React.Fragment> : null,
+  ].filter(Boolean);
+
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Visão da rede"
+        title={umaUnidade ? "Visão da unidade" : "Visão da rede"}
         // A leitura mora só no card. Repetir a mesma frase aqui e lá em cima
         // gastava duas linhas pra dizer uma coisa.
-        description={`O resultado da rede em ${formatRangeLabel(range)}.`}
+        description={
+          umaUnidade
+            ? `${unidade ? `${unidade.company_name}, ${unidade.name}, ` : "O resultado da unidade "}em ${formatRangeLabel(range)}.`
+            : `O resultado da rede em ${formatRangeLabel(range)}.`
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Select value={origem} onValueChange={(v) => setFiltro({ origem: v })}>
@@ -265,728 +1022,53 @@ export default function ManagerDashboard() {
         }
       />
 
-      {/* ===== Linha 1: leitura, receita e rede ===== */}
-      <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
-        <section className="bg-dashboard-hero flex flex-col overflow-hidden rounded-lg p-7 text-white">
-          <span className="self-start rounded-full bg-white/20 px-3 py-1.5 text-caption font-bold">
-            Leitura do período
-          </span>
-          {insight ? (
-            <div className="mt-auto pt-6">
-              <p className="text-display-md leading-tight text-white">{insight.title}</p>
-              <p className="mt-2.5 text-body-sm leading-relaxed text-white/80">{insight.detail}</p>
-            </div>
-          ) : (
-            <p className="mt-6 text-body-md text-white/80">
-              Sem unidade ativa no recorte escolhido. A leitura aparece assim que entrar movimento.
-            </p>
-          )}
-        </section>
-
-        <section className="flex flex-col overflow-hidden rounded-lg bg-mp-primary p-7 text-white">
-          <div>
-            <div className="text-body-sm font-medium text-white/90">{tituloReceita}</div>
-            <div className="mt-1 text-caption text-white/70">realizado no período</div>
+      {umaUnidade ? (
+        <>
+          {/* Uma unidade: o que mede a operação dela. Cards de rede (rede com receita,
+              concentração, ranking, destino) não têm o que comparar e saem. */}
+          <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+            {card_leitura}
+            {card_receita}
+            {card_ticket}
           </div>
-          {overview.isLoading || wlQ.isLoading ? (
-            <Skeleton className="mt-5 h-10 w-44 bg-white/20" />
-          ) : (
-            <div
-              className="mt-5 whitespace-nowrap text-display-2xl tabular-nums leading-none text-white"
-              data-testid="receita-rede"
-            >
-              {formatBRL(receitaTotal)}
-            </div>
-          )}
-          {temSite && (
-            <div className="mt-2 text-caption text-white/80" data-testid="receita-por-origem">
-              {originBreakdown(hubRevenue, wl.paid_amount, formatBRL)}
-            </div>
-          )}
-          <div className="mt-2 text-caption text-white/80">
-            {verHub ? (
-              <>
-                {int(hubBookings)} {hubBookings === 1 ? "reserva paga" : "reservas pagas"}
-                {temSite ? " no Hub" : ""} · {int(hubVehicleDays)}{" "}
-                {hubVehicleDays === 1 ? "diária" : "diárias"}
-                {temSite ? ` · ${int(wl.paid)} no white-label` : ""}
-              </>
-            ) : (
-              `${int(wl.paid)} ${wl.paid === 1 ? "reserva paga" : "reservas pagas"} no site`
-            )}
+          <div className={DUAS_COLUNAS}>
+            {card_receitaDia}
+            {card_clientes}
           </div>
-
-          {verHub && (
-            <div className="mt-auto space-y-2 pt-6">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-caption text-white/75">A repassar aos parceiros</span>
-                <span className="text-body-sm font-bold tabular-nums text-white">
-                  {formatBRL(money.payout)}
-                </span>
-              </div>
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-caption text-white/75">Comissão retida</span>
-                <span className="text-body-sm font-bold tabular-nums text-white">
-                  {formatBRL(money.commission)}
-                </span>
-              </div>
-            </div>
-          )}
-          {!verHub && (
-            <p className="mt-auto pt-6 text-caption leading-relaxed text-white/75">
-              O dinheiro do site cai direto na conta do estacionamento; repasse e comissão são só da
-              venda pelo Hub.
-            </p>
-          )}
-        </section>
-
-        <Panel className="flex flex-col">
-          <PanelTitle aside={label.toLowerCase()}>Rede com receita</PanelTitle>
-          <div className="my-5">
-            {overview.isLoading ? (
-              <Skeleton className="mx-auto h-28 w-full max-w-[212px]" />
-            ) : (
-              <NetworkGauge
-                earning={network.locations_with_revenue}
-                total={network.locations_total}
-              />
-            )}
+          <div className={DUAS_COLUNAS}>
+            {card_ocupacao}
+            {card_permanencia}
           </div>
-          <div className="mt-auto flex flex-wrap gap-1">
-            {Array.from({ length: Math.min(network.locations_total, 40) }).map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "h-4 w-4 rounded-xs",
-                  i < network.locations_with_revenue ? "bg-mp-primary" : "bg-surface-strong",
-                )}
-              />
-            ))}
+          <div className={verHub ? DUAS_COLUNAS : "grid grid-cols-1 gap-5"}>
+            {card_fluxo}
+            {verHub && card_tarifas}
           </div>
-          <p
-            className={cn(
-              "mt-3 text-caption leading-relaxed",
-              idle > 0 ? "font-medium text-error" : "text-muted",
-            )}
-          >
-            {network.locations_total === 0
-              ? "Nenhuma unidade ativa no recorte escolhido."
-              : idle > 0
-                ? `${int(idle)} ${idle === 1 ? "unidade sem nenhuma reserva paga" : "unidades sem nenhuma reserva paga"}.`
-                : "Toda a rede gerou receita no período."}
-          </p>
-        </Panel>
-      </div>
-
-      {/* ===== Linha 2: receita por dia e concentração ===== */}
-      <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Panel className="flex flex-col">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-title-md text-ink" data-testid="titulo-grafico-receita">
-                {porPagamento ? "Receita por dia do pagamento," : "Receita por dia de check-in,"}{" "}
-                <span className="text-mp-primary">{formatRangeLabel(range)}</span>
-              </div>
-              <p className="mt-1.5 text-body-sm text-muted" data-testid="total-grafico-receita">
-                Total do período {formatBRL(chartTotal)}
-                {chartTemSite ? ` (${originBreakdown(chartHub, chartSite, formatBRL)})` : ""}
-              </p>
-              {porPagamento && verSite && (
-                <p className="mt-1 text-caption text-muted-soft">
-                  No white-label, vale a data da compra.
-                </p>
-              )}
-              <Tabs
-                value={porPagamento ? "pagamento" : "checkin"}
-                onValueChange={(v) => setFiltro({ data: v })}
-                className="mt-3"
-              >
-                <TabsList aria-label="Agrupar a receita por">
-                  <TabsTrigger value="checkin">Check-in</TabsTrigger>
-                  <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            {best && (
-              <div className="shrink-0 text-right">
-                <div className="text-caption text-muted">Melhor dia</div>
-                <div className="text-display-sm tabular-nums text-mp-primary">
-                  {formatBRL(best.total)}
-                </div>
-                <div className="text-caption-sm text-muted-soft">
-                  {format(new Date(`${best.date}T12:00:00`), "d 'de' MMM", { locale: ptBR })}
-                </div>
-              </div>
-            )}
+          {card_recentes}
+        </>
+      ) : (
+        <>
+          {/* A rede: como as unidades se comparam. Fluxo por hora e reservas recentes são da
+              operação de um pátio e só aparecem com uma unidade filtrada. */}
+          <div className="grid grid-cols-1 gap-5 tablet:grid-cols-2 desktop:grid-cols-3">
+            {card_leitura}
+            {card_receita}
+            {card_rede}
           </div>
-
-          <div className="mt-6 h-[220px] min-h-[220px] flex-1">
-            {chartLoading ? (
-              <Skeleton className="h-full w-full" />
-            ) : daily.length === 0 ? (
-              <EmptyState
-                title="Sem receita no período"
-                description="As reservas pagas aparecem aqui assim que entrarem."
-              />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={daily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="mgr-rev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--mp-primary))" stopOpacity={0.22} />
-                      <stop offset="100%" stopColor="hsl(var(--mp-primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    stroke="hsl(var(--hairline-soft))"
-                    strokeDasharray="4 4"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(d: string) =>
-                      format(new Date(`${d}T12:00:00`), "dd MMM", { locale: ptBR })
-                    }
-                    tick={{ fontSize: 11 }}
-                    stroke="hsl(var(--muted-soft))"
-                    minTickGap={32}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={(v: number) => formatBRL(v)}
-                    tick={{ fontSize: 11 }}
-                    stroke="hsl(var(--muted-soft))"
-                    width={86}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    formatter={(v: number, name: string) => [
-                      formatBRL(v),
-                      name === "wl"
-                        ? "White-label"
-                        : temSite || origem === "hub"
-                          ? "Hub"
-                          : "Receita",
-                    ]}
-                    labelFormatter={(d: string) =>
-                      format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
-                    }
-                  />
-                  {verHub && (
-                    <Area
-                      type="monotone"
-                      dataKey="hub"
-                      stackId="origem"
-                      stroke="hsl(var(--mp-primary))"
-                      strokeWidth={2.5}
-                      fill="url(#mgr-rev)"
-                      dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  )}
-                  {(chartTemSite || origem === "wl") && (
-                    <Area
-                      type="monotone"
-                      dataKey="wl"
-                      stackId="origem"
-                      stroke="hsl(var(--mp-navy))"
-                      strokeWidth={2}
-                      fill="hsl(var(--mp-teal))"
-                      fillOpacity={0.45}
-                      dot={false}
-                      activeDot={{ r: 4 }}
-                    />
-                  )}
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+          <div className={DUAS_COLUNAS}>
+            {card_receitaDia}
+            {card_concentracao}
           </div>
-        </Panel>
-
-        <Panel className="flex flex-col">
-          <div className="min-w-0">
-            <div className="text-title-md text-ink">Concentração</div>
-            <div className="mt-1 text-body-sm text-muted">participação na receita{deQuem}</div>
+          <div className={DUAS_COLUNAS}>
+            {card_ocupacao}
+            {card_ticket}
           </div>
-
-          <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
-            <span className="text-display-2xl tabular-nums leading-none text-ink">
-              {conc.topShare}%
-            </span>
-            {conc.leader && (
-              <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
-                só a {conc.leader.name}
-              </span>
-            )}
+          <div className="grid grid-cols-1 gap-5 desktop:grid-cols-2">
+            {card_ranking}
+            {variosDestinos ? card_destino : card_clientes}
           </div>
-
-          <div className="mt-5 flex h-2.5 gap-1">
-            {ranking
-              .filter((r) => r.revenue > 0)
-              .slice(0, 4)
-              .map((r, i) => (
-                <div
-                  key={r.id}
-                  className={cn("rounded-full", i === 0 ? "bg-mp-primary" : "bg-mp-indigo")}
-                  style={{ width: `${r.share}%` }}
-                />
-              ))}
-            {conc.withRevenue === 0 && <div className="w-full rounded-full bg-surface-strong" />}
-          </div>
-
-          <div className="mt-5 flex flex-col gap-0.5">
-            {ranking.slice(0, 3).map((r, i) => (
-              <div key={r.id} className="flex items-center gap-2.5 rounded-md px-2 py-2.5">
-                <span
-                  className={cn(
-                    "h-2.5 w-2.5 shrink-0 rounded-full",
-                    r.revenue === 0
-                      ? "bg-surface-strong"
-                      : i === 0
-                        ? "bg-mp-primary"
-                        : "bg-mp-indigo",
-                  )}
-                  aria-hidden
-                />
-                <span className="min-w-0 truncate text-body-sm text-body">{r.name}</span>
-                <span
-                  className={cn(
-                    "ml-auto text-body-sm font-bold tabular-nums",
-                    r.revenue === 0 ? "text-muted-soft" : "text-ink",
-                  )}
-                >
-                  {r.share}%
-                </span>
-              </div>
-            ))}
-            {ranking.length === 0 && (
-              <p className="py-4 text-body-sm text-muted">Nenhuma unidade ativa no recorte.</p>
-            )}
-          </div>
-
-          <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
-            {conc.withRevenue === 0
-              ? "Nenhuma unidade da rede registrou receita no período."
-              : conc.headCount === 1
-                ? `Uma única unidade responde por 80% da receita${deQuem} do período.`
-                : `${conc.headCount} unidades respondem por 80% da receita${deQuem} do período.`}
-          </p>
-        </Panel>
-      </div>
-
-      <OccupancyDailyPanel
-        points={occupancyDaySeries(occ.data ?? [], { hub: verHub, wl: verSite })}
-        isLoading={occ.isLoading}
-        rangeLabel={formatRangeLabel(range)}
-        stacked={origem === "all"}
-      />
-
-      <>
-        {/* ===== Linha 3: tarifas (só do Hub), ticket e ranking ===== */}
-        <div className="grid grid-cols-1 items-start gap-5 desktop:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-          <div className="flex flex-col gap-5">
-            {verHub && (
-              <Panel>
-                <PanelTitle aside={label.toLowerCase()}>Receita de tarifas</PanelTitle>
-                <div className="mt-4 whitespace-nowrap text-display-xl tabular-nums text-ink">
-                  {formatBRL(fareTotal)}
-                </div>
-                <div className="mt-1.5 text-body-sm text-muted">
-                  {share(fareTotal, hubRevenue)}% da receita do Hub
-                </div>
-                <div className="mt-5 flex flex-col gap-0.5">
-                  {fares.map((f) => (
-                    <div key={f.tier} className="flex items-center gap-3 py-2.5">
-                      <span
-                        className={cn(
-                          "h-2.5 w-2.5 shrink-0 rounded-full",
-                          Number(f.revenue) > 0 ? "bg-mp-primary" : "bg-surface-strong",
-                        )}
-                        aria-hidden
-                      />
-                      <span className="text-body-sm text-body">
-                        {FARE_TIER_LABEL[f.tier as keyof typeof FARE_TIER_LABEL] ?? f.tier}
-                      </span>
-                      <span className="text-caption text-muted-soft">
-                        {int(f.bookings)} {f.bookings === 1 ? "reserva" : "reservas"}
-                      </span>
-                      <span
-                        className={cn(
-                          "ml-auto text-body-sm font-bold tabular-nums",
-                          Number(f.revenue) > 0 ? "text-ink" : "text-muted-soft",
-                        )}
-                      >
-                        {formatBRL(Number(f.revenue))}
-                      </span>
-                    </div>
-                  ))}
-                  {fares.length === 0 && (
-                    <p className="py-4 text-body-sm text-muted">
-                      Sem reserva com tarifa no período.
-                    </p>
-                  )}
-                </div>
-              </Panel>
-            )}
-
-            <Panel>
-              <div className="text-title-md text-ink">Ticket médio</div>
-              <div className="mt-4 whitespace-nowrap text-display-xl tabular-nums text-ink">
-                {formatBRL(cur?.ticket ?? 0)}
-              </div>
-              <div className="mt-1.5 text-body-sm text-muted">
-                {formatBRL(cur?.revenue_per_vehicle_day ?? 0)} por diária vendida
-              </div>
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
-                <span className="min-w-0 text-body-sm text-muted">Permanência média</span>
-                <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-                  {oneDecimal(cur?.avg_stay_days ?? 0)} dias
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <span className="min-w-0 text-body-sm text-muted">Passageiros transportados</span>
-                <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-                  {int(cur?.passengers)}
-                </span>
-              </div>
-            </Panel>
-          </div>
-
-          <Panel>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-title-md text-ink">Ranking do período</div>
-                <p className="mt-1.5 text-body-sm text-muted">
-                  {int(ranking.length)} de {int(network.locations_total)}{" "}
-                  {network.locations_total === 1 ? "unidade" : "unidades"}
-                </p>
-              </div>
-              <Link
-                to="/manager/locations"
-                className="shrink-0 text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
-              >
-                Ver todas
-              </Link>
-            </div>
-
-            <div className="mt-5 max-h-[392px] overflow-y-auto pr-1">
-              {overview.isLoading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : ranking.length === 0 ? (
-                <EmptyState
-                  title="Nenhuma unidade ativa"
-                  description="O ranking aparece quando houver unidade no recorte."
-                />
-              ) : (
-                <ol className="flex flex-col gap-0.5">
-                  {ranking.map((r) => (
-                    <li key={r.id} className="flex items-center gap-4 rounded-md px-2.5 py-3.5">
-                      <span
-                        className={cn(
-                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-caption font-bold tabular-nums",
-                          r.position === 1 && r.revenue > 0
-                            ? "bg-mp-primary text-white"
-                            : r.revenue > 0
-                              ? "bg-mp-pale text-mp-indigo"
-                              : "bg-surface-soft text-muted-soft",
-                        )}
-                      >
-                        {r.position}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-body-sm font-medium text-ink">{r.name}</div>
-                        <div className="mt-0.5 truncate text-caption text-muted">
-                          {rankDetail(r)}
-                        </div>
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-strong">
-                          <div
-                            className={cn(
-                              "h-full rounded-full",
-                              r.position === 1 ? "bg-mp-primary" : "bg-mp-indigo",
-                            )}
-                            style={{ width: r.width }}
-                          />
-                        </div>
-                      </div>
-                      <span
-                        className={cn(
-                          "shrink-0 text-body-sm font-bold tabular-nums",
-                          r.revenue > 0 ? "text-ink" : "text-muted-soft",
-                        )}
-                      >
-                        {formatBRL(r.revenue)}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-
-            {idle > 0 && (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
-                <span className="min-w-0 text-body-sm text-muted">
-                  {int(idle)} {idle === 1 ? "unidade sem receita" : "unidades sem receita"} no
-                  período
-                </span>
-                <Link
-                  to="/manager/locations"
-                  className="shrink-0 text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
-                >
-                  Revisar unidades
-                </Link>
-              </div>
-            )}
-          </Panel>
-        </div>
-
-        {/* ===== Linha 4: permanência e clientes ===== */}
-        <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-          <Panel className="flex flex-col">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-title-md text-ink">Permanência das reservas</div>
-                <p className="mt-1.5 text-body-sm text-muted">
-                  {int(cur?.bookings)} {cur?.bookings === 1 ? "reserva paga" : "reservas pagas"} no
-                  período
-                </p>
-              </div>
-              {dominant && (
-                <div className="shrink-0 text-right">
-                  <div className="text-caption text-muted">Faixa dominante</div>
-                  <div className="text-display-sm text-mp-primary">{dominant.label}</div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3.5">
-              {bars.map((b) => (
-                <div key={b.sort} className="flex items-center gap-3.5">
-                  <span className="w-[78px] shrink-0 text-body-sm text-body">{b.label}</span>
-                  <span className="block h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-strong">
-                    <span
-                      className={cn(
-                        "block h-full rounded-full",
-                        b.top ? "bg-mp-primary" : "bg-mp-indigo",
-                      )}
-                      style={{ width: b.width }}
-                    />
-                  </span>
-                  <span
-                    className={cn(
-                      "w-9 shrink-0 text-right text-body-sm font-bold tabular-nums",
-                      b.bookings > 0 ? "text-ink" : "text-muted-soft",
-                    )}
-                  >
-                    {int(b.bookings)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
-              {(cur?.bookings ?? 0) === 0
-                ? "Sem reserva paga no período para medir a permanência."
-                : `${shortStay}% das reservas ficam até 3 diárias.`}
-            </p>
-          </Panel>
-
-          <Panel className="flex flex-col">
-            <div className="min-w-0">
-              <div className="text-title-md text-ink">Clientes</div>
-              <div className="mt-1 text-body-sm text-muted">novos e recorrentes</div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
-              <span className="text-display-2xl tabular-nums leading-none text-ink">
-                {share(customers.returning, customersTotal)}%
-              </span>
-              {customersTotal > 0 && (
-                <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
-                  já eram clientes
-                </span>
-              )}
-            </div>
-
-            <div className="mt-5 flex h-2.5 gap-1">
-              <div
-                className="rounded-full bg-mp-primary"
-                style={{ width: `${share(customers.returning, customersTotal)}%` }}
-              />
-              <div
-                className="rounded-full bg-mp-indigo"
-                style={{ width: `${share(customers.new, customersTotal)}%` }}
-              />
-              {customersTotal === 0 && <div className="w-full rounded-full bg-surface-strong" />}
-            </div>
-
-            <div className="mt-5 flex flex-col gap-0.5">
-              <div className="flex items-center gap-2.5 py-2.5">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mp-primary" aria-hidden />
-                <span className="min-w-0 flex-1 text-body-sm text-body">Já tinham reservado</span>
-                <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-                  {int(customers.returning)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 py-2.5">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mp-indigo" aria-hidden />
-                <span className="min-w-0 flex-1 text-body-sm text-body">Primeira reserva</span>
-                <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-                  {int(customers.new)}
-                </span>
-              </div>
-            </div>
-
-            <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
-              {customersTotal === 0
-                ? "Sem reserva paga no período para separar novos de recorrentes."
-                : `${int(customers.new)} ${customers.new === 1 ? "cliente novo" : "clientes novos"} no período.`}
-            </p>
-          </Panel>
-        </div>
-
-        {/* ===== Blocos que ficam fora do design v2, mas o Manager pediu ===== */}
-        <div className="grid grid-cols-1 gap-5 desktop:grid-cols-2">
-          <Panel>
-            <PanelTitle aside={label.toLowerCase()}>Por destino</PanelTitle>
-            <div className="mt-5">
-              {overview.isLoading ? (
-                <Skeleton className="h-40 w-full" />
-              ) : destinations.length === 0 ? (
-                <EmptyState
-                  title="Sem reservas no período"
-                  description="A quebra por aeroporto aparece aqui."
-                />
-              ) : (
-                <ul className="flex flex-col gap-3.5">
-                  {destinations.map((d) => {
-                    const pct = share(Number(d.revenue), destinationRevenue);
-                    return (
-                      <li key={`${d.code}-${d.name}`} className="flex flex-col gap-1.5">
-                        <div className="flex items-baseline justify-between gap-3 text-body-sm">
-                          <span className="truncate text-ink">{d.name}</span>
-                          <span className="shrink-0 tabular-nums text-ink">
-                            {formatBRL(Number(d.revenue))}
-                          </span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-surface-strong">
-                          <div className="h-full bg-mp-primary" style={{ width: `${pct}%` }} />
-                        </div>
-                        <div className="flex items-baseline justify-between gap-3 text-caption-sm text-muted-soft">
-                          <span>
-                            {int(d.bookings)} reservas · {int(d.vehicle_days)} diárias
-                          </span>
-                          <span className="tabular-nums">{pct}%</span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </Panel>
-
-          <Panel>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-title-md text-ink">Fluxo de veículos por hora</div>
-              <Input
-                type="date"
-                aria-label="Dia do fluxo de veículos"
-                value={flowDate}
-                onChange={(e) => setFlowDate(e.target.value)}
-                className="h-10 w-[170px]"
-              />
-            </div>
-            <div className="mt-5">
-              {flow.isLoading ? (
-                <Skeleton className="h-56 w-full" />
-              ) : entries.vehicles === 0 && exits.vehicles === 0 ? (
-                <EmptyState
-                  title="Nenhum movimento nesse dia"
-                  description="Escolha outra data para ver as entradas e saídas hora a hora."
-                />
-              ) : (
-                <>
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={flowChart}>
-                        <CartesianGrid
-                          stroke="hsl(var(--hairline-soft))"
-                          strokeDasharray="4 4"
-                          vertical={false}
-                        />
-                        <XAxis
-                          dataKey="hour"
-                          tick={{ fontSize: 11 }}
-                          interval={1}
-                          stroke="hsl(var(--muted-soft))"
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          allowDecimals={false}
-                          tick={{ fontSize: 11 }}
-                          stroke="hsl(var(--muted-soft))"
-                          width={32}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <Tooltip />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                        <Bar
-                          dataKey="entradas"
-                          name="Entradas"
-                          fill="hsl(var(--mp-primary))"
-                          radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                          dataKey="saidas"
-                          name="Saídas"
-                          fill="hsl(var(--mp-indigo))"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <p className="mt-4 text-caption text-muted">
-                    {int(entries.vehicles)} entradas, {int(exits.vehicles)} saídas e{" "}
-                    {int(entries.passengers)} passageiros.
-                    {entries.peakHour !== null
-                      ? ` Pico de chegada às ${hourLabel(entries.peakHour)}.`
-                      : ""}
-                  </p>
-                </>
-              )}
-            </div>
-          </Panel>
-        </div>
-
-        <Panel>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-title-md text-ink">Reservas recentes</div>
-            <Link
-              to="/manager/attribution"
-              className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
-            >
-              Ver a origem das reservas
-            </Link>
-          </div>
-          <div className="mt-5">
-            <BookingTable
-              rows={recent.data?.rows}
-              isLoading={recent.isLoading}
-              showSource
-              onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
-              onWlRowClick={(w) => navigate(`/manager/bookings/site/${w.id}`)}
-            />
-          </div>
-        </Panel>
-      </>
+          <div className={colunas(linhaFinal.length)}>{linhaFinal}</div>
+        </>
+      )}
     </div>
   );
 }

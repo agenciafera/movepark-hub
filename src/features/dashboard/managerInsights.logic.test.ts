@@ -3,6 +3,8 @@ import {
   concentration,
   dominantStay,
   networkInsight,
+  unitInsight,
+  compareNoun,
   rankDetail,
   rankLocations,
   share,
@@ -129,7 +131,12 @@ describe("networkInsight", () => {
     const r = networkInsight({
       revenue: 1000,
       network: { locations_total: 10, locations_with_revenue: 2 },
-      concentration: { leader: { name: "Abbapark" }, topShare: 81, headCount: 1, withRevenue: 2 } as never,
+      concentration: {
+        leader: { name: "Abbapark" },
+        topShare: 81,
+        headCount: 1,
+        withRevenue: 2,
+      } as never,
       customers: { new: 1, returning: 1 },
       scope: "hub",
     });
@@ -198,5 +205,60 @@ describe("networkInsight", () => {
     expect(i?.title).toBe("A rede está crescendo por recompra");
     expect(i?.title).not.toMatch(/não/);
     expect(i?.detail).toContain("94%");
+  });
+});
+
+describe("unitInsight", () => {
+  const money = (n: number) => `R$ ${n}`;
+  const base = {
+    revenue: 1000,
+    previousRevenue: 0,
+    bookings: 20,
+    vehicleDays: 80,
+    ticket: 50,
+    customers: { new: 15, returning: 5 },
+    money,
+  };
+
+  it("sem venda, diz que ainda não há leitura", () => {
+    expect(unitInsight({ ...base, bookings: 0, revenue: 0 }).title).toBe(
+      "Nenhuma reserva paga no período",
+    );
+  });
+
+  it("variação de 10% ou mais contra o período anterior vira a leitura", () => {
+    expect(unitInsight({ ...base, previousRevenue: 800 })).toEqual({
+      title: "A receita subiu 25% sobre o período anterior",
+      detail: "R$ 1000 no período, contra R$ 800 antes.",
+    });
+    expect(
+      unitInsight({ ...base, previousRevenue: 1250, compareLabel: "período comparado" }).title,
+    ).toBe("A receita caiu 20% em relação ao período comparado");
+    expect(
+      unitInsight({
+        ...base,
+        previousRevenue: 800,
+        compareLabel: compareNoun("lastYear"),
+      }).title,
+    ).toBe("A receita subiu 25% sobre o mesmo período do ano passado");
+    expect(compareNoun("previous")).toBe("período anterior");
+  });
+
+  it("variação pequena não vira manchete; cai na recompra ou no retrato", () => {
+    expect(unitInsight({ ...base, previousRevenue: 950 }).title).toBe(
+      "20 reservas pagas no período",
+    );
+    expect(
+      unitInsight({ ...base, previousRevenue: 950, customers: { new: 2, returning: 18 } }).title,
+    ).toBe("A unidade está crescendo por recompra");
+  });
+
+  it("nunca fala de rede nem de unidade sozinha", () => {
+    const t = JSON.stringify([
+      unitInsight(base),
+      unitInsight({ ...base, previousRevenue: 500 }),
+      unitInsight({ ...base, bookings: 0 }),
+    ]);
+    expect(t).not.toMatch(/rede|sozinha|de cada 10/);
   });
 });

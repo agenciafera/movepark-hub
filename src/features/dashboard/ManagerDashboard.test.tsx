@@ -4,6 +4,12 @@ import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import ManagerDashboard from "./ManagerDashboard";
+import { ManagerFiltersContext } from "@/features/manager-filters/context";
+import {
+  DEFAULT_PERIOD,
+  resolveCompare,
+  resolvePeriod,
+} from "@/features/manager-filters/managerFilters.logic";
 import type { ManagerOverview } from "@/types/domain";
 
 const SUPABASE_URL = "http://localhost:54321";
@@ -81,20 +87,51 @@ const FLOW = {
   })),
 };
 
-function renderDashboard(wl?: unknown, route = "/manager", overview: ManagerOverview = OVERVIEW) {
+/** Filtro com uma unidade escolhida: a tela vira a visão da unidade. */
+function comUmaUnidade(ui: React.ReactElement) {
+  const range = resolvePeriod(DEFAULT_PERIOD);
+  return (
+    <ManagerFiltersContext.Provider
+      value={{
+        period: DEFAULT_PERIOD,
+        setPeriod: () => {},
+        range,
+        compareRange: resolveCompare(DEFAULT_PERIOD, range),
+        locationIds: ["loc-1"],
+        setLocationIds: () => {},
+        scopedLocationIds: ["loc-1"],
+        reset: () => {},
+      }}
+    >
+      {ui}
+    </ManagerFiltersContext.Provider>
+  );
+}
+
+function renderDashboard(
+  wl?: unknown,
+  route = "/manager",
+  overview: ManagerOverview = OVERVIEW,
+  opts: { unidade?: boolean } = {},
+) {
   server.use(
     http.post(`${SUPABASE_URL}/rest/v1/rpc/wl_revenue`, () =>
-      HttpResponse.json(wl ?? { total: { created: 0, paid: 0, paid_amount: 0 }, by_day: [], by_company: [] }),
+      HttpResponse.json(
+        wl ?? { total: { created: 0, paid: 0, paid_amount: 0 }, by_day: [], by_company: [] },
+      ),
     ),
     http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_dashboard_overview`, () =>
       HttpResponse.json(overview),
     ),
     http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_daily_flow`, () => HttpResponse.json(FLOW)),
   );
-  return renderWithProviders(<ManagerDashboard />, {
-    auth: mockAuth({ session: mockSession("hub_admin"), effectiveRole: "hub_admin" }),
-    route,
-  });
+  return renderWithProviders(
+    opts.unidade ? comUmaUnidade(<ManagerDashboard />) : <ManagerDashboard />,
+    {
+      auth: mockAuth({ session: mockSession("hub_admin"), effectiveRole: "hub_admin" }),
+      route,
+    },
+  );
 }
 
 describe("ManagerDashboard", () => {
@@ -153,11 +190,58 @@ describe("ManagerDashboard", () => {
     expect(screen.getByText("45")).toBeInTheDocument();
   });
 
-  it("mantém o fluxo horário e a quebra por destino", async () => {
+  // 16/11/2026: na rede, fluxo por hora e reservas recentes saem (são da operação de um pátio), e
+  // a quebra por destino só aparece com dois destinos ou mais.
+  it("na rede: sem fluxo por hora nem reservas recentes; destino só com dois ou mais", async () => {
     renderDashboard();
-    expect(await screen.findByText("Fluxo de veículos por hora")).toBeInTheDocument();
-    expect(screen.getByText("Por destino")).toBeInTheDocument();
+    expect(await screen.findByText("Visão da rede")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Ranking do período")).toBeInTheDocument());
+    expect(screen.queryByText("Fluxo de veículos por hora")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reservas recentes")).not.toBeInTheDocument();
+    // O retrato tem um destino só: o card de destino daria 100% num aeroporto.
+    expect(screen.queryByText("Por destino")).not.toBeInTheDocument();
+  });
+
+  it("na rede com dois destinos, a quebra por destino aparece", async () => {
+    renderDashboard(undefined, "/manager", {
+      ...OVERVIEW,
+      by_destination: [
+        { code: "VCP", name: "Viracopos", bookings: 12, revenue: 919.3, vehicle_days: 23 },
+        { code: "GRU", name: "Guarulhos", bookings: 33, revenue: 521.1, vehicle_days: 66 },
+      ],
+    });
+    expect(await screen.findByText("Por destino")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("Viracopos")).toBeInTheDocument());
+  });
+
+  it("com uma unidade: cards de rede saem, entram fluxo, recentes e a leitura da unidade", async () => {
+    const fluxo: unknown[] = [];
+    renderDashboard(undefined, "/manager", OVERVIEW, { unidade: true });
+    // Depois do render para ganhar do handler padrão (no MSW o último registrado vence).
+    server.use(
+      http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_daily_flow`, async ({ request }) => {
+        fluxo.push(((await request.json()) as Record<string, unknown>).p_source);
+        return HttpResponse.json(FLOW);
+      }),
+    );
+    expect(await screen.findByText("Visão da unidade")).toBeInTheDocument();
+    expect(await screen.findByText("Fluxo de veículos por hora")).toBeInTheDocument();
+    expect(screen.getByText("Reservas recentes")).toBeInTheDocument();
+    expect(screen.getByText("Ticket médio")).toBeInTheDocument();
+    for (const deRede of [
+      "Rede com receita",
+      "Concentração",
+      "Ranking do período",
+      "Por destino",
+    ]) {
+      expect(screen.queryByText(deRede)).not.toBeInTheDocument();
+    }
+    // 1440,40 contra 1200 no período anterior: +20%.
+    expect(
+      await screen.findByText("A receita subiu 20% sobre o período anterior"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/sozinha faz|de cada 10 reais/)).not.toBeInTheDocument();
+    await waitFor(() => expect(fluxo).toContain("all"));
   });
 
   // Fase 5 (D6): receita da rede com a quebra por origem, e a comissão do site à parte.
@@ -178,7 +262,9 @@ describe("ManagerDashboard", () => {
   it("sem venda no site, nada de white-label na tela", async () => {
     renderDashboard();
     expect(await screen.findByText("Receita da rede")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"));
+    await waitFor(() =>
+      expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"),
+    );
     expect(screen.queryByTestId("receita-por-origem")).not.toBeInTheDocument();
     expect(screen.queryByText("Comissão do white-label")).not.toBeInTheDocument();
   });
@@ -187,7 +273,9 @@ describe("ManagerDashboard", () => {
   const SITE = {
     total: { created: 8, paid: 6, paid_amount: 300 },
     by_day: [{ day: "2026-07-29", paid: 6, paid_amount: 300 }],
-    by_company: [{ company_id: "c1", company_name: "Virapark", created: 8, paid: 6, paid_amount: 300 }],
+    by_company: [
+      { company_id: "c1", company_name: "Virapark", created: 8, paid: 6, paid_amount: 300 },
+    ],
   };
 
   // Gráfico por dia do pagamento (09/11/2026): o recorte muda, o card de cima segue por check-in.
@@ -245,7 +333,9 @@ describe("ManagerDashboard", () => {
   it("origem Hub: receita só do Hub, sem quebra nem nada do site", async () => {
     renderDashboard(SITE, "/manager?origem=hub");
     expect(await screen.findByText("Receita do Hub")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"));
+    await waitFor(() =>
+      expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.440,40"),
+    );
     expect(screen.queryByTestId("receita-por-origem")).not.toBeInTheDocument();
     expect(screen.queryByTestId("site-por-estacionamento")).not.toBeInTheDocument();
   });
@@ -263,12 +353,13 @@ describe("ManagerDashboard", () => {
     );
     expect(await screen.findByText("Receita do white-label")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 300,00"));
-    expect(await screen.findByText("Virapark sozinha faz 6 de cada 10 reais do white-label")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Virapark sozinha faz 6 de cada 10 reais do white-label"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Rede com receita")).toBeInTheDocument();
     expect(screen.getByText("Concentração")).toBeInTheDocument();
     expect(screen.getByText("participação na receita do white-label")).toBeInTheDocument();
     expect(screen.getByText("Clientes")).toBeInTheDocument();
-    expect(screen.getByText("Reservas recentes")).toBeInTheDocument();
     expect(screen.queryByTestId("aviso-so-hub")).not.toBeInTheDocument();
     expect(screen.queryByTestId("site-por-estacionamento")).not.toBeInTheDocument();
     expect(screen.queryByText("A repassar aos parceiros")).not.toBeInTheDocument();
@@ -278,20 +369,14 @@ describe("ManagerDashboard", () => {
 
   it("a RPC dos cards recebe a origem escolhida (padrão: as duas)", async () => {
     const origens: unknown[] = [];
-    const fluxo: unknown[] = [];
     renderDashboard();
     server.use(
       http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_dashboard_overview`, async ({ request }) => {
         origens.push(((await request.json()) as Record<string, unknown>).p_source);
         return HttpResponse.json(OVERVIEW);
       }),
-      http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_daily_flow`, async ({ request }) => {
-        fluxo.push(((await request.json()) as Record<string, unknown>).p_source);
-        return HttpResponse.json(FLOW);
-      }),
     );
     await waitFor(() => expect(origens).toContain("all"));
-    await waitFor(() => expect(fluxo).toContain("all"));
   });
 
   // A RPC soma o site em `current.revenue` quando a origem o inclui; o card de receita usa a quebra
@@ -310,7 +395,9 @@ describe("ManagerDashboard", () => {
         wl_bookings: 6,
       },
     });
-    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.740,40"));
+    await waitFor(() =>
+      expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.740,40"),
+    );
     expect(screen.getByTestId("receita-por-origem")).toHaveTextContent(
       "R$ 1.440,40 no Hub, R$ 300,00 no white-label",
     );

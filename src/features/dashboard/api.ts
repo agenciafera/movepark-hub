@@ -6,11 +6,7 @@ import {
   type PriceBreakdownLike,
 } from "@/features/bookings/bookingMoney.logic";
 import { AGENDA_STATUSES } from "./operatorInsights.logic";
-import type {
-  BookingWithRelations,
-  DailyFlow,
-  ManagerOverview,
-} from "@/types/domain";
+import type { BookingWithRelations, DailyFlow, ManagerOverview } from "@/types/domain";
 import type { Range } from "@/features/manager-filters/managerFilters.logic";
 import {
   summarizeRanges,
@@ -36,7 +32,16 @@ export function useManagerOverview(
   const compareFrom = compareRange?.from.toISOString() ?? null;
   const compareTo = compareRange?.to.toISOString() ?? null;
   return useQuery({
-    queryKey: ["dashboard", "manager-overview", from, to, compareFrom, compareTo, locationIds, source],
+    queryKey: [
+      "dashboard",
+      "manager-overview",
+      from,
+      to,
+      compareFrom,
+      compareTo,
+      locationIds,
+      source,
+    ],
     staleTime: 60_000,
     queryFn: async (): Promise<ManagerOverview> => {
       const { data, error } = await supabase.rpc("manager_dashboard_overview", {
@@ -63,9 +68,11 @@ export function useManagerDailyFlow(
   date: string,
   locationIds?: string[],
   source: "hub" | "wl" | "all" = "hub",
+  enabled = true,
 ) {
   return useQuery({
     queryKey: ["dashboard", "manager-daily-flow", date, locationIds, source],
+    enabled,
     staleTime: 60_000,
     queryFn: async (): Promise<DailyFlow> => {
       const { data, error } = await supabase.rpc("manager_daily_flow", {

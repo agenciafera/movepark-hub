@@ -213,3 +213,77 @@ export function networkInsight(input: NetworkInsightInput): Insight | null {
       : `A receita ficou distribuída pela rede.`,
   };
 }
+
+export type UnitInsightInput = {
+  revenue: number;
+  previousRevenue: number;
+  bookings: number;
+  vehicleDays: number;
+  ticket: number;
+  customers: { new: number; returning: number };
+  /**
+   * Com que período a receita é comparada, como a frase diz: "período anterior" (padrão),
+   * "mesmo período do ano passado" ou "período comparado".
+   */
+  compareLabel?: string;
+  /** Formatação de dinheiro (a da tela), para a lógica continuar pura e testável. */
+  money: (n: number) => string;
+};
+
+/**
+ * A leitura de uma unidade só (16/11/2026). Com o filtro numa unidade, as frases da rede perdem o
+ * sentido ("X sozinha faz 10 de cada 10 reais", "1 de 1 unidade gerou receita"), então a unidade
+ * tem o seu conjunto fechado: sem venda, variação forte contra o período anterior, recompra, ou o
+ * retrato. Nunca volta `null`: com venda ou sem, sempre há o que dizer.
+ */
+/** Rótulo da comparação do filtro, para a leitura da unidade. */
+export function compareNoun(compare: "none" | "previous" | "lastYear" | "custom"): string {
+  if (compare === "lastYear") return "mesmo período do ano passado";
+  if (compare === "custom") return "período comparado";
+  return "período anterior";
+}
+
+export function unitInsight(input: UnitInsightInput): Insight {
+  const { revenue, previousRevenue, bookings, vehicleDays, ticket, customers, money } = input;
+  const periodo = input.compareLabel ?? "período anterior";
+
+  // 1. Sem venda.
+  if (bookings === 0) {
+    return {
+      title: "Nenhuma reserva paga no período",
+      detail: "A leitura aparece assim que entrar a primeira venda.",
+    };
+  }
+
+  // 2. Variação forte da receita: 10% ou mais para cima ou para baixo.
+  if (previousRevenue > 0) {
+    const delta = Math.round(((revenue - previousRevenue) / previousRevenue) * 100);
+    if (delta >= 10) {
+      return {
+        title: `A receita subiu ${delta}% sobre o ${periodo}`,
+        detail: `${money(revenue)} no período, contra ${money(previousRevenue)} antes.`,
+      };
+    }
+    if (delta <= -10) {
+      return {
+        title: `A receita caiu ${Math.abs(delta)}% em relação ao ${periodo}`,
+        detail: `${money(revenue)} no período, contra ${money(previousRevenue)} antes.`,
+      };
+    }
+  }
+
+  // 3. Recompra: a mesma régua da rede.
+  const clientes = customers.new + customers.returning;
+  if (clientes >= 10 && customers.returning / clientes >= 0.7) {
+    return {
+      title: "A unidade está crescendo por recompra",
+      detail: `${share(customers.returning, clientes)}% das reservas vieram de quem já tinha reservado, contra ${customers.new} ${plural(customers.new, "cliente novo", "clientes novos")} no período.`,
+    };
+  }
+
+  // 4. O retrato.
+  return {
+    title: `${bookings} ${plural(bookings, "reserva paga", "reservas pagas")} no período`,
+    detail: `Ticket médio de ${money(ticket)} e ${vehicleDays} ${plural(vehicleDays, "diária vendida", "diárias vendidas")}.`,
+  };
+}

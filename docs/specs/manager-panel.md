@@ -144,6 +144,35 @@ padrão 'hub') e juntam as linhas de `wl_booking` no mesmo formato das do Hub (m
 Com `p_source = 'hub'` as duas RPCs devolvem exatamente o que devolviam antes (conferido no banco
 vivo em 16/11/2026, resumo de 30 dias e fluxo de 16 dias seguidos).
 
+#### Rede ou unidade (16/11/2026)
+
+A tela tem duas grades e escolhe pela quantidade de unidades no filtro (`scopedLocationIds`):
+nenhuma ou várias é a **visão da rede**, exatamente uma é a **visão da unidade** (título "Visão da
+unidade", com empresa e unidade na descrição). Cada card só aparece onde responde a uma pergunta.
+
+| Card | Rede | Unidade | Por quê |
+|---|---|---|---|
+| Leitura do período | `networkInsight` | `unitInsight` | As frases da rede ("X sozinha faz 10 de cada 10 reais") não fazem sentido para uma unidade; a da unidade compara a receita com o período do filtro (anterior, ano passado ou comparado), depois recompra, depois o retrato |
+| Receita, receita por dia, ocupação por dia, ticket médio, permanência, clientes | sim | sim | Medem a operação nos dois recortes |
+| Rede com receita, concentração, ranking | sim | não | Com uma unidade dariam "1 de 1", "100%" e "1º de 1" |
+| Por destino | só com 2+ destinos | não | Um destino só seria uma barra de 100% |
+| Fluxo de veículos por hora, reservas recentes | não | sim | São da operação de um pátio; somar pátios de cidades diferentes hora a hora não orienta decisão, e a lista da rede já está em Reservas. Na rede as duas consultas nem são feitas |
+| Receita de tarifas | só com Hub na origem | só com Hub na origem | Tarifa não existe no site |
+
+**Grade da rede:** leitura, receita e rede com receita (3 colunas); receita por dia e concentração
+(2fr/1fr); ocupação por dia e ticket médio (2fr/1fr); ranking e por destino (ou clientes, quando
+não há dois destinos); a última linha junta permanência, clientes (se ainda não entrou) e tarifas,
+com tantas colunas quanto cards sobraram.
+
+**Grade da unidade:** leitura, receita e ticket médio (3 colunas); receita por dia e clientes
+(2fr/1fr); ocupação por dia e permanência (2fr/1fr); fluxo por hora e tarifas (ou o fluxo na linha
+inteira, sem Hub); reservas recentes.
+
+A regra é parear cards de altura parecida na mesma linha e deixar todos esticarem (`flex-col`),
+para não sobrar área vazia embaixo do card mais baixo. O ticket médio ganhou reservas pagas e
+diárias vendidas, que equilibram a altura ao lado do gráfico de ocupação, e as listas (ranking e
+destino) têm o mesmo teto de altura com rolagem.
+
 #### Linha 1
 
 | Bloco | O que mostra |
