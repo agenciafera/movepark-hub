@@ -299,7 +299,12 @@ export default function ManagerDashboard() {
         <Skeleton className="mt-5 h-10 w-44 bg-white/20" />
       ) : (
         <div
-          className="mt-5 whitespace-nowrap text-display-2xl tabular-nums leading-none text-white"
+          // Na rede a receita passa de R$ 1 milhão, e no tamanho cheio "R$ 1.698.146,34" era
+          // cortado no card de um terço da largura (16/11/2026).
+          className={cn(
+            "mt-5 whitespace-nowrap tabular-nums leading-none text-white",
+            formatBRL(receitaTotal).length > 12 ? "text-display-xl" : "text-display-2xl",
+          )}
           data-testid="receita-rede"
         >
           {formatBRL(receitaTotal)}

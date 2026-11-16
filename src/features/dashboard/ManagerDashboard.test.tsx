@@ -403,3 +403,17 @@ describe("ManagerDashboard", () => {
     );
   });
 });
+
+describe("ManagerDashboard · receita longa", () => {
+  // Regressão (16/11/2026): "R$ 1.698.146,34" no tamanho cheio era cortado no card.
+  it("receita de 7 dígitos usa a fonte menor para caber no card", async () => {
+    renderDashboard(undefined, "/manager", {
+      ...OVERVIEW,
+      current: { ...OVERVIEW.current, revenue: 1698146.34, hub_revenue: 1698146.34 },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.698.146,34"),
+    );
+    expect(screen.getByTestId("receita-rede").className).toContain("text-display-xl");
+  });
+});
