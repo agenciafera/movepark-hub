@@ -132,6 +132,7 @@ export function OccupancyDailyPanel({
                 strokeWidth={1.5}
               />
               <Tooltip
+                separator=": "
                 formatter={(v: number, key: string, item: { payload?: OccupancyDayPoint }) => {
                   const serie = SERIE[key];
                   const carros = item.payload && serie ? item.payload[serie.carros] : 0;
