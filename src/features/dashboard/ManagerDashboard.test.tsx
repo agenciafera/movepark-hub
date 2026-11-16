@@ -244,6 +244,30 @@ describe("ManagerDashboard", () => {
     await waitFor(() => expect(fluxo).toContain("all"));
   });
 
+  it("unidade só do site: receita da unidade e sem o card de tarifas", async () => {
+    renderDashboard(
+      undefined,
+      "/manager",
+      {
+        ...OVERVIEW,
+        by_fare: [],
+        current: { ...OVERVIEW.current, hub_bookings: 0, hub_revenue: 0, hub_vehicle_days: 0 },
+      },
+      { unidade: true },
+    );
+    expect(await screen.findByText("Receita da unidade")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Ticket médio")).toBeInTheDocument());
+    expect(screen.queryByText("Receita de tarifas")).not.toBeInTheDocument();
+  });
+
+  it("tarifas contam quantas reservas do Hub pagaram tarifa", async () => {
+    renderDashboard();
+    // 14 superflex + 9 flex pagaram, de 51 reservas do Hub.
+    expect(
+      await screen.findByText("23 de 51 reservas do Hub levaram tarifa paga."),
+    ).toBeInTheDocument();
+  });
+
   // Fase 5 (D6): receita da rede com a quebra por origem, e a comissão do site à parte.
   it("soma o site white-label na receita da rede, com a quebra e sem comissão do site", async () => {
     renderDashboard({

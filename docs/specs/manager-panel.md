@@ -169,9 +169,19 @@ com tantas colunas quanto cards sobraram.
 inteira, sem Hub); reservas recentes.
 
 A regra é parear cards de altura parecida na mesma linha e deixar todos esticarem (`flex-col`),
-para não sobrar área vazia embaixo do card mais baixo. O ticket médio ganhou reservas pagas e
-diárias vendidas, que equilibram a altura ao lado do gráfico de ocupação, e as listas (ranking e
-destino) têm o mesmo teto de altura com rolagem.
+para não sobrar área vazia embaixo do card mais baixo. Conferido na tela em 16/11/2026, com estes
+acabamentos:
+
+- O ticket médio mostra reservas pagas, diárias vendidas, permanência média e passageiros em
+  blocos 2x2 que crescem até a altura da linha (uma lista deixava um vão ao lado da ocupação).
+- Ranking e destino têm a mesma altura fixa no desktop (520px) e rolam por dentro.
+- Tarifas só aparece com Hub na origem e alguma reserva do Hub no recorte, e fecha com quantas
+  reservas do Hub pagaram tarifa.
+- A receita com mais de 12 caracteres ("R$ 1.698.146,34") desce um tamanho de fonte para caber no
+  card de um terço.
+- Na unidade, o card de receita diz "Receita da unidade" e "Reservas recentes" mostra 10 reservas
+  sem a coluna Estacionamento, que repetiria o mesmo nome em toda linha.
+- Enquanto o resumo carrega, a leitura mostra o esqueleto, e não "Sem unidade ativa".
 
 #### Linha 1
 

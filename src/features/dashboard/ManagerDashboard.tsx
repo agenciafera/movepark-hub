@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Panel, PanelTitle } from "@/components/shared/Panel";
 import { BookingTable } from "@/features/bookings/BookingTable";
+import { defaultColumnSettings, visibleColumnIds } from "@/features/bookings/bookingColumns.logic";
 import { useBookingsPage } from "@/features/bookings/api";
 import { useRevenueByPaymentDay, useRevenueByRange } from "@/features/reports/api";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +59,19 @@ import {
 } from "./managerInsights.logic";
 
 const int = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("pt-BR");
+
+/** Bloco de número dentro de um card, o mesmo desenho da "Qualidade da operação" do parceiro. */
+function Bloco({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div className="flex flex-col justify-center rounded-md bg-surface-soft p-3.5">
+      <div className="text-caption text-muted">{rotulo}</div>
+      <div className="mt-1.5 text-display-sm tabular-nums text-ink">{valor}</div>
+    </div>
+  );
+}
+
+/** Colunas de "Reservas recentes" na visão da unidade: as padrão, sem a da unidade. */
+const COLUNAS_RECENTES = visibleColumnIds(defaultColumnSettings()).filter((c) => c !== "parking");
 
 /** Linha com o card largo (gráfico) e o card estreito ao lado. */
 const DUAS_COLUNAS = "grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]";
@@ -183,7 +197,7 @@ export default function ManagerDashboard() {
       source: origem,
       locationIds: scopedLocationIds,
       page: 0,
-      pageSize: 20,
+      pageSize: 10,
     },
     umaUnidade,
   );
@@ -212,6 +226,9 @@ export default function ManagerDashboard() {
   const receitaTotal = hubRevenue + siteRevenue;
   const hubBookings = cur?.hub_bookings ?? cur?.bookings ?? 0;
   const hubVehicleDays = cur?.hub_vehicle_days ?? cur?.vehicle_days ?? 0;
+  // Tarifa só existe no Hub: o card some com a origem só do site e quando o recorte não tem
+  // nenhuma reserva do Hub (numa unidade que vende só pelo site ele mostrava R$ 0,00).
+  const temTarifas = verHub && hubBookings > 0;
   // De quem são os números dos cards: " do Hub", " do white-label" ou nada (a rede, as duas).
   const deQuem = origem === "hub" ? " do Hub" : origem === "wl" ? " do white-label" : "";
   const tituloReceita =
@@ -219,7 +236,9 @@ export default function ManagerDashboard() {
       ? "Receita do Hub"
       : origem === "wl"
         ? "Receita do white-label"
-        : "Receita da rede";
+        : umaUnidade
+          ? "Receita da unidade"
+          : "Receita da rede";
   const best = bestRevenueDay(daily);
   // Por pagamento, o recorte do gráfico é outro (quem pagou no período, não quem entrou), então o
   // total sai do próprio gráfico e não do card de cima, que segue por check-in.
@@ -235,6 +254,10 @@ export default function ManagerDashboard() {
   const shortStay = shortStayShare(overview.data?.length_of_stay ?? []);
   const fares = overview.data?.by_fare ?? [];
   const fareTotal = fares.reduce((acc, f) => acc + Number(f.revenue), 0);
+  // Reservas que pagaram alguma tarifa (a básica sai de graça e não conta).
+  const comTarifaPaga = fares
+    .filter((f) => Number(f.revenue) > 0)
+    .reduce((acc, f) => acc + f.bookings, 0);
   const customers = overview.data?.customers ?? { new: 0, returning: 0 };
   const customersTotal = customers.new + customers.returning;
   const destinations = overview.data?.by_destination ?? [];
@@ -277,7 +300,12 @@ export default function ManagerDashboard() {
       <span className="self-start rounded-full bg-white/20 px-3 py-1.5 text-caption font-bold">
         Leitura do período
       </span>
-      {leitura ? (
+      {overview.isLoading ? (
+        <div className="mt-auto space-y-2.5 pt-6">
+          <Skeleton className="h-7 w-4/5 bg-white/20" />
+          <Skeleton className="h-4 w-3/5 bg-white/15" />
+        </div>
+      ) : leitura ? (
         <div className="mt-auto pt-6">
           <p className="text-display-md leading-tight text-white">{leitura.title}</p>
           <p className="mt-2.5 text-body-sm leading-relaxed text-white/80">{leitura.detail}</p>
@@ -585,7 +613,7 @@ export default function ManagerDashboard() {
     />
   );
   const card_tarifas = (
-    <Panel>
+    <Panel className="flex flex-col">
       <PanelTitle aside={label.toLowerCase()}>Receita de tarifas</PanelTitle>
       <div className="mt-4 whitespace-nowrap text-display-xl tabular-nums text-ink">
         {formatBRL(fareTotal)}
@@ -623,6 +651,12 @@ export default function ManagerDashboard() {
           <p className="py-4 text-body-sm text-muted">Sem reserva com tarifa no período.</p>
         )}
       </div>
+      {hubBookings > 0 && (
+        <p className="mt-auto pt-5 text-body-sm leading-relaxed text-body">
+          {int(comTarifaPaga)} de {int(hubBookings)}{" "}
+          {hubBookings === 1 ? "reserva do Hub levou" : "reservas do Hub levaram"} tarifa paga.
+        </p>
+      )}
     </Panel>
   );
   const card_ticket = (
@@ -631,37 +665,21 @@ export default function ManagerDashboard() {
       <div className="mt-4 whitespace-nowrap text-display-xl tabular-nums text-ink">
         {formatBRL(cur?.ticket ?? 0)}
       </div>
-      <div className="mb-5 mt-1.5 text-body-sm text-muted">
+      <div className="mt-1.5 text-body-sm text-muted">
         {formatBRL(cur?.revenue_per_vehicle_day ?? 0)} por diária vendida
       </div>
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
-        <span className="min-w-0 text-body-sm text-muted">Reservas pagas</span>
-        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-          {int(cur?.bookings)}
-        </span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <span className="min-w-0 text-body-sm text-muted">Diárias vendidas</span>
-        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-          {int(cur?.vehicle_days)}
-        </span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <span className="min-w-0 text-body-sm text-muted">Permanência média</span>
-        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-          {oneDecimal(cur?.avg_stay_days ?? 0)} dias
-        </span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <span className="min-w-0 text-body-sm text-muted">Passageiros transportados</span>
-        <span className="shrink-0 text-body-sm font-bold tabular-nums text-ink">
-          {int(cur?.passengers)}
-        </span>
+      {/* Blocos 2x2 crescem até a altura da linha: ao lado do gráfico de ocupação, uma lista
+          deixava um vão entre o valor e as linhas de baixo (16/11/2026). */}
+      <div className="mt-5 grid flex-1 grid-cols-2 gap-3">
+        <Bloco rotulo="Reservas pagas" valor={int(cur?.bookings)} />
+        <Bloco rotulo="Diárias vendidas" valor={int(cur?.vehicle_days)} />
+        <Bloco rotulo="Permanência média" valor={`${oneDecimal(cur?.avg_stay_days ?? 0)} dias`} />
+        <Bloco rotulo="Passageiros" valor={int(cur?.passengers)} />
       </div>
     </Panel>
   );
   const card_ranking = (
-    <Panel className="flex flex-col">
+    <Panel className="flex min-h-0 flex-col">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="text-title-md text-ink">Ranking do período</div>
@@ -678,7 +696,7 @@ export default function ManagerDashboard() {
         </Link>
       </div>
 
-      <div className="mt-5 max-h-[392px] overflow-y-auto pr-1">
+      <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
         {overview.isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -853,9 +871,9 @@ export default function ManagerDashboard() {
     </Panel>
   );
   const card_destino = (
-    <Panel className="flex flex-col">
+    <Panel className="flex min-h-0 flex-col">
       <PanelTitle aside={label.toLowerCase()}>Por destino</PanelTitle>
-      <div className="mt-5">
+      <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
         {overview.isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : destinations.length === 0 ? (
@@ -864,7 +882,7 @@ export default function ManagerDashboard() {
             description="A quebra por aeroporto aparece aqui."
           />
         ) : (
-          <ul className="flex max-h-[392px] flex-col gap-3.5 overflow-y-auto pr-1">
+          <ul className="flex flex-col gap-3.5">
             {destinations.map((d) => {
               const pct = share(Number(d.revenue), destinationRevenue);
               return (
@@ -981,6 +999,8 @@ export default function ManagerDashboard() {
       <div className="mt-5">
         <BookingTable
           rows={recent.data?.rows}
+          // A tela é de uma unidade: a coluna Estacionamento repetiria o mesmo nome em toda linha.
+          columns={COLUNAS_RECENTES}
           isLoading={recent.isLoading}
           showSource
           onRowClick={(b) => navigate(`/manager/bookings/${b.code}`)}
@@ -994,7 +1014,7 @@ export default function ManagerDashboard() {
   const linhaFinal = [
     <React.Fragment key="permanencia">{card_permanencia}</React.Fragment>,
     variosDestinos ? <React.Fragment key="clientes">{card_clientes}</React.Fragment> : null,
-    verHub ? <React.Fragment key="tarifas">{card_tarifas}</React.Fragment> : null,
+    temTarifas ? <React.Fragment key="tarifas">{card_tarifas}</React.Fragment> : null,
   ].filter(Boolean);
 
   return (
@@ -1044,9 +1064,9 @@ export default function ManagerDashboard() {
             {card_ocupacao}
             {card_permanencia}
           </div>
-          <div className={verHub ? DUAS_COLUNAS : "grid grid-cols-1 gap-5"}>
+          <div className={temTarifas ? DUAS_COLUNAS : "grid grid-cols-1 gap-5"}>
             {card_fluxo}
-            {verHub && card_tarifas}
+            {temTarifas && card_tarifas}
           </div>
           {card_recentes}
         </>
@@ -1067,7 +1087,8 @@ export default function ManagerDashboard() {
             {card_ocupacao}
             {card_ticket}
           </div>
-          <div className="grid grid-cols-1 gap-5 desktop:grid-cols-2">
+          {/* Altura fixa no desktop: ranking e destino rolam por dentro e terminam na mesma linha. */}
+          <div className="grid grid-cols-1 gap-5 desktop:grid-cols-2 desktop:grid-rows-[520px]">
             {card_ranking}
             {variosDestinos ? card_destino : card_clientes}
           </div>
