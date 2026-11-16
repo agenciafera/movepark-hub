@@ -15,7 +15,8 @@ meta_description: Estacionamento em Viracopos para viagem longa: Virapark a part
 links:
   - ancora: Virapark
     url: https://www.virapark.com.br/
-  - ancora: Movepark
+  - ancora: estacionamento aeroporto Viracopos
+    tipo: exata (palavra-chave da praça, regra de 16/11/2026; a versão enviada ao WhitePress em 12/11 tinha a âncora "Movepark")
     url: https://movepark.co/estacionamentos/aeroporto-viracopos
 imagens:
   - arquivo: estacionamento-viracopos-viagem-longa.jpg
@@ -61,7 +62,7 @@ No estacionamento oficial do aeroporto de Viracopos, a tabela publicada no site 
 
 Fonte: site do aeroporto de Viracopos e Virapark na Movepark, consultados em 10/11/2026. O bolsão F foi calculado pela diária de R$ 31,00.
 
-Em viagem longa, a diferença para o edifício garagem passa de R$ 500,00 já em 10 dias. O bolsão econômico fica perto da Virapark no preço, mas é descoberto. Para comparar a Virapark com outros estacionamentos parceiros da região, com preço e distância do terminal lado a lado, a [Movepark](https://movepark.co/estacionamentos/aeroporto-viracopos) mostra o total de cada opção para as datas da viagem.
+Em viagem longa, a diferença para o edifício garagem passa de R$ 500,00 já em 10 dias. O bolsão econômico fica perto da Virapark no preço, mas é descoberto. Para comparar a Virapark com outras opções de [estacionamento aeroporto Viracopos](https://movepark.co/estacionamentos/aeroporto-viracopos), com preço e distância do terminal lado a lado, a Movepark mostra o total de cada uma para as datas da viagem.
 
 ## Vale pagar por vaga coberta numa viagem de duas semanas?
 

@@ -415,7 +415,7 @@ Valem para todo pedido a partir de outubro de 2026. Pedido fora da regra não en
 | Site que fica de fora | Publica "artigo patrocinado" de qualquer assunto, tem dezenas de links de saída por post, ou cai na lista de exclusão da seção 4.2 (Conteúdo 63) |
 | Verba | Cerca de R$ 4.000 por mês, dividida entre os projetos Movepark e Virapark no WhitePress (perto de metade cada), e **todo artigo leva link para o `movepark.co`**, inclusive os da Virapark (seção 4.3) |
 | Destino do link | Maioria para `/estacionamentos/<aeroporto>` (Guarulhos primeiro), uma parte para post-pilar dono do termo ([canonicalizacao-gru-cwb.md](./canonicalizacao-gru-cwb.md), [canonicalizacao-vcp-cnf.md](./canonicalizacao-vcp-cnf.md)), pouco para a home. No artigo da Virapark, o link da Movepark vai para a página do aeroporto (seção 4.3) |
-| Âncora | Maioria marca ou URL ("Movepark", "movepark.co"), uma parte parcial ("estacionamento perto do aeroporto de Guarulhos"), **exata quase nunca** |
+| Âncora | **Todo artigo tem um link na palavra-chave da praça**, apontando para a página do aeroporto: "estacionamento aeroporto Guarulhos", "estacionamento aeroporto Viracopos" (ou "Campinas"), "estacionamento aeroporto Curitiba" (ou "Afonso Pena"), "estacionamento aeroporto Confins", e assim por diante. Os demais links usam marca ("Movepark") ou parcial. Decisão do Diego em 16/11/2026, que substitui a regra anterior ("exata quase nunca"): segundo ele, os publicadores sempre aceitam a âncora com a palavra-chave, mesmo quando a oferta lista só marca, genérica, gráfica e URL. Confira o link publicado, porque o publicador pode trocar a âncora |
 | Ritmo | Constante, todo mês, nunca em rajada. A quantidade sai do orçamento: no custo histórico de cerca de R$ 510 por link, R$ 3.000 por mês compram de 4 a 6 links de AS 30 ou mais (site melhor custa mais, e está certo) |
 | Conteúdo do artigo | Útil por si só, sem promessa de transação que a unidade não entrega (ADR-009) e sem travessão |
 | Registro | Todo link comprado entra na planilha de controle (Conteúdo 66), [`dados/backlinks-controle.csv`](./dados/backlinks-controle.csv): pedido, projeto, site, AS no dia, preço, URL publicada, destino, âncora, dofollow, se ainda está no ar e a data da conferência. Criada em 14/10/2026 com as 37 compras auditadas na seção 2.7 e os cinco pedidos de outubro |
@@ -576,6 +576,8 @@ Decisão do Diego em 13/10/2026, que vale para todo lote daqui em diante:
 3. **Todo artigo leva link para o `movepark.co`**, inclusive os pagos pela Virapark. O artigo da
    Virapark tem dois links: `virapark.com.br`, com âncora "Virapark", e a página do aeroporto no
    `movepark.co`, com âncora de marca. Só entra oferta que aceite dois links dofollow no artigo.
+   **Desde 16/11/2026, a âncora do link da Movepark é a palavra-chave da praça** ("estacionamento
+   aeroporto Viracopos" ou "Campinas"), pela regra da tabela da seção 4.
 4. **A metade Virapark vai para Viracopos**, a praça da Virapark. O link da Movepark nesses artigos
    aponta para `/estacionamentos/aeroporto-viracopos`, e não para a ficha da Virapark: o
    `virapark.com.br` já cobre o parceiro, e a página do aeroporto é a que vende.
