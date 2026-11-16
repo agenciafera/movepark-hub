@@ -4,11 +4,12 @@ import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import ManagerDashboard from "./ManagerDashboard";
+import type { ManagerOverview } from "@/types/domain";
 
 const SUPABASE_URL = "http://localhost:54321";
 
 /** Retrato da rede real: duas unidades vendendo e o resto parado. */
-const OVERVIEW = {
+const OVERVIEW: ManagerOverview = {
   current: {
     bookings: 51,
     revenue: 1440.4,
@@ -80,13 +81,13 @@ const FLOW = {
   })),
 };
 
-function renderDashboard(wl?: unknown, route = "/manager") {
+function renderDashboard(wl?: unknown, route = "/manager", overview: ManagerOverview = OVERVIEW) {
   server.use(
     http.post(`${SUPABASE_URL}/rest/v1/rpc/wl_revenue`, () =>
       HttpResponse.json(wl ?? { total: { created: 0, paid: 0, paid_amount: 0 }, by_day: [], by_company: [] }),
     ),
     http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_dashboard_overview`, () =>
-      HttpResponse.json(OVERVIEW),
+      HttpResponse.json(overview),
     ),
     http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_daily_flow`, () => HttpResponse.json(FLOW)),
   );
@@ -249,14 +250,69 @@ describe("ManagerDashboard", () => {
     expect(screen.queryByTestId("site-por-estacionamento")).not.toBeInTheDocument();
   });
 
-  it("origem White-label: receita do site, venda por estacionamento, e os painéis só do Hub saem", async () => {
+  // 16/11/2026: com a origem White-label, os cards analíticos leem o site (antes sumiam e a tela
+  // de uma unidade só do site ficava vazia fora da receita). Repasse, comissão e tarifas são do Hub.
+  it("origem White-label: os cards leem o site, e só o dinheiro e as tarifas do Hub saem", async () => {
+    const origens: unknown[] = [];
     renderDashboard(SITE, "/manager?origem=wl");
+    server.use(
+      http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_dashboard_overview`, async ({ request }) => {
+        origens.push(((await request.json()) as Record<string, unknown>).p_source);
+        return HttpResponse.json(OVERVIEW);
+      }),
+    );
     expect(await screen.findByText("Receita do white-label")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 300,00"));
-    expect(screen.getByTestId("site-por-estacionamento")).toHaveTextContent("Virapark");
-    expect(screen.getByTestId("aviso-so-hub")).toBeInTheDocument();
+    expect(await screen.findByText("Virapark sozinha faz 6 de cada 10 reais do white-label")).toBeInTheDocument();
+    expect(screen.getByText("Rede com receita")).toBeInTheDocument();
+    expect(screen.getByText("Concentração")).toBeInTheDocument();
+    expect(screen.getByText("participação na receita do white-label")).toBeInTheDocument();
+    expect(screen.getByText("Clientes")).toBeInTheDocument();
+    expect(screen.getByText("Reservas recentes")).toBeInTheDocument();
+    expect(screen.queryByTestId("aviso-so-hub")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("site-por-estacionamento")).not.toBeInTheDocument();
     expect(screen.queryByText("A repassar aos parceiros")).not.toBeInTheDocument();
-    expect(screen.queryByText("Concentração")).not.toBeInTheDocument();
-    expect(screen.queryByText("Reservas recentes")).not.toBeInTheDocument();
+    expect(screen.queryByText("Receita de tarifas")).not.toBeInTheDocument();
+    await waitFor(() => expect(origens).toContain("wl"));
+  });
+
+  it("a RPC dos cards recebe a origem escolhida (padrão: as duas)", async () => {
+    const origens: unknown[] = [];
+    const fluxo: unknown[] = [];
+    renderDashboard();
+    server.use(
+      http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_dashboard_overview`, async ({ request }) => {
+        origens.push(((await request.json()) as Record<string, unknown>).p_source);
+        return HttpResponse.json(OVERVIEW);
+      }),
+      http.post(`${SUPABASE_URL}/rest/v1/rpc/manager_daily_flow`, async ({ request }) => {
+        fluxo.push(((await request.json()) as Record<string, unknown>).p_source);
+        return HttpResponse.json(FLOW);
+      }),
+    );
+    await waitFor(() => expect(origens).toContain("all"));
+    await waitFor(() => expect(fluxo).toContain("all"));
+  });
+
+  // A RPC soma o site em `current.revenue` quando a origem o inclui; o card de receita usa a quebra
+  // por origem para não contar o site duas vezes.
+  it("com Hub e site, o card de receita usa a parte do Hub e não soma o site duas vezes", async () => {
+    renderDashboard(SITE, "/manager", {
+      ...OVERVIEW,
+      current: {
+        ...OVERVIEW.current,
+        revenue: 1740.4,
+        bookings: 57,
+        hub_revenue: 1440.4,
+        hub_bookings: 51,
+        hub_vehicle_days: 101,
+        wl_revenue: 300,
+        wl_bookings: 6,
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId("receita-rede")).toHaveTextContent("R$ 1.740,40"));
+    expect(screen.getByTestId("receita-por-origem")).toHaveTextContent(
+      "R$ 1.440,40 no Hub, R$ 300,00 no white-label",
+    );
   });
 });

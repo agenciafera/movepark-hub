@@ -9,13 +9,13 @@
 
 begin;
 set local time zone 'UTC';
-select plan(17);
+select plan(23);
 
 select has_function('public', 'manager_dashboard_overview',
-  ARRAY['timestamptz', 'timestamptz', 'timestamptz', 'timestamptz', 'uuid[]'],
-  'manager_dashboard_overview(from, to, compare_from, compare_to, location_ids) existe');
-select has_function('public', 'manager_daily_flow', ARRAY['date', 'uuid[]'],
-  'manager_daily_flow(date, uuid[]) existe');
+  ARRAY['timestamptz', 'timestamptz', 'timestamptz', 'timestamptz', 'uuid[]', 'text'],
+  'manager_dashboard_overview(from, to, compare_from, compare_to, location_ids, source) existe');
+select has_function('public', 'manager_daily_flow', ARRAY['date', 'uuid[]', 'text'],
+  'manager_daily_flow(date, uuid[], source) existe');
 select is(
   (select prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'manager_dashboard_overview'),
@@ -23,12 +23,12 @@ select is(
 
 -- ── Grants: privilegiada, então anon fica de fora ────────────────────────────
 select ok(not has_function_privilege('anon',
-  'public.manager_dashboard_overview(timestamptz, timestamptz, timestamptz, timestamptz, uuid[])', 'EXECUTE'),
+  'public.manager_dashboard_overview(timestamptz, timestamptz, timestamptz, timestamptz, uuid[], text)', 'EXECUTE'),
   'anon NÃO executa manager_dashboard_overview');
-select ok(not has_function_privilege('anon', 'public.manager_daily_flow(date, uuid[])', 'EXECUTE'),
+select ok(not has_function_privilege('anon', 'public.manager_daily_flow(date, uuid[], text)', 'EXECUTE'),
   'anon NÃO executa manager_daily_flow');
 select ok(has_function_privilege('authenticated',
-  'public.manager_dashboard_overview(timestamptz, timestamptz, timestamptz, timestamptz, uuid[])', 'EXECUTE'),
+  'public.manager_dashboard_overview(timestamptz, timestamptz, timestamptz, timestamptz, uuid[], text)', 'EXECUTE'),
   'authenticated mantém EXECUTE (o gate é o is_hub_admin lá dentro)');
 
 -- ── Fixture: hub_admin, customer, destino/unidade próprios e reservas ────────
@@ -209,6 +209,60 @@ select is(
        public.manager_daily_flow((now() at time zone 'America/Sao_Paulo')::date) -> 'entries'
      )),
   24, 'o fluxo devolve as 24 horas do dia, inclusive as sem movimento');
+reset role;
+
+-- ── Origem (16/11/2026): o site entra nos cards com p_source ───────────────────
+-- Na unidade da fixture: uma venda paga no site (R$ 300, entrada hoje às 9h local), uma cancelada e
+-- uma duplicada. Só a paga e não duplicada conta.
+insert into public.wl_booking (company_id, location_id, wl_order_id, wl_order_number, status,
+                               check_in_at, check_out_at, wl_created_at, paid_total_cents,
+                               passenger_count, customer_email, is_duplicate)
+select l.company_id, l.id, x.n, current_setting('test.dest') || '-WL' || x.n, x.st,
+       (date_trunc('day', now() at time zone 'America/Sao_Paulo') + interval '9 hours')
+         at time zone 'America/Sao_Paulo',
+       (date_trunc('day', now() at time zone 'America/Sao_Paulo') + interval '2 days 9 hours')
+         at time zone 'America/Sao_Paulo',
+       now() - interval '1 day', 30000, 2, 'site-' || x.n || '@ex.com', x.dup
+  from public.location l
+  cross join (values (1, 'confirmed', false), (2, 'cancelled', false), (3, 'confirmed', true))
+    as x(n, st, dup)
+ where l.id = current_setting('test.loc')::uuid;
+
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.ua'))::text, true);
+select throws_ok(
+  $$ select public.manager_dashboard_overview(now() - interval '30 days', now(), p_source => 'x') $$,
+  '22023', null, 'origem fora de hub, wl e all é recusada');
+select is(
+  (public.manager_dashboard_overview(now() - interval '30 days', now() + interval '1 day', null, null,
+     array[current_setting('test.loc')::uuid], 'wl') -> 'current') ->> 'bookings',
+  '1', 'só o site: conta a venda paga, fora a cancelada e a duplicada');
+select is(
+  ((public.manager_dashboard_overview(now() - interval '30 days', now() + interval '1 day', null, null,
+     array[current_setting('test.loc')::uuid], 'all') -> 'current') ->> 'wl_revenue')::numeric,
+  300::numeric, 'com as duas origens, a quebra traz a receita do site em reais');
+select is(
+  ((public.manager_dashboard_overview(now() - interval '30 days', now() + interval '1 day', null, null,
+     array[current_setting('test.loc')::uuid], 'all') -> 'current') ->> 'revenue')::numeric,
+  ((public.manager_dashboard_overview(now() - interval '30 days', now() + interval '1 day', null, null,
+     array[current_setting('test.loc')::uuid], 'hub') -> 'current') ->> 'revenue')::numeric + 300,
+  'a receita das duas origens é a do Hub mais a do site');
+select is(
+  public.manager_dashboard_overview(now() - interval '30 days', now() + interval '1 day', null, null,
+     array[current_setting('test.loc')::uuid], 'all') -> 'money',
+  public.manager_dashboard_overview(now() - interval '30 days', now() + interval '1 day', null, null,
+     array[current_setting('test.loc')::uuid], 'hub') -> 'money',
+  'comissão e repasse seguem só do Hub: o dinheiro do site não passa pela Movepark');
+select is(
+  (select (h ->> 'vehicles')::int
+     from jsonb_array_elements(public.manager_daily_flow(
+       (now() at time zone 'America/Sao_Paulo')::date, array[current_setting('test.loc')::uuid], 'all') -> 'entries') h
+    where (h ->> 'hour')::int = 9)
+  - (select (h ->> 'vehicles')::int
+     from jsonb_array_elements(public.manager_daily_flow(
+       (now() at time zone 'America/Sao_Paulo')::date, array[current_setting('test.loc')::uuid], 'hub') -> 'entries') h
+    where (h ->> 'hour')::int = 9),
+  1, 'o fluxo com as duas origens soma a chegada do site na hora local');
 reset role;
 
 select * from finish();

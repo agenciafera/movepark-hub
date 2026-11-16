@@ -449,6 +449,15 @@ export type ManagerOverview = {
     passengers: number;
     pcd: number;
     fare_revenue: number;
+    /**
+     * Quebra por origem (16/11/2026, `p_source`): o card de receita soma o site à parte e não pode
+     * contar duas vezes. Ausente nas respostas de antes da mudança.
+     */
+    hub_bookings?: number;
+    hub_revenue?: number;
+    hub_vehicle_days?: number;
+    wl_bookings?: number;
+    wl_revenue?: number;
   };
   previous: { bookings: number; revenue: number; ticket: number; vehicle_days: number };
   statuses: {

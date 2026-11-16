@@ -150,11 +150,11 @@ export type NetworkInsightInput = {
   concentration: Concentration;
   customers: { new: number; returning: number };
   /**
-   * De quem é a receita da leitura. Com venda no site white-label no recorte, a receita da rede
-   * soma as duas origens, mas a concentração e as unidades são só do Hub: a frase diz "do Hub" para
-   * não afirmar sobre a rede inteira (fase 5, 09/10/2026).
+   * De quem é a receita da leitura: a origem escolhida no filtro. Desde 16/11/2026 a concentração e
+   * as unidades seguem a mesma origem da receita, então "da rede" é Hub e site juntos, e com uma
+   * origem só a frase diz de qual.
    */
-  scope?: "rede" | "hub";
+  scope?: "rede" | "hub" | "wl";
 };
 
 /**
@@ -180,7 +180,7 @@ export function networkInsight(input: NetworkInsightInput): Insight | null {
   if (conc.leader && conc.topShare >= 40) {
     const reais = Math.round(conc.topShare / 10);
     return {
-      title: `${conc.leader.name} sozinha faz ${reais} de cada 10 reais ${input.scope === "hub" ? "do Hub" : "da rede"}`,
+      title: `${conc.leader.name} sozinha faz ${reais} de cada 10 reais ${input.scope === "hub" ? "do Hub" : input.scope === "wl" ? "do white-label" : "da rede"}`,
       detail: `${earning} de ${total} ${plural(total, "unidade gerou", "unidades geraram")} receita. Uma queda ali derruba o período inteiro.`,
     };
   }

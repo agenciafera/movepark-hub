@@ -9571,7 +9571,7 @@ export type Database = {
         }[]
       }
       manager_daily_flow: {
-        Args: { p_date: string; p_location_ids?: string[] }
+        Args: { p_date: string; p_location_ids?: string[]; p_source?: string }
         Returns: Json
       }
       manager_dashboard_overview: {
@@ -9580,6 +9580,7 @@ export type Database = {
           p_compare_to?: string
           p_from: string
           p_location_ids?: string[]
+          p_source?: string
           p_to: string
         }
         Returns: Json

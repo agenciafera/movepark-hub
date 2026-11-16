@@ -28,13 +28,15 @@ export function useManagerOverview(
   range: Range,
   compareRange: Range | null,
   locationIds?: string[],
+  /** Origem dos cards analíticos (16/11/2026): só Hub, só site ou as duas. */
+  source: "hub" | "wl" | "all" = "hub",
 ) {
   const from = range.from.toISOString();
   const to = range.to.toISOString();
   const compareFrom = compareRange?.from.toISOString() ?? null;
   const compareTo = compareRange?.to.toISOString() ?? null;
   return useQuery({
-    queryKey: ["dashboard", "manager-overview", from, to, compareFrom, compareTo, locationIds],
+    queryKey: ["dashboard", "manager-overview", from, to, compareFrom, compareTo, locationIds, source],
     staleTime: 60_000,
     queryFn: async (): Promise<ManagerOverview> => {
       const { data, error } = await supabase.rpc("manager_dashboard_overview", {
@@ -45,6 +47,7 @@ export function useManagerOverview(
           ? { p_compare_from: compareFrom, p_compare_to: compareTo }
           : {}),
         ...(locationIds?.length ? { p_location_ids: locationIds } : {}),
+        p_source: source,
       });
       if (error) throw error;
       return data as unknown as ManagerOverview;
@@ -56,14 +59,19 @@ export function useManagerOverview(
  * Fluxo de veículos hora a hora num dia (RPC `manager_daily_flow`, só hub_admin).
  * `date` é a data local no formato `yyyy-MM-dd`; a hora sai no fuso de cada unidade.
  */
-export function useManagerDailyFlow(date: string, locationIds?: string[]) {
+export function useManagerDailyFlow(
+  date: string,
+  locationIds?: string[],
+  source: "hub" | "wl" | "all" = "hub",
+) {
   return useQuery({
-    queryKey: ["dashboard", "manager-daily-flow", date, locationIds],
+    queryKey: ["dashboard", "manager-daily-flow", date, locationIds, source],
     staleTime: 60_000,
     queryFn: async (): Promise<DailyFlow> => {
       const { data, error } = await supabase.rpc("manager_daily_flow", {
         p_date: date,
         ...(locationIds?.length ? { p_location_ids: locationIds } : {}),
+        p_source: source,
       });
       if (error) throw error;
       return data as unknown as DailyFlow;

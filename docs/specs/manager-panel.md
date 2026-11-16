@@ -116,6 +116,31 @@ qual unidade está parada.
 
 **Filtros:** unidade e período vêm da barra compartilhada (§4.0), com comparação.
 
+**Origem (Hub, white-label ou os dois), 16/11/2026.** Todos os cards seguem a origem escolhida
+no seletor do cabeçalho (`?origem=`). Antes, só a receita e o gráfico liam o site, e o resto
+(leitura, rede com receita, concentração, ticket, permanência, ranking, clientes, destino, fluxo
+por hora e reservas recentes) sumia com "White-label" ou ficava só com o Hub com "Hub e
+white-label". Uma unidade que vende só pelo site aparecia vazia. As RPCs
+`manager_dashboard_overview` e `manager_daily_flow` ganharam `p_source` ('hub' | 'wl' | 'all',
+padrão 'hub') e juntam as linhas de `wl_booking` no mesmo formato das do Hub (migration
+`20261203180000_manager_dashboard_com_wl.sql`):
+
+- Valor do site é `paid_total_cents` e venda é `status = 'confirmed'` fora as duplicadas, a mesma
+  regra do card de receita (`wl_revenue`); o status sai no vocabulário do Hub
+  (`wl_booking_hub_status`).
+- Cliente novo ou recorrente casa pelo e-mail ou, sem ele, pelos dígitos do telefone (40% das
+  reservas do site não têm e-mail). Com só o Hub, segue perfil e depois e-mail, como antes.
+- **Comissão, repasse e tarifas continuam só do Hub**: o dinheiro do site cai direto na conta do
+  estacionamento e tarifa não existe no site. Com "White-label", o card de receita diz isso e o
+  card de tarifas não aparece.
+- `current` traz a quebra por origem (`hub_*`, `wl_*`): o card de receita soma o site pela RPC
+  `wl_revenue` e usa `hub_revenue` para não contar o site duas vezes.
+- "Reservas recentes" usa a lista única (`bookings_list_page`) na origem escolhida.
+- O painel "Vendas no white-label por estacionamento" saiu: o ranking por unidade já mostra o site.
+
+Com `p_source = 'hub'` as duas RPCs devolvem exatamente o que devolviam antes (conferido no banco
+vivo em 16/11/2026, resumo de 30 dias e fluxo de 16 dias seguidos).
+
 #### Linha 1
 
 | Bloco | O que mostra |
