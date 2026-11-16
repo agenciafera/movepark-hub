@@ -105,10 +105,6 @@
       ]
     },
     {
-      "url": "**/rest/v1/**",
-      "json": []
-    },
-    {
       "url": "**/rpc/operator_recoverable_bookings*",
       "json": [
         {
@@ -129,6 +125,10 @@
           "created_at": "2098-12-20T10:00:00Z"
         }
       ]
+    },
+    {
+      "url": "**/rest/v1/**",
+      "json": []
     },
     {
       "url": "**/rpc/**",

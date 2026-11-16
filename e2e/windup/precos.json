@@ -1,7 +1,7 @@
 {
   "scenario_id": "precos",
   "start_url": "/precos",
-  "task": "Verifique que a pagina exibe o titulo Indice de precos de estacionamento, uma tabela por aeroporto com as colunas Diaria avulsa, 7 dias e 15 dias, e pelo menos um link Reservar.",
+  "task": "Verifique que a trilha de navegacao exibe Indice de precos, que a tabela oferece os precos de Diaria avulsa, 7 diarias e 15 diarias, e que existe pelo menos um link Reservar.",
   "tags": [
     "smoke",
     "leitura"
@@ -9,6 +9,7 @@
   "hints": [
     "A pagina e o indice de precos: um resumo em quatro numeros no topo, uma lateral de filtros (busca, estado, so com reserva online) e uma tabela editorial por aeroporto. Todos os aeroportos publicados aparecem, mesmo sem parceiro.",
     "Vagas de parceiro Movepark abrem a tabela, ordenadas pela diaria mais baixa; o link Reservar leva para /p/... Lotes mapeados sem contrato completam as linhas sem preco, com o link Ver ficha.",
-    "O link Tabela completa de cada destino com parceiro leva para /precos/<slug>; aeroporto sem parceiro linka a Pagina do destino."
+    "O link Tabela completa de cada destino com parceiro leva para /precos/<slug>; aeroporto sem parceiro linka a Pagina do destino.",
+    "Nao ancore a checagem do link Reservar em um parceiro ou href especifico: o catalogo muda (o plano anterior apontava para a Aeropark em Guarulhos, que saiu do Hub em 16/11/2026). Basta existir pelo menos um link com o texto Reservar."
   ]
 }
