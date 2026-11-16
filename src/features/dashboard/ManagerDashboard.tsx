@@ -70,8 +70,13 @@ function Bloco({ rotulo, valor }: { rotulo: string; valor: string }) {
   );
 }
 
-/** Colunas de "Reservas recentes" na visão da unidade: as padrão, sem a da unidade. */
-const COLUNAS_RECENTES = visibleColumnIds(defaultColumnSettings()).filter((c) => c !== "parking");
+/**
+ * Colunas de "Reservas recentes" na visão da unidade: as padrão, sem a da unidade (repetiria o mesmo
+ * nome em toda linha) e sem a do voucher, que ficava cortada na borda do card e já está na reserva.
+ */
+const COLUNAS_RECENTES = visibleColumnIds(defaultColumnSettings()).filter(
+  (c) => c !== "parking" && c !== "voucher",
+);
 
 /** Linha com o card largo (gráfico) e o card estreito ao lado. */
 const DUAS_COLUNAS = "grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]";

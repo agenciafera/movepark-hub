@@ -253,6 +253,13 @@ describe("unitInsight", () => {
     ).toBe("A unidade está crescendo por recompra");
   });
 
+  it("números grandes saem com ponto de milhar", () => {
+    expect(unitInsight({ ...base, bookings: 4498, vehicleDays: 32290 })).toEqual({
+      title: "4.498 reservas pagas no período",
+      detail: "Ticket médio de R$ 50 e 32.290 diárias vendidas.",
+    });
+  });
+
   it("nunca fala de rede nem de unidade sozinha", () => {
     const t = JSON.stringify([
       unitInsight(base),

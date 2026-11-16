@@ -19,6 +19,8 @@ export type RankedLocation = {
 export type Network = { locations_total: number; locations_with_revenue: number };
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+/** Número com ponto de milhar ("32.290", não "32290"). */
+const num = (n: number) => Number(n ?? 0).toLocaleString("pt-BR");
 
 /** Percentual inteiro da parte sobre o total. Zero quando não há total. */
 export function share(part: number, total: number): number {
@@ -88,7 +90,7 @@ export function rankLocations(rows: RankedLocation[], totalRevenue: number): Ran
 /** Detalhe da linha do ranking: empresa e o volume, ou o aviso de rede parada. */
 export function rankDetail(row: RankedLocation): string {
   if (row.bookings === 0) return `${row.company_name} · sem reservas no período`;
-  return `${row.company_name} · ${row.bookings} ${plural(row.bookings, "reserva", "reservas")} · ${row.vehicle_days} ${plural(row.vehicle_days, "diária", "diárias")}`;
+  return `${row.company_name} · ${num(row.bookings)} ${plural(row.bookings, "reserva", "reservas")} · ${num(row.vehicle_days)} ${plural(row.vehicle_days, "diária", "diárias")}`;
 }
 
 export const STAY_LABEL: Record<number, string> = {
@@ -277,13 +279,13 @@ export function unitInsight(input: UnitInsightInput): Insight {
   if (clientes >= 10 && customers.returning / clientes >= 0.7) {
     return {
       title: "A unidade está crescendo por recompra",
-      detail: `${share(customers.returning, clientes)}% das reservas vieram de quem já tinha reservado, contra ${customers.new} ${plural(customers.new, "cliente novo", "clientes novos")} no período.`,
+      detail: `${share(customers.returning, clientes)}% das reservas vieram de quem já tinha reservado, contra ${num(customers.new)} ${plural(customers.new, "cliente novo", "clientes novos")} no período.`,
     };
   }
 
   // 4. O retrato.
   return {
-    title: `${bookings} ${plural(bookings, "reserva paga", "reservas pagas")} no período`,
-    detail: `Ticket médio de ${money(ticket)} e ${vehicleDays} ${plural(vehicleDays, "diária vendida", "diárias vendidas")}.`,
+    title: `${num(bookings)} ${plural(bookings, "reserva paga", "reservas pagas")} no período`,
+    detail: `Ticket médio de ${money(ticket)} e ${num(vehicleDays)} ${plural(vehicleDays, "diária vendida", "diárias vendidas")}.`,
   };
 }
