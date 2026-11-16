@@ -35,6 +35,13 @@ begin
   perform set_config('test.lpt', v_lpt::text, false);
 end $$;
 
+-- Datas relativas a now(): data cravada vira passado e o create_booking_atomic recusa check-in no
+-- passado (foi o que derrubou este arquivo em 10/11/2026). Meio-dia em UTC cai no mesmo dia no
+-- fuso de Brasília, então o `date` da disponibilidade é o mesmo nos dois.
+create or replace function pg_temp.dia(p_dias int) returns timestamptz language sql as $$
+  select date_trunc('day', now()) + make_interval(days => p_dias, hours => 12);
+$$;
+
 -- Espelha o gate da Edge: dá para cancelar enquanto `fare_cancel_until` está no futuro.
 create or replace function pg_temp.dentro_da_janela(p_bk uuid) returns boolean language sql as $$
   select fare_cancel_until > now() from public.booking where id = p_bk;
@@ -57,20 +64,20 @@ end $$;
 -- 1. O snapshot é calculado certo na criação, para as três Tarifas
 -- ─────────────────────────────────────────────────────────────────────────────
 select set_config('test.b_basica',
-  pg_temp.reserva('basica', '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z')::text, false);
+  pg_temp.reserva('basica', pg_temp.dia(30), pg_temp.dia(32))::text, false);
 select set_config('test.b_flex',
-  pg_temp.reserva('flex', '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z')::text, false);
+  pg_temp.reserva('flex', pg_temp.dia(30), pg_temp.dia(32))::text, false);
 select set_config('test.b_super',
-  pg_temp.reserva('superflex', '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z')::text, false);
+  pg_temp.reserva('superflex', pg_temp.dia(30), pg_temp.dia(32))::text, false);
 
-select is(pg_temp.janela(current_setting('test.b_basica')::uuid), '2026-12-09T12:00:00Z'::timestamptz,
+select is(pg_temp.janela(current_setting('test.b_basica')::uuid), pg_temp.dia(29),
   'Básica: fare_cancel_until = check_in menos 24h');
-select is(pg_temp.janela(current_setting('test.b_flex')::uuid), '2026-12-09T12:00:00Z'::timestamptz,
+select is(pg_temp.janela(current_setting('test.b_flex')::uuid), pg_temp.dia(29),
   'Flex: fare_cancel_until = check_in menos 24h');
 select is(pg_temp.janela(current_setting('test.b_flex')::uuid),
   pg_temp.janela(current_setting('test.b_basica')::uuid),
   'Básica e Flex têm a MESMA janela (a Flex se diferencia por data e placa, não por cancelamento)');
-select is(pg_temp.janela(current_setting('test.b_super')::uuid), '2026-12-10T11:59:00Z'::timestamptz,
+select is(pg_temp.janela(current_setting('test.b_super')::uuid), pg_temp.dia(30) - interval '1 minute',
   'Superflex: fare_cancel_until = check_in menos 1 minuto');
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -142,13 +149,13 @@ select is(
 --    Duas reservas nas mesmas datas; cancelar a primeira duas vezes não pode devolver a vaga da outra.
 -- ─────────────────────────────────────────────────────────────────────────────
 select set_config('test.b_x',
-  pg_temp.reserva('basica', '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z')::text, false);
+  pg_temp.reserva('basica', pg_temp.dia(40), pg_temp.dia(42))::text, false);
 select set_config('test.b_y',
-  pg_temp.reserva('basica', '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z')::text, false);
+  pg_temp.reserva('basica', pg_temp.dia(40), pg_temp.dia(42))::text, false);
 
 select is(
   (select booked_count from public.location_parking_availability
-    where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-10'),
+    where location_parking_type_id = current_setting('test.lpt')::uuid and date = pg_temp.dia(40)::date),
   2, 'duas reservas nas mesmas datas seguram 2 vagas');
 
 select is(
@@ -156,7 +163,7 @@ select is(
   'cancelled'::public.booking_status, 'primeira chamada cancela e retorna cancelled');
 select is(
   (select booked_count from public.location_parking_availability
-    where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-10'),
+    where location_parking_type_id = current_setting('test.lpt')::uuid and date = pg_temp.dia(40)::date),
   1, 'a capacidade da reserva cancelada volta');
 
 select is(
@@ -164,7 +171,7 @@ select is(
   'cancelled'::public.booking_status, 'cancelar reserva já cancelada é noop, não erro');
 select is(
   (select booked_count from public.location_parking_availability
-    where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-10'),
+    where location_parking_type_id = current_setting('test.lpt')::uuid and date = pg_temp.dia(40)::date),
   1, 'REGRESSÃO: a capacidade é liberada UMA vez (a vaga da outra reserva é preservada)');
 
 -- status terminal: não cancela, levanta exceção
@@ -180,7 +187,7 @@ select throws_ok(
 --    `expires_at` vencido continua confirmada e mantém a vaga.
 -- ─────────────────────────────────────────────────────────────────────────────
 select set_config('test.b_conf',
-  pg_temp.reserva('basica', '2026-11-20T12:00:00Z', '2026-11-22T12:00:00Z')::text, false);
+  pg_temp.reserva('basica', pg_temp.dia(50), pg_temp.dia(52))::text, false);
 
 do $$
 begin
@@ -194,7 +201,7 @@ select is(
   'confirmed', 'C-13: reserva confirmada com expires_at vencido NÃO é cancelada pelo cron');
 select is(
   (select booked_count from public.location_parking_availability
-    where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-20'),
+    where location_parking_type_id = current_setting('test.lpt')::uuid and date = pg_temp.dia(50)::date),
   1, 'C-13: a vaga da reserva confirmada continua segurada');
 
 select * from finish();

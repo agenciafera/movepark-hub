@@ -18,7 +18,7 @@
 -- Transação com rollback.
 
 begin;
-select plan(17);
+select plan(16);
 
 insert into auth.users (id, instance_id, aud, role, email, phone)
 values

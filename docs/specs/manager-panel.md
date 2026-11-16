@@ -129,7 +129,10 @@ padrão 'hub') e juntam as linhas de `wl_booking` no mesmo formato das do Hub (m
   regra do card de receita (`wl_revenue`); o status sai no vocabulário do Hub
   (`wl_booking_hub_status`).
 - Cliente novo ou recorrente casa pelo e-mail ou, sem ele, pelos dígitos do telefone (40% das
-  reservas do site não têm e-mail). Com só o Hub, segue perfil e depois e-mail, como antes.
+  reservas do site não têm e-mail). Com só o Hub, segue perfil e depois e-mail, como antes. A
+  primeira compra de cada cliente é a menor por `(created_at, id)`: só pela data, reservas gravadas
+  na mesma transação empatavam e todas contavam como primeira (corrigido em
+  `20261203190000_manager_dashboard_desempate_recorrente.sql`).
 - **Comissão, repasse e tarifas continuam só do Hub**: o dinheiro do site cai direto na conta do
   estacionamento e tarifa não existe no site. Com "White-label", o card de receita diz isso e o
   card de tarifas não aparece.

@@ -17,7 +17,7 @@ declare
   v_owner uuid := gen_random_uuid();
   v_outro uuid := gen_random_uuid();
   v_cust uuid := gen_random_uuid();
-  v_c uuid; v_c2 uuid; v_loc uuid := gen_random_uuid(); v_pt uuid; v_cpt uuid; v_lpt_a uuid; v_lpt_b uuid;
+  v_c uuid; v_c2 uuid; v_loc uuid := gen_random_uuid(); v_pt uuid; v_pt2 uuid; v_cpt uuid; v_cpt2 uuid; v_lpt_a uuid; v_lpt_b uuid;
 begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at) values
     (v_owner,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','occd-a@ex.com',now(),now()),
@@ -33,13 +33,17 @@ begin
   insert into public.profile_company(profile_id, company_id, role) values (v_owner, v_c, 'owner'), (v_outro, v_c2, 'owner');
   insert into public.location(id, company_id, name, slug) values (v_loc, v_c, 'OCCD Pátio', 'occd-patio');
 
-  select id into v_pt from public.parking_type limit 1;
+  -- Dois tipos de vaga diferentes: a unidade só tem um location_parking_type por company_parking_type.
+  select id into v_pt from public.parking_type order by id limit 1;
+  select id into v_pt2 from public.parking_type where id <> v_pt order by id limit 1;
   insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity, is_active)
     values (v_c, v_pt, 50, 10, true) returning id into v_cpt;
+  insert into public.company_parking_type(company_id, parking_type_id, base_price, default_capacity, is_active)
+    values (v_c, v_pt2, 50, 5, true) returning id into v_cpt2;
   insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active)
     values (v_loc, v_cpt, 10, true) returning id into v_lpt_a;
   insert into public.location_parking_type(location_id, company_parking_type_id, capacity, is_active)
-    values (v_loc, v_cpt, 5, true) returning id into v_lpt_b;
+    values (v_loc, v_cpt2, 5, true) returning id into v_lpt_b;
   -- O tipo B fica bloqueado no dia 12: a capacidade do dia é só a do A.
   insert into public.location_parking_availability(location_parking_type_id, date, booked_count, blocked)
     values (v_lpt_b, '2027-11-12', 0, true);

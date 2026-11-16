@@ -30,7 +30,10 @@ begin
   insert into public.profiles(id, role) values (u,'customer') on conflict (id) do nothing;
   select id into v_lpt from public.location_parking_type where capacity > 0 and is_active limit 1;
   update public.location_parking_type set capacity = 5 where id = v_lpt;
-  a := public.create_booking_atomic(u, v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
+  -- Data relativa: data cravada vira passado e o create_booking_atomic recusa check-in no passado.
+  a := public.create_booking_atomic(u, v_lpt,
+    date_trunc('day', now()) + interval '30 days 12 hours',
+    date_trunc('day', now()) + interval '32 days 12 hours');
   insert into public.payment (booking_id, provider, amount, status, paid_at)
     values ((a ->> 'booking_id')::uuid, 'pagarme', 100, 'paid', now())
     returning id into v_pay;

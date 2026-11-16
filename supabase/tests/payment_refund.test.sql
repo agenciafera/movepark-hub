@@ -17,6 +17,8 @@ select has_column('public', 'payment', 'refund_reason', 'payment.refund_reason e
 -- uma reserva nova, e o booked_count ficaria em 1. Ver 86ajmycpc.
 do $$
 declare u uuid := gen_random_uuid(); u2 uuid := gen_random_uuid(); v_lpt uuid; a jsonb; b jsonb; v_pay uuid;
+  -- Data relativa: data cravada vira passado e o create_booking_atomic recusa check-in no passado.
+  v_in timestamptz := date_trunc('day', now()) + interval '30 days 12 hours';
 begin
   insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
     values (u,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','refund@ex.com',now(),now()),
@@ -25,8 +27,8 @@ begin
   select id into v_lpt from public.location_parking_type where capacity > 0 and is_active limit 1;
   update public.location_parking_type set capacity = 5 where id = v_lpt;
 
-  a := public.create_booking_atomic(u,  v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
-  b := public.create_booking_atomic(u2, v_lpt, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z');
+  a := public.create_booking_atomic(u,  v_lpt, v_in, v_in + interval '2 days');
+  b := public.create_booking_atomic(u2, v_lpt, v_in, v_in + interval '2 days');
 
   -- payment pago para a reserva A (testa RLS de escrita)
   insert into public.payment (booking_id, provider, amount, status)
@@ -34,6 +36,7 @@ begin
     returning id into v_pay;
 
   perform set_config('test.lpt', v_lpt::text, false);
+  perform set_config('test.dia', v_in::date::text, false);
   perform set_config('test.a', a::text, false);
   perform set_config('test.b', b::text, false);
   perform set_config('test.pay', v_pay::text, false);
@@ -42,7 +45,7 @@ end $$;
 -- duas reservas seguram a vaga → booked_count = 2
 select is(
   (select booked_count from public.location_parking_availability
-   where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-10'),
+   where location_parking_type_id = current_setting('test.lpt')::uuid and date = current_setting('test.dia')::date),
   2, 'duas reservas → booked_count 2');
 
 -- ── 1ª chamada: cancela A e libera 1 vaga ──────────────────────────────────
@@ -52,7 +55,7 @@ select is(
 
 select is(
   (select booked_count from public.location_parking_availability
-   where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-10'),
+   where location_parking_type_id = current_setting('test.lpt')::uuid and date = current_setting('test.dia')::date),
   1, 'release de A → booked_count 1');
 
 select is(
@@ -67,7 +70,7 @@ select is(
 
 select is(
   (select booked_count from public.location_parking_availability
-   where location_parking_type_id = current_setting('test.lpt')::uuid and date = '2026-11-10'),
+   where location_parking_type_id = current_setting('test.lpt')::uuid and date = current_setting('test.dia')::date),
   1, 'REGRESSÃO: capacidade liberada UMA vez (a vaga de B é preservada)');
 
 -- ── RLS: authenticated NÃO escreve em payment (só service_role) ─────────────
