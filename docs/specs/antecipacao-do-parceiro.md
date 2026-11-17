@@ -179,7 +179,7 @@ visível, regra de 11/09/2026).
 |---|---|---|
 | G1 | A Pagar.me aceita ligar a antecipação automática num recebedor de parceiro pela API, ou exige liberação do relacionamento? | **Fechado em 13/11/2026: aceita.** `update-recipient-payout` na Agência Fera respondeu `ok` sem aviso, e a releitura do recebedor mostra `enabled: true` com a regra abaixo |
 | G2 | Qual `delay`/`type` está no recebedor da Movepark (para copiar o modelo de 30 dias)? | **Fechado em 13/11/2026:** `enabled: true`, `type: "1025"`, `volume_percentage: 100`, `delay: 29`, `days: 1 a 31`. É a regra que o Manager aplica ao ligar |
-| G3 | Ligar a automática pega recebíveis já existentes ou só vendas novas? | Ligar na Agência Fera com recebível pendente e reler no dia seguinte |
+| G3 | Ligar a automática pega recebíveis já existentes ou só vendas novas? | **Fechado em 17/11/2026: pega recebível antigo.** As 8 cobranças de cartão de 07/10 a 15/10 (Abbapark, BePark, Nationpark) que a releitura de 13 a 15/11 viu com parcela do parceiro em `waiting_funds` foram relidas em 17/11 (`anticipation_reread_at` zerado, `reconcile-gateway-fees` com `reread: 8`). Em todas, as parcelas 2 e 3 do parceiro passaram a `paid` em 17/11 com `bulk_anticipation_id` e `anticipation_fee`; a parcela 1, já liquidada no prazo normal, ficou sem taxa. A MP-07DAE9 (venda de 17/10) mostrou o mesmo na releitura normal do dia. Crédito criado nas 8: Abbapark 1.195 c, BePark 1.058 c, Nationpark 671 c (2.924 c no total); com a MP-07DAE9, Abbapark soma 1.754 c |
 | G4 | No estorno de parcela já antecipada, a taxa de antecipação volta? | Medir no primeiro estorno de cartão antecipado; até lá o razão não presume devolução |
 
 ## Testes
