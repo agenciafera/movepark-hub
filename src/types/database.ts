@@ -5041,6 +5041,39 @@ export type Database = {
           },
         ]
       }
+      operator_assistant_company: {
+        Row: {
+          company_id: string
+          created_at: string
+          enabled_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          enabled_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          enabled_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_assistant_company_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_company_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
       operator_assistant_gap: {
         Row: {
           article_id: string | null
@@ -10591,6 +10624,10 @@ export type Database = {
         Returns: Json
       }
       operator_assist_resolve: { Args: { p_token_hash: string }; Returns: Json }
+      operator_assistant_liberado: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       operator_create_api_key: {
         Args: {
           p_company_id: string

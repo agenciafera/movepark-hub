@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { OperatorAssistantGap, OperatorAssistantMessage, OperatorPlaybookArticle } from "@/types/domain";
+import type {
+  OperatorAssistantCompany,
+  OperatorAssistantGap,
+  OperatorAssistantMessage,
+  OperatorPlaybookArticle,
+} from "@/types/domain";
+import { operatorAssistantKeys } from "./api";
 
 /**
  * Manager › Mia para operadores: conversas, lacunas e a base do operador.
@@ -15,6 +21,7 @@ export const miaOperadorKeys = {
   conversas: (companyId: string | null) => [...miaOperadorKeys.all, "conversas", companyId] as const,
   lacunas: (status: string) => [...miaOperadorKeys.all, "lacunas", status] as const,
   artigos: () => [...miaOperadorKeys.all, "artigos"] as const,
+  empresas: () => [...miaOperadorKeys.all, "empresas"] as const,
 };
 
 export type MensagemComQuem = OperatorAssistantMessage & {
@@ -143,5 +150,39 @@ export function useArquivarArtigo() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: miaOperadorKeys.all }),
+  });
+}
+
+/**
+ * Empresas com a Mia liberada. Sem linha, a bolinha não aparece e a Edge recusa; a chave global
+ * (`app_setting.operator_assistant.enabled`) continua acima de tudo.
+ */
+export function useEmpresasLiberadas() {
+  return useQuery({
+    queryKey: miaOperadorKeys.empresas(),
+    queryFn: async (): Promise<OperatorAssistantCompany[]> => {
+      const { data, error } = await supabase
+        .from("operator_assistant_company")
+        .select("company_id, enabled_by, created_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useLiberarEmpresa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { companyId: string; liberar: boolean }) => {
+      const { error } = p.liberar
+        ? await supabase.from("operator_assistant_company").insert({ company_id: p.companyId })
+        : await supabase.from("operator_assistant_company").delete().eq("company_id", p.companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: miaOperadorKeys.all });
+      // A bolinha do hub_admin impersonando a empresa reflete na hora.
+      void qc.invalidateQueries({ queryKey: operatorAssistantKeys.all });
+    },
   });
 }

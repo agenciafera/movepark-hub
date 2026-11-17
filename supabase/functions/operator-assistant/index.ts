@@ -11,6 +11,12 @@
 //   { acao: "confirmar", action_id }    → { status, resumo, pix? }
 //   { acao: "descartar", action_id }    → { ok }
 //
+// ## Liberação por empresa
+//
+// A Mia só atende empresa liberada (`operator_assistant_company`). A regra é a função
+// `operator_assistant_liberado`, chamada aqui sob o JWT da pessoa: a mesma que decide se a bolinha
+// aparece. Vale para conversar, ler o histórico e confirmar; descartar uma proposta continua livre.
+//
 // ## Esta Edge é a fronteira de confiança
 //
 // O beast-bots não autentica usuário final: ele confia em quem tem o token de serviço. Então tudo
@@ -83,6 +89,14 @@ async function temAcesso(admin: Sb, userId: string, companyId: string): Promise<
   return !!v;
 }
 
+/** A mesma regra da bolinha: vínculo (ou hub_admin), chave global e empresa na lista. */
+async function liberado(comoUsuario: Sb, companyId: string): Promise<boolean> {
+  const { data } = await comoUsuario.rpc("operator_assistant_liberado", { p_company_id: companyId });
+  return data === true;
+}
+
+const NAO_LIBERADA = "A Mia para operadores ainda não foi liberada para esta empresa.";
+
 async function conversaAtual(admin: Sb, userId: string, companyId: string): Promise<string | null> {
   const { data } = await admin
     .from("operator_assistant_message").select("conversation_id")
@@ -114,6 +128,10 @@ export async function handler(req: Request): Promise<Response> {
   const { data: u, error: erroAuth } = await admin.auth.getUser(jwt);
   if (erroAuth || !u?.user) return json({ error: "Sessão inválida." }, 401);
   const userId = u.user.id as string;
+  const comoUsuario = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+  });
 
   let bruto: unknown;
   try {
@@ -154,10 +172,7 @@ export async function handler(req: Request): Promise<Response> {
     // O vínculo e o escopo são conferidos de novo, sob o JWT: a proposta pode ter nascido antes
     // de o papel da pessoa mudar.
     if (!(await temAcesso(admin, userId, a.company_id))) return json({ error: "Sem acesso a esta empresa." }, 403);
-    const comoUsuario = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), {
-      auth: { persistSession: false },
-      global: { headers: { Authorization: `Bearer ${jwt}` } },
-    });
+    if (!(await liberado(comoUsuario, a.company_id))) return json({ error: NAO_LIBERADA }, 403);
     const escopo = ESCOPO_DA_ACAO[a.kind];
     const { data: pode } = await comoUsuario.rpc("member_has_scope", { p_company_id: a.company_id, p_scope: escopo });
     if (pode !== true) return json({ error: "O seu papel nesta empresa não permite esta ação." }, 403);
@@ -225,6 +240,7 @@ export async function handler(req: Request): Promise<Response> {
   const comEmpresa = corpo as Exclude<Corpo, { acao: "confirmar" | "descartar" }>;
   const companyId = comEmpresa.companyId;
   if (!(await temAcesso(admin, userId, companyId))) return json({ error: "Sem acesso a esta empresa." }, 403);
+  if (!(await liberado(comoUsuario, companyId))) return json({ error: NAO_LIBERADA }, 403);
 
   if (comEmpresa.acao === "limpar") {
     const nova = crypto.randomUUID();

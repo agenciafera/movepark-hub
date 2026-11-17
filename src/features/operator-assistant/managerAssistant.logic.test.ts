@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparConversas, erroDoArtigo, type FalaGravada, slugDoTitulo } from "./managerAssistant.logic";
+import { agruparConversas, erroDoArtigo, type FalaGravada, ordenarEmpresas, slugDoTitulo } from "./managerAssistant.logic";
 
 const fala = (over: Partial<FalaGravada>): FalaGravada => ({
   id: Math.random().toString(),
@@ -44,5 +44,21 @@ describe("Manager › Mia para operadores", () => {
     expect(erroDoArtigo({ ...ok, title: "" })).toContain("título");
     expect(erroDoArtigo({ ...ok, body_md: "curto" })).toContain("curto");
     expect(erroDoArtigo({ ...ok, body_md: ok.body_md + " \u2014 e mais" })).toContain("travessão");
+  });
+});
+
+describe("ordenarEmpresas", () => {
+  it("liberadas no topo, depois por nome, com a data da liberação", () => {
+    const r = ordenarEmpresas(
+      [
+        { id: "c", name: "Pare Seguro" },
+        { id: "a", name: "Abbapark" },
+        { id: "f", name: "Agência Fera" },
+      ],
+      [{ company_id: "f", created_at: "2026-11-17T16:43:41Z" }],
+    );
+    expect(r.map((e) => e.name)).toEqual(["Agência Fera", "Abbapark", "Pare Seguro"]);
+    expect(r[0].liberadaEm).toBe("2026-11-17T16:43:41Z");
+    expect(r[1].liberadaEm).toBeNull();
   });
 });

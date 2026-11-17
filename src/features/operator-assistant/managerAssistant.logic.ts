@@ -72,3 +72,19 @@ export function erroDoArtigo(a: { title: string; category: string; body_md: stri
   if (/[\u2013\u2014]/.test(`${a.title}${a.body_md}`)) return "Tire o travessão do texto (regra de escrita da Movepark).";
   return null;
 }
+
+export type EmpresaDaMia = { id: string; name: string; liberadaEm: string | null };
+
+/** Liberadas primeiro, depois por nome: quem está testando a Mia fica no topo da lista. */
+export function ordenarEmpresas(
+  empresas: ReadonlyArray<{ id: string; name: string }>,
+  liberadas: ReadonlyArray<{ company_id: string; created_at: string }>,
+): EmpresaDaMia[] {
+  const quando = new Map(liberadas.map((l) => [l.company_id, l.created_at]));
+  return empresas
+    .map((e) => ({ id: e.id, name: e.name, liberadaEm: quando.get(e.id) ?? null }))
+    .sort((a, b) => {
+      if (!!a.liberadaEm !== !!b.liberadaEm) return a.liberadaEm ? -1 : 1;
+      return a.name.localeCompare(b.name, "pt-BR");
+    });
+}

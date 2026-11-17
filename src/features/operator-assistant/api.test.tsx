@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { supabase } from "@/lib/supabase";
 import { edge, falha, renderMutation, tabela } from "@/test/msw/supabase";
 import { useConfirmarAcao, useEnviarAoAssistente } from "./api";
-import { useArquivarArtigo, useResolverLacuna, useSalvarArtigo } from "./managerApi";
+import { useArquivarArtigo, useLiberarEmpresa, useResolverLacuna, useSalvarArtigo } from "./managerApi";
 
 // Contrato de rede da Mia para operadores (docs/specs/assistente-do-operador.md).
 
@@ -87,5 +87,25 @@ describe("Manager: lacunas e base do operador", () => {
     await result.current.mutateAsync("art-1");
     expect(chamada.ultimoBody).toMatchObject({ is_published: false });
     expect((chamada.ultimoBody as { deleted_at: string }).deleted_at).toBeTruthy();
+  });
+});
+
+describe("Manager: liberação por empresa", () => {
+  it("liberar insere a empresa na lista; desligar apaga só ela", async () => {
+    const insert = tabela("operator_assistant_company", "post", { status: 201 });
+    const { result } = renderMutation(() => useLiberarEmpresa());
+    await result.current.mutateAsync({ companyId: "empresa-1", liberar: true });
+    expect(insert.ultimoBody).toEqual({ company_id: "empresa-1" });
+
+    const apaga = tabela("operator_assistant_company", "delete", { status: 204 });
+    const { result: r2 } = renderMutation(() => useLiberarEmpresa());
+    await r2.current.mutateAsync({ companyId: "empresa-1", liberar: false });
+    expect(apaga.chamadas[0].url).toContain("company_id=eq.empresa-1");
+  });
+
+  it("propaga a recusa da RLS (quem não é hub_admin não liga)", async () => {
+    falha("tabela", "operator_assistant_company", 403, "new row violates row-level security policy");
+    const { result } = renderMutation(() => useLiberarEmpresa());
+    await expect(result.current.mutateAsync({ companyId: "empresa-1", liberar: true })).rejects.toThrow(/row-level/);
   });
 });

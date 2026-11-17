@@ -1145,3 +1145,4 @@ export type SocialPostEvent = {
 export type OperatorAssistantMessage = Tables<"operator_assistant_message">;
 export type OperatorAssistantGap = Tables<"operator_assistant_gap">;
 export type OperatorPlaybookArticle = Tables<"operator_playbook_article">;
+export type OperatorAssistantCompany = Tables<"operator_assistant_company">;

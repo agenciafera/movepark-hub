@@ -25,6 +25,7 @@ o operador confirmar num clique.
 | 6 | Base do operador em tabela própria, vetorizada em tabela própria | O estado "artigo interno aparecendo no chat do site" fica impossível por ausência, não por filtro (mesmo espírito do ADR-010) |
 | 7 | A equipe Movepark vê as conversas e a lista de lacunas no Manager; a bolinha avisa que é registrado | Escolha do Kallef: é assim que a base melhora |
 | 8 | Teto de uso por usuário/hora e por empresa/dia em `app_setting` | O beast-bots não tem teto de custo próprio |
+| 9 | Liberação **por empresa** (`operator_assistant_company`), começando só pela Agência Fera | Pedido do Kallef em 17/11/2026: testar numa empresa antes de abrir para os parceiros |
 
 ## Fluxo
 
@@ -127,6 +128,29 @@ nunca no prompt, nunca em log, mascarado nos spans.
 (`is_platform_scope = true`, atribuível à chave). Config em `app_setting.operator_assistant`
 (`enabled`, `max_messages_per_user_hour`, `max_messages_per_company_day`).
 
+## Liberação por empresa (migration `20261204130000_mia_operador_liberacao_por_empresa.sql`)
+
+A Mia só existe para a empresa que estiver em `operator_assistant_company` (uma linha por
+empresa, com quem liberou e quando). Começou só com a **Agência Fera**, em 17/11/2026.
+
+- **Uma regra só:** `operator_assistant_liberado(company_id)` devolve verdadeiro quando a pessoa é
+  da empresa (ou é hub_admin), a chave global `app_setting.operator_assistant.enabled` não está
+  desligada e a empresa está na lista. A bolinha consulta essa função para aparecer, e a Edge
+  `operator-assistant` chama a MESMA função, sob o JWT da pessoa, antes de conversar, de ler o
+  histórico e de confirmar uma ação. Descartar proposta continua livre.
+- **Ordem das chaves:** a global é o desligamento de emergência e vale sobre a lista. JSON torto em
+  `app_setting` vale o padrão (ligada), igual ao `lerConfig` da Edge.
+- **hub_admin segue a lista:** impersonando uma empresa não liberada, ele também não vê a bolinha.
+  É o que o operador daquela empresa veria.
+- **Quem liga:** só hub_admin, pela aba **Empresas** do Manager (RLS `is_hub_admin()` na tabela).
+  O parceiro não lê a lista; só pergunta pela própria empresa. Desligar vale na pergunta seguinte;
+  a bolinha some quando a pessoa recarrega o painel (a resposta fica 5 minutos em cache).
+- O token `mpo_` só nasce depois dessa checagem, então a superfície `/operator` do MCP não precisa
+  repetir a regra.
+
+pgTAP em `supabase/tests/operator_assistant_liberacao.test.sql` (12 casos: fora da lista, operador
+não se libera nem lê a lista, empresa alheia, hub_admin, chave global, config torta).
+
 ## Execução da ação (o clique)
 
 `operator-assistant` `{ acao: "confirmar", action_id }`, com o JWT do operador:
@@ -153,7 +177,7 @@ nunca no prompt, nunca em log, mascarado nos spans.
 
 ## Manager
 
-`/manager/mia-operadores` (menu Conta › Mia para operadores), três abas:
+`/manager/mia-operadores` (menu Conta › Mia para operadores), quatro abas:
 
 - **Sem resposta**: as lacunas abertas, com empresa, pessoa e reserva. "Base atualizada" ou
   "Ignorar" fecham a pendência.
@@ -162,6 +186,8 @@ nunca no prompt, nunca em log, mascarado nos spans.
 - **Base do operador**: os artigos por categoria. Salvar reenfileira a vetorização pelo gatilho, e a
   Mia passa a usar o texto novo no ciclo seguinte do cron (2 minutos). O formulário recusa
   travessão e texto curto demais.
+- **Empresas**: liga e desliga a Mia por empresa, com a data da liberação. As liberadas ficam no
+  topo.
 
 ## Decisões de conteúdo
 
@@ -183,6 +209,9 @@ Tudo no ar e conferido em produção:
   o clique executou pela `cancel-booking` (histórico com `staff` e motivo), o segundo clique foi
   recusado, os tokens do turno foram apagados e cada chamada ao `/operator` ficou no
   `api_request_log` com a chave do agente e o `acting_user_id`.
+
+Desde 17/11/2026 a Mia está liberada **só para a Agência Fera**; as outras empresas não veem a
+bolinha e a Edge recusa com 403.
 
 **Não exercitado ainda com dinheiro de verdade:** cancelamento com estorno e troca de datas paga
 pelo cartão. O caminho é o mesmo dos botões do painel, mas o primeiro uso real merece conferência

@@ -6,18 +6,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { Bubble } from "@/features/assistant/ChatBubble";
+import { useCompanies } from "@/features/companies/api";
 import {
   type ArtigoInput,
   useArquivarArtigo,
   useArtigosDaBase,
   useConversasDosOperadores,
+  useEmpresasLiberadas,
   useLacunas,
+  useLiberarEmpresa,
   useResolverLacuna,
   useSalvarArtigo,
 } from "@/features/operator-assistant/managerApi";
-import { agruparConversas, erroDoArtigo, type FalaGravada, slugDoTitulo } from "@/features/operator-assistant/managerAssistant.logic";
-import { formatDateTime } from "@/lib/format";
+import {
+  agruparConversas,
+  erroDoArtigo,
+  type FalaGravada,
+  ordenarEmpresas,
+  slugDoTitulo,
+} from "@/features/operator-assistant/managerAssistant.logic";
+import { formatDate, formatDateTime } from "@/lib/format";
 import type { OperatorPlaybookArticle } from "@/types/domain";
 
 /**
@@ -36,6 +46,7 @@ export default function ManagerMiaOperadores() {
           <TabsTrigger value="lacunas">Sem resposta</TabsTrigger>
           <TabsTrigger value="conversas">Conversas</TabsTrigger>
           <TabsTrigger value="base">Base do operador</TabsTrigger>
+          <TabsTrigger value="empresas">Empresas</TabsTrigger>
         </TabsList>
         <TabsContent value="lacunas">
           <Lacunas />
@@ -45,6 +56,9 @@ export default function ManagerMiaOperadores() {
         </TabsContent>
         <TabsContent value="base">
           <Base />
+        </TabsContent>
+        <TabsContent value="empresas">
+          <Empresas />
         </TabsContent>
       </Tabs>
     </div>
@@ -280,6 +294,59 @@ function Base() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Liga e desliga a Mia por empresa. A chave global (app_setting) continua acima desta lista. */
+function Empresas() {
+  const empresas = useCompanies();
+  const liberadas = useEmpresasLiberadas();
+  const liberar = useLiberarEmpresa();
+  const lista = React.useMemo(
+    () => ordenarEmpresas(empresas.data ?? [], liberadas.data ?? []),
+    [empresas.data, liberadas.data],
+  );
+
+  if (empresas.isLoading || liberadas.isLoading) return <p className="text-body-sm text-muted">Carregando…</p>;
+  if (empresas.error || liberadas.error) {
+    return <p className="text-body-sm text-red-700">Não consegui carregar as empresas.</p>;
+  }
+  if (!lista.length) return <p className="text-body-sm text-muted">Nenhuma empresa cadastrada.</p>;
+
+  async function alternar(id: string, nome: string, ligar: boolean) {
+    try {
+      await liberar.mutateAsync({ companyId: id, liberar: ligar });
+      toast.success(ligar ? `Mia liberada para ${nome}.` : `Mia desligada para ${nome}.`);
+    } catch {
+      toast.error("Não consegui mudar a liberação.");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-body-sm text-muted">
+        A Mia só aparece no painel das empresas ligadas aqui. Desligar vale na hora: a próxima pergunta já é
+        recusada.
+      </p>
+      <div className="divide-y divide-hairline rounded-md border border-hairline bg-white">
+        {lista.map((e) => (
+          <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-3">
+            <div>
+              <p className="text-body-md font-medium text-ink">{e.name}</p>
+              <p className="text-caption text-muted">
+                {e.liberadaEm ? `Liberada em ${formatDate(e.liberadaEm)}` : "Desligada"}
+              </p>
+            </div>
+            <Switch
+              aria-label={`Mia para ${e.name}`}
+              checked={!!e.liberadaEm}
+              disabled={liberar.isPending}
+              onCheckedChange={(v) => void alternar(e.id, e.name, v)}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

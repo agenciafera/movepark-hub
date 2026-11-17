@@ -13,6 +13,7 @@ import type { CartaoDeAcao, Fala, PapelDaFala } from "./operatorAssistant.logic"
 export const operatorAssistantKeys = {
   all: ["operator-assistant"] as const,
   historico: (companyId: string) => [...operatorAssistantKeys.all, "historico", companyId] as const,
+  liberado: (companyId: string) => [...operatorAssistantKeys.all, "liberado", companyId] as const,
 };
 
 type RespostaDoEnvio = {
@@ -43,6 +44,25 @@ async function chamar<T>(body: Record<string, unknown>, padrao: string): Promise
 
 let seq = 0;
 const novoId = () => `fala-${++seq}`;
+
+/**
+ * A Mia está liberada nesta empresa? É a mesma função que a Edge consulta antes de atender
+ * (`operator_assistant_liberado`): vínculo com a empresa, chave global e a lista do Manager.
+ */
+export function useAssistenteLiberado(companyId: string | null) {
+  return useQuery({
+    queryKey: operatorAssistantKeys.liberado(companyId ?? "nenhuma"),
+    enabled: !!companyId,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc("operator_assistant_liberado", {
+        p_company_id: companyId as string,
+      });
+      if (error) throw error;
+      return data === true;
+    },
+  });
+}
 
 export function useHistoricoDoAssistente(companyId: string | null, aberto: boolean) {
   return useQuery({

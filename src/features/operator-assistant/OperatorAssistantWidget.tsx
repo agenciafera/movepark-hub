@@ -10,6 +10,7 @@ import {
   useConfirmarAcao,
   useDescartarAcao,
   useEnviarAoAssistente,
+  useAssistenteLiberado,
   useHistoricoDoAssistente,
   useNovaConversa,
 } from "./api";
@@ -33,6 +34,8 @@ import {
  * com o efeito em reais. Nada acontece sem o "Confirmar" do operador; quem executa é a Edge,
  * pelas mesmas Edges dos botões do painel. Ver docs/specs/assistente-do-operador.md.
  *
+ * Só aparece para empresa liberada no Manager › Mia para operadores › Empresas.
+ *
  * A empresa é a ativa no painel (ou a impersonada pelo hub_admin). A página aberta vai junto,
  * para "esta reserva" funcionar sem o operador digitar o código.
  */
@@ -49,6 +52,7 @@ export function OperatorAssistantWidget() {
   const [erro, setErro] = React.useState<string | null>(null);
   const fim = React.useRef<HTMLDivElement>(null);
 
+  const liberado = useAssistenteLiberado(companyId);
   const historico = useHistoricoDoAssistente(companyId, aberto);
   const enviar = useEnviarAoAssistente();
   const novaConversa = useNovaConversa();
@@ -70,7 +74,8 @@ export function OperatorAssistantWidget() {
     fim.current?.scrollIntoView({ block: "end" });
   }, [falas, enviar.isPending]);
 
-  if (!companyId) return null;
+  // A bolinha só existe para empresa liberada no Manager (e com a chave global ligada).
+  if (!companyId || liberado.data !== true) return null;
 
   async function perguntar(texto: string) {
     const mensagem = texto.trim();

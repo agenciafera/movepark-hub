@@ -743,7 +743,8 @@ Bolinha no canto de todas as telas do `/operator` (`OperatorAssistantWidget`, mo
 consulta a base do operador, escreve a mensagem pronta para o cliente (com "Copiar mensagem") e,
 quando cabe, mostra um cartão de ação (cancelar, alterar datas, trocar placa, entrada, saída) com o
 efeito em reais. Nada acontece sem o "Confirmar". Usa a empresa ativa do painel e só propõe o que
-o papel da pessoa permite. Avisa que a conversa é registrada. Spec completa:
+o papel da pessoa permite. Avisa que a conversa é registrada. Só aparece para empresa liberada no
+Manager › Mia para operadores › Empresas (desde 17/11/2026, só a Agência Fera). Spec completa:
 [assistente-do-operador.md](./assistente-do-operador.md).
 
 ## 9. Open Points

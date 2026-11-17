@@ -6,6 +6,7 @@ import { OperatorAssistantWidget } from "./OperatorAssistantWidget";
 
 const h = vi.hoisted(() => ({
   historico: { data: { falas: [], cartoes: [] }, isLoading: false, dataUpdatedAt: 1 },
+  liberado: { data: true as boolean | undefined },
   enviar: vi.fn(),
   confirmar: vi.fn(),
   descartar: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("./api", () => ({
   })(),
   // Objeto estável, como o do React Query.
   useHistoricoDoAssistente: () => h.historico,
+  useAssistenteLiberado: () => h.liberado,
   useEnviarAoAssistente: () => ({ mutateAsync: h.enviar, isPending: false }),
   useNovaConversa: () => ({ mutate: vi.fn(), isPending: false }),
   useConfirmarAcao: () => ({ mutateAsync: h.confirmar }),
@@ -42,10 +44,21 @@ describe("OperatorAssistantWidget", () => {
     h.enviar.mockReset();
     h.confirmar.mockReset();
     h.descartar.mockReset();
+    h.liberado = { data: true };
   });
 
   it("não aparece sem empresa", () => {
     renderWithProviders(<OperatorAssistantWidget />, { auth: mockAuth() });
+    expect(screen.queryByLabelText("Abrir a Mia, assistente da operação")).toBeNull();
+  });
+
+  it("não aparece em empresa que não foi liberada, nem enquanto a resposta não chega", () => {
+    h.liberado = { data: false };
+    const { unmount } = renderWithProviders(<OperatorAssistantWidget />, comEmpresa());
+    expect(screen.queryByLabelText("Abrir a Mia, assistente da operação")).toBeNull();
+    unmount();
+    h.liberado = { data: undefined };
+    renderWithProviders(<OperatorAssistantWidget />, comEmpresa());
     expect(screen.queryByLabelText("Abrir a Mia, assistente da operação")).toBeNull();
   });
 
