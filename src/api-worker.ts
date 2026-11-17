@@ -190,8 +190,12 @@ function json(body: unknown, status: number, extra: Record<string, string> = {})
 
 /**
  * Superfícies que existem. Path fora daqui não chega na Edge.
+ *
+ * `/manager` e `/operator` são internas (sem card nem menção na página de docs): o
+ * `/operator` é a do assistente do operador, chamada pelo beast-bots com o token
+ * `mpo_` e a chave do agente. Ver docs/specs/assistente-do-operador.md.
  */
-const SUPERFICIES_MCP = new Set(["/", "/public", "/partner", "/customer", "/manager"]);
+const SUPERFICIES_MCP = new Set(["/", "/public", "/partner", "/customer", "/manager", "/operator"]);
 
 /**
  * Tools que custam dinheiro ou criam conta, e por isso passam pelo freio de

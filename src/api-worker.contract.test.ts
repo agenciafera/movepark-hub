@@ -31,7 +31,7 @@ describe("allowlist de superfície do MCP", () => {
     // `/mcp<path>`. Com a raiz resolvendo perfil pela credencial, path inventado
     // não pode nem chegar na Edge.
     expect(conjunto("SUPERFICIES_MCP").sort()).toEqual(
-      ["/", "/customer", "/manager", "/partner", "/public"].sort(),
+      ["/", "/customer", "/manager", "/operator", "/partner", "/public"].sort(),
     );
   });
 
@@ -201,6 +201,8 @@ describe("página de documentação do MCP", () => {
     // guarda os cards; esta página precisa da mesma regra.
     expect(pagina.includes("/manager")).toBe(false);
     expect(pagina.includes("manager-card")).toBe(false);
+    // O assistente do operador também é interno: nada de /operator na página pública.
+    expect(pagina.includes("/operator")).toBe(false);
   });
 
   it("explica a URL única, que é o que os cards não dizem", () => {

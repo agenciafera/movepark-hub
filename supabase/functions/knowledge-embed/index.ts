@@ -11,7 +11,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chunkFaq, chunkProse, estimateTokens } from "./chunking.ts";
-import { hashContent, nextBackoff } from "./logic.ts";
+import { hashContent, nextBackoff, tabelaDosTrechos } from "./logic.ts";
 
 const EMBED_MODEL = "gemini-embedding-001"; // via outputDimensionality=768, casa com vector(768)
 const EMBED_DIM = 768;
@@ -76,6 +76,23 @@ async function loadSource(admin: any, sourceType: string, sourceId: string): Pro
     };
   }
 
+  if (sourceType === "operator_playbook") {
+    const { data } = await admin
+      .from("operator_playbook_article")
+      .select("title, category, body_md, is_published, deleted_at")
+      .eq("id", sourceId)
+      .maybeSingle();
+    if (!data || data.deleted_at || !data.is_published) return null;
+    // Título e categoria em todo trecho do mesmo artigo seria repetição; no primeiro basta,
+    // como no blog. É ele que separa "estorno do cancelamento" de "estorno da troca de datas".
+    return {
+      scope: "global",
+      location_id: null,
+      destination_id: null,
+      chunks: chunkProse(`${data.title} (${data.category})\n\n${data.body_md ?? ""}`),
+    };
+  }
+
   if (sourceType === "location_amenity") {
     const { data } = await admin.from("location_amenity").select("notes").eq("location_id", sourceId);
     // deno-lint-ignore no-explicit-any
@@ -116,16 +133,17 @@ async function embedBatch(apiKey: string, texts: string[]): Promise<string[]> {
 // deno-lint-ignore no-explicit-any
 async function processItem(admin: any, apiKey: string, item: any): Promise<void> {
   const { source_type, source_id, op } = item;
+  const tabela = tabelaDosTrechos(source_type);
 
   if (op === "delete") {
-    await admin.from("knowledge_chunk").delete().eq("source_type", source_type).eq("source_id", source_id);
+    await admin.from(tabela).delete().eq("source_type", source_type).eq("source_id", source_id);
     return;
   }
 
   const src = await loadSource(admin, source_type, source_id);
   if (!src || src.chunks.length === 0) {
     // fonte sumiu / despublicada / prosa vazia: remove os chunks daquela fonte
-    await admin.from("knowledge_chunk").delete().eq("source_type", source_type).eq("source_id", source_id);
+    await admin.from(tabela).delete().eq("source_type", source_type).eq("source_id", source_id);
     return;
   }
 
@@ -133,7 +151,7 @@ async function processItem(admin: any, apiKey: string, item: any): Promise<void>
 
   // reuso por hash: embedding que não mudou não vai de novo à API
   const { data: existing } = await admin
-    .from("knowledge_chunk")
+    .from(tabela)
     .select("content_hash, embedding")
     .eq("source_type", source_type)
     .eq("source_id", source_id);
@@ -161,8 +179,8 @@ async function processItem(admin: any, apiKey: string, item: any): Promise<void>
     embedding_stale: false,
   }));
 
-  await admin.from("knowledge_chunk").delete().eq("source_type", source_type).eq("source_id", source_id);
-  const { error } = await admin.from("knowledge_chunk").insert(rows);
+  await admin.from(tabela).delete().eq("source_type", source_type).eq("source_id", source_id);
+  const { error } = await admin.from(tabela).insert(rows);
   if (error) throw new Error(error.message);
 }
 

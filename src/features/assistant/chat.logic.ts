@@ -35,7 +35,11 @@ export function canSend(input: string, pending: boolean): boolean {
 export type InlineToken = { bold: boolean; text: string };
 export type ChatBlock =
   | { type: "p"; spans: InlineToken[] }
-  | { type: "ul"; items: InlineToken[][] };
+  | { type: "ul"; items: InlineToken[][] }
+  // Citação (`> `): é onde a Mia para operadores põe a mensagem pronta para o cliente, e a
+  // bolinha do operador mostra um botão de copiar nela. `raw` é o texto sem marcação, que é o
+  // que vai para a área de transferência.
+  | { type: "quote"; lines: InlineToken[][]; raw: string };
 
 /** Quebra uma linha em trechos normais e em negrito (**assim**). */
 export function parseInline(line: string): InlineToken[] {
@@ -57,6 +61,7 @@ export function parseChatMarkdown(text: string): ChatBlock[] {
   const blocks: ChatBlock[] = [];
   let para: string[] = [];
   let items: InlineToken[][] = [];
+  let quote: string[] = [];
 
   const flushPara = () => {
     if (para.length) {
@@ -70,22 +75,49 @@ export function parseChatMarkdown(text: string): ChatBlock[] {
       items = [];
     }
   };
+  const flushQuote = () => {
+    if (quote.length) {
+      blocks.push({
+        type: "quote",
+        lines: quote.map(parseInline),
+        raw: quote.join("\n").replace(/\*\*(.+?)\*\*/g, "$1"),
+      });
+      quote = [];
+    }
+  };
 
   for (const raw of text.split("\n")) {
     const line = raw.trimEnd();
+    const citacao = line.match(/^\s*>\s?(.*)$/);
     const bullet = line.match(/^\s*[*-]\s+(.*)$/);
-    if (bullet) {
+    // Título em markdown (`### O que fazer`) vira uma linha em negrito: o modelo às vezes usa, e
+    // sem isto o "###" aparecia cru na bolha.
+    const titulo = line.match(/^\s*#{1,6}\s+(.*)$/);
+    if (titulo) {
       flushPara();
+      flushList();
+      flushQuote();
+      blocks.push({ type: "p", spans: [{ bold: true, text: titulo[1].replace(/\*\*/g, "").trim() }] });
+    } else if (citacao) {
+      flushPara();
+      flushList();
+      quote.push(citacao[1]);
+    } else if (bullet) {
+      flushPara();
+      flushQuote();
       items.push(parseInline(bullet[1]));
     } else if (line.trim() === "") {
       flushPara();
       flushList();
+      flushQuote();
     } else {
       flushList();
+      flushQuote();
       para.push(line.trim());
     }
   }
   flushPara();
   flushList();
+  flushQuote();
   return blocks;
 }

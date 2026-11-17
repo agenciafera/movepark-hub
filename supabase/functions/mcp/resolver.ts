@@ -22,7 +22,7 @@
 // o parceiro. São duas fontes independentes, e é essa independência que segura o
 // dia em que uma delas estiver errada.
 
-export type Perfil = "public" | "partner" | "customer" | "manager";
+export type Perfil = "public" | "partner" | "customer" | "manager" | "operator";
 
 /**
  * `"raiz"` é o path sem superfície declarada, e é o que torna a URL única
@@ -43,11 +43,30 @@ export interface ChaveVerificada {
 
 export type Verificacao = (chave: string) => Promise<ChaveVerificada>;
 
+/** O que `operator_assist_resolve` devolve para um token `mpo_`. */
+export interface AssistenteVerificado {
+  ok: boolean;
+  reason?: string;
+  profile_id?: string;
+  company_id?: string;
+  role?: string;
+  scopes?: string[];
+  user_name?: string | null;
+  company_name?: string | null;
+}
+
+export type VerificacaoAssistente = (token: string) => Promise<AssistenteVerificado>;
+
+/** O escopo que a chave do agente precisa ter para usar a superfície /operator. */
+export const ESCOPO_ASSISTENTE = "operator:assist";
+
 export interface Entrada {
   path: string;
   authorization: string | null;
   xApiKey: string | null;
   verificar: Verificacao;
+  /** Só a superfície /operator usa. Ausente, ela recusa tudo. */
+  verificarAssistente?: VerificacaoAssistente;
 }
 
 export interface Resolucao {
@@ -58,17 +77,28 @@ export interface Resolucao {
   companyId: string | null;
   apiKeyId: string | null;
   environment: string | null;
+  /** Só no /operator: o operador em nome de quem o agente age. */
+  actingUserId: string | null;
+  /** Só no /operator: o papel dele na empresa (ou `hub_admin`). */
+  papel: string | null;
   /** Para o log, nunca para a resposta. */
   motivo: string;
 }
 
 const PREFIXO_CHAVE = "mp_";
+/**
+ * Token do assistente do operador. Não começa com `mp_` de propósito: ele nunca
+ * pode chegar ao `api_key_verify`, e uma chave de API nunca pode ser lida como ele.
+ */
+const PREFIXO_ASSISTENTE = "mpo_";
 
 const VAZIO: Omit<Resolucao, "perfil" | "status" | "motivo"> = {
   escopos: [],
   companyId: null,
   apiKeyId: null,
   environment: null,
+  actingUserId: null,
+  papel: null,
 };
 
 /**
@@ -89,6 +119,7 @@ export function superficieDoPath(path: string): Superficie | null {
   if (p === "/partner") return "partner";
   if (p === "/customer") return "customer";
   if (p === "/manager") return "manager";
+  if (p === "/operator") return "operator";
   return null;
 }
 
@@ -101,13 +132,18 @@ export function superficieDoPath(path: string): Superficie | null {
  */
 export function classificarSujeito(
   authorization: string | null,
-): { tipo: "ausente" } | { tipo: "chave"; valor: string } | { tipo: "jwt"; valor: string } {
+):
+  | { tipo: "ausente" }
+  | { tipo: "chave"; valor: string }
+  | { tipo: "jwt"; valor: string }
+  | { tipo: "assistente"; valor: string } {
   const bruto = (authorization ?? "").trim();
   if (!bruto.toLowerCase().startsWith("bearer ")) return { tipo: "ausente" };
 
   const valor = bruto.slice(7).trim();
   if (!valor || valor === "null" || valor === "undefined") return { tipo: "ausente" };
   if (valor.startsWith(PREFIXO_CHAVE)) return { tipo: "chave", valor };
+  if (valor.startsWith(PREFIXO_ASSISTENTE)) return { tipo: "assistente", valor };
   // Um JWT tem três partes separadas por ponto. O resolvedor não valida a
   // assinatura: quem valida é o GoTrue, no handler que usa a sessão.
   if (valor.split(".").length === 3) return { tipo: "jwt", valor };
@@ -129,6 +165,47 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
   // uma em silêncio foi o que gerava 401 sem explicação.
   if (sujeito.tipo === "chave" && agente) {
     return { perfil: "public", status: 400, motivo: "credencial_ambigua", ...VAZIO };
+  }
+
+  // ── Superfície do assistente do operador ─────────────────────────────────
+  // Exige as DUAS credenciais: o token `mpo_` (o operador naquela empresa) e a
+  // chave da Movepark com `operator:assist` (o programa que age por ele). Uma
+  // sem a outra não serve: o token sozinho seria um atalho para quem o pegasse
+  // num log, e a chave sozinha seria um agente agindo por ninguém.
+  if (sujeito.tipo === "assistente" || superficie === "operator") {
+    if (superficie !== "operator") {
+      return { perfil: "public", status: 401, motivo: `assistente_fora_da_superficie_${superficie}`, ...VAZIO };
+    }
+    if (sujeito.tipo !== "assistente") {
+      return { perfil: "public", status: 401, motivo: "credencial_ausente", ...VAZIO };
+    }
+    if (!agente) {
+      return { perfil: "public", status: 401, motivo: "agente_ausente", ...VAZIO };
+    }
+    const k = await e.verificar(agente);
+    if (!k.ok || k.company_id != null || !(k.scopes ?? []).includes(ESCOPO_ASSISTENTE)) {
+      return { perfil: "public", status: 401, motivo: "agente_sem_operator_assist", ...VAZIO };
+    }
+    if (!e.verificarAssistente) {
+      return { perfil: "public", status: 401, motivo: "assistente_sem_verificador", ...VAZIO };
+    }
+    const t = await e.verificarAssistente(sujeito.valor);
+    if (!t.ok || !t.company_id || !t.profile_id) {
+      return { perfil: "public", status: 401, motivo: `assistente_${t.reason ?? "invalido"}`, ...VAZIO };
+    }
+    const escopos = new Set(t.scopes ?? []);
+    escopos.add(ESCOPO_ASSISTENTE);
+    return {
+      perfil: "operator",
+      status: 200,
+      escopos: [...escopos].sort(),
+      companyId: t.company_id,
+      apiKeyId: k.api_key_id ?? null,
+      environment: k.environment ?? null,
+      actingUserId: t.profile_id,
+      papel: t.role ?? null,
+      motivo: "ok",
+    };
   }
 
   // ── Sujeito é chave de API: parceiro ou Manager ──────────────────────────
@@ -161,6 +238,8 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
       companyId: v.company_id ?? null,
       apiKeyId: v.api_key_id ?? null,
       environment: v.environment ?? null,
+      actingUserId: null,
+      papel: null,
       motivo: "ok",
     };
   }
@@ -203,6 +282,8 @@ export async function resolverPerfil(e: Entrada): Promise<Resolucao> {
     companyId: null,
     apiKeyId,
     environment: null,
+    actingUserId: null,
+    papel: null,
     motivo: sujeito.tipo === "jwt" ? "sujeito_jwt" : "anonimo",
   };
 }

@@ -71,4 +71,18 @@ describe("parseChatMarkdown (blocos)", () => {
     const blocks = parseChatMarkdown("- um\n- dois");
     expect(blocks[0].type).toBe("ul");
   });
+  it("título com # vira linha em negrito, sem o # cru", () => {
+    const blocks = parseChatMarkdown("### O que fazer\nNão há devolução.");
+    expect(blocks[0]).toEqual({ type: "p", spans: [{ bold: true, text: "O que fazer" }] });
+    expect(blocks[1].type).toBe("p");
+  });
+  it("citação com > vira bloco próprio, com o texto limpo para copiar", () => {
+    const md = "Diga ao cliente:\n\n> O estorno de **R$ 80,00** já foi pedido.\n> No PIX cai em minutos.\n\nDepois confirme.";
+    const blocks = parseChatMarkdown(md);
+    expect(blocks.map((b) => b.type)).toEqual(["p", "quote", "p"]);
+    if (blocks[1].type === "quote") {
+      expect(blocks[1].lines).toHaveLength(2);
+      expect(blocks[1].raw).toBe("O estorno de R$ 80,00 já foi pedido.\nNo PIX cai em minutos.");
+    }
+  });
 });

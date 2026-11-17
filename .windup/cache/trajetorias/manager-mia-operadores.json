@@ -1,0 +1,73 @@
+{
+  "cache_version": "0.2",
+  "key": {
+    "scenario_id": "manager-mia-operadores",
+    "start_url": "/manager/mia-operadores",
+    "scenario_sig": "7f1b461f80a82317"
+  },
+  "plan": {
+    "plan_version": "0.1",
+    "scenario_id": "manager-mia-operadores",
+    "start_url": "http://localhost:5273/manager/mia-operadores",
+    "actions": [
+      {
+        "id": "a1",
+        "type": "wait_for",
+        "target": {
+          "selector": "h1",
+          "description": "Page heading Mia para operadores"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "h1",
+            "text": "Mia para operadores"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a2",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Tab Sem resposta"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Sem resposta"
+          }
+        },
+        "timeout_ms": 5000
+      },
+      {
+        "id": "a3",
+        "type": "wait_for",
+        "target": {
+          "selector": "main",
+          "description": "Empty state of the open gaps tab"
+        },
+        "expect": {
+          "text_contains": {
+            "selector": "main",
+            "text": "Nenhuma pergunta sem resposta"
+          }
+        },
+        "timeout_ms": 5000
+      }
+    ],
+    "task": "Passo 1: verifique que a pagina exibe o texto \"Mia para operadores\". Passo 2: verifique que a pagina exibe o texto \"Sem resposta\". Passo 3: verifique que a pagina exibe o texto \"Nenhuma pergunta sem resposta\".",
+    "generated_by": {
+      "model": "manual (plano deterministico de 3 verificacoes de texto)",
+      "at": "2026-11-17T15:00:29.740Z"
+    }
+  },
+  "status": "active",
+  "stats": {
+    "created_at": "2026-11-17T15:00:29.740Z",
+    "last_replayed_at": null,
+    "replay_count": 0,
+    "replay_failures": 0,
+    "plan_generation": 1
+  }
+}

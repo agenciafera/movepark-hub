@@ -736,6 +736,16 @@ entre `/operator` e `/manager` pelo `AppShell`. Ela faz duas coisas: acha objeto
 
 Migration `20260902000000_admin_search.sql`.
 
+## 8.w Mia para operadores (17/11/2026)
+
+Bolinha no canto de todas as telas do `/operator` (`OperatorAssistantWidget`, montada em
+`routes/operator/layout.tsx`). Responde dúvida de atendimento: lê a reserva aberta na tela,
+consulta a base do operador, escreve a mensagem pronta para o cliente (com "Copiar mensagem") e,
+quando cabe, mostra um cartão de ação (cancelar, alterar datas, trocar placa, entrada, saída) com o
+efeito em reais. Nada acontece sem o "Confirmar". Usa a empresa ativa do painel e só propõe o que
+o papel da pessoa permite. Avisa que a conversa é registrada. Spec completa:
+[assistente-do-operador.md](./assistente-do-operador.md).
+
 ## 9. Open Points
 
 - [ ] Confirmação manual de reservas: fluxo obrigatório ou opcional por empresa?

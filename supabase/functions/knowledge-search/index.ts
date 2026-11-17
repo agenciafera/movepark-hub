@@ -10,9 +10,7 @@
 
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const EMBED_MODEL = "gemini-embedding-001";
-const EMBED_DIM = 768;
+import { embedQuery } from "../_shared/embedding.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -29,25 +27,6 @@ function json(body: unknown, status = 200) {
 function env(k: string): string {
   // @ts-expect-error - Deno env
   return Deno.env.get(k) ?? "";
-}
-
-async function embedQuery(apiKey: string, text: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: `models/${EMBED_MODEL}`,
-      content: { parts: [{ text }] },
-      taskType: "RETRIEVAL_QUERY",
-      outputDimensionality: EMBED_DIM,
-    }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error?.message ?? `embed HTTP ${res.status}`);
-  const values = data.embedding?.values as number[] | undefined;
-  if (!values || values.length !== EMBED_DIM) throw new Error(`embed devolveu ${values?.length ?? 0} dims`);
-  return `[${values.join(",")}]`;
 }
 
 // @ts-expect-error - Deno global

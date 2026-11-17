@@ -13,3 +13,13 @@ export async function hashContent(content: string): Promise<string> {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
+
+/**
+ * Onde os trechos de cada fonte moram. A base do operador vai para uma tabela própria: a busca
+ * pública (`match_knowledge`) lê só a `knowledge_chunk`, então artigo interno no chat do site é
+ * impossível por ausência, e não por um filtro que alguém pode esquecer. Ver
+ * docs/specs/assistente-do-operador.md.
+ */
+export function tabelaDosTrechos(sourceType: string): "knowledge_chunk" | "operator_knowledge_chunk" {
+  return sourceType === "operator_playbook" ? "operator_knowledge_chunk" : "knowledge_chunk";
+}

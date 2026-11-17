@@ -1140,3 +1140,8 @@ export type SocialPostEvent = {
   actor: string | null;
   created_at: string;
 };
+
+// ── Mia para operadores (docs/specs/assistente-do-operador.md) ───────────────
+export type OperatorAssistantMessage = Tables<"operator_assistant_message">;
+export type OperatorAssistantGap = Tables<"operator_assistant_gap">;
+export type OperatorPlaybookArticle = Tables<"operator_playbook_article">;

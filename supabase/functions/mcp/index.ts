@@ -29,13 +29,16 @@ import {
   toolTextContent,
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
+import { callOperator, type OperatorCtx } from "./operator.ts";
 import { keyPrefix, sha256Hex } from "./auth.ts";
 import {
   resolverPerfil,
   superficieDoPath,
+  type AssistenteVerificado,
   type ChaveVerificada,
   type Resolucao,
   type Verificacao,
+  type VerificacaoAssistente,
 } from "./resolver.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
@@ -97,12 +100,16 @@ interface PartnerCtx {
 export interface Deps {
   /** Consulta `api_key_verify`. */
   verificar: Verificacao;
+  /** Consulta `operator_assist_resolve` (token `mpo_` da superfície /operator). */
+  verificarAssistente?: VerificacaoAssistente;
   /** Executa a tool já autorizada. */
   chamarTool: (ctx: {
     endpoint: Endpoint;
     nome: string;
     args: Record<string, unknown>;
     partner: PartnerCtx | null;
+    /** Só na superfície /operator: o operador, a empresa e os escopos efetivos. */
+    operador?: OperatorCtx | null;
     authorization: string | null;
     ip: string | null;
     /** Chave `mp_` aceita no `X-API-Key` do consumidor (o agente), para auditoria. */
@@ -180,6 +187,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     authorization: req.headers.get("Authorization"),
     xApiKey: req.headers.get("x-api-key"),
     verificar: deps.verificar,
+    verificarAssistente: deps.verificarAssistente,
   });
 
   /*
@@ -225,7 +233,18 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     resolucao.status === 200 && (endpoint === "partner" || endpoint === "manager")
       ? { api_key_id: resolucao.apiKeyId!, company_id: resolucao.companyId, scopes: resolucao.escopos }
       : null;
-  const callerScopes: string[] = endpoint === "customer" ? resolucao.escopos : [];
+  const operador: OperatorCtx | null =
+    resolucao.status === 200 && endpoint === "operator" && resolucao.companyId && resolucao.actingUserId
+      ? {
+          api_key_id: resolucao.apiKeyId,
+          company_id: resolucao.companyId,
+          profile_id: resolucao.actingUserId,
+          papel: resolucao.papel,
+          scopes: resolucao.escopos,
+        }
+      : null;
+  const callerScopes: string[] =
+    endpoint === "customer" ? resolucao.escopos : endpoint === "operator" ? (operador?.scopes ?? []) : [];
 
   // Notificações (sem id) não recebem resposta.
   if (isNotification(reqMsg) && reqMsg.method.startsWith("notifications/")) {
@@ -244,7 +263,9 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
               ? "movepark-customer"
               : endpoint === "manager"
                 ? "movepark-manager"
-                : "movepark";
+                : endpoint === "operator"
+                  ? "movepark-operator"
+                  : "movepark";
         // O perfil só sai com credencial aceita. Anônimo não recebe nada que
         // ajude a triar uma chave.
         resp = json(
@@ -277,6 +298,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           nome: toolName,
           args,
           partner,
+          operador,
           authorization: req.headers.get("Authorization"),
           ip: clientIp(req),
           apiKeyId: resolucao.status === 200 ? resolucao.apiKeyId : null,
@@ -332,9 +354,12 @@ function auditar(
       : null;
   const tool = toolName ? findTool(endpoint, toolName) : null;
 
+  const doOperador = endpoint === "operator" && resolucao.status === 200;
   deps.auditar({
-    api_key_id: partner?.api_key_id ?? null,
-    company_id: partner?.company_id ?? null,
+    api_key_id: doOperador ? resolucao.apiKeyId : (partner?.api_key_id ?? null),
+    company_id: doOperador ? resolucao.companyId : (partner?.company_id ?? null),
+    // "Agente agindo por fulano": a chave é do beast-bots, a pessoa é o operador.
+    acting_user_id: doOperador ? resolucao.actingUserId : null,
     surface: "mcp",
     method: reqMsg.method,
     // O motivo entra no `path` quando a credencial foi recusada: é onde a
@@ -355,6 +380,8 @@ interface ApiLogRow {
   api_key_id: string | null;
   // Nulo na chave da Movepark: a escrita do blog não pertence a empresa nenhuma.
   company_id: string | null;
+  /** Só no /operator: o operador em nome de quem o agente agiu. */
+  acting_user_id?: string | null;
   surface: "rest" | "mcp";
   method: string;
   path: string;
@@ -1055,8 +1082,19 @@ function depsDeProducao(): Deps {
       });
       return (data ?? { ok: false }) as ChaveVerificada;
     },
-    chamarTool: ({ endpoint, nome, args, partner, authorization, ip, apiKeyId }) =>
-      endpoint === "manager"
+    verificarAssistente: async (token) => {
+      const { data } = await admin.rpc("operator_assist_resolve", { p_token_hash: await sha256Hex(token) });
+      return (data ?? { ok: false }) as AssistenteVerificado;
+    },
+    chamarTool: ({ endpoint, nome, args, partner, operador, authorization, ip, apiKeyId }) =>
+      endpoint === "operator"
+        ? callOperator(admin, operador!, nome, args, {
+            callPartner: (n, a) =>
+              callPartner(admin, { api_key_id: operador!.api_key_id ?? "", company_id: operador!.company_id, scopes: operador!.scopes }, n, a),
+            geminiKey: env("GEMINI_API_KEY") ?? "",
+            now: () => new Date(),
+          })
+        : endpoint === "manager"
         ? callManager(admin, nome, args)
         : endpoint === "partner"
           ? callPartner(admin, partner!, nome, args)

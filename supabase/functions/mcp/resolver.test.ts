@@ -434,3 +434,92 @@ Deno.test("na raiz, o agente segue sendo só escopo, e nunca perfil", async () =
   assertEquals(r.perfil, "public");
   assertEquals(r.escopos, ["blog:write", "checkout:link"]);
 });
+
+// ── Superfície /operator (assistente do operador) ───────────────────────────
+// Duas credenciais obrigatórias: o token `mpo_` (o operador naquela empresa) e a
+// chave da Movepark com `operator:assist` (o agente). O caso que interessa é a
+// combinação quase certa: token sem chave, chave sem escopo, chave de empresa,
+// token em outra superfície.
+
+const TOKEN_OPERADOR = "mpo_token_valido_abcdefghijk";
+const TOKEN_VENCIDO = "mpo_token_vencido_abcdefghij";
+const CHAVE_AGENTE = "mp_live_agenteop_abcdefghijk";
+
+const verificarComAgente: Verificacao = (chave) =>
+  chave === CHAVE_AGENTE
+    ? Promise.resolve({ ok: true, api_key_id: "k-agente", company_id: null, scopes: ["operator:assist"], environment: "live" })
+    : verificar(chave);
+
+const verificarAssistente = (token: string) =>
+  Promise.resolve(
+    token === TOKEN_OPERADOR
+      ? { ok: true, profile_id: "u-op", company_id: "empresa-1", role: "operator", scopes: ["bookings:checkin", "bookings:read"] }
+      : { ok: false, reason: "token_invalido" },
+  );
+
+function resolverOperador(authorization: string | null, xApiKey: string | null, path = "/operator") {
+  return resolverPerfil({ path, authorization, xApiKey, verificar: verificarComAgente, verificarAssistente });
+}
+
+Deno.test("/operator: token do assistente + chave do agente abre o perfil operator", async () => {
+  const r = await resolverOperador(`Bearer ${TOKEN_OPERADOR}`, CHAVE_AGENTE);
+  assertEquals(r.status, 200);
+  assertEquals(r.perfil, "operator");
+  assertEquals(r.companyId, "empresa-1");
+  assertEquals(r.actingUserId, "u-op");
+  assertEquals(r.apiKeyId, "k-agente");
+  // Escopo do papel mais o do agente; nada da chave além do operator:assist.
+  assertEquals(r.escopos, ["bookings:checkin", "bookings:read", "operator:assist"]);
+});
+
+Deno.test("/operator: cada credencial sozinha recusa", async () => {
+  const casos: Array<[string | null, string | null, string]> = [
+    [`Bearer ${TOKEN_OPERADOR}`, null, "agente_ausente"],
+    [null, CHAVE_AGENTE, "credencial_ausente"],
+    [`Bearer ${JWT_USUARIO}`, CHAVE_AGENTE, "credencial_ausente"],
+    [`Bearer ${TOKEN_OPERADOR}`, CHAVE_PLATAFORMA, "agente_sem_operator_assist"],
+    [`Bearer ${TOKEN_OPERADOR}`, CHAVE_PARCEIRO, "agente_sem_operator_assist"],
+    [`Bearer ${TOKEN_OPERADOR}`, CHAVE_REVOGADA, "agente_sem_operator_assist"],
+    [`Bearer ${TOKEN_VENCIDO}`, CHAVE_AGENTE, "assistente_token_invalido"],
+  ];
+  for (const [auth, x, motivo] of casos) {
+    const r = await resolverOperador(auth, x);
+    assertEquals([r.status, r.perfil, r.motivo], [401, "public", motivo], `${auth} + ${x}`);
+    assertEquals(r.escopos, []);
+    assertEquals(r.companyId, null);
+  }
+});
+
+Deno.test("/operator: chave de parceiro no Authorization não abre a superfície", async () => {
+  const r = await resolverOperador(`Bearer ${CHAVE_PARCEIRO}`, null);
+  assertEquals([r.status, r.perfil], [401, "public"]);
+});
+
+Deno.test("token do assistente fora do /operator recusa, inclusive na raiz", async () => {
+  for (const path of ["/", "/public", "/partner", "/customer", "/manager"]) {
+    const r = await resolverOperador(`Bearer ${TOKEN_OPERADOR}`, CHAVE_AGENTE, path);
+    assertEquals([r.status, r.perfil], [401, "public"], path);
+  }
+});
+
+Deno.test("/operator sem verificador injetado recusa tudo", async () => {
+  const r = await resolverPerfil({
+    path: "/operator",
+    authorization: `Bearer ${TOKEN_OPERADOR}`,
+    xApiKey: CHAVE_AGENTE,
+    verificar: verificarComAgente,
+  });
+  assertEquals([r.status, r.motivo], [401, "assistente_sem_verificador"]);
+});
+
+Deno.test("o token do assistente nunca chega ao api_key_verify", async () => {
+  consultasAoBanco = [];
+  await resolverOperador(`Bearer ${TOKEN_OPERADOR}`, CHAVE_AGENTE);
+  assertEquals(consultasAoBanco.includes(TOKEN_OPERADOR), false);
+});
+
+Deno.test("superfície /operator é reconhecida pelos dois caminhos", () => {
+  assertEquals(superficieDoPath("/operator"), "operator");
+  assertEquals(superficieDoPath("/functions/v1/mcp/operator"), "operator");
+  assertEquals(superficieDoPath("/operatorX"), null);
+});

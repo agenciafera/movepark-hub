@@ -4,8 +4,9 @@
 
 import { READ_TOOLS, toMcpToolDef } from "../_shared/assistant-tools.ts";
 import { CUSTOMER_AUTH_TOOLS, CUSTOMER_TXN_TOOLS } from "./customer.logic.ts";
+import { OPERATOR_ASSIST_TOOLS, OPERATOR_PARTNER_READS } from "./operator.logic.ts";
 
-export type Endpoint = "public" | "partner" | "customer" | "manager";
+export type Endpoint = "public" | "partner" | "customer" | "manager" | "operator";
 
 export interface ToolDef {
   name: string;
@@ -343,11 +344,25 @@ export const MANAGER_TOOLS: ToolDef[] = [
   },
 ];
 
+// ── Assistente do operador (a Mia para operadores) ────────────────────────────
+//
+// Superfície interna: `/mcp/operator`. Igual ao Manager, **sem card público**, e o
+// `lint:openapi` reprova se um nome daqui vazar para card. Só leitura de parceiro
+// mais as tools próprias do assistente: as escritas de parceiro (cupom, preço,
+// unidade) ficam de fora porque não passariam pelo clique de confirmação. A única
+// "escrita" é `propose_booking_action`, que só cria a proposta.
+// Ver docs/specs/assistente-do-operador.md.
+export const OPERATOR_TOOLS: ToolDef[] = [
+  ...PARTNER_TOOLS.filter((t) => (OPERATOR_PARTNER_READS as readonly string[]).includes(t.name)),
+  ...OPERATOR_ASSIST_TOOLS,
+];
+
 const REGISTRY: Record<Endpoint, ToolDef[]> = {
   public: PUBLIC_TOOLS,
   partner: PARTNER_TOOLS,
   customer: CUSTOMER_TOOLS,
   manager: MANAGER_TOOLS,
+  operator: OPERATOR_TOOLS,
 };
 
 function registry(endpoint: Endpoint): ToolDef[] {

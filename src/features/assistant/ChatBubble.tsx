@@ -27,10 +27,16 @@ export function Bubble({
   role,
   text,
   markdown,
+  onCopiar,
 }: {
   role: "user" | "model";
   text: string;
   markdown?: boolean;
+  /**
+   * Quando presente, a citação (`> `) ganha um botão "Copiar". É a mensagem pronta para o
+   * cliente que a Mia para operadores escreve: o operador copia e cola no WhatsApp.
+   */
+  onCopiar?: (texto: string) => void;
 }) {
   const mine = role === "user";
   const comMarkdown = markdown ?? !mine;
@@ -49,7 +55,24 @@ export function Bubble({
         {!comMarkdown
           ? text
           : blocks!.map((b, i) =>
-              b.type === "ul" ? (
+              b.type === "quote" ? (
+                <div key={i} className="space-y-1 rounded-md border-l-2 border-mp-primary bg-white px-3 py-2">
+                  {b.lines.map((linha, j) => (
+                    <p key={j}>
+                      <Inline spans={linha} />
+                    </p>
+                  ))}
+                  {onCopiar ? (
+                    <button
+                      type="button"
+                      onClick={() => onCopiar(b.raw)}
+                      className="text-caption font-medium text-mp-primary hover:underline"
+                    >
+                      Copiar mensagem
+                    </button>
+                  ) : null}
+                </div>
+              ) : b.type === "ul" ? (
                 <ul key={i} className="list-disc space-y-1 pl-4">
                   {b.items.map((item, j) => (
                     <li key={j}>

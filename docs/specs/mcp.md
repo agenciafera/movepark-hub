@@ -356,6 +356,36 @@ chamadas ficam no `api_request_log` com `company_id` nulo.
 
 ---
 
+### Assistente do operador (`/operator`, interna)
+
+Quarta superfície credenciada, da **Mia para operadores** (agente `movepark-operador` no
+beast-bots). Spec completa: [assistente-do-operador.md](./assistente-do-operador.md).
+
+Exige **as duas** credenciais, e uma sem a outra é 401 com a resposta padrão:
+
+| Header | O que é |
+|---|---|
+| `Authorization: Bearer mpo_…` | o **sujeito**: token do assistente emitido pela Edge `operator-assistant`, que vale um turno (teto de 30 min), uma empresa e só esta superfície |
+| `X-API-Key: mp_…` | o **agente**: chave de plataforma com o escopo `operator:assist` (a "Movepark-Mia-Operador") |
+
+O token começa com `mpo_`, e não `mp_`, de propósito: nunca chega ao `api_key_verify`, e chave
+de API nunca é lida como ele. Ele é resolvido por `operator_assist_resolve`, que recalcula o
+escopo pelo papel da pessoa a cada chamada. **Escopo efetivo** = escopos do papel ∪
+`operator:assist`. A empresa vem do token, nunca de argumento.
+
+Tools: as **leituras** de parceiro (`list_locations`, `get_location`, `list_parking_types`,
+`get_availability`, `simulate_price`, `list_bookings`, `get_booking`, `list_reviews`,
+`get_occupancy`) mais as próprias, em `mcp/operator.logic.ts`: `find_booking`,
+`get_booking_situation`, `quote_date_change`, `quote_fare_upgrade` (`bookings:read`),
+`search_operator_knowledge`, `report_knowledge_gap` (`operator:assist`) e
+`propose_booking_action`, que só cria a proposta; quem executa é o clique do operador na Edge.
+Nenhuma escrita de parceiro entra: não passaria pela confirmação.
+
+Sem card, igual ao `/manager`: o `lint:openapi` reprova se um nome de `OPERATOR_ASSIST_TOOLS`
+aparecer em card. O proxy `mcp.movepark.co` aceita o path (`SUPERFICIES_MCP`), mas a página de
+docs não o menciona. Toda chamada vai ao `api_request_log` com `api_key_id` do agente,
+`company_id` e `acting_user_id` ("agente agindo por fulano"). Matriz em `resolver.test.ts`.
+
 ### Uma URL só
 
 `https://mcp.movepark.co` atende todo mundo. Na **raiz** é a credencial que
@@ -463,6 +493,7 @@ condicional dentro do `Deno.serve`, sem um único teste.
 | `Authorization: Bearer mp_…` com empresa | `partner`, e só na superfície `/partner` |
 | `Authorization: Bearer mp_…` sem empresa | `manager`, e só na superfície `/manager` |
 | `X-API-Key: mp_…` sem empresa | não credencia ninguém; só acrescenta escopo de agente |
+| `Authorization: Bearer mpo_…` + `X-API-Key` com `operator:assist` | `operator`, e só na superfície `/operator` |
 
 Cinco regras, e cada uma existe por um motivo medido:
 

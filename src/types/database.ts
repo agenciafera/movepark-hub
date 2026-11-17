@@ -278,6 +278,7 @@ export type Database = {
       }
       api_request_log: {
         Row: {
+          acting_user_id: string | null
           api_key_id: string | null
           company_id: string | null
           created_at: string
@@ -292,6 +293,7 @@ export type Database = {
           surface: string
         }
         Insert: {
+          acting_user_id?: string | null
           api_key_id?: string | null
           company_id?: string | null
           created_at?: string
@@ -306,6 +308,7 @@ export type Database = {
           surface: string
         }
         Update: {
+          acting_user_id?: string | null
           api_key_id?: string | null
           company_id?: string | null
           created_at?: string
@@ -4902,6 +4905,391 @@ export type Database = {
           },
         ]
       }
+      operator_assist_session: {
+        Row: {
+          company_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          profile_id: string
+          token_hash: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          profile_id: string
+          token_hash: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          profile_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_assist_session_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assist_session_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "operator_assist_session_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operator_assistant_action: {
+        Row: {
+          booking_id: string
+          company_id: string
+          created_at: string
+          decided_at: string | null
+          effect_cents: number | null
+          error: string | null
+          expires_at: string
+          id: string
+          kind: string
+          params: Json
+          profile_id: string
+          result: Json | null
+          status: string
+          summary: string
+        }
+        Insert: {
+          booking_id: string
+          company_id: string
+          created_at?: string
+          decided_at?: string | null
+          effect_cents?: number | null
+          error?: string | null
+          expires_at?: string
+          id?: string
+          kind: string
+          params?: Json
+          profile_id: string
+          result?: Json | null
+          status?: string
+          summary: string
+        }
+        Update: {
+          booking_id?: string
+          company_id?: string
+          created_at?: string
+          decided_at?: string | null
+          effect_cents?: number | null
+          error?: string | null
+          expires_at?: string
+          id?: string
+          kind?: string
+          params?: Json
+          profile_id?: string
+          result?: Json | null
+          status?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_assistant_action_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_action_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_booking_fact"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_action_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_action_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_action_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operator_assistant_gap: {
+        Row: {
+          article_id: string | null
+          booking_code: string | null
+          company_id: string | null
+          context: string | null
+          created_at: string
+          id: string
+          profile_id: string | null
+          question: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          article_id?: string | null
+          booking_code?: string | null
+          company_id?: string | null
+          context?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          question: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          article_id?: string | null
+          booking_code?: string | null
+          company_id?: string | null
+          context?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string | null
+          question?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_assistant_gap_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "operator_playbook_article"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_gap_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_gap_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_gap_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_gap_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operator_assistant_message: {
+        Row: {
+          action_ids: string[]
+          booking_code: string | null
+          company_id: string
+          content: string
+          conversation_id: string
+          created_at: string
+          error: string | null
+          id: string
+          page: string | null
+          profile_id: string
+          role: string
+          used_tools: string[]
+        }
+        Insert: {
+          action_ids?: string[]
+          booking_code?: string | null
+          company_id: string
+          content: string
+          conversation_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          page?: string | null
+          profile_id: string
+          role: string
+          used_tools?: string[]
+        }
+        Update: {
+          action_ids?: string[]
+          booking_code?: string | null
+          company_id?: string
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          page?: string | null
+          profile_id?: string
+          role?: string
+          used_tools?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_assistant_message_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_message_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "wl_booking_import_target"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "operator_assistant_message_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operator_knowledge_chunk: {
+        Row: {
+          chunk_index: number
+          content: string
+          content_hash: string
+          created_at: string
+          destination_id: string | null
+          embedding: string | null
+          embedding_stale: boolean
+          id: string
+          location_id: string | null
+          scope: Database["public"]["Enums"]["faq_scope"]
+          source_id: string
+          source_type: string
+          token_estimate: number | null
+          updated_at: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          content_hash: string
+          created_at?: string
+          destination_id?: string | null
+          embedding?: string | null
+          embedding_stale?: boolean
+          id?: string
+          location_id?: string | null
+          scope?: Database["public"]["Enums"]["faq_scope"]
+          source_id: string
+          source_type: string
+          token_estimate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          content_hash?: string
+          created_at?: string
+          destination_id?: string | null
+          embedding?: string | null
+          embedding_stale?: boolean
+          id?: string
+          location_id?: string | null
+          scope?: Database["public"]["Enums"]["faq_scope"]
+          source_id?: string
+          source_type?: string
+          token_estimate?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      operator_playbook_article: {
+        Row: {
+          body_md: string
+          category: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_published: boolean
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body_md: string
+          category: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body_md?: string
+          category?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_published?: boolean
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_playbook_article_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       otp_request_log: {
         Row: {
           created_at: string
@@ -8882,6 +9270,14 @@ export type Database = {
         Args: { p_check_in: string }
         Returns: undefined
       }
+      assist_booking_situation: {
+        Args: { p_company_id: string; p_ref: string }
+        Returns: Json
+      }
+      assist_find_booking: {
+        Args: { p_company_id: string; p_limit?: number; p_query: string }
+        Returns: Json
+      }
       availability_batch: {
         Args: {
           p_check_in_at: string
@@ -10071,6 +10467,17 @@ export type Database = {
           source_type: string
         }[]
       }
+      match_operator_knowledge: {
+        Args: { p_k?: number; p_query_embedding: string }
+        Returns: {
+          category: string
+          chunk_index: number
+          content: string
+          similarity: number
+          source_id: string
+          title: string
+        }[]
+      }
       member_has_scope: {
         Args: { p_company_id: string; p_scope: string }
         Returns: boolean
@@ -10183,6 +10590,7 @@ export type Database = {
         Args: { p_company_id: string; p_limit?: number; p_since?: string }
         Returns: Json
       }
+      operator_assist_resolve: { Args: { p_token_hash: string }; Returns: Json }
       operator_create_api_key: {
         Args: {
           p_company_id: string

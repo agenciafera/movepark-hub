@@ -145,6 +145,7 @@ import ManagerUsers from "@/routes/manager/users";
 import ManagerCompanyAccount from "@/routes/manager/company-account";
 import ManagerCompanyRecovery from "@/routes/manager/company-recovery";
 import ManagerMia from "@/routes/manager/mia";
+import ManagerMiaOperadores from "@/routes/manager/mia-operadores";
 import ManagerFinanceBilling from "@/routes/manager/finance-billing";
 import ManagerFinanceCommissions from "@/routes/manager/finance-commissions";
 import ManagerFinancePayouts from "@/routes/manager/finance-payouts";
@@ -1665,6 +1666,8 @@ export const routes: RouteRecord[] = [
               { path: "settings", element: <ManagerSettings /> },
               // Ferramenta de time: a Mia de teste como página (era bolinha flutuante).
               { path: "mia", element: <ManagerMia /> },
+              // Mia para operadores: conversas, perguntas sem resposta e a base que ela consulta.
+              { path: "mia-operadores", element: <ManagerMiaOperadores /> },
               { path: "legal", element: <ManagerLegal /> },
             ],
           },
