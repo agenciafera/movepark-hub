@@ -165,33 +165,81 @@ As Edges `cancel-booking`, `change-booking-dates` e `change-booking-vehicle` gra
 A extensão por atraso de voo mantém a tabela própria `booking_fare_extension`. pgTAP:
 `supabase/tests/booking_modification.test.sql`. (`fare_upgrade`/`refund` do webhook entram na Fase B.)
 
-## 8. Fase B (E2.8-h): alterar datas de reserva PAGA (mecânica confirmada)
+## 8. Fase B (E2.8-h): alterar datas de reserva PAGA
 
-Decisões de produto (jul/2026) que guiam a implementação:
+### 8.1 Regra de 17/11/2026 (substitui as decisões de jul/2026)
 
-- **Preço:** re-cota a vaga a **preço atual** (`simulate_price`), igual à troca de datas de reserva
-  pendente. Uma estadia do mesmo tamanho pode mudar de valor se o preço mudou desde a compra. O delta
-  é sempre `novo_total − booking.total_amount` (o total acumulado que a pessoa já pagou, incluindo
-  upgrades). Cotação read-only já entregue: `reprice_booking_dates` (B1, migration `20260809000000`).
-- **Delta > 0 (mais caro):** cobra o delta por **PIX** (`payment.kind='date_change'`, split 100%
-  Movepark, padrão do `fare_upgrade`). As datas-alvo ficam em `payment.date_change_check_in_at/out_at`.
-  **Segura a vaga nova já na cobrança** (hold): adquire a capacidade das novas datas no momento da
-  cobrança e mantém as datas antigas até o pagamento. As novas datas só são aplicadas quando o
-  **webhook** confirma o PIX (aí libera a capacidade antiga). Se o PIX **expira** sem pagar, libera o
-  hold das novas datas e a reserva segue nas antigas (cleanup por expiração).
-- **Delta < 0 (mais barato):** aplica as novas datas na hora e **estorna a diferença** (estorno
-  parcial via gateway, reverte o split proporcional). É o "estorno parcial" descopado da E0.3.2.
+Decidida pelo Kallef em 17/11/2026, depois de a simulação com reservas reais mostrar que a regra de
+jul/2026 ("re-cota a vaga a preço atual", "split 100% Movepark") cobrava R$ 80 de quem só mudava o
+dia da viagem quando a tabela tinha subido (MP-BD9A16), cobrava para encurtar quando a tabela tinha
+pacote e deixava o estacionamento sem receber pelos dias a mais.
+
+| # | Decisão | Consequência |
+|---|---|---|
+| 1 | A diferença sai da **tabela da compra**. A reserva guarda, ao nascer, o preço de cada duração (`booking.price_by_days`, de 1 até 30 dias além da estadia, teto 90). O motor de preço não muda. | Mudar só o dia, com a mesma quantidade de diárias, não custa nada. Tabela que sobe depois não pesa na reserva. |
+| 2 | Reserva sem a tabela guardada (anterior a 17/11/2026, ou duração fora da faixa) usa a **diferença entre as durações pela tabela de hoje**: `tabela(nova) − tabela(atual)`. | Mesmo nas antigas, mudar só o dia não custa nada. |
+| 3 | **Encurtar segue a tabela**: se a estadia menor custa mais (pacote da Pare Seguro: 15 dias R$ 350, 13 dias R$ 375,70), cobra a diferença. O Kallef recusou a trava "encurtar nunca cobra". | A prévia mostra antes; o Termo 6.3 v6 avisa. |
+| 4 | A diferença é **da vaga**: divide como a reserva (comissão congelada, E0.3.12) e entra no extrato do estacionamento (`payout_*` passaram a contar `kind in ('booking','date_change')`). A **tarifa** é sempre da Movepark e nunca entra na diferença, nem na cobrança nem no estorno. | No estorno, sai do estacionamento a parte dele nas diárias devolvidas e da Movepark a comissão delas (decisão do Kallef em 17/11/2026, depois de eu ter descrito a conta de hoje ao contrário: a proporção do total incluía a tarifa e tirava R$ 45,10 em vez de R$ 49,13 num estorno de R$ 57,80). |
+| 5 | O **cupom continua**: percentual refeito sobre o novo valor (com o teto `max_discount_amount`), fixo mantido sem passar do novo valor. Cupom da Movepark volta para a base do repasse, como na reserva. | A troca não apaga mais `booking_coupon`. |
+| 6 | Pagamento da diferença por **PIX ou cartão**. O cartão vai pela Edge `create-card-charge` com `date_change` (mesmo split, antifraude, parcelamento congelado e cartão salvo do checkout). A equipe (Mia, painel) gera PIX. | Os Termos v5 já prometiam "PIX ou cartão"; o Kallef escolheu fazer o cartão em vez de mudar o texto. |
+
+### 8.2 Como funciona
+
+- **Cotação única** `reprice_booking_dates(booking, entrada, saída)`: devolve `days` (com a tolerância
+  da unidade, a mesma conta da criação), `days_before`, `price_source` (`compra`/`hoje`),
+  `delta_cents`, `new_total_cents`, `subtotal_new`, `coupon_discount_new`, `partner_base_delta_cents`,
+  `available`, `reason`. Abaixo do mínimo da tabela devolve "Nesta unidade o mínimo é de N diárias."
+  O delta é `(subtotal_novo − cupom_novo) − (subtotal_atual − cupom_atual)` somado ao total atual,
+  então upgrades e outros componentes do total ficam como estão.
+- **Prévia** (`dry_run: true` na Edge `change-booking-dates-paid`): a tela do cliente e a Mia mostram
+  o valor antes de qualquer cobrança. O clique manda `expected_delta_cents`; se a cotação mudou até
+  lá, a Edge recusa (409 `quote_changed`) em vez de cobrar ou devolver outro valor.
+- **Delta > 0:** segura a vaga nova (`hold_paid_date_change`) e cobra a diferença (PIX nesta Edge,
+  cartão na `create-card-charge`). A cobrança grava a cotação em `payment.date_change_quote`, e o
+  webhook aplica **essa** conta, não um re-preço na hora do pagamento. Cartão aprovado na hora aplica
+  na hora. PIX vencido ou cartão recusado soltam a vaga (o webhook solta antes de gravar o status,
+  porque a liberação só age em cobrança pendente). Só uma troca viva por reserva: antes de outra, os
+  PIX de diferença abertos são anulados no gateway e a vaga deles é solta (`cancelPendingDateChanges`).
+- **Delta < 0:** aplica na hora e estorna a diferença na cobrança da reserva. A cobrança guarda
+  `date_change_refunded_cents` e `date_change_partner_refund_frac` (fração da perna do estacionamento
+  devolvida), que o extrato usa no lugar da proporção do total (`payment_partner_refund_ratio`; sem
+  estorno de datas, a conta é a de sempre). Recusa do gateway não desfaz a troca: a devolução vai
+  para a fila manual do Manager (`payout_refund_manual`), e marcar como paga soma só o que a linha
+  devolveu (`20261204150000`).
 - **Delta = 0:** aplica na hora.
-- **Histórico:** registra em `booking_modification` (`date_change`, e `refund` quando estorna).
-- **Front:** libera "Alterar datas" na reserva **confirmada**; mostra a diferença e o fluxo (pagar
-  por PIX / confirmar estorno / confirmar).
+- **Gravação** `apply_paid_date_change(..., p_actor_role, p_quote)`: grava exatamente a cotação
+  (total, diárias, subtotal, cupom), registra `staff` quando é a equipe, e a troca vai ao white-label.
+- **Cancelamento depois de uma troca:** devolve o que sobrou da cobrança da reserva (não o valor
+  cheio de novo) e também as cobranças extras (diferença de datas, upgrade de tarifa). Antes só a
+  cobrança da reserva voltava.
+- **Aviso ao cliente** (`notifyDatesChanged`): novas datas e o que aconteceu com o dinheiro (pagou,
+  devolvido no PIX ou no cartão, ou devolução pela equipe). O caminho do estorno não mandava aviso.
 
-Implementação (E2.8-h, todos no ar): **B1** schema + cotação `reprice_booking_dates` (✅);
-**B2.1** RPCs `hold_paid_date_change`/`apply_paid_date_change`/`expire_paid_date_change_hold` (✅);
+### 8.3 Onde a regra aparece para o cliente
+
+Termos de Uso v6, item 6.3 (`20261204160000`); FAQ global "Como funciona a alteração de datas da
+reserva?" (pt, en, es) e o ajuste de "Como cancelo uma reserva?" (`20261204170000`); comparativo de
+tarifas (`FareComparisonDialog`); a instrução do chat do site; a base do operador e as ferramentas da
+Mia para operadores (`quote_date_change`).
+
+### 8.4 Limites conhecidos
+
+- Com o **estorno híbrido** ligado (chave hoje desligada), a parte que o gateway debita direto do
+  estacionamento segue a proporção do total; o extrato registra a parte certa das diárias.
+- Os relatórios de canal e os resumos diários (`commission_channel_report`, `team_digest_*`,
+  `partner_daily_digest`) ainda contam só a cobrança da reserva.
+- O formulário de cartão da troca (`DateChangeCardForm`) repete os campos do checkout em vez de
+  compartilhar um componente com o `Step4Payment`.
+
+### 8.5 Histórico
+
+Implementação E2.8-h (jul/2026): **B1** cotação `reprice_booking_dates` (migration `20260809000000`);
+**B2.1** RPCs `hold_paid_date_change`/`apply_paid_date_change`/`expire_paid_date_change_hold`;
 **B2.2** Edge `change-booking-dates-paid` + ramo `date_change` do webhook + cron
-`cron_expire_date_change_holds` (✅); **B3** front `ChangeDatesPaidDialog` + gate
-`canCustomerChangePaidDates` (✅). Testado por pgTAP + deno + Vitest. Falta só a verificação visual
-ao vivo com sessão logada (B4).
+`cron_expire_date_change_holds`; **B3** front `ChangeDatesPaidDialog` + gate
+`canCustomerChangePaidDates`. Regra nova: migrations `20261204140000` (tabela da compra, cotação,
+gravação, extrato) e `20261204150000` (reembolso manual parcial). Até 17/11/2026 nenhuma cobrança de
+diferença nem estorno parcial tinha acontecido em produção (3 trocas, todas com diferença zero).
 
 ## 9. Divergência conhecida a alinhar
 

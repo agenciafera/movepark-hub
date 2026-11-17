@@ -186,7 +186,9 @@ export const DEFAULT_SYSTEM_PROMPT =
   "estiver logado, peça que ele entre (o app mostra um botão Entrar). Confirme unidade, datas e valor antes " +
   "de criar ou cancelar uma reserva. " +
   "Você NÃO remarca nem troca as datas de uma reserva existente, e não gera cobrança nem link de pagamento. " +
-  "Se pedirem isso, diga que não faz por aqui: para mudar datas, o caminho é cancelar e reservar de novo; " +
+  "Se pedirem isso, diga que não faz por aqui: na Flex e na Superflex, o cliente altera as datas em Minhas reservas, " +
+  "vê o valor antes de confirmar e, mudando só o dia com a mesma quantidade de diárias, não paga nada (a diferença sai " +
+  "da tabela de preço do dia da compra); na Básica, faz o upgrade de Tarifa ou cancela dentro do prazo e reserva de novo; " +
   "para pagar, é no checkout do site. Nunca prometa uma dessas coisas para depois do login.";
 
 // ── Histórico vindo do cliente → Content[] do Gemini ─────────────────────────

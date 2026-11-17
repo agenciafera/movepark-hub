@@ -27,7 +27,7 @@ import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { sweepDebtEmails } from "../_shared/debt-email.ts";
 import { cancellationRefund, sendBookingCancellationEmail } from "../_shared/booking-cancellation.ts";
 import { notifyBooking } from "../_shared/notify.ts";
-import { desfechoDoCancelamento, parseCancelInput, refundDecision, type Actor } from "./logic.ts";
+import { desfechoDoCancelamento, parseCancelInput, refundDecision, remainingCents, type Actor } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -121,18 +121,19 @@ Deno.serve(async (req: Request) => {
   // último (pendente, recusado). Com o estorno avulso (19/10/2026) a reserva pode ter um pagamento
   // estornado MAIS NOVO que o que vale (a cópia da cobrança em dobro), e pegar só "o último" faria
   // o cancelamento achar que já devolveu tudo.
+  // Troca de datas mais barata (17/11/2026) devolve PARTE da cobrança e ela continua sustentando a
+  // reserva: o critério é "ainda tem valor a devolver", não "nunca teve estorno".
   const PAYMENT_COLS =
-    "id, provider, provider_payment_id, provider_charge_id, amount, method, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents";
-  const { data: vivo } = await admin
+    "id, provider, provider_payment_id, provider_charge_id, amount, refunded_amount, method, status, refunded_at, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents";
+  const { data: candidatos } = await admin
     .from("payment")
     .select(PAYMENT_COLS)
     .eq("booking_id", booking.id)
     .eq("kind", "booking")
     .in("status", ["paid", "authorized"])
-    .is("refunded_at", null)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(5);
+  const vivo = (candidatos ?? []).find((p) => remainingCents(p.amount, p.refunded_amount) > 0) ?? null;
   const { data: payment } = vivo
     ? { data: vivo }
     : await admin
@@ -147,7 +148,7 @@ Deno.serve(async (req: Request) => {
     actor,
     bookingStatus: booking.status,
     paymentStatus: payment?.status ?? null,
-    alreadyRefunded: !!payment?.refunded_at,
+    alreadyRefunded: vivo ? false : !!payment?.refunded_at,
     checkInAt: booking.check_in_at,
     fareCancelUntil: booking.fare_cancel_until,
     now: new Date(),
@@ -174,6 +175,7 @@ Deno.serve(async (req: Request) => {
   let refundPending = false;
   let refundManual = false;
   let absorvidoPeloMaster = false;
+  let devolvidoCents = 0;
 
   if (decision.action === "cancel_with_refund" && payment) {
     // Resolve o charge id: coluna → fallback via getCharge(order id).
@@ -196,12 +198,16 @@ Deno.serve(async (req: Request) => {
 
     const settings = await loadGatewaySettings(admin);
     const totalCents = Math.round(Number(payment.amount) * 100);
+    // O que sobrou: uma troca de datas pode já ter devolvido parte (só as diárias).
+    const restanteCents = remainingCents(payment.amount, (payment as { refunded_amount?: number | null }).refunded_amount ?? null);
+    devolvidoCents = restanteCents;
     const exec = await executeRefund({
       gateway,
       chargeId,
       payment,
       moveparkRecipientId: settings.moveparkRecipientId,
       totalCents,
+      ...(restanteCents < totalCents ? { amountCents: restanteCents } : {}),
       // E0.3.6: com a chave ligada, o gateway debita o parceiro quando o saldo dele cobre.
       hybridEnabled: settings.refundHybridEnabled,
       partnerRecipientMissing: await partnerRecipientMissing(admin, payment),
@@ -212,7 +218,7 @@ Deno.serve(async (req: Request) => {
       bookingId: booking.id,
       kind: "refund",
       httpStatus: exec.result.httpStatus,
-      request: { amount_cents: totalCents, split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
+      request: { amount_cents: restanteCents, split: exec.splitSent ?? null, mode: exec.mode, reason: exec.reason },
       response: exec.result.raw,
       // Recusa processada fica explícita no rastro: "HTTP 200" sozinho parecia estorno feito.
       note: exec.result.status === "failed"
@@ -244,12 +250,12 @@ Deno.serve(async (req: Request) => {
       const { error: filaErr } = pendente
         ? await admin
             .from("payout_refund_manual")
-            .update({ reason: manualRefundReason(refund.raw), gateway_response: refund.raw ?? null })
+            .update({ amount_cents: restanteCents, reason: manualRefundReason(refund.raw), gateway_response: refund.raw ?? null })
             .eq("id", pendente.id)
         : await admin.from("payout_refund_manual").insert({
             booking_id: booking.id,
             payment_id: payment.id,
-            amount_cents: totalCents,
+            amount_cents: restanteCents,
             reason: manualRefundReason(refund.raw),
             gateway_response: refund.raw ?? null,
             created_by: userId,
@@ -286,6 +292,93 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Cobranças extras da reserva (17/11/2026): diferença de datas paga e upgrade de tarifa. O
+  // cancelamento dentro do prazo devolve TUDO o que o cliente pagou (Termos 7.1); antes só a cobrança
+  // da reserva voltava. Aqui a reserva já vai cancelar, então nenhuma recusa aborta: o que o gateway
+  // não devolver vai para a fila manual.
+  if (decision.action === "cancel_with_refund") {
+    const { data: extras } = await admin
+      .from("payment")
+      .select(PAYMENT_COLS + ", kind")
+      .eq("booking_id", booking.id)
+      .in("kind", ["date_change", "fare_upgrade"])
+      .eq("status", "paid");
+    for (const extra of (extras ?? []) as unknown as Array<Record<string, unknown> & { id: string; amount: number; refunded_amount: number | null; provider: string | null; provider_charge_id: string | null; provider_payment_id: string | null; kind: string }>) {
+      const restante = remainingCents(extra.amount, extra.refunded_amount);
+      if (restante <= 0) continue;
+      const motivoExtra = `${input.reason ?? `cancelamento (${actor})`} · ${extra.kind === "date_change" ? "diferença de datas" : "upgrade de tarifa"}`;
+      let gw;
+      try {
+        gw = getGateway(extra.provider ?? "pagarme");
+      } catch {
+        gw = null;
+      }
+      let chargeIdExtra = extra.provider_charge_id;
+      if (gw && !chargeIdExtra && extra.provider_payment_id) {
+        chargeIdExtra = (await gw.getCharge(extra.provider_payment_id)).chargeId;
+      }
+      const settingsExtra = await loadGatewaySettings(admin);
+      const execExtra = gw && chargeIdExtra
+        ? await executeRefund({
+          gateway: gw,
+          chargeId: chargeIdExtra,
+          // deno-lint-ignore no-explicit-any
+          payment: extra as any,
+          moveparkRecipientId: settingsExtra.moveparkRecipientId,
+          totalCents: Math.round(Number(extra.amount) * 100),
+          ...(restante < Math.round(Number(extra.amount) * 100) ? { amountCents: restante } : {}),
+          hybridEnabled: settingsExtra.refundHybridEnabled,
+          // deno-lint-ignore no-explicit-any
+          partnerRecipientMissing: await partnerRecipientMissing(admin, extra as any),
+        })
+        : null;
+      if (execExtra) {
+        await persistPartnerBalance(admin, execExtra);
+        await logGatewayEvent(admin, {
+          paymentId: extra.id,
+          bookingId: booking.id,
+          kind: "refund",
+          httpStatus: execExtra.result.httpStatus,
+          request: { amount_cents: restante, split: execExtra.splitSent ?? null, mode: execExtra.mode, reason: execExtra.reason },
+          response: execExtra.result.raw,
+          note: execExtra.outcome === "ok" ? motivoExtra : `ESTORNO RECUSADO, vai para a fila manual · ${motivoExtra}`,
+        });
+      }
+      if (execExtra?.outcome === "ok") {
+        const pend = execExtra.result.status !== "refunded";
+        refunded = true;
+        refundPending = refundPending || pend;
+        absorvidoPeloMaster = absorvidoPeloMaster || execExtra.absorbedByMaster === true;
+        await admin.from("payment").update({
+          status: pend ? "paid" : "refunded",
+          refunded_at: new Date().toISOString(),
+          refunded_amount: extra.amount,
+          refund_reason: motivoExtra,
+          provider_charge_id: chargeIdExtra,
+          refund_absorbed_by_master: execExtra.absorbedByMaster,
+          refund_split: execExtra.splitSent ?? null,
+          refund_partner_cents: execExtra.partnerCents,
+          refund_partner_balance_cents: execExtra.partnerBalanceCents,
+        }).eq("id", extra.id);
+      } else {
+        const { data: pendExtra } = await admin
+          .from("payout_refund_manual").select("id").eq("payment_id", extra.id).eq("status", "pending").maybeSingle();
+        const motivoFila = execExtra ? manualRefundReason(execExtra.result.raw) : "gateway_refused";
+        const { error: filaExtraErr } = pendExtra
+          ? await admin.from("payout_refund_manual")
+            .update({ amount_cents: restante, reason: motivoFila, gateway_response: execExtra?.result.raw ?? null })
+            .eq("id", pendExtra.id)
+          : await admin.from("payout_refund_manual").insert({
+            booking_id: booking.id, payment_id: extra.id, amount_cents: restante, reason: motivoFila,
+            gateway_response: execExtra?.result.raw ?? null, created_by: userId,
+          });
+        if (filaExtraErr) console.error("[cancel-booking] fila manual (extra) falhou:", filaExtraErr.message);
+        refundManual = true;
+      }
+      devolvidoCents += restante;
+    }
+  }
+
   // Cancela + libera capacidade (idempotente por status). Único ponto de liberação.
   const { error: rpcErr } = await admin.rpc("cancel_booking_with_release", {
     p_booking_id: booking.id,
@@ -305,7 +398,7 @@ Deno.serve(async (req: Request) => {
   // (`expired`) não é cancelamento: não manda aviso de reserva cancelada.
   if (desfecho.avisarCliente) await sendBookingCancellationEmail(admin, booking.id, {
     refund: cancellationRefund({ refunded, refundPending, refundManual }),
-    amount: refunded || refundManual ? Number(payment?.amount ?? 0) || null : null,
+    amount: refunded || refundManual ? devolvidoCents / 100 || null : null,
     method: payment?.method === "card" ? "card" : payment?.method === "pix" ? "pix" : null,
     reason: input.reason ?? null,
   });
@@ -324,7 +417,7 @@ Deno.serve(async (req: Request) => {
       p_actor_id: userId,
       p_actor_role: actor,
       p_changes: { status: { from: booking.status, to: desfecho.status } },
-      p_amount_delta_cents: refunded && payment ? -Math.round(Number(payment.amount) * 100) : null,
+      p_amount_delta_cents: refunded || refundManual ? -devolvidoCents : null,
       p_reason: input.reason ?? null,
     })
     .then(({ error }) => {

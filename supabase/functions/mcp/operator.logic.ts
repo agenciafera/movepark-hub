@@ -45,7 +45,7 @@ export const OPERATOR_ASSIST_TOOLS: ToolDef[] = [
     name: "quote_date_change",
     scope: "bookings:read",
     description:
-      "Cota a troca de datas de uma reserva ao preço de hoje: novo total, diferença, se cobra PIX do cliente ou estorna parte do valor, e se há vaga. Use para 'vou voltar antes', 'quero adiar', 'quero ficar mais dias'. Não altera nada.",
+      "Cota a troca de datas de uma reserva paga pela tabela de preço da compra: novo total, diferença, se cobra do cliente ou estorna parte do valor, e se há vaga. Mudar só o dia, com a mesma duração, não custa nada; encurtar pode custar mais quando a tabela tem pacote. Use para 'vou voltar antes', 'quero adiar', 'quero ficar mais dias'. Não altera nada.",
     inputSchema: obj(
       {
         booking: BOOKING,
@@ -444,9 +444,12 @@ export interface Cotacao {
   available: boolean;
   current_total_cents?: number;
   reason: string | null;
-  delta_cents: number;
-  new_total_cents: number;
+  /** Nulo quando a unidade não vende a duração pedida (estadia mínima da tabela). */
+  delta_cents: number | null;
+  new_total_cents: number | null;
   days: number;
+  /** De onde saiu o preço (17/11/2026): a tabela guardada na compra ou, em reserva antiga, a de hoje. */
+  price_source?: "compra" | "hoje";
 }
 
 export interface ParametrosDaAcao {
@@ -518,7 +521,9 @@ export function montarProposta(input: {
       }
       const c = input.cotacao;
       if (!c) return { ok: false, erro: "Cote as novas datas antes de propor." };
-      if (!c.available) return { ok: false, erro: c.reason ?? "Não há vaga nas novas datas." };
+      if (!c.available || c.delta_cents == null || c.new_total_cents == null) {
+        return { ok: false, erro: c.reason ?? "Não há vaga nas novas datas." };
+      }
       const novas = `entrada ${quando(ini)} e saída ${quando(fim)}`;
       if (s.status === "pending") {
         return {
@@ -538,7 +543,8 @@ export function montarProposta(input: {
         ok: true,
         summary: `Alterar a reserva ${s.code} para ${novas} ${efeito}`,
         effect_cents: d === 0 ? null : d,
-        params: { check_in_at: ini, check_out_at: fim },
+        // A diferença que o operador vê no cartão: se a cotação mudar até o clique, a Edge recusa.
+        params: { check_in_at: ini, check_out_at: fim, expected_delta_cents: d },
       };
     }
     case "change_vehicle": {

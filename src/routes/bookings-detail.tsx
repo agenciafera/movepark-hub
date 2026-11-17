@@ -560,6 +560,8 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
           bookingCode={booking.code}
           currentCheckIn={booking.check_in_at}
           currentCheckOut={booking.check_out_at}
+          installmentsMax={booking.commission_installments_max}
+          installmentsInterestFree={booking.commission_installments_interest_free}
           open={datesOpen}
           onOpenChange={setDatesOpen}
         />

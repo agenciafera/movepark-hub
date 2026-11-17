@@ -46,25 +46,8 @@ import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { alertIfDuplicatePayment } from "../_shared/payments/duplicate.ts";
 import { chargebackDebtCents } from "../_shared/payments/commission.ts";
 import { normalizeBrand } from "../_shared/payments/card-brand.ts";
-import { notifyBooking } from "../_shared/notify.ts";
-import { tplBookingDatesChanged } from "../_shared/email.ts";
+import { notifyDatesChanged } from "../_shared/payments/date-change.ts";
 
-
-/** Dados da reserva para os avisos (unidade, datas, veículo). */
-// deno-lint-ignore no-explicit-any
-async function noticeData(admin: any, bookingId: string) {
-  const { data: r } = await admin
-    .from("booking")
-    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
-    .eq("id", bookingId)
-    .maybeSingle();
-  if (!r) return null;
-  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
-}
-
-function fmtBR(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-}
 
 /** Em produção o webhook exige Basic auth; em staging (chave `sk_test_`) é opcional. */
 function isProduction(): boolean {
@@ -352,7 +335,7 @@ Deno.serve(async (req: Request) => {
   // "mais recente do booking": uma reserva pode ter várias cobranças e o chute aplicaria no errado.
   // Ver resolvePayment e 86ajnet8w.
   const paymentCols =
-    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, status, paid_at, refund_keeps_booking";
+    "id, booking_id, kind, fare_target_tier, date_change_check_in_at, date_change_check_out_at, date_change_quote, amount, method, status, paid_at, refund_keeps_booking";
   const findBy = async (col: string, val: string) => {
     const { data } = await admin
       .from("payment")
@@ -429,6 +412,14 @@ Deno.serve(async (req: Request) => {
   // pagamento já terminal. A guarda em memória (decidePaymentStatus) reduz a janela mas não fecha a
   // corrida entre charge.pending e charge.paid, que é de concorrência. paid_at é preservado dentro
   // da RPC (coalesce). Ver 86ajmwb4u.
+  // Diferença de datas que não vai ser paga (cartão recusado depois da análise, PIX vencido no
+  // gateway): solta a vaga nova AGORA, antes de gravar o status, porque a liberação só age em cobrança
+  // pendente e o cron só olha pendente. Sem isto o cartão recusado deixava a vaga presa (17/11/2026).
+  if (payment.kind === "date_change" && payment.status === "pending" && (paymentStatus === "failed" || paymentStatus === "cancelled")) {
+    const { error: holdErr } = await admin.rpc("expire_paid_date_change_hold", { p_payment_id: payment.id });
+    if (holdErr) console.error("[pagarme-webhook] expire_paid_date_change_hold falhou:", holdErr.message);
+  }
+
   const { data: applyRows, error: applyErr } = await admin.rpc("apply_payment_webhook_status", {
     p_payment_id: payment.id,
     p_new_status: paymentStatus,
@@ -464,26 +455,24 @@ Deno.serve(async (req: Request) => {
     payment.date_change_check_in_at &&
     payment.date_change_check_out_at
   ) {
+    // Grava a cotação que o cliente PAGOU (17/11/2026), não um re-preço na hora do webhook: se a
+    // tabela mudou entre o QR e o pagamento, vale o que ele viu. Cobrança antiga, sem cotação
+    // gravada, re-cota como antes.
     const { error: dcErr } = await admin.rpc("apply_paid_date_change", {
       p_booking_id: payment.booking_id,
       p_check_in: payment.date_change_check_in_at,
       p_check_out: payment.date_change_check_out_at,
       p_actor_id: null,
       p_acquire: false,
+      p_quote: payment.date_change_quote ?? null,
     });
     if (dcErr) console.error("[pagarme-webhook] apply_paid_date_change falhou:", dcErr.message);
     else {
-      // Aviso das novas datas (fase 2 da tarifas-operacao). Best-effort.
-      const nd = await noticeData(admin, payment.booking_id);
-      if (nd) {
-        const quando = `${fmtBR(nd.check_in_at)} a ${fmtBR(nd.check_out_at)}`;
-        await notifyBooking(admin, {
-          bookingId: payment.booking_id,
-          event: "dates_changed",
-          whatsappParams: (c) => [c.name ?? "cliente", nd.code, quando],
-          email: (c) => tplBookingDatesChanged(nd, c.name, `${siteUrl()}/bookings/${nd.code}`),
-        });
-      }
+      // Aviso das novas datas, com a diferença paga. Best-effort.
+      await notifyDatesChanged(admin, payment.booking_id, {
+        chargedCents: Math.round(Number(payment.amount ?? 0) * 100),
+        method: payment.method === "card" ? "card" : "pix",
+      });
     }
     await markProcessed(admin, ev.eventId);
     return json({ ok: true, status: paymentStatus, date_change: true });

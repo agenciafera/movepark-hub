@@ -752,6 +752,7 @@ export type Database = {
           passenger_last_name: string | null
           passenger_phone: string | null
           price_breakdown: Json | null
+          price_by_days: Json | null
           profile_id: string | null
           review_request_sent_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
@@ -813,6 +814,7 @@ export type Database = {
           passenger_last_name?: string | null
           passenger_phone?: string | null
           price_breakdown?: Json | null
+          price_by_days?: Json | null
           profile_id?: string | null
           review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -874,6 +876,7 @@ export type Database = {
           passenger_last_name?: string | null
           passenger_phone?: string | null
           price_breakdown?: Json | null
+          price_by_days?: Json | null
           profile_id?: string | null
           review_request_sent_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -5535,6 +5538,9 @@ export type Database = {
           currency: string
           date_change_check_in_at: string | null
           date_change_check_out_at: string | null
+          date_change_partner_refund_frac: number
+          date_change_quote: Json | null
+          date_change_refunded_cents: number
           debt_email_sent_at: string | null
           debt_recovered_cents: number
           debt_reservation_id: string | null
@@ -5582,6 +5588,9 @@ export type Database = {
           currency?: string
           date_change_check_in_at?: string | null
           date_change_check_out_at?: string | null
+          date_change_partner_refund_frac?: number
+          date_change_quote?: Json | null
+          date_change_refunded_cents?: number
           debt_email_sent_at?: string | null
           debt_recovered_cents?: number
           debt_reservation_id?: string | null
@@ -5629,6 +5638,9 @@ export type Database = {
           currency?: string
           date_change_check_in_at?: string | null
           date_change_check_out_at?: string | null
+          date_change_partner_refund_frac?: number
+          date_change_quote?: Json | null
+          date_change_refunded_cents?: number
           debt_email_sent_at?: string | null
           debt_recovered_cents?: number
           debt_reservation_id?: string | null
@@ -9282,9 +9294,11 @@ export type Database = {
         Args: {
           p_acquire?: boolean
           p_actor_id?: string
+          p_actor_role?: string
           p_booking_id: string
           p_check_in: string
           p_check_out: string
+          p_quote?: Json
         }
         Returns: Json
       }
@@ -10843,6 +10857,15 @@ export type Database = {
         Args: { p_booking_id: string; p_token: string }
         Returns: boolean
       }
+      payment_partner_refund_ratio: {
+        Args: {
+          p_amount: number
+          p_dc_partner_frac: number
+          p_dc_refunded_cents: number
+          p_refunded: number
+        }
+        Returns: number
+      }
       payout_auto_day: { Args: { p_company_id: string }; Returns: number }
       payout_auto_due: {
         Args: { p_today: string }
@@ -10950,6 +10973,15 @@ export type Database = {
       preco_pesquisado_fresco: {
         Args: { p_hoje?: string; p_researched_at: string }
         Returns: boolean
+      }
+      price_table_snapshot: {
+        Args: {
+          p_booked_days: number
+          p_company_slug: string
+          p_location_slug: string
+          p_pt_code: string
+        }
+        Returns: Json
       }
       pricing_rule_fingerprint: { Args: { p_rule_id: string }; Returns: Json }
       pricing_schedule_apply_due: { Args: never; Returns: number }

@@ -1058,8 +1058,38 @@ export function tplBookingReminderCheckout(b: BookingNoticeData, customerName: s
   };
 }
 
-/** Datas alteradas: o novo período, e que o voucher já mudou junto. */
-export function tplBookingDatesChanged(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+/** O que aconteceu com o dinheiro na troca de datas de reserva paga (17/11/2026). */
+export interface DatesChangedMoney {
+  /** Diferença paga pelo cliente (centavos). */
+  chargedCents?: number | null;
+  /** Diferença devolvida ao cliente (centavos). */
+  refundedCents?: number | null;
+  /** O gateway recusou a devolução: a equipe devolve à mão. */
+  refundManual?: boolean;
+  method?: "pix" | "card" | null;
+}
+
+/** Linha do dinheiro no aviso de datas alteradas. Vazia quando não houve diferença. */
+export function datesChangedMoneyLine(m: DatesChangedMoney | null | undefined): string {
+  if (!m) return "";
+  if (m.chargedCents && m.chargedCents > 0) {
+    return `<p style="margin:0 0 14px">Você pagou <strong>${cents(m.chargedCents)}</strong> de diferença pelo novo período.</p>`;
+  }
+  if (m.refundedCents && m.refundedCents > 0) {
+    const valor = `<strong>${cents(m.refundedCents)}</strong>`;
+    if (m.refundManual) {
+      return `<p style="margin:0 0 14px">A devolução de ${valor} da diferença vai ser feita pela nossa equipe em até 2 dias úteis. Você recebe um aviso quando ela sair.</p>`;
+    }
+    const prazo = m.method === "card"
+      ? "No cartão, ela aparece em até duas faturas, conforme o seu banco."
+      : "No PIX, costuma cair na sua conta em minutos, no máximo em um dia útil.";
+    return `<p style="margin:0 0 14px">Devolvemos ${valor} da diferença pelo mesmo meio de pagamento. ${prazo}</p>`;
+  }
+  return "";
+}
+
+/** Datas alteradas: o novo período, o que aconteceu com o dinheiro e que o voucher já mudou junto. */
+export function tplBookingDatesChanged(b: BookingNoticeData, customerName: string | null, bookingUrl: string, money?: DatesChangedMoney | null): { subject: string; html: string } {
   const fn = primeiroNome(customerName);
   return {
     subject: `Reserva ${b.code}: novas datas confirmadas`,
@@ -1067,6 +1097,7 @@ export function tplBookingDatesChanged(b: BookingNoticeData, customerName: strin
       "Datas atualizadas",
       `
       <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}a reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> agora vale de <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_in_at))}</strong> a <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDateTime(b.check_out_at))}</strong>.</p>
+      ${datesChangedMoneyLine(money)}
       ${checkItem(`O voucher já está com as datas novas. Baixe de novo antes de ir.`)}
       ${checkItem(`O estacionamento ${escapeHtml(b.location_name)} recebe a atualização por aqui.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,

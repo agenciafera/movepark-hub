@@ -147,6 +147,9 @@ export type MyBookingDetail = MyBookingListItem & {
   fare_benefits: import("@/lib/fares").FareBenefits | null;
   /** Número do voo informado no checkout da Superflex (opcional). */
   flight_number: string | null;
+  /** Parcelamento congelado na reserva (regra de repasse > empresa): vale também para a diferença de datas. */
+  commission_installments_max?: number | null;
+  commission_installments_interest_free?: number | null;
   /** Extensões por atraso de voo já usadas (a proteção vale uma vez). */
   fare_extensions: {
     id: string;
@@ -193,6 +196,7 @@ export function useBookingDetail(code: string | undefined) {
           `id, code, status, check_in_at, check_out_at, expires_at, total_amount, created_at,
            passenger_count, has_pcd, checked_in_at,
            fare_tier, fare_price_cents, fare_cancel_until, fare_benefits, flight_number,
+           commission_installments_max, commission_installments_interest_free,
            fare_extensions:booking_fare_extension(id, kind, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents),
            guarantee_claims:guarantee_claim(id, status, opened_at),
            location:location!inner(
@@ -433,6 +437,60 @@ export function useChangeBookingDates() {
   });
 }
 
+/**
+ * Prévia da troca de datas de reserva paga (17/11/2026): a diferença pela tabela da compra, antes
+ * de qualquer cobrança ou devolução. `effect` diz o que acontece com o dinheiro.
+ */
+export type ChangePaidDatesQuote = {
+  mode: "quote";
+  available: boolean;
+  reason: string | null;
+  days: number;
+  days_before: number;
+  price_source: "compra" | "hoje";
+  current_total: number;
+  new_total: number | null;
+  delta: number | null;
+  delta_cents: number | null;
+  effect: "charge" | "refund" | "none" | null;
+  /** O próprio cliente pode pagar a diferença no cartão. */
+  card_allowed: boolean;
+};
+
+async function postDatesPaid(body: Record<string, unknown>): Promise<Response> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Você precisa entrar.");
+  return fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-dates-paid`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+/** Cota a troca sem mexer em nada: o que a tela mostra antes do botão de confirmar. */
+export function useQuotePaidBookingDates() {
+  return useMutation({
+    mutationFn: async (args: { bookingCode: string; checkInAt: string; checkOutAt: string }): Promise<ChangePaidDatesQuote> => {
+      const res = await postDatesPaid({
+        booking_code: args.bookingCode,
+        check_in_at: args.checkInAt,
+        check_out_at: args.checkOutAt,
+        dry_run: true,
+      });
+      const body = await res.json().catch(() => ({}));
+      // Período que a unidade não vende chega como 409 com a cotação: a tela mostra o motivo.
+      if (res.status === 409 && body.available === false) return { mode: "quote", card_allowed: false, ...body };
+      if (!res.ok) throw new Error(body.error ?? `Falha ao cotar as datas (HTTP ${res.status})`);
+      return body;
+    },
+  });
+}
+
 export type ChangePaidDatesResult =
   | {
       mode: "applied";
@@ -440,6 +498,8 @@ export type ChangePaidDatesResult =
       total_amount: number | null;
       refunded: boolean;
       refund_pending: boolean;
+      /** O gateway recusou a devolução: a equipe devolve à mão em até 2 dias úteis. */
+      refund_manual?: boolean;
     }
   | {
       mode: "charge";
@@ -454,6 +514,7 @@ export type ChangePaidDatesResult =
 /**
  * Altera as datas de uma reserva PAGA (E2.8-h) via Edge change-booking-dates-paid. Se ficar mais
  * caro, devolve uma cobrança PIX do delta (mode="charge"); senão aplica na hora (mode="applied").
+ * `expectedDeltaCents` é a diferença que o cliente viu na prévia: se mudou, a Edge recusa (409).
  */
 export function useChangePaidBookingDates() {
   const qc = useQueryClient();
@@ -462,23 +523,13 @@ export function useChangePaidBookingDates() {
       bookingCode: string;
       checkInAt: string;
       checkOutAt: string;
+      expectedDeltaCents?: number | null;
     }): Promise<ChangePaidDatesResult> => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) throw new Error("Você precisa entrar.");
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change-booking-dates-paid`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          booking_code: args.bookingCode,
-          check_in_at: args.checkInAt,
-          check_out_at: args.checkOutAt,
-        }),
+      const res = await postDatesPaid({
+        booking_code: args.bookingCode,
+        check_in_at: args.checkInAt,
+        check_out_at: args.checkOutAt,
+        ...(args.expectedDeltaCents == null ? {} : { expected_delta_cents: args.expectedDeltaCents }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

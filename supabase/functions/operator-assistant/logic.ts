@@ -136,7 +136,15 @@ export function comoExecutar(kind: string, params: Record<string, unknown>, stat
       return {
         tipo: "edge",
         funcao: statusAtual === "pending" ? "change-booking-dates" : "change-booking-dates-paid",
-        corpo: { booking_code: codigo, check_in_at: params.check_in_at, check_out_at: params.check_out_at },
+        corpo: {
+          booking_code: codigo,
+          check_in_at: params.check_in_at,
+          check_out_at: params.check_out_at,
+          // A diferença do cartão que o operador confirmou: se a cotação mudou, a Edge recusa.
+          ...(statusAtual !== "pending" && Number.isInteger(params.expected_delta_cents)
+            ? { expected_delta_cents: params.expected_delta_cents }
+            : {}),
+        },
       };
     case "change_vehicle":
       return {
@@ -174,6 +182,9 @@ export function resumoDoResultado(kind: string, r: Record<string, unknown>): str
       if (r.mode === "charge") {
         const d = Number(r.delta ?? 0);
         return `PIX de ${reais(Math.round(d * 100))} gerado para o cliente. As datas mudam quando ele pagar.`;
+      }
+      if (r.refund_manual) {
+        return `Datas alteradas. A devolução de ${reais(Math.round(Math.abs(Number(r.delta ?? 0)) * 100))} vai ser feita pela equipe Movepark em até 2 dias úteis.`;
       }
       if (r.refunded || r.refund_pending) return "Datas alteradas e diferença estornada ao cliente.";
       return "Datas alteradas.";

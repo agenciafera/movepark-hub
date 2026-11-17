@@ -113,12 +113,19 @@ export async function callOperator(admin: any, ctx: OperatorCtx, name: string, a
       const s = await situacao(admin, ctx, a.booking);
       const analise = analisarReserva(s, now);
       const c = await cotar(admin, s, a.check_in_at, a.check_out_at);
+      if (c.delta_cents == null || c.new_total_cents == null) {
+        return {
+          reserva: s.code,
+          disponivel: false,
+          motivo_indisponivel: c.reason ?? "A unidade não vende esse período.",
+        };
+      }
       const efeito = s.status === "pending"
         ? `A reserva ainda não foi paga: o novo total passa a ser ${reais(c.new_total_cents)}, sem cobrança agora.`
         : c.delta_cents < 0
-          ? `Estorno de ${reais(-c.delta_cents)} ao cliente, na mesma forma de pagamento da reserva.`
+          ? `Estorno de ${reais(-c.delta_cents)} ao cliente, na mesma forma de pagamento da reserva. Sai só das diárias: a tarifa não volta.`
           : c.delta_cents > 0
-            ? `O cliente paga ${reais(c.delta_cents)} por PIX; as datas só mudam quando o PIX for pago.`
+            ? `O cliente paga ${reais(c.delta_cents)}: ele mesmo, em Minhas reservas, por PIX ou cartão, ou o estacionamento gera um PIX pela Mia. As datas só mudam quando o pagamento for aprovado.`
             : "Sem diferença de valor.";
       return {
         reserva: s.code,
@@ -135,7 +142,9 @@ export async function callOperator(admin: any, ctx: OperatorCtx, name: string, a
           a_equipe_do_estacionamento: analise.pode_agora.alterar_datas.pela_equipe,
           motivo: analise.pode_agora.alterar_datas.motivo,
         },
-        observacao: "Cotação ao preço de hoje. O preço pode ter mudado desde a compra.",
+        observacao: c.price_source === "compra"
+          ? "Cotação pela tabela de preço da compra: mudar só o dia não custa nada. O cupom da reserva continua valendo."
+          : "Reserva anterior a 17/11/2026: a diferença entre as durações sai da tabela de hoje. Mudar só o dia não custa nada.",
       };
     }
 

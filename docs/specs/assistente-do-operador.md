@@ -59,7 +59,7 @@ exigem `bookings:read`; as de conhecimento exigem só `operator:assist`. O handl
 |---|---|---|
 | `find_booking(query)` | `bookings:read` | Busca por código, placa, nome, e-mail ou telefone (até 10) |
 | `get_booking_situation(booking)` | `bookings:read` | Status, tarifa, até quando cancela com estorno, se troca data/placa, pagamentos e estornos, check-in/out, histórico de alterações e **o que dá para fazer agora** (calculado pelas mesmas regras das Edges) |
-| `quote_date_change(booking, check_in_at, check_out_at)` | `bookings:read` | Novo total, diferença, se cobra PIX ou estorna parcial, disponibilidade |
+| `quote_date_change(booking, check_in_at, check_out_at)` | `bookings:read` | Novo total, diferença pela tabela da compra (17/11/2026), se cobra ou estorna parcial, disponibilidade. A proposta guarda a diferença e a Edge recusa se ela mudar até o clique |
 | `quote_fare_upgrade(booking, target_tier)` | `bookings:read` | Quanto custa ir para Flex/Superflex e o que libera |
 | `search_operator_knowledge(query, k?)` | `operator:assist` | Busca semântica na base do operador |
 | `report_knowledge_gap(question, context?)` | `operator:assist` | Registra pergunta sem resposta para a equipe |

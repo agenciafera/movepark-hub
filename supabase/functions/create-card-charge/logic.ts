@@ -17,6 +17,12 @@ export interface CardInput {
   saveCard: boolean;
   /** Obrigatório com card_token (antifraude); cartão salvo já tem o dele no gateway. */
   billingAddress: BillingAddress | null;
+  /**
+   * Diferença de uma troca de datas de reserva PAGA (17/11/2026). Sem isto, é o pagamento da reserva
+   * no checkout. Com isto, o valor é a diferença cotada pela tabela da compra, e `expected_delta_cents`
+   * é o que o cliente viu na prévia: se mudou, a Edge recusa em vez de cobrar outro valor.
+   */
+  dateChange: { checkInAt: string; checkOutAt: string; expectedDeltaCents: number } | null;
   /** Dados não-sensíveis do cartão (p/ salvar): brand + last4 + titular + validade. */
   card: {
     holderName: string | null;
@@ -56,6 +62,9 @@ export function parseCardInput(body: unknown): { input: CardInput | null; error?
     return { input: null, error: billing.error ?? "Informe o endereço de cobrança do cartão." };
   }
 
+  const dc = parseDateChange(b.date_change);
+  if (dc.error) return { input: null, error: dc.error };
+
   return {
     input: {
       bookingCode,
@@ -64,6 +73,7 @@ export function parseCardInput(body: unknown): { input: CardInput | null; error?
       installments,
       saveCard: b.save_card === true,
       billingAddress: billing.address ?? null,
+      dateChange: dc.value,
       card: {
         holderName: str(b.holder_name),
         brand: str(b.brand),
@@ -156,3 +166,30 @@ export const ANTIFRAUD_NOTE = "reprovado pelo antifraude da Pagar.me (o banco ti
 
 export const ANTIFRAUD_MESSAGE =
   "A análise de segurança não liberou este cartão agora. Pague com PIX: a confirmação chega na hora.";
+
+/** `date_change` do corpo: datas ISO (saída depois da entrada) e a diferença vista na prévia. */
+export function parseDateChange(
+  raw: unknown,
+): { value: CardInput["dateChange"]; error?: string } {
+  if (raw == null) return { value: null };
+  if (typeof raw !== "object") return { value: null, error: "date_change inválido." };
+  const d = raw as Record<string, unknown>;
+  const inTs = Date.parse(typeof d.check_in_at === "string" ? d.check_in_at : "");
+  const outTs = Date.parse(typeof d.check_out_at === "string" ? d.check_out_at : "");
+  if (Number.isNaN(inTs) || Number.isNaN(outTs)) return { value: null, error: "Datas inválidas (use ISO 8601)." };
+  if (outTs <= inTs) return { value: null, error: "Check-out precisa ser após o check-in." };
+  const exp = d.expected_delta_cents;
+  if (!(typeof exp === "number" && Number.isInteger(exp) && exp > 0)) {
+    return { value: null, error: "expected_delta_cents é obrigatório (centavos da diferença a pagar)." };
+  }
+  return {
+    value: { checkInAt: new Date(inTs).toISOString(), checkOutAt: new Date(outTs).toISOString(), expectedDeltaCents: exp },
+  };
+}
+
+/** Itens da cobrança da diferença de datas: a diferença + a linha de juros, quando houver. */
+export function buildDateChangeItems(bookingCode: string, baseCents: number, interestCents: number): ChargeItem[] {
+  return buildCardItems(bookingCode, baseCents, interestCents).map((it, i) =>
+    i === 0 ? { ...it, description: `Alteração de datas · ${bookingCode}` } : it
+  );
+}

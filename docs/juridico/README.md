@@ -1,5 +1,7 @@
 # Minutas jurídicas (rascunho, 27/09/2026)
 
+> **17/11/2026: Termos v6 publicados** (migration `20261204160000_termos_v6_troca_de_datas.sql`). Só o item 6.3: a alteração de data passa a seguir a tabela de preço do dia da compra (mudar só o dia não custa nada; com pacote, encurtar pode custar mais), a Tarifa não muda, o cupom continua valendo e a diferença pode ser paga por PIX ou cartão. A v5 dizia "recalcula pela tabela vigente" e "cupom não é reaplicado". Regra em `docs/specs/booking-modifications.md` §8.
+
 > **17/11/2026: Termos v5 publicados** (migration `20261204120000_termos_v5_rodape_da_versao.sql`). Só o item 18: a v4 saiu com o rodapé da v3 ("versão 3, publicados em 27/09/2026"), e agora ele diz versão 5, 17/11/2026, com a v4 de 09/11/2026 como anterior. O resto é igual à v4.
 
 > **09/11/2026: Termos v4 publicados** (`2026-11-09-termos-de-uso-v4.md`). Só o parcelamento mudou: os itens 4.2 (b) e 5.3 deixam de prometer "até 3 vezes sem juros" para todos e remetem à condição que o checkout de cada reserva mostra, porque o parcelamento passou a ser configurável por regra de repasse e por empresa.

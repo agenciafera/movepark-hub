@@ -6,9 +6,16 @@
 // da plataforma: máximo de parcelas e até quantas sem juros (09/11/2026).
 // Tokenização é client-side (nunca trafega o PAN). Confirmação chega pela Edge `pagarme-webhook`.
 //
+// Diferença de troca de datas (17/11/2026): com `date_change`, cobra a diferença de uma reserva PAGA
+// pela tabela da compra (RPC reprice_booking_dates), pelo MESMO caminho de split, antifraude e
+// cartão salvo do checkout. A diferença é da vaga: divide como a reserva. Segura a vaga nova antes da
+// cobrança, aplica na hora se aprovou (ou no webhook, se ficou em análise) e solta a vaga se recusou.
+// Ver docs/specs/booking-modifications.md §8.
+//
 // POST /functions/v1/create-card-charge
 // Authorization: Bearer <JWT>
-// { booking_code, card_token? | payment_method_id?, installments, save_card?, holder_name?, brand?, last4?, exp_month?, exp_year?, billing_address? (obrigatório com card_token) }
+// { booking_code, card_token? | payment_method_id?, installments, save_card?, holder_name?, brand?, last4?, exp_month?, exp_year?, billing_address? (obrigatório com card_token),
+//   date_change?: { check_in_at, check_out_at, expected_delta_cents } }
 //
 // Resposta (201): { payment_id, status, installments, charged_amount, interest_amount, saved_card }
 
@@ -34,6 +41,7 @@ import {
   ANTIFRAUD_NOTE,
   ANTIFRAUD_RETRY_LIMIT,
   buildCardItems,
+  buildDateChangeItems,
   cardFieldMessage,
   clientIp,
   extractCardId,
@@ -54,6 +62,12 @@ import { normalizeBrand } from "../_shared/payments/card-brand.ts";
 import { CHARGE_IN_PROGRESS_MESSAGE, claimChargeLock } from "../_shared/payments/charge-lock.ts";
 import { voidOpenPixCharges } from "../_shared/payments/open-pix.ts";
 import { alertIfDuplicatePayment } from "../_shared/payments/duplicate.ts";
+import {
+  cancelPendingDateChanges,
+  chargeSplitBase,
+  type DateChangeQuote,
+  notifyDatesChanged,
+} from "../_shared/payments/date-change.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,7 +137,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   const { data: booking } = await admin
     .from("booking")
     .select(
-      "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, " +
+      "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, check_in_at, fare_benefits, " +
         "price_breakdown, " +
         "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
         "commission_installments_max, commission_installments_interest_free, commission_anticipation_payer, " +
@@ -151,20 +165,30 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     });
     return jsonResponse(extra?.code ? { error, code: extra.code } : { error }, status);
   };
-  if (booking.status !== "pending") {
-    return await recusar(400, `Reserva já está ${booking.status}`);
-  }
-  if (booking.expires_at && new Date(booking.expires_at) < new Date()) {
-    return await recusar(400, "Reserva expirada");
-  }
+  const dc = input.dateChange;
+  if (dc) {
+    // Diferença de troca de datas: reserva paga, antes da entrada, tarifa que permite alterar.
+    if (booking.status !== "confirmed") return await recusar(400, "A troca de datas com cobrança é para reserva paga.");
+    if (new Date(booking.check_in_at) <= new Date()) return await recusar(400, "A reserva já começou.");
+    if ((booking.fare_benefits as Record<string, unknown> | null)?.date_change !== true) {
+      return await recusar(403, "Sua Tarifa não permite alterar datas. Faça upgrade para Flex ou Superflex.");
+    }
+  } else {
+    if (booking.status !== "pending") {
+      return await recusar(400, `Reserva já está ${booking.status}`);
+    }
+    if (booking.expires_at && new Date(booking.expires_at) < new Date()) {
+      return await recusar(400, "Reserva expirada");
+    }
 
-  // 1a. Gate de conformidade (RFN005/LGPD): sem aceite explícito dos Termos, não cobra.
-  const { count: termsCount } = await admin
-    .from("terms_acceptance")
-    .select("id", { count: "exact", head: true })
-    .eq("booking_id", booking.id);
-  if (!termsCount) {
-    return await recusar(422, "É necessário aceitar os Termos de Uso antes de pagar.");
+    // 1a. Gate de conformidade (RFN005/LGPD): sem aceite explícito dos Termos, não cobra.
+    const { count: termsCount } = await admin
+      .from("terms_acceptance")
+      .select("id", { count: "exact", head: true })
+      .eq("booking_id", booking.id);
+    if (!termsCount) {
+      return await recusar(422, "É necessário aceitar os Termos de Uso antes de pagar.");
+    }
   }
 
   // 1a'. Trava de cobrança (MP-07DAE9, 17/10/2026): dois cliques viraram duas cobranças porque a
@@ -176,15 +200,18 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   }
   lock.release = trava.release;
 
-  // 1b. Idempotência: não cobrar de novo se já há pagamento aprovado/autorizado.
-  const { data: paid } = await admin
-    .from("payment")
-    .select("id")
-    .eq("booking_id", booking.id)
-    .in("status", ["paid", "authorized"])
-    .limit(1)
-    .maybeSingle();
-  if (paid) return await recusar(409, "Esta reserva já foi paga.");
+  // 1b. Idempotência: não cobrar de novo se já há pagamento aprovado/autorizado. (Na troca de datas a
+  // reserva JÁ está paga; a trava de cobrança acima é que impede o clique duplo.)
+  if (!dc) {
+    const { data: paid } = await admin
+      .from("payment")
+      .select("id")
+      .eq("booking_id", booking.id)
+      .in("status", ["paid", "authorized"])
+      .limit(1)
+      .maybeSingle();
+    if (paid) return await recusar(409, "Esta reserva já foi paga.");
+  }
 
   // 2. Empresa + take_rate + recebedor do parceiro
   const { data: location } = await admin
@@ -260,7 +287,23 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   // estacionamento que não aceita 3x sem juros, a 3x sem juros não existe aqui e é recusada. O
   // cliente parcela o TOTAL (vaga + tarifa); os juros incidem sobre esse total.
   const policy = applyInstallmentOverride(platformPolicy, commission.installments);
-  const baseCents = reaisToCents(Number(booking.total_amount));
+  // Troca de datas: a diferença pela tabela da compra, conferida com a que o cliente viu na prévia.
+  let quote: DateChangeQuote | null = null;
+  if (dc) {
+    const { data: q, error: qErr } = await admin.rpc("reprice_booking_dates", {
+      p_booking_id: booking.id,
+      p_check_in: dc.checkInAt,
+      p_check_out: dc.checkOutAt,
+    });
+    if (qErr) return await recusar(400, qErr.message);
+    quote = q as DateChangeQuote;
+    if (!quote.available || quote.delta_cents == null) return await recusar(409, quote.reason ?? "Datas indisponíveis.");
+    if (quote.delta_cents <= 0) return await recusar(409, "Esta troca não tem diferença a pagar.");
+    if (quote.delta_cents !== dc.expectedDeltaCents) {
+      return await recusar(409, "O valor mudou desde a cotação. Confira o novo valor antes de pagar.", { code: "quote_changed" });
+    }
+  }
+  const baseCents = quote ? quote.delta_cents! : reaisToCents(Number(booking.total_amount));
   const plan = computeInstallmentPlan(baseCents, policy);
   const chosen = plan.find((o) => o.installments === input.installments);
   if (!chosen) return await recusar(422, "Parcelamento inválido para esta reserva.");
@@ -269,7 +312,8 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
 
   // 5. Split. Parceiro recebe sobre o preço da VAGA (base − tarifa); a Tarifa (E2.8, serviço
   // Movepark) e o excedente de juros vão pra perna da Movepark.
-  const fareCents = booking.fare_price_cents ?? 0;
+  // Na troca de datas a diferença é toda vaga: a tarifa não entra.
+  const fareCents = dc ? 0 : booking.fare_price_cents ?? 0;
   const partnerBaseCents = baseCents - fareCents;
   let split;
   try {
@@ -280,7 +324,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       moveparkRecipientId,
       partnerRecipientId: recipient?.external_recipient_id ?? null,
       requireRecipients: splitEnabled,
-      platformFundedCents: platformFundedCents(booking.price_breakdown),
+      platformFundedCents: quote ? chargeSplitBase(quote).platformFundedCents : platformFundedCents(booking.price_breakdown),
       method: "card",
       feePayer: commission.feePayer,
     });
@@ -414,8 +458,20 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     throw e;
   }
 
+  // Troca de datas: a anterior ainda aberta (PIX gerado e não pago) sai, e a vaga nova fica segura
+  // antes de o cartão passar. Sem vaga, nada é cobrado.
+  if (dc) {
+    await cancelPendingDateChanges(admin, gateway, booking.id);
+    const { error: holdErr } = await admin.rpc("hold_paid_date_change", {
+      p_booking_id: booking.id,
+      p_check_in: dc.checkInAt,
+      p_check_out: dc.checkOutAt,
+    });
+    if (holdErr) return await recusar(409, holdErr.message);
+  }
+
   const result = await gateway.createCardCharge({
-    externalCode: booking.code,
+    externalCode: dc ? `${booking.code}-DT-${crypto.randomUUID().slice(0, 4).toUpperCase()}` : booking.code,
     amountCents: chargedCents,
     customer: {
       name: payerName,
@@ -424,7 +480,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       type: customerTypeFor(booking.customer_tax_id),
       phone,
     },
-    items: buildCardItems(booking.code, baseCents, interestCents),
+    items: dc ? buildDateChangeItems(booking.code, baseCents, interestCents) : buildCardItems(booking.code, baseCents, interestCents),
     // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
     // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
     split: splitEnabled ? gatewaySplit : undefined,
@@ -432,20 +488,35 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     billingAddress: input.billingAddress ?? undefined,
     ip: clientIp(req.headers) ?? undefined,
     installments: input.installments,
-    metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents) },
+    metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents), ...(dc ? { kind: "date_change" } : {}) },
   });
 
   // Recusa do emissor → registra failed e responde 402 (sem confirmar a reserva).
+  // Campos da troca de datas na cobrança: o webhook aplica a cotação gravada aqui.
+  const dcCols = dc
+    ? {
+      kind: "date_change",
+      date_change_check_in_at: dc.checkInAt,
+      date_change_check_out_at: dc.checkOutAt,
+      date_change_quote: quote,
+      // O cron solta a vaga nova se a análise do cartão não terminar até aqui.
+      expires_at: new Date(Date.now() + pixExpiresInSeconds((await admin.rpc("get_booking_hold_minutes")).data) * 1000).toISOString(),
+    }
+    : {};
+
   if (result.status === "failed") {
+    const failedId = crypto.randomUUID();
     await admin.from("payment").insert({
-      id: crypto.randomUUID(),
+      id: failedId,
       booking_id: booking.id,
       provider: "pagarme",
       method: "card",
       provider_payment_id: result.orderId,
       provider_charge_id: result.chargeId,
       amount: chargedCents / 100,
-      status: "failed",
+      // Troca de datas: nasce pendente só para a liberação soltar a vaga nova, e logo vira recusada.
+      status: dc ? "pending" : "failed",
+      ...dcCols,
       installments: input.installments,
       split,
       split_sent_to_gateway: splitEnabled,
@@ -456,6 +527,10 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     anticipation_comp_cents: anticipationAppliedCents || null,
     anticipation_credit_cents: Math.max(0, anticipationCompCents - anticipationAppliedCents),
     });
+    if (dc) {
+      await admin.rpc("expire_paid_date_change_hold", { p_payment_id: failedId });
+      await admin.from("payment").update({ status: "failed" }).eq("id", failedId);
+    }
     // Recusa do emissor e erro nosso no pedido chegam pelo mesmo status; o gateway_response separa.
     const detalhe = chargeFailureDetail(result.raw);
     await logGatewayEvent(admin, {
@@ -504,6 +579,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     amount: chargedCents / 100,
     status: chargeStatusToPaymentStatus(result.status),
     installments: input.installments,
+    ...dcCols,
     split,
     split_sent_to_gateway: splitEnabled,
     debt_recovered_cents: debtRecoveryCents,
@@ -551,18 +627,33 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   // o expires_at); cartão em análise (authorized/pending) mantém o hold vivo até o webhook.
   // Mesmo helper das cobranças PIX: `Number(holdMin ?? 30)` virava NaN quando a RPC não respondia,
   // e um `expires_at` inválido apaga o hold em vez de renovar.
-  const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
-  const holdSeconds = pixExpiresInSeconds(holdMin);
-  await admin
-    .from("booking")
-    .update({ expires_at: new Date(Date.now() + holdSeconds * 1000).toISOString() })
-    .eq("id", booking.id)
-    .eq("status", "pending");
+  if (!dc) {
+    const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
+    const holdSeconds = pixExpiresInSeconds(holdMin);
+    await admin
+      .from("booking")
+      .update({ expires_at: new Date(Date.now() + holdSeconds * 1000).toISOString() })
+      .eq("id", booking.id)
+      .eq("status", "pending");
+  }
 
   // 9c. Aprovado na hora → confirma inline (não espera o webhook), melhorando o feedback no checkout.
   // O webhook `charge.paid`/`order.paid` chega depois, vê 'confirmed' → noop, e segue como gerador
   // único do voucher. Cartão em análise NÃO confirma aqui — o webhook confirma quando virar 'paid'.
-  if (result.status === "paid") {
+  if (result.status === "paid" && dc) {
+    // Diferença aprovada na hora: grava a troca com a cotação que o cliente pagou.
+    const { error: dcErr } = await admin.rpc("apply_paid_date_change", {
+      p_booking_id: booking.id,
+      p_check_in: dc.checkInAt,
+      p_check_out: dc.checkOutAt,
+      p_actor_id: userData.user.id,
+      p_acquire: false,
+      p_actor_role: "customer",
+      p_quote: quote,
+    });
+    if (dcErr) console.error("[%s] apply_paid_date_change falhou:", EDGE_NAME, dcErr.message);
+    else await notifyDatesChanged(admin, booking.id, { chargedCents, method: "card" });
+  } else if (result.status === "paid") {
     await admin.rpc("confirm_or_refund_booking", {
       p_booking_id: booking.id,
       p_payment_id: paymentId,
@@ -571,7 +662,9 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
 
   // 9d. Cartão aprovado: anula o PIX que o cliente gerou antes e deixou aberto, para ele não pagar a
   // mesma reserva duas vezes, e confere se a reserva ficou com mais de um pagamento (alerta a equipe).
-  if (result.status === "paid" || result.status === "authorized") {
+  // (Na troca de datas a reserva já tinha o pagamento dela: alertar "dois pagamentos" seria falso, e o
+  // PIX de diferença aberto já foi anulado antes da cobrança.)
+  if (!dc && (result.status === "paid" || result.status === "authorized")) {
     await voidOpenPixCharges(admin, gateway, booking.id);
     await alertIfDuplicatePayment(admin, booking.id, paymentId);
   }
@@ -603,6 +696,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       charged_amount: chargedCents / 100,
       interest_amount: interestCents / 100,
       saved_card: savedCard,
+      ...(dc ? { date_change: true, applied: result.status === "paid" } : {}),
     },
     201,
   );

@@ -16,7 +16,8 @@ describe("FareComparisonDialog", () => {
     // Suporte prioritário saiu do catálogo em 25/09/2026.
     expect(within(dialog).queryByText("Suporte prioritário")).not.toBeInTheDocument();
     expect(within(dialog).getByText("Vaga garantida em qualquer tarifa.")).toBeInTheDocument();
-    expect(within(dialog).getByText(/recalculada pelo preço do dia/)).toBeInTheDocument();
+    // 17/11/2026: a diferença da troca de datas é pela tabela da compra, não pelo preço do dia.
+    expect(within(dialog).getByText(/tabela de preço do dia da compra/)).toBeInTheDocument();
     expect(within(dialog).queryByText("Vaga garantida")).not.toBeInTheDocument();
   });
 

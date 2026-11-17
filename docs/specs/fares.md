@@ -178,8 +178,8 @@ resolve a dor do white-label que não troca placa (registramos do nosso lado). U
 **Alterar data/horário** (benefício `date_change`): RPC `change_booking_dates` (migration
 `20260722000000`) + Edge `change-booking-dates` + `ChangeDatesDialog`/botão no detalhe. Só para
 reservas **pendentes** (antes do pagamento): re-segura capacidade (atômico) + re-precifica a vaga +
-recalcula a janela da Tarifa + dropa o cupom. **Reserva paga** é recusada com orientação de
-cancelar+refazer (a Superflex cancela grátis até 1 min) — evita mexer em dinheiro de reserva paga.
+recalcula a janela da Tarifa + dropa o cupom. **Reserva paga** vai pela Edge `change-booking-dates-paid`, com a
+diferença cobrada ou devolvida (ver [booking-modifications.md §8](./booking-modifications.md)).
 
 **Operador troca placa**: `change-booking-vehicle` aceita `license_plate` (staff digita) além de
 `vehicle_id`; botão "Trocar placa" na `BookingDrawer`.
@@ -191,8 +191,9 @@ tarifa escolhida não estiver ativa. Dead code `FareTierSelector.tsx` removido.
 
 ## Pendências / refinamentos conhecidos
 
-- **Date change em reserva paga:** delta de pagamento (cobrar/estornar a diferença) é o passo futuro
-  se quiserem permitir alterar datas após o pagamento sem cancelar+refazer.
+- **Date change em reserva paga:** entregue (E2.8-h); desde 17/11/2026 a diferença sai da tabela da
+  compra, a tarifa não entra, o cupom continua e a diferença divide com o estacionamento. Ver
+  [booking-modifications.md §8](./booking-modifications.md).
 - **Follow-ups da E2.8-e:** propagação da extensão ao white-label (`wl_delivery` não modela `extend`)
   e gatilho automático da auto-extensão por uma API de rastreio de voos; aprovação dos templates de
   WhatsApp no Meta para ativar as notificações.

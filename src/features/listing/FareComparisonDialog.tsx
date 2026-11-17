@@ -121,7 +121,7 @@ export function FareComparisonDialog({
           {rows.some((r) => r.label === "Alteração de data/horário") && (
             <li className="flex items-start gap-2.5">
               <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              Ao alterar a data, a estadia é recalculada pelo preço do dia da alteração.
+              Ao alterar a data, a diferença sai da tabela de preço do dia da compra. Mudar só o dia não custa nada.
             </li>
           )}
         </ul>

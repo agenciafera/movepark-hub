@@ -560,6 +560,11 @@ export type CardChargeArgs = {
   exp_year?: number;
   /** Endereço de cobrança (antifraude da Pagar.me exige em cartão novo). */
   billing_address?: { zip_code: string; line_1: string; line_2?: string; city: string; state: string; country: "BR" };
+  /**
+   * Diferença de troca de datas de reserva paga (17/11/2026), pelo mesmo caminho do checkout.
+   * `expected_delta_cents` é a diferença que o cliente viu na prévia.
+   */
+  date_change?: { check_in_at: string; check_out_at: string; expected_delta_cents: number };
 };
 
 export type CardChargeResponse = {
@@ -569,6 +574,9 @@ export type CardChargeResponse = {
   charged_amount: number;
   interest_amount: number;
   saved_card: boolean;
+  /** Só na diferença de datas: `applied` = aprovado na hora e as datas já mudaram. */
+  date_change?: boolean;
+  applied?: boolean;
 };
 
 /** Cobrança cartão real com split + parcelamento (E0.1.3) — Edge create-card-charge. */

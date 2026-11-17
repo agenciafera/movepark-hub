@@ -12,8 +12,11 @@ import { assert } from "jsr:@std/assert";
 
 const FUNCTIONS_DIR = new URL("../../", import.meta.url);
 
-/** Uma Edge "cobra" quando decide o modo de split pela chave (`isGatewaySplitEnabled`). */
-const MARCA_DE_COBRANCA = "isGatewaySplitEnabled";
+/**
+ * Uma Edge "cobra" quando decide o modo de split pela chave: a global (`isGatewaySplitEnabled`) ou a
+ * por empresa (`effectiveSplitEnabled`, E0.3.5), que a troca de datas passou a usar em 17/11/2026.
+ */
+const MARCA_DE_COBRANCA = /isGatewaySplitEnabled|effectiveSplitEnabled/;
 const COLUNA = "split_sent_to_gateway";
 
 async function edgeIndexFiles(): Promise<URL[]> {
@@ -39,7 +42,7 @@ Deno.test("toda Edge que cobra grava split_sent_to_gateway no payment", async ()
   const faltando: string[] = [];
   for (const file of arquivos) {
     const src = await Deno.readTextFile(file);
-    if (!src.includes(MARCA_DE_COBRANCA)) continue;
+    if (!MARCA_DE_COBRANCA.test(src)) continue;
     const nome = file.pathname.split("/functions/")[1] ?? file.pathname;
     cobram.push(nome);
     if (!src.includes(COLUNA)) faltando.push(nome);

@@ -322,6 +322,12 @@ create index on public.pricing_hourly_bracket (pricing_rule_id);
 
 ## Consumidores do motor (reuso, sem regra nova)
 
+> **Tabela da compra (17/11/2026).** A criação da reserva guarda em `booking.price_by_days` o preço de
+> cada duração (de 1 até 30 dias além da estadia, teto 90), chamando a própria `simulate_price` uma
+> vez por duração (`price_table_snapshot`, ~2 ms cada). A troca de datas de reserva paga lê essa
+> tabela em vez de recalcular. Não é um segundo motor: são números que o motor já deu, congelados.
+> Ver [booking-modifications.md §8](./booking-modifications.md).
+
 > **Existiu um segundo motor, e ele custou caro.** A Edge `simulate-price` (com hífen, diferente da
 > RPC `simulate_price`) reimplementava estas estratégias em TypeScript, para devolver uma grade
 > inteira numa chamada só. Rodava em produção desde jun/2026 **sem fonte no git**, e quando o fonte

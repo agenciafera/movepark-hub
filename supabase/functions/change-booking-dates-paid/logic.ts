@@ -1,13 +1,20 @@
 // Lógica pura de change-booking-dates-paid (testável sem rede): parsing do payload + helpers.
-// Ver docs/specs/booking-modifications.md §8 (Fase B).
+// Ver docs/specs/booking-modifications.md §8.
 
 export interface ChangeDatesPaidInput {
   bookingCode: string;
   checkInAt: string;
   checkOutAt: string;
+  /** Só cota: não segura vaga, não cobra, não devolve. É o que a tela mostra antes do botão. */
+  dryRun: boolean;
+  /**
+   * A diferença que a pessoa viu na prévia. Se a cotação mudou até o clique (a tabela de hoje virou,
+   * por exemplo), a Edge recusa em vez de cobrar ou devolver um valor que ninguém aprovou.
+   */
+  expectedDeltaCents: number | null;
 }
 
-/** Valida { booking_code, check_in_at, check_out_at } (ISO, check_out > check_in). */
+/** Valida { booking_code, check_in_at, check_out_at, dry_run?, expected_delta_cents? }. */
 export function parseChangeDatesPaidInput(
   body: unknown,
 ): { input: ChangeDatesPaidInput | null; error?: string } {
@@ -22,11 +29,29 @@ export function parseChangeDatesPaidInput(
     return { input: null, error: "Datas inválidas (use ISO 8601)." };
   }
   if (outTs <= inTs) return { input: null, error: "Check-out precisa ser após o check-in." };
+  const expected = b.expected_delta_cents;
+  if (expected != null && !(typeof expected === "number" && Number.isInteger(expected))) {
+    return { input: null, error: "expected_delta_cents precisa ser inteiro (centavos)." };
+  }
   return {
     input: {
       bookingCode: code,
       checkInAt: new Date(inTs).toISOString(),
       checkOutAt: new Date(outTs).toISOString(),
+      dryRun: b.dry_run === true,
+      expectedDeltaCents: typeof expected === "number" ? expected : null,
     },
   };
+}
+
+/** A diferença mudou desde a prévia? Sem prévia (chamada antiga), não confere. */
+export function quoteChanged(expectedDeltaCents: number | null, deltaCents: number): boolean {
+  return expectedDeltaCents != null && expectedDeltaCents !== deltaCents;
+}
+
+/** Quanto ainda dá para devolver desta cobrança (centavos). */
+export function refundableCents(amount: number | string | null, refundedAmount: number | string | null): number {
+  const total = Math.round(Number(amount ?? 0) * 100);
+  const devolvido = Math.round(Number(refundedAmount ?? 0) * 100);
+  return Math.max(0, total - devolvido);
 }

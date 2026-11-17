@@ -22,6 +22,7 @@ import {
   tplBookingReminderCheckin,
   tplBookingReminderCheckout,
   tplBookingDatesChanged,
+  datesChangedMoneyLine,
   tplBookingVehicleChanged,
   tplBookingExtended,
   tplSupportTicketTeam,
@@ -493,4 +494,18 @@ Deno.test("tplTeamDailyDigest: dia sem nada mostra 'nenhum' e 'Nada pedindo aten
   assertEquals(m.html.includes("Nenhuma venda no Hub."), true);
   assertEquals(m.html.includes("Nada pedindo atenção."), true);
   assertEquals(m.html.includes("Nenhuma avaliação nova."), true);
+});
+
+// 17/11/2026: troca de datas de reserva paga diz o que aconteceu com o dinheiro.
+Deno.test("datas alteradas: diferença paga, devolvida (PIX, cartão) ou na fila manual; sem diferença, nada", () => {
+  const b = { code: "MP-ABC123", location_name: "Pare Seguro", location_address: "Av. X, 1", check_in_at: "2026-12-10T12:00:00Z", check_out_at: "2026-12-12T15:30:00Z", vehicle: null };
+  assertStringIncludes(tplBookingDatesChanged(b, "Ana", "u", { chargedCents: 5780 }).html, "pagou <strong>R$");
+  assertStringIncludes(datesChangedMoneyLine({ refundedCents: 5780, method: "pix" }), "em minutos");
+  assertStringIncludes(datesChangedMoneyLine({ refundedCents: 5780, method: "card" }), "duas faturas");
+  assertStringIncludes(datesChangedMoneyLine({ refundedCents: 5780, refundManual: true }), "2 dias úteis");
+  assertEquals(datesChangedMoneyLine({ chargedCents: 0, refundedCents: 0 }), "");
+  assertEquals(datesChangedMoneyLine(null), "");
+  for (const m of [{ chargedCents: 100 }, { refundedCents: 100, method: "card" as const }, { refundedCents: 100, refundManual: true }]) {
+    assertEquals(/[\u2014\u2013]/.test(datesChangedMoneyLine(m)), false);
+  }
 });

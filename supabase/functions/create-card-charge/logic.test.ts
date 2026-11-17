@@ -1,5 +1,14 @@
 import { assertEquals } from "jsr:@std/assert";
-import { buildCardItems, cardFieldMessage, clientIp, extractCardId, parseBillingAddress, parseCardInput, reaisToCents } from "./logic.ts";
+import {
+  buildCardItems,
+  buildDateChangeItems,
+  cardFieldMessage,
+  clientIp,
+  extractCardId,
+  parseBillingAddress,
+  parseCardInput,
+  reaisToCents,
+} from "./logic.ts";
 
 Deno.test("reaisToCents arredonda corretamente", () => {
   assertEquals(reaisToCents(159.5), 15950);
@@ -43,6 +52,7 @@ Deno.test("parseCardInput: cartão novo válido normaliza os campos", () => {
     installments: 3,
     saveCard: true,
     billingAddress: { zip_code: "80020310", line_1: "123, Rua XV, Centro", city: "Curitiba", state: "PR", country: "BR" },
+    dateChange: null,
     card: { holderName: "Tony Stark", brand: "visa", last4: "1234", expMonth: 12, expYear: 2030 },
   });
 });
@@ -105,4 +115,24 @@ Deno.test("clientIp: lê o IP do comprador dos cabeçalhos de encaminhamento", (
   assertEquals(clientIp(new Headers({ "x-forwarded-for": "2804:14c::1" })), "2804:14c::1");
   assertEquals(clientIp(new Headers({ "x-forwarded-for": "lixo" })), null);
   assertEquals(clientIp(new Headers()), null);
+});
+
+// 17/11/2026: diferença de troca de datas paga no cartão, pelo mesmo caminho do checkout.
+Deno.test("date_change: datas válidas e a diferença vista na prévia são obrigatórias", () => {
+  const base = { booking_code: "MP-1", installments: 1, payment_method_id: "pm-1" };
+  const ok = parseCardInput({ ...base, date_change: { check_in_at: "2027-01-10T12:00:00Z", check_out_at: "2027-01-14T12:00:00Z", expected_delta_cents: 5400 } });
+  assertEquals(ok.input?.dateChange, { checkInAt: "2027-01-10T12:00:00.000Z", checkOutAt: "2027-01-14T12:00:00.000Z", expectedDeltaCents: 5400 });
+  assertEquals(parseCardInput(base).input?.dateChange, null);
+  assertEquals(parseCardInput({ ...base, date_change: { check_in_at: "2027-01-10T12:00:00Z", check_out_at: "2027-01-14T12:00:00Z" } }).error,
+    "expected_delta_cents é obrigatório (centavos da diferença a pagar).");
+  assertEquals(parseCardInput({ ...base, date_change: { check_in_at: "2027-01-14T12:00:00Z", check_out_at: "2027-01-10T12:00:00Z", expected_delta_cents: 1 } }).error,
+    "Check-out precisa ser após o check-in.");
+  assertEquals(parseCardInput({ ...base, date_change: { check_in_at: "2027-01-10T12:00:00Z", check_out_at: "2027-01-14T12:00:00Z", expected_delta_cents: -100 } }).error,
+    "expected_delta_cents é obrigatório (centavos da diferença a pagar).");
+});
+
+Deno.test("itens da diferença de datas: a diferença + juros, somando o cobrado", () => {
+  const itens = buildDateChangeItems("MP-ABC123", 5400, 312);
+  assertEquals(itens[0], { amount: 5400, description: "Alteração de datas · MP-ABC123", quantity: 1 });
+  assertEquals(itens.reduce((a, i) => a + i.amount, 0), 5712);
 });

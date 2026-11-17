@@ -7,6 +7,7 @@ import {
   useExtendBookingFlightDelay,
   useClaimGuarantee,
   useChangePaidBookingDates,
+  useQuotePaidBookingDates,
   useVoucherPdf,
 } from "./customerApi";
 
@@ -140,6 +141,49 @@ describe("useChangePaidBookingDates", () => {
 
     expect(paga.chamadas).toHaveLength(1);
     expect(naoPaga.chamadas).toHaveLength(0);
+  });
+
+  it("manda a diferença que o cliente viu na prévia, para a Edge recusar se ela mudou", async () => {
+    comSessao("token-de-teste");
+    const paga = edge("change-booking-dates-paid", { json: { mode: "applied", delta: -57.8, refunded: true } });
+    const { result } = renderMutation(() => useChangePaidBookingDates());
+    await result.current.mutateAsync({
+      bookingCode: "MP7K2X",
+      checkInAt: "2027-03-10T08:00:00Z",
+      checkOutAt: "2027-03-14T18:00:00Z",
+      expectedDeltaCents: -5780,
+    });
+    expect(paga.ultimoBody).toEqual({
+      booking_code: "MP7K2X",
+      check_in_at: "2027-03-10T08:00:00Z",
+      check_out_at: "2027-03-14T18:00:00Z",
+      expected_delta_cents: -5780,
+    });
+  });
+});
+
+describe("useQuotePaidBookingDates", () => {
+  it("só cota (dry_run): não segura vaga, não cobra, não devolve", async () => {
+    comSessao("token-de-teste");
+    const espiao = edge("change-booking-dates-paid", {
+      json: { mode: "quote", available: true, delta: -57.8, delta_cents: -5780, effect: "refund", days: 3, price_source: "compra" },
+    });
+    const { result } = renderMutation(() => useQuotePaidBookingDates());
+    const q = await result.current.mutateAsync({ bookingCode: "MP7K2X", checkInAt: "2027-03-10T08:00:00Z", checkOutAt: "2027-03-13T08:00:00Z" });
+    expect((espiao.ultimoBody as { dry_run: boolean }).dry_run).toBe(true);
+    expect(q.delta_cents).toBe(-5780);
+  });
+
+  it("período que a unidade não vende volta como cotação indisponível, com o motivo", async () => {
+    comSessao("token-de-teste");
+    edge("change-booking-dates-paid", {
+      status: 409,
+      json: { available: false, reason: "Nesta unidade o mínimo é de 3 diárias.", delta: null, delta_cents: null },
+    });
+    const { result } = renderMutation(() => useQuotePaidBookingDates());
+    const q = await result.current.mutateAsync({ bookingCode: "MP7K2X", checkInAt: "2027-03-10T08:00:00Z", checkOutAt: "2027-03-11T08:00:00Z" });
+    expect(q.available).toBe(false);
+    expect(q.reason).toMatch(/mínimo é de 3 diárias/);
   });
 });
 

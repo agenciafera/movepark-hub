@@ -101,3 +101,13 @@ export function desfechoDoCancelamento(statusFinal: string | null | undefined): 
   const status = statusFinal ?? "cancelled";
   return { status, avisarCliente: status === "cancelled" };
 }
+
+/**
+ * Quanto ainda dá para devolver de uma cobrança (centavos). Uma troca de datas mais barata já pode
+ * ter devolvido parte (17/11/2026); o cancelamento devolve só o resto, nunca o valor cheio de novo.
+ */
+export function remainingCents(amount: number | string | null, refundedAmount: number | string | null): number {
+  const total = Math.round(Number(amount ?? 0) * 100);
+  const devolvido = Math.round(Number(refundedAmount ?? 0) * 100);
+  return Math.max(0, total - devolvido);
+}

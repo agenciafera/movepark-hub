@@ -131,6 +131,10 @@ export interface MatchedPayment {
   fare_target_tier: string | null;
   date_change_check_in_at: string | null;
   date_change_check_out_at: string | null;
+  /** Cotação da troca de datas que esta cobrança paga (17/11/2026): o webhook aplica ESTA conta. */
+  date_change_quote?: unknown;
+  amount?: number | string | null;
+  method?: string | null;
   status: string | null;
   paid_at: string | null;
   /** Estorno avulso pelo Manager: o estorno deste pagamento não cancela a reserva. */

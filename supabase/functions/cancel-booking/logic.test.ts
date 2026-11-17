@@ -4,6 +4,7 @@ import {
   freeCancelDeadline,
   parseCancelInput,
   refundDecision,
+  remainingCents,
   withinFreeWindow,
 } from "./logic.ts";
 
@@ -155,4 +156,10 @@ Deno.test("desfechoDoCancelamento: abandono não é cancelamento e não avisa o 
   assertEquals(desfechoDoCancelamento("cancelled"), { status: "cancelled", avisarCliente: true });
   // leitura falhou: segue o comportamento antigo, que é o do caso pago
   assertEquals(desfechoDoCancelamento(null), { status: "cancelled", avisarCliente: true });
+});
+
+Deno.test("remainingCents: o cancelamento depois de uma troca de datas devolve só o resto", () => {
+  assertEquals(remainingCents(157.4, null), 15740);
+  assertEquals(remainingCents(157.4, 57.8), 9960);
+  assertEquals(remainingCents("157.40", "157.40"), 0);
 });

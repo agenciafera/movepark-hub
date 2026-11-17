@@ -102,3 +102,16 @@ Deno.test("resumo do resultado em português, com o dinheiro", () => {
   assertStringIncludes(resumoDoResultado("change_dates", { mode: "charge", delta: 30.5 }), "R$ 30,50");
   assertStringIncludes(resumoDoResultado("change_dates", { mode: "applied", refunded: true }), "estornada");
 });
+
+Deno.test("troca de datas paga leva a diferença que o operador confirmou; pendente não", () => {
+  const p = { booking_code: "MP-ABC123", check_in_at: "a", check_out_at: "b", expected_delta_cents: -5780 };
+  const paga = comoExecutar("change_dates", p, "confirmed") as { corpo: Record<string, unknown> };
+  assertEquals(paga.corpo.expected_delta_cents, -5780);
+  const pendente = comoExecutar("change_dates", p, "pending") as { corpo: Record<string, unknown> };
+  assertEquals("expected_delta_cents" in pendente.corpo, false);
+});
+
+Deno.test("devolução da troca de datas que foi para a fila manual", () => {
+  assertStringIncludes(resumoDoResultado("change_dates", { mode: "applied", refund_manual: true, delta: -57.8 }), "R$ 57,80");
+  assertStringIncludes(resumoDoResultado("change_dates", { mode: "applied", refund_manual: true, delta: -57.8 }), "2 dias úteis");
+});
