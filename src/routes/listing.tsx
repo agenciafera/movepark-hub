@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, ArrowRight, Buildings, Bus, CalendarX, Car, Heart, MapPin, SealCheck, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowRight, Buildings, Bus, CalendarX, Car, Heart, MapPin, SealCheck, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,6 @@ import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
 import { aPartirDe, type PriceShowcase, type ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
 import { basicCancelLabel } from "@/features/listing/fareMatrix.logic";
-import { RecommendedCarousel } from "@/features/listing/RecommendedCarousel";
 import { buildListingTldr, nearestTerminal } from "@/features/listing/tldr.logic";
 import { ReviewsBlock } from "@/features/reviews/ReviewsBlock";
 import { GoogleReviewsBlock } from "@/features/reviews/GoogleReviewsBlock";
@@ -183,7 +182,6 @@ export default function ListingPage() {
 
   const fromStr = searchParams.get("from");
   const toStr = searchParams.get("to");
-  const dest = searchParams.get("dest");
   const initialFrom = fromStr ? new Date(fromStr) : null;
   const initialTo = toStr ? new Date(toStr) : null;
 
@@ -412,14 +410,8 @@ export default function ListingPage() {
         )}
       </Helmet>
 
-      {/* Voltar */}
-      <Button variant="ghost" size="sm" asChild className="mb-4 -ml-3">
-        <Link to={`/search?${searchParams.toString()}`}>
-          <ArrowLeft className="h-4 w-4" />
-          Voltar pra busca
-        </Link>
-      </Button>
-
+      {/* Sem "voltar pra busca" e sem recomendados: a ficha da unidade não aponta para outro
+          estacionamento (pedido da Pare Seguro, 17/11/2026). Ver cascaDaFicha.logic.ts. */}
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="space-y-2">
@@ -656,22 +648,6 @@ export default function ListingPage() {
         </aside>
       </div>
 
-      {/* Carrossel de recomendados */}
-      {dest && fromStr && toStr && (
-        <>
-          <Separator className="mt-10" />
-          <div className="mt-10">
-            <RecommendedCarousel
-              currentLocationId={listing.location.id}
-              dest={dest}
-              from={fromStr}
-              to={toStr}
-              searchParams={searchParams}
-            />
-          </div>
-        </>
-      )}
-
       {/* Sticky CTA mobile: espelha o total real da reserva (referência Airbnb) */}
       {showStickyBar && (
         <ListingStickyBar
@@ -721,6 +697,7 @@ function ListingFaqSection({ items, isLoading, includeGlobal = true }: ListingFa
       <FaqList
         items={isLoading ? undefined : (inlineItems?.length ? inlineItems : visibleItems)}
         isLoading={isLoading}
+        linkDaPergunta={false}
       />
 
       {/* Link para abrir todas as perguntas */}
@@ -737,7 +714,7 @@ function ListingFaqSection({ items, isLoading, includeGlobal = true }: ListingFa
 
       <Dialog open={allOpen} onOpenChange={setAllOpen}>
         <DialogContent className="max-h-[70vh] max-w-3xl overflow-y-auto px-12 py-10">
-          <FaqList items={visibleItems} groupByScope />
+          <FaqList items={visibleItems} groupByScope linkDaPergunta={false} />
         </DialogContent>
       </Dialog>
     </section>

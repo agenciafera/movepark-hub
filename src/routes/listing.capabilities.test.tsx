@@ -380,3 +380,30 @@ describe("Contato da van na single", () => {
     expect(screen.queryByTestId("go2park-cta")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * Pedido da Pare Seguro (17/11/2026): a ficha da unidade não aponta para outro estacionamento.
+ * O cliente que chega pelo site do parceiro não pode sair dela para a busca nem para um
+ * recomendado. A rota leva `dest`, que era o que fazia o carrossel de recomendados aparecer.
+ */
+describe("ficha da unidade sem saída para outro estacionamento", () => {
+  it("não tem 'voltar pra busca' nem link para a busca ou outra ficha", async () => {
+    server.use(
+      http.get(`${BASE}/rest/v1/location_parking_type`, () => HttpResponse.json([linha("hub")])),
+    );
+    renderWithProviders(
+      <HelmetProvider>
+        <ListingPage />
+      </HelmetProvider>,
+      { route: `${ROTA}&dest=aeroporto-viracopos`, path: PATH },
+    );
+    await screen.findAllByText(/Virapark/i);
+
+    expect(screen.queryByText(/Voltar pra busca/i)).not.toBeInTheDocument();
+    const destinos = [...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")!);
+    expect(destinos.filter((h) => h.startsWith("/search") || h.startsWith("/faq/"))).toEqual([]);
+    expect(
+      destinos.filter((h) => h.startsWith("/estacionamentos/") && !h.includes("/virapark")),
+    ).toEqual([]);
+  });
+});

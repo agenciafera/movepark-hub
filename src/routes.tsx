@@ -28,7 +28,11 @@ import { caminhoFicha, caminhoMaisBarato, caminhoPrecos } from "@/lib/urls";
 
 import { AppProviders } from "@/components/shared/AppProviders";
 import { RootErrorBoundary } from "@/components/shared/RootErrorBoundary";
-import { ConsumerAppShell } from "@/components/shared/ConsumerAppShell";
+import {
+  CascaDaFicha,
+  CascaDoConsumidor,
+  ConsumerAppShell,
+} from "@/components/shared/ConsumerAppShell";
 import { AccountAppShell } from "@/components/shared/AccountAppShell";
 import { CheckoutShell } from "@/components/shared/CheckoutShell";
 import { RequireRole } from "@/auth/RequireRole";
@@ -204,7 +208,22 @@ function RedirectToLogin() {
  */
 function FichaEstacionamento() {
   const data = useLoaderData() as FichaLoaderData;
-  return data?.kind === "mapeado" ? <EstacionamentoMapeadoPage /> : <ListingPage />;
+  // A unidade parceira sai sem cabeçalho e sem rodapé (pedido da Pare Seguro, 17/11/2026): quem
+  // chega pelo site do parceiro não pode ter a busca na mão no meio da compra. O lote mapeado não
+  // tem reserva e a ficha inexistente só tem a volta para a home, então os dois mantêm a casca
+  // inteira. Ver src/components/shared/cascaDaFicha.logic.ts.
+  if (data?.kind === "unidade") {
+    return (
+      <CascaDaFicha>
+        <ListingPage />
+      </CascaDaFicha>
+    );
+  }
+  return (
+    <CascaDoConsumidor>
+      {data?.kind === "mapeado" ? <EstacionamentoMapeadoPage /> : <ListingPage />}
+    </CascaDoConsumidor>
+  );
 }
 
 /**

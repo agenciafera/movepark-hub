@@ -38,4 +38,19 @@ describe("FaqList", () => {
     const links = [...container.querySelectorAll('a[href^="/faq/"]')];
     expect(links.map((a) => a.getAttribute("href"))).toEqual(["/faq/como-cancelo"]);
   });
+
+  /** A ficha da unidade não linka a página da pergunta: lá o cabeçalho tem a busca. */
+  it.each([false, true])(
+    "não linka a página da pergunta com linkDaPergunta=false (groupByScope=%s)",
+    (agrupa) => {
+      const { container } = renderWithProviders(
+        <FaqList
+          items={[item({ id: "com", slug: "como-cancelo" })]}
+          groupByScope={agrupa}
+          linkDaPergunta={false}
+        />,
+      );
+      expect(container.querySelectorAll('a[href^="/faq/"]')).toHaveLength(0);
+    },
+  );
 });

@@ -415,3 +415,34 @@ O teste-guarda (`src/routes/listing.capabilities.test.tsx`) não pega este caso 
 página da unidade, não a casca. Se a ressalva for revertida, o caminho é a bolinha ler a capacidade
 da rota ativa, ou trocar a frase por uma neutra ("Falar com a Movepark") quando a unidade for
 externa. Antes desta mudança a bolinha não prometia nada: era só o glifo do WhatsApp.
+
+## A ficha da unidade não aponta para outro estacionamento (17/11/2026)
+
+Pedido da **Pare Seguro**. O cliente sai do site do parceiro, clica em reservar e chega na ficha
+da unidade no Movepark. Ali o cabeçalho tinha a busca, e o cliente podia procurar e reservar outro
+estacionamento no meio da compra. O parceiro lê isso como a Movepark levando o cliente dele para a
+concorrência.
+
+**Regra:** a ficha de **unidade parceira** (`/estacionamentos/<destino>/<lote>`, loader `kind:
+"unidade"`) não tem saída para outro estacionamento. Vale para toda unidade, venda pelo Hub ou
+externa, e para quem chega pelo site do parceiro ou pelo card da busca.
+
+- **Sem cabeçalho e sem rodapé.** A ficha usa a `CascaDaFicha` (só o `<main>`), como o checkout já
+  usava a `CheckoutShell`. Quem escolhe a casca é a própria ficha (`FichaEstacionamento` em
+  `src/routes.tsx`), porque só o loader sabe se o slug é de unidade, de lote mapeado ou de nada. O
+  `ConsumerAppShell` reconhece o caminho (`ehFichaDeEstacionamento`, em
+  `src/components/shared/cascaDaFicha.logic.ts`) só para não desenhar a casca em dobro.
+- **Sem "voltar pra busca" e sem carrossel de recomendados** dentro da ficha. O
+  `RecommendedCarousel` saiu do código.
+- **Sem o link "Página desta pergunta" no FAQ** (`FaqList` com `linkDaPergunta={false}`). A
+  página `/faq/<slug>` tem o cabeçalho com a busca, e perguntas como "qual o estacionamento mais
+  barato perto de Guarulhos" levavam direto à comparação. A resposta continua inteira na ficha e
+  no `FAQPage`; a página da pergunta segue existindo e linkada no resto do site.
+- **Fica:** a bolinha do WhatsApp (suporte, não concorrente), o caminho até o checkout e tudo que é
+  publicado (canonical, JSON-LD, FAQ pré-renderizado, `og:image`). O idioma continua no
+  `LocaleProvider` do `ConsumerAppShell`, que segue envolvendo a ficha.
+- **Não vale para o lote mapeado** nem para a ficha inexistente: o mapeado não tem reserva e a
+  inexistente só tem a volta para a home, então os dois mantêm cabeçalho e rodapé.
+
+Guardas: `ConsumerAppShell.test.tsx` (casca some na ficha e fica no destino) e
+`listing.capabilities.test.tsx` (nenhum link da ficha leva à busca ou a outra ficha).

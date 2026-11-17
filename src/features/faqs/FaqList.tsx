@@ -22,6 +22,12 @@ type Props = {
   /** Quando true, filtra silenciosamente FAQs sem categoria pra agrupar por categoria. */
   groupByCategory?: boolean;
   query?: string;
+  /**
+   * Quando false, a resposta não leva o link "Página desta pergunta". A ficha da unidade usa
+   * assim: a página da pergunta tem o cabeçalho com a busca e é saída para outro estacionamento
+   * no meio da compra (pedido da Pare Seguro, 17/11/2026). Default: true.
+   */
+  linkDaPergunta?: boolean;
 };
 
 function highlight(text: string, q: string | undefined) {
@@ -42,10 +48,12 @@ function RenderAccordion({
   items,
   query,
   idPrefix,
+  linkDaPergunta,
 }: {
   items: FaqCombinedItem[];
   query?: string;
   idPrefix?: string;
+  linkDaPergunta: boolean;
 }) {
   return (
     <Accordion type="multiple">
@@ -55,7 +63,7 @@ function RenderAccordion({
             <span className="flex items-center gap-2">
               {highlight(f.question, query)}
               {f.category && (
-                <Badge tone="neutral" className="hidden sm:inline-flex">
+                <Badge tone="neutral" className="sm:inline-flex hidden">
                   {f.category.label}
                 </Badge>
               )}
@@ -68,7 +76,7 @@ function RenderAccordion({
             <p className="whitespace-pre-wrap text-body-md text-body">
               {highlight(f.answer, query)}
             </p>
-            {f.slug && (
+            {linkDaPergunta && f.slug && (
               <Link
                 to={`/faq/${f.slug}`}
                 className="mt-2 inline-block text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
@@ -89,6 +97,7 @@ export function FaqList({
   groupByScope = false,
   destinationLabel,
   query,
+  linkDaPergunta = true,
 }: Props) {
   if (isLoading) {
     return (
@@ -114,7 +123,7 @@ export function FaqList({
   }
 
   if (!groupByScope) {
-    return <RenderAccordion items={items} query={query} />;
+    return <RenderAccordion items={items} query={query} linkDaPergunta={linkDaPergunta} />;
   }
 
   const groups = groupFaqsByScope(items);
@@ -124,19 +133,34 @@ export function FaqList({
       {groups.location.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-title-md text-ink">Sobre este estacionamento</h3>
-          <RenderAccordion items={groups.location} query={query} idPrefix="loc" />
+          <RenderAccordion
+            items={groups.location}
+            query={query}
+            linkDaPergunta={linkDaPergunta}
+            idPrefix="loc"
+          />
         </div>
       )}
       {groups.destination.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-title-md text-ink">{destinationLabel ?? "Sobre o destino"}</h3>
-          <RenderAccordion items={groups.destination} query={query} idPrefix="dest" />
+          <RenderAccordion
+            items={groups.destination}
+            query={query}
+            linkDaPergunta={linkDaPergunta}
+            idPrefix="dest"
+          />
         </div>
       )}
       {groups.global.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-title-md text-ink">Perguntas gerais</h3>
-          <RenderAccordion items={groups.global} query={query} idPrefix="gen" />
+          <RenderAccordion
+            items={groups.global}
+            query={query}
+            linkDaPergunta={linkDaPergunta}
+            idPrefix="gen"
+          />
         </div>
       )}
     </div>

@@ -57,4 +57,31 @@ describe("ConsumerAppShell", () => {
 
     expect(screen.getByRole("button", { name: "Abrir menu" })).toBeInTheDocument();
   });
+
+  /**
+   * Na ficha de estacionamento a casca não desenha cabeçalho nem rodapé: quem decide é a
+   * própria ficha (unidade parceira sai sem os dois, lote mapeado chama `CascaDoConsumidor`).
+   * Pedido da Pare Seguro, 17/11/2026.
+   */
+  it("não desenha cabeçalho nem rodapé na ficha de estacionamento", () => {
+    renderWithProviders(<ConsumerAppShell />, {
+      route: "/estacionamentos/aeroporto-guarulhos/pare-seguro",
+      auth: mockAuth(),
+    });
+
+    expect(screen.queryByRole("button", { name: "Abrir menu" })).toBeNull();
+    expect(document.querySelector("footer")).toBeNull();
+    // O suporte continua: a bolinha do WhatsApp não é saída para concorrente.
+    expect(screen.getByRole("link", { name: /WhatsApp/i })).toBeInTheDocument();
+  });
+
+  it("mantém cabeçalho e rodapé na página do destino", () => {
+    renderWithProviders(<ConsumerAppShell />, {
+      route: "/estacionamentos/aeroporto-guarulhos",
+      auth: mockAuth(),
+    });
+
+    expect(screen.getByRole("button", { name: "Abrir menu" })).toBeInTheDocument();
+    expect(document.querySelector("footer")).not.toBeNull();
+  });
 });
