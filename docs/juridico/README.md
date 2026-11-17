@@ -1,5 +1,7 @@
 # Minutas jurídicas (rascunho, 27/09/2026)
 
+> **17/11/2026: Termos v5 publicados** (migration `20261204120000_termos_v5_rodape_da_versao.sql`). Só o item 18: a v4 saiu com o rodapé da v3 ("versão 3, publicados em 27/09/2026"), e agora ele diz versão 5, 17/11/2026, com a v4 de 09/11/2026 como anterior. O resto é igual à v4.
+
 > **09/11/2026: Termos v4 publicados** (`2026-11-09-termos-de-uso-v4.md`). Só o parcelamento mudou: os itens 4.2 (b) e 5.3 deixam de prometer "até 3 vezes sem juros" para todos e remetem à condição que o checkout de cada reserva mostra, porque o parcelamento passou a ser configurável por regra de repasse e por empresa.
 
 Três minutas escritas a partir da revisão de consistência produto-contrato de 27/09/2026. **Publicadas em 27/09/2026** por decisão do Kallef (o produto ainda não foi lançado ao público): Termos v3 e Privacidade v3 no banco (`legal_document`, versão 3, pela RPC `publish_legal_document`) e contrato v2 em `partner_contract_version`. A conversão de Markdown para o HTML do banco (tabelas viram listas, porque o sanitizador só aceita h2, h3, p, ul, ol, li, strong, em, a, br) foi feita por script; o texto é o das minutas sem as marcações. Os Termos e a Política vigentes continuam sendo a v2 no banco (`legal_document`, 18/08/2026); o contrato vigente continua sendo a v1 em `src/features/payouts/contract.ts`.
