@@ -166,8 +166,10 @@ Monte a lista de valores vencidos a partir do `before` do espelho (ou da tabela 
 - as datas da tabela velha por extenso e em `dd/mm/aaaa` ("tabela de 20/10/2026", "conferidos
   em 11/09/2026").
 
-A busca é por regex sobre o formato brasileiro (`R$ 1.707,00`), que é o mesmo nos textos em en
-e es. Uma varredura de 03/11 achou 1.900 ocorrências em 71 documentos; a de 12/11, 35 campos.
+A busca é por regex nos **dois** formatos: o brasileiro (`R$ 1.707,00`), usado em pt e es, e o de
+ponto decimal (`R$ 1,707.00`), usado nas traduções em **en**. Até 17/11/2026 esta skill dizia que
+o formato era o mesmo nos três idiomas, e a varredura da Plenty só pelo brasileiro deixou as quatro
+FAQs em inglês de Congonhas para trás. Uma varredura de 03/11 achou 1.900 ocorrências em 71 documentos; a de 12/11, 35 campos.
 Espere volume e automatize a listagem campo a campo, nunca leia só os posts que "devem" citar.
 
 ### Falsos positivos que a varredura sempre traz
@@ -349,6 +351,11 @@ próxima rodada" e esta skill no mesmo commit. Mensagem de commit no padrão
 - **`wl_sync_enabled` não pausa o espelho de preço.**
 - **Unidade espelhada não agenda e não se edita à mão**; o espelho desfaz em minutos.
 - **Posts de outra praça citam esta praça** (comparações e convênio). Varra o acervo inteiro.
+- **Inglês usa ponto decimal** (`R$ 39.90`, `R$ 1,077.00`): a regex só no formato brasileiro não
+  acha nada em en.
+- **Post retratado numa data antiga escapa da lista de vencidos.** Se o texto ainda tem a tabela
+  de duas viradas atrás, os valores dele não estão no `before` desta. Procure também por toda
+  menção ao parceiro (fronteira de palavra) no acervo da praça e leia o que vier.
 - **md5 sobre bytes do banco**, não sobre o JSON da API.
 - **Carimbo de migration com `HHMMSS` real**, ou o `db reset` do CI para na PK duplicada.
 - **Migration grande não cabe inline**; `pg_net` do commit fixo, com md5 do arquivo, e o par

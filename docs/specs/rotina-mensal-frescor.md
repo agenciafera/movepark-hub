@@ -368,6 +368,58 @@ duas diárias". A `meta_description` do post `garageinn-viracopos` dizia "Diári
 R$ 40,00", que é o preço do Virapark. E o post `virapark-viracopos` dizia que a diária avulsa do
 Virapark (R$ 40,00) "perde para o Garageinn" (R$ 59,99).
 
+## Rodada extra de 17/11/2026: teste de preço da Plenty Park
+
+O cliente aprovou em 17/11/2026 o teste de 21 dias proposto em 05/11 para retomar as reservas da
+Plenty Park (CGH), que tinham caído em novembro ([card](https://app.clickup.com/t/17tn9ea1knq)).
+A vaga coberta saiu da tabela de 16/10/2026 (R$ 39,90 por dia de 3 a 6 diárias, R$ 37,90 de 7 a
+14 e R$ 35,90 a partir de 15) para R$ 31,90 de 3 a 6, R$ 27,90 de 7 a 14, R$ 26,90 de 15 a 29 e
+R$ 16,90 a partir de 30. O balcão segue R$ 49,90 por dia e a estadia mínima segue 3 diárias. O WL
+virou em 17/11/2026 e o espelho copiou às 10h29, já acusando a anomalia esperada: 29 diárias
+(R$ 780,10) custam mais que 30 (R$ 507,00). A Aerovalet não mudou. O teste vai até 08/12/2026, e
+a tabela pode voltar à de 16/10 depois disso: nesse caso a rodada se repete no sentido contrário.
+
+Ficaram para trás 5 FAQs em pt (8 campos), 8 traduções (en e es), 7 posts em pt e o top 3 de Congonhas em
+en e es, 28 campos no total (`20261203200000_frescor_plenty_teste_novembro.sql`, 190 KB, aplicada
+por `pg_net`). A varredura procurou as três diárias velhas, todo total delas de 3 a 31 diárias, as
+diferenças contra a Aerovalet e contra o balcão, nos formatos pt (`R$ 1.077,00`) e en
+(`R$ 1,077.00`). **As traduções em inglês usam ponto decimal**, e a varredura só pelo formato
+brasileiro deixava as quatro FAQs em en para trás. Os resíduos são falso positivo: R$ 39,90 é a
+diária do oficial de Congonhas no post `quanto-custa-deixar-o-carro-no-aeroporto` (e nas
+traduções) e a vaga coberta do oficial de Goiânia; R$ 35,90 é o oficial do Salgado Filho e o
+Nationpark em Curitiba; R$ 84,00 é diferença de Curitiba no post de fim de ano; R$ 239,40 e
+R$ 538,50 são valores de Viracopos, Curitiba e Porto Alegre.
+
+**O que mudou de sentido:**
+
+- **A distância para a Aerovalet encolheu.** A semana passou de R$ 84,00 para R$ 14,00 acima da
+  Aerovalet, e o mês de R$ 630,00 para R$ 60,00. A Aerovalet segue mais barata por dia em todas as
+  durações que a Plenty aceita, e a maior distância passou a ser 29 diárias (R$ 203,00).
+- **A Plenty passou a premiar estadia longa.** "Chega a R$ 35,90 com 15 diárias e para aí" virou
+  degrau em 30 diárias, e "compensa o pacote de 30 dias?" passou de "no Aerovalet" para "nos dois".
+- **Contra o oficial**, os 30 dias na Plenty ficam R$ 840,00 abaixo (eram R$ 270,00).
+- **Contra o Express Parking** (R$ 600,00 fixos de 15 a 30 dias), a Plenty fica abaixo de 15 a 22
+  diárias e em 30, e acima de 23 a 29; antes só ficava abaixo até 16.
+- **Na semana**, a Plenty passou o The Parking (R$ 195,30 contra R$ 210,00), e a ordem da tabela
+  de 7 dias do post de estacionamento barato mudou. Em 15 diárias ela também fica abaixo da diária
+  cheia do The Parking.
+- **No fim de ano** (12 diárias), a diferença entre os dois parceiros caiu de R$ 144,00 para
+  R$ 24,00. O post é de 10/11 e passa a datar a linha da Plenty em 17/11.
+- **Na balança balcão contra online**, a semana da Plenty agora economiza R$ 154,00 (era R$ 84,00).
+
+**Corrigido de passagem:** o `guia-completo-dos-estacionamentos-proximos-ao-aeroporto-de-congonhas`
+ainda tinha os dois parceiros na tabela de setembro (Aerovalet a R$ 32,90 e R$ 17,06 no mês,
+Plenty a R$ 29,90 e "o melhor preço na semana cheia") e dizia conferir tudo em 05/09, embora
+chamasse o preço dos parceiros de vivo. As rodadas de 19/10 e 03/11 não o pegaram porque os valores
+dele não estavam na lista de vencidos daquelas viradas. O título da seção da Plenty perdeu o
+"melhor preço na semana", que não era verdade desde 16/10. Na FAQ de quanto custa, a coluna
+"Diária a partir de" da Plenty mostrava o valor de 15 diárias, enquanto a da Aerovalet mostrava o
+de um dia; as duas passaram a mostrar a menor estadia aceita.
+
+**Aberto:** a FAQ "o que está incluso na diária em Congonhas" diz que os parceiros oferecem
+traslado até o terminal, enquanto o post de informações do aeroporto diz que nenhum dos dois
+declara van. Não é preço e ficou fora desta rodada.
+
 ## O procedimento, para a próxima rodada
 
 > Desde 12/11/2026 o método mora na skill `.claude/skills/frescor-de-preco/SKILL.md`, que cobre
