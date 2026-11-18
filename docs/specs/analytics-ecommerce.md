@@ -76,9 +76,38 @@ No GTM é **uma tag só**, "Compra - Parceiro" (conversão do Google Ads), com o
 
 Por unidade, e não por empresa, porque o parceiro pode ter uma conta de Ads por praça; empresa com uma conta só repete os valores em cada unidade. Os dois valores não são segredo (já aparecem no código-fonte de qualquer página com a tag), por isso ficam na `location` e saem no `dataLayer`. O mesmo bloco serve mais tarde para pixel da Meta e remarketing por parceiro, acrescentando campos, sem mexer no formato dos eventos.
 
+### 3.2 GA4 do parceiro por unidade
+
+O parceiro quer ver no GA4 dele o funil das vendas que nascem no Hub. Havia duas rotas, e a decisão (18/11/2026) foi pela segunda.
+
+**Carregar o GTM do parceiro dentro do Hub foi recusado.** Um container de terceiro roda código arbitrário em página nossa, inclusive no checkout, onde estão cartão, e-mail e telefone. E o Hub é aplicação de página única: o container, uma vez carregado, fica ativo até a aba fechar, então receberia a compra que o visitante fizesse depois em outro estacionamento. No mesmo dia apareceram dois exemplos do custo de tag que ninguém audita: o `AW-17259932016` de um parceiro injetado em todas as páginas pelo gateway da Cloudflare, e a conversão de toda compra do Hub indo para a conta de Ads de uma ex-cliente (§6.3).
+
+**O que foi feito: o Hub manda uma cópia do evento para o GA4 do parceiro.** Mesmo desenho do §3.1. A unidade guarda o ID da métrica do GA4 do parceiro (`location.ga4_measurement_id`, formato `G-` + letras maiúsculas e dígitos, só `hub_admin` escreve), o front manda no bloco `partner` e uma tag só no GTM do Hub lê de lá:
+
+```js
+partner: {
+  company_slug: "pare-seguro",
+  location_slug: "aeroporto-guarulhos",
+  destination_code: "GRU",
+  ads_conversion_id: "17302388529",       // só no checkout; null na ficha
+  ads_conversion_label: "K6HqCKf8_7IdELH-tbpA",
+  ga4_measurement_id: "G-AB12CD34EF",     // null quando a unidade não tem GA4 próprio
+}
+```
+
+Regras:
+
+- **Cinco eventos vão para o parceiro:** `view_item`, `add_to_cart`, `begin_checkout`, `add_payment_info` e `purchase`. Os dois de lista (`view_item_list`, `select_item`) ficam de fora, porque mostram concorrentes na mesma tela. `external_checkout_click` também fica de fora por enquanto.
+- **O bloco vai sempre inteiro nesses cinco, com `null` no que a unidade não tem.** O GTM guarda o último valor de cada chave enquanto a página não recarrega. Sem o `null` explícito, o evento de uma unidade sem GA4 herdaria o ID da ficha vista antes e iria para o GA4 de outro parceiro. Por defesa, o reset de todo evento de e-commerce passou a ser `{ ecommerce: null, partner: null }` (§4), o que cobre também os eventos que não têm parceiro.
+- **Sem dado pessoal.** A tag do parceiro manda só o objeto `ecommerce`. `user_id`, `user_data` (e-mail e telefone) e `new_customer` continuam indo apenas para as tags da Movepark.
+- **Direto para o Google.** O envio para o GA4 do parceiro não passa pelo servidor de `stape.movepark.co`; só o GA4 da Movepark (`G-L99117RGEY`) usa esse transporte.
+- **A ficha não leva a conta de Ads.** `partnerFromListing` manda `ads_*` nulos de propósito: conversão de Ads é só na compra.
+
+O que isso não resolve sozinho: a compra chega ao GA4 do parceiro com a origem certa (o `gclid` e as UTMs vêm na URL, §6.2), mas como visitante novo, separado da visita ao site dele. Unir as duas visitas exige o vínculo entre domínios do GA4 do parceiro, que em 18/11/2026 não estava ativo (o `_gl` que saiu de `pareseguro.com` não levava o `_ga`).
+
 ## 4. O formato
 
-Cada push é precedido de `{ ecommerce: null }`. O evento:
+Cada push é precedido de `{ ecommerce: null, partner: null }` (o `partner` entrou no reset em 18/11/2026, §3.2). O evento:
 
 ```js
 {
@@ -150,6 +179,9 @@ Regras por evento:
 | `src/features/locations/useLocationForm.ts`, `LocationSections.tsx` | Seção "Conversão e mídia paga" do formulário da unidade (só Manager): `normalizarIdConversaoAds` (tira o `AW-`, recusa id de GA4 e customer id), `normalizarRotuloConversaoAds`, `splitAdsSnippet` (colar o snippet inteiro preenche os dois), `validateAdsConversion` (espelha as constraints) |
 | `supabase/migrations/20261201220000_location_ads_conversion.sql` | `location.ads_conversion_id`/`ads_conversion_label`, constraints de formato e do par, trigger `location_ads_conversion_guard` (só `hub_admin`), seed do Virapark. pgTAP: `supabase/tests/location_ads_conversion.test.sql` |
 | `supabase/migrations/20261204180000_ads_conversion_id_sem_prefixo.sql` | Tira o `AW-` do `ads_conversion_id` (constraint passa a `^[0-9]{6,}$`) e normaliza as linhas existentes: com o prefixo, a tag do GTM disparava sem registrar conversão |
+| `supabase/migrations/20261205140000_location_ga4_measurement_id.sql` | `location.ga4_measurement_id` (constraint `^G-[A-Z0-9]{6,}$`) e o trigger `location_ga4_measurement_guard` (só `hub_admin`). pgTAP: `supabase/tests/location_ga4_measurement.test.sql` |
+| `src/lib/analytics-ecommerce.ts` (`partnerFromListing`, `partnerFromBooking`) | O bloco `partner` da ficha (`view_item`, `add_to_cart`) e do checkout, com `ga4_measurement_id` sempre presente, nulo quando a unidade não tem (§3.2) |
+| `src/features/locations/useLocationForm.ts` (`normalizarIdGa4`, `validateGa4MeasurementId`) | Campo "ID do GA4 do parceiro" na seção "Conversão e mídia paga": sobe para maiúsculas, recusa `AW-`, `GTM-`, `UA-` e o id numérico da propriedade |
 | `src/features/checkout/useCheckoutTracking.ts` | `begin_checkout` e `purchase` a partir da reserva; `shouldTrack*` puros |
 | `src/features/checkout/api.ts` | O select do checkout passou a trazer `public_name`, `destination(code, name)` e `payment.method` |
 | `src/features/search/ParkingCard.tsx` | Ganhou `onClick` no link, que o `ResultCard` usa para o `select_item` |
@@ -175,6 +207,7 @@ Testes: `src/lib/analytics-ecommerce.test.ts`, `src/lib/analytics.test.ts`, `src
 4. `external_checkout_click`: tag GA4 própria (evento personalizado); registrar o nome em Administrador › Eventos para virar conversão se fizer sentido.
 5. **Conversão otimizada do Ads** (opcional): a tag de conversão lê `user_data` do dataLayer.
 5b. **Conversão por parceiro (§3.1)**: variáveis de camada de dados `partner.ads_conversion_id` e `partner.ads_conversion_label`; acionador "evento personalizado `purchase`" com a condição `partner.ads_conversion_id` *não é igual a* vazio (`undefined` também não passa); uma tag "Conversão do Google Ads" com *ID de conversão* = `{{partner.ads_conversion_id}}`, *Rótulo* = `{{partner.ads_conversion_label}}`, *Valor* = `{{ecommerce.value}}`, *ID da transação* = `{{ecommerce.transaction_id}}`, *Moeda* = `{{ecommerce.currency}}`. Depois de publicada e conferida no Visualizar, a tag `[Virapark] Purchase` é **pausada** (não apagada): o par do Virapark já está na unidade. **Feito em 06/11/2026, versão 31 do container** (`Conversão por parceiro + e-commerce GA4`, publicada por google@coffeecup.cc): tag `[Parceiro] Compra - Google Ads` com acionador `CE | purchase - com conta de Ads do parceiro` (`partner.ads_conversion_id` casando `^AW-`), tag `🟠GA4 - E-commerce (7 eventos)` com acionador `CE | e-commerce GA4 (7 eventos)` (regex dos sete nomes, dados de e-commerce da camada de dados, propriedade de usuário `user_id`), variáveis `partner.ads_conversion_id`, `partner.ads_conversion_label`, `ecommerce.value`, `ecommerce.transaction_id`, `ecommerce.currency`, `user_id`. Pausadas na mesma versão: as quatro `🟠GA4 - *` antigas (mandariam cada evento duas vezes), `[Virapark] Purchase` e `🍪| Set Cookie`. Conferido no Tag Assistant: `view_item` chega ao `G-L99117RGEY` com itens e valor; um `purchase` simulado (R$ 0, `PREVIEW-GTM-*`, conta fictícia `AW-000000000`) disparou a tag do parceiro com id, rótulo, valor, moeda e transação certos. A limpeza do resto (tags do Google duplicadas, pixels da Meta extras, variáveis mortas) fica para uma versão à parte, item a item. **Corrigido em 18/11/2026 (§3.1):** o *Código de conversão* dessa tag recebia `AW-...`, que o campo não sabe ler, e o acionador casava `^AW-`. O Hub passou a mandar só o número (migration `20261204180000`) e a versão 37 do container trocou a condição do acionador para `^[0-9]{6,}$`. A mesma versão excluiu oito tags que já estavam pausadas (as quatro `🟠GA4 - *` antigas, `[Virapark] Purchase`, `[Google Ads] Remarketing`, `Tag do Google AW-326904374` e `Remarketing - Google Ads`).
+5c. **GA4 do parceiro por unidade (§3.2)**: variável de camada de dados `partner.ga4_measurement_id`; acionador `CE | e-commerce da unidade - com GA4 do parceiro` (evento personalizado por regex `^(view_item|add_to_cart|begin_checkout|add_payment_info|purchase)$`, com a condição `partner.ga4_measurement_id` casando `^G-[A-Z0-9]{6,}$`); tag `[Parceiro] GA4 - E-commerce da unidade` (evento do GA4, *ID da métrica* = `{{partner.ga4_measurement_id}}`, *Nome do evento* = `{{Event}}`, "Enviar dados de e-commerce" pela camada de dados, **sem** propriedade de usuário). **Versão 39 do container, criada em 18/11/2026 e ainda não publicada.** Antes de dar por feito, conferir a requisição de saída (lição do §3.1): o evento do parceiro tem que ir para `google-analytics.com` com o `tid` do parceiro, sem `user_id` e sem e-mail ou telefone, e nenhum `page_view` automático pode sair para esse `tid`.
 6. Dimensões personalizadas de item no GA4: `stay_days` e `fare_tier` (escopo item), se quiser cruzar receita por tarifa. Dimensões de evento, se quiser: `event_source` (navegador vs servidor) e `new_customer`.
 7. **Measurement Protocol (o `purchase` do servidor).** No GA4: Administrador › Fluxos de dados › o fluxo web do site › *Chaves secretas da API do Measurement Protocol* › Criar. Depois, nas Edges do Supabase (projeto `mgaigbezdalbyuqiofcf`), os dois segredos:
 
@@ -260,6 +293,21 @@ Medido em navegador isolado com o container no ar (versão 36, Vinculador pausad
 Três consequências. O limite do consentimento descrito acima deixou de valer nesse caminho, porque o `gclid` viaja na URL e não depende do cookie da origem. O `_gl` que ainda sai do site (com `_gcl_aw` e `_gcl_au`, sem `_ga`) é ignorado no Hub. E a venda que chega do site com a UTM do anúncio (`google / cpc`) não casa mais a regra de comissão por `utm_source=pareseguro`: quem a reconhece é o site de origem (`commission_rule.referrer_domains`, lido da referência `pareseguro.com`), entregue no mesmo dia e descrito em [`comissao-por-origem.md`](comissao-por-origem.md). Não testado: clique de iPhone que chega com `gbraid`/`wbraid` no lugar do `gclid`.
 
 O GA4 próprio da Pare Seguro tem vínculo entre domínios configurado do lado dela, mas isso não tem efeito no Hub enquanto o Hub não carregar esse GA4. Quando a compra passar a ser enviada para o GA4 do parceiro, ela aparece lá como visitante novo, a menos que o identificador do GA4 também seja carregado na passagem.
+
+### 6.3 Duas tags de terceiro achadas em 18/11/2026
+
+**`AW-17259932016` em toda página, injetado pela Cloudflare.** O id é de uma conta de Google Ads de parceiro (Aerovalet) e aparecia em todas as páginas do Hub, inclusive na ficha de outros parceiros, no login e no Manager. Ele não está no código, no `src/worker.ts`, no container do GTM, nos scripts do GA4 nem no legado. Quem injeta é o recurso **Google tag gateway for advertisers** da zona `movepark.co` na Cloudflare, configurado com esse id e o caminho `/metrics`. A Cloudflare escreve no topo do `<head>`, antes de qualquer código nosso:
+
+```html
+<script>...(window,'AW-17259932016','google_tags_first_party');</script>
+<script async src="/metrics/"></script>
+```
+
+Só aparece para requisição com User-Agent de navegador: um `curl` simples recebe a página sem o trecho, e por isso passou despercebido. A configuração é por zona e vale para todo host dela. Numa visita de página o script carrega e nenhum envio para essa conta foi observado; o checkout não foi testado. Desliga-se no painel da Cloudflare, em Tag Management › Google Tag Gateway, e o Audit Log da conta mostra quem ligou. **Em 18/11/2026 seguia ligado.**
+
+**`AW-11286871587` não é da Movepark.** O GTM mostra esse destino como a conta de Google Ads "Multipark SA", uma ex-cliente, sem vínculo de acesso. A tag `Compra - Google Ads` (rótulo `8HiACNmGk80YEKP8_4Uq`) tinha sido religada na versão 32 (06/11/2026) com a suposição, pelo nome, de que a conta era da Movepark, e desde então mandava toda compra do Hub, de qualquer parceiro, com valor, número do pedido, e-mail e telefone, para essa conta. Foi pausada na versão 38 (18/11/2026). A tag `Remarketing - Google Ads`, do mesmo id, já estava pausada desde a versão 36 e foi excluída na 37.
+
+**A regra que fica:** antes de criar ou religar tag de Google Ads, conferir o dono do id na visão geral do GTM (Tags do Google › Destinos). O nome da tag não prova nada.
 
 ## 7. Como validar
 

@@ -63,9 +63,11 @@ export function trackEvent(event: ProductEvent, params: EventParams = {}): void 
 /**
  * Empurra um evento de e-commerce no formato do GA4.
  *
- * Antes do evento vai um `{ ecommerce: null }`: o GTM mescla pushes consecutivos, e sem o
- * reset os itens do `view_item` anterior vazariam para o `add_to_cart` seguinte. É a prática
- * que o próprio Google pede na doc do dataLayer de e-commerce.
+ * Antes do evento vai um `{ ecommerce: null, partner: null }`: o GTM mescla pushes consecutivos,
+ * e sem o reset os itens do `view_item` anterior vazariam para o `add_to_cart` seguinte. É a
+ * prática que o próprio Google pede na doc do dataLayer de e-commerce. O `partner` entra no
+ * mesmo reset porque é ele que decide para qual conta de parceiro o evento vai: sem zerar, um
+ * evento sem parceiro herdaria o da ficha vista antes e iria para o GA4 de quem não é dono dele.
  *
  * `extra` é o que fica FORA do objeto `ecommerce`: `user_id`, `new_customer` e `user_data`
  * (e-mail e telefone para conversão otimizada do Ads). O GA4 ignora o que não conhece dentro
@@ -79,7 +81,7 @@ export function trackEcommerce(
   if (typeof window === "undefined") return;
   try {
     window.dataLayer = window.dataLayer ?? [];
-    window.dataLayer.push({ ecommerce: null });
+    window.dataLayer.push({ ecommerce: null, partner: null });
     window.dataLayer.push({ event, ecommerce, ...extra });
   } catch {
     // Mesmo motivo do `trackEvent`.

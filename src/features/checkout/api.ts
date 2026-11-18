@@ -78,6 +78,8 @@ export type BookingForCheckout = {
      */
     ads_conversion_id: string | null;
     ads_conversion_label: string | null;
+    /** ID da métrica do GA4 do parceiro, que recebe cópia dos eventos do checkout. */
+    ga4_measurement_id: string | null;
   };
   items: {
     id: string;
@@ -122,7 +124,7 @@ export function useCheckoutBooking(code: string | undefined) {
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone, fare_tier, flight_number,
            commission_installments_max, commission_installments_interest_free,
            location:location!inner(id, slug, name, address, photos, checkout_mode, public_name,
-             ads_conversion_id, ads_conversion_label,
+             ads_conversion_id, ads_conversion_label, ga4_measurement_id,
              company:company!inner(slug, name),
              destination:destination(code, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
@@ -182,6 +184,7 @@ export function useCheckoutBooking(code: string | undefined) {
           destination: row.location?.destination ?? null,
           ads_conversion_id: row.location?.ads_conversion_id ?? null,
           ads_conversion_label: row.location?.ads_conversion_label ?? null,
+          ga4_measurement_id: row.location?.ga4_measurement_id ?? null,
         },
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any

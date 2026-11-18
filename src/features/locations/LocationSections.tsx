@@ -455,7 +455,7 @@ export function LocationSections({
       {!operatorMode && (
         <Section
           title="Conversão e mídia paga"
-          description="Para onde vai a conversão de compra desta unidade. A conta da Movepark recebe sempre; aqui entra a conta do parceiro, quando ele roda campanha própria."
+          description="Para onde vão a conversão de compra e os eventos desta unidade quando o parceiro roda campanha própria."
         >
           {/* Os dois campos andam juntos (constraint do par no banco). O erro é um só, ancorado
               no id, porque a mensagem já diz qual metade falta. */}
@@ -492,7 +492,28 @@ export function LocationSections({
           </Field>
           <p className="text-caption text-muted tablet:col-span-2">
             Com os dois preenchidos, cada compra confirmada nesta unidade registra uma conversão na
-            conta do parceiro, além da conta da Movepark. Nada muda no GTM: a tag genérica lê daqui.
+            conta de Google Ads do parceiro. Nada muda no GTM: a tag genérica lê daqui.
+          </p>
+          <Field
+            label="ID do GA4 do parceiro"
+            htmlFor="ga4-measurement-id"
+            error={errors.ga4MeasurementId}
+            hint="O ID da métrica do fluxo da Web, que começa com G-. Ex.: G-AB12CD34EF. Fica em Administrador › Fluxos de dados, no GA4 do parceiro."
+          >
+            <Input
+              id="ga4-measurement-id"
+              value={f.ga4MeasurementId}
+              onChange={(e) => f.setGa4MeasurementId(e.target.value)}
+              placeholder="G-AB12CD34EF"
+              autoComplete="off"
+              spellCheck={false}
+              {...errorProps("ga4-measurement-id", errors.ga4MeasurementId)}
+            />
+          </Field>
+          <p className="text-caption text-muted tablet:col-span-2">
+            Com o ID preenchido, o GA4 do parceiro recebe uma cópia dos eventos desta unidade, da
+            visita à ficha até a compra, sem e-mail nem telefone do cliente. O GA4 da Movepark
+            continua recebendo tudo.
           </p>
         </Section>
       )}

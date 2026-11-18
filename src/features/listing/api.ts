@@ -84,6 +84,11 @@ export type ListingDetail = {
     /** Onde a reserva desta unidade fecha (E0.14). Fonte primária das capacidades (ADR-009). */
     checkout_mode: string;
     /**
+     * ID da métrica do GA4 do parceiro (`G-...`), que recebe cópia dos eventos da ficha (bloco
+     * `partner` do `view_item` e do `add_to_cart`). Nulo ou ausente = só o GA4 da Movepark.
+     */
+    ga4_measurement_id?: string | null;
+    /**
      * A unidade opera o transfer com a Go2Park (rastreio da van em tempo real). Fato da unidade,
      * não promessa de transação: renderiza também em checkout externo, que é onde estão as três
      * unidades com o contrato hoje.
@@ -145,7 +150,7 @@ const baseSelect = `
     id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours, is_24h,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
-    review_avg, review_count, photos, is_draft,
+    review_avg, review_count, photos, is_draft, ga4_measurement_id,
     company:company!inner(id, slug, name, legal_name, tax_id, created_at),
     destination:destination!inner(seo_label, short_name, name, type, city, code, public_slug),
     amenities:location_amenity(
@@ -260,6 +265,7 @@ export async function fetchListing(
       slug: m.location.slug,
       public_slug: m.location.public_slug ?? null,
       public_name: m.location.public_name ?? null,
+      ga4_measurement_id: m.location.ga4_measurement_id ?? null,
       name: m.location.name,
       // Default 'hub' na leitura: a coluna nasceu com esse default e ler ausência como
       // 'external' apagaria a página de toda unidade nativa se o select falhasse.

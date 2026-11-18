@@ -46,6 +46,7 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
       destination: { code: "GRU", name: "Aeroporto de Guarulhos" },
       ads_conversion_id: null,
       ads_conversion_label: null,
+      ga4_measurement_id: null,
     },
     items: [
       {

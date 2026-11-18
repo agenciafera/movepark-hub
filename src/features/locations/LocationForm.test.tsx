@@ -213,4 +213,52 @@ describe("LocationForm — seção Conversão e mídia paga", () => {
       expect(screen.getByText(/Informe o rótulo junto com o ID de conversão/i)).toBeInTheDocument();
     });
   });
+
+  it("mostra o campo de ID do GA4 do parceiro no full scope", () => {
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    expect(screen.getByLabelText(/ID do GA4 do parceiro/i)).toBeInTheDocument();
+  });
+
+  it("o ID do GA4 digitado em minúsculas sobe para maiúsculas", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    const campo = screen.getByLabelText(/ID do GA4 do parceiro/i);
+    await user.click(campo);
+    await user.paste("g-ab12cd34ef");
+    expect(campo).toHaveValue("G-AB12CD34EF");
+  });
+
+  it("id do Google Ads no campo do GA4 não salva e diz de onde ele é", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <LocationForm
+        open
+        companyId="company-1"
+        location={location}
+        onOpenChange={() => {}}
+        editableScope="full"
+      />,
+    );
+    await user.type(screen.getByLabelText(/ID do GA4 do parceiro/i), "AW-17302388529");
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => {
+      expect(screen.getByText(/O ID do GA4 começa com G-/i)).toBeInTheDocument();
+    });
+  });
 });

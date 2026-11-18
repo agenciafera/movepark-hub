@@ -190,13 +190,43 @@ export function validateAdsConversion(id: string, label: string): string | null 
   return null;
 }
 
+/**
+ * ID da métrica do GA4 do parceiro (`G-` + letras maiúsculas e dígitos), que recebe uma cópia dos
+ * eventos da unidade. A regex espelha a constraint `location_ga4_measurement_id_format`.
+ */
+export const GA4_MEASUREMENT_ID_RE = /^G-[A-Z0-9]{6,}$/;
+
+/**
+ * Devolve o ID da métrica normalizado, ou null quando o texto não é um.
+ *
+ * Aceita o id como o GA4 mostra, com espaço sobrando e em minúsculas (quem digita de cabeça
+ * escreve `g-ab12...`). Recusa o que cai aqui por confusão: id de tag do Google Ads (`AW-...`),
+ * container do GTM (`GTM-...`), Universal Analytics (`UA-...`) e o id numérico da propriedade,
+ * que aparece na mesma tela do GA4 e não serve para enviar evento.
+ */
+export function normalizarIdGa4(valor: unknown): string | null {
+  const id = String(valor ?? "")
+    .replace(/\s+/g, "")
+    .toUpperCase();
+  return GA4_MEASUREMENT_ID_RE.test(id) ? id : null;
+}
+
+/** Vazio passa (unidade sem GA4 de parceiro). Preenchido, tem que ser um ID da métrica. */
+export function validateGa4MeasurementId(id: string): string | null {
+  if (id.trim() === "") return null;
+  if (normalizarIdGa4(id) === null)
+    return "O ID do GA4 começa com G-, como G-AB12CD34EF. AW- é do Google Ads e GTM- é do Tag Manager.";
+  return null;
+}
+
 /** Campos que a validação e a âncora de erro conhecem. */
 export type LocationFieldError =
   | "name"
   | "shuttleFrequency"
   | "shuttleToTerminal"
   | "photos"
-  | "adsConversion";
+  | "adsConversion"
+  | "ga4MeasurementId";
 
 type Options = {
   companyId: string;
@@ -236,6 +266,8 @@ type Snapshot = {
   /** Conversão do Google Ads por unidade (Manager): id da conta e rótulo da ação. */
   adsConversionId: string;
   adsConversionLabel: string;
+  /** ID da métrica do GA4 do parceiro (Manager): recebe cópia dos eventos da unidade. */
+  ga4MeasurementId: string;
 };
 
 /**
@@ -284,6 +316,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [amenities, setAmenities_] = React.useState<string[]>([]);
   const [adsConversionId, setAdsConversionId] = React.useState("");
   const [adsConversionLabel, setAdsConversionLabel] = React.useState("");
+  const [ga4MeasurementId, setGa4MeasurementId] = React.useState("");
   const [errors, setErrors] = React.useState<Partial<Record<LocationFieldError, string>>>({});
 
   // Fonte única do "estado original": `reset` aplica isto e `isDirty` compara com
@@ -337,6 +370,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       amenities: amenitiesData ?? [],
       adsConversionId: location?.ads_conversion_id ?? "",
       adsConversionLabel: location?.ads_conversion_label ?? "",
+      ga4MeasurementId: location?.ga4_measurement_id ?? "",
     }),
     [location, amenitiesData],
   );
@@ -368,6 +402,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setExternalRef(baseline.externalRef);
     setAdsConversionId(baseline.adsConversionId);
     setAdsConversionLabel(baseline.adsConversionLabel);
+    setGa4MeasurementId(baseline.ga4MeasurementId);
     setErrors({});
     // amenidades chegam depois (query própria); o efeito abaixo semeia quando vierem.
   }, [baseline]);
@@ -406,6 +441,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     amenities,
     adsConversionId,
     adsConversionLabel,
+    ga4MeasurementId,
   };
 
   // Compara ordenando amenidades (ordem não importa) e mantendo a de fotos (a
@@ -430,6 +466,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     if (!operatorMode) {
       const ads = validateAdsConversion(adsConversionId, adsConversionLabel);
       if (ads) next.adsConversion = ads;
+      const ga4 = validateGa4MeasurementId(ga4MeasurementId);
+      if (ga4) next.ga4MeasurementId = ga4;
     }
     return next;
   }
@@ -441,6 +479,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     shuttleToTerminal: "shuttle-terminal",
     photos: "photos-field",
     adsConversion: "ads-conversion-id",
+    ga4MeasurementId: "ga4-measurement-id",
   };
 
   async function submit(e: React.FormEvent) {
@@ -489,6 +528,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       // `AW-` e o snippet inteiro, o banco recebe só o número, que é o que o GTM sabe ler.
       ads_conversion_id: normalizarIdConversaoAds(adsConversionId),
       ads_conversion_label: normalizarRotuloConversaoAds(adsConversionLabel),
+      // Vazio vira null; preenchido vai em maiúsculas, que é como a constraint aceita.
+      ga4_measurement_id: normalizarIdGa4(ga4MeasurementId),
       latitude,
       longitude,
       photos,
@@ -637,6 +678,11 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
        */
       setAdsConversionLabel: (v: string) => {
         setAdsConversionLabel(normalizarRotuloConversaoAds(v) ?? v);
+      },
+      ga4MeasurementId,
+      /** Normaliza quando o texto já é um id; no meio da digitação fica como a pessoa escreveu. */
+      setGa4MeasurementId: (v: string) => {
+        setGa4MeasurementId(normalizarIdGa4(v) ?? v);
       },
     },
   };

@@ -13,7 +13,7 @@ import { HowToArrive } from "@/features/listing/HowToArrive";
 import { TerminalDistances } from "@/features/listing/TerminalDistances";
 import { ReservationCard } from "@/features/listing/ReservationCard";
 import { trackEcommerce } from "@/lib/analytics";
-import { listingEcommerce } from "@/lib/analytics-ecommerce";
+import { listingEcommerce, partnerFromListing } from "@/lib/analytics-ecommerce";
 import { ListingStickyBar } from "@/features/listing/ListingStickyBar";
 import { aPartirDe, type PriceShowcase, type ReservationSummary } from "@/features/listing/reservation.logic";
 import { ListingTrustBar } from "@/features/listing/ListingTrustBar";
@@ -138,6 +138,7 @@ export default function ListingPage() {
     trackEcommerce(
       "view_item",
       listingEcommerce(listing, entrada ? { total: entrada.total, days: entrada.days } : null),
+      { partner: partnerFromListing(listing) },
     );
   }, [listing, showcase, showcasePending]);
 

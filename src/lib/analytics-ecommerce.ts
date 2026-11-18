@@ -279,11 +279,17 @@ export function purchaseEcommerce(booking: BookingForCheckout): Ecommerce {
 }
 
 /**
- * O parceiro da compra, fora de `ecommerce`, para o GTM decidir conversão por unidade sem fatiar
- * string. Os slugs identificam a unidade (`location.slug` só é único dentro da empresa); os
- * campos `ads_*` são a conta do Google Ads do parceiro, lidos do cadastro da unidade. A tag
- * genérica do GTM dispara quando `ads_conversion_id` vem preenchido e manda a conversão para ela.
- * Ver docs/specs/analytics-ecommerce.md §3.1.
+ * O parceiro do evento, fora de `ecommerce`, para o GTM decidir por unidade sem fatiar string. Os
+ * slugs identificam a unidade (`location.slug` só é único dentro da empresa); os campos `ads_*`
+ * são a conta do Google Ads do parceiro e `ga4_measurement_id` é o GA4 dele, todos lidos do
+ * cadastro da unidade. No GTM, uma tag genérica manda a conversão de compra para a conta de Ads
+ * quando `ads_conversion_id` vem preenchido, e outra manda uma cópia do evento para o GA4 do
+ * parceiro quando `ga4_measurement_id` vem preenchido.
+ *
+ * O bloco vai SEMPRE inteiro nos cinco eventos da unidade, com `null` no que a unidade não tem.
+ * O GTM guarda o último valor de cada chave enquanto a página não recarrega, e o Hub é página
+ * única: sem o `null` explícito, o GA4 do parceiro visto antes receberia o evento do seguinte.
+ * Ver docs/specs/analytics-ecommerce.md §3.1 e §3.2.
  */
 export type Partner = {
   company_slug: string;
@@ -291,7 +297,23 @@ export type Partner = {
   destination_code: string | null;
   ads_conversion_id: string | null;
   ads_conversion_label: string | null;
+  ga4_measurement_id: string | null;
 };
+
+/**
+ * O parceiro da ficha, para o `view_item` e o `add_to_cart`. A conta de Ads vai nula de
+ * propósito: conversão de Ads é só na compra, e a ficha nem carrega esses dois campos.
+ */
+export function partnerFromListing(listing: Pick<ListingDetail, "company" | "location">): Partner {
+  return {
+    company_slug: listing.company.slug,
+    location_slug: listing.location.slug,
+    destination_code: listing.location.destination?.code ?? null,
+    ads_conversion_id: null,
+    ads_conversion_label: null,
+    ga4_measurement_id: listing.location.ga4_measurement_id ?? null,
+  };
+}
 
 export function partnerFromBooking(
   booking: Pick<BookingForCheckout, "location">,
@@ -305,6 +327,7 @@ export function partnerFromBooking(
     destination_code: loc.destination?.code ?? null,
     ads_conversion_id: complete ? loc.ads_conversion_id : null,
     ads_conversion_label: complete ? loc.ads_conversion_label : null,
+    ga4_measurement_id: loc.ga4_measurement_id ?? null,
   };
 }
 

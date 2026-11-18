@@ -15,7 +15,7 @@ import { useAuth } from "@/auth/context";
 import { formatBRL, formatDuration } from "@/lib/format";
 import { originFromSrc } from "@/lib/bookingOrigin";
 import { trackEcommerce } from "@/lib/analytics";
-import { listingEcommerce } from "@/lib/analytics-ecommerce";
+import { listingEcommerce, partnerFromListing } from "@/lib/analytics-ecommerce";
 import { bookingAttributionPayload } from "@/lib/utm";
 import { gaIdsPayload } from "@/lib/ga-cookie";
 import {
@@ -290,7 +290,7 @@ export function ReservationCard({
           },
           applied?.code ?? null,
         ),
-        { user_id: session?.userId },
+        { user_id: session?.userId, partner: partnerFromListing(listing) },
       );
       navigate(`/checkout/${result.code}`);
     } catch (err) {

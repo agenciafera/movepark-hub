@@ -12,6 +12,8 @@ import {
   validateAdsConversion,
   normalizarIdConversaoAds,
   normalizarRotuloConversaoAds,
+  normalizarIdGa4,
+  validateGa4MeasurementId,
 } from "./useLocationForm";
 
 describe("statusFieldFrom / statusFieldToPayload (Rascunho como status na tela)", () => {
@@ -249,5 +251,40 @@ describe("conversão do Google Ads por unidade (splitAdsSnippet / validateAdsCon
   });
   it("o par no formato passa", () => {
     expect(validateAdsConversion("326904374", "EaA6CMu82aYbELbU8JsB")).toBeNull();
+  });
+});
+
+describe("ID do GA4 do parceiro (normalizarIdGa4 / validateGa4MeasurementId)", () => {
+  // Espelha a constraint `location_ga4_measurement_id_format`. Id errado aqui é tag que dispara e
+  // não registra nada, em silêncio: a mesma falha que o id do Ads teve até 18/11/2026.
+  it("o ID da métrica passa inteiro", () => {
+    expect(normalizarIdGa4("G-AB12CD34EF")).toBe("G-AB12CD34EF");
+  });
+  it("sobe para maiúsculas e tira espaço sobrando", () => {
+    expect(normalizarIdGa4("  g-ab12cd34ef ")).toBe("G-AB12CD34EF");
+    expect(normalizarIdGa4("G- AB12CD34EF")).toBe("G-AB12CD34EF");
+  });
+  it("recusa id de outro produto do Google", () => {
+    expect(normalizarIdGa4("AW-17302388529")).toBeNull();
+    expect(normalizarIdGa4("GTM-KHBBZT9")).toBeNull();
+    expect(normalizarIdGa4("UA-12345678-1")).toBeNull();
+    expect(normalizarIdGa4("GT-MK5T7H2J")).toBeNull();
+  });
+  it("recusa o id numérico da propriedade e id curto demais", () => {
+    expect(normalizarIdGa4("284173242")).toBeNull();
+    expect(normalizarIdGa4("G-AB12")).toBeNull();
+  });
+  it("vazio, nulo e indefinido viram null, não string vazia", () => {
+    expect(normalizarIdGa4("")).toBeNull();
+    expect(normalizarIdGa4(null)).toBeNull();
+    expect(normalizarIdGa4(undefined)).toBeNull();
+  });
+  it("campo vazio é válido: a unidade não manda eventos para GA4 de parceiro", () => {
+    expect(validateGa4MeasurementId("")).toBeNull();
+    expect(validateGa4MeasurementId("   ")).toBeNull();
+  });
+  it("id no formato passa; id de Ads é recusado dizendo de onde ele é", () => {
+    expect(validateGa4MeasurementId("g-ab12cd34ef")).toBeNull();
+    expect(validateGa4MeasurementId("AW-17302388529")).toMatch(/AW- é do Google Ads/);
   });
 });

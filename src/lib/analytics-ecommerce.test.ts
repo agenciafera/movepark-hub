@@ -11,6 +11,7 @@ import {
   markPurchaseTracked,
   paymentEcommerce,
   partnerFromBooking,
+  partnerFromListing,
   purchaseEcommerce,
   resultsSignature,
   selectItemEcommerce,
@@ -134,6 +135,7 @@ function reserva(over: Partial<BookingForCheckout> = {}): BookingForCheckout {
       destination: { code: "GRU", name: "Aeroporto de Guarulhos" },
       ads_conversion_id: null,
       ads_conversion_label: null,
+      ga4_measurement_id: null,
     },
     items: [
       {
@@ -390,6 +392,7 @@ describe("partner: de quem é a compra, e para qual conta de Ads vai a conversã
       destination_code: "GRU",
       ads_conversion_id: "AW-326904374",
       ads_conversion_label: "EaA6CMu82aYbELbU8JsB",
+      ga4_measurement_id: null,
     });
   });
   it("sem conta própria, os campos de Ads vão nulos e a tag genérica não dispara", () => {
@@ -404,5 +407,36 @@ describe("partner: de quem é a compra, e para qual conta de Ads vai a conversã
     const p = partnerFromBooking(b);
     expect(p.ads_conversion_id).toBeNull();
     expect(p.ads_conversion_label).toBeNull();
+  });
+});
+
+describe("partner: para qual GA4 de parceiro vai a cópia do evento", () => {
+  it("a reserva leva o ID do GA4 da unidade, independente da conta de Ads", () => {
+    const b = reserva();
+    b.location.ga4_measurement_id = "G-AB12CD34EF";
+    const p = partnerFromBooking(b);
+    expect(p.ga4_measurement_id).toBe("G-AB12CD34EF");
+    expect(p.ads_conversion_id).toBeNull();
+  });
+  it("a ficha leva o ID do GA4 e os slugs, e nunca a conta de Ads", () => {
+    const f = ficha();
+    f.location.ga4_measurement_id = "G-AB12CD34EF";
+    expect(partnerFromListing(f)).toEqual({
+      company_slug: "aerovalet",
+      location_slug: "guarulhos",
+      destination_code: "GRU",
+      ads_conversion_id: null,
+      ads_conversion_label: null,
+      ga4_measurement_id: "G-AB12CD34EF",
+    });
+  });
+  // O GTM guarda o último valor de cada chave até a página recarregar, e o Hub é página única.
+  // Se a unidade sem GA4 mandasse o bloco sem a chave, o evento dela iria para o GA4 do parceiro
+  // cuja ficha foi vista antes.
+  it("unidade sem GA4 manda null explícito, nunca a chave ausente", () => {
+    const daFicha = partnerFromListing(ficha());
+    const daReserva = partnerFromBooking(reserva());
+    expect(daFicha).toHaveProperty("ga4_measurement_id", null);
+    expect(daReserva).toHaveProperty("ga4_measurement_id", null);
   });
 });

@@ -3519,6 +3519,7 @@ export type Database = {
           directions_text: string | null
           email: string | null
           external_ref: string | null
+          ga4_measurement_id: string | null
           geog: unknown
           go2park_enabled: boolean
           go2park_whatsapp: string | null
@@ -3568,6 +3569,7 @@ export type Database = {
           directions_text?: string | null
           email?: string | null
           external_ref?: string | null
+          ga4_measurement_id?: string | null
           geog?: unknown
           go2park_enabled?: boolean
           go2park_whatsapp?: string | null
@@ -3617,6 +3619,7 @@ export type Database = {
           directions_text?: string | null
           email?: string | null
           external_ref?: string | null
+          ga4_measurement_id?: string | null
           geog?: unknown
           go2park_enabled?: boolean
           go2park_whatsapp?: string | null
