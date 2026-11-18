@@ -1,5 +1,6 @@
 import { fetchUnitFares } from "@/features/fares/api";
 import type { FareOption } from "@/lib/fares";
+import type { BookingAttribution } from "@/lib/utm";
 import * as React from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -737,7 +738,7 @@ export function useCreateBooking() {
       utm_medium?: string | null;
       utm_campaign?: string | null;
       /** Prova da origem (E0.3.12): quando clicou, por onde entrou, de onde veio. */
-      attribution?: { clicked_at: string; landing_url: string | null; referrer: string | null } | null;
+      attribution?: BookingAttribution | null;
       /** Ids do GA4 (cookies `_ga` e `_ga_<stream>`) para o purchase do servidor casar com a sessão. */
       ga?: { client_id: string | null; session_id: string | null } | null;
     }): Promise<{

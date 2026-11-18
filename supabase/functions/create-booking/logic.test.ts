@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { decidirGa, decidirUtm, montarArgsRpc, montarAtribuicao, validarEntrada } from "./logic.ts";
+import { decidirGa, decidirUtm, MAX_CHEGADAS, montarArgsRpc, montarAtribuicao, montarChegadas, validarEntrada } from "./logic.ts";
 
 const BASE = {
   location_parking_type_id: "lpt-1",
@@ -148,6 +148,73 @@ Deno.test("a prova carrega SÓ os seis campos, mesmo com lixo no corpo", () => {
 
 Deno.test("UTM gigante é cortado", () => {
   assertEquals(montarAtribuicao({ ...BASE, utm_source: "a".repeat(999) })?.utm_source?.length, 200);
+});
+
+// ── chegada de outro site, sem UTM (18/11/2026) ──────────────────────────────
+Deno.test("sem UTM mas vindo de outro site: a prova leva a chegada e nada do clique", () => {
+  assertEquals(
+    montarAtribuicao({
+      ...BASE,
+      attribution: {
+        clicked_at: "2026-11-17T12:00:00Z",
+        referrer: "https://pareseguro.com/",
+        referrals: [{ referrer: "https://pareseguro.com/", arrived_at: "2026-11-17T12:00:00Z", landing_url: "/p/gru/pare-seguro" }],
+      },
+    }),
+    {
+      utm_source: null,
+      utm_medium: null,
+      utm_campaign: null,
+      clicked_at: null,
+      landing_url: null,
+      referrer: null,
+      referrals: [{ referrer: "https://pareseguro.com/", arrived_at: "2026-11-17T12:00:00.000Z", landing_url: "/p/gru/pare-seguro" }],
+    },
+  );
+});
+
+Deno.test("chegada sem hora ou com endereço que não é web é descartada", () => {
+  assertEquals(
+    montarChegadas([
+      { referrer: "https://pareseguro.com/" },
+      { referrer: "javascript:alert(1)", arrived_at: "2026-11-17T12:00:00Z" },
+      { referrer: "https://pareseguro.com/", arrived_at: "ontem" },
+      "lixo",
+      null,
+    ]),
+    [],
+  );
+  assertEquals(montarAtribuicao({ ...BASE, attribution: { referrals: [{ referrer: "https://x.com/" }] } }), null);
+  assertEquals(montarChegadas({ referrer: "https://x.com/" }), []);
+});
+
+Deno.test("chegadas vão da mais nova para a mais velha, no máximo cinco, só com os três campos", () => {
+  const raw = Array.from({ length: 8 }, (_, i) => ({
+    referrer: `https://site${i}.com/`,
+    arrived_at: `2026-11-1${i}T12:00:00Z`,
+    landing_url: "//evil.com",
+    take_rate_bps: 0,
+  }));
+  const r = montarChegadas(raw);
+  assertEquals(r.length, MAX_CHEGADAS);
+  assertEquals(r[0].referrer, "https://site7.com/");
+  assertEquals(r[4].referrer, "https://site3.com/");
+  assertEquals(r[0].landing_url, null);
+  assertEquals(Object.keys(r[0]).sort(), ["arrived_at", "landing_url", "referrer"]);
+});
+
+Deno.test("com UTM e chegada, a prova leva os dois", () => {
+  const a = montarAtribuicao({
+    ...BASE,
+    utm_source: "google",
+    attribution: {
+      clicked_at: "2026-11-10T12:00:00Z",
+      referrer: "https://pareseguro.com/",
+      referrals: [{ referrer: "https://www.google.com/", arrived_at: "2026-11-12T12:00:00Z" }],
+    },
+  });
+  assertEquals(a?.referrer, "https://pareseguro.com/");
+  assertEquals(a?.referrals?.length, 1);
 });
 
 Deno.test("decidirGa: client_id e session_id no formato do GA viram patch", () => {

@@ -60,6 +60,8 @@ export type PartnerChannels = {
     id: string;
     name: string;
     utm_sources: string[];
+    /** Sites de onde o cliente vem (18/11/2026). Ausente em resposta anterior à migration. */
+    referrer_domains?: string[];
     match_white_label: boolean;
     take_rate_bps: number;
     valid_until: string | null;

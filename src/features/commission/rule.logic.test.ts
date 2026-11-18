@@ -5,7 +5,9 @@ import {
   formFromRule,
   installmentsLabel,
   installmentsPreview,
+  normalizeDomain,
   parseInstallmentsPair,
+  parseReferrerDomains,
   parseUtmSources,
   ruleStatus,
   splitExample,
@@ -13,6 +15,7 @@ import {
   validateRuleForm,
 } from "./rule.logic";
 import type { CommissionRule } from "@/types/domain";
+import { SITE_URL } from "@/lib/site";
 
 describe("parseUtmSources", () => {
   it("normaliza igual ao trigger do banco: minúsculas, sem vazio, sem repetido, ordenado", () => {
@@ -32,6 +35,7 @@ describe("validateRuleForm", () => {
         name: "Site do parceiro",
         company_id: "c1",
         utm_sources: ["abbapark"],
+        referrer_domains: [],
         match_white_label: false,
         take_rate_bps: 500,
         gateway_fee_payer: "partner",
@@ -77,6 +81,31 @@ describe("validateRuleForm", () => {
     expect(validateRuleForm({ ...ok, windowDays: " 30 " })).toMatchObject({ payload: { attribution_window_days: 30 } });
   });
 
+  it("site de origem: normaliza, aceita regra só de site e recusa o que não é domínio", () => {
+    const v = validateRuleForm({
+      ...ok,
+      utmSourcesText: "",
+      referrerDomainsText: "https://www.PareSeguro.com/reserva, pareseguro.com\nreservas.pareseguro.com.br",
+    });
+    expect(v.ok && v.payload.referrer_domains).toEqual(["pareseguro.com", "reservas.pareseguro.com.br"]);
+    expect(validateRuleForm({ ...ok, referrerDomainsText: "pare seguro" })).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/não é um endereço de site/),
+    });
+    expect(validateRuleForm({ ...ok, referrerDomainsText: "localhost" })).toMatchObject({ ok: false });
+    expect(validateRuleForm({ ...ok, utmSourcesText: "", referrerDomainsText: "" })).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/site de origem/),
+    });
+  });
+
+  it("o site da própria Movepark não vale como origem do parceiro", () => {
+    expect(validateRuleForm({ ...ok, referrerDomainsText: SITE_URL })).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/própria Movepark/),
+    });
+  });
+
   it("white-label sem UTM é regra válida", () => {
     const v = validateRuleForm({ ...ok, utmSourcesText: "", matchWhiteLabel: true });
     expect(v.ok && v.payload.utm_sources).toEqual([]);
@@ -89,10 +118,19 @@ describe("validateRuleForm", () => {
   });
 });
 
+describe("normalizeDomain e parseReferrerDomains", () => {
+  it("tiram esquema, www, porta, caminho, query e hash, igual ao banco", () => {
+    expect(normalizeDomain("https://WWW.Ref-A-Site.com.br:443/reserva?x=1#y")).toBe("ref-a-site.com.br");
+    expect(normalizeDomain("pareseguro.com/")).toBe("pareseguro.com");
+    expect(normalizeDomain("  ")).toBeNull();
+    expect(parseReferrerDomains("pareseguro.com; PARESEGURO.COM , ,")).toEqual({ domains: ["pareseguro.com"], invalid: [], own: [] });
+  });
+});
+
 describe("formFromRule", () => {
   it("ida e volta: o que sai do banco entra no formulário e valida no mesmo payload", () => {
     const rule = {
-      id: "r1", company_id: "c1", name: "Site", utm_sources: ["abbapark", "abbapark-insta"], match_white_label: true,
+      id: "r1", company_id: "c1", name: "Site", utm_sources: ["abbapark", "abbapark-insta"], referrer_domains: ["abbapark.com.br"], match_white_label: true,
       take_rate_bps: 750, gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, attribution_window_days: 14, is_active: true,
       valid_from: "2026-10-01T03:00:00.000Z", valid_until: null,
       installments_max: null, installments_interest_free: null, anticipation_fee_payer: null,
@@ -100,7 +138,7 @@ describe("formFromRule", () => {
     } satisfies CommissionRule;
     const v = validateRuleForm(formFromRule(rule));
     expect(v.ok && v.payload).toMatchObject({
-      id: "r1", company_id: "c1", utm_sources: ["abbapark", "abbapark-insta"], take_rate_bps: 750,
+      id: "r1", company_id: "c1", utm_sources: ["abbapark", "abbapark-insta"], referrer_domains: ["abbapark.com.br"], take_rate_bps: 750,
       gateway_fee_payer: "partner", chargeback_bearer: "movepark", priority: 2, attribution_window_days: 14, valid_from: "2026-10-01T03:00:00.000Z",
     });
   });
@@ -179,7 +217,7 @@ describe("pagador da antecipação na regra (E0.3.14)", () => {
   });
   it("lê a regra do banco de volta no formulário", () => {
     const rule = {
-      id: "r1", company_id: "c1", name: "Site", utm_sources: ["site"], match_white_label: false,
+      id: "r1", company_id: "c1", name: "Site", utm_sources: ["site"], referrer_domains: [], match_white_label: false,
       take_rate_bps: 1000, gateway_fee_payer: "movepark", chargeback_bearer: "each", priority: 0, attribution_window_days: null,
       is_active: true, valid_from: null, valid_until: null, installments_max: null, installments_interest_free: null,
       anticipation_fee_payer: "movepark", created_at: "", updated_at: "", created_by: null, deleted_at: null,

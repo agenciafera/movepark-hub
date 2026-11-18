@@ -55,29 +55,63 @@
       })();
     </script>
     <!-- Canal de parceiro sem WhatsApp da Movepark. Quem chega pelo site de um
-         parceiro (utm_source na lista abaixo) é cliente que ele trouxe, e a bolinha
-         flutuante de WhatsApp puxaria a conversa para a Movepark no meio da venda
-         dele. Pedido da Pare Seguro (12/11/2026). O script marca o <html> com
-         `data-canal-parceiro` antes do paint, e a `WhatsappBubble` some por CSS:
-         decidir no React faria a bolinha aparecer no HTML pré-renderizado e sumir só
-         depois da hidratação. Segue a mesma atribuição de src/lib/utm.ts: vale a UTM
-         da URL e, sem ela, a guardada em `mp_utm` por até 30 dias (último clique, ou
-         seja, quem volta por outra campanha vê a bolinha de novo). Contrato em
-         src/test/canal-parceiro.contract.test.ts. -->
+         parceiro (utm_source em `canais`, ou vindo de um site em `dominios`) é
+         cliente que ele trouxe, e a bolinha flutuante de WhatsApp puxaria a
+         conversa para a Movepark no meio da venda dele. Pedido da Pare Seguro
+         (12/11/2026); o site de origem entrou em 18/11/2026. O script marca o
+         <html> com `data-canal-parceiro` antes do paint, e a `WhatsappBubble` some
+         por CSS: decidir no React faria a bolinha aparecer no HTML pré-renderizado
+         e sumir só depois da hidratação. Segue a mesma atribuição de
+         src/lib/utm.ts: vale a chegada atual (UTM da URL ou site de onde veio) e,
+         sem ela, o clique guardado em `mp_utm` e as chegadas sem UTM em `mp_ref`,
+         por até 30 dias (último clique: quem volta por outra campanha vê a
+         bolinha de novo). Contrato em src/test/canal-parceiro.contract.test.ts. -->
     <script>
       (function () {
         try {
           var canais = ["pareseguro"];
+          var dominios = ["pareseguro.com"];
+          var janela = 30 * 86400000;
+          var host = function (u) {
+            try {
+              return new URL(u).hostname.toLowerCase().replace(/^www\./, "");
+            } catch (e) {
+              return "";
+            }
+          };
+          var doSite = function (u) {
+            var h = host(u);
+            for (var i = 0; i < dominios.length; i++) {
+              var d = dominios[i];
+              if (h && (h === d || h.slice(-(d.length + 1)) === "." + d)) return true;
+            }
+            return false;
+          };
+          var doCanal = function (fonte) {
+            return !!fonte && canais.indexOf(String(fonte).trim().toLowerCase()) !== -1;
+          };
+          var recente = function (iso) {
+            var t = iso ? new Date(iso).getTime() : NaN;
+            return Date.now() - t <= janela;
+          };
           var q = new URLSearchParams(location.search);
-          var fonte = null;
+          var parceiro = false;
           if (q.get("utm_source") || q.get("utm_medium") || q.get("utm_campaign")) {
-            fonte = q.get("utm_source");
+            parceiro = doCanal(q.get("utm_source")) || doSite(document.referrer);
+          } else if (doSite(document.referrer)) {
+            parceiro = true;
           } else {
             var salvo = JSON.parse(localStorage.getItem("mp_utm") || "null");
-            var quando = salvo && salvo.clicked_at ? new Date(salvo.clicked_at).getTime() : NaN;
-            if (Date.now() - quando <= 30 * 86400000) fonte = salvo.utm_source;
+            if (salvo && recente(salvo.clicked_at)) {
+              parceiro = doCanal(salvo.utm_source) || doSite(salvo.referrer);
+            }
+            var chegadas = JSON.parse(localStorage.getItem("mp_ref") || "[]");
+            for (var j = 0; !parceiro && chegadas && j < chegadas.length; j++) {
+              var c = chegadas[j];
+              if (c && recente(c.arrived_at) && doSite(c.referrer)) parceiro = true;
+            }
           }
-          if (fonte && canais.indexOf(String(fonte).trim().toLowerCase()) !== -1) {
+          if (parceiro) {
             document.documentElement.setAttribute("data-canal-parceiro", "");
           }
         } catch (e) {}

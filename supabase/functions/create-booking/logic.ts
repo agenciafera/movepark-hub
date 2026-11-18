@@ -32,8 +32,11 @@ export type CreateBookingInput = {
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;
-  /** Prova da origem (E0.3.12): quando clicou, por onde entrou e de onde veio. */
-  attribution?: { clicked_at?: unknown; landing_url?: unknown; referrer?: unknown } | null;
+  /**
+   * Prova da origem (E0.3.12): quando clicou, por onde entrou e de onde veio. `referrals` são as
+   * chegadas SEM UTM vindas de outro site (18/11/2026), que a regra reconhece pelo domínio.
+   */
+  attribution?: { clicked_at?: unknown; landing_url?: unknown; referrer?: unknown; referrals?: unknown } | null;
   /** Ids do GA4 (cookies `_ga` e `_ga_<stream>`), para o purchase do servidor casar com a sessão. */
   ga?: { client_id?: unknown; session_id?: unknown } | null;
   [extra: string]: unknown;
@@ -100,6 +103,9 @@ export function decidirUtm(
   };
 }
 
+/** Chegada sem UTM vinda de outro site: de onde, quando e por qual página entrou. */
+export type Chegada = { referrer: string; arrived_at: string; landing_url: string | null };
+
 export type Atribuicao = {
   utm_source: string | null;
   utm_medium: string | null;
@@ -107,12 +113,52 @@ export type Atribuicao = {
   clicked_at: string | null;
   landing_url: string | null;
   referrer: string | null;
+  /** Só aparece quando há chegada válida. A mais nova primeiro, no máximo `MAX_CHEGADAS`. */
+  referrals?: Chegada[];
 };
+
+/** Quantas chegadas o banco confere. O navegador guarda o mesmo número (src/lib/utm.ts). */
+export const MAX_CHEGADAS = 5;
 
 function texto(v: unknown, max: number): string | null {
   if (typeof v !== "string") return null;
   const t = v.trim();
   return t ? t.slice(0, max) : null;
+}
+
+function dataIso(v: unknown): string | null {
+  const raw = texto(v, 40);
+  const d = raw ? new Date(raw) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toISOString() : null;
+}
+
+function caminho(v: unknown): string | null {
+  const t = texto(v, 500);
+  return t && t.startsWith("/") && !t.startsWith("//") ? t : null;
+}
+
+function enderecoWeb(v: unknown): string | null {
+  const t = texto(v, 500);
+  return t && /^https?:\/\//i.test(t) ? t : null;
+}
+
+/**
+ * As chegadas sem UTM (18/11/2026). Cada uma precisa de endereço http(s) E de hora legível: sem a
+ * hora não há janela para conferir, e o banco a ignoraria de qualquer jeito. Ordena da mais nova
+ * para a mais velha, porque o banco confere nessa ordem e a primeira que casar vence.
+ */
+export function montarChegadas(raw: unknown): Chegada[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Chegada[] = [];
+  for (const item of raw.slice(0, 20)) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const referrer = enderecoWeb(r.referrer);
+    const arrived_at = dataIso(r.arrived_at);
+    if (!referrer || !arrived_at) continue;
+    out.push({ referrer, arrived_at, landing_url: caminho(r.landing_url) });
+  }
+  return out.sort((x, y) => y.arrived_at.localeCompare(x.arrived_at)).slice(0, MAX_CHEGADAS);
 }
 
 /**
@@ -121,27 +167,27 @@ function texto(v: unknown, max: number): string | null {
  * Mesmo cuidado do patch de UTM: só campos NOMEADOS, cada um com tipo e tamanho conferidos,
  * porque isto vira jsonb gravado com service_role. Data ilegível vira null (o banco trata como
  * "sem data do clique"), página de entrada tem que ser caminho do próprio site e o referrer tem
- * que ser http(s). Sem UTM nenhum não há o que provar: devolve null e a reserva é do Hub, salvo
- * o white-label, que o banco reconhece pela `origin`.
+ * que ser http(s). Sem UTM e sem chegada de outro site não há o que provar: devolve null e a
+ * reserva é do Hub, salvo o white-label, que o banco reconhece pela `origin`.
  */
 export function montarAtribuicao(input: CreateBookingInput): Atribuicao | null {
   const utm_source = texto(input.utm_source, 200);
   const utm_medium = texto(input.utm_medium, 200);
   const utm_campaign = texto(input.utm_campaign, 200);
-  if (!utm_source && !utm_medium && !utm_campaign) return null;
-
   const a = input.attribution && typeof input.attribution === "object" ? input.attribution : {};
-  const clickedRaw = texto(a.clicked_at, 40);
-  const clicked = clickedRaw ? new Date(clickedRaw) : null;
-  const landing = texto(a.landing_url, 500);
-  const referrer = texto(a.referrer, 500);
+  const referrals = montarChegadas(a.referrals);
+  const temUtm = !!(utm_source || utm_medium || utm_campaign);
+  if (!temUtm && referrals.length === 0) return null;
+
   return {
     utm_source,
     utm_medium,
     utm_campaign,
-    clicked_at: clicked && !Number.isNaN(clicked.getTime()) ? clicked.toISOString() : null,
-    landing_url: landing && landing.startsWith("/") && !landing.startsWith("//") ? landing : null,
-    referrer: referrer && /^https?:\/\//i.test(referrer) ? referrer : null,
+    // Os campos do clique só valem junto do UTM: sem ele, não houve clique rastreado.
+    clicked_at: temUtm ? dataIso(a.clicked_at) : null,
+    landing_url: temUtm ? caminho(a.landing_url) : null,
+    referrer: temUtm ? enderecoWeb(a.referrer) : null,
+    ...(referrals.length > 0 ? { referrals } : {}),
   };
 }
 

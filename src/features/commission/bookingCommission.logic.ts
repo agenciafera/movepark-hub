@@ -68,6 +68,15 @@ export function commissionView(b: BookingCommissionLike, formatDateTime: (iso: s
   if (landing) proof.push({ label: "Página de entrada", value: landing });
   const referrer = text(a.referrer);
   if (referrer) proof.push({ label: "Veio de", value: referrer });
+  // Chegadas sem UTM vindas de outro site (18/11/2026), a mais nova primeiro.
+  for (const r of Array.isArray(a.referrals) ? a.referrals.slice(0, 5) : []) {
+    const item = (r && typeof r === "object" ? r : {}) as Record<string, unknown>;
+    const site = text(item.referrer);
+    const at = text(item.arrived_at);
+    if (!site) continue;
+    const when = at && !Number.isNaN(new Date(at).getTime()) ? ` em ${formatDateTime(at)}` : "";
+    proof.push({ label: "Chegou do site", value: `${site}${when}` });
+  }
   if (b.origin === "white_label") proof.push({ label: "Onde reservou", value: "Site white-label do estacionamento" });
 
   return {

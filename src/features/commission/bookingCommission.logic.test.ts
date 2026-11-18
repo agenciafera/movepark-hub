@@ -63,6 +63,29 @@ describe("commissionView", () => {
     ]);
   });
 
+  it("chegada sem UTM de outro site entra na prova, com a hora (18/11/2026)", () => {
+    const v = commissionView(
+      {
+        commission_channel: "Site do Pare Seguro",
+        commission_rule_id: "r1",
+        commission_take_rate_bps: 1200,
+        attribution: {
+          utm_source: null,
+          referrals: [
+            { referrer: "https://pareseguro.com/", arrived_at: "2026-11-17T12:00:00Z" },
+            { referrer: "https://sem-hora.com/" },
+            { arrived_at: "2026-11-17T12:00:00Z" },
+          ],
+        },
+      },
+      fmt,
+    );
+    expect(v.proof).toEqual([
+      { label: "Chegou do site", value: "https://pareseguro.com/ em em 2026-11-17" },
+      { label: "Chegou do site", value: "https://sem-hora.com/" },
+    ]);
+  });
+
   it("white-label sem UTM ainda tem prova: onde reservou", () => {
     const v = commissionView({ origin: "white_label" }, fmt);
     expect(v.proof).toEqual([{ label: "Onde reservou", value: "Site white-label do estacionamento" }]);

@@ -70,6 +70,19 @@ function campoDoClique(attribution: unknown, campo: "utm_source" | "referrer"): 
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+/** O site do clique com UTM e os das chegadas sem UTM (18/11/2026). */
+function sitesDeOrigem(attribution: unknown): string[] {
+  const out: string[] = [];
+  const clique = campoDoClique(attribution, "referrer");
+  if (clique) out.push(clique);
+  const chegadas = attribution && typeof attribution === "object" ? (attribution as Record<string, unknown>).referrals : null;
+  for (const c of Array.isArray(chegadas) ? chegadas : []) {
+    const r = campoDoClique(c, "referrer");
+    if (r) out.push(r);
+  }
+  return out;
+}
+
 /** Primeiro rótulo do domínio do referrer, sem "www." ("https://www.pareseguro.com.br/x" vira "pareseguro"). */
 function nomeDoDominio(referrer: string): string | null {
   try {
@@ -103,9 +116,8 @@ export function partnerSiteLabel(b: PartnerSiteInput): string | null {
   );
   nomes.delete("");
   const utm = b.utm_source?.trim() || campoDoClique(b.attribution, "utm_source");
-  const referrer = campoDoClique(b.attribution, "referrer");
-  const dominio = referrer ? nomeDoDominio(referrer) : null;
-  const casa = [utm, dominio].some((v) => !!v && nomes.has(chaveDeNome(v)));
+  const dominios = sitesDeOrigem(b.attribution).map(nomeDoDominio);
+  const casa = [utm, ...dominios].some((v) => !!v && nomes.has(chaveDeNome(v)));
   return casa ? `Site ${empresa}` : null;
 }
 

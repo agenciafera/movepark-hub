@@ -47,6 +47,7 @@ import {
   formFromRule,
   installmentsLabel,
   installmentsPreview,
+  parseReferrerDomains,
   parseUtmSources,
   ruleStatus,
   splitExample,
@@ -69,7 +70,8 @@ const STATUS_TONE: Record<RuleStatus, "confirmed" | "neutral" | "pending" | "can
 
 /**
  * Regras de comissão por origem da venda (E0.3.12, hub_admin). Cada regra diz de onde a venda
- * tem que vir (utm_source cadastrado, ou o site white-label da empresa) e qual pacote ela recebe:
+ * tem que vir (utm_source cadastrado, site de onde o cliente veio, ou o site white-label da
+ * empresa) e qual pacote ela recebe:
  * comissão, quem paga a taxa do gateway e quem arca com chargeback. Venda que não casa com
  * nenhuma regra segue o padrão da empresa, na tabela logo abaixo.
  */
@@ -146,6 +148,11 @@ export function CommissionRulesCard() {
                             <code key={u} className="rounded bg-surface-soft px-1.5 py-0.5 text-caption text-body">
                               {u}
                             </code>
+                          ))}
+                          {(r.referrer_domains ?? []).map((d) => (
+                            <Badge key={d} tone="neutral">
+                              vindo de {d}
+                            </Badge>
                           ))}
                           {r.match_white_label && <Badge tone="neutral">site white-label</Badge>}
                         </div>
@@ -234,6 +241,7 @@ function RuleDialog({
   const warning = bps == null ? null : feeCoverageWarning(bps, form.feePayer);
   const example = bps == null ? null : splitExample(bps);
   const utms = parseUtmSources(form.utmSourcesText);
+  const sites = parseReferrerDomains(form.referrerDomainsText);
 
   async function submit() {
     const v = validateRuleForm(form);
@@ -305,6 +313,22 @@ function RuleDialog({
             <span className="text-caption text-muted">
               Separe por vírgula. Maiúscula e minúscula não fazem diferença.
               {utms.length > 0 && ` Vai valer para: ${utms.join(", ")}.`}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rule-sites">Sites de origem</Label>
+            <Textarea
+              id="rule-sites"
+              rows={2}
+              value={form.referrerDomainsText}
+              onChange={(e) => set("referrerDomainsText", e.target.value)}
+              placeholder="pareseguro.com"
+            />
+            <span className="text-caption text-muted">
+              O endereço do site que manda o cliente. Quem chega de lá entra na regra, com ou sem UTM no
+              link, e o www e os subdomínios contam junto.
+              {sites.domains.length > 0 && ` Vai valer para: ${sites.domains.join(", ")}.`}
             </span>
           </div>
 

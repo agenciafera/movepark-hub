@@ -25,6 +25,7 @@ const REGRA: CommissionRule = {
   company_id: "c1",
   name: "Site do Abbapark",
   utm_sources: ["abbapark"],
+  referrer_domains: [],
   match_white_label: true,
   take_rate_bps: 500,
   gateway_fee_payer: "partner",
@@ -109,6 +110,30 @@ describe("CommissionRulesCard", () => {
       gateway_fee_payer: "movepark",
       chargeback_bearer: "each",
     });
+  });
+
+  it("cria regra que reconhece só o site de onde o cliente vem", async () => {
+    renderWithProviders(<CommissionRulesCard />);
+    fireEvent.click(screen.getByRole("button", { name: "Nova regra" }));
+    fireEvent.change(screen.getByLabelText("Nome da regra"), { target: { value: "Site do Pare Seguro" } });
+    fireEvent.change(screen.getByLabelText("Sites de origem"), { target: { value: "https://www.PareSeguro.com/" } });
+    fireEvent.change(screen.getByLabelText("Comissão da Movepark (%)"), { target: { value: "12" } });
+    expect(screen.getByText(/Vai valer para: pareseguro\.com\./)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvar regra" }));
+    await waitFor(() => expect(saveRule).toHaveBeenCalledTimes(1));
+    expect(saveRule.mock.calls[0][0]).toMatchObject({
+      name: "Site do Pare Seguro",
+      utm_sources: [],
+      referrer_domains: ["pareseguro.com"],
+      take_rate_bps: 1200,
+    });
+  });
+
+  it("mostra na tabela o site de origem da regra", () => {
+    rulesData.current = [{ ...REGRA, referrer_domains: ["abbapark.com.br"] }];
+    renderWithProviders(<CommissionRulesCard />);
+    expect(screen.getByText("vindo de abbapark.com.br")).toBeInTheDocument();
   });
 
   it("formulário inválido não chega ao banco", async () => {

@@ -11,6 +11,7 @@ const REGRA: RulePayload = {
   name: "Site do parceiro",
   company_id: "c1",
   utm_sources: ["abbapark"],
+  referrer_domains: [],
   match_white_label: true,
   take_rate_bps: 500,
   gateway_fee_payer: "partner",

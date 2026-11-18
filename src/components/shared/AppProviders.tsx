@@ -10,7 +10,7 @@ import { hasSupabaseEnv } from "@/lib/supabase";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { SavedListingsSync } from "@/features/search/SavedListingsSync";
 import { initClarity } from "@/lib/clarity";
-import { captureUtmFromSearch } from "@/lib/utm";
+import { captureAttribution } from "@/lib/utm";
 import { captureCouponFromSearch } from "@/lib/coupon";
 
 function EnvMissing() {
@@ -43,10 +43,11 @@ function EnvMissing() {
 export function AppProviders() {
   const location = useLocation();
 
-  // Atribuição (E2.4.1): captura UTMs da URL (last-touch) pra anexar na reserva.
+  // Atribuição (E2.4.1, E0.3.12): captura UTMs da URL (last-touch) e o site de onde o cliente
+  // veio, pra anexar na reserva.
   // Campanha de cupom: captura ?cupom=/?coupon= (persiste na sessão até o checkout).
   React.useEffect(() => {
-    captureUtmFromSearch(location.search);
+    captureAttribution(location.search);
     captureCouponFromSearch(location.search);
   }, [location.search]);
 

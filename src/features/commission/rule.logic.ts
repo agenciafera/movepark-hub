@@ -6,6 +6,7 @@
 
 import type { CommissionRule } from "@/types/domain";
 import { parseCommissionPct } from "@/routes/manager/finance-commissions.logic";
+import { SITE_URL } from "@/lib/site";
 
 export type FeePayer = "movepark" | "partner";
 export type ChargebackBearer = "each" | "partner" | "movepark";
@@ -33,6 +34,8 @@ export type RuleForm = {
   /** "" = regra global (vale para qualquer empresa). */
   companyId: string;
   utmSourcesText: string;
+  /** Sites de onde o cliente vem (18/11/2026), separados por vírgula. */
+  referrerDomainsText: string;
   matchWhiteLabel: boolean;
   takeRatePct: string;
   feePayer: FeePayer;
@@ -55,6 +58,7 @@ export const EMPTY_RULE_FORM: RuleForm = {
   name: "",
   companyId: "",
   utmSourcesText: "",
+  referrerDomainsText: "",
   matchWhiteLabel: false,
   takeRatePct: "",
   feePayer: "movepark",
@@ -79,11 +83,51 @@ export function parseUtmSources(raw: string): string[] {
   return [...out].sort();
 }
 
+/**
+ * "https://WWW.PareSeguro.com/reserva" vira "pareseguro.com": o mesmo que `commission_domain` faz no
+ * banco, para a tela mostrar exatamente o que vai ficar gravado.
+ */
+export function normalizeDomain(raw: string): string | null {
+  const host = raw
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+    .split("/")[0]
+    .split("?")[0]
+    .split("#")[0]
+    .replace(/^[^@]*@/, "")
+    .replace(/:[0-9]*$/, "")
+    .replace(/\.$/, "")
+    .replace(/^www\./, "");
+  return host || null;
+}
+
+const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+const OWN_DOMAIN = normalizeDomain(SITE_URL) ?? "";
+
+export type ParsedDomains = { domains: string[]; invalid: string[]; own: string[] };
+
+/** "pareseguro.com, https://www.pareseguro.com.br/" → domínios normalizados, inválidos e os nossos. */
+export function parseReferrerDomains(raw: string): ParsedDomains {
+  const ok = new Set<string>();
+  const invalid: string[] = [];
+  const own: string[] = [];
+  for (const part of raw.split(/[\s,;]+/)) {
+    if (!part.trim()) continue;
+    const d = normalizeDomain(part);
+    if (!d || !DOMAIN_RE.test(d)) invalid.push(part.trim());
+    else if (OWN_DOMAIN && (d === OWN_DOMAIN || d.endsWith(`.${OWN_DOMAIN}`))) own.push(d);
+    else ok.add(d);
+  }
+  return { domains: [...ok].sort(), invalid, own };
+}
+
 export type RulePayload = {
   id?: string;
   name: string;
   company_id: string | null;
   utm_sources: string[];
+  referrer_domains: string[];
   match_white_label: boolean;
   take_rate_bps: number;
   gateway_fee_payer: FeePayer;
@@ -107,11 +151,24 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
   const name = f.name.trim();
   if (!name) return { ok: false, error: "Dê um nome à regra. Ele aparece na reserva como o canal da venda." };
   const utm = parseUtmSources(f.utmSourcesText);
+  const sites = parseReferrerDomains(f.referrerDomainsText);
+  if (sites.invalid.length > 0) {
+    return {
+      ok: false,
+      error: `"${sites.invalid[0]}" não é um endereço de site. Use só o domínio, como pareseguro.com.`,
+    };
+  }
+  if (sites.own.length > 0) {
+    return { ok: false, error: `${sites.own[0]} é o site da própria Movepark e não serve como origem do parceiro.` };
+  }
   if (f.matchWhiteLabel && !f.companyId) {
     return { ok: false, error: "Site white-label é sempre de uma empresa: escolha a empresa da regra." };
   }
-  if (!f.matchWhiteLabel && utm.length === 0) {
-    return { ok: false, error: "Informe ao menos um utm_source, ou marque o site white-label da empresa." };
+  if (!f.matchWhiteLabel && utm.length === 0 && sites.domains.length === 0) {
+    return {
+      ok: false,
+      error: "Informe ao menos um utm_source ou um site de origem, ou marque o site white-label da empresa.",
+    };
   }
   const pct = parseCommissionPct(f.takeRatePct);
   if ("error" in pct) return { ok: false, error: pct.error };
@@ -135,6 +192,7 @@ export function validateRuleForm(f: RuleForm): { ok: true; payload: RulePayload 
       name,
       company_id: f.companyId || null,
       utm_sources: utm,
+      referrer_domains: sites.domains,
       match_white_label: f.matchWhiteLabel,
       take_rate_bps: pct.bps,
       gateway_fee_payer: f.feePayer,
@@ -158,6 +216,7 @@ export function formFromRule(r: CommissionRule): RuleForm {
     name: r.name,
     companyId: r.company_id ?? "",
     utmSourcesText: r.utm_sources.join(", "),
+    referrerDomainsText: (r.referrer_domains ?? []).join(", "),
     matchWhiteLabel: r.match_white_label,
     takeRatePct: String(r.take_rate_bps / 100),
     feePayer: r.gateway_fee_payer === "partner" ? "partner" : "movepark",

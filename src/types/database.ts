@@ -1406,6 +1406,7 @@ export type Database = {
           match_white_label: boolean
           name: string
           priority: number
+          referrer_domains: string[]
           take_rate_bps: number
           updated_at: string
           utm_sources: string[]
@@ -1428,6 +1429,7 @@ export type Database = {
           match_white_label?: boolean
           name: string
           priority?: number
+          referrer_domains?: string[]
           take_rate_bps: number
           updated_at?: string
           utm_sources?: string[]
@@ -1450,6 +1452,7 @@ export type Database = {
           match_white_label?: boolean
           name?: string
           priority?: number
+          referrer_domains?: string[]
           take_rate_bps?: number
           updated_at?: string
           utm_sources?: string[]
@@ -9419,6 +9422,7 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: Json
       }
+      commission_domain: { Args: { p: string }; Returns: string }
       company_access_link_done: {
         Args: { p_company_id: string }
         Returns: boolean
@@ -11079,6 +11083,7 @@ export type Database = {
           p_clicked_at: string
           p_company_id: string
           p_origin: string
+          p_referrer?: string
           p_utm_source: string
         }
         Returns: Json

@@ -18,8 +18,9 @@ import { useHasWl } from "@/features/companies/useHasWl";
 
 /**
  * Canais de venda do estacionamento (E0.3.12). Mostra as regras que a Movepark cadastrou para
- * ele e monta o link de cada unidade com o UTM certo. Sem regra, o card não aparece: não há o que
- * divulgar, e a comissão padrão já está no contrato.
+ * ele e monta o link de cada unidade com o UTM certo. Quando a regra reconhece o site dele
+ * (18/11/2026), diz que a venda de quem vem de lá conta mesmo sem UTM. Sem regra, o card não
+ * aparece: não há o que divulgar, e a comissão padrão já está no contrato.
  */
 export function PartnerChannelsCard({ companyId }: { companyId: string }) {
   const { data } = usePartnerChannels(companyId);
@@ -78,6 +79,12 @@ export function PartnerChannelsCard({ companyId }: { companyId: string }) {
               <Badge tone="neutral">vale por {r.window_days ?? data?.window_days ?? 7} dias depois do clique</Badge>
               {r.match_white_label && hasWl && <Badge tone="neutral">vale também no seu site Movepark</Badge>}
             </div>
+            {(r.referrer_domains ?? []).length > 0 && (
+              <p className="text-body-sm text-body" data-testid="canal-sites">
+                Quem chega do seu site ({(r.referrer_domains ?? []).join(", ")}) também entra neste canal,
+                mesmo que o link não tenha UTM.
+              </p>
+            )}
             {location ? (
               r.utm_sources.map((utm) => {
                 const link = trackedLink(siteUrl(location.public_path), utm);

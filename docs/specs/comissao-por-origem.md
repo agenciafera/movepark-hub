@@ -23,7 +23,7 @@ gateway e quem arca com chargeback. Não existe afiliado terceiro neste épico.
 
 | # | Pergunta | Decisão |
 |---|---|---|
-| 1 | O que identifica a venda trazida pelo parceiro | `utm_source` com valor **cadastrado para a empresa** no Manager. Venda pelo site white-label da empresa conta sozinha, sem UTM |
+| 1 | O que identifica a venda trazida pelo parceiro | `utm_source` com valor **cadastrado para a empresa** no Manager. Venda pelo site white-label da empresa conta sozinha, sem UTM. Desde 18/11/2026, também o **site de onde o cliente veio** (domínio cadastrado na regra), com ou sem UTM |
 | 2 | Cliente tocou nos dois lados | **Último clique, janela de 7 dias** |
 | 3 | Quem define os valores | **Tudo configurável pela Movepark**: quais UTMs, qual comissão, quem paga a taxa do gateway, quem arca com chargeback. Regra global como padrão, regra por empresa como exceção. Nenhum pacote fixo em código |
 | 4 | Quantos canais | Quantas regras a Movepark cadastrar. Sem regra que case, vale o padrão do Hub |
@@ -47,7 +47,8 @@ Uma linha por regra. `company_id` nulo = regra global.
 | `id` | uuid | |
 | `company_id` | uuid null | FK `company`. Nulo = vale para todas as empresas |
 | `name` | text | Rótulo que aparece nas telas ("Site do parceiro", "Anúncios da Virapark") |
-| `utm_sources` | text[] | Valores aceitos, normalizados (minúsculas, sem espaço nas pontas). Pode ser vazio se a regra for só de white-label |
+| `utm_sources` | text[] | Valores aceitos, normalizados (minúsculas, sem espaço nas pontas). Pode ser vazio se a regra for só de white-label ou só de site |
+| `referrer_domains` | text[] | Sites de origem (18/11/2026), normalizados por `commission_domain` (sem esquema, caminho, porta e `www.`). Casa o domínio e os subdomínios dele |
 | `match_white_label` | boolean | Casa venda cuja origem é o site white-label da empresa |
 | `take_rate_bps` | integer | Comissão da Movepark nesta origem, 0 a 10000 |
 | `gateway_fee_payer` | text | `movepark` ou `partner` |
@@ -79,7 +80,7 @@ Os dois últimos ficam em `app_setting` (`commission_default_fee_payer`,
 | `commission_take_rate_bps` | Comissão aplicada |
 | `commission_fee_payer` | `movepark` ou `partner` |
 | `commission_chargeback_bearer` | `each`, `partner` ou `movepark` |
-| `attribution` | jsonb com a prova: `utm_source`, `utm_medium`, `utm_campaign`, `clicked_at`, `landing_url`, `referrer`, `origin` |
+| `attribution` | jsonb com a prova: `utm_source`, `utm_medium`, `utm_campaign`, `clicked_at`, `landing_url`, `referrer`, `origin` e, quando houver, `referrals` (chegadas sem UTM vindas de outro site: `referrer`, `arrived_at`, `landing_url`) |
 
 Reserva anterior ao épico fica com as colunas nulas e é lida como padrão do Hub.
 
@@ -97,8 +98,9 @@ reserva (server-authoritative; o navegador só informa a atribuição):
 
 1. Descobre a empresa da unidade.
 2. Candidatas: regras ativas, dentro da vigência, da **empresa** ou **globais**, que casem por
-   `utm_source` (valor normalizado presente em `utm_sources`, com `clicked_at` dentro de 7 dias)
-   ou por `match_white_label` quando a origem é o white-label da empresa.
+   `utm_source` (valor normalizado presente em `utm_sources`) ou pelo site de origem (domínio do
+   `referrer` em `referrer_domains`, ou subdomínio dele), com o clique dentro da janela, ou por
+   `match_white_label` quando a origem é o white-label da empresa.
 3. Ordena por: regra da empresa antes de global, depois `priority` decrescente, depois a mais
    recente. Pega a primeira.
 4. Sem candidata: padrão do Hub.
@@ -315,7 +317,8 @@ atendimento no meio da venda dele. Para essas visitas a bolinha não aparece.
 
 - **Quem conta como canal:** a lista `canais` no script do `index.html`, hoje só `pareseguro`
   (é o `utm_source` das 44 reservas da Pare Seguro até 12/11/2026). Comparação sem diferença de
-  caixa. Parceiro novo que peça o mesmo entra nessa lista.
+  caixa. Desde 18/11/2026 há também `dominios` (hoje `pareseguro.com`): quem chega desse site, com
+  ou sem UTM, também conta. Parceiro novo que peça o mesmo entra nessas listas.
 - **Atribuição:** a mesma da comissão, lida da chave `mp_utm` de `src/lib/utm.ts`. Vale a UTM da
   URL; sem UTM na URL, vale a guardada, por até `MAX_AGE_DAYS` (30). Último clique: quem volta por
   outra campanha vê a bolinha de novo.
@@ -354,6 +357,65 @@ de outro estacionamento. É rótulo de tela: não muda comissão, que continua n
 "Site Movepark" no filtro ainda inclui essas vendas. Para separar, use "Fonte da campanha" em Mais
 filtros (`p_utm_source`). Trazer "Site do estacionamento" para o filtro de Canal pede migration na
 RPC e ficou para depois.
+
+## Site de origem (18/11/2026)
+
+**Pedido do Kallef.** A regra da Pare Seguro só casava por `utm_source=pareseguro`. Nem todo link
+do site deles leva UTM, e o anúncio da própria Pare Seguro repassa `utm_source=google` no link que
+sai de pareseguro.com: essa venda caía nos 20% do Hub (havia uma assim no banco em 18/11/2026). A
+regra passa a ter **sites de origem**: quem chega de `pareseguro.com` entra no canal dela, com ou
+sem UTM, dentro da mesma janela de atribuição.
+
+**De onde sai o site.** Do endereço da página que trouxe o cliente: o cabeçalho Referer da
+navegação, que o navegador expõe em `document.referrer`. Com a política padrão dos navegadores
+(`strict-origin-when-cross-origin`) ele chega só como origem, `https://pareseguro.com/`, que é o que
+a regra precisa. O cabeçalho Origin da chamada que cria a reserva **não** serve: ela parte do
+próprio site da Movepark, então a origem que importa é a da chegada, guardada no navegador. Se o
+site do parceiro mandar `Referrer-Policy: no-referrer` ou `rel="noreferrer"` no link, não há site a
+reconhecer e vale o UTM.
+
+**Como o navegador guarda (`src/lib/utm.ts`).** Duas provas, com o último clique preservado:
+
+- **Clique com UTM** (`mp_utm`): como antes, agora com o `referrer` só quando é outro site. O
+  próprio site e a volta de fluxo nosso (login com Google, Supabase Auth, Pagar.me) não contam como
+  origem; antes, quem entrava pelo link do parceiro e fazia login com Google ficava com
+  `accounts.google.com` como prova (35 reservas da Pare Seguro até 18/11/2026). Voltar do login com o
+  mesmo UTM não é clique novo e não troca a prova. Um clique com UTM descarta as chegadas de antes
+  dele.
+- **Chegadas sem UTM vindas de outro site** (`mp_ref`): até cinco, a mais nova primeiro, uma por
+  domínio, por até 30 dias. Elas **não** sobrescrevem o clique com UTM, porque o navegador não sabe
+  quais sites estão cadastrados: uma visita vinda da busca do Google não pode apagar o clique no link
+  do parceiro. O `document.referrer` só vale na primeira captura de cada carregamento de página.
+
+**Como o banco decide (`booking_apply_commission`).** Primeiro as chegadas sem UTM, da mais nova
+para a mais velha: a primeira cujo site esteja numa regra, dentro da janela, vence (chegada sem hora
+não prova janela e é ignorada; white-label não casa por este caminho). Sem nenhuma, vale o clique
+com UTM, que casa pelo UTM **ou** pelo site de onde veio esse clique. A Edge `create-booking`
+(`montarChegadas`) só repassa chegadas com endereço http(s) e hora legível, no máximo cinco.
+
+**Cadastro.** Manager › Comissões, campo "Sites de origem" (vírgula separa). O trigger normaliza,
+recusa o que não é domínio (`22023`) e o mesmo site em duas regras ativas do mesmo dono (`23505`);
+a tela recusa também o domínio da própria Movepark. Regra só de site é válida
+(`commission_rule_reconhece_algo`). O Operator vê no card "Vendas que você traz" que a venda de quem
+vem do site dele conta mesmo sem UTM (`my_commission_channels` devolve `referrer_domains`).
+
+**Onde mais o site de origem vale.** A bolinha de WhatsApp da Movepark (seção "Canal de parceiro sem
+o WhatsApp") lê a mesma prova: a lista `dominios` do script do `index.html` (hoje `pareseguro.com`)
+ao lado de `canais`. O rótulo "Site <empresa>" da lista de reservas (`partnerSiteLabel`) olha também
+as chegadas sem UTM. A prova aparece no card "Canal da venda" como "Chegou do site".
+
+**Risco.** O mesmo do UTM (decisão 1): o referrer vem do navegador e quem quiser forja. Só reduz
+comissão em unidade da empresa dona da regra, e a prova fica na reserva para o alerta de
+concentração e a correção manual.
+
+**Testes.** pgTAP `commission_referrer_domain.test.sql` (27); Deno `create-booking/logic.test.ts`
+(chegadas); Vitest `utm.test.ts`, `canal-parceiro.contract.test.ts`, `rule.logic.test.ts`,
+`CommissionRulesCard.test.tsx`, `PartnerChannelsCard.test.tsx`, `bookingCommission.logic.test.ts`,
+`bookingList.logic.test.ts`.
+
+**Fora deste corte.** Reserva já criada não muda de pacote (a do `utm_source=google` vinda de
+pareseguro.com segue no Hub; a correção é a manual, com histórico, se ainda não foi paga). A Public
+API e o MCP seguem sem atribuição.
 
 ## Fora do escopo
 

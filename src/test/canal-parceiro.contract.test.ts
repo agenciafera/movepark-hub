@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { captureUtmFromSearch, MAX_AGE_DAYS } from "@/lib/utm";
+import { captureAttribution, MAX_AGE_DAYS } from "@/lib/utm";
 
 /**
  * Canal de parceiro sem a bolinha de WhatsApp da Movepark (pedido da Pare Seguro,
@@ -24,10 +24,15 @@ function scriptDoCanal(): string {
   return indexHtml.slice(inicio, fim);
 }
 
-function rodar(url: string) {
+function rodar(url: string, referrer = "") {
   window.history.replaceState({}, "", url);
   document.documentElement.removeAttribute("data-canal-parceiro");
-  new Function(scriptDoCanal())();
+  Object.defineProperty(document, "referrer", { value: referrer, configurable: true });
+  try {
+    new Function(scriptDoCanal())();
+  } finally {
+    delete (document as unknown as Record<string, unknown>).referrer;
+  }
   return document.documentElement.hasAttribute("data-canal-parceiro");
 }
 
@@ -54,20 +59,45 @@ describe("canal de parceiro no template", () => {
   });
 
   /* A UTM some da URL na primeira navegação; o checkout continua sendo a venda do
-     parceiro. Quem grava é o `captureUtmFromSearch`, o mesmo da comissão. */
+     parceiro. Quem grava é o `captureAttribution`, o mesmo da comissão. */
   it("segue marcado nas páginas seguintes, pela atribuição guardada", () => {
-    captureUtmFromSearch("?utm_source=pareseguro", { pathname: "/", referrer: "" });
+    captureAttribution("?utm_source=pareseguro", { pathname: "/", referrer: "" });
     expect(rodar("/checkout")).toBe(true);
   });
 
   it("solta quando o último clique foi de outra campanha", () => {
-    captureUtmFromSearch("?utm_source=pareseguro", { pathname: "/", referrer: "" });
+    captureAttribution("?utm_source=pareseguro", { pathname: "/", referrer: "" });
     expect(rodar("/?utm_source=google")).toBe(false);
   });
 
   it("solta quando a atribuição passou da janela", () => {
     const antigo = new Date(Date.now() - (MAX_AGE_DAYS + 1) * 86_400_000);
-    captureUtmFromSearch("?utm_source=pareseguro", { now: antigo, pathname: "/", referrer: "" });
+    captureAttribution("?utm_source=pareseguro", { now: antigo, pathname: "/", referrer: "" });
+    expect(rodar("/checkout")).toBe(false);
+  });
+
+  /* 18/11/2026: o site de origem conta como o UTM, inclusive guardado. */
+  it("marca quem chega do site do parceiro, sem UTM ou com UTM de outra origem", () => {
+    expect(rodar("/p/gru/pare-seguro", "https://pareseguro.com/")).toBe(true);
+    expect(rodar("/p/gru/pare-seguro", "https://www.pareseguro.com/precos")).toBe(true);
+    expect(rodar("/?utm_source=google&utm_campaign=gru-marca", "https://pareseguro.com/")).toBe(true);
+    expect(rodar("/", "https://falsopareseguro.com/")).toBe(false);
+    expect(rodar("/", "https://www.google.com/")).toBe(false);
+  });
+
+  it("segue marcado nas páginas seguintes pela chegada guardada", () => {
+    captureAttribution("", { pathname: "/", referrer: "https://pareseguro.com/" });
+    expect(rodar("/checkout")).toBe(true);
+  });
+
+  it("segue marcado pelo site do clique guardado, mesmo com UTM de outra origem", () => {
+    captureAttribution("?utm_source=google", { pathname: "/", referrer: "https://pareseguro.com/" });
+    expect(rodar("/checkout")).toBe(true);
+  });
+
+  it("solta quando o último clique foi de outra campanha, depois da chegada do parceiro", () => {
+    captureAttribution("", { pathname: "/", referrer: "https://pareseguro.com/" });
+    captureAttribution("?utm_source=google", { pathname: "/", referrer: "" });
     expect(rodar("/checkout")).toBe(false);
   });
 
@@ -76,6 +106,9 @@ describe("canal de parceiro no template", () => {
   });
 
   it("não quebra com o que estiver ilegível no storage", () => {
+    localStorage.setItem("mp_ref", "{quebrado");
+    expect(rodar("/")).toBe(false);
+    localStorage.clear();
     localStorage.setItem("mp_utm", "{quebrado");
     expect(rodar("/")).toBe(false);
   });

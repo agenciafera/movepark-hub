@@ -74,6 +74,29 @@ describe("partnerSiteLabel", () => {
     ).toBe("Site Pare Seguro");
   });
 
+  it("chegada sem UTM vinda do site da empresa também rotula (18/11/2026)", () => {
+    expect(
+      partnerSiteLabel({
+        origin: "hub_direct",
+        attribution: {
+          utm_source: null,
+          referrals: [
+            { referrer: "https://www.google.com/", arrived_at: "2026-11-17T12:00:00Z" },
+            { referrer: "https://pareseguro.com/", arrived_at: "2026-11-16T12:00:00Z" },
+          ],
+        },
+        company: pare,
+      }),
+    ).toBe("Site Pare Seguro");
+    expect(
+      partnerSiteLabel({
+        origin: "hub_direct",
+        attribution: { referrals: [{ referrer: "https://www.google.com/" }, "lixo", null] },
+        company: pare,
+      }),
+    ).toBeNull();
+  });
+
   it("regra de comissão cadastrada manda: o nome dela é o canal", () => {
     expect(
       partnerSiteLabel({

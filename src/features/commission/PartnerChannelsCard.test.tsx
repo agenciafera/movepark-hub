@@ -31,6 +31,29 @@ describe("PartnerChannelsCard", () => {
     expect(screen.getByRole("button", { name: "Copiar link abbapark" })).toBeInTheDocument();
   });
 
+  it("regra com site de origem diz que a venda de quem vem de lá conta sem UTM", () => {
+    channels.current = {
+      default_take_rate_bps: 2000, window_days: 7,
+      rules: [{
+        id: "r1", name: "Site do Pare Seguro", utm_sources: ["pareseguro"], referrer_domains: ["pareseguro.com"],
+        match_white_label: false, take_rate_bps: 1200, valid_until: null,
+      }],
+      locations: [{ id: "l1", name: "Pare Seguro", public_path: "/estacionamentos/aeroporto-guarulhos/pare-seguro" }],
+    };
+    renderWithProviders(<PartnerChannelsCard companyId="c1" />);
+    expect(screen.getByTestId("canal-sites")).toHaveTextContent(/Quem chega do seu site \(pareseguro\.com\)/);
+  });
+
+  it("regra sem site de origem não fala de site", () => {
+    channels.current = {
+      default_take_rate_bps: 2000, window_days: 7,
+      rules: [{ id: "r1", name: "Site", utm_sources: ["abbapark"], match_white_label: false, take_rate_bps: 500, valid_until: null }],
+      locations: [],
+    };
+    renderWithProviders(<PartnerChannelsCard companyId="c1" />);
+    expect(screen.queryByTestId("canal-sites")).toBeNull();
+  });
+
   it("unidade sem página pública: avisa em vez de montar link quebrado", () => {
     channels.current = {
       default_take_rate_bps: 2000, window_days: 10,
