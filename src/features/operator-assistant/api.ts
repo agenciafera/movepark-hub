@@ -1,4 +1,5 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { bookingsKeys } from "@/features/bookings/api";
 import { supabase } from "@/lib/supabase";
 import type { CartaoDeAcao, Fala, PapelDaFala } from "./operatorAssistant.logic";
 
@@ -102,12 +103,17 @@ export function useNovaConversa() {
 }
 
 export function useConfirmarAcao() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (actionId: string) =>
       chamar<{ status: "executed" | "failed"; resumo: string; pix: { copia_e_cola: string | null; vence_em: string | null } | null }>(
         { acao: "confirmar", action_id: actionId },
         "Não consegui fazer a ação.",
       ),
+    // A ação mexe na reserva (datas, status, estorno): a página aberta atrás da bolinha recarrega.
+    onSuccess: (r) => {
+      if (r.status === "executed") void qc.invalidateQueries({ queryKey: bookingsKeys.all });
+    },
   });
 }
 

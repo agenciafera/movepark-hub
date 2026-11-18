@@ -38,6 +38,22 @@ describe("bolinha: Edge operator-assistant", () => {
     });
   });
 
+  it("ação executada recarrega a reserva aberta na tela; ação que falhou não mexe em nada", async () => {
+    // Regressão de 18/11/2026: a Mia trocava as datas e a página da reserva seguia com as antigas
+    // até alguém recarregar.
+    edge("operator-assistant", { json: { status: "executed", resumo: "Datas alteradas.", pix: null } });
+    const ok = renderMutation(() => useConfirmarAcao());
+    const invalidarOk = vi.spyOn(ok.qc, "invalidateQueries");
+    await ok.result.current.mutateAsync("a1");
+    expect(invalidarOk).toHaveBeenCalledWith({ queryKey: ["bookings"] });
+
+    edge("operator-assistant", { json: { status: "failed", resumo: "Não deu.", pix: null } });
+    const falhou = renderMutation(() => useConfirmarAcao());
+    const invalidarFalhou = vi.spyOn(falhou.qc, "invalidateQueries");
+    await falhou.result.current.mutateAsync("a2");
+    expect(invalidarFalhou).not.toHaveBeenCalled();
+  });
+
   it("propaga a mensagem da Edge (teto de uso, proposta vencida)", async () => {
     falha("edge", "operator-assistant", 409, "A proposta venceu (10 minutos). Peça de novo à Mia.");
     const { result } = renderMutation(() => useConfirmarAcao());
