@@ -10,6 +10,8 @@ import {
   statusFieldToPayload,
   splitAdsSnippet,
   validateAdsConversion,
+  normalizarIdConversaoAds,
+  normalizarRotuloConversaoAds,
 } from "./useLocationForm";
 
 describe("statusFieldFrom / statusFieldToPayload (Rascunho como status na tela)", () => {
@@ -148,17 +150,84 @@ describe("patch do destino: omitir é diferente de mandar null", () => {
   });
 });
 
+describe("normalizarIdConversaoAds (o `AW-` é o id da tag, não o id de conversão)", () => {
+  // Por que isto existe: o campo "Código de conversão" da tag do Google Ads no GTM aceita só
+  // inteiro positivo. Com `AW-17302388529` ali, o GTM recusaria na mão ("O valor precisa ser um
+  // número inteiro positivo ou 0"), mas o valor chega por variável de camada de dados e a
+  // validação do GTM só roda para valor fixo: a tag salva calada e a conversão falha em runtime,
+  // sem erro em lugar nenhum. As duas unidades configuradas ficaram assim até 18/11/2026.
+  it("o número puro passa inteiro", () => {
+    expect(normalizarIdConversaoAds("17302388529")).toBe("17302388529");
+  });
+  it("tira o AW- do id da tag, em maiúscula ou minúscula", () => {
+    expect(normalizarIdConversaoAds("AW-17302388529")).toBe("17302388529");
+    expect(normalizarIdConversaoAds("aw-17302388529")).toBe("17302388529");
+  });
+  it("aguenta espaço sobrando, inclusive depois do AW-", () => {
+    expect(normalizarIdConversaoAds("  17302388529  ")).toBe("17302388529");
+    expect(normalizarIdConversaoAds("AW- 17302388529")).toBe("17302388529");
+    expect(normalizarIdConversaoAds(" aw-17302388529 ")).toBe("17302388529");
+  });
+  it("o send_to inteiro vira só o id: o rótulo fica para o outro campo", () => {
+    expect(normalizarIdConversaoAds("AW-17302388529/AbCd_eFgH")).toBe("17302388529");
+    expect(normalizarIdConversaoAds("17302388529/AbCd_eFgH")).toBe("17302388529");
+  });
+
+  // Os três que caem aqui por confusão. O customer id é o mais comum: fica no topo da conta do
+  // Ads, tem a mesma cara de id e não serve para conversão nenhuma.
+  it("recusa o id de GA4 no campo errado", () => {
+    expect(normalizarIdConversaoAds("G-YWNH4G3PNV")).toBeNull();
+  });
+  it("recusa o customer id com hífens", () => {
+    expect(normalizarIdConversaoAds("123-456-7890")).toBeNull();
+  });
+  it("recusa letra onde era número e número curto demais", () => {
+    expect(normalizarIdConversaoAds("AW-ABC123")).toBeNull();
+    expect(normalizarIdConversaoAds("123")).toBeNull();
+    expect(normalizarIdConversaoAds("AW-")).toBeNull();
+  });
+  it("vazio, nulo e indefinido viram null, não string vazia", () => {
+    expect(normalizarIdConversaoAds("")).toBeNull();
+    expect(normalizarIdConversaoAds("   ")).toBeNull();
+    expect(normalizarIdConversaoAds(null)).toBeNull();
+    expect(normalizarIdConversaoAds(undefined)).toBeNull();
+  });
+  it("é idempotente: normalizar o já normalizado não muda nada", () => {
+    const uma = normalizarIdConversaoAds("AW-17302388529");
+    expect(normalizarIdConversaoAds(uma)).toBe(uma);
+  });
+});
+
+describe("normalizarRotuloConversaoAds (mesma defesa na outra ponta)", () => {
+  it("o rótulo puro passa inteiro", () => {
+    expect(normalizarRotuloConversaoAds("AbCd_eFgH")).toBe("AbCd_eFgH");
+  });
+  it("snippet inteiro colado no campo do rótulo fica com o que está depois da barra", () => {
+    expect(normalizarRotuloConversaoAds("AW-17302388529/AbCd_eFgH")).toBe("AbCd_eFgH");
+  });
+  it("recusa caractere fora do snippet e rótulo curto demais", () => {
+    expect(normalizarRotuloConversaoAds("tem espaço no meio")).toBeNull();
+    expect(normalizarRotuloConversaoAds("AbC")).toBeNull();
+    expect(normalizarRotuloConversaoAds("")).toBeNull();
+    expect(normalizarRotuloConversaoAds(null)).toBeNull();
+  });
+});
+
 describe("conversão do Google Ads por unidade (splitAdsSnippet / validateAdsConversion)", () => {
   // A tela do Google Ads oferece o snippet inteiro para copiar (`AW-123/rótulo`). Colar no campo
   // de id tem que preencher os dois, porque fatiar à mão é onde o rótulo se perde.
-  it("o snippet inteiro colado no id vira id + rótulo", () => {
+  it("o snippet inteiro colado no id vira id normalizado + rótulo", () => {
     expect(splitAdsSnippet(" AW-326904374/EaA6CMu82aYbELbU8JsB ")).toEqual({
-      id: "AW-326904374",
+      id: "326904374",
       label: "EaA6CMu82aYbELbU8JsB",
     });
   });
-  it("sem barra, devolve só o id e não mexe no rótulo", () => {
-    expect(splitAdsSnippet("AW-326904374")).toEqual({ id: "AW-326904374", label: null });
+  it("sem barra, devolve só o id normalizado e não mexe no rótulo", () => {
+    expect(splitAdsSnippet("AW-326904374")).toEqual({ id: "326904374", label: null });
+  });
+  it("no meio da digitação, o que não normaliza fica na tela como foi escrito", () => {
+    // Senão o campo apagaria o que a pessoa está digitando a cada tecla.
+    expect(splitAdsSnippet("AW-17")).toEqual({ id: "AW-17", label: null });
   });
 
   // Espelha as constraints do banco: os dois vazios ou os dois preenchidos e no formato.
@@ -166,14 +235,19 @@ describe("conversão do Google Ads por unidade (splitAdsSnippet / validateAdsCon
     expect(validateAdsConversion("", "  ")).toBeNull();
   });
   it("metade preenchida é recusada, com a mensagem dizendo qual metade falta", () => {
-    expect(validateAdsConversion("AW-326904374", "")).toMatch(/rótulo/);
-    expect(validateAdsConversion("", "EaA6CMu82aYbELbU8JsB")).toMatch(/AW-/);
+    expect(validateAdsConversion("326904374", "")).toMatch(/rótulo/);
+    expect(validateAdsConversion("", "EaA6CMu82aYbELbU8JsB")).toMatch(/ID de conversão/);
   });
-  it("id sem o prefixo AW- e rótulo com caractere fora do snippet são recusados", () => {
-    expect(validateAdsConversion("326904374", "EaA6CMu82aYbELbU8JsB")).toMatch(/AW-123456789/);
-    expect(validateAdsConversion("AW-326904374", "tem espaço")).toMatch(/depois da barra/);
+  it("o id da tag é aceito e normalizado, não recusado", () => {
+    // O `AW-` não é erro de digitação, é o que o Google mostra. A tela aceita e grava o número.
+    expect(validateAdsConversion("AW-326904374", "EaA6CMu82aYbELbU8JsB")).toBeNull();
+  });
+  it("o que não é id de conversão é recusado, explicando a diferença", () => {
+    expect(validateAdsConversion("123-456-7890", "EaA6CMu82aYbELbU8JsB")).toMatch(/ID da tag/);
+    expect(validateAdsConversion("G-YWNH4G3PNV", "EaA6CMu82aYbELbU8JsB")).toMatch(/só o número/);
+    expect(validateAdsConversion("326904374", "tem espaço")).toMatch(/depois da barra/);
   });
   it("o par no formato passa", () => {
-    expect(validateAdsConversion("AW-326904374", "EaA6CMu82aYbELbU8JsB")).toBeNull();
+    expect(validateAdsConversion("326904374", "EaA6CMu82aYbELbU8JsB")).toBeNull();
   });
 });

@@ -158,8 +158,8 @@ describe("LocationForm — seção Conversão e mídia paga", () => {
       />,
     );
     expect(screen.getByRole("heading", { name: "Conversão e mídia paga" })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Google Ads · id da conta/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Google Ads · rótulo da conversão/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/ID de conversão do Google Ads/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Rótulo da conversão do Google Ads/i)).toBeInTheDocument();
   });
 
   it("esconde a seção no operator scope", () => {
@@ -175,7 +175,7 @@ describe("LocationForm — seção Conversão e mídia paga", () => {
     expect(screen.queryByRole("heading", { name: "Conversão e mídia paga" })).not.toBeInTheDocument();
   });
 
-  it("colar o snippet inteiro no id preenche o rótulo sozinho", async () => {
+  it("colar o snippet inteiro no id tira o AW- e preenche o rótulo sozinho", async () => {
     const user = userEvent.setup();
     renderWithProviders(
       <LocationForm
@@ -186,11 +186,12 @@ describe("LocationForm — seção Conversão e mídia paga", () => {
         editableScope="full"
       />,
     );
-    const id = screen.getByLabelText(/Google Ads · id da conta/i);
+    const id = screen.getByLabelText(/ID de conversão do Google Ads/i);
     await user.click(id);
     await user.paste("AW-326904374/EaA6CMu82aYbELbU8JsB");
-    expect(id).toHaveValue("AW-326904374");
-    expect(screen.getByLabelText(/Google Ads · rótulo da conversão/i)).toHaveValue(
+    // O `AW-` é o id da tag; o GTM só sabe ler o número. Ver §3.1 da spec de analytics.
+    expect(id).toHaveValue("326904374");
+    expect(screen.getByLabelText(/Rótulo da conversão do Google Ads/i)).toHaveValue(
       "EaA6CMu82aYbELbU8JsB",
     );
   });
@@ -206,10 +207,10 @@ describe("LocationForm — seção Conversão e mídia paga", () => {
         editableScope="full"
       />,
     );
-    await user.type(screen.getByLabelText(/Google Ads · id da conta/i), "AW-326904374");
+    await user.type(screen.getByLabelText(/ID de conversão do Google Ads/i), "326904374");
     await user.click(screen.getByRole("button", { name: "Salvar" }));
     await waitFor(() => {
-      expect(screen.getByText(/Informe o rótulo da conversão/i)).toBeInTheDocument();
+      expect(screen.getByText(/Informe o rótulo junto com o ID de conversão/i)).toBeInTheDocument();
     });
   });
 });

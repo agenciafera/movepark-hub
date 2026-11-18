@@ -5,9 +5,13 @@
 -- de mídia paga da plataforma. Quem tem `locations:write` edita a unidade inteira pelo PostgREST,
 -- então a única barreira que vale é a do banco; e os dois valores têm formato fechado, porque
 -- texto errado aqui vira tag que dispara e não registra nada, em silêncio.
+--
+-- O id é guardado SEM o `AW-` (migration 20261204180000): o `AW-17302388529` é o id da tag do
+-- Google, e o campo "Código de conversão" da tag do GTM aceita só inteiro positivo. Guardar com
+-- prefixo foi exatamente a falha calada que esses testes passam a barrar.
 
 begin;
-select plan(13);
+select plan(16);
 
 -- ── fixtures (como postgres; RLS não se aplica) ────────────────────────────
 do $$
@@ -58,18 +62,30 @@ select ok(
 );
 
 -- ── formato fechado ────────────────────────────────────────────────────────
+-- O número puro é o formato certo; o id da tag (`AW-...`) é recusado, porque é o valor que o GTM
+-- não consegue ler e que ninguém descobriria estar errado antes do fim da campanha.
 select throws_ok(
-  format($$ update public.location set ads_conversion_id = '326904374', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
+  format($$ update public.location set ads_conversion_id = 'AW-326904374', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
     current_setting('test.loc')),
-  '23514', null, 'id sem o prefixo AW- é recusado'
+  '23514', null, 'id com o prefixo AW- é recusado: aquilo é o id da tag, não o de conversão'
 );
 select throws_ok(
-  format($$ update public.location set ads_conversion_id = 'AW-326904374', ads_conversion_label = 'tem espaço' where id = %L $$,
+  format($$ update public.location set ads_conversion_id = 'G-YWNH4G3PNV', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
+    current_setting('test.loc')),
+  '23514', null, 'id de GA4 no campo errado é recusado'
+);
+select throws_ok(
+  format($$ update public.location set ads_conversion_id = '123-456-7890', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
+    current_setting('test.loc')),
+  '23514', null, 'customer id com hífens é recusado'
+);
+select throws_ok(
+  format($$ update public.location set ads_conversion_id = '326904374', ads_conversion_label = 'tem espaço' where id = %L $$,
     current_setting('test.loc')),
   '23514', null, 'rótulo com caractere fora do snippet é recusado'
 );
 select throws_ok(
-  format($$ update public.location set ads_conversion_id = 'AW-326904374' where id = %L $$,
+  format($$ update public.location set ads_conversion_id = '326904374' where id = %L $$,
     current_setting('test.loc')),
   '23514', null, 'id sem rótulo é recusado: metade configurada não dispara nada'
 );
@@ -78,20 +94,24 @@ select throws_ok(
 -- O gerente tem locations:write e edita a unidade, mas não aponta a conversão para conta nenhuma.
 select pg_temp.as_user(current_setting('test.gerente'));
 select throws_ok(
-  format($$ update public.location set ads_conversion_id = 'AW-326904374', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
+  format($$ update public.location set ads_conversion_id = '326904374', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
     current_setting('test.loc')),
   '42501', null, 'parceiro com locations:write não configura a conta de Ads'
 );
 
 select pg_temp.as_user(current_setting('test.admin'));
 select lives_ok(
-  format($$ update public.location set ads_conversion_id = 'AW-326904374', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
+  format($$ update public.location set ads_conversion_id = '326904374', ads_conversion_label = 'EaA6CMu82aYbELbU8JsB' where id = %L $$,
     current_setting('test.loc')),
   'hub_admin configura o par'
 );
 select is(
   (select ads_conversion_label from public.location where id = current_setting('test.loc')::uuid),
   'EaA6CMu82aYbELbU8JsB', 'o rótulo gravou'
+);
+select is(
+  (select ads_conversion_id from public.location where id = current_setting('test.loc')::uuid),
+  '326904374', 'o id gravou sem o prefixo'
 );
 
 -- Update que não toca as colunas passa por qualquer um: o trigger recusa a MUDANÇA, não a edição.

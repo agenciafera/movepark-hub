@@ -110,23 +110,67 @@ export function slugify(s: string) {
 }
 
 /**
- * Conversão do Google Ads da unidade: o id da conta (`AW-` + dígitos) e o rótulo da ação, a parte
+ * Conversão do Google Ads da unidade: o id de conversão (só dígitos) e o rótulo da ação, a parte
  * depois da barra no snippet. As duas regex espelham as constraints do banco
  * (`location_ads_conversion_*_format`), para o erro aparecer na tela antes do 23514.
+ *
+ * O id é guardado **sem** o `AW-`, de propósito. O `AW-17302388529` que o Google mostra é o id da
+ * tag (o id de destino); o campo "Código de conversão" da tag do GTM aceita só inteiro positivo e
+ * recusa `AW-...` com "O valor precisa ser um número inteiro positivo ou 0". Como o valor chega
+ * por variável de camada de dados, o GTM não valida na hora de salvar: a tag salva sem reclamar e
+ * a conversão falha em runtime, sem erro em lugar nenhum. Foi o que aconteceu com as duas unidades
+ * configuradas até 18/11/2026. Ver docs/specs/analytics-ecommerce.md §3.1.
  */
-export const ADS_CONVERSION_ID_RE = /^AW-[0-9]{6,}$/;
+export const ADS_CONVERSION_ID_RE = /^[0-9]{6,}$/;
 export const ADS_CONVERSION_LABEL_RE = /^[A-Za-z0-9_-]{4,}$/;
 
 /**
+ * Devolve só a parte numérica do id de conversão, ou null quando o texto não é um id.
+ *
+ * Aceita o que as telas do Google oferecem para copiar: `17302388529`, `AW-17302388529` (o id da
+ * tag), o `send_to` inteiro (`AW-17302388529/AbCd_eFgH`) e qualquer um deles com espaço sobrando.
+ * Recusa o que cai aqui por confusão: id de GA4 (`G-YWNH4G3PNV`), customer id com hífens
+ * (`123-456-7890`) e número curto demais para ser id de conversão.
+ */
+export function normalizarIdConversaoAds(valor: unknown): string | null {
+  const id = String(valor ?? "")
+    .trim()
+    .split("/")[0]
+    .replace(/^AW-/i, "")
+    .replace(/\s+/g, "");
+  return ADS_CONVERSION_ID_RE.test(id) ? id : null;
+}
+
+/**
+ * Devolve só o rótulo, ou null quando o texto não é um rótulo. É a mesma defesa do id na outra
+ * ponta: quem cola o `send_to` inteiro (`AW-123/AbCd`) no campo do rótulo fica com o que está
+ * depois da barra, que é o rótulo de verdade.
+ */
+export function normalizarRotuloConversaoAds(valor: unknown): string | null {
+  const partes = String(valor ?? "")
+    .trim()
+    .split("/");
+  const rotulo = partes[partes.length - 1].replace(/\s+/g, "");
+  return ADS_CONVERSION_LABEL_RE.test(rotulo) ? rotulo : null;
+}
+
+/**
  * Aceita o snippet inteiro colado do Google Ads (`AW-326904374/EaA6CMu82aYbELbU8JsB`) e devolve
- * as duas partes. Sem barra, devolve só o id. É o que deixa o campo de id receber o que a tela
- * de conversão do Ads oferece para copiar, sem a pessoa ter que fatiar à mão.
+ * as duas partes, já normalizadas. Sem barra, devolve só o id. É o que deixa o campo de id
+ * receber o que a tela de conversão do Ads oferece para copiar, sem a pessoa fatiar à mão nem
+ * apagar o `AW-`.
+ *
+ * Cada parte só é trocada pela normalizada quando a normalização dá certo: `AW-17` no meio da
+ * digitação continua na tela como a pessoa escreveu, em vez de sumir.
  */
 export function splitAdsSnippet(raw: string): { id: string; label: string | null } {
   const value = raw.trim();
   const slash = value.indexOf("/");
-  if (slash === -1) return { id: value, label: null };
-  return { id: value.slice(0, slash).trim(), label: value.slice(slash + 1).trim() };
+  const idCru = slash === -1 ? value : value.slice(0, slash).trim();
+  const id = normalizarIdConversaoAds(idCru) ?? idCru;
+  if (slash === -1) return { id, label: null };
+  const rotuloCru = value.slice(slash + 1).trim();
+  return { id, label: normalizarRotuloConversaoAds(rotuloCru) ?? rotuloCru };
 }
 
 /**
@@ -137,10 +181,11 @@ export function validateAdsConversion(id: string, label: string): string | null 
   const i = id.trim();
   const l = label.trim();
   if (i === "" && l === "") return null;
-  if (i === "") return "Informe o id da conta (AW-...) junto com o rótulo.";
-  if (l === "") return "Informe o rótulo da conversão junto com o id da conta.";
-  if (!ADS_CONVERSION_ID_RE.test(i)) return "O id da conta tem a forma AW-123456789.";
-  if (!ADS_CONVERSION_LABEL_RE.test(l))
+  if (i === "") return "Informe o ID de conversão junto com o rótulo.";
+  if (l === "") return "Informe o rótulo junto com o ID de conversão.";
+  if (normalizarIdConversaoAds(i) === null)
+    return "O ID de conversão é só o número, como 17302388529. O AW-17302388529 é o ID da tag do Google, que é outra coisa.";
+  if (normalizarRotuloConversaoAds(l) === null)
     return "O rótulo é a parte depois da barra no snippet, só letras, números, - e _.";
   return null;
 }
@@ -440,9 +485,10 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       company_id: companyId,
       external_ref: externalRef.trim() || null,
       // Os dois vazios viram null juntos (constraint `location_ads_conversion_pair`); a validação
-      // acima já garantiu que não vai metade.
-      ads_conversion_id: adsConversionId.trim() || null,
-      ads_conversion_label: adsConversionLabel.trim() || null,
+      // acima já garantiu que não vai metade. A normalização aqui é a que vale: o campo aceita o
+      // `AW-` e o snippet inteiro, o banco recebe só o número, que é o que o GTM sabe ler.
+      ads_conversion_id: normalizarIdConversaoAds(adsConversionId),
+      ads_conversion_label: normalizarRotuloConversaoAds(adsConversionLabel),
       latitude,
       longitude,
       photos,
@@ -585,7 +631,13 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
         if (parts.label) setAdsConversionLabel(parts.label);
       },
       adsConversionLabel,
-      setAdsConversionLabel,
+      /**
+       * Mesma defesa do id: quem cola o `send_to` inteiro aqui fica com o que está depois da
+       * barra, em vez de gravar `AW-123/AbCd` como rótulo.
+       */
+      setAdsConversionLabel: (v: string) => {
+        setAdsConversionLabel(normalizarRotuloConversaoAds(v) ?? v);
+      },
     },
   };
 }

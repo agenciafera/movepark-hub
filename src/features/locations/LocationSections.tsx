@@ -460,23 +460,24 @@ export function LocationSections({
           {/* Os dois campos andam juntos (constraint do par no banco). O erro é um só, ancorado
               no id, porque a mensagem já diz qual metade falta. */}
           <Field
-            label="Google Ads · id da conta"
+            label="ID de conversão do Google Ads"
             htmlFor="ads-conversion-id"
             error={errors.adsConversion}
-            hint="Cole o snippet inteiro da ação de conversão (AW-123456789/AbCd...) que o rótulo preenche sozinho."
+            hint="Só o número, sem o AW-. Ex.: 17302388529. O AW-17302388529 é o ID da tag do Google, que é outra coisa. Pode colar o snippet inteiro da ação de conversão que o rótulo preenche sozinho."
           >
             <Input
               id="ads-conversion-id"
               value={f.adsConversionId}
               onChange={(e) => f.setAdsConversionId(e.target.value)}
-              placeholder="AW-123456789"
+              placeholder="17302388529"
               autoComplete="off"
               spellCheck={false}
+              inputMode="numeric"
               {...errorProps("ads-conversion-id", errors.adsConversion)}
             />
           </Field>
           <Field
-            label="Google Ads · rótulo da conversão"
+            label="Rótulo da conversão do Google Ads"
             htmlFor="ads-conversion-label"
             hint="A parte depois da barra no snippet. Fica em branco quando a unidade não tem conta própria."
           >
