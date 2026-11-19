@@ -51,3 +51,16 @@ silenciosa mantém a linha, e o dia não repete.
 Migration `20261130170000_resumo_diario_parceiro.sql`. Testes: `supabase/tests/partner_daily_digest.test.sql`,
 `supabase/functions/partner-daily-digest/logic.test.ts` e os casos `tplPartnerDailyDigest` em
 `_shared/email.test.ts`.
+
+## Incidente de 16 a 19/11/2026: o resumo da Pare Seguro sumiu
+
+O log marcava "enviado" e o SES aceitava, mas nada chegava. O denomailer 1.6 codifica o assunto
+acentuado em quoted-printable e quebra a linha a cada 74 caracteres com `=\r\n`, que é quebra de
+corpo e não de cabeçalho. Assunto longo com "saídas" ("Pare Seguro, movimento de hoje: 3 entradas,
+2 saídas e 8 reservas novas") saía com o cabeçalho partido e o Gmail recusava depois do aceite do
+SES, sem erro do nosso lado. Empresa com assunto curto (Nationpark, Abbapark) seguia recebendo.
+
+Correção: `encodeSubject` em `_shared/email.ts` codifica o assunto em RFC 2047 (base64, palavras
+dobradas) antes de entregar ao denomailer, para todo e-mail do Hub. Teste de regressão em
+`_shared/email.test.ts`. "Enviado" no `partner_digest_log` quer dizer aceito pelo SES, não entregue:
+devolução depois do aceite só aparece no console do SES.

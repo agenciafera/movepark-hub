@@ -1,6 +1,8 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
+import { quotedPrintableEncodeInline } from "https://deno.land/x/denomailer@1.6.0/config/mail/encoding.ts";
 import {
+  encodeSubject,
   htmlToBase64,
   pdfAttachment,
   siteUrl,
@@ -508,4 +510,41 @@ Deno.test("datas alteradas: diferença paga, devolvida (PIX, cartão) ou na fila
   for (const m of [{ chargedCents: 100 }, { refundedCents: 100, method: "card" as const }, { refundedCents: 100, refundManual: true }]) {
     assertEquals(/[\u2014\u2013]/.test(datesChangedMoneyLine(m)), false);
   }
+});
+
+// Regressão de 19/11/2026: assunto com acento e longo saía com "=\r\n" no meio do cabeçalho
+// (quoted-printable do denomailer), o Gmail recusava e o resumo da Pare Seguro sumiu.
+function decodeSubject(h: string): string {
+  const words = [...h.matchAll(/=\?utf-8\?B\?([^?]+)\?=/g)].map((m) => decodeBase64(m[1]));
+  const bytes = new Uint8Array(words.reduce((n, w) => n + w.length, 0));
+  let o = 0;
+  for (const w of words) {
+    bytes.set(w, o);
+    o += w.length;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+Deno.test("encodeSubject: assunto longo com acento vira palavras RFC 2047 dobradas, sem quebra solta", () => {
+  const subject = "Pare Seguro, movimento de hoje: 3 entradas, 2 saídas e 8 reservas novas";
+  // O denomailer recebe o nosso valor e não pode recodificar.
+  const header = quotedPrintableEncodeInline(encodeSubject(subject));
+  assertEquals(header, encodeSubject(subject));
+  const linhas = header.split("\r\n");
+  assert(linhas.length > 1);
+  for (const [i, l] of linhas.entries()) {
+    // Cada linha é uma palavra codificada inteira, precedida de espaço (dobra válida).
+    assert(/^ =\?utf-8\?B\?[A-Za-z0-9+/]+={0,2}\?=$/.test(l), `linha ${i} é uma palavra RFC 2047 inteira: ${l}`);
+    assert(("Subject:  " + l).length <= 78, `linha ${i} cabe em 78 caracteres`);
+  }
+  assertEquals(decodeSubject(header), subject);
+});
+
+Deno.test("encodeSubject: não parte caractere de vários bytes entre palavras", () => {
+  const subject = "ção".repeat(40);
+  assertEquals(decodeSubject(encodeSubject(subject)), subject);
+});
+
+Deno.test("encodeSubject: assunto só ASCII passa igual", () => {
+  assertEquals(encodeSubject("Nationpark, movimento de hoje: 1 entrada"), "Nationpark, movimento de hoje: 1 entrada");
 });

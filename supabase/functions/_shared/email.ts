@@ -26,6 +26,34 @@ export function htmlToBase64(html: string): string {
   return (b64.match(/.{1,76}/g) ?? []).join("\r\n");
 }
 
+/**
+ * Assunto com acento em RFC 2047 (base64), em palavras de até 75 caracteres dobradas com
+ * "\r\n ". O denomailer 1.6 codifica sozinho em quoted-printable e quebra a linha a cada 74
+ * caracteres com "=\r\n", que é quebra de corpo e não de cabeçalho: o resto do assunto vira
+ * uma linha solta, o SES aceita e o Gmail recusa sem ninguém ver. Assim sumiu o resumo diário da
+ * Pare Seguro de 16/11/2026 em diante ("..., 2 saídas e 8 reservas novas"). Começa com espaço
+ * porque o denomailer recodifica o que começa com "=?"; o espaço a mais no cabeçalho é ignorado.
+ */
+export function encodeSubject(subject: string): string {
+  // deno-lint-ignore no-control-regex
+  if (!/[^\u0000-\u007f]/.test(subject) && !subject.startsWith("=?")) return subject;
+  const enc = new TextEncoder();
+  // "=?utf-8?B?" + "?=" ocupa 12; 39 bytes viram 52 de base64: 64 por palavra, e a primeira
+  // linha ("Subject:" e os espaços do denomailer) fica em 75, dentro dos 78 da RFC 5322.
+  const pedacos: string[] = [];
+  let atual = "";
+  for (const ch of subject) {
+    if (atual && enc.encode(atual + ch).length > 39) {
+      pedacos.push(atual);
+      atual = ch;
+    } else {
+      atual += ch;
+    }
+  }
+  if (atual) pedacos.push(atual);
+  return " " + pedacos.map((p) => `=?utf-8?B?${encodeBase64(enc.encode(p))}?=`).join("\r\n ");
+}
+
 // @ts-expect-error - Deno env
 const env = (k: string) => Deno.env.get(k);
 
@@ -132,7 +160,7 @@ export async function sendEmail({ from, to, subject, html, replyTo, attachments 
       from,
       to: destinos,
       replyTo,
-      subject,
+      subject: encodeSubject(subject),
       mimeContent: [
         {
           mimeType: 'text/plain; charset="utf-8"',
