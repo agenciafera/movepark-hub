@@ -71,3 +71,11 @@ dobradas) antes de entregar ao denomailer, para todo e-mail do Hub (as 28 Edges 
 publicadas de novo em 19/11). Além disso, o assunto do resumo virou fixo, sem contagens. Teste de regressão em
 `_shared/email.test.ts`. "Enviado" no `partner_digest_log` quer dizer aceito pelo SES, não entregue:
 devolução depois do aceite só aparece no console do SES.
+
+Depois disso, o assunto chegava certo mas o **Outlook clássico** da Elis (contato@grupowge.com.br,
+UHServer) mostrava o corpo em branco, enquanto Gmail e KingHost mostravam completo. O denomailer
+escrevia `boundary=message100 ` com espaço no fim e embrulhava tudo num `multipart/mixed` mesmo
+sem anexo. Em 19/11 o envio trocou para a **nodemailer** (`https://esm.sh/nodemailer@6.9.16`):
+boundary entre aspas, assunto RFC 2047 dobrado, HTML em base64. `composeRawEmail` monta o e-mail
+cru sem enviar e os testes de `_shared/email.test.ts` travam esse formato. Teste real pelo SES
+conferido no Gmail antes de publicar as 28 Edges que enviam e-mail.

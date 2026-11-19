@@ -8,51 +8,13 @@
 //   PUBLIC_SITE_URL: base de URLs nos links dos e-mails
 // Remetente/caixa interna vêm do banco (app_setting, editável no Manager).
 
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
-import { encodeBase64 } from "jsr:@std/encoding/base64";
+// nodemailer no lugar do denomailer desde 19/11/2026: o denomailer 1.6 partia o assunto acentuado
+// e deixava espaço sobrando no "boundary=" das partes, e o Outlook clássico mostrava o corpo em
+// branco (Pare Seguro). A nodemailer gera o MIME que o Outlook espera.
+import nodemailer from "https://esm.sh/nodemailer@6.9.16";
+import { Buffer } from "node:buffer";
 import { formatBRDateTime, formatBRL, type VoucherBooking } from "./voucher/fields.ts";
 import { siteUrl } from "./site.ts";
-
-/**
- * Codifica o HTML como base64 quebrado em linhas de 76 chars (RFC 2045). Usamos base64 de
- * propósito, no lugar do quoted-printable padrão do denomailer: em QP, uma URL longa (magic link)
- * é quebrada a cada 76 chars com "=\r\n"; quando a quebra cai logo depois de um ponto, a linha
- * seguinte começa com "." e o dot-stuffing do SMTP remove esse ponto inicial, corrompendo o
- * domínio do link (ex.: "...qiofcf.supabase.co" vira "...qiofcfsupabase.co" e dá NXDOMAIN). O
- * alfabeto base64 não tem ".", então nenhuma linha começa com ponto e o link chega íntegro.
- */
-export function htmlToBase64(html: string): string {
-  const b64 = encodeBase64(new TextEncoder().encode(html));
-  return (b64.match(/.{1,76}/g) ?? []).join("\r\n");
-}
-
-/**
- * Assunto com acento em RFC 2047 (base64), em palavras de até 75 caracteres dobradas com
- * "\r\n ". O denomailer 1.6 codifica sozinho em quoted-printable e quebra a linha a cada 74
- * caracteres com "=\r\n", que é quebra de corpo e não de cabeçalho: o resto do assunto vira
- * uma linha solta, o SES aceita e o Gmail recusa sem ninguém ver. Assim sumiu o resumo diário da
- * Pare Seguro de 16/11/2026 em diante ("..., 2 saídas e 8 reservas novas"). Começa com espaço
- * porque o denomailer recodifica o que começa com "=?"; o espaço a mais no cabeçalho é ignorado.
- */
-export function encodeSubject(subject: string): string {
-  // deno-lint-ignore no-control-regex
-  if (!/[^\u0000-\u007f]/.test(subject) && !subject.startsWith("=?")) return subject;
-  const enc = new TextEncoder();
-  // "=?utf-8?B?" + "?=" ocupa 12; 39 bytes viram 52 de base64: 64 por palavra, e a primeira
-  // linha ("Subject:" e os espaços do denomailer) fica em 75, dentro dos 78 da RFC 5322.
-  const pedacos: string[] = [];
-  let atual = "";
-  for (const ch of subject) {
-    if (atual && enc.encode(atual + ch).length > 39) {
-      pedacos.push(atual);
-      atual = ch;
-    } else {
-      atual += ch;
-    }
-  }
-  if (atual) pedacos.push(atual);
-  return " " + pedacos.map((p) => `=?utf-8?B?${encodeBase64(enc.encode(p))}?=`).join("\r\n ");
-}
 
 // @ts-expect-error - Deno env
 const env = (k: string) => Deno.env.get(k);
@@ -100,7 +62,7 @@ export async function getEmailConfig(admin: any): Promise<{ from: string | null;
   };
 }
 
-/** Anexo binário (ex.: o PDF do voucher). O denomailer codifica em base64 na hora de enviar. */
+/** Anexo binário (ex.: o PDF do voucher). A nodemailer codifica em base64 na hora de enviar. */
 export interface EmailAttachment {
   filename: string;
   contentType: string;
@@ -121,15 +83,46 @@ interface SendArgs {
   attachments?: EmailAttachment[];
 }
 
+const TEXTO_ALTERNATIVO = "Este e-mail requer um cliente compatível com HTML.";
+
+/**
+ * Opções da nodemailer para um envio. O corpo vai em base64 (`textEncoding`): o alfabeto não tem
+ * ".", então nenhuma linha começa com ponto e link longo chega íntegro (regressão do magic link de
+ * 10/07/2026, quando o ponto do domínio era comido no dot-stuffing).
+ */
+function mailOptions({ from, to, subject, html, replyTo, attachments }: SendArgs) {
+  return {
+    from,
+    to,
+    replyTo,
+    subject,
+    text: TEXTO_ALTERNATIVO,
+    html,
+    textEncoding: "base64" as const,
+    attachments: (attachments ?? []).map((a) => ({
+      filename: a.filename,
+      contentType: a.contentType,
+      content: Buffer.from(a.content),
+    })),
+  };
+}
+
+/** Monta o e-mail cru (RFC 5322, CRLF) sem enviar. Existe para o teste conferir o formato. */
+export async function composeRawEmail(args: SendArgs): Promise<string> {
+  const t = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "windows" });
+  const info = await t.sendMail(mailOptions(args));
+  return (info.message as Buffer).toString("utf-8");
+}
+
 /** Envia um e-mail via SMTP. Nunca lança; retorna {ok}. */
-export async function sendEmail({ from, to, subject, html, replyTo, attachments }: SendArgs): Promise<{ ok: boolean; error?: string }> {
-  // Vários destinatários num envio só: o denomailer 1.6 junta com ";" no cabeçalho e o SES
-  // recusa ("554 Illegal semicolon, not in group", 20/10/2026). Um envio por destinatário.
-  const destinos = (Array.isArray(to) ? to : [to]).map((d) => d.trim()).filter(Boolean);
+export async function sendEmail(args: SendArgs): Promise<{ ok: boolean; error?: string }> {
+  // Um envio por destinatário: um endereço que falha não derruba os outros, e quem chama conta
+  // os entregues um a um (resumo diário do parceiro).
+  const destinos = (Array.isArray(args.to) ? args.to : [args.to]).map((d) => d.trim()).filter(Boolean);
   if (destinos.length > 1) {
     let erro: string | undefined;
     for (const d of destinos) {
-      const r = await sendEmail({ from, to: d, subject, html, replyTo, attachments });
+      const r = await sendEmail({ ...args, to: d });
       if (!r.ok && !erro) erro = r.error;
     }
     return erro ? { ok: false, error: erro } : { ok: true };
@@ -138,58 +131,25 @@ export async function sendEmail({ from, to, subject, html, replyTo, attachments 
   const port = Number(env("SES_SMTP_PORT") ?? "465");
   const username = env("SES_SMTP_USER");
   const password = env("SES_SMTP_PASS");
-  if (!hostname || !username || !password || !from) {
-    console.warn("[smtp] credenciais/remetente ausentes; e-mail não enviado:", subject);
+  if (!hostname || !username || !password || !args.from || destinos.length === 0) {
+    console.warn("[smtp] credenciais/remetente ausentes; e-mail não enviado:", args.subject);
     return { ok: false, error: "SMTP não configurado" };
   }
 
-  const implicitTls = port === 465 || port === 2465;
-  const client = new SMTPClient({
-    connection: {
-      hostname,
-      port,
-      tls: implicitTls, // 465 = TLS implícito; 587/2587 = STARTTLS (tls:false)
-      auth: { username, password },
-    },
+  const transport = nodemailer.createTransport({
+    host: hostname,
+    port,
+    secure: port === 465 || port === 2465, // 465 = TLS implícito; 587/2587 = STARTTLS
+    auth: { user: username, pass: password },
   });
-
   try {
-    // HTML enviado como base64 (não quoted-printable), ver htmlToBase64: evita que o
-    // dot-stuffing do SMTP coma o ponto do domínio em links longos (magic link → NXDOMAIN).
-    await client.send({
-      from,
-      to: destinos,
-      replyTo,
-      subject: encodeSubject(subject),
-      mimeContent: [
-        {
-          mimeType: 'text/plain; charset="utf-8"',
-          content: "Este e-mail requer um cliente compatível com HTML.",
-          transferEncoding: "quoted-printable",
-        },
-        {
-          mimeType: 'text/html; charset="utf-8"',
-          content: htmlToBase64(html),
-          transferEncoding: "base64",
-        },
-      ],
-      attachments: (attachments ?? []).map((a) => ({
-        filename: a.filename,
-        contentType: a.contentType,
-        content: a.content,
-        encoding: "binary" as const,
-      })),
-    });
+    await transport.sendMail(mailOptions({ ...args, to: destinos[0] }));
     return { ok: true };
   } catch (e) {
     console.error("[smtp] erro:", e);
     return { ok: false, error: String(e) };
   } finally {
-    try {
-      await client.close();
-    } catch {
-      // ignore
-    }
+    transport.close();
   }
 }
 

@@ -1,9 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import { decodeBase64 } from "jsr:@std/encoding/base64";
-import { quotedPrintableEncodeInline } from "https://deno.land/x/denomailer@1.6.0/config/mail/encoding.ts";
 import {
-  encodeSubject,
-  htmlToBase64,
+  composeRawEmail,
   pdfAttachment,
   siteUrl,
   tplApprovalInvite,
@@ -72,26 +70,6 @@ Deno.test("tplApprovalInvite: inclui o link de ação", () => {
   const m = tplApprovalInvite("Kallef", link);
   assertStringIncludes(m.html, link);
   assertStringIncludes(m.subject, "aprovado");
-});
-
-Deno.test("htmlToBase64: link longo chega íntegro e nenhuma linha começa com '.' (regressão do ponto comido pelo SMTP dot-stuffing)", () => {
-  // Link real que quebrou em produção: o QP soft-wrap deixou uma linha começando com
-  // ".supabase.co" e o dot-stuffing comeu o ponto → "...qiofcfsupabase.co" (NXDOMAIN).
-  const link =
-    "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/verify?token=9872e9be6a60a81f2c000477706ff7ab52dc530f975d1452b1957760&type=magiclink&redirect_to=https://hub.movepark.co/onboarding";
-  const html = tplApprovalInvite("Léo", link).html;
-  const encoded = htmlToBase64(html);
-
-  // Base64 não tem "." no alfabeto → nenhuma linha começa com ponto (é o que corrige o bug).
-  for (const line of encoded.split("\r\n")) {
-    assert(!line.startsWith("."), `linha base64 não pode começar com ponto: ${line.slice(0, 12)}`);
-    assert(line.length <= 76, "linha base64 respeita o limite de 76 chars (RFC 2045)");
-  }
-
-  // Round-trip: o HTML decodificado preserva o domínio COM o ponto.
-  const decoded = new TextDecoder().decode(decodeBase64(encoded.replaceAll("\r\n", "")));
-  assertStringIncludes(decoded, "mgaigbezdalbyuqiofcf.supabase.co");
-  assertStringIncludes(decoded, link);
 });
 
 Deno.test("tplRejection: inclui o motivo quando informado", () => {
@@ -516,39 +494,75 @@ Deno.test("datas alteradas: diferença paga, devolvida (PIX, cartão) ou na fila
   }
 });
 
-// Regressão de 19/11/2026: assunto com acento e longo saía com "=\r\n" no meio do cabeçalho
-// (quoted-printable do denomailer), o Gmail recusava e o resumo da Pare Seguro sumiu.
-function decodeSubject(h: string): string {
-  const words = [...h.matchAll(/=\?utf-8\?B\?([^?]+)\?=/g)].map((m) => decodeBase64(m[1]));
-  const bytes = new Uint8Array(words.reduce((n, w) => n + w.length, 0));
-  let o = 0;
-  for (const w of words) {
-    bytes.set(w, o);
-    o += w.length;
-  }
-  return new TextDecoder().decode(bytes);
+// E-mail cru montado pela nodemailer (19/11/2026). O denomailer partia o assunto acentuado e
+// deixava espaço no fim do "boundary=", e o Outlook clássico da Pare Seguro mostrava o corpo em
+// branco. Estes testes travam o formato que o Outlook lê.
+function partesDoEmail(raw: string) {
+  const fim = raw.indexOf("\r\n\r\n");
+  return { cabecalho: raw.slice(0, fim), corpo: raw.slice(fim + 4) };
 }
 
-Deno.test("encodeSubject: assunto longo com acento vira palavras RFC 2047 dobradas, sem quebra solta", () => {
+function decodificaPartes(raw: string): { tipo: string; conteudo: Uint8Array }[] {
+  // Cada parte começa depois de uma linha "--boundary"; cabeçalho e corpo separados por linha vazia.
+  return raw.split(/\r\n--[^\r\n]+\r\n/).slice(1).flatMap((parte) => {
+    const fim = parte.indexOf("\r\n\r\n");
+    if (fim < 0) return [];
+    const cab = parte.slice(0, fim);
+    if (!/Content-Transfer-Encoding: base64/.test(cab)) return [];
+    const tipo = cab.match(/Content-Type: ([^;\r\n]+)/)?.[1] ?? "";
+    const corpo = parte.slice(fim + 4).split("\r\n--")[0].replaceAll("\r\n", "");
+    return [{ tipo, conteudo: decodeBase64(corpo) }];
+  });
+}
+
+Deno.test("composeRawEmail: assunto acentuado e longo sai codificado, sem linha solta no cabeçalho", async () => {
   const subject = "Pare Seguro, movimento de hoje: 3 entradas, 2 saídas e 8 reservas novas";
-  // O denomailer recebe o nosso valor e não pode recodificar.
-  const header = quotedPrintableEncodeInline(encodeSubject(subject));
-  assertEquals(header, encodeSubject(subject));
-  const linhas = header.split("\r\n");
-  assert(linhas.length > 1);
-  for (const [i, l] of linhas.entries()) {
-    // Cada linha é uma palavra codificada inteira, precedida de espaço (dobra válida).
-    assert(/^ =\?utf-8\?B\?[A-Za-z0-9+/]+={0,2}\?=$/.test(l), `linha ${i} é uma palavra RFC 2047 inteira: ${l}`);
-    assert(("Subject:  " + l).length <= 78, `linha ${i} cabe em 78 caracteres`);
+  const raw = await composeRawEmail({ from: "contato@movepark.co", to: "a@b.com", subject, html: "<p>oi</p>" });
+  const { cabecalho } = partesDoEmail(raw);
+  assert(/^[\x20-\x7e\r\n\t]*$/.test(cabecalho), "cabeçalho só com ASCII");
+  for (const linha of cabecalho.split("\r\n")) {
+    assert(/^[A-Za-z-]+: |^[ \t]/.test(linha), `linha de cabeçalho bem formada: ${linha}`);
+    assert(linha.length <= 998, "linha dentro do limite da RFC 5322");
   }
-  assertEquals(decodeSubject(header), subject);
+  assertStringIncludes(cabecalho, "Subject: =?UTF-8?");
 });
 
-Deno.test("encodeSubject: não parte caractere de vários bytes entre palavras", () => {
-  const subject = "ção".repeat(40);
-  assertEquals(decodeSubject(encodeSubject(subject)), subject);
+Deno.test("composeRawEmail: separador das partes entre aspas e sem espaço sobrando (Outlook clássico)", async () => {
+  const raw = await composeRawEmail({ from: "contato@movepark.co", to: "a@b.com", subject: "Teste", html: "<p>oi</p>" });
+  const boundaries = [...raw.matchAll(/boundary="([^"]+)"/g)].map((m) => m[1]);
+  assert(boundaries.length >= 1, "boundary declarado entre aspas");
+  for (const linha of raw.split("\r\n")) {
+    assert(!/boundary=\S+\s+$/.test(linha), `boundary sem espaço no fim: ${linha}`);
+  }
+  for (const b of boundaries) assertStringIncludes(raw, `\r\n--${b}--`);
+  assertStringIncludes(raw, "multipart/alternative");
 });
 
-Deno.test("encodeSubject: assunto só ASCII passa igual", () => {
-  assertEquals(encodeSubject("Nationpark, movimento de hoje: 1 entrada"), "Nationpark, movimento de hoje: 1 entrada");
+Deno.test("composeRawEmail: HTML em base64 preserva link longo e nenhuma linha começa com ponto", async () => {
+  // Link real que quebrou em 10/07/2026: o ponto do domínio era comido no dot-stuffing (NXDOMAIN).
+  const link =
+    "https://mgaigbezdalbyuqiofcf.supabase.co/auth/v1/verify?token=9872e9be6a60a81f2c000477706ff7ab52dc530f975d1452b1957760&type=magiclink&redirect_to=https://hub.movepark.co/onboarding";
+  const html = tplApprovalInvite("Léo", link).html;
+  const raw = await composeRawEmail({ from: "contato@movepark.co", to: "a@b.com", subject: "Aprovado", html });
+  for (const linha of partesDoEmail(raw).corpo.split("\r\n")) {
+    assert(!linha.startsWith("."), `linha não pode começar com ponto: ${linha.slice(0, 12)}`);
+  }
+  const htmlParte = decodificaPartes(raw).find((p) => p.tipo === "text/html");
+  assert(htmlParte, "parte text/html em base64");
+  const decodificado = new TextDecoder().decode(htmlParte.conteudo);
+  assertEquals(decodificado, html);
+  assertStringIncludes(decodificado, link);
+});
+
+Deno.test("composeRawEmail: anexo PDF vai inteiro, como application/pdf", async () => {
+  const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x0a, 0xff, 0x00, 0x2e]);
+  const raw = await composeRawEmail({
+    from: "contato@movepark.co", to: "a@b.com", subject: "Voucher", html: "<p>oi</p>",
+    attachments: [pdfAttachment("voucher-MP-F3FC9F.pdf", bytes)],
+  });
+  assertStringIncludes(raw, "multipart/mixed");
+  assertStringIncludes(raw, 'filename=voucher-MP-F3FC9F.pdf');
+  const pdf = decodificaPartes(raw).find((p) => p.tipo === "application/pdf");
+  assert(pdf, "parte application/pdf em base64");
+  assertEquals(pdf.conteudo, bytes);
 });
