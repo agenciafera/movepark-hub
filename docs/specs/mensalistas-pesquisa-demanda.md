@@ -8,6 +8,9 @@
 > "Alinhamento Renato - 2026/11/13") e a atividade
 > [Mensalistas: perguntas da pesquisa de demanda para as 3 frentes](https://app.clickup.com/t/17tn9ea20c8)
 > (Sprint 9). **Pronto quando:** perguntas aprovadas pelo Renato.
+> **Apresentação para o Renato** (14 slides, mesmo conteúdo desta spec, em ordem de conversa):
+> <https://claude.ai/artifact/M8teidSGMDAXJuDtorXp2V>. Privada até ser compartilhada pelo menu da
+> página; quando a spec mudar, os slides mudam junto.
 > **Relacionadas:** [grupo-movepark.md](./grupo-movepark.md) (Coopark, Q-025),
 > [marketing-automation.md](./marketing-automation.md) (contato de marketing, consentimento,
 > "candidato a assinante"), [reservas-wl-no-hub.md](./reservas-wl-no-hub.md) (`wl_booking`, a base
@@ -35,6 +38,13 @@ Cuidado levantado pelo Renato, que vira regra de desenho (§ 3): a pesquisa não
 micro-regiões espalhadas (BH, Osasco, Interlagos). Ela tem que **puxar para os polos de demanda**
 (Vila Olímpia, Itaim, e o entorno Faria Lima e Iguatemi) sem, por isso, deixar de registrar quem
 está fora deles.
+
+**O que destrava a fase 2**, nas palavras da reunião (00:43): **três regiões com demanda real**
+(um polo só não basta), **vaga na mão** (lotes credenciados, com preço e quantidade acertados) e a
+meta de **R$ 100 mil de vendas por mês**. A pesquisa desta fase **não inclui a Garagem** (a rede do
+Renato): a demanda dela ele já conhece; o teste é se outras redes também querem. O que vem depois
+(match instantâneo, leilão de vaga, cobrança no cartão, cashback por indicação, painel de avisos
+para o estacionamento) foi conversado e fica para a fase 2.
 
 ## 2. O que a pesquisa precisa provar
 
@@ -88,7 +98,9 @@ desiste no meio ainda deixa as respostas anteriores gravadas (salvamento por per
 
 **R4. A pergunta de preço é por faixa, e as faixas são do Renato.** Ele mostra a precificação na
 próxima reunião (ata, 00:56:42). As faixas abaixo são **placeholder** para ele calibrar. Faixa
-errada (larga demais ou fora do mercado) joga todo mundo na mesma caixa e o dado morre.
+errada (larga demais ou fora do mercado) joga todo mundo na mesma caixa e o dado morre. Âncoras
+que a própria reunião deu: o mensal da Garagem em Pinheiros é R$ 650 (00:53), e o pacote de 25
+vagas vendido ao C6 saiu a R$ 320 por vaga (00:33). As faixas de § 4 cobrem esse intervalo.
 
 **R5. Nenhuma promessa de produto.** A página não diz "a Movepark tem vaga mensal em Vila Olímpia"
 porque não tem. Diz o que é verdade: "estamos mapeando onde falta vaga mensal e quanto se paga;
@@ -101,6 +113,29 @@ aceitar marketing. Quem quer ser avisada marca a caixa e isso grava `whatsapp_co
 `pesquisa-mensalista` (modelo de `marketing_contact`, § 7 de `marketing-automation.md`). Hoje
 **zero** contatos da base têm `whatsapp_consent`, então esta pesquisa é também a primeira coleta
 de opt-in de WhatsApp da Movepark, e vale tratá-la como tal.
+
+### 3.1 O fluxo ponta a ponta
+
+```
+gatilho ─► mensagem ─► página ─► resposta ─► polo ─► fila da região ─► quadro ─► Renato ─► vaga ─► aviso à fila
+```
+
+| Passo | O que acontece | Quem | Onde fica o dado |
+|---|---|---|---|
+| 1. Gatilho | A: saída concluída em GRU ou CGH há 24h. B: pessoa no raio do polo abre o Instagram. C: Renato dispara a lista. | Hub (A), Meta Ads (B), Renato (C) | `wl_booking.check_out_at` (A) |
+| 2. Mensagem | A: template de utilidade no WhatsApp ("deu tudo certo na retirada?") com link. B: anúncio com a pergunta 1 na chamada. C: e-mail assinado pelo Renato. | Movepark (A, B), Renato (C) | `notification_log` (A), UTMs (B, C) |
+| 3. Página | Uma página só. A frente A abre com a avaliação da estadia; as três seguem para as 7 perguntas. Salva por pergunta. | Movepark | tabela da pesquisa, `origem` + UTMs |
+| 4. Resposta | 7 perguntas em 90 segundos; nome e WhatsApp só de quem quer ser avisado. | cliente | idem, com `whatsapp_consent` se marcou |
+| 5. Polo | O ponto do endereço do trabalho cai num polo da lista, ou em "outro" com o município. Nunca escolhido pela pessoa. | Hub (PostGIS, ADR-001) | coluna `polo` na tabela |
+| 6. Fila da região | Quem respondeu "quero ser avisado" recebe uma confirmação curta ("você está na fila de Vila Olímpia; avisamos quando houver vaga") e entra na lista daquele polo. | Movepark | mesma tabela, `quer_aviso = true` |
+| 7. Quadro | Toda semana: respostas por polo, já mensalistas, preço mediano, intenção com contato, estacionamentos citados. | Movepark | § 8 |
+| 8. Renato | Leva os três ou quatro polos mais cheios às redes (sem a Garagem) e volta com vaga, preço e quantidade. | Renato | fora do Hub |
+| 9. Vaga | Há vaga num polo com demanda: critério "três regiões com demanda real + vaga na mão" atendido. | os dois | decisão de ir para a fase 2 |
+| 10. Aviso à fila | A fila do polo recebe a oferta real. É a primeira venda da fase 2, e ela nasce com lista quente, não com anúncio frio. | Movepark | fase 2 |
+
+O passo 6 é o que separa pesquisa de captura: sem a confirmação, a pessoa respondeu a um
+formulário morto; com ela, entrou numa fila e sabe por que vai receber a próxima mensagem. É
+também o que legitima o aviso do passo 10 meses depois.
 
 ## 4. O questionário
 
