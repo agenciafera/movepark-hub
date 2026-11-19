@@ -17,7 +17,7 @@ de venda, clientes e cancelamento vêm comparados com o mesmo dia da semana ante
 | Dinheiro | repasses do dia por empresa (automático ou saque pedido), cancelamentos, estornado, dívida de parceiros em aberto |
 | Hoje | entradas e saídas do Hub no dia do e-mail, chamados abertos e novos |
 | Avaliações | quantas, a média e as de nota até 3 com o comentário |
-| Atenção | publicação do site parada (`site_rebuild_health`), entrega de integração que falhou, cartão recusado no checkout, lead de parceiro novo. Sem nada: "Nada pedindo atenção." |
+| Atenção | publicação do site parada (`site_rebuild_health`), entrega de integração que falhou, cartão recusado no checkout, lead de parceiro novo, e-mail devolvido, marcado como spam ou recusado pelo SES no dia (`alertas.emails_problema`, ver [email-eventos-ses.md](./email-eventos-ses.md)). Sem nada: "Nada pedindo atenção." |
 
 ## Regras dos números
 

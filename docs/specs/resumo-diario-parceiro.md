@@ -69,8 +69,9 @@ SES, sem erro do nosso lado. Empresa com assunto curto (Nationpark, Abbapark) se
 Correção: `encodeSubject` em `_shared/email.ts` codifica o assunto em RFC 2047 (base64, palavras
 dobradas) antes de entregar ao denomailer, para todo e-mail do Hub (as 28 Edges que enviam foram
 publicadas de novo em 19/11). Além disso, o assunto do resumo virou fixo, sem contagens. Teste de regressão em
-`_shared/email.test.ts`. "Enviado" no `partner_digest_log` quer dizer aceito pelo SES, não entregue:
-devolução depois do aceite só aparece no console do SES.
+`_shared/email.test.ts`. "Enviado" no `partner_digest_log` quer dizer aceito pelo SES, não entregue.
+Desde 19/11/2026 a devolução depois do aceite chega ao Hub (`email_event`), entra no resumo diário da
+equipe e aparece em `/manager/emails`: ver [email-eventos-ses.md](./email-eventos-ses.md).
 
 Depois disso, o assunto chegava certo mas o **Outlook clássico** da Elis (contato@grupowge.com.br,
 UHServer) mostrava o corpo em branco, enquanto Gmail e KingHost mostravam completo. O denomailer

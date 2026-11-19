@@ -160,6 +160,7 @@ import ManagerLotesMapeados from "@/routes/manager/lotes-mapeados";
 import ManagerPesquisaDePreco from "@/routes/manager/pesquisa-de-preco";
 import ManagerConversas from "@/routes/manager/conversas";
 import ManagerAuditoriaEnderecos from "@/routes/manager/auditoria-enderecos";
+import ManagerEmails from "@/routes/manager/emails";
 import ManagerWhiteLabel from "@/routes/manager/white-label";
 import ManagerBlog from "@/routes/manager/blog";
 import ManagerSocial from "@/routes/manager/social";
@@ -1632,6 +1633,8 @@ export const routes: RouteRecord[] = [
               { path: "pesquisa-de-preco", element: <ManagerPesquisaDePreco /> },
               { path: "conversas", element: <ManagerConversas /> },
               { path: "auditoria-enderecos", element: <ManagerAuditoriaEnderecos /> },
+              // Eventos do SES: devolução, reclamação e entrega por destinatário (19/11/2026).
+              { path: "emails", element: <ManagerEmails /> },
               { path: "white-label", element: <ManagerWhiteLabel /> },
               { path: "blog", element: <ManagerBlog /> },
               // Fila de publicação do Instagram (E3.6).

@@ -6,6 +6,10 @@
 //   SES_SMTP_PORT: 465 (TLS) recomendado; 587/2587 (STARTTLS) também funcionam
 //   SES_SMTP_USER / SES_SMTP_PASS: credenciais SMTP do SES
 //   PUBLIC_SITE_URL: base de URLs nos links dos e-mails
+//   SES_CONFIGURATION_SET: configuration set do SES (ex.: movepark-eventos). Com ele, o envio leva o
+//     header X-SES-CONFIGURATION-SET e o SES publica devolução, reclamação e entrega no SNS, que cai
+//     na Edge ses-events (tabela email_event). Sem ele, nenhum header: um nome que não existe no SES
+//     faria o envio falhar. Ver docs/specs/email-eventos-ses.md.
 // Remetente/caixa interna vêm do banco (app_setting, editável no Manager).
 
 // nodemailer no lugar do denomailer desde 19/11/2026: o denomailer 1.6 partia o assunto acentuado
@@ -91,7 +95,9 @@ const TEXTO_ALTERNATIVO = "Este e-mail requer um cliente compatível com HTML.";
  * 10/07/2026, quando o ponto do domínio era comido no dot-stuffing).
  */
 function mailOptions({ from, to, subject, html, replyTo, attachments }: SendArgs) {
+  const configSet = (env("SES_CONFIGURATION_SET") ?? "").trim();
   return {
+    ...(configSet ? { headers: { "X-SES-CONFIGURATION-SET": configSet } } : {}),
     from,
     to,
     replyTo,
@@ -787,6 +793,8 @@ export interface TeamDigest {
     cartao_recusado: number;
     publicacao_ok: boolean;
     publicacao_motivo: string | null;
+    /** E-mail que o SES aceitou e o destino devolveu ou reclamou (email_event, 19/11/2026). */
+    emails_problema?: { destinatario: string; tipo: string; bounce_type: string | null; assunto: string | null; n: number }[];
   };
 }
 
@@ -798,6 +806,19 @@ export function teamDigestDelta(atual: number, antes: number, dinheiro = false):
   const pct = Math.round(((atual - antes) / antes) * 100);
   const sinal = pct > 0 ? "+" : "";
   return `${sinal}${pct}% contra ${fmt(antes)} na semana passada`;
+}
+
+/**
+ * Uma linha do alerta de e-mail que não chegou (devolução, reclamação ou recusa do SES). Puro, para
+ * teste. Devolução temporária (caixa cheia) é dita como tal, porque pede ação diferente.
+ */
+export function teamDigestEmailAlert(e: { destinatario: string; tipo: string; bounce_type: string | null; assunto: string | null; n: number }): string {
+  const vezes = e.n > 1 ? ` (${e.n} vezes)` : "";
+  const assunto = e.assunto ? `, último assunto "${e.assunto}"` : "";
+  if (e.tipo === "complaint") return `${e.destinatario} marcou e-mail nosso como spam${vezes}${assunto}.`;
+  if (e.tipo === "reject") return `O SES recusou e-mail para ${e.destinatario}${vezes}${assunto}.`;
+  const tipo = e.bounce_type === "Transient" ? "devolveu temporariamente" : "devolveu";
+  return `E-mail para ${e.destinatario} ${tipo}${vezes}${assunto}.`;
 }
 
 const CANAL_ROTULO: Record<string, string> = { hub: "Movepark", direto: "Sem canal" };
@@ -873,6 +894,7 @@ export function tplTeamDailyDigest(d: TeamDigest): { subject: string; html: stri
     ? "1 entrega para integração de parceiro falhou."
     : `${al.integracao_falhas} entregas para integração de parceiro falharam.`);
   if (al.cartao_recusado) alertas.push(`${contagem(al.cartao_recusado, "cartão recusado", "cartões recusados")} no checkout.`);
+  for (const e of al.emails_problema ?? []) alertas.push(teamDigestEmailAlert(e));
   for (const l of al.leads_parceiro) alertas.push(`Lead de parceiro: ${l.empresa ?? "sem nome"}${l.cidade ? `, ${l.cidade}` : ""}.`);
   const blocoAlertas = alertas.length
     ? `<ul style="margin:8px 0 0;padding-left:20px">${alertas.map((t) => `<li style="margin:4px 0">${escapeHtml(t)}</li>`).join("")}</ul>`

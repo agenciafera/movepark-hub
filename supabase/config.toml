@@ -496,6 +496,11 @@ verify_jwt = false
 [functions.team-daily-digest]
 verify_jwt = false
 
+# Eventos do SES via SNS (19/11/2026): quem chama é o SNS, sem JWT. A porta é a assinatura do
+# SNS e o tópico da allowlist (app_setting.ses_events_topic_arn). Ver docs/specs/email-eventos-ses.md.
+[functions.ses-events]
+verify_jwt = false
+
 [functions.reconcile-confirmations]
 verify_jwt = false
 

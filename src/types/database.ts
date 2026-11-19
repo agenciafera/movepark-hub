@@ -2388,6 +2388,54 @@ export type Database = {
           },
         ]
       }
+      email_event: {
+        Row: {
+          bounce_subtype: string | null
+          bounce_type: string | null
+          created_at: string
+          diagnostic: string | null
+          event_type: string
+          id: string
+          occurred_at: string
+          raw: Json | null
+          recipient: string
+          sender: string | null
+          ses_message_id: string | null
+          sns_message_id: string
+          subject: string | null
+        }
+        Insert: {
+          bounce_subtype?: string | null
+          bounce_type?: string | null
+          created_at?: string
+          diagnostic?: string | null
+          event_type: string
+          id?: string
+          occurred_at: string
+          raw?: Json | null
+          recipient: string
+          sender?: string | null
+          ses_message_id?: string | null
+          sns_message_id: string
+          subject?: string | null
+        }
+        Update: {
+          bounce_subtype?: string | null
+          bounce_type?: string | null
+          created_at?: string
+          diagnostic?: string | null
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          raw?: Json | null
+          recipient?: string
+          sender?: string | null
+          ses_message_id?: string | null
+          sns_message_id?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       external_exit_click: {
         Row: {
           check_in_at: string | null

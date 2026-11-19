@@ -8,6 +8,7 @@ import {
   tplDuplicatePaymentTeam,
   tplPartnerDailyDigest,
   teamDigestDelta,
+  teamDigestEmailAlert,
   tplTeamDailyDigest,
   tplBookingConfirmation,
   tplLeadAlert,
@@ -565,4 +566,46 @@ Deno.test("composeRawEmail: anexo PDF vai inteiro, como application/pdf", async 
   const pdf = decodificaPartes(raw).find((p) => p.tipo === "application/pdf");
   assert(pdf, "parte application/pdf em base64");
   assertEquals(pdf.conteudo, bytes);
+});
+
+// Eventos do SES (19/11/2026): o resumo da Pare Seguro sumiu por dias sem ninguém no Hub ver.
+Deno.test("teamDigestEmailAlert: devolução, temporária, reclamação e recusa", () => {
+  assertEquals(
+    teamDigestEmailAlert({ destinatario: "a@ex.com", tipo: "bounce", bounce_type: "Permanent", assunto: "Movimento de hoje: X", n: 3 }),
+    'E-mail para a@ex.com devolveu (3 vezes), último assunto "Movimento de hoje: X".',
+  );
+  assertEquals(
+    teamDigestEmailAlert({ destinatario: "a@ex.com", tipo: "bounce", bounce_type: "Transient", assunto: null, n: 1 }),
+    "E-mail para a@ex.com devolveu temporariamente.",
+  );
+  assertStringIncludes(teamDigestEmailAlert({ destinatario: "c@ex.com", tipo: "complaint", bounce_type: "abuse", assunto: null, n: 1 }), "como spam");
+  assertStringIncludes(teamDigestEmailAlert({ destinatario: "c@ex.com", tipo: "reject", bounce_type: null, assunto: null, n: 1 }), "O SES recusou");
+});
+
+Deno.test("tplTeamDailyDigest: e-mail devolvido entra em Atenção, escapado", () => {
+  const m = tplTeamDailyDigest({
+    ...resumoEquipe,
+    alertas: { ...resumoEquipe.alertas, emails_problema: [{ destinatario: "x<y>@ex.com", tipo: "bounce", bounce_type: "Permanent", assunto: "Oi", n: 2 }] },
+  });
+  assertStringIncludes(m.html, "E-mail para x&lt;y&gt;@ex.com devolveu (2 vezes)");
+  const vazio = tplTeamDailyDigest({
+    ...resumoEquipe,
+    alertas: { leads_parceiro: [], integracao_falhas: 0, cartao_recusado: 0, publicacao_ok: true, publicacao_motivo: null, emails_problema: [] },
+  });
+  assertStringIncludes(vazio.html, "Nada pedindo atenção.");
+});
+
+Deno.test("composeRawEmail: header do configuration set só quando SES_CONFIGURATION_SET existe", async () => {
+  const args = { from: "contato@movepark.co", to: "a@ex.com", subject: "Teste", html: "<p>oi</p>" };
+  const antes = Deno.env.get("SES_CONFIGURATION_SET");
+  try {
+    Deno.env.delete("SES_CONFIGURATION_SET");
+    assertEquals(/X-SES-CONFIGURATION-SET/i.test(await composeRawEmail(args)), false);
+    Deno.env.set("SES_CONFIGURATION_SET", "movepark-eventos");
+    // A nodemailer grafa "X-Ses-Configuration-Set"; nome de header não diferencia maiúscula.
+    assertEquals(/^X-SES-CONFIGURATION-SET: movepark-eventos\r$/im.test(await composeRawEmail(args)), true);
+  } finally {
+    if (antes === undefined) Deno.env.delete("SES_CONFIGURATION_SET");
+    else Deno.env.set("SES_CONFIGURATION_SET", antes);
+  }
 });

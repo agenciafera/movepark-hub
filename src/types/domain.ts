@@ -26,6 +26,8 @@ export type Location = Tables<"location">;
 export type Profile = Tables<"profiles">;
 export type Vehicle = Tables<"vehicle">;
 export type Payment = Tables<"payment">;
+/** Evento do Amazon SES por destinatário (devolução, reclamação, entrega). Ver email-eventos-ses.md. */
+export type EmailEvent = Tables<"email_event">;
 export type ParkingType = Tables<"parking_type">;
 /** Próxima tabela de preço com data (vigência pela data da compra). Ver agendamento-de-preco.md. */
 export type PricingSchedule = Tables<"pricing_schedule">;

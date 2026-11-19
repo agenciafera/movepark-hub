@@ -5,7 +5,7 @@
 // de flexibilidade Básica/Flex/Superflex da Movepark, editadas só pelo Super Admin no /manager
 // (a unidade não toca nelas). Cada item tem um ícone próprio: em tablet a sidebar é só-ícone.
 
-import { Airplane, ArrowsLeftRight, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, Gear, Handshake, InstagramLogo, Kanban, Key, LockKey, MagnifyingGlass, MapPin, MapPinArea, MapTrifold, Megaphone, PaperPlaneTilt, Percent, Question, Receipt, Robot, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Ticket, UserMinus, Users, UsersThree, Wallet,
+import { Airplane, ArrowsLeftRight, Article, Bank, Buildings, Calendar, CalendarBlank, ChartBar, ChartPie, CurrencyCircleDollar, EnvelopeSimple, Gear, Handshake, InstagramLogo, Kanban, Key, LockKey, MagnifyingGlass, MapPin, MapPinArea, MapTrifold, Megaphone, PaperPlaneTilt, Percent, Question, Receipt, Robot, Scroll, ShieldCheck, Sparkle, SquaresFour, Star, Tag, Ticket, UserMinus, Users, UsersThree, Wallet,
   ChatCircleDots,
 } from "@phosphor-icons/react";
 import type { NavItem, NavSection } from "./Sidebar.logic";
@@ -70,6 +70,7 @@ export const managerSections: Section[] = [
       { to: "/manager/users", label: "Usuários", icon: Users },
       { to: "/manager/legal", label: "Documentos legais", icon: Scroll },
       { to: "/manager/api-interna", label: "API interna", icon: LockKey },
+      { to: "/manager/emails", label: "E-mails", icon: EnvelopeSimple },
       // Externo: o Studio é outro worker. Ver `features/studio/api.ts` para por que o
       // token não pode vir do bundle.
       // Ferramenta de time (17/09/2026): era uma bolinha flutuante em cima das tabelas.
