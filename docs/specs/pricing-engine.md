@@ -88,13 +88,27 @@ dia. Se a faixa não tiver total e sim `unit_price`, o motor cobra `unit_price �
 pseudocódigo em "Cálculo"), o que vale para qualquer faixa, aberta ou fechada. É isso que permite
 misturar total fixo e diária na mesma tabela.
 
+**Pacote + diária extra.** Uma faixa com os **dois** campos preenchidos cobra o total como base e
+soma a diária por dia dentro da faixa: `total_price + (dias - from_day + 1) × unit_price`. É o
+"acima de 30, pacote + diária extra" dos parceiros. Até 19/11/2026 o motor fazia
+`coalesce(total, dias × diária)` e descartava a diária quando havia total, embora o editor já
+mostrasse os dois campos lado a lado; nenhuma faixa do banco usava os dois quando a regra mudou
+(migration `20261205160000_faixa_pacote_mais_diaria.sql`).
+
 ```
 1 dia   → R$ 149,00
 2 dias  → R$ 198,00
 3 dias  → R$ 297,00
 6-10 dias → R$ 594,00
-30+ dias  → R$ 792,00 + (dias - 30) × R$ 26,40
+31+ dias  → total R$ 792,00 + diária R$ 26,40  (31 dias = R$ 818,40)
 ```
+
+**A última faixa tem que ser aberta.** Sem faixa que cubra o número de dias, o motor devolve
+`null`, a ficha fica sem preço e o botão de reservar não ativa. Foi o que aconteceu com a Pare
+Seguro (Guarulhos) até 19/11/2026: as duas vagas paravam no pacote de 15 a 30 dias. Hoje a
+descoberta cobra R$ 290 + R$ 18,90 por dia acima de 30 e a coberta R$ 350 + R$ 28,90; a tabela
+agendada para 01/12/2026 ganhou a mesma faixa com a diária nova de cada vaga (R$ 370 + R$ 24,90 e
+R$ 420 + R$ 38,90). Coberto por `supabase/tests/pricing_draft.test.sql`.
 
 **Exemplos no legado:** Aeropark Valet. NationPark mistura fixo (1-2 dias) com diária (3+).
 O Virapark usa total fixo só em 1 dia e diária nas demais faixas.

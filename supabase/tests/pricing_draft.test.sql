@@ -4,7 +4,7 @@
 -- Rodar com: supabase test db
 
 begin;
-select plan(9);
+select plan(14);
 
 -- preço de um rascunho num dado nº de dias
 create or replace function pg_temp.d(rule jsonb, tiers jsonb, days int)
@@ -32,6 +32,28 @@ select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.virapark(), 7), 125.
   'fixed_bracket: 7 dias (mais barato que 6, a inversão que o painel avisa)');
 select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.virapark(), 30), 597.0,
   'fixed_bracket: faixa aberta multiplica pelos dias');
+
+-- Pacote + diária extra (Pare Seguro, 19/11/2026): faixa com total E diária cobra o pacote mais a
+-- diária por dia dentro da faixa. Antes a diária era ignorada e, sem faixa 31+, o preço era nulo
+-- (o botão de reservar não ativava acima de 30 dias).
+create or replace function pg_temp.pare_seguro(com_extra boolean) returns jsonb language sql as $$
+  select '[{"from_day":1,"to_day":14,"unit_price":18.9},
+           {"from_day":15,"to_day":30,"total_price":290}]'::jsonb
+         || case when com_extra
+              then '[{"from_day":31,"to_day":null,"total_price":290,"unit_price":18.9}]'::jsonb
+              else '[]'::jsonb end;
+$$;
+
+select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.pare_seguro(false), 31), null::numeric,
+  'fixed_bracket: sem faixa que cubra o dia, não há preço');
+select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.pare_seguro(true), 30), 290.0,
+  'pacote + diária: dia 30 segue no pacote fechado');
+select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.pare_seguro(true), 31), 308.9,
+  'pacote + diária: 31 dias = R$ 290 + 1 diária de R$ 18,90');
+select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.pare_seguro(true), 45), 573.5,
+  'pacote + diária: 45 dias = R$ 290 + 15 diárias');
+select is(pg_temp.d('{"strategy":"fixed_bracket"}', pg_temp.pare_seguro(true), 14), 264.6,
+  'pacote + diária: faixa só de diária não muda');
 
 -- uniform_by_duration: a faixa da duração total vale para todos os dias
 select is(

@@ -30,7 +30,8 @@ function makeTmpId() {
 /**
  * Editor de faixas de preço. Suporta 3 estratégias de tier:
  * - tiered_progressive / uniform_by_duration → preço por dia (unit_price)
- * - fixed_bracket → valor total fixo (total_price), com unit_price opcional p/ faixa aberta
+ * - fixed_bracket → valor total fixo (total_price) ou diária (unit_price); com os dois, pacote +
+ *   diária extra (total + diária por dia dentro da faixa)
  */
 export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
   const usesUnit = tierUsesUnitPrice(strategy);
@@ -68,7 +69,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
         {strategy === "fixed_bracket" ? (
           <>
             <Label className="col-span-3">Preço total fixo</Label>
-            <Label className="col-span-4">Preço/dia (faixa aberta)</Label>
+            <Label className="col-span-4">Preço/dia</Label>
           </>
         ) : (
           <Label className="col-span-7">Preço por dia</Label>
@@ -130,7 +131,7 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
               <div className="flex flex-col gap-1.5 tablet:col-span-4">
                 <Label className="tablet:hidden">Preço por dia</Label>
                 <CurrencyInput
-                  aria-label="Preço por dia (faixa aberta)"
+                  aria-label="Preço por dia"
                   value={tier.unit_price}
                   onChange={(v) => updateTier(tier.id, { unit_price: v })}
                 />
@@ -166,10 +167,11 @@ export function PricingTierEditor({ strategy, tiers, onChange }: Props) {
 
       {strategy === "fixed_bracket" && (
         <p className="text-caption text-muted">
-          Cada faixa aceita <em>um</em> dos dois: <em>Preço total fixo</em>, que vale para
-          qualquer estadia dentro da faixa, ou <em>Preço/dia</em>, que é multiplicado pelos dias
-          da reserva. O total fixo tem prioridade se os dois estiverem preenchidos. Na faixa
-          final aberta (sem "Até"), use <em>Preço/dia</em>.
+          Use <em>Preço total fixo</em> para um valor fechado na faixa inteira, ou{" "}
+          <em>Preço/dia</em> para multiplicar pelos dias da reserva. Com os dois preenchidos, a
+          faixa cobra o total mais a diária por dia dentro dela: de 31 dias em diante com R$ 290 e
+          R$ 18,90, a reserva de 31 dias sai por R$ 308,90. Deixe a última faixa aberta (sem
+          "Até"), senão estadias mais longas ficam sem preço e não dá para reservar.
         </p>
       )}
     </div>

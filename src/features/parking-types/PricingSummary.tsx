@@ -62,7 +62,7 @@ export function PricingRuleSummary({ rule }: { rule: SummaryRule }) {
           <span key={`${t.from_day}-${t.to_day}`} className="tabular-nums">
             <strong className="text-ink">
               {t.from_day}
-              {t.to_day && t.to_day !== t.from_day ? `a ${t.to_day}` : ""}
+              {t.to_day && t.to_day !== t.from_day ? ` a ${t.to_day}` : ""}
               {!t.to_day ? "+" : ""}d
             </strong>
             : {formatBRL(Number(t.unit_price ?? 0))}/dia
@@ -79,13 +79,15 @@ export function PricingRuleSummary({ rule }: { rule: SummaryRule }) {
           <span key={`${t.from_day}-${t.to_day}`} className="tabular-nums">
             <strong className="text-ink">
               {t.from_day}
-              {t.to_day && t.to_day !== t.from_day ? `a ${t.to_day}` : ""}
+              {t.to_day && t.to_day !== t.from_day ? ` a ${t.to_day}` : ""}
               {!t.to_day ? "+" : ""}d
             </strong>
             :{" "}
-            {t.total_price != null
-              ? formatBRL(Number(t.total_price))
-              : `${formatBRL(Number(t.unit_price ?? 0))}/dia`}
+            {t.total_price != null && t.unit_price != null
+              ? `${formatBRL(Number(t.total_price))} + ${formatBRL(Number(t.unit_price))}/dia`
+              : t.total_price != null
+                ? formatBRL(Number(t.total_price))
+                : `${formatBRL(Number(t.unit_price ?? 0))}/dia`}
           </span>
         ))}
       </div>
