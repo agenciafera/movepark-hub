@@ -25,6 +25,12 @@ Só reservas do Hub (`booking`), em status `confirmed`, `checked_in` ou `complet
 `confirmed`/`checked_in`). Datas comparadas no fuso de cada unidade. Empresa externa com reserva
 antiga do Hub (BePark, MP-670EDA) também recebe no dia da entrada.
 
+## Assunto
+
+Fixo e curto: **"Movimento de hoje: {empresa}"**. A parte fixa não tem acento. As contagens
+("3 entradas, 2 saídas e 8 reservas novas") ficam só na prévia (preheader) e no corpo, porque o
+assunto longo e acentuado foi o que sumiu entre 16 e 19/11/2026 (ver o incidente abaixo).
+
 ## Quem recebe
 
 A equipe da empresa com o escopo `bookings:read` (ADR-005; hoje os quatro papéis) e o dono,
@@ -61,6 +67,7 @@ corpo e não de cabeçalho. Assunto longo com "saídas" ("Pare Seguro, movimento
 SES, sem erro do nosso lado. Empresa com assunto curto (Nationpark, Abbapark) seguia recebendo.
 
 Correção: `encodeSubject` em `_shared/email.ts` codifica o assunto em RFC 2047 (base64, palavras
-dobradas) antes de entregar ao denomailer, para todo e-mail do Hub. Teste de regressão em
+dobradas) antes de entregar ao denomailer, para todo e-mail do Hub (as 28 Edges que enviam foram
+publicadas de novo em 19/11). Além disso, o assunto do resumo virou fixo, sem contagens. Teste de regressão em
 `_shared/email.test.ts`. "Enviado" no `partner_digest_log` quer dizer aceito pelo SES, não entregue:
 devolução depois do aceite só aparece no console do SES.

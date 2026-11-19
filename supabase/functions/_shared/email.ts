@@ -778,7 +778,9 @@ export function tplPartnerDailyDigest(d: {
     blocoDaReserva(`${nome(i)} · entra ${quandoLocal(i.check_in_at, i.timezone, true)}`, i,
       `Sai em ${quandoLocal(i.check_out_at, i.timezone, true)} · ${i.code}`, mostrarUnidade));
 
-  const subject = `${d.companyName}, movimento de hoje: ${juntaComE(partes)}`;
+  // Assunto fixo e curto, sem acento na parte fixa: as contagens ficam na prévia (preheader). O
+  // assunto com "2 saídas e 8 reservas novas" foi o que sumiu da caixa da Pare Seguro (19/11/2026).
+  const subject = `Movimento de hoje: ${d.companyName}`;
   return {
     subject,
     html: shell("Movimento de hoje", `

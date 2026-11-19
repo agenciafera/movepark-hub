@@ -369,7 +369,9 @@ Deno.test("tplPartnerDailyDigest: entradas, saídas e novas com hora local, plac
     saidas: [{ ...base, code: "MP-BBB222", check_in_at: "2026-10-16T11:00:00Z", check_out_at: "2026-10-21T01:00:00Z", cliente: "Bruno Lima", placa: "XYZ9K87" }],
     novas: [],
   });
-  assertEquals(t.subject, "Abbapark & Cia, movimento de hoje: 1 entrada e 1 saída");
+  assertEquals(t.subject, "Movimento de hoje: Abbapark & Cia");
+  // As contagens saem do assunto e ficam na prévia.
+  assertStringIncludes(t.html, "1 entrada e 1 saída</span>");
   assertStringIncludes(t.html, "Abbapark &amp; Cia");
   assertStringIncludes(t.html, "10:00 · Ana Souza");
   assertStringIncludes(t.html, "RSM1A23 · Onix prata · Vaga Descoberta");
@@ -393,7 +395,9 @@ Deno.test("tplPartnerDailyDigest: só reservas novas; duas unidades mostram o no
     companyName: "Parque", dayIso: "2026-10-20", entradas: [], saidas: [],
     novas: [{ ...item, location_name: "Unidade A" }, { ...item, code: "MP-DDD444", location_name: "Unidade B" }],
   });
-  assertEquals(t.subject, "Parque, movimento de hoje: 2 reservas novas");
+  assertEquals(t.subject, "Movimento de hoje: Parque");
+  // Parte fixa só com ASCII: não depende de codificar acento no cabeçalho.
+  assert(/^[\x20-\x7e]+$/.test(t.subject.replace("Parque", "")), "parte fixa do assunto sem acento");
   assertStringIncludes(t.html, "Cliente · entra 25/10 às 09:00");
   assertStringIncludes(t.html, "placa não informada · Vaga Coberta · Unidade A");
 });
