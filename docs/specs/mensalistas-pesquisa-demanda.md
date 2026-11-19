@@ -30,7 +30,7 @@ Três frentes, meta combinada de **100 nomes por frente** e **300 respostas no t
 
 | Frente | Quem é | O que a Movepark já tem | Dono do disparo |
 |---|---|---|---|
-| **A. Base Movepark** | quem já estacionou com um parceiro, viajando | telefone de 86.811 pessoas em `wl_booking` + 133 no Hub | Movepark |
+| **A. Clientes da Garageinn e da Virapark** | quem acabou de buscar o carro numa das duas unidades de Viracopos | telefone de 58 mil pessoas em `wl_booking` (número interno, ver R7) | Movepark |
 | **B. Tráfego pago** | quem trabalha nos polos e não é cliente | nada: lista nasce do zero | Movepark monta, Renato aprova a segmentação |
 | **C. Base antiga da Copark** | ex-mensalistas da operação que o Renato absorveu | nada no Hub; e-mails com o Renato | Renato |
 
@@ -69,9 +69,9 @@ Hipóteses que a contagem confirma ou derruba:
   sem multa, poder trocar quando muda de emprego). Qual dos dois pesa mais define a oferta.
 - **H3.** Uma parte relevante não paga do próprio bolso (empresa paga ou reembolsa). Para essa
   parte, "pagar menos" não convence; "cashback" e "sem multa" convencem (ideia do Renato na ata).
-- **H4.** A base de viajantes de Guarulhos e Congonhas é majoritariamente gente que trabalha na
-  capital, então ela rende respostas nos polos. A de Viracopos rende Campinas, e Campinas não é
-  polo desta fase.
+- **H4.** Uma fatia relevante dos clientes da Garageinn e da Virapark mora e trabalha em São
+  Paulo (um em cada cinco tem DDD 11, § 5.1), e é essa fatia que cai nos polos. O resto cai em
+  "outro" com município, e Campinas só vira polo se a contagem justificar.
 
 ## 3. Regras de desenho (valem para as três frentes)
 
@@ -114,6 +114,13 @@ aceitar marketing. Quem quer ser avisada marca a caixa e isso grava `whatsapp_co
 **zero** contatos da base têm `whatsapp_consent`, então esta pesquisa é também a primeira coleta
 de opt-in de WhatsApp da Movepark, e vale tratá-la como tal.
 
+**R7. O tamanho da base não sai da Movepark.** Decisão de 19/11/2026: nenhum material que chegue
+ao Renato (apresentação, quadro semanal, mensagens, conversa) traz contagem de clientes, de
+reservas ou de saídas por dia, nem total nem por unidade, nem taxa de resposta (que permitiria
+deduzir a base). A frente A é apresentada como "clientes da Garageinn e da Virapark, saída nas
+últimas 24 horas", e só. Os números ficam nesta spec, que é interna. O quadro por polo (§ 8)
+mostra respostas, não a base de onde saíram.
+
 ### 3.1 O fluxo ponta a ponta
 
 ```
@@ -122,7 +129,7 @@ gatilho ─► mensagem ─► página ─► resposta ─► polo ─► fila d
 
 | Passo | O que acontece | Quem | Onde fica o dado |
 |---|---|---|---|
-| 1. Gatilho | A: saída concluída em GRU ou CGH há 24h. B: pessoa no raio do polo abre o Instagram. C: Renato dispara a lista. | Hub (A), Meta Ads (B), Renato (C) | `wl_booking.check_out_at` (A) |
+| 1. Gatilho | A: saída concluída na Garageinn ou na Virapark há 24h. B: pessoa no raio do polo abre o Instagram. C: Renato dispara a lista. | Hub (A), Meta Ads (B), Renato (C) | `wl_booking.check_out_at` (A) |
 | 2. Mensagem | A: template de utilidade no WhatsApp ("deu tudo certo na retirada?") com link. B: anúncio com a pergunta 1 na chamada. C: e-mail assinado pelo Renato. | Movepark (A, B), Renato (C) | `notification_log` (A), UTMs (B, C) |
 | 3. Página | Uma página só. A frente A abre com a avaliação da estadia; as três seguem para as 7 perguntas. Salva por pergunta. | Movepark | tabela da pesquisa, `origem` + UTMs |
 | 4. Resposta | 7 perguntas em 90 segundos; nome e WhatsApp só de quem quer ser avisado. | cliente | idem, com `whatsapp_consent` se marcou |
@@ -167,35 +174,54 @@ muda o que o Renato leva à mesa. Modelo do carro a base já tem (`vehicle`).
 
 ## 5. Frente A: base Movepark
 
-### 5.1 Qual base, de verdade
+### 5.1 Qual base: Garageinn e Virapark (decisão de 19/11/2026)
 
-A base do Hub é pequena: 140 reservas pagas, 133 pessoas, 68 em Guarulhos. A base que importa está
-em **`wl_booking`**, as reservas dos sites white-label importadas desde 08/10/2026
-(`reservas-wl-no-hub.md`). Medido em 19/11/2026, só reservas confirmadas e sem duplicata:
+A frente A fala só com clientes da **Garageinn** e da **Virapark**, as duas unidades de Viracopos.
+A razão é de relação com o parceiro, não de dado: o Renato não deve ter noção do tamanho da base
+da Movepark (R7), e duas unidades nomeadas dizem "de onde vem a pesquisa" sem dizer "quanto
+temos". Tudo o que segue nesta subseção é **interno**.
 
-| Destino | Reservas | Pessoas com telefone | Pessoas com telefone e saída nos últimos 12 meses | Saídas nos últimos 90 dias |
-|---|---|---|---|---|
-| Viracopos | 80.725 | 58.309 | 51.647 | 18.275 |
-| **Guarulhos** | 21.122 | 17.540 | 15.804 | 5.275 |
-| Afonso Pena | 9.196 | 7.553 | 6.754 | 2.134 |
-| **Congonhas** | 3.887 | 3.295 | 3.082 | 971 |
-| Confins | 883 | 790 | 676 | 743 |
-| Tietê | 598 | 404 | 351 | 70 |
-| **Total** | 116.411 | 86.811 | | |
+A base do Hub (`booking`) é pequena: 140 reservas pagas, 133 pessoas. A que importa está em
+**`wl_booking`**, as reservas dos sites white-label importadas desde 08/10/2026
+(`reservas-wl-no-hub.md`). Medido em 19/11/2026, status `confirmed`, sem duplicata:
 
-Duas leituras saem daí:
+| Unidade | Reservas | Pessoas com telefone | Com saída nos últimos 12 meses | Saídas nos últimos 90 dias | Saídas nos últimos 30 dias |
+|---|---|---|---|---|---|
+| Virapark | 57.108 | 44.398 | 39.102 | 13.541 | 4.602 |
+| Garageinn | 23.467 | 14.789 | 13.166 | 4.682 | 1.418 |
+| **Juntas** | 80.575 | 58.199 | 51.556 | 18.223 | 6.020 |
 
-- **O público desta fase é Guarulhos e Congonhas: cerca de 19 mil pessoas com telefone e viagem
-  no último ano.** É quem trabalha na capital. Viracopos é a maior base e a mais errada para esta
-  pergunta: rende Campinas, Jundiaí e Sorocaba, exatamente a dispersão que o Renato pediu para
-  evitar. Afonso Pena e Confins idem. Elas ficam para uma fase em que Curitiba, Campinas ou BH
-  sejam polo.
-- **Só a saída de Guarulhos e Congonhas gera cerca de 70 pessoas por dia** com reserva recém
-  concluída. Com 3% de resposta, os 100 nomes da frente A chegam em uma a duas semanas sem tocar
-  no histórico. Com 1%, em um mês. Se o pós-saída não bastar, o histórico de 12 meses é a reserva.
+11.580 pessoas têm duas ou mais reservas nas duas unidades. Para registro, a base inteira do
+`wl_booking` (seis destinos) tem 86.811 pessoas com telefone; Guarulhos e Congonhas somam cerca de
+19 mil com viagem no último ano, e ficaram fora desta fase por escopo (D-7).
 
-**14.763 pessoas têm duas ou mais reservas nos aeroportos de São Paulo.** Recorrente responde mais
-e confia mais; é a primeira fatia do histórico a receber, se o histórico for necessário.
+**Onde essas pessoas moram, pelo DDD** (quem teve saída nos últimos 12 meses):
+
+| DDD | Região | Pessoas | Fatia |
+|---|---|---|---|
+| 19 | Campinas | 17.772 | 34,5% |
+| 11 | São Paulo e região metropolitana | 11.282 | 21,9% |
+| 15 | Sorocaba | 5.377 | 10,4% |
+| 16 | Ribeirão Preto | 5.178 | 10,0% |
+| 14 | Bauru e Marília | 4.098 | 7,9% |
+| 35 | Sul de Minas | 2.455 | 4,8% |
+
+DDD é proxy fraco (o número acompanha a pessoa quando ela muda de cidade), mas dá a ordem: **um em
+cada cinco clientes dessas unidades tem telefone de São Paulo**, e é essa fatia que tende a cair
+nos polos. O resto cai em "outro" com município, como R2 manda, e Campinas pode virar polo se a
+contagem justificar. É a resposta ao cuidado do Renato: a dispersão aparece no mapa como "outro",
+contada, e não contamina os polos.
+
+Leituras:
+
+- **Cerca de 200 saídas por dia nas duas unidades.** Mesmo que só a fatia de DDD 11 responda, e a
+  3%, são 100 nomes em pouco mais de três semanas; com o conjunto respondendo, em menos de uma. A
+  frente A não precisa do histórico para bater a meta.
+- **Recorrente responde mais e confia mais.** As 11.580 pessoas com duas ou mais reservas são a
+  primeira fatia do histórico, se ele for necessário.
+- **Nenhum desses números vai para o Renato.** Na apresentação a frente A é "quem acabou de buscar
+  o carro na Garageinn ou na Virapark", e a meta de 100 nomes é apresentada como atingível "em
+  duas semanas", sem a conta que a sustenta.
 
 ### 5.2 Em que momento interceptar
 
@@ -209,8 +235,8 @@ e confia mais; é a primeira fatia do histórico a receber, se o histórico for 
 | Conversa com a Mia (WhatsApp) | sim, agente ativo nos WL | **Sim, como complemento.** Quem já está conversando pode receber o link ali, sem template e sem custo, dentro da janela de 24h da Meta. |
 | Área da conta (`/account`) | sim | Fraco. Pouca gente volta à conta fora de uma viagem. Vale um card discreto, não como canal principal. |
 
-**Decisão recomendada:** uma mensagem de WhatsApp **24 horas depois da saída**, para reservas de
-Guarulhos e Congonhas, com o link da página. E-mail só como queda para quem não tem telefone (e já
+**Decisão recomendada:** uma mensagem de WhatsApp **24 horas depois da saída**, para saídas da
+Garageinn e da Virapark, com o link da página. E-mail só como queda para quem não tem telefone (e já
 existe `review-request` por e-mail: a pesquisa não deve ir num segundo e-mail; ou entra como bloco
 nesse, ou não vai por e-mail).
 
@@ -333,7 +359,7 @@ demanda veio e qual frente repetir.
 | 5 | Primeiro quadro por polo para o Renato; ele tem "uma semana, alguns dias" para voltar com vagas | |
 
 Se o pós-saída da frente A render menos de 30 respostas em duas semanas, entra o histórico de 12
-meses de Guarulhos e Congonhas, começando pelos 14.763 recorrentes.
+meses das mesmas duas unidades, começando pelas 11.580 pessoas com duas ou mais reservas.
 
 ## 10. Gates e decisões abertas
 
@@ -351,6 +377,9 @@ meses de Guarulhos e Congonhas, começando pelos 14.763 recorrentes.
   envio). Define o tamanho da implementação.
 - **D-4 · Faixas de preço.** Placeholder em § 4; o Renato traz a precificação.
 - **D-5 · Lista de polos.** Seis polos mais "outro" em § 3; o Renato confirma.
+- **D-7 · Estender a frente A a Guarulhos e Congonhas.** Fora desta fase por decisão de escopo
+  (R7), não por dado. Se a Garageinn e a Virapark renderem pouco nos polos, a extensão é decisão
+  nova, com a mesma regra de não expor tamanho de base.
 - **Q-025** (em `grupo-movepark.md`) continua aberta e, enquanto estiver, a pesquisa não usa o
   nome Coopark (R5).
 
