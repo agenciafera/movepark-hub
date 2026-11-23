@@ -111,10 +111,20 @@ então tem que ser **dedicada e restrita à Static Maps API**, nunca a chave do 
 
 ## Pendências
 
-- **Pare Seguro cadastrada em 23/11/2026**, com os logos do site dela
-  (`pareseguro-website/assets/logo/pare-seguro-cor.svg` e `pare-seguro-negativo.svg`) convertidos
-  para PNG transparente de 160px de altura e gravados em `assets-public/<company_id>/`. As outras
-  empresas seguem sem logo. O original de todo parceiro é SVG: converta para PNG antes de subir.
+- **Logos cadastrados em 23/11/2026 para os nove parceiros ativos**, em `assets-public/<company_id>/`
+  como `logo-<marca>.png` (colorido) e `logo-escuro-<marca>.png` (branco), PNG transparente de
+  ~200px de altura:
+  - Pare Seguro: do site dela (`pareseguro-website/assets/logo/pare-seguro-cor.svg` e
+    `pare-seguro-negativo.svg`).
+  - Abbapark, Aeropark, Aerovalet, Garageinn, Nationpark, Plenty Park e Virapark: dos SVGs de
+    `public/images/parceiros/`. Abbapark e Aerovalet vinham com fundo branco sólido, tirado na
+    conversão.
+  - BePark: `logo-bepark.png` do repositório do site dela (`bepark-website/src/assets/img`).
+  - A versão escura é **vazada**: o que é branco ou prateado no original vira transparente e o resto
+    vira branco. Uma silhueta branca simples apagava o "G" da Garageinn e o texto da faixa da Plenty
+    Park; a Plenty pediu um corte mais baixo porque o texto dela é prateado, não branco.
+  - Converter: SVG em PNG transparente pelo Chrome headless (`--default-background-color=00000000`),
+    recorte do vazio e, para o escuro, alfa = alfa × clamp((235 − min(R,G,B)) / 45).
 - O PDF do voucher passou a quebrar valor longo em linhas (`wrapText`): o endereço completo da
   Pare Seguro passava da margem direita e saía cortado.
 - Mapa do e-mail: ativar a Static Maps API no Google Cloud, criar a chave restrita a ela e gravar
