@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAppSettings, useUpdateAppSettings } from "@/features/settings/api";
+import { GatewayFeeScheduleSettings } from "@/features/settings/GatewayFeeScheduleSettings";
 import {
   DEFAULT_INSTALLMENT_POLICY,
   parseInstallmentPolicy,
@@ -602,6 +603,7 @@ export default function ManagerSettings() {
           <PayoutAutoSettings />
           <BookingHoldSettings />
           <InstallmentPolicySettings />
+          <GatewayFeeScheduleSettings />
         </TabsContent>
 
         <TabsContent value="notifications">
