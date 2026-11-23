@@ -153,3 +153,11 @@ Deno.test("locationBrand: nome da empresa e logo resolvido da unidade", () => {
   );
   assertEquals(locationBrand(null).company_name, null);
 });
+
+Deno.test("voucherFields: o voucher do balcão sai sem a linha de valor e o do cliente continua com ela", () => {
+  const comValor = voucherFields(base).map((l) => l.label);
+  assertEquals(comValor.includes("Valor"), true);
+  const balcao = voucherFields({ ...base, hide_amount: true }).map((l) => l.label);
+  assertEquals(balcao.includes("Valor"), false);
+  assertEquals(balcao.length, comValor.length - 1);
+});

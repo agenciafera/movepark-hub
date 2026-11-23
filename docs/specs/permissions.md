@@ -238,15 +238,19 @@ datas, situação e forma do pagamento, as operações (check-in, check-out, nã
 placa) e o excedente da proteção de voo, que é o que ele cobra no balcão.
 
 **Limites que ficam (decididos, não esquecidos):**
-- O voucher em PDF (`voucher-pdf`) é o documento do cliente e leva o total pago. O balcão pode
-  gerá-lo para a reserva da própria empresa (via `counter_can_open_booking`), então por esse
-  caminho um Operação alcança o total. Fechar exige um PDF sem valor para o balcão.
+- O voucher em PDF (`voucher-pdf`) leva o total pago ao cliente. Para quem o lê pela RLS (dono da
+  reserva, hub_admin, `finance:read`) nada muda. O balcão não lê a tabela: a Edge confere o acesso por
+  `counter_can_open_booking` e gera o voucher **sem a linha "Valor"**, em `<id>-balcao.pdf`, sem
+  trocar o `voucher_url` (o PDF do cliente, com o valor, não é sobrescrito). Achado da revisão de
+  segurança de 23/11/2026, fechado na mesma entrega.
 - `booking_fare_extension` (proteção de voo) mantém `partner_credit_cents` visível ao balcão: o
   excedente que ele cobra está na mesma linha. Separar é trabalho à parte.
 - `booking_item`, `booking_discount`, `booking_modification` e `vehicle` têm policies que
   consultam `booking`, então o membro sem `finance:read` também deixou de lê-las direto; o balcão
   recebe o que precisa (placa, itens do voucher) pelas RPCs.
-- A reserva do white-label (`wl_booking`) ainda tem o detalhe em outra RPC; nesta rodada só a lista
+- A reserva do white-label (`wl_booking`) ainda tem o detalhe em outra RPC, e a policy de SELECT da
+  tabela segue o mesmo predicado de `wl-bookings:read` (que a Operação tem), então `total_cents` e
+  `paid_total_cents` ainda podem ser lidos direto por quem tem esse escopo. Nesta rodada só a lista
   (`bookings_list_page`) passou a esconder o valor do site de quem não tem `finance:read`.
 - Quem tem `finance:read` numa empresa e não noutra: o front escolhe o caminho pela empresa ativa; o
   servidor é quem decide linha a linha (hoje ninguém no vivo tem papéis diferentes entre empresas).

@@ -75,6 +75,7 @@ Deno.serve(async (req: Request) => {
   if (bErr) return jsonResponse({ error: bErr.message }, 500);
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+  let viaBalcao = false;
 
   // O balcão (papel Operação, sem `finance:read`) não lê `booking` pela API, mas gera o voucher
   // da reserva da própria empresa: a RPC `counter_can_open_booking` confere o acesso com o JWT da
@@ -90,6 +91,7 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (lido.error) return jsonResponse({ error: lido.error.message }, 500);
       b = lido.data;
+      viaBalcao = !!b;
     }
   }
 
@@ -99,19 +101,22 @@ Deno.serve(async (req: Request) => {
   // Service role a partir daqui: o acesso já foi provado acima (RLS ou RPC do balcão).
 
   const voucher = mapBookingRowToVoucher(b);
+  // O balcão não lê dinheiro de reserva (finance:read): o voucher dele sai sem a linha de valor, em
+  // outro arquivo, para não sobrescrever o do cliente (que leva o valor) nem trocar `voucher_url`.
+  if (viaBalcao) voucher.hide_amount = true;
   // Unidade com integração de cancela: o QR é o código do provedor (docs/specs/integracoes.md § 5.6).
   const accessCode = await activeAccessCode(service, b.id);
   const pdfBytes = await buildVoucherPdf(voucher, voucherQrContent(SITE_URL, b.code, accessCode));
 
   // Upload + voucher_url + signed URL
-  const path = `${b.id}.pdf`;
+  const path = viaBalcao ? `${b.id}-balcao.pdf` : `${b.id}.pdf`;
 
   const { error: upErr } = await service.storage
     .from("vouchers")
     .upload(path, pdfBytes, { contentType: "application/pdf", upsert: true });
   if (upErr) return jsonResponse({ error: `Falha ao gerar voucher: ${upErr.message}` }, 500);
 
-  await service.from("booking").update({ voucher_url: path }).eq("id", b.id);
+  if (!viaBalcao) await service.from("booking").update({ voucher_url: path }).eq("id", b.id);
 
   const { data: signed, error: signErr } = await service.storage
     .from("vouchers")

@@ -3,6 +3,11 @@
 // `pagarme-webhook` (pré-geração server-side no `pago`).
 
 export interface VoucherBooking {
+  /**
+   * Voucher gerado para o balcão (papel Operação, sem `finance:read`): sai sem a linha "Valor".
+   * O voucher do cliente continua com o valor.
+   */
+  hide_amount?: boolean;
   code: string;
   check_in_at: string;
   check_out_at: string;
@@ -165,7 +170,9 @@ export function voucherFields(b: VoucherBooking): VoucherLine[] {
       : b.vehicle.license_plate;
     lines.push({ label: "Veículo", value: v });
   }
-  lines.push({ label: "Valor", value: formatBRL(b.total_amount, b.currency ?? "BRL") });
+  if (!b.hide_amount) {
+    lines.push({ label: "Valor", value: formatBRL(b.total_amount, b.currency ?? "BRL") });
+  }
   return lines;
 }
 
