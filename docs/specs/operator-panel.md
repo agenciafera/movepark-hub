@@ -421,6 +421,13 @@ Lista as avaliações publicadas das unidades da empresa (nota, autor, data, com
 - Selector de período: últimos 7d · 30d · 90d · personalizado
 - Breakdown por tipo de vaga (stacked bar)
 - Total do período, média diária, crescimento vs. período anterior
+- **Base da aba (23/11/2026, implementado):** alternância **Pagamento | Check-in** no topo da aba
+  (`?data=checkin` no endereço; o **padrão é Pagamento**), a mesma do dashboard. Por pagamento, a
+  reserva conta no dia em que o pagamento caiu (`payment.paid_at`, `kind = 'booking'`, fuso de
+  Brasília), nos últimos N dias até agora; por check-in, vale a janela de antes (check-in desde N
+  dias, sem teto, que já incluía viagens futuras). Os três cards (diárias, o que você recebe,
+  reservas), o gráfico e o CSV "Receita diária" seguem a base escolhida; o CSV por pagamento sai
+  como `receita-pagamento-<N>d.csv`. No white-label vale a data da compra.
 
 **Ocupação**
 - Taxa de ocupação por localização e tipo de vaga

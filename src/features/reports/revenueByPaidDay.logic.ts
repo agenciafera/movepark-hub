@@ -1,5 +1,12 @@
 import { formatInTimeZone } from "date-fns-tz";
-import { bookingParkingAmount, type PriceBreakdownLike } from "@/features/bookings/bookingMoney.logic";
+import {
+  bookingParkingAmount,
+  buildMoneyBreakdown,
+  mainPayment,
+  partnerMoneyView,
+  type MoneyPaymentLike,
+  type PriceBreakdownLike,
+} from "@/features/bookings/bookingMoney.logic";
 import type { DailyRevenueRow } from "./api";
 
 /**
@@ -12,17 +19,22 @@ import type { DailyRevenueRow } from "./api";
  * (já aconteceu, MP-07DAE9) conta uma vez só, no primeiro pagamento.
  *
  * `parking` são as diárias: com o detalhe do preço (`price_breakdown`, que só a visão do
- * estacionamento busca) sai o plano da Movepark; sem ele vale o total, como no Manager.
+ * estacionamento busca) sai o plano da Movepark; sem ele vale o total, como no Manager. Com
+ * `net`, soma também o que o estacionamento recebe (a mesma conta da visão por check-in); isso pede
+ * o pagamento completo na linha, e quem não precisa do líquido não o busca.
  */
 export type PaidDayRow = {
   total_amount: number | string | null;
   price_breakdown?: PriceBreakdownLike | null;
-  payments: { paid_at: string | null }[] | null;
+  payments: ({ paid_at: string | null } & Partial<MoneyPaymentLike>)[] | null;
 };
 
 export const PAYMENT_TIMEZONE = "America/Sao_Paulo";
 
-export function tallyRevenueByPaidDay(rows: PaidDayRow[]): DailyRevenueRow[] {
+export function tallyRevenueByPaidDay(
+  rows: PaidDayRow[],
+  opts: { net?: boolean } = {},
+): DailyRevenueRow[] {
   const map = new Map<string, DailyRevenueRow>();
   for (const row of rows) {
     const paidAt = (row.payments ?? [])
@@ -35,6 +47,13 @@ export function tallyRevenueByPaidDay(rows: PaidDayRow[]): DailyRevenueRow[] {
     const current = map.get(key) ?? { date: key, total: 0, parking: 0, net: 0, count: 0 };
     current.total += total;
     current.parking += bookingParkingAmount(row.price_breakdown, total);
+    if (opts.net) {
+      const payment = mainPayment((row.payments ?? []) as MoneyPaymentLike[]);
+      const net = partnerMoneyView(
+        buildMoneyBreakdown(row.price_breakdown ?? null, total, payment),
+      ).netCents;
+      current.net += (net ?? 0) / 100;
+    }
     current.count += 1;
     map.set(key, current);
   }

@@ -28,8 +28,9 @@ type RevenueRow = {
 
 const REVENUE_SELECT = "check_in_at, total_amount";
 // O pagamento completo só na visão do parceiro: é de onde sai o líquido dele (split, taxa, dívida).
-const PARTNER_REVENUE_SELECT =
-  "check_in_at, total_amount, price_breakdown, payments:payment(status, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, paid_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents, created_at, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_fee_movepark_cents, anticipation_credit_cents, anticipation_estimate_cents)";
+const PARTNER_PAYMENT_FIELDS =
+  "status, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, paid_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents, created_at, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_fee_movepark_cents, anticipation_credit_cents, anticipation_estimate_cents";
+const PARTNER_REVENUE_SELECT = `check_in_at, total_amount, price_breakdown, payments:payment(${PARTNER_PAYMENT_FIELDS})`;
 
 export function tallyRevenue(rows: RevenueRow[]): DailyRevenueRow[] {
   const map = new Map<string, DailyRevenueRow>();
@@ -50,9 +51,15 @@ export function tallyRevenue(rows: RevenueRow[]): DailyRevenueRow[] {
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function useRevenueByDay(periodDays: ReportPeriod, locationIds?: string[], partner = false) {
+export function useRevenueByDay(
+  periodDays: ReportPeriod,
+  locationIds?: string[],
+  partner = false,
+  enabled = true,
+) {
   return useQuery({
     queryKey: ["reports", "revenue", periodDays, locationIds, partner],
+    enabled,
     queryFn: async (): Promise<DailyRevenueRow[]> => {
       const since = subDays(new Date(), periodDays).toISOString();
       let q = supabase
@@ -93,7 +100,8 @@ export function useRevenueByRange(fromIso: string, toIso: string, locationIds?: 
 /**
  * Receita por dia do pagamento (ver `revenueByPaidDay.logic.ts`). O recorte é pela data em que o
  * pagamento da reserva caiu, não pelo check-in. `from` inclusivo, `to` exclusivo. `partner` traz o
- * detalhe do preço, para a visão do estacionamento contar só as diárias.
+ * detalhe do preço e o pagamento completo, para a visão do estacionamento contar só as diárias e o
+ * que ele recebe (mesma conta da visão por check-in).
  *
  * Recarrega a cada minuto com a tela aberta: o gráfico existe para mostrar a venda de hoje, e
  * sem isso ele ficava como estava na hora em que a página abriu (23/11/2026).
@@ -114,7 +122,7 @@ export function useRevenueByPaymentDay(
         .from("booking")
         .select(
           partner
-            ? "total_amount, price_breakdown, payments:payment!inner(paid_at)"
+            ? `total_amount, price_breakdown, payments:payment!inner(${PARTNER_PAYMENT_FIELDS})`
             : "total_amount, payments:payment!inner(paid_at)",
         )
         .in("status", ["confirmed", "checked_in", "completed"])
@@ -125,7 +133,7 @@ export function useRevenueByPaymentDay(
       if (locationIds?.length) q = q.in("location_id", locationIds);
       const { data, error } = await q;
       if (error) throw error;
-      return tallyRevenueByPaidDay((data ?? []) as unknown as PaidDayRow[]);
+      return tallyRevenueByPaidDay((data ?? []) as unknown as PaidDayRow[], { net: partner });
     },
   });
 }

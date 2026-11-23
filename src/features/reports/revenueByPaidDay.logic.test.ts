@@ -47,4 +47,32 @@ describe("tallyRevenueByPaidDay (receita por dia do pagamento, 09/11/2026)", () 
     ]);
     expect(rows).toEqual([{ date: "2026-11-23", total: 120, parking: 100, net: 0, count: 1 }]);
   });
+
+  // Relatórios do Operator (23/11/2026): a tela mostra também o que o estacionamento recebe, a
+  // mesma conta da visão por check-in (`tallyRevenue`): diárias menos a fatia da Movepark.
+  it("com `net`, soma o que o estacionamento recebe de cada reserva paga no dia", () => {
+    const pago = {
+      status: "paid", method: "pix", amount: 136.5, installments: 1,
+      created_at: "2026-11-23T13:10:00Z", paid_at: "2026-11-23T13:10:00Z",
+      split: [{ role: "partner", amount: 8928 }, { role: "movepark", amount: 4722 }],
+      split_sent_to_gateway: true, debt_recovered_cents: 0, gateway_fee_cents: 0,
+      partner_release_at: null, refunded_amount: null, refund_absorbed_by_master: false,
+      refund_partner_cents: 0,
+    };
+    const pb = {
+      days: 4,
+      line_items: [
+        { kind: "parking", subtotal: 111.6 },
+        { kind: "fare", tier: "superflex", subtotal: 24.9 },
+      ],
+    };
+    const linha = { total_amount: 136.5, price_breakdown: pb, payments: [pago] };
+    const rows = tallyRevenueByPaidDay([linha, linha], { net: true });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].count).toBe(2);
+    expect(rows[0].parking).toBeCloseTo(223.2);
+    expect(rows[0].net).toBeCloseTo(178.56);
+    // Sem `net` (dashboard e Manager) o líquido continua zerado, como antes.
+    expect(tallyRevenueByPaidDay([linha])[0].net).toBe(0);
+  });
 });

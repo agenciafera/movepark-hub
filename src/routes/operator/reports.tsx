@@ -24,14 +24,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRevenueByDay, useStatusFunnel, type ReportPeriod } from "@/features/reports/api";
+import {
+  useRevenueByDay,
+  useRevenueByPaymentDay,
+  useStatusFunnel,
+  type ReportPeriod,
+} from "@/features/reports/api";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { useAuth } from "@/auth/context";
+import { useUrlFilters } from "@/lib/useUrlFilters";
 import { formatBRL } from "@/lib/format";
 import { subDays } from "date-fns";
 import { useHasWl } from "@/features/companies/useHasWl";
 import { useWlRevenue } from "@/features/finance/wlRevenue";
 import { mergeDailyByOrigin } from "@/features/dashboard/revenueByOrigin.logic";
+
+/**
+ * Base da aba Receita (23/11/2026), no endereço como no dashboard (`?data=checkin`). Padrão: o dia
+ * do pagamento, que responde "quanto vendi". Por check-in a venda de hoje para viajar mais tarde
+ * cai no dia da viagem, e o gráfico de hoje não se mexia.
+ */
+const FILTROS = { data: "pagamento" };
+/** Sem teto, como a janela por check-in (`useRevenueByDay`): nenhum pagamento é do futuro. */
+const SEM_TETO = "2100-01-01T00:00:00.000Z";
 
 const statusLabel: Record<string, string> = {
   pending: "Pendente",
@@ -69,17 +84,34 @@ export default function OperatorReports() {
   // Receita é financeiro (ADR-005): a aba Receita e o export de receita exigem finance:read.
   // A aba Reservas (funil) fica para todos (bookings:read). O papel Operação não vê receita aqui.
   const canFinance = hasScope("finance:read", effectiveCompanyIds[0]);
-  const revenue = useRevenueByDay(period, scopedLocationIds, true);
+  const { filters: of, set: setFiltro } = useUrlFilters(FILTROS);
+  const porPagamento = of.data !== "checkin";
+  const since = React.useMemo(() => subDays(new Date(), period).toISOString(), [period]);
+  // Só busca a base escolhida. Por pagamento a reserva conta no dia em que foi paga (`paid_at`).
+  const revenueCheckin = useRevenueByDay(period, scopedLocationIds, true, !porPagamento);
+  const revenuePaid = useRevenueByPaymentDay(
+    since,
+    SEM_TETO,
+    scopedLocationIds,
+    canFinance && porPagamento,
+    true,
+  );
+  const revenue = porPagamento ? revenuePaid : revenueCheckin;
   const funnel = useStatusFunnel(period, scopedLocationIds);
 
-  // Site white-label (fase 5): mesmo recorte das diárias (check-in desde N dias, sem teto, como
-  // `useRevenueByDay`). Só para quem tem; quem não tem nem chama.
+  // Site white-label (fase 5): mesmo recorte das diárias (desde N dias, sem teto). Por check-in vale
+  // o do site, por pagamento a data da compra (o site cobra na hora). Só para quem tem; quem não
+  // tem nem chama.
   const { hasWl } = useHasWl();
-  const since = React.useMemo(() => subDays(new Date(), period).toISOString(), [period]);
-  const wlQ = useWlRevenue(
-    { from: since, to: "2100-01-01T00:00:00.000Z", locationIds: scopedLocationIds },
-    hasWl && canFinance,
+  const wlCheckin = useWlRevenue(
+    { from: since, to: SEM_TETO, locationIds: scopedLocationIds },
+    hasWl && canFinance && !porPagamento,
   );
+  const wlPaid = useWlRevenue(
+    { from: since, to: SEM_TETO, locationIds: scopedLocationIds, dateField: "created_at" },
+    hasWl && canFinance && porPagamento,
+  );
+  const wlQ = porPagamento ? wlPaid : wlCheckin;
   const wl = hasWl ? wlQ.data?.total : undefined;
   const temSite = !!wl && wl.paid_amount > 0;
   const daily = React.useMemo(
@@ -141,6 +173,22 @@ export default function OperatorReports() {
 
         {canFinance && (
           <TabsContent value="revenue">
+            <div className="mb-4">
+              <Tabs
+                value={porPagamento ? "pagamento" : "checkin"}
+                onValueChange={(v) => setFiltro({ data: v })}
+              >
+                <TabsList aria-label="Agrupar a receita por">
+                  <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+                  <TabsTrigger value="checkin">Check-in</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              {porPagamento && hasWl && (
+                <p className="mt-2 text-caption text-muted-soft">
+                  No white-label, vale a data da compra.
+                </p>
+              )}
+            </div>
             <div
               className={`grid grid-cols-1 gap-4 ${temSite ? "tablet:grid-cols-4" : "tablet:grid-cols-3"}`}
             >
@@ -189,7 +237,8 @@ export default function OperatorReports() {
             <Card className="mt-4">
               <CardHeader>
                 <CardTitle>
-                  {temSite ? "Diárias e white-label por dia" : "Diárias por dia"}
+                  {temSite ? "Diárias e white-label por dia" : "Diárias por dia"}{" "}
+                  {porPagamento ? "do pagamento" : "de check-in"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -292,7 +341,12 @@ export default function OperatorReports() {
                 {canFinance && (
                   <Button
                     variant="secondary"
-                    onClick={() => exportCsv(`receita-${period}d.csv`, revenueCsv)}
+                    onClick={() =>
+                      exportCsv(
+                        porPagamento ? `receita-pagamento-${period}d.csv` : `receita-${period}d.csv`,
+                        revenueCsv,
+                      )
+                    }
                     disabled={revenue.isLoading}
                   >
                     <Download className="h-4 w-4" /> Receita diária
