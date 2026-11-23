@@ -192,6 +192,7 @@ export function ResultCard({
       coverImage={item.location.cover_image}
       coverAlt={`${nomeDaVaga(locale, item.parking_type.code, item.parking_type.name)} - ${item.location.name}`}
       title={tituloDaUnidade(item.location.public_name, item.operator.name, item.location.name)}
+      logo={item.operator.logo ? { src: item.operator.logo, alt: item.operator.name } : null}
       parkingTypeName={nomeDaVaga(locale, item.parking_type.code, item.parking_type.name)}
       parkingTypeCode={item.parking_type.code}
       typeTestId="result-card-type"

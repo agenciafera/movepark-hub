@@ -29,6 +29,11 @@ export type ParkingCardProps = {
   /** Título do card: `Empresa · Unidade`, montado por `parkingTitle` (@/lib/parkingName).
    *  Nunca só a empresa: quem tem várias unidades vira uma fila de cards idênticos. */
   title: string;
+  /**
+   * Logo colorido do estacionamento, acima do título (docs/specs/logo-do-estacionamento.md).
+   * Ausente, o card abre no título como antes.
+   */
+  logo?: { src: string; alt: string } | null;
   /** Tipo de vaga: a identidade do card ("Vaga Coberta"). Vem em chip colorido. */
   parkingTypeName: string;
   /** Código do `parking_type` (covered/uncovered/valet…) — define a cor do chip. */
@@ -125,6 +130,7 @@ export function ParkingCard({
   coverImage,
   coverAlt,
   title,
+  logo,
   parkingTypeName,
   parkingTypeCode,
   meta,
@@ -208,6 +214,16 @@ export function ParkingCard({
         <div className="min-w-0 space-y-0.5">
           {/* Duas linhas: "Empresa · Unidade" não cabe em uma só nos cards de 3 colunas,
               e a parte cortada seria justamente a unidade, que é o que diferencia. */}
+          {logo && (
+            <img
+              src={logo.src}
+              alt={logo.alt}
+              height={28}
+              loading="lazy"
+              className="mb-1.5 h-7 w-auto max-w-[140px] object-contain object-left"
+              data-testid="parking-card-logo"
+            />
+          )}
           <h3 className="line-clamp-2 text-balance text-[18px] font-bold leading-snug text-ink">
             {title}
           </h3>

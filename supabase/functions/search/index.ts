@@ -30,6 +30,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callerAuthorization } from "./authHeader.ts";
+import { resolveParkingLogo } from "../_shared/voucher/fields.ts";
 import { temVolumeParaNota } from "../_shared/reviews.ts";
 import {
   availabilityFor,
@@ -209,8 +210,8 @@ Deno.serve(async (req: Request) => {
       id, capacity, is_active,
       location:location!inner(
         id, slug, public_slug, public_name, name, address, latitude, longitude, status, deleted_at, is_listed, is_draft,
-        review_avg, review_count, photos, google_place_id, go2park_enabled,
-        company:company!inner(id, slug, name, status),
+        review_avg, review_count, photos, google_place_id, go2park_enabled, logo_url, logo_dark_url,
+        company:company!inner(id, slug, name, status, logo_url, logo_dark_url),
         destination:destination(code, name, type, public_slug),
         amenities:location_amenity(amenity_code)
       ),
@@ -481,6 +482,9 @@ Deno.serve(async (req: Request) => {
     operator: {
       slug: r.location.company.slug,
       name: r.location.company.name,
+      // Logo colorido do parceiro (unidade antes da empresa), acima do nome no card
+      // (docs/specs/logo-do-estacionamento.md). Null sem logo cadastrado.
+      logo: resolveParkingLogo(r.location, r.location.company).light,
     },
     location: {
       id: r.location.id,

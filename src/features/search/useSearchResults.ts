@@ -34,7 +34,12 @@ export type SearchFilters = {
 
 export type SearchResultItem = {
   id: string;
-  operator: { slug: string; name: string };
+  operator: {
+    slug: string;
+    name: string;
+    /** Logo colorido do parceiro, acima do nome no card. Null/ausente sem logo cadastrado. */
+    logo?: string | null;
+  };
   location: {
     id: string;
     slug: string;

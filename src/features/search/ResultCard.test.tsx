@@ -44,6 +44,35 @@ function item(
 }
 
 describe("ResultCard", () => {
+  it("logo do parceiro acima do título, quando cadastrado (docs/specs/logo-do-estacionamento.md)", () => {
+    const base = item();
+    renderWithProviders(
+      <ResultCard
+        item={{ ...base, operator: { ...base.operator, logo: "https://cdn.test/aerovalet.png" } }}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    const logo = screen.getByTestId("parking-card-logo");
+    expect(logo).toHaveAttribute("src", "https://cdn.test/aerovalet.png");
+    expect(logo).toHaveAttribute("alt", "Aerovalet");
+    const titulo = screen.getByRole("heading", { level: 3 });
+    expect(logo.compareDocumentPosition(titulo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("sem logo cadastrado, o card abre no título", () => {
+    renderWithProviders(
+      <ResultCard
+        item={item()}
+        isSaved={false}
+        onToggleSave={vi.fn()}
+        searchParams={new URLSearchParams()}
+      />,
+    );
+    expect(screen.queryByTestId("parking-card-logo")).toBeNull();
+  });
+
   it("disponível: navega para o listing (tem links) e sem badge de esgotado", () => {
     const { container } = renderWithProviders(
       <ResultCard
