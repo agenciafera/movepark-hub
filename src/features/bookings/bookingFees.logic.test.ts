@@ -77,6 +77,7 @@ function cenario(
     booking?: Partial<FeeBookingLike>;
     custody?: boolean;
     refundedReais?: number | null;
+    comp?: number | null;
   } = {},
 ) {
   const method = o.method ?? "card";
@@ -100,6 +101,7 @@ function cenario(
     refund_absorbed_by_master: false,
     refund_partner_cents: 0,
     created_at: "2026-11-01T12:00:00Z",
+    anticipation_comp_cents: o.comp ?? null,
   };
   const money = buildMoneyBreakdown(
     { days: 1, total: 100, line_items: [{ kind: "parking", quantity: 1, subtotal: 100 }] },
@@ -114,6 +116,7 @@ function cenario(
       installments,
       gateway_fee_cents: payment.gateway_fee_cents,
       anticipation_credit_cents: 40,
+      anticipation_comp_cents: o.comp ?? null,
     },
     booking: {
       total_amount: 100,
@@ -248,12 +251,15 @@ describe("buildFeeDetail", () => {
       moveparkCents: 5,
       anticipatedAt: "2026-11-05T03:00:00Z",
       creditCents: 40,
+      compCents: 0,
+      expected: false,
       payer: "movepark",
     });
     expect(d.lines[3]).toEqual({ key: "antifraud", cents: 10, payer: "movepark" });
     expect(d.gateway).toEqual({
       linesCents: 175,
       recordedCents: 175,
+      expectedCents: 0,
       pending: false,
       stale: false,
       detailed: true,
@@ -266,6 +272,7 @@ describe("buildFeeDetail", () => {
         receivedDate: "2026-12-01T03:00:00Z",
         mdrCents: 60,
         anticipationCents: 0,
+        expected: false,
       },
       {
         installment: 2,
@@ -274,6 +281,7 @@ describe("buildFeeDetail", () => {
         receivedDate: "2026-11-05T03:00:00Z",
         mdrCents: 60,
         anticipationCents: 45,
+        expected: false,
       },
     ]);
     expect(d.band).toEqual({ from: 2, to: 6, bps: 118 });
@@ -298,6 +306,7 @@ describe("buildFeeDetail", () => {
     expect(d.gateway).toEqual({
       linesCents: null,
       recordedCents: 175,
+      expectedCents: 0,
       pending: false,
       stale: false,
       detailed: false,
@@ -383,6 +392,51 @@ describe("buildFeeDetail", () => {
       cents: 0,
       anticipatedAt: null,
     });
+  });
+
+  it("antecipação ainda não feita, com cessão gravada: taxa prevista e parcelas entrando junto com a 1ª", () => {
+    const semAntecipacao = CARTAO_2X.map((p) => ({
+      ...p,
+      anticipationFeeCents: 0,
+      paymentDate: p.originalPaymentDate,
+    }));
+    const d = cenario({ installments: 3, payables: semAntecipacao, feeCents: 130, comp: 300 });
+    expect(d.lines.find((l) => l.key === "anticipation")).toEqual({
+      key: "anticipation",
+      cents: 300,
+      partnerCents: 300,
+      moveparkCents: 0,
+      anticipatedAt: "2026-12-01T03:00:00Z",
+      creditCents: 40,
+      compCents: 300,
+      expected: true,
+      payer: "movepark",
+    });
+    expect(d.gateway).toMatchObject({ linesCents: 130, recordedCents: 130, expectedCents: 300, stale: false });
+    // Dias antecipados: 0, 30 e 60; a taxa prevista se divide nessa proporção.
+    expect(d.installments.map((p) => [p.receivedDate, p.anticipationCents, p.expected])).toEqual([
+      ["2026-12-01T03:00:00Z", 0, false],
+      ["2026-12-01T03:00:00Z", 100, true],
+      ["2026-12-01T03:00:00Z", 200, true],
+    ]);
+  });
+
+  it("antecipação já feita mostra a real e quanto a Movepark cedeu no split", () => {
+    const d = cenario({ comp: 30 });
+    expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({
+      cents: 45,
+      expected: false,
+      compCents: 30,
+    });
+    expect(d.gateway.expectedCents).toBe(0);
+  });
+
+  it("sem cessão e sem antecipação continua \"ainda não antecipado\"", () => {
+    const d = cenario({
+      payables: CARTAO_2X.map((p) => ({ ...p, anticipationFeeCents: 0 })),
+      feeCents: 130,
+    });
+    expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({ cents: 0, expected: false });
   });
 
   it("sem split e com estorno aparecem no resumo", () => {

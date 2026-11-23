@@ -50,6 +50,11 @@ Abre pelo botão "Ver taxas" no card Valores, só na audiência `manager`. Quatr
 1. **Resumo.** Três números: o que o cliente pagou (com "Nx de R$ Y" no cartão), o que o
    estacionamento recebe e com quanto a Movepark fica depois das taxas. Os três saem de
    `buildMoneyBreakdown`, a mesma conta do card Valores, para o modal nunca discordar do card.
+   Desde 23/11/2026 essa conta considera a antecipação: o `split` gravado é o normal, sem a cessão
+   da Movepark, então a cessão sai da Movepark e entra no estacionamento; a taxa do estacionamento
+   é a prevista (a cessão) antes da releitura e a real depois; a da perna da Movepark sai dela; o
+   crédito devolvido entra no estacionamento. Antes disso o card dava à Movepark a cessão inteira e,
+   depois da releitura, cobrava do estacionamento que paga a taxa do cartão também as antecipações.
 2. **Taxas cobradas nesta venda.** Uma linha por taxa, com a regra, quem pagou e o valor:
    - **Comissão Movepark:** `commission_take_rate_bps` sobre as diárias, com o canal da regra
      (`commission_channel`) como etiqueta. Quem paga: o estacionamento.
@@ -67,15 +72,21 @@ Abre pelo botão "Ver taxas" no card Valores, só na audiência `manager`. Quatr
    - **Antecipação (Pagar.me):** soma do `anticipation_fee`, separada por perna (estacionamento e
      Movepark) e com a data em que o dinheiro entrou. Quem paga: `commission_anticipation_payer`;
      quando é a Movepark, a linha diz quanto ela devolveu ao estacionamento
-     (`payment.anticipation_credit_cents`). Sem antecipação ainda, a linha diz "ainda não
-     antecipado".
+     (`payment.anticipation_credit_cents`). **Antes da antecipação** (a Pagar.me antecipa por volta do
+     D+29, e só aí a taxa aparece nos recebíveis), se a Movepark cedeu a estimativa no split
+     (`payment.anticipation_comp_cents`, E0.3.14), a linha mostra a taxa **prevista** (a cessão), a
+     data prevista (perto da 1ª parcela) e que as parcelas entram junto com a 1ª; o total do gateway
+     ganha "com a antecipação prevista". Só sem cessão e sem antecipação a linha diz "ainda não
+     antecipado" (corrigido em 23/11/2026, MP-6C7D84).
    - **Antifraude (Pagar.me):** soma do `fraud_coverage_fee`.
    - **Total do gateway:** soma das três linhas da Pagar.me. Tem que bater com
      `payment.gateway_fee_cents`; se não bater, o modal mostra os dois números e o aviso
      "recebíveis desatualizados", em vez de esconder a diferença.
 3. **Parcelas** (só cartão). Uma linha por parcela: valor que o cliente vê na fatura, data
-   original de vencimento, data em que o dinheiro entrou (`payment_date`, quando houve
-   antecipação) e as taxas daquela parcela somadas entre os recebedores (MDR e antecipação). O
+   original de vencimento, data em que o dinheiro entra (`payment_date`, quando houve
+   antecipação; antes dela, a data prevista, marcada "(prevista)") e as taxas daquela parcela
+   somadas entre os recebedores (MDR e antecipação; antes da antecipação, a prevista dividida pelos
+   dias antecipados de cada parcela: 0, 30, 60...). O
    valor da parcela é o do cliente (valor cobrado dividido pelas parcelas, com o resto de centavos,
    se houver, na primeira), e não o recebível de cada recebedor, que o split divide em valores
    diferentes por parcela.

@@ -93,14 +93,22 @@ function descreve(l: FeeLine, pending: boolean) {
       };
     case "anticipation": {
       let regra = "sem detalhe por parcela";
-      if (l.cents === 0) regra = "ainda não antecipado";
+      if (l.expected) {
+        regra = `prevista${l.anticipatedAt ? ` para perto de ${formatDate(l.anticipatedAt)}` : ""}: as parcelas entram junto com a 1ª · a Movepark já cedeu ${brl(l.compCents)} no split para cobrir`;
+      } else if (l.cents === 0) regra = "ainda não antecipado";
       else if (l.cents != null) {
         regra = `estacionamento ${brl(l.partnerCents)} · Movepark ${brl(l.moveparkCents)}`;
         if (l.anticipatedAt) regra += ` · antecipado em ${formatDate(l.anticipatedAt)}`;
+        if (l.compCents > 0) regra += ` · a Movepark cedeu ${brl(l.compCents)} no split`;
         if (l.payer === "movepark" && l.creditCents > 0)
           regra += ` · a Movepark devolveu ${brl(l.creditCents)} ao estacionamento`;
       }
-      return { label: "Antecipação (Pagar.me)", regra, valor: v(l.cents), aviso: null };
+      return {
+        label: "Antecipação (Pagar.me)",
+        regra,
+        valor: l.expected && l.cents != null ? `${brl(l.cents)} previstos` : v(l.cents),
+        aviso: null,
+      };
     }
     case "antifraud":
       return { label: "Antifraude (Pagar.me)", regra: null, valor: v(l.cents), aviso: null };
@@ -165,7 +173,13 @@ function Conteudo({ d }: { d: FeeDetail }) {
           ))}
           <TaxaLinha
             label="Total do gateway"
-            regra={!g.detailed && g.recordedCents != null ? "sem detalhe por parcela" : null}
+            regra={
+              g.expectedCents > 0 && totalGateway != null
+                ? `com a antecipação prevista: ${brl(totalGateway + g.expectedCents)}`
+                : !g.detailed && g.recordedCents != null
+                  ? "sem detalhe por parcela"
+                  : null
+            }
             pagador={null}
             valor={totalGateway != null ? brl(totalGateway) : "apurando"}
             aviso={
@@ -180,7 +194,16 @@ function Conteudo({ d }: { d: FeeDetail }) {
       </Bloco>
 
       {cartao && (
-        <Bloco title="Parcelas" hint={g.detailed ? undefined : "sem detalhe por parcela"}>
+        <Bloco
+          title="Parcelas"
+          hint={
+            !g.detailed
+              ? "sem detalhe por parcela"
+              : d.installments.some((p) => p.expected)
+                ? "previsão: a Pagar.me antecipa por volta do D+29 e as parcelas entram junto com a 1ª"
+                : undefined
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-body-sm tabular-nums" data-testid="taxas-parcelas">
               <thead className="text-caption text-muted">
@@ -188,7 +211,7 @@ function Conteudo({ d }: { d: FeeDetail }) {
                   <th className="py-1 text-left font-normal">Parcela</th>
                   <th className="text-right font-normal">Valor</th>
                   <th className="text-right font-normal">Vencimento</th>
-                  <th className="text-right font-normal">Entrou</th>
+                  <th className="text-right font-normal">Entra</th>
                   <th className="text-right font-normal">Taxas</th>
                 </tr>
               </thead>
@@ -198,7 +221,11 @@ function Conteudo({ d }: { d: FeeDetail }) {
                     <td className="py-1">{p.installment}ª</td>
                     <td className="text-right">{brl(p.customerCents)}</td>
                     <td className="text-right">{p.originalDate ? formatDate(p.originalDate) : "-"}</td>
-                    <td className="text-right">{p.receivedDate ? formatDate(p.receivedDate) : "-"}</td>
+                    <td className="text-right">
+                      {p.receivedDate
+                        ? `${formatDate(p.receivedDate)}${p.expected ? " (prevista)" : ""}`
+                        : "-"}
+                    </td>
                     <td className="text-right">
                       {p.mdrCents != null && p.anticipationCents != null
                         ? brl(p.mdrCents + p.anticipationCents)

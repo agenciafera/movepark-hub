@@ -58,9 +58,17 @@ const payables = (method: "card" | "pix") => ({
   },
 });
 
-function abre(method: "card" | "pix") {
-  state.events = [payables(method)];
-  const fee = method === "card" ? 175 : 80;
+function abre(method: "card" | "pix", opts: { comp?: number; semAntecipacao?: boolean } = {}) {
+  const ev: { payment_id: string; kind: string; created_at: string; response: { data: Record<string, unknown>[] } } =
+    payables(method);
+  if (opts.semAntecipacao)
+    ev.response.data = ev.response.data.map((r) => ({
+      ...r,
+      anticipation_fee: 0,
+      payment_date: r.original_payment_date ?? r.payment_date,
+    }));
+  state.events = [ev];
+  const fee = method === "card" ? (opts.semAntecipacao ? 130 : 175) : 80;
   const pay: MoneyPaymentLike = {
     status: "paid",
     method,
@@ -79,6 +87,7 @@ function abre(method: "card" | "pix") {
     refund_absorbed_by_master: false,
     refund_partner_cents: 0,
     created_at: "2026-11-01T12:00:00Z",
+    anticipation_comp_cents: opts.comp ?? null,
   };
   const money = buildMoneyBreakdown(
     { days: 1, total: 100, line_items: [{ kind: "parking", quantity: 1, subtotal: 100 }] },
@@ -98,6 +107,7 @@ function abre(method: "card" | "pix") {
         installments: pay.installments,
         gateway_fee_cents: fee,
         anticipation_credit_cents: 40,
+        anticipation_comp_cents: opts.comp ?? null,
       }}
       booking={{
         total_amount: 100,
@@ -125,6 +135,21 @@ describe("BookingFeesDialog", () => {
     expect(
       within(screen.getByTestId("tabela-parcelamento")).getByText(/2x de/).closest("[aria-current]"),
     ).not.toBeNull();
+  });
+
+  it("cartão antes da antecipação: taxa prevista, parcelas entrando junto com a 1ª e total previsto", () => {
+    state.cardBps = 118;
+    abre("card", { comp: 300, semAntecipacao: true });
+    const ant = screen.getByTestId("taxa-anticipation");
+    expect(ant).toHaveTextContent(/R\$\s?3,00 previstos/);
+    expect(ant).toHaveTextContent(/prevista para perto de 01\/12\/2026/);
+    expect(ant).toHaveTextContent(/a Movepark já cedeu R\$\s?3,00 no split/);
+    expect(ant).not.toHaveTextContent("ainda não antecipado");
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(/com a antecipação prevista: R\$\s?4,30/);
+    const linhas = within(screen.getByTestId("taxas-parcelas")).getAllByRole("row");
+    expect(linhas[2]).toHaveTextContent(/01\/12\/2026 \(prevista\)/);
+    // A Movepark fica com a comissão menos a cessão: 2000 - 300 - 130 de MDR que ela paga.
+    expect(screen.getByText("A Movepark fica com").nextSibling).toHaveTextContent(/15,70/);
   });
 
   it("cartão fora do contrato ganha o aviso", () => {

@@ -37,6 +37,14 @@ export interface MoneyPaymentLike {
   refund_absorbed_by_master: boolean;
   refund_partner_cents: number;
   created_at: string;
+  /** Quanto a perna da Movepark cedeu à do parceiro para cobrir a antecipação (E0.3.14). */
+  anticipation_comp_cents?: number | null;
+  /** Taxa de antecipação real na perna do parceiro, gravada na releitura (~D+31). */
+  anticipation_fee_partner_cents?: number | null;
+  /** Idem na perna da Movepark. */
+  anticipation_fee_movepark_cents?: number | null;
+  /** Taxa de antecipação que a Movepark devolve ao parceiro como crédito. */
+  anticipation_credit_cents?: number | null;
 }
 
 export type CustomerLineKind = "parking" | "fare" | "addon" | "discount" | "interest";
@@ -58,7 +66,16 @@ export interface MoneyBreakdown {
     partner: {
       grossCents: number;
       debtRecoveredCents: number;
+      /** Taxa do cartão (MDR e antifraude) na conta do parceiro. A antecipação fica à parte. */
       feeCents: number;
+      /** O que a Movepark cedeu no split para cobrir a antecipação do parceiro. */
+      compCents: number;
+      /** Taxa de antecipação na perna do parceiro: a real depois da releitura, a cessão antes dela. */
+      anticipationCents: number;
+      /** A antecipação ainda não aconteceu: `anticipationCents` é a prevista. */
+      anticipationExpected: boolean;
+      /** Taxa de antecipação devolvida pela Movepark como crédito. */
+      creditCents: number;
       netCents: number;
       /** Quando o gateway libera o recebível da parte do parceiro. */
       releaseAt: string | null;
@@ -67,7 +84,17 @@ export interface MoneyBreakdown {
     };
     /** Quem paga a taxa do gateway nesta venda (pela regra de comissão, E0.3.12). */
     feePayer: "partner" | "movepark";
-    movepark: { commissionCents: number; fareCents: number; interestCents: number; debtRecoveredCents: number; feeCents: number; netCents: number };
+    movepark: {
+      commissionCents: number;
+      fareCents: number;
+      interestCents: number;
+      debtRecoveredCents: number;
+      /** Taxa do gateway que sai da Movepark: o MDR quando é ela quem paga, mais a antecipação da perna dela. */
+      feeCents: number;
+      compCents: number;
+      creditCents: number;
+      netCents: number;
+    };
     /** Taxa do gateway ainda não apurada (até 30 min depois do pagamento). */
     feePending: boolean;
     feeCents: number;
@@ -139,8 +166,19 @@ export function buildMoneyBreakdown(
     const feeCents = Math.max(0, payment.gateway_fee_cents ?? 0);
     const feePending = payment.gateway_fee_cents == null;
     const debt = custody ? 0 : Math.max(0, payment.debt_recovered_cents ?? 0);
-    const partnerFee = !custody && partnerPaysFee ? feeCents : 0;
-    const moveparkFee = feeCents - partnerFee;
+    // Antecipação (E0.3.14). O `split` gravado é o normal; a cessão da Movepark vai ao gateway por
+    // cima dele. Antes da releitura a taxa do parceiro é a prevista, igual à cessão; depois, é a real
+    // de cada perna, e o que a Movepark devolve como crédito entra na conta do parceiro.
+    const pos = (v: number | null | undefined) => Math.max(0, v ?? 0);
+    const comp = custody ? 0 : pos(payment.anticipation_comp_cents);
+    const reread = payment.anticipation_fee_partner_cents != null || payment.anticipation_fee_movepark_cents != null;
+    const antPartnerReal = custody ? 0 : pos(payment.anticipation_fee_partner_cents);
+    const antMovepark = pos(payment.anticipation_fee_movepark_cents) + (custody ? pos(payment.anticipation_fee_partner_cents) : 0);
+    const credit = custody ? 0 : pos(payment.anticipation_credit_cents);
+    const mdrCents = Math.max(0, feeCents - antPartnerReal - antMovepark);
+    const partnerFee = !custody && partnerPaysFee ? mdrCents : 0;
+    const partnerAnt = reread ? antPartnerReal : comp;
+    const moveparkFee = mdrCents - partnerFee + antMovepark;
     const moveparkNominal = chargedCents - partnerGross;
     const commissionCents = Math.max(0, moveparkNominal - fareCents - interestCents);
     split = {
@@ -149,7 +187,11 @@ export function buildMoneyBreakdown(
         grossCents: partnerGross,
         debtRecoveredCents: debt,
         feeCents: partnerFee,
-        netCents: Math.max(0, partnerGross - debt - partnerFee),
+        compCents: comp,
+        anticipationCents: partnerAnt,
+        anticipationExpected: !reread && comp > 0,
+        creditCents: credit,
+        netCents: Math.max(0, partnerGross + comp - debt - partnerFee - partnerAnt + credit),
         releaseAt: payment.partner_release_at,
         withdrawAt:
           releaseDays != null && payment.paid_at
@@ -163,7 +205,9 @@ export function buildMoneyBreakdown(
         interestCents,
         debtRecoveredCents: debt,
         feeCents: moveparkFee,
-        netCents: moveparkNominal + debt - moveparkFee,
+        compCents: comp,
+        creditCents: credit,
+        netCents: moveparkNominal + debt - comp - moveparkFee - credit,
       },
       feePending,
       feeCents,
@@ -196,6 +240,12 @@ export interface PartnerMoneyView {
   debtRecoveredCents: number;
   feeCents: number;
   feePending: boolean;
+  /**
+   * Acerto da antecipação na conta do parceiro (E0.3.14): cessão da Movepark mais crédito menos a
+   * taxa real. Zero quando a Movepark cobre exatamente; positivo é a folga que ficou com ele;
+   * negativo é antecipação paga por ele.
+   */
+  anticipationCents: number;
   netCents: number | null;
   custody: boolean;
   /** O que o cliente pagou além das diárias (plano, juros): "taxas e custos da plataforma". */
@@ -227,6 +277,9 @@ export function partnerMoneyView(money: MoneyBreakdown): PartnerMoneyView {
     debtRecoveredCents: split?.partner.debtRecoveredCents ?? 0,
     feeCents: split?.partner.feeCents ?? 0,
     feePending: !!split && split.feePending && split.feePayer === "partner" && !split.custody,
+    anticipationCents: split
+      ? split.partner.compCents + split.partner.creditCents - split.partner.anticipationCents
+      : 0,
     netCents: split ? split.partner.netCents : null,
     custody: split?.custody ?? false,
     platformCents: Math.max(0, chargedCents - (parkingCents - discount)),

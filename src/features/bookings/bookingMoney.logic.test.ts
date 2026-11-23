@@ -27,7 +27,10 @@ describe("buildMoneyBreakdown", () => {
       { kind: "fare", label: "Plano Flex", cents: 1290 },
     ]);
     expect(m.customer.chargedCents).toBe(3090);
-    expect(m.split?.partner).toEqual({ grossCents: 1440, debtRecoveredCents: 0, feeCents: 117, netCents: 1323, releaseAt: "2026-10-20T03:00:00Z", withdrawAt: null });
+    expect(m.split?.partner).toEqual({
+      grossCents: 1440, debtRecoveredCents: 0, feeCents: 117, compCents: 0, anticipationCents: 0, anticipationExpected: false,
+      creditCents: 0, netCents: 1323, releaseAt: "2026-10-20T03:00:00Z", withdrawAt: null,
+    });
     expect(m.split?.feePayer).toBe("partner");
     expect(m.split?.movepark).toMatchObject({ commissionCents: 360, fareCents: 1290, feeCents: 0, netCents: 1650 });
     expect(m.refund).toBeNull();
@@ -94,6 +97,63 @@ describe("taxa e liberação para saque", () => {
   });
   it("sem o prazo da empresa a data de saque fica vazia em vez de inventada", () => {
     expect(buildMoneyBreakdown(breakdown, 30.9, pay({ paid_at: "2026-09-22T12:22:06Z" })).split?.partner.withdrawAt).toBeNull();
+  });
+});
+
+// Antecipação do cartão do parceiro (E0.3.14): a Movepark cede no split a estimativa da taxa
+// (`anticipation_comp_cents`), a Pagar.me antecipa por volta do D+29 e a releitura grava a taxa real
+// de cada perna. A divisão gravada (`split`) é a normal, sem a cessão. Números inventados.
+describe("antecipação do cartão (E0.3.14)", () => {
+  const parceiroPagaTaxa = [
+    { role: "partner", amount: 8800, liable: false, chargeProcessingFee: true },
+    { role: "movepark", amount: 1200, liable: true, chargeProcessingFee: false },
+  ];
+  const venda = { days: 1, total: 100, line_items: [{ kind: "parking", quantity: 1, subtotal: 100 }] };
+  const cartao = (over: Partial<MoneyPaymentLike>) =>
+    pay({ amount: 100, installments: 3, split: parceiroPagaTaxa, gateway_fee_cents: 400, ...over });
+
+  it("antes da antecipação: a cessão já saiu da Movepark e cobre a taxa prevista do parceiro", () => {
+    const m = buildMoneyBreakdown(venda, 100, cartao({ anticipation_comp_cents: 300 }));
+    expect(m.split?.partner).toMatchObject({ feeCents: 400, compCents: 300, anticipationCents: 300, anticipationExpected: true, netCents: 8400 });
+    expect(m.split?.movepark).toMatchObject({ compCents: 300, feeCents: 0, netCents: 900 });
+  });
+
+  it("depois da releitura com folga: a sobra fica com o parceiro e a antecipação da Movepark sai dela", () => {
+    const m = buildMoneyBreakdown(venda, 100, cartao({
+      anticipation_comp_cents: 300, anticipation_fee_partner_cents: 250, anticipation_fee_movepark_cents: 20, gateway_fee_cents: 670,
+    }));
+    expect(m.split?.partner).toMatchObject({ feeCents: 400, anticipationCents: 250, anticipationExpected: false, netCents: 8450 });
+    expect(m.split?.movepark).toMatchObject({ feeCents: 20, netCents: 880 });
+    expect((m.split?.partner.netCents ?? 0) + (m.split?.movepark.netCents ?? 0)).toBe(10000 - 670);
+  });
+
+  it("depois da releitura sem folga: a falta volta ao parceiro como crédito, pago pela Movepark", () => {
+    const m = buildMoneyBreakdown(venda, 100, cartao({
+      anticipation_comp_cents: 300, anticipation_fee_partner_cents: 350, anticipation_fee_movepark_cents: 20,
+      anticipation_credit_cents: 50, gateway_fee_cents: 770,
+    }));
+    expect(m.split?.partner).toMatchObject({ creditCents: 50, netCents: 8400 });
+    expect(m.split?.movepark).toMatchObject({ creditCents: 50, netCents: 830 });
+  });
+
+  it("venda anterior à cessão: a taxa do parceiro volta inteira como crédito e a conta não muda", () => {
+    const m = buildMoneyBreakdown(venda, 100, cartao({
+      split: [
+        { role: "partner", amount: 8800, liable: false, chargeProcessingFee: false },
+        { role: "movepark", amount: 1200, liable: true, chargeProcessingFee: true },
+      ],
+      anticipation_fee_partner_cents: 500, anticipation_fee_movepark_cents: 30, anticipation_credit_cents: 500, gateway_fee_cents: 930,
+    }));
+    expect(m.split?.partner.netCents).toBe(8800);
+    expect(m.split?.movepark.netCents).toBe(1200 - 930);
+  });
+
+  it("a conta do parceiro mostra o acerto da antecipação e fecha no líquido", () => {
+    const v = partnerMoneyView(buildMoneyBreakdown(venda, 100, cartao({
+      anticipation_comp_cents: 300, anticipation_fee_partner_cents: 250, anticipation_fee_movepark_cents: 20, gateway_fee_cents: 670,
+    })));
+    expect(v).toMatchObject({ feeCents: 400, anticipationCents: 50, netCents: 8450 });
+    expect(v.parkingCents - v.discountCents - v.commissionCents - v.debtRecoveredCents - v.feeCents + v.anticipationCents).toBe(v.netCents);
   });
 });
 

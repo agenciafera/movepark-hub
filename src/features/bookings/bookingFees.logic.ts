@@ -83,6 +83,8 @@ export interface FeePaymentLike {
   installments: number | null;
   gateway_fee_cents: number | null;
   anticipation_credit_cents?: number | null;
+  /** Quanto a Movepark cedeu no split para cobrir a antecipação do parceiro (E0.3.14). */
+  anticipation_comp_cents?: number | null;
 }
 
 export interface FeeBookingLike {
@@ -126,6 +128,10 @@ export type FeeLine =
       moveparkCents: number;
       anticipatedAt: string | null;
       creditCents: number;
+      /** O que a Movepark cedeu no split para cobrir a antecipação do parceiro. */
+      compCents: number;
+      /** A antecipação ainda não aconteceu: o valor é o previsto (a cessão gravada). */
+      expected: boolean;
       payer: Payer;
     }
   | { key: "antifraud"; cents: number | null; payer: Payer };
@@ -138,6 +144,8 @@ export interface FeeInstallmentRow {
   receivedDate: string | null;
   mdrCents: number | null;
   anticipationCents: number | null;
+  /** Data de entrada e taxa de antecipação desta parcela são previstas. */
+  expected: boolean;
 }
 
 export interface FeeDetail {
@@ -156,6 +164,8 @@ export interface FeeDetail {
   gateway: {
     linesCents: number | null;
     recordedCents: number | null;
+    /** Antecipação prevista que ainda vai sair (zero quando já saiu ou não se aplica). */
+    expectedCents: number;
     pending: boolean;
     stale: boolean;
     detailed: boolean;
@@ -241,22 +251,32 @@ export function buildFeeDetail(args: {
     payer: feePayer,
   });
 
+  // Antecipação (E0.3.14): a Pagar.me antecipa o cartão do parceiro por volta do D+29 e só então a
+  // taxa aparece nos recebíveis. Antes disso, se a Movepark cedeu a estimativa no split, a taxa é
+  // a prevista (a cessão) e as parcelas entram todas junto com a 1ª.
+  const comp = Math.max(0, payment.anticipation_comp_cents ?? 0);
+  const anticipatedRows = rows.filter((p) => p.anticipationFeeCents > 0);
+  const anticipationReal = total(anticipatedRows, (p) => p.anticipationFeeCents);
+  const expected = method === "card" && comp > 0 && anticipationReal === 0;
+  const firstDate = earliest(
+    rows.filter((p) => p.installment === 1).map((p) => p.originalPaymentDate),
+  );
   if (method === "card") {
-    const anticipated = rows.filter((p) => p.anticipationFeeCents > 0);
-    const all = total(anticipated, (p) => p.anticipationFeeCents);
     const moveparkCents = total(
-      anticipated.filter(
+      anticipatedRows.filter(
         (p) => moveparkRecipientId != null && p.recipientId === moveparkRecipientId,
       ),
       (p) => p.anticipationFeeCents,
     );
     lines.push({
       key: "anticipation",
-      cents: payables ? all : null,
-      partnerCents: all - moveparkCents,
-      moveparkCents,
-      anticipatedAt: earliest(anticipated.map((p) => p.paymentDate)),
+      cents: expected ? comp : payables ? anticipationReal : null,
+      partnerCents: expected ? comp : anticipationReal - moveparkCents,
+      moveparkCents: expected ? 0 : moveparkCents,
+      anticipatedAt: expected ? firstDate : earliest(anticipatedRows.map((p) => p.paymentDate)),
       creditCents: Math.max(0, payment.anticipation_credit_cents ?? 0),
+      compCents: comp,
+      expected,
       payer: booking.commission_anticipation_payer === "partner" ? "partner" : "movepark",
     });
   }
@@ -272,18 +292,35 @@ export function buildFeeDetail(args: {
     : null;
   const recordedCents = payment.gateway_fee_cents;
 
+  // Taxa prevista por parcela: proporcional aos dias antecipados (0, 30, 60...), resto na última.
+  const weightSum = (n * (n - 1)) / 2;
+  const expectedShare = (k: number) => {
+    if (!expected || weightSum === 0) return 0;
+    if (k === n) {
+      let rest = comp;
+      for (let j = 1; j < n; j++) rest -= Math.floor((comp * (j - 1)) / weightSum);
+      return rest;
+    }
+    return Math.floor((comp * (k - 1)) / weightSum);
+  };
+
   const installments: FeeInstallmentRow[] =
     method === "card"
       ? Array.from({ length: n }, (_, i) => {
           const k = i + 1;
           const deste = rows.filter((p) => p.installment === k);
+          const originalDate = earliest(deste.map((p) => p.originalPaymentDate));
+          const realAnticipation = payables ? total(deste, (p) => p.anticipationFeeCents) : null;
           return {
             installment: k,
             customerCents: k === 1 ? first : base,
-            originalDate: earliest(deste.map((p) => p.originalPaymentDate)),
-            receivedDate: earliest(deste.map((p) => p.paymentDate)),
+            originalDate,
+            receivedDate: expected
+              ? (firstDate ?? originalDate)
+              : earliest(deste.map((p) => p.paymentDate)),
             mdrCents: payables ? total(deste, (p) => p.feeCents) : null,
-            anticipationCents: payables ? total(deste, (p) => p.anticipationFeeCents) : null,
+            anticipationCents: expected ? expectedShare(k) : realAnticipation,
+            expected: expected && k > 1,
           };
         })
       : [];
@@ -304,6 +341,7 @@ export function buildFeeDetail(args: {
     gateway: {
       linesCents,
       recordedCents,
+      expectedCents: expected ? comp : 0,
       pending: recordedCents == null,
       stale: linesCents != null && recordedCents != null && linesCents !== recordedCents,
       detailed: payables != null,
