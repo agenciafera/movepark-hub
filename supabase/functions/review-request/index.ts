@@ -10,6 +10,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, siteUrl, getEmailConfig, tplReviewRequest } from "../_shared/email.ts";
+import { LOCATION_BRAND_SELECT, locationBrand } from "../_shared/voucher/fields.ts";
 import { pendingReviewRequests, reviewRecipient, reviewWindowStartIso } from "./pending.ts";
 
 const corsHeaders = {
@@ -62,7 +63,7 @@ Deno.serve(async (req: Request) => {
     .from("booking")
     .select(
       `id, code, profile_id, customer_email, customer_first_name,
-       location:location!inner(name),
+       location:location!inner(name, ${LOCATION_BRAND_SELECT}),
        profile:profiles(first_name),
        review:review(id)`,
     )
@@ -95,6 +96,7 @@ Deno.serve(async (req: Request) => {
       to.firstName,
       row.location?.name ?? "seu estacionamento",
       `${siteUrl()}/bookings/${row.code}`,
+      locationBrand(row.location),
     );
     const res = await sendEmail({ from: cfg.from, to: email, subject: tpl.subject, html: tpl.html });
     if (res.ok) {

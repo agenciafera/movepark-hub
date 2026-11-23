@@ -97,11 +97,32 @@ export async function buildVoucherPdf(
   const center = (text: string, y: number, size: number, font: typeof helv, color = ink) =>
     page.drawText(text, { x: (width - font.widthOfTextAtSize(text, size)) / 2, y, size, font, color });
 
+  // Cabeçalho do estacionamento (regra de 23/11/2026, a mesma do e-mail): o logo colorido dele,
+  // ou o nome em texto quando não há logo. A Movepark vai no rodapé da folha.
   let y = height - 64;
-  page.drawText("Movepark", { x: M, y, size: 20, font: helvB, color: ink });
+  const logo = await fetchLogoImage(voucher.parking_logo?.light);
+  let drewLogo = false;
+  if (logo) {
+    try {
+      const img = logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
+      const ratio = img.width / img.height;
+      let h = 34;
+      let w = ratio * h;
+      if (w > 200) {
+        w = 200;
+        h = w / ratio;
+      }
+      // Centro da imagem na linha do título (baseline + 7).
+      page.drawImage(img, { x: M, y: y + 7 - h / 2, width: w, height: h });
+      drewLogo = true;
+    } catch (e) {
+      console.error("[voucher] logo não embutido:", voucher.code, e);
+    }
+  }
+  if (!drewLogo) page.drawText(voucher.company_name, { x: M, y, size: 20, font: helvB, color: ink });
   const tr = "Voucher de reserva";
   page.drawText(tr, { x: width - M - helv.widthOfTextAtSize(tr, 11), y: y + 4, size: 11, font: helv, color: muted });
-  y -= 24;
+  y -= 30;
   page.drawLine({ start: { x: M, y }, end: { x: width - M, y }, thickness: 1, color: hair });
 
   const qrImg = await pdf.embedPng(pngFromDataUrl(qrDataUrl));
@@ -120,28 +141,6 @@ export async function buildVoucherPdf(
   page.drawLine({ start: { x: M, y }, end: { x: width - M, y }, thickness: 1, color: hair });
   y -= 28;
 
-  // Quem opera a vaga, como primeira linha do quadro, no mesmo desenho rótulo × valor dos campos.
-  // A imagem vai alinhada à direita, com 22pt de altura e no máximo 140pt de largura.
-  const logo = await fetchLogoImage(voucher.parking_logo?.light);
-  if (logo) {
-    try {
-      const img = logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
-      const ratio = img.width / img.height;
-      let h = 22;
-      let w = ratio * h;
-      if (w > 140) {
-        w = 140;
-        h = w / ratio;
-      }
-      page.drawText("Operado por", { x: M, y, size: 11, font: helv, color: muted });
-      // Centro da imagem no centro óptico do texto de 11pt (baseline + 4).
-      page.drawImage(img, { x: width - M - w, y: y + 4 - h / 2, width: w, height: h });
-      y -= 34;
-    } catch (e) {
-      console.error("[voucher] logo não embutido:", voucher.code, e);
-    }
-  }
-
   // Valor longo (endereço completo) quebra em linhas alinhadas à direita; antes ele passava da
   // margem e saía cortado da folha. 150pt ficam reservados para o rótulo.
   const maxValueWidth = width - 2 * M - 150;
@@ -154,6 +153,17 @@ export async function buildVoucherPdf(
     });
     y -= 22 + (rows.length - 1) * 15;
   }
+
+  // Rodapé: a Movepark, pequena, no pé da folha.
+  const fy = 48;
+  page.drawLine({ start: { x: M, y: fy + 22 }, end: { x: width - M, y: fy + 22 }, thickness: 1, color: hair });
+  const pre = "Reserva feita pela ";
+  const preW = helv.widthOfTextAtSize(pre, 9);
+  const mark = "Movepark";
+  const markW = helvB.widthOfTextAtSize(mark, 11);
+  const fx = (width - preW - markW) / 2;
+  page.drawText(pre, { x: fx, y: fy, size: 9, font: helv, color: muted });
+  page.drawText(mark, { x: fx + preW, y: fy, size: 11, font: helvB, color: ink });
 
   return await pdf.save();
 }

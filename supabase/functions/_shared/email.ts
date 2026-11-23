@@ -17,7 +17,13 @@
 // branco (Pare Seguro). A nodemailer gera o MIME que o Outlook espera.
 import nodemailer from "https://esm.sh/nodemailer@6.9.16";
 import { Buffer } from "node:buffer";
-import { formatBRDateTime, formatBRL, mapsSearchUrl, type VoucherBooking } from "./voucher/fields.ts";
+import {
+  formatBRDateTime,
+  formatBRL,
+  mapsSearchUrl,
+  type ParkingLogo,
+  type VoucherBooking,
+} from "./voucher/fields.ts";
 import { siteUrl } from "./site.ts";
 
 // @ts-expect-error - Deno env
@@ -216,13 +222,29 @@ function termsUrl(): string {
 // cliente o confundia com o do estacionamento (docs/specs/logo-do-estacionamento.md).
 const LEGAL_NAME = "Movepark Tecnologia Ltda.";
 
+/** Estacionamento parceiro no topo do e-mail (ver `shell`). */
+export interface Partner {
+  name: string;
+  /** Logo para fundo claro (colorido). O topo do e-mail é branco. */
+  logo: string | null;
+}
+
+/** Parceiro de um e-mail de reserva, a partir dos dados da reserva. Sem empresa, sem parceiro. */
+export function partnerFrom(
+  b: { company_name?: string | null; parking_logo?: ParkingLogo | null },
+): Partner | null {
+  const name = String(b.company_name ?? "").trim();
+  if (!name) return null;
+  return { name, logo: b.parking_logo?.light ?? null };
+}
+
 /**
  * Casco do e-mail. Layout table-based (robusto em Gmail/Apple/Outlook), CSS inline.
  *
  * Minimalista desde 23/11/2026: o cliente confundia a Movepark com o estacionamento (caso Pare
- * Seguro e Movepark Estacionamento, os dois em Guarulhos). A marca Movepark ficou pequena e
- * discreta: wordmark de 16px no topo sobre branco, sem a faixa violeta, sem a régua de cores e
- * sem a banda de ajuda. O rodapé é uma linha de links, o aviso de mensagem automática e a razão
+ * Seguro e Movepark Estacionamento, os dois em Guarulhos). Sem a faixa violeta, sem a régua de
+ * cores e sem a banda de ajuda. E-mail de reserva (`partner`) abre com o logo do estacionamento e
+ * leva a Movepark para o rodapé; os demais abrem com o wordmark de 16px da Movepark. O rodapé é uma linha de links, o aviso de mensagem automática e a razão
  * social, **sem endereço**: o único endereço do e-mail de reserva é o de onde a pessoa vai
  * estacionar. Ver docs/specs/logo-do-estacionamento.md.
  *
@@ -232,9 +254,26 @@ const LEGAL_NAME = "Movepark Tecnologia Ltda.";
 function shell(
   title: string,
   bodyHtml: string,
-  opts?: { preheader?: string },
+  opts?: {
+    preheader?: string;
+    /**
+     * Estacionamento parceiro do e-mail. Presente, o topo é dele (logo colorido, ou o nome em
+     * texto quando não há logo) e o wordmark da Movepark desce para o rodapé. Regra do Diego,
+     * 23/11/2026: e-mail que envolve estacionamento parceiro leva a Movepark sempre no rodapé.
+     */
+    partner?: Partner | null;
+  },
 ): string {
   const wordmark = `${siteUrl()}/brand/logo-movepark-email.png`;
+  const partner = opts?.partner ?? null;
+  const header = partner
+    ? partner.logo
+      ? `<img src="${escapeHtml(partner.logo)}" height="44" alt="${escapeHtml(partner.name)}" style="display:block;border:0;outline:none;height:44px;width:auto;max-width:240px;">`
+      : `<p style="margin:0;font-family:${FONT};font-size:18px;line-height:1.3;font-weight:700;color:${BRAND.navy};">${escapeHtml(partner.name)}</p>`
+    : `<img src="${wordmark}" width="108" height="16" alt="Movepark" style="display:block;border:0;outline:none;height:16px;width:auto;">`;
+  const footerBrand = partner
+    ? `<img src="${wordmark}" width="95" height="14" alt="Movepark" style="display:block;border:0;outline:none;height:14px;width:auto;margin:0 0 12px;">`
+    : "";
   const pre = (opts?.preheader ?? title).replace(/\s+/g, " ").trim();
   const footLink = (href: string, label: string) =>
     `<a href="${href}" class="mp-foot-link" style="color:${BRAND.muted};text-decoration:underline;">${label}</a>`;
@@ -265,7 +304,7 @@ function shell(
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:12px;">
 
 <tr><td class="mp-pad" style="padding:28px 40px 0;font-family:${FONT};">
-<img src="${wordmark}" width="108" height="16" alt="Movepark" style="display:block;border:0;outline:none;height:16px;width:auto;">
+${header}
 </td></tr>
 
 <tr><td class="mp-pad" style="padding:28px 40px 0;font-family:${FONT};">
@@ -277,6 +316,7 @@ ${bodyHtml}
 </td></tr>
 
 <tr><td class="mp-pad" style="padding:24px 40px 32px;border-top:1px solid ${BRAND.hairline};font-family:${FONT};font-size:12px;line-height:1.7;color:${BRAND.muted};">
+${footerBrand}
 <p style="margin:0 0 6px;">${footLink(helpUrl(), "Central de Ajuda")} &nbsp;&middot;&nbsp; ${footLink(privacyUrl(), "Privacidade")} &nbsp;&middot;&nbsp; ${footLink(termsUrl(), "Termos de Uso")}</p>
 <p style="margin:0 0 6px;">Mensagem automática. Para falar com a gente, use a Central de Ajuda.</p>
 <p style="margin:0;">&copy; 2026 ${LEGAL_NAME}</p>
@@ -891,6 +931,7 @@ export function tplReviewRequest(
   contactName: string,
   locationName: string,
   reviewLink: string,
+  brand?: { company_name?: string | null; parking_logo?: ParkingLogo | null },
 ): { subject: string; html: string } {
   // Estrelas clicáveis: cada uma é um deep link de 1 clique que já abre a
   // avaliação com aquela nota pré-selecionada (?rating=N), menos fricção.
@@ -909,7 +950,8 @@ export function tplReviewRequest(
       <p style="margin:8px 0 4px">Toque numa estrela para avaliar:</p>
       <div style="text-align:center;margin:4px 0 12px">${stars}</div>
       <p style="text-align:center">${button(reviewLink, "Avaliar meu estacionamento")}</p>
-      <p style="color:${BRAND.muted};font-size:13px">Se as estrelas não funcionarem, copie e cole este link no navegador:<br>${reviewLink}</p>`),
+      <p style="color:${BRAND.muted};font-size:13px">Se as estrelas não funcionarem, copie e cole este link no navegador:<br>${reviewLink}</p>`,
+      { partner: brand ? partnerFrom(brand) : null }),
   };
 }
 
@@ -946,8 +988,9 @@ function formatBRDayMonth(iso: string): string {
 
 /**
  * Bloco "onde você vai estacionar" do e-mail de reserva (23/11/2026,
- * docs/specs/logo-do-estacionamento.md). De cima para baixo:
- *   1. logo colorido do estacionamento (versão para fundo claro) ou, sem logo, o nome em texto;
+ * docs/specs/logo-do-estacionamento.md). O logo do estacionamento abre o e-mail, no topo do
+ * `shell`; o bloco vem depois da saudação. De cima para baixo:
+ *   1. nome do estacionamento e da unidade;
  *   2. duas colunas: foto da fachada e miniatura do mapa, que abre o Google Maps. Sem foto, o
  *      mapa ocupa a linha; sem mapa (falta `GOOGLE_STATIC_MAPS_KEY`), um cartão com o endereço
  *      e o link faz o papel dele; sem nenhum dos dois, a linha some;
@@ -958,12 +1001,8 @@ function parkingBlock(b: VoucherBooking): string {
   const name = `${b.company_name} · ${b.location_name}`;
   const address = String(b.location_address ?? "").trim();
   const maps = address ? mapsSearchUrl(address) : null;
-  const logo = b.parking_logo?.light ?? null;
-
-  const head = logo
-    ? `<img src="${escapeHtml(logo)}" height="36" alt="${escapeHtml(b.company_name)}" style="display:block;border:0;outline:none;height:36px;width:auto;max-width:220px;margin:0 0 8px;">
-       <p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:${BRAND.muted};">${escapeHtml(b.location_name)}</p>`
-    : `<p style="margin:0 0 16px;font-size:18px;line-height:1.35;font-weight:600;color:${BRAND.navy};">${escapeHtml(name)}</p>`;
+  // O logo do estacionamento já abre o e-mail (topo do `shell`); aqui vai o nome da unidade.
+  const head = `<p style="margin:0 0 14px;font-size:17px;line-height:1.35;font-weight:600;color:${BRAND.navy};">${escapeHtml(name)}</p>`;
 
   const photo = b.email_photo_url
     ? `<img src="${escapeHtml(b.email_photo_url)}" width="252" alt="Fachada do ${escapeHtml(b.company_name)}" style="display:block;border:0;outline:none;width:100%;max-width:252px;height:auto;border-radius:8px;">`
@@ -1039,7 +1078,7 @@ export function tplBookingConfirmation(
       ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}
       ${checkItem(`O voucher vai em anexo neste e-mail e também fica na sua reserva, pronto para baixar quando quiser.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Reserva ${b.code} confirmada no ${b.company_name}, ${b.location_name}` },
+      { preheader: `Reserva ${b.code} confirmada no ${b.company_name}, ${b.location_name}`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1052,6 +1091,9 @@ export interface BookingNoticeData {
   check_in_at: string;
   check_out_at: string;
   vehicle?: { license_plate: string; model: string | null } | null;
+  /** Estacionamento parceiro, para o topo do e-mail (`locationBrand` em voucher/fields.ts). */
+  company_name?: string | null;
+  parking_logo?: ParkingLogo | null;
 }
 
 function primeiroNome(name: string | null): string {
@@ -1071,7 +1113,7 @@ export function tplBookingReminderCheckin(b: BookingNoticeData, customerName: st
       ${b.vehicle ? checkItem(`Veículo na reserva: <strong style="color:${BRAND.navy};">${escapeHtml(b.vehicle.license_plate)}</strong>. Mudou de carro? Troque na sua reserva antes de chegar.`) : ""}
       ${checkItem(`Na chegada, mostre o voucher. Ele está na sua reserva.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Entrada em ${formatBRDateTime(b.check_in_at)} no ${b.location_name}` },
+      { preheader: `Entrada em ${formatBRDateTime(b.check_in_at)} no ${b.location_name}`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1088,7 +1130,7 @@ export function tplBookingReminderCheckout(b: BookingNoticeData, customerName: s
       ${checkItem(`Vai atrasar? Fale com o estacionamento pelo telefone que está na sua reserva.`)}
       ${checkItem(`Tarifa Superflex com voo atrasado: estenda a saída em até 24h pela reserva, sem custo.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Saída em ${formatBRDateTime(b.check_out_at)}` },
+      { preheader: `Saída em ${formatBRDateTime(b.check_out_at)}`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1136,7 +1178,7 @@ export function tplBookingDatesChanged(b: BookingNoticeData, customerName: strin
       ${checkItem(`O voucher já está com as datas novas. Baixe de novo antes de ir.`)}
       ${checkItem(`O estacionamento ${escapeHtml(b.location_name)} recebe a atualização por aqui.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Novas datas da reserva ${b.code}` },
+      { preheader: `Novas datas da reserva ${b.code}`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1153,7 +1195,7 @@ export function tplBookingVehicleChanged(b: BookingNoticeData, customerName: str
       <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, ` : ""}a reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> agora está no veículo <strong style="color:${BRAND.navy};">${escapeHtml(v)}</strong>.</p>
       ${checkItem(`É essa placa que vale no portão do ${escapeHtml(b.location_name)}. O voucher já mudou junto.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Veículo da reserva ${b.code}: ${v}` },
+      { preheader: `Veículo da reserva ${b.code}: ${v}`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1173,7 +1215,7 @@ export function tplAccessCodeUpdated(b: BookingNoticeData, customerName: string 
       <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, o` : "O"} QR de entrada da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> mudou. O voucher novo vai em anexo e é ele que abre a cancela do ${escapeHtml(b.location_name)}.</p>
       ${checkItem(`Se você salvou o voucher anterior, troque pelo novo.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Use o voucher novo na cancela do ${b.location_name}` },
+      { preheader: `Use o voucher novo na cancela do ${b.location_name}`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1226,7 +1268,7 @@ export function tplBookingExtended(
         : checkItem(`Nada a pagar: a diária extra é por conta da Movepark.`)}
       ${checkItem(`O estacionamento ${escapeHtml(b.location_name)} já sabe da nova saída.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Saída da reserva ${b.code} estendida` },
+      { preheader: `Saída da reserva ${b.code} estendida`, partner: partnerFrom(b) },
     ),
   };
 }
@@ -1303,7 +1345,7 @@ export function tplBookingCancelled(
       ${checkItem(`Mudou de ideia? É só fazer uma nova reserva. A vaga volta para a busca na hora.`)}
       ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver a reserva")}</p>`,
-      { preheader: `Reserva ${b.code} cancelada${opts.refund === "none" ? "" : ", estorno a caminho"}` },
+      { preheader: `Reserva ${b.code} cancelada${opts.refund === "none" ? "" : ", estorno a caminho"}`, partner: partnerFrom(b) },
     ),
   };
 }

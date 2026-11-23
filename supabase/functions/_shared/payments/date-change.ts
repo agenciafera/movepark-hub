@@ -10,6 +10,7 @@ import { logGatewayEvent } from "./trail.ts";
 import type { PaymentGateway } from "./types.ts";
 import { notifyBooking } from "../notify.ts";
 import { type DatesChangedMoney, tplBookingDatesChanged } from "../email.ts";
+import { LOCATION_BRAND_SELECT, locationBrand } from "../voucher/fields.ts";
 import { siteUrl } from "../site.ts";
 
 /** O que `reprice_booking_dates` devolve (migration 20261204140000). */
@@ -146,13 +147,14 @@ export async function notifyDatesChanged(
   try {
     const { data: r } = await admin
       .from("booking")
-      .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+      .select(`code, check_in_at, check_out_at, location:location!inner(name, address, ${LOCATION_BRAND_SELECT}), vehicle:vehicle(license_plate, model)`)
       .eq("id", bookingId)
       .maybeSingle();
     if (!r) return;
     const nd = {
       code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null,
       check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null,
+      ...locationBrand(r.location),
     };
     const quando = `${fmtBR(nd.check_in_at)} a ${fmtBR(nd.check_out_at)}`;
     await notifyBooking(admin, {

@@ -44,13 +44,16 @@ function cleanUrl(url: string | null | undefined): string | null {
 }
 
 /**
- * Unidade antes da empresa, cada fundo por conta própria: o logo de fundo claro nunca vai para o
- * topo escuro (some no violeta). Espelho de `src/lib/parkingLogo.ts`; ao mudar um, mude o outro.
+ * Unidade antes da empresa. Em fundo escuro o logo do parceiro sai todo branco (regra de
+ * 23/11/2026): a tela pinta de branco o arquivo que tiver, então o escuro cai no colorido quando
+ * não há versão própria. O contrário não vale, porque um logo branco some no fundo claro.
+ * Espelho de `src/lib/parkingLogo.ts`; ao mudar um, mude o outro.
  */
 export function resolveParkingLogo(location: LogoFields, company: LogoFields): ParkingLogo {
+  const light = cleanUrl(location?.logo_url) ?? cleanUrl(company?.logo_url);
   return {
-    light: cleanUrl(location?.logo_url) ?? cleanUrl(company?.logo_url),
-    dark: cleanUrl(location?.logo_dark_url) ?? cleanUrl(company?.logo_dark_url),
+    light,
+    dark: cleanUrl(location?.logo_dark_url) ?? cleanUrl(company?.logo_dark_url) ?? light,
   };
 }
 
@@ -93,6 +96,22 @@ export function staticMapUrl(
     key: k,
   });
   return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
+}
+
+/**
+ * Pedaço de select (dentro de `location:location!inner(...)`) com o que o e-mail precisa para pôr o
+ * estacionamento no topo: nome da empresa e logos (docs/specs/logo-do-estacionamento.md).
+ */
+export const LOCATION_BRAND_SELECT =
+  "logo_url, logo_dark_url, company:company!inner(name, logo_url, logo_dark_url)";
+
+/** Nome da empresa e logo resolvido, a partir da `location` lida com `LOCATION_BRAND_SELECT`. */
+// deno-lint-ignore no-explicit-any
+export function locationBrand(location: any): { company_name: string | null; parking_logo: ParkingLogo } {
+  return {
+    company_name: (location?.company?.name as string | undefined) ?? null,
+    parking_logo: resolveParkingLogo(location, location?.company),
+  };
 }
 
 /** Link do Google Maps para o endereço da unidade (o mesmo que o checkout usa). */

@@ -11,7 +11,12 @@ também fica em Guarulhos. O e-mail de confirmação mostrava no rodapé o logo 
 Movepark e não mostrava o endereço de onde a pessoa ia estacionar.
 
 A decisão da reunião: o hub continua centralizado (a marca da compra é a Movepark) e o logo de quem
-opera a vaga entra de forma discreta, como "Operado por [logo]". No mesmo dia o Diego pediu o
+opera a vaga entra de forma discreta, como "Operado por [logo]".
+
+**Regra de marca (Diego, 23/11/2026).** Em e-mail, voucher e qualquer comunicação que envolva um
+estacionamento parceiro, **o logo do parceiro vai no topo e o da Movepark vai sempre no rodapé**.
+Em fundo escuro, o logo do parceiro sai **todo branco**. Nas telas da compra (checkout e
+confirmação) o parceiro continua discreto, como "Operado por". No mesmo dia o Diego pediu o
 e-mail com a Movepark menor e minimalista, sem o endereço da Movepark no rodapé, com o logo
 colorido do estacionamento no corpo e o bloco de foto da fachada e mapa que o template do legado
 tinha.
@@ -21,15 +26,17 @@ tinha.
 | Coluna | Fundo | Onde aparece |
 |---|---|---|
 | `company.logo_url` | claro | checkout, confirmação, reserva, e-mail de confirmação, PDF do voucher, voucher impresso |
-| `company.logo_dark_url` | escuro | topo navy do voucher na conta do cliente |
+| `company.logo_dark_url` | escuro | topo navy do voucher na conta (opcional: sem ele, o colorido) |
 | `location.logo_url` | claro | troca o da empresa só nesta unidade |
 | `location.logo_dark_url` | escuro | troca o da empresa só nesta unidade |
 
 - **Unidade antes da empresa, fundo por fundo.** Unidade com logo nulo segue a empresa. Serve para
   unidade que opera com outra marca (o pedido citou Garageinn Viracopos e Garageinn Serve, Nation
   Park e Park).
-- **Um fundo nunca usa o arquivo do outro.** O logo de fundo claro costuma ser escuro e some no
-  navy. Sem o arquivo do fundo certo, o lugar fica sem logo, como era antes.
+- **Em fundo escuro, todo branco.** A tela pinta de branco o arquivo que tiver (CSS
+  `brightness(0) invert(1)`, `LOGO_WHITE_FILTER`), então o escuro cai no colorido quando não há
+  versão própria. O contrário não vale: logo branco some no fundo claro, e o lugar fica sem logo.
+  Por isso o upload pede PNG transparente: JPG de fundo sólido viraria um retângulo branco.
 - **Só PNG ou JPG em https**, por constraint (`*_logo_*_formato`). O Gmail não mostra SVG e o
   pdf-lib do voucher só embute PNG e JPG. O upload do Manager recusa outro formato e limita a 2 MB.
 - **Leitura pública.** `company` tem privilégio por coluna (20261129090500): `logo_dark_url` foi
@@ -49,23 +56,26 @@ outro.
 | Checkout, desktop | `SummaryCard.tsx` | "Operado por [logo]" sob o nome e o "Ver endereço" do cartão de resumo |
 | Checkout, mobile | `routes/checkout.tsx` | mesma linha, centralizada acima do passo a passo (no mobile o resumo fica fechado na gaveta) |
 | Confirmação (passo 5) | `Step5Confirmation.tsx` | sob a instrução do QR |
-| Reserva / voucher de tela | `bookings/Voucher.tsx` | versão para fundo escuro no topo navy; versão clara no cabeçalho impresso |
-| E-mail de confirmação | `_shared/email.ts` (`parkingBlock`) | logo colorido (fundo claro) no topo do bloco do estacionamento, no corpo. Sem logo, o nome em texto |
-| PDF do voucher | `_shared/voucher/pdf.ts` | primeira linha do quadro de dados: "Operado por" à esquerda, logo de fundo claro à direita (22pt de altura, até 140pt de largura). Logo que não baixa em 4 s não segura o voucher. A Edge só baixa do Storage público do próprio projeto (host de `SUPABASE_URL`): a coluna aceita qualquer https, e sem essa trava quem escreve na unidade apontaria o fetch do servidor para outro host |
+| Reserva / voucher de tela | `bookings/Voucher.tsx` | logo todo branco no topo navy; colorido no cabeçalho impresso; "Reserva feita pela [Movepark]" no rodapé |
+| E-mails de reserva | `_shared/email.ts` (`shell` com `partner`) | logo colorido no topo de todo e-mail de reserva (confirmação, lembretes, troca de datas e de veículo, novo código de acesso, extensão, cancelamento, pedido de avaliação); sem logo, o nome em texto. A Movepark desce para o rodapé |
+| PDF do voucher | `_shared/voucher/pdf.ts` | logo colorido no cabeçalho (34pt de altura, até 200pt de largura; sem logo, o nome em texto) e "Reserva feita pela Movepark" no pé da folha. Logo que não baixa em 4 s não segura o voucher. A Edge só baixa do Storage público do próprio projeto (host de `SUPABASE_URL`): a coluna aceita qualquer https, e sem essa trava quem escreve na unidade apontaria o fetch do servidor para outro host |
 
 Sem logo cadastrado, nada disso aparece e as telas ficam como eram.
 
 ## O e-mail (casco e confirmação)
 
-**Casco (`shell()`), vale para todos os e-mails.** Minimalista: wordmark da Movepark de 16px no
-topo sobre branco, título em navy, corpo e um rodapé de três linhas (Central de Ajuda, Privacidade
-e Termos; aviso de mensagem automática; razão social). Saíram a faixa violeta com o símbolo
+**Casco (`shell()`), vale para todos os e-mails.** Minimalista: topo branco, título em navy, corpo
+e um rodapé curto (Central de Ajuda, Privacidade e Termos; aviso de mensagem automática; razão
+social). E-mail de reserva recebe `partner` (`partnerFrom`, a partir de `company_name` e
+`parking_logo`, que os remetentes leem com `LOCATION_BRAND_SELECT` e `locationBrand`): o topo é do
+estacionamento e o wordmark da Movepark (14px) abre o rodapé. E-mail sem parceiro (lead, KYC,
+equipe, resumo do parceiro) abre com o wordmark de 16px da Movepark. Saíram a faixa violeta com o símbolo
 branco, a régua de cores, a banda "Ficou com alguma dúvida?" com redes sociais e o **endereço da
 Movepark**, que o cliente confundia com o do estacionamento.
 
 **Bloco do estacionamento (`parkingBlock`), na confirmação**, logo depois da saudação:
 
-1. logo colorido do estacionamento e o nome da unidade (sem logo: nome em texto);
+1. nome do estacionamento e da unidade (o logo já está no topo do e-mail);
 2. duas colunas, foto da fachada e miniatura do mapa, que abre o Google Maps. No celular empilham;
 3. endereço por extenso com "Como chegar".
 
@@ -92,8 +102,10 @@ então tem que ser **dedicada e restrita à Static Maps API**, nunca a chave do 
 
 - Página da unidade e busca: o card de busca já diz o nome do estacionamento e o pedido foi pela
   jornada de compra. Se a confusão aparecer antes do checkout, a mesma `OperatedBy` serve.
-- Lembretes de check-in e check-out, troca de datas e cancelamento: já saem com o casco novo, mas
-  sem o bloco do estacionamento. Ligar é chamar `parkingBlock` com os mesmos dados.
+- Lembretes, troca de datas e cancelamento: já saem com o parceiro no topo e a Movepark no rodapé,
+  mas sem o bloco de foto e mapa. Ligar é chamar `parkingBlock` com os mesmos dados.
+- E-mails para o próprio parceiro (resumo diário, saque, KYC) seguem com a Movepark no topo: quem
+  lê é o parceiro, e a confusão de marca era do cliente final.
 - Unidades com checkout externo (`checkout_mode = external`) não passam pelo checkout nem pelos
   e-mails do Hub.
 

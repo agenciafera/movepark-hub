@@ -627,15 +627,43 @@ Deno.test("tplBookingConfirmation: endereço da unidade com Como chegar, e nenhu
   assertStringIncludes(m.html, "Pare Seguro · Aeroporto de Guarulhos");
 });
 
-Deno.test("tplBookingConfirmation: o logo colorido vai no corpo, e o branco não é usado", () => {
+Deno.test("e-mail de reserva: logo colorido do parceiro no topo e Movepark no rodapé", () => {
   const m = tplBookingConfirmation(
     { ...PS, parking_logo: { light: "https://cdn.test/ps.png", dark: "https://cdn.test/ps-branco.png" } },
     null,
     "https://movepark.co/bookings/MP-PS0001",
   );
-  assertStringIncludes(m.html, 'src="https://cdn.test/ps.png"');
-  assertStringIncludes(m.html, 'alt="Pare Seguro"');
+  const logo = m.html.indexOf('src="https://cdn.test/ps.png"');
+  const titulo = m.html.indexOf("<h1");
+  const movepark = m.html.indexOf("/brand/logo-movepark-email.png");
+  const rodape = m.html.indexOf("Central de Ajuda</a>");
+  assert(logo > 0 && logo < titulo, "o logo do parceiro abre o e-mail");
+  assert(movepark > titulo && movepark < rodape, "a Movepark vai no rodapé");
+  assertEquals(m.html.match(/logo-movepark-email\.png/g)?.length, 1);
   assertEquals(m.html.includes("ps-branco.png"), false);
+});
+
+Deno.test("e-mail de reserva sem logo: o nome do parceiro no topo, Movepark no rodapé", () => {
+  const m = tplBookingReminderCheckin(
+    { code: "MP-1", location_name: "Aeroporto de Guarulhos", check_in_at: PS.check_in_at, check_out_at: PS.check_out_at, company_name: "Pare Seguro", parking_logo: { light: null, dark: null } },
+    "Ana",
+    "https://movepark.co/bookings/MP-1",
+  );
+  assert(m.html.indexOf(">Pare Seguro</p>") < m.html.indexOf("<h1"));
+  assert(m.html.indexOf("/brand/logo-movepark-email.png") > m.html.indexOf("<h1"));
+});
+
+Deno.test("e-mail sem parceiro (lead, equipe): a Movepark segue no topo", () => {
+  const html = tplLeadReceived("Kallef").html;
+  assert(html.indexOf("/brand/logo-movepark-email.png") < html.indexOf("<h1"));
+});
+
+Deno.test("tplReviewRequest: com o parceiro, o logo dele abre o e-mail", () => {
+  const m = tplReviewRequest("Ana", "Aeroporto de Guarulhos", "https://movepark.co/bookings/MP-1", {
+    company_name: "Pare Seguro",
+    parking_logo: { light: "https://cdn.test/ps.png", dark: null },
+  });
+  assert(m.html.indexOf("https://cdn.test/ps.png") < m.html.indexOf("<h1"));
 });
 
 Deno.test("tplBookingConfirmation: foto da fachada e mapa lado a lado, o mapa abre o Maps", () => {

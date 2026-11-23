@@ -210,7 +210,7 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
                 <LogoUploadField
                   id="logo-dark"
                   label="Para fundo escuro"
-                  hint="Topo navy do voucher na conta do cliente. Use a versão branca."
+                  hint="Opcional. Em fundo escuro o logo sai todo branco; sem este arquivo, usamos o colorido em branco."
                   background="dark"
                   value={logoDarkUrl}
                   companyId={company.id}

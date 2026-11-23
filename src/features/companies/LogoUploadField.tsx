@@ -4,7 +4,7 @@ import { UploadSimple, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { uploadCompanyAsset } from "@/lib/storage";
-import { LOGO_ACCEPT, prepareLogoFile } from "@/lib/parkingLogo";
+import { LOGO_ACCEPT, LOGO_WHITE_FILTER, prepareLogoFile } from "@/lib/parkingLogo";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -23,7 +23,7 @@ type Props = {
 /**
  * Campo de logo do estacionamento (docs/specs/logo-do-estacionamento.md). Só PNG e JPG, porque o
  * e-mail e o voucher não mostram outro formato. A prévia fica sobre o fundo de destino: o logo de
- * fundo escuro aparece no navy do topo do voucher da conta.
+ * fundo escuro aparece todo branco no navy do topo do voucher da conta, como o cliente vai ver.
  */
 export function LogoUploadField({
   id,
@@ -71,7 +71,12 @@ export function LogoUploadField({
           data-testid={`${id}-preview`}
         >
           {value ? (
-            <img src={value} alt={`Prévia: ${label}`} className="max-h-9 max-w-full object-contain" />
+            <img
+              src={value}
+              alt={`Prévia: ${label}`}
+              className="max-h-9 max-w-full object-contain"
+              style={background === "dark" ? { filter: LOGO_WHITE_FILTER } : undefined}
+            />
           ) : (
             <span
               className={cn(

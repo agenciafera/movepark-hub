@@ -13,6 +13,7 @@
 
 import { notifyBooking } from "../_shared/notify.ts";
 import { tplBookingVehicleChanged } from "../_shared/email.ts";
+import { LOCATION_BRAND_SELECT, locationBrand } from "../_shared/voucher/fields.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { parseChangeVehicleInput, plateChangeAllowed, staffReasonMissing, vehicleChangeOpen } from "./logic.ts";
@@ -216,10 +217,10 @@ Deno.serve(async (req: Request) => {
 async function noticeData(admin: any, bookingId: string) {
   const { data: r } = await admin
     .from("booking")
-    .select("code, check_in_at, check_out_at, location:location!inner(name, address), vehicle:vehicle(license_plate, model)")
+    .select(`code, check_in_at, check_out_at, location:location!inner(name, address, ${LOCATION_BRAND_SELECT}), vehicle:vehicle(license_plate, model)`)
     .eq("id", bookingId)
     .maybeSingle();
   if (!r) return null;
-  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null, ...locationBrand(r.location) };
 }
 

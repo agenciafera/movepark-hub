@@ -7,7 +7,7 @@ import { toDataUrl } from "@/lib/qr";
 import { formatBRL, formatDate, formatTime, formatWeekdayDate } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import { Wordmark } from "@/components/shared/Brand";
-import { OperatedBy } from "@/components/shared/OperatedBy";
+import { LOGO_WHITE_FILTER } from "@/lib/parkingLogo";
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { nightsOf } from "@/features/account/accountSummary.logic";
 import { useBookingAccessCode, useVoucherPdf, type MyBookingDetail } from "./customerApi";
@@ -67,25 +67,35 @@ export function Voucher({ booking }: Props) {
 
   return (
     <div className="overflow-hidden rounded-lg bg-canvas print:rounded-none">
-      {/* Cabeçalho impresso: no papel o navy não sai, então a marca entra em cima. */}
+      {/* Cabeçalho impresso: no papel o navy não sai, então o estacionamento entra em cima, com o
+          logo colorido. A Movepark fica no rodapé (regra de 23/11/2026, a mesma do e-mail). */}
       <div className="hidden print:mb-4 print:flex print:items-center print:justify-between print:border-b print:border-hairline print:pb-4">
-        <Wordmark height={18} />
-        <OperatedBy logo={booking.location.logo} name={booking.location.company.name} />
+        {booking.location.logo?.light ? (
+          <img
+            src={booking.location.logo.light}
+            alt={booking.location.company.name}
+            className="h-8 w-auto max-w-[180px] object-contain"
+          />
+        ) : (
+          <span className="text-title-md text-ink">{booking.location.company.name}</span>
+        )}
         <span className="text-caption text-muted">
           {receipt ? "Comprovante de estadia" : "Voucher de reserva"}
         </span>
       </div>
 
       <div className="bg-mp-navy p-6 text-white print:bg-transparent print:p-0 print:text-ink">
-        {/* O topo é navy na tela: vai a versão do logo para fundo escuro. No papel o navy não
-            sai, e o logo de fundo claro aparece no cabeçalho impresso acima. */}
+        {/* O topo é do estacionamento: o logo dele, todo branco sobre o navy. A Movepark fica no
+            rodapé do voucher. No papel o navy não sai, e o logo colorido vai no cabeçalho impresso. */}
         <div className="flex items-center justify-between gap-3">
-          <OperatedBy
-            logo={booking.location.logo}
-            name={booking.location.company.name}
-            background="dark"
-            className="print:hidden"
-          />
+          {booking.location.logo?.dark && (
+            <img
+              src={booking.location.logo.dark}
+              alt={booking.location.company.name}
+              className="h-7 w-auto max-w-[160px] object-contain print:hidden"
+              style={{ filter: LOGO_WHITE_FILTER }}
+            />
+          )}
           <span className="ml-auto text-badge uppercase tracking-[0.5px] text-white/60 print:text-muted">
             {receipt ? "Comprovante" : "Voucher"}
           </span>
@@ -204,6 +214,12 @@ export function Voucher({ booking }: Props) {
               Calendário
             </a>
           )}
+        </div>
+
+        {/* Rodapé: a Movepark, pequena. Quem aparece em cima é o estacionamento. */}
+        <div className="mt-5 flex items-center justify-center gap-2 text-caption-sm text-muted">
+          <span>Reserva feita pela</span>
+          <Wordmark height={14} />
         </div>
       </div>
     </div>

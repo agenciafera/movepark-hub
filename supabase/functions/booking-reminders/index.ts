@@ -11,6 +11,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { notifyBooking, type NotifyEvent } from "../_shared/notify.ts";
 import { tplBookingReminderCheckin, tplBookingReminderCheckout } from "../_shared/email.ts";
+import { LOCATION_BRAND_SELECT, locationBrand } from "../_shared/voucher/fields.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { pendingFor, reminderWindows } from "./logic.ts";
 
@@ -32,7 +33,7 @@ Deno.serve(async (req: Request) => {
 
   const w = reminderWindows(Date.now());
   const site = siteUrl();
-  const select = "id, code, check_in_at, check_out_at, status, location:location!inner(name, address), vehicle:vehicle(license_plate, model)";
+  const select = "id, code, check_in_at, check_out_at, status, location:location!inner(name, address, " + LOCATION_BRAND_SELECT + "), vehicle:vehicle(license_plate, model)";
 
   async function run(event: NotifyEvent, statuses: string[], field: "check_in_at" | "check_out_at", until: string) {
     const { data: rows, error } = await admin
@@ -58,6 +59,7 @@ Deno.serve(async (req: Request) => {
       const data = {
         code: row.code, location_name: row.location?.name ?? "", location_address: row.location?.address ?? null,
         check_in_at: row.check_in_at, check_out_at: row.check_out_at, vehicle: row.vehicle ?? null,
+        ...locationBrand(row.location),
       };
       const url = `${site}/bookings/${row.code}`;
       const tpl = event === "reminder_checkin" ? tplBookingReminderCheckin : tplBookingReminderCheckout;

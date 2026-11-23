@@ -23,10 +23,11 @@ describe("resolveParkingLogo", () => {
       light: C,
       dark: B,
     });
+    expect(resolveParkingLogo({ logo_url: C }, { logo_url: A })).toEqual({ light: C, dark: C });
   });
 
-  it("um fundo nunca usa o arquivo do outro", () => {
-    expect(resolveParkingLogo(null, { logo_url: A })).toEqual({ light: A, dark: null });
+  it("o escuro cai no colorido (a tela pinta de branco); o claro nunca usa o branco", () => {
+    expect(resolveParkingLogo(null, { logo_url: A })).toEqual({ light: A, dark: A });
     expect(resolveParkingLogo(null, { logo_dark_url: B })).toEqual({ light: null, dark: B });
   });
 });

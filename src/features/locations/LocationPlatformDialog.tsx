@@ -244,7 +244,7 @@ export function LocationPlatformDialog({
                 <LogoUploadField
                   id="location-logo-dark"
                   label="Para fundo escuro"
-                  hint="Topo navy do voucher na conta. Use a versão branca."
+                  hint="Opcional. Em fundo escuro o logo sai todo branco."
                   background="dark"
                   value={logoDarkUrl}
                   companyId={companyId}

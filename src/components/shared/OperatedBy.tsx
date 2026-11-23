@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { ParkingLogo } from "@/lib/parkingLogo";
+import { LOGO_WHITE_FILTER, type ParkingLogo } from "@/lib/parkingLogo";
 
 type Props = {
   logo: ParkingLogo | null | undefined;
@@ -12,8 +12,8 @@ type Props = {
 
 /**
  * "Operado por [logo]": o sinal discreto de quem cuida da vaga, para o cliente não confundir o
- * estacionamento com a Movepark (caso Pare Seguro, 23/11/2026). Sem o arquivo do fundo certo, não
- * renderiza nada: a tela fica como era antes do logo existir.
+ * estacionamento com a Movepark (caso Pare Seguro, 23/11/2026). Em fundo escuro o logo sai todo
+ * branco, seja qual for o arquivo. Sem logo, não renderiza nada: a tela fica como era antes.
  */
 export function OperatedBy({ logo, name, background = "light", className }: Props) {
   const src = background === "dark" ? logo?.dark : logo?.light;
@@ -32,6 +32,7 @@ export function OperatedBy({ logo, name, background = "light", className }: Prop
         alt={name}
         loading="lazy"
         className="h-5 w-auto max-w-[112px] object-contain"
+        style={background === "dark" ? { filter: LOGO_WHITE_FILTER } : undefined}
       />
     </p>
   );

@@ -19,6 +19,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { notifyBooking } from "../_shared/notify.ts";
 import { getEmailConfig, sendEmail, tplBookingExtended, tplFlightProtectionUnit } from "../_shared/email.ts";
+import { LOCATION_BRAND_SELECT, locationBrand } from "../_shared/voucher/fields.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { fmtBRDateTime, fmtBRL, parseExtendInput, pickExtendedEvent } from "./logic.ts";
 
@@ -160,9 +161,9 @@ Deno.serve(async (req: Request) => {
 async function noticeData(admin: any, bookingId: string) {
   const { data: r } = await admin
     .from("booking")
-    .select("code, check_in_at, check_out_at, location:location!inner(name, address, email), vehicle:vehicle(license_plate, model)")
+    .select(`code, check_in_at, check_out_at, location:location!inner(name, address, email, ${LOCATION_BRAND_SELECT}), vehicle:vehicle(license_plate, model)`)
     .eq("id", bookingId)
     .maybeSingle();
   if (!r) return null;
-  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, location_email: (r.location?.email as string | null) ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null };
+  return { code: r.code, location_name: r.location?.name ?? "", location_address: r.location?.address ?? null, location_email: (r.location?.email as string | null) ?? null, check_in_at: r.check_in_at, check_out_at: r.check_out_at, vehicle: r.vehicle ?? null, ...locationBrand(r.location) };
 }

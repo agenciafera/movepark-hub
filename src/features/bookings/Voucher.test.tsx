@@ -94,7 +94,7 @@ describe("Voucher", () => {
     expect(await screen.findByRole("img", { name: /QR MP-A8K7P2/ })).toBeInTheDocument();
   });
 
-  it("logo do estacionamento: no topo navy vai a versão para fundo escuro", () => {
+  it("logo do estacionamento no topo (branco no navy) e a Movepark no rodapé", () => {
     const b = booking("confirmed");
     renderWithProviders(
       <Voucher
@@ -107,9 +107,15 @@ describe("Voucher", () => {
         }}
       />,
     );
-    const srcs = screen.getAllByRole("img", { name: "Abbapark" }).map((i) => i.getAttribute("src"));
-    // Cabeçalho impresso (papel branco) e topo navy da tela, cada um com o arquivo do seu fundo.
-    expect(srcs).toEqual(["https://cdn.test/abba.png", "https://cdn.test/abba-branco.png"]);
+    const imgs = screen.getAllByRole("img", { name: "Abbapark" });
+    // Cabeçalho impresso (papel branco, colorido) e topo navy da tela (pintado de branco).
+    expect(imgs.map((i) => i.getAttribute("src"))).toEqual([
+      "https://cdn.test/abba.png",
+      "https://cdn.test/abba-branco.png",
+    ]);
+    expect(imgs[1].style.filter).toBe("brightness(0) invert(1)");
+    expect(screen.getByText("Reserva feita pela")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Movepark" })).toBeInTheDocument();
   });
 
   describe("QR da cancela integrada (docs/specs/integracoes.md § 5.6)", () => {

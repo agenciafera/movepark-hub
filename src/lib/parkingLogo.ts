@@ -4,8 +4,9 @@
  * Cada fundo tem o seu arquivo: `logo_url` é o logo para fundo claro e `logo_dark_url` para fundo
  * escuro. A unidade pode trocar o da empresa (`location.logo_*`); nulo segue a empresa.
  *
- * Um fundo nunca cai para o arquivo do outro: o logo de fundo claro costuma ser escuro, e posto
- * sobre o topo navy do voucher ele some. Sem o arquivo certo, o lugar fica sem logo, como hoje.
+ * Em fundo escuro o logo do parceiro sai todo branco (regra de 23/11/2026): `OperatedBy` pinta de
+ * branco o arquivo que tiver, então o escuro cai no colorido quando não há versão própria. O
+ * contrário não vale: um logo branco some no fundo claro, e aí o lugar fica sem logo.
  *
  * A mesma regra existe nas Edges, em `supabase/functions/_shared/voucher/fields.ts`
  * (`resolveParkingLogo`). Ao mudar aqui, mude lá.
@@ -19,7 +20,7 @@ export type LogoFields = {
 export type ParkingLogo = {
   /** Para fundo claro (checkout, reserva, e-mail de confirmação, PDF do voucher). */
   light: string | null;
-  /** Para fundo escuro (topo navy do voucher na conta). */
+  /** Para fundo escuro (topo navy do voucher na conta). Sempre exibido todo branco. */
   dark: string | null;
 };
 
@@ -32,11 +33,18 @@ export function resolveParkingLogo(
   location: LogoFields | null | undefined,
   company: LogoFields | null | undefined,
 ): ParkingLogo {
+  const light = clean(location?.logo_url) ?? clean(company?.logo_url);
   return {
-    light: clean(location?.logo_url) ?? clean(company?.logo_url),
-    dark: clean(location?.logo_dark_url) ?? clean(company?.logo_dark_url),
+    light,
+    dark: clean(location?.logo_dark_url) ?? clean(company?.logo_dark_url) ?? light,
   };
 }
+
+/**
+ * Filtro que deixa o logo todo branco em fundo escuro, mantendo a transparência. Vale para PNG com
+ * fundo transparente; JPG com fundo sólido vira um retângulo branco, por isso o upload pede PNG.
+ */
+export const LOGO_WHITE_FILTER = "brightness(0) invert(1)";
 
 /** Formatos aceitos no upload do logo: o e-mail não mostra SVG e o PDF do voucher só embute PNG e JPG. */
 export const LOGO_MIME = ["image/png", "image/jpeg"] as const;

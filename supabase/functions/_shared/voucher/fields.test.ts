@@ -3,6 +3,7 @@ import {
   formatBRL,
   mapBookingRowToVoucher,
   emailPhotoUrl,
+  locationBrand,
   mapsSearchUrl,
   staticMapUrl,
   resolveParkingLogo,
@@ -87,13 +88,15 @@ Deno.test("mapBookingRowToVoucher extrai a vaga do item 'parking' e relações a
   assertEquals(v.vehicle?.license_plate, "AAA-1B11");
 });
 
-Deno.test("resolveParkingLogo: unidade antes da empresa, um fundo nunca usa o arquivo do outro", () => {
+Deno.test("resolveParkingLogo: unidade antes da empresa; o escuro cai no colorido, que a tela pinta de branco", () => {
   assertEquals(resolveParkingLogo(null, null), { light: null, dark: null });
   assertEquals(
     resolveParkingLogo({ logo_url: "https://c/u.png" }, { logo_url: "https://c/e.png", logo_dark_url: "https://c/e-b.png" }),
     { light: "https://c/u.png", dark: "https://c/e-b.png" },
   );
-  assertEquals(resolveParkingLogo(null, { logo_url: "https://c/e.png" }), { light: "https://c/e.png", dark: null });
+  assertEquals(resolveParkingLogo(null, { logo_url: "https://c/e.png" }), { light: "https://c/e.png", dark: "https://c/e.png" });
+  // O contrário não: sem colorido, o fundo claro fica sem logo (o branco some no branco).
+  assertEquals(resolveParkingLogo(null, { logo_dark_url: "https://c/b.png" }), { light: null, dark: "https://c/b.png" });
 });
 
 Deno.test("mapBookingRowToVoucher: traz o logo resolvido da unidade e da empresa", () => {
@@ -141,4 +144,12 @@ Deno.test("staticMapUrl: só com chave e coordenadas, pino na cor da marca", () 
   assertEquals(u.searchParams.get("center"), "-23.463795,-46.501537");
   assertEquals(u.searchParams.get("markers"), "color:0x5D5FEF|-23.463795,-46.501537");
   assertEquals(u.searchParams.get("key"), "k");
+});
+
+Deno.test("locationBrand: nome da empresa e logo resolvido da unidade", () => {
+  assertEquals(
+    locationBrand({ logo_url: null, company: { name: "Pare Seguro", logo_url: "https://c/ps.png", logo_dark_url: null } }),
+    { company_name: "Pare Seguro", parking_logo: { light: "https://c/ps.png", dark: "https://c/ps.png" } },
+  );
+  assertEquals(locationBrand(null).company_name, null);
 });
