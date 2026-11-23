@@ -208,7 +208,8 @@ acabamentos:
   fuso de Brasília), com o mesmo valor da visão por check-in (`total_amount`); cobrança em dobro
   conta uma vez, no primeiro pagamento. É a visão que bate com o extrato do gateway. O total do
   gráfico sai do próprio gráfico; o card "Receita da rede" segue por check-in. No white-label não
-  há data de pagamento e vale a da compra (`wl_revenue` com `p_date_field = 'created_at'`).
+  há data de pagamento e vale a da compra (`wl_revenue` com `p_date_field = 'created_at'`). A consulta por pagamento recarrega
+  a cada 60 s com a tela aberta (23/11/2026), para a venda de hoje aparecer sem F5.
 - **Ocupação por dia** (13/11/2026): carros no pátio por dia, Hub e site empilhados, contra a
   capacidade, com a ocupação média e o dia mais cheio. Segue o filtro de origem como a receita
   (com uma origem só, mostra só ela) e vale para unidade que vende só pelo white-label, que antes

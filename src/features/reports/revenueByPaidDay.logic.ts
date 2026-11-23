@@ -1,4 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { bookingParkingAmount, type PriceBreakdownLike } from "@/features/bookings/bookingMoney.logic";
 import type { DailyRevenueRow } from "./api";
 
 /**
@@ -9,9 +10,13 @@ import type { DailyRevenueRow } from "./api";
  * as duas visões somam a mesma coisa quando o recorte cobre as duas datas. A data é a do
  * pagamento da reserva (`kind = 'booking'`), no fuso de Brasília. Reserva cobrada duas vezes
  * (já aconteceu, MP-07DAE9) conta uma vez só, no primeiro pagamento.
+ *
+ * `parking` são as diárias: com o detalhe do preço (`price_breakdown`, que só a visão do
+ * estacionamento busca) sai o plano da Movepark; sem ele vale o total, como no Manager.
  */
 export type PaidDayRow = {
   total_amount: number | string | null;
+  price_breakdown?: PriceBreakdownLike | null;
   payments: { paid_at: string | null }[] | null;
 };
 
@@ -29,7 +34,7 @@ export function tallyRevenueByPaidDay(rows: PaidDayRow[]): DailyRevenueRow[] {
     const total = Number(row.total_amount ?? 0);
     const current = map.get(key) ?? { date: key, total: 0, parking: 0, net: 0, count: 0 };
     current.total += total;
-    current.parking += total;
+    current.parking += bookingParkingAmount(row.price_breakdown, total);
     current.count += 1;
     map.set(key, current);
   }

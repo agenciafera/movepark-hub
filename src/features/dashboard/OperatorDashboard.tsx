@@ -17,11 +17,16 @@ import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { RecipientKycBanner } from "@/features/payouts/RecipientKycBanner";
-import { useRevenueByRange, useStatusFunnelRange } from "@/features/reports/api";
+import {
+  useRevenueByPaymentDay,
+  useRevenueByRange,
+  useStatusFunnelRange,
+} from "@/features/reports/api";
 import { useWlRevenue } from "@/features/finance/wlRevenue";
 import { useHasWl } from "@/features/companies/useHasWl";
 import { mergeDailyByOrigin, originBreakdown } from "./revenueByOrigin.logic";
@@ -39,6 +44,7 @@ import { usePayoutBalance } from "@/features/payouts/api";
 import { useOperatorReviews } from "@/features/reviews/operatorApi";
 import { useOperatorLocations } from "@/features/locations/api";
 import { useAuth } from "@/auth/context";
+import { useUrlFilters } from "@/lib/useUrlFilters";
 import { DayAgendaPanel } from "./DayAgendaPanel";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { cn } from "@/lib/utils";
@@ -70,6 +76,13 @@ import {
   periodInsight,
   situations,
 } from "./operatorInsights.logic";
+
+/**
+ * Base do gráfico "Receita diária" (23/11/2026), no endereço como no Manager (`?data=checkin`).
+ * Padrão: o dia do pagamento, que responde "quanto vendi hoje". Por check-in a venda de hoje para
+ * viajar na semana que vem cai num dia futuro, fora do período, e o gráfico de hoje não se mexia.
+ */
+const FILTROS = { data: "pagamento" };
 
 const int = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("pt-BR");
 const oneDecimal = (n: number) =>
@@ -230,6 +243,8 @@ export default function OperatorDashboard() {
 
   const [period, setPeriod] = React.useState<PeriodState>(DEFAULT_PERIOD);
   const [goalOpen, setGoalOpen] = React.useState(false);
+  const { filters: of, set: setFiltro } = useUrlFilters(FILTROS);
+  const porPagamento = of.data !== "checkin";
 
   const range = resolvePeriod(period);
   const compareRange = resolveCompare(period, range);
@@ -250,6 +265,19 @@ export default function OperatorDashboard() {
   const { hasWl } = useHasWl();
   const wlQ = useWlRevenue({ from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds }, hasWl);
   const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds, true);
+  // Gráfico por dia do pagamento: só busca na base escolhida e só para quem vê dinheiro. No
+  // white-label não há data de pagamento, e a mais próxima é a da compra (o site cobra na hora).
+  const revenuePaid = useRevenueByPaymentDay(
+    rangeFrom,
+    rangeTo,
+    scopedLocationIds,
+    canFinance && porPagamento,
+    true,
+  );
+  const wlPaidQ = useWlRevenue(
+    { from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds, dateField: "created_at" },
+    hasWl && porPagamento,
+  );
   const funnel = useStatusFunnelRange(rangeFrom, rangeTo, scopedLocationIds);
   const upcoming = useUpcomingBookingsCount(days, scopedLocationIds);
   const highDemand = useHighDemandToday(scopedLocationIds);
@@ -297,7 +325,27 @@ export default function OperatorDashboard() {
   const totalRevenue = hubRevenue + (wl?.paid_amount ?? 0);
   const conv = conversion(funnel.data ?? []);
   const rows = situations(funnel.data ?? []);
-  const best = bestRevenueDay(daily);
+  // O gráfico tem a base própria. Por pagamento o recorte é outro (quem pagou no período, não quem
+  // entrou), então o total sai do próprio gráfico; o card de receita, a meta e a leitura do período
+  // seguem por check-in, a conta do pátio.
+  const chartDaily = React.useMemo(
+    () =>
+      porPagamento
+        ? mergeDailyByOrigin(
+            (revenuePaid.data ?? []).map((d) => ({ date: d.date, value: d.parking })),
+            hasWl ? (wlPaidQ.data?.by_day ?? []) : [],
+          )
+        : daily,
+    [porPagamento, revenuePaid.data, wlPaidQ.data, hasWl, daily],
+  );
+  const chartHub = porPagamento ? chartDaily.reduce((acc, d) => acc + d.hub, 0) : hubRevenue;
+  const chartWl = porPagamento ? chartDaily.reduce((acc, d) => acc + d.wl, 0) : (wl?.paid_amount ?? 0);
+  const chartTotal = chartHub + chartWl;
+  const chartTemSite = chartWl > 0;
+  const chartLoading = porPagamento
+    ? revenuePaid.isLoading || (hasWl && wlPaidQ.isLoading)
+    : revenue.isLoading || (hasWl && wlQ.isLoading);
+  const best = bestRevenueDay(chartDaily);
   const insight = periodInsight({
     revenue: totalRevenue,
     daily,
@@ -473,13 +521,29 @@ export default function OperatorDashboard() {
           <Panel className="flex flex-col">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-title-md text-ink">
-                  Receita diária, <span className="text-mp-primary">{formatRangeLabel(range)}</span>
+                <div className="text-title-md text-ink" data-testid="titulo-grafico-receita">
+                  {porPagamento ? "Receita por dia do pagamento," : "Receita por dia de check-in,"}{" "}
+                  <span className="text-mp-primary">{formatRangeLabel(range)}</span>
                 </div>
-                <p className="mt-1.5 text-body-sm text-muted">
-                  Total do período {formatBRL(totalRevenue)}
-                  {temSite ? ` (${originBreakdown(hubRevenue, wl!.paid_amount, formatBRL)})` : ""}
+                <p className="mt-1.5 text-body-sm text-muted" data-testid="total-grafico-receita">
+                  Total do período {formatBRL(chartTotal)}
+                  {chartTemSite ? ` (${originBreakdown(chartHub, chartWl, formatBRL)})` : ""}
                 </p>
+                {porPagamento && hasWl && (
+                  <p className="mt-1 text-caption text-muted-soft">
+                    No white-label, vale a data da compra.
+                  </p>
+                )}
+                <Tabs
+                  value={porPagamento ? "pagamento" : "checkin"}
+                  onValueChange={(v) => setFiltro({ data: v })}
+                  className="mt-3"
+                >
+                  <TabsList aria-label="Agrupar a receita por">
+                    <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+                    <TabsTrigger value="checkin">Check-in</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
               {best && (
                 <div className="shrink-0 text-right">
@@ -495,16 +559,16 @@ export default function OperatorDashboard() {
             </div>
 
             <div className="mt-6 h-[220px] flex-1">
-              {revenue.isLoading || (hasWl && wlQ.isLoading) ? (
+              {chartLoading ? (
                 <Skeleton className="h-full w-full" />
-              ) : daily.length === 0 ? (
+              ) : chartDaily.length === 0 ? (
                 <EmptyState
                   title="Sem receita no período"
                   description="As reservas pagas aparecem aqui assim que entrarem."
                 />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={daily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <AreaChart data={chartDaily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="op-rev" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="hsl(var(--mp-primary))" stopOpacity={0.22} />
@@ -538,7 +602,7 @@ export default function OperatorDashboard() {
                     <Tooltip
                       formatter={(v: number, name: string) => [
                         formatBRL(v),
-                        name === "wl" ? "White-label" : temSite ? "Hub" : "Receita",
+                        name === "wl" ? "White-label" : chartTemSite ? "Hub" : "Receita",
                       ]}
                       labelFormatter={(d: string) =>
                         format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
@@ -554,7 +618,7 @@ export default function OperatorDashboard() {
                       dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
                       activeDot={{ r: 5 }}
                     />
-                    {temSite && (
+                    {chartTemSite && (
                       <Area
                         type="monotone"
                         dataKey="wl"

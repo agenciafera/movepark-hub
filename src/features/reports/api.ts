@@ -91,22 +91,32 @@ export function useRevenueByRange(fromIso: string, toIso: string, locationIds?: 
 }
 
 /**
- * Receita por dia do pagamento, para o Manager (ver `revenueByPaidDay.logic.ts`). O recorte é pela
- * data em que o pagamento da reserva caiu, não pelo check-in. `from` inclusivo, `to` exclusivo.
+ * Receita por dia do pagamento (ver `revenueByPaidDay.logic.ts`). O recorte é pela data em que o
+ * pagamento da reserva caiu, não pelo check-in. `from` inclusivo, `to` exclusivo. `partner` traz o
+ * detalhe do preço, para a visão do estacionamento contar só as diárias.
+ *
+ * Recarrega a cada minuto com a tela aberta: o gráfico existe para mostrar a venda de hoje, e
+ * sem isso ele ficava como estava na hora em que a página abriu (23/11/2026).
  */
 export function useRevenueByPaymentDay(
   fromIso: string,
   toIso: string,
   locationIds?: string[],
   enabled = true,
+  partner = false,
 ) {
   return useQuery({
-    queryKey: ["reports", "revenue-paid-day", fromIso, toIso, locationIds],
+    queryKey: ["reports", "revenue-paid-day", fromIso, toIso, locationIds, partner],
     enabled,
+    refetchInterval: 60_000,
     queryFn: async (): Promise<DailyRevenueRow[]> => {
       let q = supabase
         .from("booking")
-        .select("total_amount, payments:payment!inner(paid_at)")
+        .select(
+          partner
+            ? "total_amount, price_breakdown, payments:payment!inner(paid_at)"
+            : "total_amount, payments:payment!inner(paid_at)",
+        )
         .in("status", ["confirmed", "checked_in", "completed"])
         .eq("payments.kind", "booking")
         .in("payments.status", ["paid", "refunded"])

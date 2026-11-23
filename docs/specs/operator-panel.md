@@ -128,7 +128,16 @@ receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera
 
 #### Linha 2
 
-- **Receita diária:** área no período escolhido, com o melhor dia destacado no cabeçalho.
+- **Receita por dia do pagamento:** área no período escolhido, com o melhor dia destacado no
+  cabeçalho. Alternância **Pagamento | Check-in** (23/11/2026, `?data=checkin` no endereço; o
+  **padrão é Pagamento**). Antes o gráfico só agrupava por check-in, então a venda de hoje para
+  viajar na semana que vem caía num dia futuro, fora do período, e o gráfico de hoje ficava parado
+  o dia inteiro. Por pagamento, a reserva conta no dia em que o pagamento caiu (`payment.paid_at`
+  com `kind = 'booking'`, fuso de Brasília), só nas **diárias** (sem o plano da Movepark, a mesma
+  base da visão por check-in); cobrança em dobro conta uma vez. O total do gráfico sai do próprio
+  gráfico; o card "Receita do período", a meta e a leitura do período seguem por check-in. No
+  white-label vale a data da compra. A consulta recarrega a cada 60 s com a tela aberta
+  (`useRevenueByPaymentDay`, também usada pelo Manager).
 - **Reservas pagas:** o número, a conversão sobre o criado e a quebra por situação. O
   denominador é toda reserva criada no período, então `expired` (abandono) aparece do lado
   de `cancelled` em vez de sumir.
