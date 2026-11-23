@@ -97,7 +97,8 @@ export default function OperatorReports() {
     true,
   );
   const revenue = porPagamento ? revenuePaid : revenueCheckin;
-  const funnel = useStatusFunnel(period, scopedLocationIds);
+  // Balcão (sem finance:read): o funil conta pela RPC do balcão, sem valor.
+  const funnel = useStatusFunnel(period, scopedLocationIds, { counter: !canFinance });
 
   // Site white-label (fase 5): mesmo recorte das diárias (desde N dias, sem teto). Por check-in vale
   // o do site, por pagamento a data da compra (o site cobra na hora). Só para quem tem; quem não

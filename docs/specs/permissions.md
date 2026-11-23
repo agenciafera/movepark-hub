@@ -180,13 +180,81 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 > Financeiro não. Não é atribuível a chave de API. Cada download fica em `booking_recovery_export`.
 > Ver `booking-flow.md` (Recuperável) e `operator-panel.md` § 4.2b.
 
-> **Leitura vs. escrita:** o gating de **escrita** é server-authoritative (RPC + RLS). A **leitura**
-> de dados da própria empresa segue a RLS por associação (qualquer membro lê); a UI é que esconde as
-> seções por escopo. Um membro sem o item no menu não tem como agir (a ação é bloqueada no servidor).
-> Desde 23/11/2026 o front também **não pede** a receita (gráfico do dashboard e aba Receita de
-> Relatórios) a quem não tem `finance:read`, mas isso é higiene da tela: as políticas de `booking` e
-> `payment` ainda deixam qualquer membro da empresa ler esses valores direto pela API, e fechar isso
-> no servidor é trabalho à parte (as telas de check-in do balcão leem essas mesmas tabelas).
+> **Leitura vs. escrita:** o gating de **escrita** é server-authoritative (RPC + RLS). A **leitura** de
+> dados da própria empresa segue a RLS por associação (qualquer membro lê), com **uma exceção de
+> dinheiro**, a seção seguinte: `booking` e `payment` só saem da tabela para quem tem `finance:read`.
+> A UI continua escondendo as seções por escopo, mas agora para o dinheiro da reserva ela é espelho,
+> não a barreira.
+
+## Dinheiro da reserva: `booking` e `payment` só com `finance:read` (23/11/2026)
+
+Até 23/11/2026 as policies `booking_select` e `payment_select` liberavam toda linha da empresa a
+**qualquer membro** (`current_company_ids()`), e `authenticated` lê a tabela inteira. O papel
+Operação (o balcão) não tem `finance:read`, mas lia `booking.total_amount`, `price_breakdown`,
+`price_by_days`, `fare_price_cents`, as colunas `commission_*`, e em `payment` o `amount`, `split`,
+`gateway_fee_cents`, `refunded_amount`, `anticipation_*`, `debt_*` e `refund_*`, direto pelo
+PostgREST. A tela escondia só o gráfico de receita; a lista e o detalhe de reservas mostravam o valor
+das diárias, o "Você recebe" e a comissão ao balcão.
+
+**Regra.** O membro de empresa só lê a linha de `booking` e de `payment` se tiver `finance:read` na
+empresa da unidade (Dono, Gerente e Financeiro; hub_admin sempre). O dono da reserva (o cliente) e o
+hub_admin leem como antes. Migrations `20261206140000` (RPCs do balcão) e `20261206140100`
+(policies), teste `supabase/tests/leitura_dinheiro_por_escopo.test.sql`.
+
+**Por que policy por linha e RPC para o balcão, e não corte por coluna.** RLS escolhe linha, não
+coluna. Tirar o SELECT das colunas de dinheiro de `authenticated` (como se fez em `company`) valeria
+para o cliente, o hub_admin e o Dono também, porque no Postgres os três são o mesmo papel
+`authenticated`: quebraria o checkout, a conta do cliente, o Manager e todo `select("*")`, cerca de
+15 pontos do front. Apertar a policy para `finance:read` e servir só o balcão por RPC quebra apenas
+quem já não tem o escopo: no banco vivo eram 10 vínculos de Operação (8 pessoas). Um view sem as
+colunas de dinheiro foi descartado: view definer é regressão no advisor (`security_definer_view`) e
+view invoker herda a policy da tabela.
+
+**O que o balcão usa no lugar** (SECURITY DEFINER, `search_path` fixo, `revoke` de `anon`, escopo
+`bookings:read` conferido por dentro via `counter_company_ids()`; nenhuma devolve dinheiro):
+
+| RPC | Para quê |
+|---|---|
+| `operator_bookings_by_ids(p_ids)` | hidrata a lista de reservas (a forma do `baseSelect`, com os valores nulos e o pagamento só com situação e forma) |
+| `operator_booking_by_code(p_code, p_only_active, p_items)` | detalhe da reserva e voucher do portão |
+| `operator_day_agenda(p_from, p_to, p_location_ids, p_statuses)` | agenda do dia |
+| `operator_booking_facts(p_from, p_to, p_location_ids, p_statuses, p_to_inclusive)` | datas, status e canal para contar (dashboard, funil, próximas reservas) |
+| `operator_set_booking_status(...)` | confirmar, check-in, check-out, não compareceu, notas: o `UPDATE ... where` também passa pela policy de SELECT, então a escrita direta deixou de servir ao balcão. Exige `bookings:write` ou `bookings:checkin`, grava só as quatro colunas que o gatilho de allowlist aceita |
+| `counter_can_open_booking(p_code)` | a Edge `voucher-pdf` pergunta, com o JWT da pessoa, se ela pode abrir o código; só então lê com a service role |
+
+`bookings_list_page`, `bookings_filter_options` e `admin_search` eram INVOKER e dependiam da RLS
+para recortar por empresa; viraram DEFINER com a visibilidade escrita na função (hub_admin, a própria
+reserva, ou empresa em que a pessoa tem `bookings:read`). O resumo da lista e o total do site
+(`total_cents`, `paid_total_cents`) só somam empresa em que a pessoa tem `finance:read`.
+
+**No front** o hook `useSeesMoney()` (`src/auth/useSeesMoney.ts`) decide o caminho: com
+`finance:read`, a leitura é a de sempre; sem, os hooks passam `counter: true` e saem pelas RPCs
+acima, e a tela some com o valor (coluna "Diárias" da lista, "Valor das diárias", o card de Valores
+e o de comissão no detalhe). Quem tem o escopo não muda nada.
+
+**Mudou para o balcão (Operação), de propósito:** deixou de ver na lista e no detalhe de reservas o
+valor das diárias, o "Você recebe", a comissão e a taxa do gateway. Segue vendo cliente, placa,
+datas, situação e forma do pagamento, as operações (check-in, check-out, não compareceu, trocar
+placa) e o excedente da proteção de voo, que é o que ele cobra no balcão.
+
+**Limites que ficam (decididos, não esquecidos):**
+- O voucher em PDF (`voucher-pdf`) é o documento do cliente e leva o total pago. O balcão pode
+  gerá-lo para a reserva da própria empresa (via `counter_can_open_booking`), então por esse
+  caminho um Operação alcança o total. Fechar exige um PDF sem valor para o balcão.
+- `booking_fare_extension` (proteção de voo) mantém `partner_credit_cents` visível ao balcão: o
+  excedente que ele cobra está na mesma linha. Separar é trabalho à parte.
+- `booking_item`, `booking_discount`, `booking_modification` e `vehicle` têm policies que
+  consultam `booking`, então o membro sem `finance:read` também deixou de lê-las direto; o balcão
+  recebe o que precisa (placa, itens do voucher) pelas RPCs.
+- A reserva do white-label (`wl_booking`) ainda tem o detalhe em outra RPC; nesta rodada só a lista
+  (`bookings_list_page`) passou a esconder o valor do site de quem não tem `finance:read`.
+- Quem tem `finance:read` numa empresa e não noutra: o front escolhe o caminho pela empresa ativa; o
+  servidor é quem decide linha a linha (hoje ninguém no vivo tem papéis diferentes entre empresas).
+
+**Regra para quem mexe:** tabela ou coluna nova com dinheiro de reserva nasce com a policy atrás de
+`finance_company_ids()` (a lista de empresas em que a pessoa tem `finance:read`, calculada uma vez
+por consulta), e o balcão a lê por RPC definer que não a devolve. `select("*")` em `booking` no
+front só vale para quem passou por `useSeesMoney()`.
 
 ## Colunas de `company` (08/10/2026)
 

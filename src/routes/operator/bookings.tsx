@@ -29,6 +29,7 @@ import { BookingColumnsPicker } from "@/features/bookings/BookingColumnsPicker";
 import { useBookingColumns } from "@/features/bookings/useBookingColumns";
 import { columnHeader } from "@/features/bookings/bookingColumns.logic";
 import { BulkAttendanceBar } from "@/features/bookings/BulkAttendanceBar";
+import { useSeesMoney } from "@/auth/useSeesMoney";
 import { useWlBookingActions } from "@/features/wl-bookings/api";
 import type { SourceFilter } from "@/features/bookings/unifiedBookingRow.logic";
 import { useBookingsPage, type BookingPageFilters } from "@/features/bookings/api";
@@ -90,6 +91,9 @@ export default function OperatorBookings() {
   const { hasWl } = useHasWl();
   const { scopedCompanyId, effectiveCompanyIds, hasScope } = useAuth();
   const companyId = effectiveCompanyIds[0];
+  // Balcão (sem finance:read): a reserva vem pelas RPCs do balcão, sem valor, e a coluna de valor
+  // some da tabela (o servidor só libera `booking`/`payment` a quem tem o escopo).
+  const counter = !useSeesMoney();
   // Ação em massa (fase 6): quem pode marcar chegada no Hub (bookings:checkin ou :write). No site,
   // vale o que o servidor diz para quem está logado (chave de ações + permissão).
   const canCheckin =
@@ -111,6 +115,7 @@ export default function OperatorBookings() {
       companyIds: scopedCompanyId ? [scopedCompanyId] : undefined,
       source: hasWl ? source : "hub",
       partnerView: true,
+      counter,
       paymentMethod: f.pagamento === "all" ? undefined : (f.pagamento as PaymentMethodFilter),
       attendance: attendanceParam(f.comparecimento),
       pcd: pcdParam(f.pcd),
@@ -143,6 +148,7 @@ export default function OperatorBookings() {
       from,
       to,
       page,
+      counter,
     ],
   );
 
@@ -281,6 +287,7 @@ export default function OperatorBookings() {
       {selecionadas.length > 0 && (
         <BulkAttendanceBar
           rows={selecionadas}
+          counter={counter}
           wlAttendance={wlAttendance}
           onDone={() => setSelected(new Set())}
         />
@@ -292,7 +299,7 @@ export default function OperatorBookings() {
         showCompany={false}
         showSource={hasWl}
         valueMode="parking"
-        columns={colunas.visible}
+        columns={counter ? colunas.visible.filter((id) => id !== "value") : colunas.visible}
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
         onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
         selected={canCheckin ? selected : undefined}

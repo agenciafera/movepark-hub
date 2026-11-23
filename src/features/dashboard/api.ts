@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
+import { untypedRpc } from "@/lib/untypedRpc";
 import {
   bookingParkingAmount,
   type PriceBreakdownLike,
@@ -134,14 +135,30 @@ const agendaSelect =
 /**
  * Reservas de um dia (chegando ou saindo), pra agenda do painel do parceiro.
  * `dateIso` é a data local (`yyyy-MM-dd`); o recorte é do 00:00 ao 24:00 local.
+ * `counter` (balcão, sem `finance:read`): a agenda vem da RPC `operator_day_agenda`, sem valor.
  */
-export function useDayAgenda(dateIso: string, locationIds?: string[]) {
+export function useDayAgenda(
+  dateIso: string,
+  locationIds?: string[],
+  opts: { counter?: boolean } = {},
+) {
+  const counter = opts.counter ?? false;
   return useQuery({
-    queryKey: ["operator", "day-agenda", dateIso, locationIds],
+    queryKey: ["operator", "day-agenda", dateIso, locationIds, counter],
     queryFn: async (): Promise<BookingWithRelations[]> => {
       const [y, m, d] = dateIso.split("-").map(Number);
       const dayStart = new Date(y, (m ?? 1) - 1, d ?? 1).toISOString();
       const dayEnd = new Date(y, (m ?? 1) - 1, (d ?? 1) + 1).toISOString();
+      if (counter) {
+        const { data, error } = await untypedRpc("operator_day_agenda", {
+          p_from: dayStart,
+          p_to: dayEnd,
+          p_location_ids: locationIds?.length ? locationIds : null,
+          p_statuses: [...AGENDA_STATUSES],
+        });
+        if (error) throw new Error(error.message);
+        return (Array.isArray(data) ? data : []) as BookingWithRelations[];
+      }
       let q = supabase
         .from("booking")
         .select(agendaSelect)
@@ -180,7 +197,23 @@ async function fetchPaidBookings(
   from: string,
   to: string,
   locationIds?: string[],
+  counter = false,
 ): Promise<PaidBookingRow[]> {
+  if (counter) {
+    // Balcão (sem `finance:read`): só datas, status e canal, pela RPC `operator_booking_facts`. O
+    // valor vai zerado: ocupação, diárias, permanência e canal não dependem dele, e a receita
+    // nem aparece na tela deste papel.
+    const { data, error } = await untypedRpc("operator_booking_facts", {
+      p_from: from,
+      p_to: to,
+      p_location_ids: locationIds?.length ? locationIds : null,
+      p_statuses: ["confirmed", "checked_in", "completed"],
+    });
+    if (error) throw new Error(error.message);
+    return ((Array.isArray(data) ? data : []) as Omit<PaidBookingRow, "total_amount">[]).map(
+      (r) => ({ ...r, total_amount: 0 }),
+    );
+  }
   let q = supabase
     .from("booking")
     .select(
@@ -213,17 +246,19 @@ export function useOperatorPeriodSummary(
   range: Range,
   compareRange: Range | null,
   locationIds?: string[],
+  opts: { counter?: boolean } = {},
 ) {
   const from = range.from.toISOString();
   const to = range.to.toISOString();
   const prevFrom = compareRange?.from.toISOString() ?? null;
   const prevTo = compareRange?.to.toISOString() ?? null;
+  const counter = opts.counter ?? false;
   return useQuery({
-    queryKey: ["dashboard", "operator-period", from, to, prevFrom, prevTo, locationIds],
+    queryKey: ["dashboard", "operator-period", from, to, prevFrom, prevTo, locationIds, counter],
     queryFn: async () => {
       const [currentRows, previousRows] = await Promise.all([
-        fetchPaidBookings(from, to, locationIds),
-        prevFrom && prevTo ? fetchPaidBookings(prevFrom, prevTo, locationIds) : null,
+        fetchPaidBookings(from, to, locationIds, counter),
+        prevFrom && prevTo ? fetchPaidBookings(prevFrom, prevTo, locationIds, counter) : null,
       ]);
       return {
         ...summarizeRanges(currentRows, previousRows),
@@ -236,12 +271,28 @@ export function useOperatorPeriodSummary(
 }
 
 /** Reservas confirmadas com check-in nos próximos `periodDays`: o olhar pra frente. */
-export function useUpcomingBookingsCount(periodDays: number, locationIds?: string[]) {
+export function useUpcomingBookingsCount(
+  periodDays: number,
+  locationIds?: string[],
+  opts: { counter?: boolean } = {},
+) {
+  const counter = opts.counter ?? false;
   return useQuery({
-    queryKey: ["dashboard", "operator-upcoming", periodDays, locationIds],
+    queryKey: ["dashboard", "operator-upcoming", periodDays, locationIds, counter],
     queryFn: async (): Promise<number> => {
       const now = new Date();
       const until = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000).toISOString();
+      if (counter) {
+        const { data, error } = await untypedRpc("operator_booking_facts", {
+          p_from: now.toISOString(),
+          p_to: until,
+          p_to_inclusive: true,
+          p_location_ids: locationIds?.length ? locationIds : null,
+          p_statuses: ["confirmed", "checked_in"],
+        });
+        if (error) throw new Error(error.message);
+        return Array.isArray(data) ? data.length : 0;
+      }
       let q = supabase
         .from("booking")
         .select("id", { count: "exact", head: true })

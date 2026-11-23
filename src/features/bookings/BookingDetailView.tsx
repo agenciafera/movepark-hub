@@ -25,6 +25,7 @@ import { usePayoutReleaseDays } from "@/features/payouts/api";
 import { useChangeBookingVehicle, useVoucherPdf } from "./customerApi";
 import { canDownloadVoucher } from "./voucher.logic";
 import { BookingMoneyCard } from "./BookingMoneyCard";
+import { useSeesMoney } from "@/auth/useSeesMoney";
 import { BookingFeesDialog } from "./BookingFeesDialog";
 import type { FeeBookingLike } from "./bookingFees.logic";
 import { BookingStateBanner } from "./BookingStateBanner";
@@ -84,10 +85,14 @@ export function BookingDetailView({
   audience: "manager" | "operator";
 }) {
   const { hasScope, effectiveRole } = useAuth();
-  const bookingQ = useBookingByCode(code);
+  // Balcão (papel Operação, sem finance:read): o servidor não libera valor de reserva nem de
+  // pagamento, então a reserva vem pela RPC do balcão e a tela não mostra dinheiro.
+  const seesMoney = useSeesMoney();
+  const counter = audience === "operator" && !seesMoney;
+  const bookingQ = useBookingByCode(code, { counter });
   const booking = bookingQ.data ?? null;
   const cancelMutation = useCancelBookingStaff();
-  const statusMutation = useUpdateBookingStatus();
+  const statusMutation = useUpdateBookingStatus({ counter });
   const changeVehicle = useChangeBookingVehicle();
   const voucherPdf = useVoucherPdf();
   const [confirming, setConfirming] = React.useState(false);
@@ -96,7 +101,8 @@ export function BookingDetailView({
   const [flightCheckoutOpen, setFlightCheckoutOpen] = React.useState(false);
   const [feesOpen, setFeesOpen] = React.useState(false);
   const reconcileFees = useReconcileBookingFees();
-  const releaseDaysQ = usePayoutReleaseDays(bookingQ.data?.location?.company?.id);
+  // Prazo de repasse só entra na conta de valores, que o balcão não vê.
+  const releaseDaysQ = usePayoutReleaseDays(counter ? undefined : bookingQ.data?.location?.company?.id);
   const historyQ = useBookingHistory(bookingQ.data?.id);
   const releaseDays = releaseDaysQ.data ?? null;
 
@@ -156,7 +162,9 @@ export function BookingDetailView({
     podeCancelarStatus &&
     (audience === "operator" || hasScope("bookings:cancel", booking.location?.company?.id));
   const refundHint = pay.canRefund
-    ? `estorna ${formatBRL(booking.total_amount)} ao cliente`
+    ? counter
+      ? "estorna o pagamento ao cliente"
+      : `estorna ${formatBRL(booking.total_amount)} ao cliente`
     : pay.badge === "Estornado"
       ? "o valor já foi estornado"
       : null;
@@ -170,20 +178,25 @@ export function BookingDetailView({
     booking as unknown as Parameters<typeof bookingStateSummary>[0],
     (booking.payments ?? []) as unknown as Parameters<typeof bookingStateSummary>[1],
     { dateTime: formatDateTime, brl: formatBRL },
+    { hideMoney: counter },
   );
-  const money = buildMoneyBreakdown(
-    (booking as unknown as { price_breakdown?: PriceBreakdownLike | null }).price_breakdown ?? null,
-    Number(booking.total_amount),
-    pagamento
-      ? {
-          ...pagamento,
-          amount: Number(pagamento.amount),
-          debt_recovered_cents: pagamento.debt_recovered_cents ?? 0,
-          refund_partner_cents: pagamento.refund_partner_cents ?? 0,
-        }
-      : null,
-    releaseDays,
-  );
+  // No balcão não há valor para somar: a reserva veio sem preço nem pagamento detalhado.
+  const money = counter
+    ? null
+    : buildMoneyBreakdown(
+        (booking as unknown as { price_breakdown?: PriceBreakdownLike | null }).price_breakdown ??
+          null,
+        Number(booking.total_amount),
+        pagamento
+          ? {
+              ...pagamento,
+              amount: Number(pagamento.amount),
+              debt_recovered_cents: pagamento.debt_recovered_cents ?? 0,
+              refund_partner_cents: pagamento.refund_partner_cents ?? 0,
+            }
+          : null,
+        releaseDays,
+      );
   // Taxas da reserva (23/11/2026): só o Manager (hub_admin, que lê o rastro) e só com pagamento pago.
   const podeVerTaxas =
     audience === "manager" &&
@@ -342,10 +355,11 @@ export function BookingDetailView({
             <Campo label="Check-in" value={formatDateTime(booking.check_in_at)} />
             <Campo label="Check-out" value={formatDateTime(booking.check_out_at)} />
             {/* O estacionamento vê o valor das diárias (08/10/2026); o total com plano fica na nota de Valores. */}
-            {audience === "operator" ? (
+            {/* O balcão (sem finance:read) não vê valor nenhum: o servidor nem o entrega. */}
+            {counter ? null : audience === "operator" ? (
               <Campo
                 label="Valor das diárias"
-                value={formatBRL(partnerMoneyView(money).parkingCents / 100)}
+                value={formatBRL(partnerMoneyView(money!).parkingCents / 100)}
               />
             ) : (
               <Campo label="Valor total" value={formatBRL(booking.total_amount)} />
@@ -393,14 +407,16 @@ export function BookingDetailView({
         </Card>
       </div>
 
-      <BookingMoneyCard
-        money={money}
-        audience={audience}
-        paymentState={estado.payment}
-        bookingStatus={booking.status}
-        onShowFees={podeVerTaxas ? () => setFeesOpen(true) : undefined}
-      />
-      {podeVerTaxas && feesOpen && pagamento && (
+      {money && (
+        <BookingMoneyCard
+          money={money}
+          audience={audience}
+          paymentState={estado.payment}
+          bookingStatus={booking.status}
+          onShowFees={podeVerTaxas ? () => setFeesOpen(true) : undefined}
+        />
+      )}
+      {podeVerTaxas && feesOpen && pagamento && money && (
         <BookingFeesDialog
           open
           onOpenChange={setFeesOpen}
@@ -420,14 +436,16 @@ export function BookingDetailView({
         />
       )}
 
-      {/* De onde a venda veio e que comissão ela paga (E0.3.12). */}
-      <BookingCommissionCard
-        booking={booking}
-        companyId={booking.location?.company?.id}
-        payments={booking.payments}
-        audience={audience}
-        canFix={effectiveRole === "hub_admin"}
-      />
+      {/* De onde a venda veio e que comissão ela paga (E0.3.12). A comissão é dinheiro: o balcão não vê. */}
+      {!counter && (
+        <BookingCommissionCard
+          booking={booking}
+          companyId={booking.location?.company?.id}
+          payments={booking.payments}
+          audience={audience}
+          canFix={effectiveRole === "hub_admin"}
+        />
+      )}
 
       {/* Proteção de voo acionada (25/09/2026): a portaria precisa saber até quando sai sem custo. */}
       {ext && aguardaSaidaReal && (

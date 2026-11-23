@@ -102,6 +102,7 @@ function setup(opts: {
   rows: UnifiedBookingRow[];
   total?: number;
   route?: string;
+  hasScope?: (escopo: string) => boolean;
 }) {
   vi.mocked(useHasWl).mockReturnValue({ hasWl: opts.hasWl, isLoading: false });
   vi.mocked(useBookingsPage).mockReturnValue({
@@ -109,7 +110,10 @@ function setup(opts: {
     isLoading: false,
   } as never);
   renderWithProviders(<OperatorBookings />, {
-    auth: mockAuth({ effectiveCompanyIds: ["company-1"], hasScope: () => true }),
+    auth: mockAuth({
+      effectiveCompanyIds: ["company-1"],
+      hasScope: opts.hasScope ?? (() => true),
+    }),
     route: opts.route ?? "/operator/bookings",
   });
 }
@@ -145,6 +149,43 @@ describe("OperatorBookings · estacionamento sem white-label", () => {
     expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
     expect(screen.getByText(/111,60/)).toBeInTheDocument();
     expect(screen.queryByText(/136,50/)).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * Balcão (papel Operação, sem finance:read), 23/11/2026: a lista lê as reservas pela RPC do balcão
+ * (sem valor) e a coluna de valor some, porque o servidor não a entrega. Quem tem o escopo
+ * financeiro (Dono, Gerente, Financeiro) segue lendo a tabela e vendo a coluna.
+ */
+describe("OperatorBookings · balcão sem dinheiro", () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  const semValor = () => {
+    const r = reservaHub("MP-BALCAO") as Extract<UnifiedBookingRow, { source: "hub" }>;
+    return {
+      ...r,
+      booking: { ...r.booking, total_amount: null, price_breakdown: null },
+    } as unknown as UnifiedBookingRow;
+  };
+
+  it("pede a lista pelo caminho do balcão e não mostra a coluna de valor", () => {
+    setup({ hasWl: false, rows: [semValor()], hasScope: (e) => e !== "finance:read" });
+    const f = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
+    expect(f.counter).toBe(true);
+    expect(screen.getByText("MP-BALCAO")).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Diárias" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Valor" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+    // O resto da linha segue: pagamento, estadia e o cliente.
+    expect(screen.getByRole("columnheader", { name: "Pagamento" })).toBeInTheDocument();
+    expect(screen.getByText("Cliente MP-BALCAO")).toBeInTheDocument();
+  });
+
+  it("com finance:read, a lista é a de sempre: tabela e coluna de diárias", () => {
+    setup({ hasWl: false, rows: [reservaHub("MP-PAGA")], hasScope: () => true });
+    const f = vi.mocked(useBookingsPage).mock.calls.at(-1)![0];
+    expect(f.counter).toBe(false);
+    expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
   });
 });
 

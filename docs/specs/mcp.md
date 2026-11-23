@@ -299,7 +299,13 @@ Duas razões, e as duas foram medidas:
    banco vivo em 11/08/2026, com um membro de papel `finance`: a consulta antiga trazia a reserva
    alheia com CPF e telefone, e trazia 3 reservas, nenhuma dele.
 
-A policy fica como está. Quem estreita é o handler, e
+**Atualização de 23/11/2026:** a policy deixou de ser larga para o membro sem escopo financeiro:
+`booking_select` (e `payment_select`) só liberam a linha da empresa a quem tem `finance:read`
+(ver [permissions.md](./permissions.md), "Dinheiro da reserva"). Ainda assim o filtro por dono do
+handler continua obrigatório: o Dono, o Gerente e o Financeiro seguem alcançando a reserva de
+terceiros da própria empresa pela RLS, e o MCP `/customer` não tem tela.
+
+O filtro do handler fica como está, e
 [`supabase/tests/booking_pii_scope.test.sql`](../../supabase/tests/booking_pii_scope.test.sql) trava
 os dois lados: se alguém estreitar a policy, o teste avisa antes de o painel quebrar; se alguém tirar
 o filtro do handler, o teste mostra o que volta a vazar.

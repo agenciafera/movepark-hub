@@ -54,6 +54,8 @@ export function bookingStateSummary(
   },
   payments: PaymentLike[] | null | undefined,
   fmt: { dateTime: (iso: string) => string; brl: (value: number) => string },
+  /** `hideMoney`: o balcão (sem finance:read) lê a reserva sem valor, então o texto não cita cifra. */
+  opts: { hideMoney?: boolean } = {},
 ): BookingStateSummary {
   const payment = customerPaymentState(payments, b.status);
   const p = lastPayment(payments);
@@ -85,8 +87,8 @@ export function bookingStateSummary(
     case "cancelled": {
       const quando = b.deleted_at ?? b.updated_at;
       const em = quando ? ` em ${fmt.dateTime(quando)}` : "";
-      if (payment === "refunded") return { tone: "cancelled", payment, title: "Cancelada e devolvida", detail: `Cancelada${em}. ${fmt.brl(total)} devolvidos ao cliente.` };
-      if (payment === "refunding") return { tone: "cancelled", payment, title: "Cancelada, estorno em processamento", detail: `Cancelada${em}. O gateway está devolvendo ${fmt.brl(total)} ao cliente.` };
+      if (payment === "refunded") return { tone: "cancelled", payment, title: "Cancelada e devolvida", detail: opts.hideMoney ? `Cancelada${em}. O pagamento foi devolvido ao cliente.` : `Cancelada${em}. ${fmt.brl(total)} devolvidos ao cliente.` };
+      if (payment === "refunding") return { tone: "cancelled", payment, title: "Cancelada, estorno em processamento", detail: opts.hideMoney ? `Cancelada${em}. O gateway está devolvendo o pagamento ao cliente.` : `Cancelada${em}. O gateway está devolvendo ${fmt.brl(total)} ao cliente.` };
       if (payment === "paid") return { tone: "cancelled", payment, title: "Cancelada, devolução pendente", detail: `Cancelada${em}. O cliente pagou e a devolução está com a equipe da Movepark.` };
       return { tone: "cancelled", payment, title: "Cancelada sem pagamento", detail: `Cancelada${em}. Nada foi cobrado do cliente.` };
     }

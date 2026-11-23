@@ -6,13 +6,21 @@ import { mockAuth, renderWithProviders } from "@/test/utils";
 const state = vi.hoisted(() => ({ booking: null as unknown, trail: null as unknown, history: [] as unknown[] }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const updateMutate = vi.hoisted(() => vi.fn());
+const byCodeArgs = vi.hoisted(() => vi.fn());
+const updateArgs = vi.hoisted(() => vi.fn());
 const reconcileFees = vi.hoisted(() => vi.fn());
 vi.mock("./api", () => ({
   useReconcileBookingFees: () => ({ mutate: reconcileFees, isPending: false }),
-  useBookingByCode: () => ({ data: state.booking, isLoading: false }),
+  useBookingByCode: (...args: unknown[]) => {
+    byCodeArgs(...args);
+    return { data: state.booking, isLoading: false };
+  },
   useBookingGatewayTrail: () => ({ data: state.trail, isLoading: false, isError: false }),
   useCancelBookingStaff: () => ({ mutate: vi.fn(), isPending: false }),
-  useUpdateBookingStatus: () => ({ mutate: updateMutate, isPending: false }),
+  useUpdateBookingStatus: (...args: unknown[]) => {
+    updateArgs(...args);
+    return { mutate: updateMutate, isPending: false };
+  },
   useBookingHistory: () => ({ data: state.history ?? [] }),
 }));
 const voucherPdf = vi.hoisted(() => vi.fn());
@@ -54,14 +62,17 @@ const trailPago = {
   }],
 };
 
-function abre(audience: "manager" | "operator" = "manager") {
+function abre(
+  audience: "manager" | "operator" = "manager",
+  hasScope: (escopo: string) => boolean = () => true,
+) {
   return renderWithProviders(
     <Routes>
       <Route path="/x/:code" element={<BookingDetailView code="MP-7E2482" audience={audience} />} />
     </Routes>,
     {
       route: "/x/MP-7E2482",
-      auth: mockAuth(audience === "manager" ? { effectiveRole: "hub_admin", hasScope: () => true } : { effectiveRole: "company_operator", hasScope: () => true }),
+      auth: mockAuth(audience === "manager" ? { effectiveRole: "hub_admin", hasScope: () => true } : { effectiveRole: "company_operator", hasScope }),
     },
   );
 }
@@ -264,3 +275,69 @@ describe("BookingDetailView", () => {
     state.history = [];
   });
 });
+
+/**
+ * Balcão (papel Operação, sem `finance:read`), 23/11/2026: o servidor não entrega valor de reserva
+ * nem de pagamento a quem não tem o escopo, então a reserva vem pela RPC do balcão (sem preço, sem
+ * split, sem taxa) e a tela não mostra dinheiro. O que o balcão precisa continua: quem é, a placa,
+ * as datas, se pagou e como, o check-in e o excedente da proteção de voo que ele cobra.
+ */
+describe("BookingDetailView: balcão sem dinheiro", () => {
+  const SEM_FINANCEIRO = (escopo: string) => escopo !== "finance:read";
+  // O que a RPC do balcão devolve: a mesma forma, com os valores nulos e o pagamento sem valor.
+  const semValor = (status: string) => ({
+    ...booking(status, [
+      { id: "p1", status: "paid", refunded_at: null, created_at: "2026-09-18T17:36:40Z", paid_at: "2026-09-18T17:37:26Z", method: "card", installments: 1 },
+    ]),
+    total_amount: null,
+    price_breakdown: null,
+  });
+
+  it("pede a reserva e a marcação pelo caminho do balcão, e não mostra valor nem comissão", () => {
+    byCodeArgs.mockClear();
+    updateArgs.mockClear();
+    state.booking = semValor("confirmed");
+    abre("operator", SEM_FINANCEIRO);
+    expect(byCodeArgs).toHaveBeenCalledWith("MP-7E2482", { counter: true });
+    expect(updateArgs).toHaveBeenCalledWith({ counter: true });
+    expect(screen.queryByText("Valor das diárias")).not.toBeInTheDocument();
+    expect(screen.queryByText("Valor total")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("reserva-valores")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("valores-diarias")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("valores-comissao")).not.toBeInTheDocument();
+    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+  });
+
+  it("o que o balcão precisa segue na tela: cliente, placa, pagamento e as operações", () => {
+    state.booking = semValor("confirmed");
+    abre("operator", SEM_FINANCEIRO);
+    expect(screen.getByText("Reserva MP-7E2482")).toBeInTheDocument();
+    expect(screen.getByText(/BAI-2J44/)).toBeInTheDocument();
+    expect(screen.getByTestId("badge-pagamento")).toHaveTextContent("Pago");
+    expect(screen.getByText("Forma de pagamento")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check-in" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Não compareceu" })).toBeInTheDocument();
+  });
+
+  it("reserva cancelada e devolvida: o estado não cita cifra", () => {
+    state.booking = {
+      ...semValor("cancelled"),
+      payments: [
+        { id: "p1", status: "refunded", refunded_at: "2026-09-19T10:00:00Z", created_at: "2026-09-18T17:36:40Z", paid_at: "2026-09-18T17:37:26Z", method: "card", installments: 1 },
+      ],
+    };
+    abre("operator", SEM_FINANCEIRO);
+    expect(screen.getByTestId("reserva-estado")).toHaveTextContent("O pagamento foi devolvido ao cliente");
+    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+  });
+
+  it("Gerente, Financeiro e Dono (com finance:read) seguem vendo os valores", () => {
+    byCodeArgs.mockClear();
+    state.booking = booking("confirmed", [pago]);
+    abre("operator", () => true);
+    expect(byCodeArgs).toHaveBeenCalledWith("MP-7E2482", { counter: false });
+    expect(screen.getAllByText("Valor das diárias").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("reserva-valores")).toBeInTheDocument();
+  });
+});
+

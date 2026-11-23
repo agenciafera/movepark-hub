@@ -9543,6 +9543,12 @@ export type Database = {
         Args: { p_booking_id: string; p_payment_id: string }
         Returns: Json
       }
+      counter_booking_json: {
+        Args: { p_booking_id: string; p_items?: boolean }
+        Returns: Json
+      }
+      counter_can_open_booking: { Args: { p_code: string }; Returns: boolean }
+      counter_company_ids: { Args: never; Returns: string[] }
       coupon_assert_company_access: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -9714,6 +9720,7 @@ export type Database = {
         Returns: string
       }
       faq_slugify: { Args: { t: string }; Returns: string }
+      finance_company_ids: { Args: never; Returns: string[] }
       find_user_by_identifier: {
         Args: { p_channel: string; p_identifier: string }
         Returns: string
@@ -10713,6 +10720,28 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
+      operator_booking_by_code: {
+        Args: { p_code: string; p_items?: boolean; p_only_active?: boolean }
+        Returns: Json
+      }
+      operator_booking_facts: {
+        Args: {
+          p_from: string
+          p_location_ids?: string[]
+          p_statuses?: string[]
+          p_to?: string
+          p_to_inclusive?: boolean
+        }
+        Returns: {
+          check_in_at: string
+          check_out_at: string
+          created_at: string
+          created_via_api_key_id: string
+          location_id: string
+          status: string
+        }[]
+      }
+      operator_bookings_by_ids: { Args: { p_ids: string[] }; Returns: Json }
       operator_create_api_key: {
         Args: {
           p_company_id: string
@@ -10720,6 +10749,15 @@ export type Database = {
           p_expires_at?: string
           p_name: string
           p_scopes: string[]
+        }
+        Returns: Json
+      }
+      operator_day_agenda: {
+        Args: {
+          p_from: string
+          p_location_ids?: string[]
+          p_statuses?: string[]
+          p_to: string
         }
         Returns: Json
       }
@@ -10786,6 +10824,17 @@ export type Database = {
         Returns: undefined
       }
       operator_rotate_api_key: { Args: { p_api_key_id: string }; Returns: Json }
+      operator_set_booking_status: {
+        Args: {
+          p_booking_id: string
+          p_checked_in_at?: string
+          p_checked_out_at?: string
+          p_notes?: string
+          p_set_notes?: boolean
+          p_status: string
+        }
+        Returns: undefined
+      }
       operator_set_coupon_active: {
         Args: { p_coupon_id: string; p_is_active: boolean }
         Returns: undefined

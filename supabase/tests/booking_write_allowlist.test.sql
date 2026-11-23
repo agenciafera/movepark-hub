@@ -4,17 +4,24 @@
 -- das unidades dele. Agora a escrita direta (authenticated/anon) só muda o que a UI escreve de
 -- fato: staff com escopo muda status, carimbos de operação e notas; o dono muda os dados do
 -- checkout do próprio pending. O servidor (service_role / SECURITY DEFINER) passa livre.
+--
+-- 23/11/2026: o "operador" desta fixture é um membro que ALCANÇA a linha pela RLS (papel manager:
+-- bookings:write + finance:read), que é onde o gatilho de allowlist ainda é a barreira. O papel
+-- Operação (sem finance:read) deixou de ler `booking` pela tabela (leitura_dinheiro_por_escopo), então
+-- o UPDATE dele nem acha a linha: a última seção prova que nada muda, e a marcação dele vai pela RPC
+-- `operator_set_booking_status`.
 -- Transação com rollback.
 
 begin;
-select plan(24);
+select plan(26);
 
 -- ── fixtures (como postgres; a guarda só age sobre authenticated/anon) ───────
 do $$
 declare
   u1 uuid := gen_random_uuid();    -- cliente dono
   u2 uuid := gen_random_uuid();    -- outro cliente (alvo de profile_id)
-  uop uuid := gen_random_uuid();   -- operador (papel operator)
+  uop uuid := gen_random_uuid();   -- staff que alcança a linha (papel manager, com finance:read)
+  uoper uuid := gen_random_uuid(); -- Operação (papel operator, sem finance:read)
   ufin uuid := gen_random_uuid();  -- financeiro (sem bookings:write nem bookings:checkin)
   uadm uuid := gen_random_uuid();  -- hub_admin
   v_loc uuid; v_cid uuid;
@@ -23,15 +30,16 @@ begin
     (u1,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','allow-c1@ex.com',now(),now()),
     (u2,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','allow-c2@ex.com',now(),now()),
     (uop,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','allow-op@ex.com',now(),now()),
+    (uoper,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','allow-oper@ex.com',now(),now()),
     (ufin,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','allow-fin@ex.com',now(),now()),
     (uadm,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','allow-adm@ex.com',now(),now());
   insert into public.profiles(id, role) values
-    (u1,'customer'), (u2,'customer'), (uop,'company_operator'), (ufin,'company_operator'), (uadm,'hub_admin')
+    (u1,'customer'), (u2,'customer'), (uop,'company_operator'), (uoper,'company_operator'), (ufin,'company_operator'), (uadm,'hub_admin')
   on conflict (id) do update set role = excluded.role;
 
   select id, company_id into v_loc, v_cid from public.location where deleted_at is null limit 1;
   insert into public.profile_company(profile_id, company_id, role) values
-    (uop, v_cid, 'operator'), (ufin, v_cid, 'finance')
+    (uop, v_cid, 'manager'), (uoper, v_cid, 'operator'), (ufin, v_cid, 'finance')
   on conflict do nothing;
 
   insert into public.booking(code, profile_id, location_id, check_in_at, check_out_at, status, total_amount) values
@@ -42,6 +50,7 @@ begin
   perform set_config('test.u1', u1::text, false);
   perform set_config('test.u2', u2::text, false);
   perform set_config('test.uop', uop::text, false);
+  perform set_config('test.uoper', uoper::text, false);
   perform set_config('test.ufin', ufin::text, false);
   perform set_config('test.uadm', uadm::text, false);
   perform set_config('test.a', (select id::text from public.booking where code = 'ALLOW-A'), false);
@@ -103,6 +112,20 @@ select lives_ok(
   format($$ update public.booking set total_amount = total_amount, notes = 'saiu 10h' where id = %L $$, current_setting('test.a')),
   'PATCH que repete o valor atual de coluna proibida não é mudança');
 reset role;
+
+-- ── Operação (sem finance:read) não alcança a linha: o UPDATE direto não muda nada ──
+-- Antes, o gatilho recusava as colunas proibidas e deixava passar o check-in. Agora o UPDATE com
+-- `where` também passa pela policy de SELECT, que não libera a linha: zero linhas, sem erro, e a
+-- reserva fica como estava. O check-in do balcão vai pela RPC (ver leitura_dinheiro_por_escopo).
+set local role authenticated;
+select pg_temp.as_user(current_setting('test.uoper'));
+select lives_ok(
+  format($$ update public.booking set status = 'checked_in', checked_in_at = now() where id = %L $$, current_setting('test.c')),
+  'Operação: o PATCH direto não acha a linha (sem erro)');
+reset role;
+select is(
+  (select status::text from public.booking where id = current_setting('test.c')::uuid), 'confirmed',
+  'Operação: a reserva ficou como estava, o UPDATE direto não gravou nada');
 
 -- ── membro sem escopo de reserva (Financeiro) não escreve nada ───────────────
 set local role authenticated;

@@ -203,11 +203,17 @@ export async function handler(req: Request): Promise<Response> {
         ok = r.ok;
         if (!ok) falha = String(resultado.error ?? `Falhou (${r.status}).`);
       } else {
-        // Check-in e check-out: a mesma escrita do painel, com o JWT da pessoa (RLS e o gatilho
-        // de allowlist da reserva valem igual).
-        const { error } = await comoUsuario.from("booking")
-          .update({ status: exec.status, [exec.campo]: new Date().toISOString() })
-          .eq("id", a.booking_id);
+        // Check-in e check-out: a mesma escrita do painel do balcão, com o JWT da pessoa. Vai pela
+        // RPC `operator_set_booking_status` (que confere bookings:write/bookings:checkin), porque o
+        // UPDATE direto não acha a linha de quem não tem finance:read (a policy de SELECT de
+        // `booking` só a libera com o escopo financeiro) e voltaria "feito" sem ter feito nada.
+        const agora = new Date().toISOString();
+        const { error } = await comoUsuario.rpc("operator_set_booking_status", {
+          p_booking_id: a.booking_id,
+          p_status: exec.status,
+          p_checked_in_at: exec.campo === "checked_in_at" ? agora : null,
+          p_checked_out_at: exec.campo === "checked_out_at" ? agora : null,
+        });
         ok = !error;
         if (error) falha = error.message;
       }

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
+import { untypedRpc } from "@/lib/untypedRpc";
 import {
   bookingParkingAmount,
   buildMoneyBreakdown,
@@ -169,34 +170,59 @@ function tallyStatuses(rows: { status: string }[]): StatusFunnelRow[] {
   }));
 }
 
-export function useStatusFunnel(periodDays: ReportPeriod, locationIds?: string[]) {
+/**
+ * Só o status de cada reserva conta: o balcão (`counter`, sem `finance:read`) lê pela RPC
+ * `operator_booking_facts`, que não devolve valor.
+ */
+async function fetchStatuses(
+  fromIso: string,
+  toIso: string | null,
+  locationIds: string[] | undefined,
+  counter: boolean,
+): Promise<{ status: string }[]> {
+  if (counter) {
+    const { data, error } = await untypedRpc("operator_booking_facts", {
+      p_from: fromIso,
+      p_to: toIso,
+      p_location_ids: locationIds?.length ? locationIds : null,
+    });
+    if (error) throw new Error(error.message);
+    return (Array.isArray(data) ? data : []) as { status: string }[];
+  }
+  let q = supabase.from("booking").select("status").gte("check_in_at", fromIso);
+  if (toIso) q = q.lt("check_in_at", toIso);
+  if (locationIds?.length) q = q.in("location_id", locationIds);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export function useStatusFunnel(
+  periodDays: ReportPeriod,
+  locationIds?: string[],
+  opts: { counter?: boolean } = {},
+) {
+  const counter = opts.counter ?? false;
   return useQuery({
-    queryKey: ["reports", "funnel", periodDays, locationIds],
+    queryKey: ["reports", "funnel", periodDays, locationIds, counter],
     queryFn: async (): Promise<StatusFunnelRow[]> => {
       const since = subDays(new Date(), periodDays).toISOString();
-      let q = supabase.from("booking").select("status").gte("check_in_at", since);
-      if (locationIds && locationIds.length > 0) q = q.in("location_id", locationIds);
-      const { data, error } = await q;
-      if (error) throw error;
-      return tallyStatuses(data ?? []);
+      return tallyStatuses(await fetchStatuses(since, null, locationIds, counter));
     },
   });
 }
 
 /** Funil de status num intervalo livre (`from` inclusivo, `to` exclusivo). */
-export function useStatusFunnelRange(fromIso: string, toIso: string, locationIds?: string[]) {
+export function useStatusFunnelRange(
+  fromIso: string,
+  toIso: string,
+  locationIds?: string[],
+  opts: { counter?: boolean } = {},
+) {
+  const counter = opts.counter ?? false;
   return useQuery({
-    queryKey: ["reports", "funnel-range", fromIso, toIso, locationIds],
-    queryFn: async (): Promise<StatusFunnelRow[]> => {
-      let q = supabase
-        .from("booking")
-        .select("status")
-        .gte("check_in_at", fromIso)
-        .lt("check_in_at", toIso);
-      if (locationIds?.length) q = q.in("location_id", locationIds);
-      const { data, error } = await q;
-      if (error) throw error;
-      return tallyStatuses(data ?? []);
-    },
+    queryKey: ["reports", "funnel-range", fromIso, toIso, locationIds, counter],
+    queryFn: async (): Promise<StatusFunnelRow[]> =>
+      tallyStatuses(await fetchStatuses(fromIso, toIso, locationIds, counter)),
   });
 }

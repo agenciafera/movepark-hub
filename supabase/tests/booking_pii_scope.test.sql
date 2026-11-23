@@ -13,16 +13,18 @@
 -- inteira da empresa como se fosse dele (3 reservas, nenhuma dele).
 --
 -- Estes testes travam os dois lados da decisão:
---   1. a policy continua larga de propósito, porque o painel depende dela;
---   2. por isso quem estreita é o handler, com `.eq("profile_id", <dono>)`.
+--   1. a policy segue larga PARA QUEM TEM finance:read (a fixture usa o papel `finance`). Desde
+--      23/11/2026 ela já não é larga para o membro sem esse escopo (Operação): ver
+--      leitura_dinheiro_por_escopo.test.sql;
+--   2. por isso quem estreita o resto é o handler, com `.eq("profile_id", <dono>)`.
 --
 -- Se alguém estreitar a policy, o teste 3 falha e a conversa acontece antes do
 -- painel do operador quebrar em produção. Se alguém tirar o filtro do handler, o
 -- teste 4 explica o que volta a vazar.
 --
--- O papel escolhido na fixture é `finance`, o de menor alcance operacional, para
--- deixar claro que nem papel nem escopo entram na conta: basta pertencer à
--- empresa.
+-- O papel escolhido na fixture é `finance`, que tem finance:read mas nem bookings:write
+-- nem cancel. Até 23/11/2026 bastava pertencer à empresa; agora a linha exige finance:read,
+-- e é por isso que esta fixture continua enxergando a reserva.
 --
 -- Ver docs/specs/mcp.md e supabase/functions/mcp/index.ts (`callCustomerTxn`).
 

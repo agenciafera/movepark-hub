@@ -1,7 +1,8 @@
 // Edge Function: /voucher-pdf
 // Gera (ou regenera) o PDF do voucher de uma reserva, guarda no bucket privado
 // `vouchers` e devolve uma signed URL. Requer JWT (dono da reserva OU operador
-// da empresa — a leitura usa o client do usuário, escopada pela RLS do booking).
+// da empresa). A leitura usa o client do usuário, escopada pela RLS do booking; o balcão, que
+// não lê a tabela, passa pela RPC counter_can_open_booking.
 //
 // POST /functions/v1/voucher-pdf
 // Authorization: Bearer <JWT>
@@ -64,20 +65,38 @@ Deno.serve(async (req: Request) => {
   const codeDenial = checkVoucherCode(code);
   if (codeDenial) return jsonResponse({ error: codeDenial.error }, codeDenial.status);
 
-  // Leitura escopada pela RLS (dono ou operador da empresa)
-  const { data: b, error: bErr } = await userClient
+  // Leitura escopada pela RLS: dono da reserva, hub_admin ou membro com `finance:read`.
+  let { data: b, error: bErr } = await userClient
     .from("booking")
     .select(VOUCHER_BOOKING_SELECT)
     .eq("code", code)
     .is("deleted_at", null)
     .maybeSingle();
-
   if (bErr) return jsonResponse({ error: bErr.message }, 500);
+
+  const service = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
+  // O balcão (papel Operação, sem `finance:read`) não lê `booking` pela API, mas gera o voucher
+  // da reserva da própria empresa: a RPC `counter_can_open_booking` confere o acesso com o JWT da
+  // pessoa e só então a leitura sai pela service role. O voucher é o documento do cliente.
+  if (!b) {
+    const { data: pode } = await userClient.rpc("counter_can_open_booking", { p_code: code });
+    if (pode === true) {
+      const lido = await service
+        .from("booking")
+        .select(VOUCHER_BOOKING_SELECT)
+        .eq("code", code)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (lido.error) return jsonResponse({ error: lido.error.message }, 500);
+      b = lido.data;
+    }
+  }
+
   const bookingDenial = checkVoucherBooking(b);
   if (bookingDenial) return jsonResponse({ error: bookingDenial.error }, bookingDenial.status);
 
-  // Service role a partir daqui: a RLS acima já provou que o usuário pode ver esta reserva.
-  const service = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+  // Service role a partir daqui: o acesso já foi provado acima (RLS ou RPC do balcão).
 
   const voucher = mapBookingRowToVoucher(b);
   // Unidade com integração de cancela: o QR é o código do provedor (docs/specs/integracoes.md § 5.6).

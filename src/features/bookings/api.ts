@@ -70,6 +70,11 @@ export type BookingPageFilters = BookingFilters & {
   source?: "all" | "hub" | "wl";
   /** Visão do estacionamento: só reserva que virou venda (mesma regra de `partnerSeesBooking`). */
   partnerView?: boolean;
+  /**
+   * Leitura do balcão (papel Operação, sem `finance:read`): a reserva vem da RPC
+   * `operator_bookings_by_ids`, sem valor nenhum. Quem tem o escopo lê a tabela como sempre.
+   */
+  counter?: boolean;
   page: number;
   pageSize: number;
 };
@@ -132,7 +137,13 @@ async function fetchBookingsPage(
 
   const hubIds = items.filter((i) => i.source === "hub").map((i) => i.id);
   const hubById = new Map<string, BookingWithRelations>();
-  if (hubIds.length) {
+  if (hubIds.length && f.counter) {
+    // Balcão: a policy de `booking` só libera a linha a quem tem `finance:read`, então a reserva
+    // vem pela RPC, na mesma forma do `baseSelect` e com os valores nulos.
+    const { data: hub, error: hubErr } = await rpc("operator_bookings_by_ids", { p_ids: hubIds });
+    if (hubErr) throw new Error(hubErr.message);
+    for (const b of (Array.isArray(hub) ? hub : []) as BookingWithRelations[]) hubById.set(b.id, b);
+  } else if (hubIds.length) {
     const { data: hub, error: hubErr } = await supabase
       .from("booking")
       .select(baseSelect)
@@ -226,12 +237,21 @@ const detailSelect = baseSelect.replace(
   "payments:payment(id, status, refunded_at, created_at, paid_at, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_fee_movepark_cents, anticipation_credit_cents, anticipation_estimate_cents)",
 );
 
-/** Uma reserva pelo código, com as relações da lista e o pagamento completo (tela de detalhe). */
-export function useBookingByCode(code: string | undefined) {
+/**
+ * Uma reserva pelo código, com as relações da lista e o pagamento completo (tela de detalhe).
+ * `counter` (balcão, sem `finance:read`): vem da RPC `operator_booking_by_code`, sem valor.
+ */
+export function useBookingByCode(code: string | undefined, opts: { counter?: boolean } = {}) {
+  const counter = opts.counter ?? false;
   return useQuery({
-    queryKey: [...bookingsKeys.all, "by-code", code ?? ""] as const,
+    queryKey: [...bookingsKeys.all, "by-code", code ?? "", counter] as const,
     enabled: !!code,
     queryFn: async (): Promise<BookingWithRelations | null> => {
+      if (counter) {
+        const { data, error } = await rpc("operator_booking_by_code", { p_code: code! });
+        if (error) throw new Error(error.message);
+        return (data ?? null) as BookingWithRelations | null;
+      }
       const { data, error } = await supabase
         .from("booking")
         .select(detailSelect)
@@ -271,10 +291,26 @@ type UpdateStatusInput = {
 // Escrita direta na reserva: o trigger `booking_guard_write_allowlist` só aceita do staff `status`,
 // `checked_in_at`, `checked_out_at` e `notes`. Campo novo neste patch exige migration na allowlist
 // (docs/specs/booking-flow.md), senão o PATCH volta 403.
-export function useUpdateBookingStatus() {
+export function useUpdateBookingStatus(opts: { counter?: boolean } = {}) {
   const qc = useQueryClient();
+  const counter = opts.counter ?? false;
   return useMutation({
     mutationFn: async ({ bookingId, status, timestamp, notes }: UpdateStatusInput) => {
+      if (counter) {
+        // Balcão: o UPDATE com `where` também passa pela policy de SELECT, que não libera a linha
+        // sem `finance:read`. A RPC confere `bookings:write`/`bookings:checkin` e grava as mesmas
+        // quatro colunas que o gatilho de allowlist aceita.
+        const { error } = await rpc("operator_set_booking_status", {
+          p_booking_id: bookingId,
+          p_status: status,
+          p_checked_in_at: timestamp?.field === "checked_in_at" ? timestamp.value : null,
+          p_checked_out_at: timestamp?.field === "checked_out_at" ? timestamp.value : null,
+          p_notes: notes ?? null,
+          p_set_notes: notes !== undefined,
+        });
+        if (error) throw new Error(error.message);
+        return;
+      }
       const patch: BookingUpdate = { status };
       if (timestamp) patch[timestamp.field] = timestamp.value;
       if (notes !== undefined) patch.notes = notes;

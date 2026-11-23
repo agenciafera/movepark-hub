@@ -259,7 +259,9 @@ export default function OperatorDashboard() {
   const canPayouts = hasScope("payouts:read", companyId);
   const canEditGoal = hasScope("finance:write", companyId);
 
-  const summary = useOperatorPeriodSummary(range, compareRange, scopedLocationIds);
+  // Balcão (sem finance:read): contagens e datas pelas RPCs do balcão, sem valor nenhum.
+  const counter = !canFinance;
+  const summary = useOperatorPeriodSummary(range, compareRange, scopedLocationIds, { counter });
   // Site white-label (fase 5): só para quem tem; quem não tem nem chama, e a tela fica como era.
   // A contagem vale para todo papel (Origem das reservas); o dinheiro continua atrás de finance:read.
   const { hasWl } = useHasWl();
@@ -280,8 +282,8 @@ export default function OperatorDashboard() {
     { from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds, dateField: "created_at" },
     hasWl && porPagamento,
   );
-  const funnel = useStatusFunnelRange(rangeFrom, rangeTo, scopedLocationIds);
-  const upcoming = useUpcomingBookingsCount(days, scopedLocationIds);
+  const funnel = useStatusFunnelRange(rangeFrom, rangeTo, scopedLocationIds, { counter });
+  const upcoming = useUpcomingBookingsCount(days, scopedLocationIds, { counter });
   const highDemand = useHighDemandToday(scopedLocationIds);
   const balance = usePayoutBalance(companyId);
   const reviews = useOperatorReviews(companyId);
@@ -814,7 +816,7 @@ export default function OperatorDashboard() {
           </Panel>
         </div>
 
-        <DayAgendaPanel locationIds={scopedLocationIds} />
+        <DayAgendaPanel locationIds={scopedLocationIds} counter={counter} />
       </div>
 
       <GoalDialog

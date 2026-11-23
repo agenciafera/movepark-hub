@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
+import { rpc } from "@/test/msw/supabase";
 import { mockAuth, mockSession, renderWithProviders } from "@/test/utils";
 import OperatorDashboard from "./OperatorDashboard";
 
@@ -88,16 +89,28 @@ describe("OperatorDashboard: receita só para quem tem finance:read", () => {
     expect(await screen.findByText("Receita por dia do pagamento,")).toBeInTheDocument();
   });
 
-  it("balcão (Operação): sem gráfico, sem seletor e sem pedir o dinheiro das reservas", async () => {
+  it("balcão (Operação): sem gráfico, sem seletor e sem tocar a tabela de reservas", async () => {
     const pedidos: string[] = [];
+    // O servidor só libera `booking` a quem tem finance:read (23/11/2026): o balcão conta pela RPC,
+    // que devolve datas, status e canal, nunca valor.
+    const fatos = rpc("operator_booking_facts", { json: [] });
+    const agenda = rpc("operator_day_agenda", { json: [] });
     renderDashboard("/operator", pedidos, ESCOPOS_BALCAO);
     expect(await screen.findByText("Reservas pagas")).toBeInTheDocument();
-    // O resumo do período (contagens) também chama a tabela de reservas, então esperamos ele.
-    await waitFor(() => expect(pedidos.length).toBeGreaterThan(0));
+    await waitFor(() => expect(fatos.chamadas.length).toBeGreaterThan(0));
+    await waitFor(() => expect(agenda.chamadas.length).toBeGreaterThan(0));
     expect(screen.queryByText(/Receita por dia/)).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Pagamento" })).not.toBeInTheDocument();
-    // Nenhuma consulta de receita do parceiro: nem por pagamento, nem a com o split do gateway.
-    expect(pedidos.some((q) => q.includes("payments.paid_at"))).toBe(false);
-    expect(pedidos.some((q) => q.includes("split"))).toBe(false);
+    // Nenhuma leitura direta da tabela: nem a receita, nem o split, nem o total das reservas.
+    expect(pedidos).toEqual([]);
+  });
+
+  it("Financeiro continua lendo a tabela de reservas (o servidor libera com finance:read)", async () => {
+    const pedidos: string[] = [];
+    const fatos = rpc("operator_booking_facts", { json: [] });
+    renderDashboard("/operator", pedidos, ESCOPOS_FINANCEIRO);
+    expect(await screen.findByText("Reservas pagas")).toBeInTheDocument();
+    await waitFor(() => expect(pedidos.length).toBeGreaterThan(0));
+    expect(fatos.chamadas).toHaveLength(0);
   });
 });

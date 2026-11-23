@@ -97,7 +97,9 @@ calendário e comparação. Ele fica no cabeçalho e vale para todos os blocos d
 
 **Escopo (ADR-005):** o painel espelha o escopo, igual à sidebar. `finance:read` libera
 receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera avaliações;
-`finance:write` libera editar a meta. O papel Operação não vê dinheiro.
+`finance:write` libera editar a meta. O papel Operação não vê dinheiro, e desde 23/11/2026 isso vale
+nos dados, não só na tela: sem `finance:read` a reserva vem pelas RPCs do balcão (`operator_*`), que não
+devolvem valor (ver `permissions.md`, "Dinheiro da reserva").
 
 #### Linha 1
 
@@ -139,7 +141,8 @@ receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera
   white-label vale a data da compra. A consulta recarrega a cada 60 s com a tela aberta
   (`useRevenueByPaymentDay`, também usada pelo Manager). **Quem vê:** só quem tem `finance:read`
   (Dono, Gerente e Financeiro). O balcão (papel Operação) não vê o gráfico nem o seletor, e a tela
-  nem pede os valores (23/11/2026).
+  nem pede os valores (23/11/2026). A contagem do período (reservas, diárias vendidas, permanência,
+  canal, próximas reservas, agenda do dia) vem da RPC `operator_booking_facts`, só com datas e status.
 - **Reservas pagas:** o número, a conversão sobre o criado e a quebra por situação. O
   denominador é toda reserva criada no período, então `expired` (abandono) aparece do lado
   de `cancelled` em vez de sumir.
@@ -197,6 +200,18 @@ e cancelada sem pagamento ficam só para o time Movepark. O funil de status agre
 do relatório segue contando todos os status (é a base da taxa de conversão). O bloco **Operação** traz confirmar, check-in, check-out, não compareceu e trocar
 placa; **Cancelar** pede confirmação e o servidor decide a elegibilidade. Devolução pendente
 avisa que é com a equipe da Movepark, sem ação para ele.
+
+**O balcão (papel Operação) não vê dinheiro nesta tela (23/11/2026).** O servidor só entrega valor
+de reserva e de pagamento a quem tem `finance:read` (Dono, Gerente, Financeiro; ver `permissions.md`,
+"Dinheiro da reserva"), então para a Operação a lista e o detalhe vêm das RPCs `operator_bookings_by_ids`
+e `operator_booking_by_code` e a tela **não mostra**: a coluna "Diárias" da lista, o "Valor das
+diárias" na ficha, o card de Valores (com "Sua parte", comissão e taxa do gateway), o card de
+comissão, o valor nos textos de estorno e o resumo de recebido. O que o balcão precisa fica: cliente,
+telefone, placa, datas, situação e forma do pagamento, a proteção de voo (com o excedente que ele
+cobra) e as operações (confirmar, check-in, check-out, não compareceu, trocar placa), que gravam pela
+RPC `operator_set_booking_status` (escopo `bookings:write` ou `bookings:checkin`). A agenda do dia
+(`operator_day_agenda`), a contagem do período, o funil e o check-in por QR (§4.6b) seguem o mesmo
+caminho. Quem tem `finance:read` vê e usa tudo como descrito acima.
 
 
 **Rota:** `/operator/bookings`
@@ -431,7 +446,7 @@ Lista as avaliações publicadas das unidades da empresa (nota, autor, data, com
   reservas), o gráfico e o CSV "Receita diária" seguem a base escolhida; o CSV por pagamento sai
   como `receita-pagamento-<N>d.csv`. No white-label vale a data da compra. A aba, o CSV e as
   consultas que os alimentam exigem `finance:read`: o balcão (papel Operação) fica só com a aba
-  Reservas.
+  Reservas, cujo funil de status conta pela RPC `operator_booking_facts`, sem valor.
 
 **Ocupação**
 - Taxa de ocupação por localização e tipo de vaga

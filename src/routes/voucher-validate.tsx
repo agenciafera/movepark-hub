@@ -5,6 +5,7 @@ import { CheckCircle, QrCode } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/context";
+import { useSeesMoney } from "@/auth/useSeesMoney";
 import { formatDateTime, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useBookingByCode, useVoucherCheckIn, type VoucherBooking } from "@/features/voucher/api";
@@ -91,8 +92,10 @@ export default function VoucherValidatePage() {
 }
 
 function OperatorValidate({ code }: { code: string }) {
-  const { data: booking, isLoading } = useBookingByCode(code);
-  const checkIn = useVoucherCheckIn(code);
+  // Balcão (sem finance:read): a reserva e o check-in vão pelas RPCs do balcão, sem valor.
+  const counter = !useSeesMoney();
+  const { data: booking, isLoading } = useBookingByCode(code, { counter });
+  const checkIn = useVoucherCheckIn(code, { counter });
   const validity = voucherValidity(booking ?? null, new Date());
 
   async function onCheckIn() {

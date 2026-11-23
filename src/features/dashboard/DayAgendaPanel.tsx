@@ -32,10 +32,17 @@ type Filtro = "all" | AgendaKind;
  * - hoje, a lista abre rolada na próxima hora, que é o que o balcão quer ver;
  * - filtro de chegadas e saídas nos próprios contadores, e cada linha abre a reserva.
  */
-export function DayAgendaPanel({ locationIds }: { locationIds?: string[] }) {
+export function DayAgendaPanel({
+  locationIds,
+  counter = false,
+}: {
+  locationIds?: string[];
+  /** Balcão (sem `finance:read`): a agenda vem da RPC do balcão, sem valor. */
+  counter?: boolean;
+}) {
   const [date, setDate] = React.useState(todayIsoDate);
   const [filtro, setFiltro] = React.useState<Filtro>("all");
-  const agenda = useDayAgenda(date, locationIds);
+  const agenda = useDayAgenda(date, locationIds, { counter });
 
   const items = React.useMemo(() => agendaItems(agenda.data ?? [], date), [agenda.data, date]);
   const arrivals = items.filter((i) => i.kind === "arrival").length;

@@ -15,12 +15,15 @@ export function BulkAttendanceBar({
   rows,
   wlAttendance,
   onDone,
+  counter = false,
 }: {
   rows: UnifiedBookingRow[];
   wlAttendance: boolean;
   onDone: () => void;
+  /** Balcão (sem `finance:read`): a marcação do Hub vai pela RPC do balcão. */
+  counter?: boolean;
 }) {
-  const hubStatus = useUpdateBookingStatus();
+  const hubStatus = useUpdateBookingStatus({ counter });
   const wlAction = useWlBookingAction();
   const [busy, setBusy] = React.useState<BulkAction | null>(null);
 
