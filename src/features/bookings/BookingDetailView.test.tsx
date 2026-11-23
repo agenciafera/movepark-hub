@@ -107,6 +107,27 @@ describe("BookingDetailView", () => {
     expect(screen.queryByTestId("valores-taxa-parceiro")).not.toBeInTheDocument();
   });
 
+  it("o Manager vê o botão Ver taxas numa reserva paga", () => {
+    state.booking = booking("confirmed", [pago]);
+    state.trail = trailPago;
+    abre("manager");
+    expect(screen.getByRole("button", { name: "Ver taxas" })).toBeInTheDocument();
+  });
+
+  it("o Operator não vê o botão Ver taxas", () => {
+    state.booking = booking("confirmed", [pago]);
+    state.trail = trailPago;
+    abre("operator");
+    expect(screen.queryByRole("button", { name: "Ver taxas" })).toBeNull();
+  });
+
+  it("sem pagamento pago não há taxas a ver", () => {
+    state.booking = booking("pending", []);
+    state.trail = { events: [], payments: [] };
+    abre("manager");
+    expect(screen.queryByRole("button", { name: "Ver taxas" })).toBeNull();
+  });
+
   it("Operator não dispara a apuração da taxa (é porta de hub_admin)", () => {
     reconcileFees.mockClear();
     state.booking = booking("confirmed", [{ ...pago, gateway_fee_cents: null }]);

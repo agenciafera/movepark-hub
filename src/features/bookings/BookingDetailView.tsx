@@ -25,6 +25,8 @@ import { usePayoutReleaseDays } from "@/features/payouts/api";
 import { useChangeBookingVehicle, useVoucherPdf } from "./customerApi";
 import { canDownloadVoucher } from "./voucher.logic";
 import { BookingMoneyCard } from "./BookingMoneyCard";
+import { BookingFeesDialog } from "./BookingFeesDialog";
+import type { FeeBookingLike } from "./bookingFees.logic";
 import { BookingStateBanner } from "./BookingStateBanner";
 import { bookingStateSummary } from "./bookingState.logic";
 import { GatewayTrail } from "./GatewayTrail";
@@ -92,6 +94,7 @@ export function BookingDetailView({
   const [trocandoPlaca, setTrocandoPlaca] = React.useState(false);
   const [flightOpen, setFlightOpen] = React.useState(false);
   const [flightCheckoutOpen, setFlightCheckoutOpen] = React.useState(false);
+  const [feesOpen, setFeesOpen] = React.useState(false);
   const reconcileFees = useReconcileBookingFees();
   const releaseDaysQ = usePayoutReleaseDays(bookingQ.data?.location?.company?.id);
   const historyQ = useBookingHistory(bookingQ.data?.id);
@@ -181,6 +184,12 @@ export function BookingDetailView({
       : null,
     releaseDays,
   );
+  // Taxas da reserva (23/11/2026): só o Manager (hub_admin, que lê o rastro) e só com pagamento pago.
+  const podeVerTaxas =
+    audience === "manager" &&
+    effectiveRole === "hub_admin" &&
+    !!pagamento &&
+    (pagamento.status === "paid" || pagamento.status === "refunded");
   const formaPagamento = paymentMethodLabel(booking.payments, "long");
   const ultimoPagamento = lastPayment(booking.payments);
   const fareTier = (booking as unknown as { fare_tier?: string | null }).fare_tier ?? null;
@@ -389,7 +398,27 @@ export function BookingDetailView({
         audience={audience}
         paymentState={estado.payment}
         bookingStatus={booking.status}
+        onShowFees={podeVerTaxas ? () => setFeesOpen(true) : undefined}
       />
+      {podeVerTaxas && feesOpen && pagamento && (
+        <BookingFeesDialog
+          open
+          onOpenChange={setFeesOpen}
+          bookingId={booking.id}
+          money={money}
+          payment={{
+            id: (pagamento as unknown as { id: string }).id,
+            method: pagamento.method,
+            amount: Number(pagamento.amount),
+            installments: pagamento.installments,
+            gateway_fee_cents: pagamento.gateway_fee_cents,
+            anticipation_credit_cents:
+              (pagamento as unknown as { anticipation_credit_cents?: number | null })
+                .anticipation_credit_cents ?? null,
+          }}
+          booking={booking as unknown as FeeBookingLike}
+        />
+      )}
 
       {/* De onde a venda veio e que comissão ela paga (E0.3.12). */}
       <BookingCommissionCard

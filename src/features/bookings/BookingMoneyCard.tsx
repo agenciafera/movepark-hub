@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatBRL, formatDate } from "@/lib/format";
 import { partnerMoneyView, type MoneyBreakdown } from "./bookingMoney.logic";
 import { customerBlockCopy, type CustomerPaymentState } from "./bookingState.logic";
@@ -7,7 +8,7 @@ const brl = (cents: number) => formatBRL(cents / 100);
 const signed = (cents: number) => (cents < 0 ? `−${brl(-cents)}` : brl(cents));
 const METODO: Record<string, string> = { pix: "PIX", card: "cartão" };
 
-function Linha({ label, value, strong, muted, testId }: { label: string; value: string; strong?: boolean; muted?: boolean; testId?: string }) {
+export function Linha({ label, value, strong, muted, testId }: { label: string; value: string; strong?: boolean; muted?: boolean; testId?: string }) {
   return (
     <div className={`flex items-baseline justify-between gap-4 ${strong ? "border-t border-hairline pt-2 font-medium text-ink" : muted ? "text-muted" : "text-body"}`}>
       <span className="text-body-sm">{label}</span>
@@ -16,7 +17,7 @@ function Linha({ label, value, strong, muted, testId }: { label: string; value: 
   );
 }
 
-function Bloco({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+export function Bloco({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-hairline bg-surface-soft p-4">
       <div>
@@ -121,12 +122,15 @@ export function BookingMoneyCard({
   audience = "manager",
   paymentState = "paid",
   bookingStatus = "confirmed",
+  onShowFees,
 }: {
   money: MoneyBreakdown;
   audience?: "manager" | "operator";
   /** Estado do pagamento visto pelo cliente (02/10/2026): "O cliente pagou" só quando pagou. */
   paymentState?: CustomerPaymentState;
   bookingStatus?: string;
+  /** Abre o modal de taxas (23/11/2026). Só o Manager passa, e só com pagamento pago. */
+  onShowFees?: () => void;
 }) {
   const { customer, split, refund } = money;
   const meio = customer.method ? METODO[customer.method] ?? customer.method : null;
@@ -137,8 +141,13 @@ export function BookingMoneyCard({
   if (audience === "operator") return <PartnerMoney money={money} cliente={cliente} semPagamento={semPagamento} />;
   return (
     <Card data-testid="reserva-valores">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
         <CardTitle>Valores</CardTitle>
+        {onShowFees && (
+          <Button variant="outline" size="sm" onClick={onShowFees}>
+            Ver taxas
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="grid gap-4 desktop:grid-cols-3">
         <Bloco title={cliente.title} hint={cliente.hint}>
