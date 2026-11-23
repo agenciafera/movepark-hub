@@ -25,6 +25,7 @@ import {
   type VoucherBooking,
 } from "./voucher/fields.ts";
 import { siteUrl } from "./site.ts";
+import { markdownRestritoToHtml, temAviso } from "./markdown-restrito.ts";
 
 // @ts-expect-error - Deno env
 const env = (k: string) => Deno.env.get(k);
@@ -1038,6 +1039,30 @@ function parkingBlock(b: VoucherBooking): string {
 }
 
 /**
+ * Bloco "Aviso do estacionamento" do e-mail de reserva (docs/specs/aviso-do-estacionamento.md):
+ * política do parceiro que o cliente precisa saber antes de chegar (ex.: cobrança por mala
+ * extra). Vem de `location.partner_notice_md`, em Markdown restrito convertido para HTML inline
+ * com tudo escapado; HTML cru escrito no aviso sai como texto. Vazio = o bloco não existe, sem
+ * título órfão.
+ */
+export function partnerNoticeBlock(b: Pick<VoucherBooking, "partner_notice_md">): string {
+  if (!temAviso(b.partner_notice_md)) return "";
+  const corpo = markdownRestritoToHtml(b.partner_notice_md, {
+    paragrafo: `margin:0 0 8px;font-family:${FONT};font-size:14px;line-height:1.55;color:${BRAND.body};`,
+    lista: `margin:0 0 8px;padding:0 0 0 20px;font-family:${FONT};font-size:14px;line-height:1.55;color:${BRAND.body};`,
+    item: "margin:0 0 4px;",
+    link: `color:${BRAND.violetActive};text-decoration:underline;`,
+    negrito: `color:${BRAND.navy};`,
+  });
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;"><tr>
+    <td style="background:${BRAND.surface};border:1px solid ${BRAND.hairline};border-left:4px solid ${BRAND.violet};border-radius:8px;padding:16px 18px;">
+      <p style="margin:0 0 8px;font-family:${FONT};font-size:13px;font-weight:700;letter-spacing:0.2px;color:${BRAND.navy};">Aviso do estacionamento</p>
+      ${corpo}
+    </td>
+  </tr></table>`;
+}
+
+/**
  * Confirmação de reserva (cliente). Enviado quando o pagamento confirma a reserva.
  * Reaproveita a montagem de dados do voucher (`VoucherBooking`) e linka o cliente
  * para a própria reserva, onde o voucher fica disponível para download.
@@ -1073,6 +1098,7 @@ export function tplBookingConfirmation(
       `
       <p style="margin:0 0 24px;">${greeting} Sua vaga está garantida. Confira onde você vai estacionar.</p>
       ${parkingBlock(b)}
+      ${partnerNoticeBlock(b)}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 32px;">${summary}</table>
       ${checkItem(`O <strong style="color:${BRAND.navy};">${escapeHtml(b.company_name)}</strong> espera você em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDayMonth(b.check_in_at))}</strong>.`)}
       ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}

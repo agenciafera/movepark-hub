@@ -3590,6 +3590,7 @@ export type Database = {
           longitude: number | null
           name: string
           notice: string | null
+          partner_notice_md: string | null
           phone: string | null
           photos: Json
           public_name: string | null
@@ -3642,6 +3643,7 @@ export type Database = {
           longitude?: number | null
           name: string
           notice?: string | null
+          partner_notice_md?: string | null
           phone?: string | null
           photos?: Json
           public_name?: string | null
@@ -3694,6 +3696,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           notice?: string | null
+          partner_notice_md?: string | null
           phone?: string | null
           photos?: Json
           public_name?: string | null

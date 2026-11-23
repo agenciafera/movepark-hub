@@ -136,6 +136,7 @@ function reserva(over: Partial<BookingForCheckout> = {}): BookingForCheckout {
       ads_conversion_id: null,
       ads_conversion_label: null,
       ga4_measurement_id: null,
+      partner_notice_md: null,
     },
     items: [
       {

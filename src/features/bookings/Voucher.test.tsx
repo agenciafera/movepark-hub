@@ -51,6 +51,7 @@ function booking(status: MyBookingDetail["status"]): MyBookingDetail {
       email: null,
       notice: null,
       reservation_policy: null,
+      partner_notice_md: null,
       latitude: null,
       longitude: null,
     tolerance_minutes: null,
@@ -153,5 +154,18 @@ describe("Voucher", () => {
       expect(espiao.chamadas).toHaveLength(0);
     });
   });
-});
 
+  it("aviso do estacionamento entra no voucher da conta só quando a unidade tem um", () => {
+    const sem = booking("confirmed");
+    const { unmount } = renderWithProviders(<Voucher booking={sem} />);
+    expect(screen.queryByTestId("voucher-partner-notice")).not.toBeInTheDocument();
+    unmount();
+
+    const com = booking("confirmed");
+    com.location_detail.partner_notice_md = "**Malas extras** são cobradas pelo estacionamento.";
+    renderWithProviders(<Voucher booking={com} />);
+    const bloco = screen.getByTestId("voucher-partner-notice");
+    expect(bloco).toHaveTextContent("Aviso do estacionamento");
+    expect(bloco.querySelector("strong")?.textContent).toBe("Malas extras");
+  });
+});

@@ -11,6 +11,7 @@ import {
   teamDigestEmailAlert,
   tplTeamDailyDigest,
   tplBookingConfirmation,
+  partnerNoticeBlock,
   tplLeadAlert,
   tplLeadReceived,
   tplRejection,
@@ -695,4 +696,33 @@ Deno.test("tplBookingConfirmation: sem foto, sem mapa e sem endereço, o bloco n
   assertEquals(m.html.includes("mp-col\""), false);
   assertEquals(m.html.includes("Como chegar"), false);
   assertEquals(m.html.includes("Ver no mapa"), false);
+});
+
+const AVISO_MALAS =
+  "**Malas extras são cobradas pelo estacionamento.**\nA van do traslado tem espaço limitado para bagagem.\n- Acima do limite, taxa por mala, paga na chegada\n- Veja as [regras](https://exemplo.com/regras)";
+
+Deno.test("tplBookingConfirmation: aviso do estacionamento entre o bloco da unidade e o resumo, em HTML escapado", () => {
+  const m = tplBookingConfirmation({ ...PS, partner_notice_md: AVISO_MALAS }, "Ana", "https://movepark.co/bookings/MP-PS0001");
+  const titulo = m.html.indexOf("Aviso do estacionamento");
+  const unidade = m.html.indexOf("Pare Seguro · Aeroporto de Guarulhos");
+  const resumo = m.html.indexOf(">Reserva</td>");
+  assert(titulo > 0, "o bloco tem título");
+  assert(unidade < titulo && titulo < resumo, "vem depois da unidade e antes do resumo da reserva");
+  assertStringIncludes(m.html, "<strong style=\"color:#29263F;\">Malas extras são cobradas pelo estacionamento.</strong>");
+  assertStringIncludes(m.html, "<li style=\"margin:0 0 4px;\">Acima do limite, taxa por mala, paga na chegada</li>");
+  assertStringIncludes(m.html, '<a href="https://exemplo.com/regras" target="_blank"');
+  assertEquals(m.html.includes("—"), false);
+});
+
+Deno.test("tplBookingConfirmation: sem aviso (nulo ou só espaço) o bloco não existe, nem o título", () => {
+  for (const vazio of [undefined, null, "", "  \n "]) {
+    const m = tplBookingConfirmation({ ...PS, partner_notice_md: vazio }, "Ana", "https://movepark.co/bookings/MP-PS0001");
+    assertEquals(m.html.includes("Aviso do estacionamento"), false, `vazio=${JSON.stringify(vazio)}`);
+  }
+});
+
+Deno.test("partnerNoticeBlock: HTML cru no aviso sai como texto, nunca como tag", () => {
+  const html = partnerNoticeBlock({ partner_notice_md: 'Aviso <img src=x onerror="alert(1)"> **ok**' });
+  assertEquals(html.includes("<img"), false);
+  assertStringIncludes(html, "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
 });

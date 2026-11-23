@@ -7,6 +7,8 @@ import { toDataUrl } from "@/lib/qr";
 import { formatBRL, formatDate, formatTime, formatWeekdayDate } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import { Wordmark } from "@/components/shared/Brand";
+import { MarkdownRestrito } from "@/components/shared/MarkdownRestrito";
+import { temAviso } from "@/lib/markdownRestrito";
 import { LOGO_WHITE_FILTER } from "@/lib/parkingLogo";
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { nightsOf } from "@/features/account/accountSummary.logic";
@@ -148,6 +150,18 @@ export function Voucher({ booking }: Props) {
           Tarifa {FARE_TIER_LABEL[booking.fare_tier]}
         </TicketField>
       </dl>
+
+      {/* Aviso do estacionamento, o mesmo do e-mail e do PDF: a política do parceiro que o
+          cliente precisa reler antes de chegar. Vazio = nada. */}
+      {temAviso(booking.location_detail.partner_notice_md) && (
+        <div className="mx-6 mb-2 rounded-md bg-surface-soft px-4 py-3" data-testid="voucher-partner-notice">
+          <p className="text-badge uppercase tracking-[0.4px] text-muted">Aviso do estacionamento</p>
+          <MarkdownRestrito
+            markdown={booking.location_detail.partner_notice_md}
+            className="mt-1.5 text-caption-sm leading-relaxed text-ink"
+          />
+        </div>
+      )}
 
       {/* Recorte do bilhete. Os círculos vazam pras bordas e são pintados com a cor
           do fundo da página, então só funcionam sobre `bg-panel`. */}

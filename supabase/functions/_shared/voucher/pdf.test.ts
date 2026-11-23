@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { buildVoucherPdf, fetchLogoImage, isOwnStorageUrl, logoKind, wrapText } from "./pdf.ts";
+import { buildVoucherPdf, fetchLogoImage, isOwnStorageUrl, linhasDoAviso, logoKind, wrapText } from "./pdf.ts";
 import type { VoucherBooking } from "./fields.ts";
 
 Deno.env.set("SUPABASE_URL", "https://proj.supabase.co");
@@ -112,4 +112,33 @@ Deno.test("wrapText: endereço longo quebra por palavra e nenhuma linha passa do
   for (const r of rows) assertEquals(medir(r) <= 200, true);
   assertEquals(rows.join(" "), "Av. Monteiro Lobato, 2738 - Vila Miriam, Guarulhos - SP, 07190-000");
   assertEquals(wrapText("Curto", 200, medir), ["Curto"]);
+});
+
+Deno.test("linhasDoAviso: Markdown restrito vira linhas de texto puro que cabem na folha", () => {
+  const medir = (t: string) => t.length * 6;
+  const linhas = linhasDoAviso(
+    "**Malas extras são cobradas pelo estacionamento.**\n- Acima do limite, taxa por mala, paga na chegada ao estacionamento, direto no pátio\n- Veja as [regras](https://exemplo.com/r) 🧳",
+    400,
+    medir,
+  );
+  assertEquals(linhas[0], "Malas extras são cobradas pelo estacionamento.");
+  assert(linhas.length > 3, "item longo quebra em mais de uma linha");
+  for (const l of linhas) assert(medir(l) <= 400 || !l.includes(" "), `linha larga: ${l}`);
+  assertEquals(linhas.some((l) => l.includes("🧳")), false, "emoji fora do WinAnsi sai");
+  assertEquals(linhas.at(-1), "• Veja as regras (https://exemplo.com/r)");
+  assertEquals(linhasDoAviso(null, 400, medir), []);
+  assertEquals(linhasDoAviso("  \n", 400, medir), []);
+});
+
+Deno.test("buildVoucherPdf: com aviso o PDF ganha o bloco; sem aviso fica como era", async () => {
+  const qr = "https://movepark.co/voucher/validate?code=MP-LOGO01";
+  const sem = await buildVoucherPdf(base, qr);
+  const com = await buildVoucherPdf(
+    { ...base, partner_notice_md: "**Malas extras** são cobradas pelo estacionamento.\n- Taxa por mala acima do limite" },
+    qr,
+  );
+  // O texto do PDF sai comprimido; o que dá para medir sem decodificar é o tamanho e a diferença.
+  assert(com.length > sem.length, "o aviso acrescenta conteúdo ao PDF");
+  const semVazio = await buildVoucherPdf({ ...base, partner_notice_md: "  \n " }, qr);
+  assert(Math.abs(semVazio.length - sem.length) < 64, "aviso vazio não desenha bloco");
 });

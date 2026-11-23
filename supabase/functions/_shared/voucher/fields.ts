@@ -29,6 +29,12 @@ export interface VoucherBooking {
    */
   email_photo_url?: string | null;
   email_map_url?: string | null;
+  /**
+   * Aviso do estacionamento (`location.partner_notice_md`, Markdown restrito): política do
+   * parceiro que o cliente precisa saber antes de chegar, como cobrança por mala extra. Sai no
+   * e-mail e no PDF só quando preenchido (docs/specs/aviso-do-estacionamento.md).
+   */
+  partner_notice_md?: string | null;
 }
 
 export interface ParkingLogo {
@@ -169,7 +175,7 @@ export const VOUCHER_BOOKING_STATUSES = ["confirmed", "checked_in", "completed"]
 /** Select padrão para montar o voucher (mesmas colunas no caminho RLS e no service role). */
 export const VOUCHER_BOOKING_SELECT =
   `id, code, status, check_in_at, check_out_at, total_amount, currency,
-   location:location!inner(name, address, logo_url, logo_dark_url, latitude, longitude, photos,
+   location:location!inner(name, address, logo_url, logo_dark_url, latitude, longitude, photos, partner_notice_md,
      company:company!inner(name, logo_url, logo_dark_url)),
    vehicle:vehicle(license_plate, model),
    items:booking_item(item_type, parking_type:parking_type(name))`;
@@ -198,5 +204,6 @@ export function mapBookingRowToVoucher(b: any): VoucherBooking {
     location_photo: Array.isArray(b.location.photos) && typeof b.location.photos[0] === "string"
       ? b.location.photos[0]
       : null,
+    partner_notice_md: typeof b.location.partner_notice_md === "string" ? b.location.partner_notice_md : null,
   };
 }

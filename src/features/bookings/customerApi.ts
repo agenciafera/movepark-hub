@@ -181,6 +181,8 @@ export type MyBookingDetail = MyBookingListItem & {
     email: string | null;
     notice: string | null;
     reservation_policy: string | null;
+    /** Aviso do estacionamento (Markdown restrito), repetido no voucher da conta. */
+    partner_notice_md: string | null;
     latitude: number | null;
     longitude: number | null;
     /** Minutos que a unidade segura a vaga após o horário do check-in. */
@@ -203,7 +205,7 @@ export function useBookingDetail(code: string | undefined) {
            fare_extensions:booking_fare_extension(id, kind, new_check_out_at, requested_check_out_at, overage_daily_cents, overage_cents, actual_check_out_at, overage_charged_cents),
            guarantee_claims:guarantee_claim(id, status, opened_at),
            location:location!inner(
-             name, slug, address, phone, email, notice, reservation_policy,
+             name, slug, address, phone, email, notice, reservation_policy, partner_notice_md,
              latitude, longitude, tolerance_minutes, logo_url, logo_dark_url,
              company:company!inner(name, slug, logo_url, logo_dark_url)
            ),
@@ -286,6 +288,7 @@ export function useBookingDetail(code: string | undefined) {
           email: r.location.email,
           notice: r.location.notice,
           reservation_policy: r.location.reservation_policy,
+          partner_notice_md: r.location.partner_notice_md ?? null,
           latitude: r.location.latitude != null ? Number(r.location.latitude) : null,
           longitude: r.location.longitude != null ? Number(r.location.longitude) : null,
           tolerance_minutes:

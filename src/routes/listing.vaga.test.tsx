@@ -60,6 +60,7 @@ function linha(
       shuttle_frequency_minutes: null,
       shuttle_to_terminal_minutes: null,
       reservation_policy: null,
+      partner_notice_md: null,
       checkout_mode: "hub",
       go2park_enabled: false,
       go2park_whatsapp: null,

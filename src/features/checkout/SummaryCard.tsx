@@ -1,4 +1,6 @@
-import { ArrowSquareOut, ShieldCheck, Storefront } from "@phosphor-icons/react";
+import { ArrowSquareOut, Info, ShieldCheck, Storefront } from "@phosphor-icons/react";
+import { MarkdownRestrito } from "@/components/shared/MarkdownRestrito";
+import { temAviso } from "@/lib/markdownRestrito";
 import { formatBRL, formatDuration } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import {
@@ -210,6 +212,25 @@ export function SummaryCard({ booking, bare }: Props) {
       <p className="mt-2 text-caption-sm leading-relaxed text-muted">
         {cancellationPolicyLines(booking.check_in_at, booking.fare_cancel_until).join(" ")}
       </p>
+
+      {/* Aviso do estacionamento: a política do parceiro (ex.: cobrança por mala extra) tem que
+          chegar antes do pagamento, discreta e separada da política de cancelamento, que é regra
+          da Movepark. Vazio = nada aparece. Ver docs/specs/aviso-do-estacionamento.md. */}
+      {temAviso(booking.location.partner_notice_md) && (
+        <div
+          className="mt-4 rounded-md border border-hairline bg-surface-soft px-3 py-2.5"
+          data-testid="checkout-partner-notice"
+        >
+          <p className="flex items-center gap-1.5 text-caption font-semibold text-ink">
+            <Info className="h-4 w-4 shrink-0 text-mp-indigo" aria-hidden />
+            Aviso do estacionamento
+          </p>
+          <MarkdownRestrito
+            markdown={booking.location.partner_notice_md}
+            className="mt-1.5 text-caption-sm leading-relaxed text-body"
+          />
+        </div>
+      )}
     </>
   );
 

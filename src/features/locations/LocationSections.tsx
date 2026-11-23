@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageGalleryField } from "@/components/shared/ImageUpload";
+import { MarkdownRestrito } from "@/components/shared/MarkdownRestrito";
+import { AVISO_MAX_CHARS, temAviso } from "@/lib/markdownRestrito";
 import { uploadCompanyAsset } from "@/lib/storage";
 import { useAdminDestinations } from "@/features/destinations/api";
 import { uuidOuNulo } from "./useLocationForm";
@@ -344,6 +346,40 @@ export function LocationSections({
             placeholder="Ex.: Chegue com 15 minutos de antecedência para o check-in no balcão."
           />
         </Field>
+      </Section>
+
+      <Section
+        title="Aviso do estacionamento"
+        description="Regra do estacionamento que o cliente precisa saber antes de chegar, como cobrança por mala extra. Sai na página da unidade, no checkout, no e-mail de confirmação e no voucher. Vazio, nada aparece."
+      >
+        <Field
+          label={<span className="sr-only">Aviso do estacionamento</span>}
+          htmlFor="partner-notice"
+          wide
+          hint="Negrito com **texto**, itálico com _texto_, lista começando a linha com - e link com [texto](https://...). Cada linha vira um parágrafo."
+        >
+          <Textarea
+            id="partner-notice"
+            value={f.partnerNotice}
+            maxLength={AVISO_MAX_CHARS}
+            onChange={(e) => f.setPartnerNotice(e.target.value)}
+            placeholder="Ex.: **Malas extras são cobradas pelo estacionamento.** A van leva até 2 malas por pessoa."
+          />
+          <p className="text-right text-caption text-muted" aria-live="polite">
+            {f.partnerNotice.length} / {AVISO_MAX_CHARS}
+          </p>
+        </Field>
+        {temAviso(f.partnerNotice) && (
+          <div className="tablet:col-span-2" data-testid="partner-notice-preview">
+            <p className="mb-1.5 text-caption font-semibold text-ink">Como o cliente vai ver</p>
+            <div className="rounded-md border border-hairline bg-surface-soft p-4">
+              <MarkdownRestrito
+                markdown={f.partnerNotice}
+                className="text-body-md text-body"
+              />
+            </div>
+          </div>
+        )}
       </Section>
 
       {!operatorMode && (

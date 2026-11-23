@@ -35,6 +35,7 @@ location
 ├── id, company_id → company
 ├── name, slug (unique per company), address, latitude, longitude, timezone
 ├── phone, email, notice/has_notice, reservation_policy, photos (jsonb)
+├── partner_notice_md: aviso do estacionamento (Markdown restrito), ver aviso-do-estacionamento.md
 ├── destination_id → destination (âncora de proximidade, DAT-04), geog (PostGIS)
 ├── directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes  — "Como chegar" (PRD-11)
 ├── status: entity_status
@@ -199,6 +200,7 @@ As tabelas abaixo ainda não foram criadas e são necessárias:
 | `near_capacity_threshold`, `near_capacity_message` | `location_parking_type` | [capacity-rules.md](./capacity-rules.md) |
 | `photos` (jsonb array, default `[]`) | `location_parking_type` | [customer/listing-detail.md](./customer/listing-detail.md) §4 |
 | `reservation_policy`, `has_notice`, `notice` | `location` | [capacity-rules.md](./capacity-rules.md) |
+| `partner_notice_md` (Markdown restrito, até 2.000 chars, sem HTML cru) | `location` | [aviso-do-estacionamento.md](./aviso-do-estacionamento.md) |
 
 ### Futuro (fora do MVP)
 

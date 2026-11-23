@@ -276,6 +276,9 @@ POST /webhooks/payment/{provider}
 - Gera voucher / QR code (**gerador único**, idempotente por reserva; ver
   [voucher-qrcode.md](./voucher-qrcode.md)) + envia confirmação. O webhook perdido é coberto pela
   Edge `reconcile-confirmations` (pg_cron, a cada 15 min)
+- O e-mail de confirmação e o voucher repetem o **aviso do estacionamento** da unidade
+  (`location.partner_notice_md`), quando existe: política do parceiro que o cliente já viu no
+  checkout e precisa reler antes de chegar. Ver [aviso-do-estacionamento.md](./aviso-do-estacionamento.md)
 
 ### 5. Check-in (QR escaneado) — ✅ implementado
 

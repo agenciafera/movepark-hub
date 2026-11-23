@@ -14,6 +14,7 @@ import {
   type VoucherBooking,
 } from "./fields.ts";
 import { activeAccessCode } from "../integrations/access-code.ts";
+import { markdownRestritoToLinhas } from "../markdown-restrito.ts";
 
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
@@ -156,6 +157,25 @@ export async function buildVoucherPdf(
 
   // Rodapé: a Movepark, pequena, no pé da folha.
   const fy = 48;
+
+  // Aviso do estacionamento (docs/specs/aviso-do-estacionamento.md), só quando preenchido: a
+  // política do parceiro que o cliente precisa saber antes de chegar, em texto puro (o PDF não
+  // tem marcação). A folha é uma só, então o que não cabe acima do rodapé fecha com "...".
+  const aviso = linhasDoAviso(voucher.partner_notice_md, width - 2 * M, (t) => helv.widthOfTextAtSize(t, 10));
+  if (aviso.length) {
+    y -= 6;
+    page.drawLine({ start: { x: M, y }, end: { x: width - M, y }, thickness: 1, color: hair });
+    y -= 24;
+    page.drawText("Aviso do estacionamento", { x: M, y, size: 11, font: helvB, color: ink });
+    y -= 18;
+    const limite = fy + 36;
+    for (let i = 0; i < aviso.length; i++) {
+      if (y < limite) break;
+      const ultima = y - 14 < limite && i < aviso.length - 1;
+      page.drawText(ultima ? `${aviso[i]}...` : aviso[i], { x: M, y, size: 10, font: helv, color: ink });
+      y -= 14;
+    }
+  }
   page.drawLine({ start: { x: M, y: fy + 22 }, end: { x: width - M, y: fy + 22 }, thickness: 1, color: hair });
   const pre = "Reserva feita pela ";
   const preW = helv.widthOfTextAtSize(pre, 9);
@@ -166,6 +186,24 @@ export async function buildVoucherPdf(
   page.drawText(mark, { x: fx + preW, y: fy, size: 11, font: helvB, color: ink });
 
   return await pdf.save();
+}
+
+/**
+ * Linhas do aviso prontas para a fonte padrão do PDF: Markdown restrito vira texto puro, cada
+ * parágrafo ou item quebra na largura da folha, e caractere fora do WinAnsi (emoji, por exemplo)
+ * sai, porque a Helvetica embutida não o codifica e o pdf-lib lançaria.
+ */
+export function linhasDoAviso(
+  md: string | null | undefined,
+  maxWidth: number,
+  measure: (t: string) => number,
+): string[] {
+  const seguro = (t: string) =>
+    t.replace(/[^\x20-\x7E\u00A0-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026]/g, "").trim();
+  return markdownRestritoToLinhas(md).flatMap((linha) => {
+    const s = seguro(linha);
+    return s ? wrapText(s, maxWidth, measure) : [];
+  });
 }
 
 /** Quebra o texto por palavra para caber em `maxWidth`. Palavra maior que a linha fica inteira. */

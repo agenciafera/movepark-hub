@@ -47,6 +47,7 @@ function booking(breakdown: PriceBreakdown | null, parkingSubtotal = 151.4): Boo
       ads_conversion_id: null,
       ads_conversion_label: null,
       ga4_measurement_id: null,
+      partner_notice_md: null,
     },
     items: [
       {
@@ -203,5 +204,20 @@ describe("SummaryCard", () => {
       />,
     );
     expect(screen.queryByText("Operado por")).not.toBeInTheDocument();
+  });
+
+  it("aviso do estacionamento aparece no resumo, com negrito e lista, só quando preenchido", () => {
+    const b = booking(null);
+    const { unmount } = renderWithProviders(<SummaryCard booking={b} />);
+    expect(screen.queryByTestId("checkout-partner-notice")).not.toBeInTheDocument();
+    unmount();
+
+    const com = booking(null);
+    com.location.partner_notice_md = "**Malas extras** são cobradas pelo estacionamento.\n- Até 2 por pessoa";
+    renderWithProviders(<SummaryCard booking={com} bare />);
+    const bloco = screen.getByTestId("checkout-partner-notice");
+    expect(bloco).toHaveTextContent("Aviso do estacionamento");
+    expect(bloco.querySelector("strong")?.textContent).toBe("Malas extras");
+    expect(bloco.querySelector("li")?.textContent).toBe("Até 2 por pessoa");
   });
 });

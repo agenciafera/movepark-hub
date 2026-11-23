@@ -262,3 +262,42 @@ describe("LocationForm — seção Conversão e mídia paga", () => {
     });
   });
 });
+
+/**
+ * Aviso do estacionamento (docs/specs/aviso-do-estacionamento.md): o parceiro escreve Markdown
+ * restrito e vê na hora como o cliente vai ler. O campo é do admin E do operador, porque a regra
+ * é do parceiro.
+ */
+describe("LocationForm — aviso do estacionamento", () => {
+  const AVISO = /^Aviso do estacionamento$/;
+
+  it("mostra o campo nos dois escopos (hub_admin e operador)", () => {
+    const { unmount } = renderWithProviders(
+      <LocationForm open companyId="company-1" location={location} onOpenChange={() => {}} editableScope="full" />,
+    );
+    expect(screen.getByRole("textbox", { name: AVISO })).toBeInTheDocument();
+    unmount();
+    renderWithProviders(
+      <LocationForm open companyId="company-1" location={location} onOpenChange={() => {}} editableScope="operator" />,
+    );
+    expect(screen.getByRole("textbox", { name: AVISO })).toBeInTheDocument();
+  });
+
+  it("sem texto não há preview; com Markdown o preview sai com negrito e lista, sem HTML cru", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <LocationForm open companyId="company-1" location={location} onOpenChange={() => {}} editableScope="full" />,
+    );
+    expect(screen.queryByTestId("partner-notice-preview")).not.toBeInTheDocument();
+
+    const campo = screen.getByRole("textbox", { name: AVISO });
+    await user.click(campo);
+    await user.paste("**Malas extras** são cobradas.\n- Até 2 por pessoa\n<b>cru</b>");
+
+    const preview = await screen.findByTestId("partner-notice-preview");
+    expect(preview.querySelector("strong")?.textContent).toBe("Malas extras");
+    expect(preview.querySelector("li")?.textContent).toBe("Até 2 por pessoa");
+    expect(preview.querySelector("b")).toBeNull();
+    expect(preview.textContent).toContain("<b>cru</b>");
+  });
+});

@@ -257,6 +257,8 @@ type Snapshot = {
   shuttleFrequency: string;
   shuttleToTerminal: string;
   reservationPolicy: string;
+  /** Aviso do estacionamento (Markdown restrito), docs/specs/aviso-do-estacionamento.md. */
+  partnerNotice: string;
   destinationId: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -305,6 +307,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
   const [shuttleFrequency, setShuttleFrequency] = React.useState("");
   const [shuttleToTerminal, setShuttleToTerminal] = React.useState("");
   const [reservationPolicy, setReservationPolicy] = React.useState("");
+  const [partnerNotice, setPartnerNotice] = React.useState("");
   const [destinationId, setDestinationId] = React.useState<string | null>(null);
   // A pessoa mexeu no campo de destino nesta sessão de edição? Só `onValueChange` liga isto, e é
   // o que separa "escolheu Nenhum" de "o formulário perdeu o valor sozinho".
@@ -362,6 +365,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
           ? String(location.shuttle_to_terminal_minutes)
           : "",
       reservationPolicy: location?.reservation_policy ?? "",
+      partnerNotice: location?.partner_notice_md ?? "",
       destinationId: location?.destination_id ?? null,
       latitude: location?.latitude ?? null,
       longitude: location?.longitude ?? null,
@@ -394,6 +398,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     setShuttleFrequency(baseline.shuttleFrequency);
     setShuttleToTerminal(baseline.shuttleToTerminal);
     setReservationPolicy(baseline.reservationPolicy);
+    setPartnerNotice(baseline.partnerNotice);
     setDestinationId(baseline.destinationId);
     setDestinationTouched(false);
     setLatitude(baseline.latitude);
@@ -433,6 +438,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
     shuttleFrequency,
     shuttleToTerminal,
     reservationPolicy,
+    partnerNotice,
     destinationId,
     latitude,
     longitude,
@@ -519,6 +525,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       email: email || null,
       notice: notice || null,
       reservation_policy: reservationPolicy || null,
+      partner_notice_md: partnerNotice.trim() || null,
       has_notice: !!notice,
       destination_id: uuidOuNulo(destinationId),
       company_id: companyId,
@@ -552,6 +559,7 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       email: email || null,
       notice: notice || null,
       reservation_policy: reservationPolicy || null,
+      partner_notice_md: partnerNotice.trim() || null,
       has_notice: !!notice,
       latitude,
       longitude,
@@ -646,6 +654,8 @@ export function useLocationForm({ companyId, location, operatorMode, onSaved }: 
       setShuttleToTerminal,
       reservationPolicy,
       setReservationPolicy,
+      partnerNotice,
+      setPartnerNotice,
       destinationId,
       setDestinationId: (v: string | null) => {
         setDestinationTouched(true);

@@ -61,6 +61,7 @@ O voucher é gerado automaticamente ao receber confirmação de pagamento (`book
 | Placa do veículo | `vehicle.license_plate` (se informado) |
 | Valor pago | `booking.total_amount` |
 | Passageiros / PCD | `booking.passenger_count`, `booking.has_pcd` |
+| Aviso do estacionamento | `location.partner_notice_md`, só quando preenchido: texto puro no PDF (depois dos campos, acima do rodapé), Markdown restrito no voucher da conta. Ver [aviso-do-estacionamento.md](./aviso-do-estacionamento.md) |
 
 ### Armazenamento
 

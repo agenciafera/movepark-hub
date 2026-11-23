@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Link, useLoaderData, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowRight, Buildings, Bus, CalendarX, Car, Heart, MapPin, SealCheck, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowRight, Buildings, Bus, CalendarX, Car, Heart, Info, MapPin, SealCheck, ShieldCheck } from "@phosphor-icons/react";
+import { MarkdownRestrito } from "@/components/shared/MarkdownRestrito";
+import { temAviso } from "@/lib/markdownRestrito";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -608,6 +610,26 @@ export default function ListingPage() {
               </p>
             )}
           </section>
+
+          {/* Aviso do estacionamento: política do parceiro que o cliente precisa saber antes de
+              chegar (ex.: cobrança por mala extra). É fato da unidade, não promessa de transação,
+              então renderiza em qualquer modo de checkout (ADR-009) e fica fora dos blocos de
+              garantia e cancelamento. Vazio = a seção não existe. Pré-renderizado no build. */}
+          {temAviso(listing.location.partner_notice_md) && (
+            <>
+              <Separator />
+              <section className="space-y-4" id="aviso-do-estacionamento" data-testid="partner-notice">
+                <h2 className="text-display-sm text-ink">Aviso do estacionamento</h2>
+                <div className="flex gap-3 rounded-md border border-hairline bg-surface-soft p-4">
+                  <Info className="mt-0.5 h-5 w-5 shrink-0 text-mp-indigo" aria-hidden />
+                  <MarkdownRestrito
+                    markdown={listing.location.partner_notice_md}
+                    className="min-w-0 text-body-md text-body"
+                  />
+                </div>
+              </section>
+            </>
+          )}
 
           {/* Avaliações Movepark: só aparecem quando a unidade já tem pelo menos uma. Parceiro
               novo não mostra "Seja o primeiro a avaliar" (decisão do Kallef, 04/11/2026): o

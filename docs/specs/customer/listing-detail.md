@@ -206,6 +206,15 @@ Campos novos do PRD-11 são editáveis no `LocationForm` (admin **e** operador �
 Distância **não** vem daqui — é proximidade calculada (DAT-04). Migration
 `20260620000000_location_directions_prd11.sql`.
 
+### 5.5a Aviso do estacionamento ✅ (23/11/2026)
+
+Seção própria, logo depois de "Como chegar", só quando `location.partner_notice_md` está
+preenchido: política do parceiro que o cliente precisa saber antes de chegar (ex.: cobrança por
+mala extra), em Markdown restrito renderizado por `MarkdownRestrito`. É **fato da unidade**, não
+promessa de transação: aparece também na unidade externa (ADR-009) e fica fora dos blocos de
+garantia e cancelamento. Não confundir com o aviso crítico de entrada (`notice`) do item 1 acima.
+Ver [aviso-do-estacionamento.md](../aviso-do-estacionamento.md).
+
 ### 5.5b Sobre a garantia
 ✅ **Implementado (PRD-14).** Seção "Sobre a garantia" + selo "Vaga garantida" no reservation card,
 **oculto quando esgotado** para o período (amarrado ao `check_availability`). Ver

@@ -87,6 +87,12 @@ export type ListingDetail = {
     shuttle_frequency_minutes: number | null;
     shuttle_to_terminal_minutes: number | null;
     reservation_policy: string | null;
+    /**
+     * Aviso do estacionamento (Markdown restrito): política do parceiro que o cliente precisa saber
+     * antes de chegar. Fato da unidade, renderiza sempre que preenchido (ADR-009 não bloqueia).
+     * Ver docs/specs/aviso-do-estacionamento.md.
+     */
+    partner_notice_md: string | null;
     /** Onde a reserva desta unidade fecha (E0.14). Fonte primária das capacidades (ADR-009). */
     checkout_mode: string;
     /**
@@ -155,7 +161,7 @@ const baseSelect = `
   location:location!inner(
     id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours, is_24h,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
-    reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
+    reservation_policy, partner_notice_md, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
     review_avg, review_count, photos, is_draft, ga4_measurement_id, logo_url, logo_dark_url,
     company:company!inner(id, slug, name, legal_name, tax_id, created_at, logo_url, logo_dark_url),
     destination:destination!inner(seo_label, short_name, name, type, city, code, public_slug),
@@ -309,6 +315,7 @@ export async function fetchListing(
           ? Number(m.location.shuttle_to_terminal_minutes)
           : null,
       reservation_policy: m.location.reservation_policy,
+      partner_notice_md: m.location.partner_notice_md ?? null,
       timezone: m.location.timezone,
       latitude: m.location.latitude != null ? Number(m.location.latitude) : null,
       longitude: m.location.longitude != null ? Number(m.location.longitude) : null,

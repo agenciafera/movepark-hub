@@ -83,6 +83,11 @@ export type BookingForCheckout = {
     ads_conversion_label: string | null;
     /** ID da métrica do GA4 do parceiro, que recebe cópia dos eventos do checkout. */
     ga4_measurement_id: string | null;
+    /**
+     * Aviso do estacionamento (Markdown restrito), mostrado no resumo antes de pagar. Nulo = nada.
+     * Ver docs/specs/aviso-do-estacionamento.md.
+     */
+    partner_notice_md: string | null;
   };
   items: {
     id: string;
@@ -128,6 +133,7 @@ export function useCheckoutBooking(code: string | undefined) {
            commission_installments_max, commission_installments_interest_free,
            location:location!inner(id, slug, name, address, photos, checkout_mode, public_name,
              ads_conversion_id, ads_conversion_label, ga4_measurement_id, logo_url, logo_dark_url,
+             partner_notice_md,
              company:company!inner(slug, name, logo_url, logo_dark_url),
              destination:destination(code, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
@@ -188,6 +194,7 @@ export function useCheckoutBooking(code: string | undefined) {
           ads_conversion_id: row.location?.ads_conversion_id ?? null,
           ads_conversion_label: row.location?.ads_conversion_label ?? null,
           ga4_measurement_id: row.location?.ga4_measurement_id ?? null,
+          partner_notice_md: row.location?.partner_notice_md ?? null,
           logo: resolveParkingLogo(row.location, row.location?.company),
         },
         items: (row.items ?? []).map(
