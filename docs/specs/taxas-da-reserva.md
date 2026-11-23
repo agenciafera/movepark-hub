@@ -5,7 +5,8 @@
 Em 23/11/2026 ficou decidido que, antes de mandar qualquer tabela para fora, a explicação nasce
 **dentro do Manager**, para a equipe conferir o que vai aparecer. A visão do estacionamento
 (Operator) é uma etapa posterior e não faz parte desta spec.
-**Estado:** desenho aprovado em 23/11/2026, implementação não iniciada.
+**Estado:** implementado em 23/11/2026 (commits `28597bf1`, `d3773446`, `7bdcd446`, `e76e40c1`,
+`dc089ed6`). Plano: [`docs/superpowers/plans/2026-11-23-taxas-da-reserva.md`](../superpowers/plans/2026-11-23-taxas-da-reserva.md).
 **Relacionadas:** [payment-split.md](./payment-split.md) (split, parcelamento, ADR-004),
 [rastro-do-gateway.md](./rastro-do-gateway.md) (de onde vêm os recebíveis),
 [antecipacao-do-parceiro.md](./antecipacao-do-parceiro.md) (quem paga a antecipação),
@@ -60,7 +61,9 @@ Abre pelo botão "Ver taxas" no card Valores, só na audiência `manager`. Quatr
    - **Cartão ou Pix (Pagar.me):** soma do `fee` dos recebíveis de crédito. A regra mostra o
      percentual **efetivo desta venda** (taxa dividida pelo valor cobrado) e, ao lado, o
      contratado da faixa. Se diferirem em mais de 0,05 ponto percentual, a linha ganha o aviso
-     "diferente do contrato". Quem paga: `commission_fee_payer`.
+     "diferente do contrato". Quem paga: quem o split mandou à Pagar.me como pagador da taxa
+     (`chargeProcessingFee` da perna do estacionamento, o mesmo `feePayer` do card Valores), que
+     nasce de `commission_fee_payer`. Ler do split, e não da coluna, mostra o que de fato foi cobrado.
    - **Antecipação (Pagar.me):** soma do `anticipation_fee`, separada por perna (estacionamento e
      Movepark) e com a data em que o dinheiro entrou. Quem paga: `commission_anticipation_payer`;
      quando é a Movepark, a linha diz quanto ela devolveu ao estacionamento
@@ -118,10 +121,12 @@ Ao lado de cada taxa, a coluna **"Medido nas vendas (90 dias)"**, vinda da RPC n
 - `SECURITY DEFINER`, só `hub_admin` (os demais recebem `42501`), `revoke` nominal de `anon` e
   `authenticated` antes do `grant` (default privileges do Supabase).
 - Lê o **último** evento `payables` de cada pagamento pago ou estornado da Pagar.me no período, só
-  recebíveis de crédito, e devolve por método e faixa de parcelas: quantidade de vendas, MDR
-  efetivo (`sum(fee) / sum(valor cobrado)`) e antifraude médio. Antecipação: taxa efetiva ao mês
-  sobre o líquido, proporcional aos dias corridos entre `payment_date` e `original_payment_date`,
-  só dos recebíveis antecipados.
+  recebíveis de crédito, e devolve **somas** por método e número de parcelas: `sales`,
+  `charged_cents`, `fee_cents` e `fraud_cents`. A taxa por faixa (`sum(fee) / sum(valor cobrado)`)
+  é calculada no front (`measuredForBand`), porque as faixas são configuração: se a RPC dividisse
+  por faixa, mudar uma faixa no Manager exigiria mudar a função. Antecipação: `payables`,
+  `fee_cents`, `base_cents_month` (líquido do recebível vezes dias corridos entre `payment_date` e
+  `original_payment_date`, sobre 30) e `monthly_bps`, só dos recebíveis antecipados.
 - Faixa sem venda no período devolve contagem zero e a tela mostra "sem venda".
 - Diferença acima de 0,05 ponto percentual entre medido e cadastrado ganha destaque na linha.
 
@@ -140,20 +145,26 @@ Ao lado de cada taxa, a coluna **"Medido nas vendas (90 dias)"**, vinda da RPC n
 
 ## Arquitetura
 
-- **Lógica pura** em `src/features/bookings/bookingFees.logic.ts`:
-  - `parsePayables(raw)`, que lê o `response.data` do evento e mapeia para o mesmo formato do
-    `GatewayPayable` do `_shared` mais `originalPaymentDate`, ignorando o que não for crédito;
-  - `buildFeeDetail({ payment, booking, payables, schedule, policy })`, que devolve resumo, linhas
-    de taxa, parcelas, plano de parcelamento e os avisos (diferente do contrato, recebíveis
-    desatualizados, condição da época);
-  - `parseGatewayFeeSchedule(raw)` e `bandFor(schedule, installments)`.
-  A tela só desenha.
-- **Componentes:** `BookingFeesDialog.tsx` (o modal, `Dialog` do shadcn) e o botão no
-  `BookingMoneyCard` quando `audience === "manager"`. Dados: `useBookingGatewayTrail` (já carregado
-  na tela), `useAppSettings` (já existe) e o booking.
-- **Configurações:** bloco `GatewayFeeScheduleForm` na aba Pagamentos de `src/routes/manager/settings.tsx`,
-  gravando pelo `useUpdateAppSettings` que já existe; hook `useGatewayFeeMeasured` em
-  `src/features/settings/api.ts`.
+- **Lógica pura** em dois arquivos (a tela só desenha):
+  - `src/lib/gatewayFees.ts`, usado pela tela de Configurações e pelo modal:
+    `parseGatewayFeeSchedule`, `validateGatewayFeeSchedule`, `bandFor`, `measuredForBand`,
+    `measuredAntifraudCents`, `differsFromContract` (tolerância de 5 bps), `formatBps` e
+    `parseHundredths`;
+  - `src/features/bookings/bookingFees.logic.ts`: `parsePayables(raw)` (o único que conhece o
+    formato da Pagar.me; mapeia para o formato do `GatewayPayable` do `_shared` mais
+    `originalPaymentDate`, só crédito), `latestPayables(events, paymentId)` e
+    `buildFeeDetail({ money, payment, booking, payables, schedule, policy, moveparkRecipientId })`,
+    que devolve resumo, linhas de taxa, parcelas, plano de parcelamento e os avisos. A perna da
+    antecipação é separada pelo recebedor da Movepark (`app_setting.pagarme_movepark_recipient_id`).
+- **Componentes:** `BookingFeesDialog.tsx` (o modal, `Dialog` do shadcn). O `BookingMoneyCard`
+  recebe `onShowFees` e só desenha o botão quando recebe; quem decide é o `BookingDetailView`:
+  audiência `manager`, `effectiveRole === "hub_admin"` (só ele lê o rastro) e pagamento pago ou
+  estornado. O modal só monta ao abrir. Dados: `useBookingGatewayTrail`, `useAppSettings` e o
+  booking. Reserva do white-label não passa por esta tela, então não tem botão.
+- **Configurações:** `src/features/settings/GatewayFeeScheduleSettings.tsx`, encaixado na aba
+  Pagamentos de `src/routes/manager/settings.tsx`, gravando pelo `useUpdateAppSettings` que já
+  existe; hook `useGatewayFeeMeasured` em `src/features/settings/api.ts` (cast localizado, mesmo
+  padrão de `useBookingGatewayTrail`).
 - **Banco:** uma migration só, com a RPC `gateway_fee_measured`. Nenhum valor de taxa vai na
   migration. Depois: `bun run gen:types`.
 - **Gateway:** nada muda. Nenhuma chamada nova à Pagar.me; tudo sai do rastro já gravado
