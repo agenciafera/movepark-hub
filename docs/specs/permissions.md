@@ -245,9 +245,13 @@ placa) e o excedente da proteção de voo, que é o que ele cobra no balcão.
   segurança de 23/11/2026, fechado na mesma entrega.
 - `booking_fare_extension` (proteção de voo) mantém `partner_credit_cents` visível ao balcão: o
   excedente que ele cobra está na mesma linha. Separar é trabalho à parte.
-- `booking_item`, `booking_discount`, `booking_modification` e `vehicle` têm policies que
-  consultam `booking`, então o membro sem `finance:read` também deixou de lê-las direto; o balcão
-  recebe o que precisa (placa, itens do voucher) pelas RPCs.
+- `booking_item`, `booking_discount` e `booking_modification` têm policies que consultam `booking`,
+  então o membro sem `finance:read` também deixou de lê-las direto (têm preço do item, desconto e
+  diferença de troca de datas); o balcão recebe o que precisa (itens do voucher) pelas RPCs. `vehicle`
+  (a placa) e `booking_fare_extension` (o excedente da proteção de voo, que o balcão cobra) não são
+  dinheiro da reserva e continuam legíveis para quem já lia: as policies passaram a chamar os
+  ajudantes `counter_can_see_vehicle()` e `counter_can_see_booking()` (SECURITY DEFINER, mesma regra
+  de antes), em vez de depender da RLS de `booking`. Migrations `20261206140100` e `20261206150000`.
 - A reserva do white-label (`wl_booking`) ainda tem o detalhe em outra RPC, e a policy de SELECT da
   tabela segue o mesmo predicado de `wl-bookings:read` (que a Operação tem), então `total_cents` e
   `paid_total_cents` ainda podem ser lidos direto por quem tem esse escopo. Nesta rodada só a lista

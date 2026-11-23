@@ -19,7 +19,7 @@
 --   5. Anon não executa nada disto.
 
 begin;
-select plan(41);
+select plan(44);
 
 -- ── Fixture ────────────────────────────────────────────────────────────────────────────────
 -- Um usuário por papel, na mesma empresa X; um membro da empresa Y (a vizinha); o cliente dono da
@@ -74,6 +74,10 @@ update public.booking
 insert into public.payment (booking_id, provider, method, amount, status, kind, paid_at, split, gateway_fee_cents)
 values ('00000000-0000-4000-9100-0000000000b1', 'pagarme', 'pix', 123.45, 'paid', 'booking', now(),
         '[{"role":"partner","amount":10000},{"role":"movepark","amount":2345}]'::jsonb, 117);
+
+-- Extensão de saída da proteção de voo da reserva X: o excedente que o balcão cobra.
+insert into public.booking_fare_extension (booking_id, old_check_out_at, new_check_out_at, overage_cents, overage_daily_cents)
+values ('00000000-0000-4000-9100-0000000000b1', now() + interval '3 days', now() + interval '4 days', 2790, 2790);
 
 -- ── 1. Policies: Operação não lê a tabela; quem tem finance:read lê ─────────────────────────
 set local role authenticated;
@@ -151,6 +155,10 @@ select is_empty(
   $$ select 1 from public.payment where booking_id = '00000000-0000-4000-9100-0000000000b1' $$,
   'o dono da empresa vizinha não lê o pagamento da empresa X'
 );
+select is_empty(
+  $$ select 1 from public.booking_fare_extension where booking_id = '00000000-0000-4000-9100-0000000000b1' $$,
+  'o dono da empresa vizinha não lê a extensão da empresa X'
+);
 
 reset role;
 -- Sem sessão: nada de `sub` nos claims (o do teste anterior ficaria valendo para o anon).
@@ -167,6 +175,16 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9100-0000000
 select is(
   jsonb_array_length(public.operator_bookings_by_ids(array['00000000-0000-4000-9100-0000000000b1', '00000000-0000-4000-9100-0000000000b2']::uuid[])), 1,
   'por ids, Operação recebe só a reserva da própria empresa (a da vizinha fica de fora)'
+);
+-- A extensão da proteção de voo (o excedente que o balcão cobra) segue legível pelo balcão, pela policy
+-- de bookings:read, mesmo sem ele ler a reserva (20261206150000).
+select is(
+  (select overage_cents from public.booking_fare_extension where booking_id = '00000000-0000-4000-9100-0000000000b1'), 2790,
+  'Operação lê o excedente da proteção de voo da própria empresa'
+);
+select is(
+  (select jsonb_array_length(public.operator_bookings_by_ids(array['00000000-0000-4000-9100-0000000000b1']::uuid[]) -> 0 -> 'fare_extensions')), 1,
+  'e a RPC do balcão traz a extensão junto da reserva'
 );
 select is(
   (public.operator_bookings_by_ids(array['00000000-0000-4000-9100-0000000000b1']::uuid[])) -> 0 ->> 'code', 'MP-LDX001',
@@ -325,7 +343,8 @@ select is(
        'public.counter_company_ids()',
        'public.finance_company_ids()',
        'public.counter_booking_json(uuid, boolean)',
-       'public.counter_can_see_vehicle(uuid)'
+       'public.counter_can_see_vehicle(uuid)',
+       'public.counter_can_see_booking(uuid)'
      ]) f
     where has_function_privilege('anon', f::regprocedure, 'execute')),
   0,

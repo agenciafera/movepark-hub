@@ -68,7 +68,10 @@ select set_config('request.jwt.claims', json_build_object('sub', current_setting
 select is((select count(*)::int from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), 1, 'o operador da empresa enxerga a extensão');
 select lives_ok(format($f$select public.operator_record_flight_checkout(%L::uuid, now() - interval '30 hours', %s, null)$f$, current_setting('test.bk'), current_setting('test.daily')),
   'o operador registra a saída real e o valor cobrado');
-select is((select status::text || '|' || (checked_out_at is not null)::text from public.booking where id = current_setting('test.bk')::uuid), 'completed|true', 'a reserva é concluída com a hora real');
+-- O balcão não lê `booking` pela tabela (leitura_dinheiro_por_escopo): o estado volta pela RPC dele.
+select is((select (e ->> 'status') || '|' || ((e ->> 'checked_out_at') is not null)::text
+             from (select public.operator_bookings_by_ids(array[current_setting('test.bk')::uuid]) -> 0 as e) x),
+          'completed|true', 'a reserva é concluída com a hora real');
 select is((select overage_cents || '|' || overage_charged_cents from public.booking_fare_extension where booking_id = current_setting('test.bk')::uuid), current_setting('test.daily') || '|' || current_setting('test.daily'),
   'saída real 5h depois da coberta (-35h): 1 dia de excedente, cobrado');
 select throws_ok(format($f$select public.operator_record_flight_checkout(%L::uuid, now(), 0, null)$f$, current_setting('test.bk')), 'P0001', null, 'não registra duas vezes');

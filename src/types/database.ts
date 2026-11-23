@@ -9548,6 +9548,14 @@ export type Database = {
         Returns: Json
       }
       counter_can_open_booking: { Args: { p_code: string }; Returns: boolean }
+      counter_can_see_booking: {
+        Args: { p_booking_id: string }
+        Returns: boolean
+      }
+      counter_can_see_vehicle: {
+        Args: { p_vehicle_id: string }
+        Returns: boolean
+      }
       counter_company_ids: { Args: never; Returns: string[] }
       coupon_assert_company_access: {
         Args: { p_company_id: string }
