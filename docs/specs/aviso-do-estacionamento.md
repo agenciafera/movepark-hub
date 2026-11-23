@@ -63,6 +63,8 @@ mesmo `temAviso()` antes de desenhar qualquer coisa.
 | E-mail de confirmação | `tplBookingConfirmation`, entre o bloco da unidade e o resumo da reserva | `partnerNoticeBlock`: caixa com borda violeta à esquerda, título "Aviso do estacionamento" e o HTML inline escapado |
 | Voucher PDF (anexo do e-mail e bucket) | depois dos campos da reserva, acima do rodapé | título e linhas de texto puro (`•` e `1.`), quebradas na largura da folha. O que não cabe acima do rodapé fecha com "..."; caractere fora do WinAnsi (emoji) sai, porque a Helvetica embutida não o codifica |
 | Voucher na conta (`/bookings/:code`) | abaixo dos campos do bilhete | `MarkdownRestrito` em caixa cinza, o mesmo texto do PDF |
+| FAQ da unidade (`get-faq`, escopo `auto`) | pergunta "O estacionamento tem alguma regra que eu preciso saber antes de chegar?" | resposta em texto puro (`avisoAutoAnswer`), a mesma que vai ao `FAQPage` do JSON-LD. A pergunta é outra que a da política de reserva, então o ADR-002 não deduplica |
+| Mia | `get_location_info` devolve `partner_notice_md`; a base de conhecimento indexa a fonte `location_partner_notice` | trigger `location_knowledge_enqueue` (migration `20261206130000`), worker `knowledge-embed` lê como texto puro |
 
 O dado chega às Edges pelo `VOUCHER_BOOKING_SELECT` e `mapBookingRowToVoucher`
 (`_shared/voucher/fields.ts`, campo `partner_notice_md` do `VoucherBooking`). Como o template é
@@ -94,13 +96,25 @@ e entram no texto quando ela confirmar.
 | Formulário (dois escopos, preview) | `src/features/locations/LocationForm.test.tsx`, `src/routes/operator/location-edit.test.tsx` |
 | Banco (coluna, constraints, escopo, trigger) | `supabase/tests/aviso_do_estacionamento.test.sql` |
 
+## O campo vizinho: política de reserva do parceiro
+
+`location.reservation_policy` esteve rotulado "Observações da unidade" de 14/08/2026 (D-007) a
+23/11/2026, mas é e sempre foi a **política de reserva do parceiro**: quatro unidades externas
+(Nationpark Afonso Pena, Aerovalet Congonhas, Aerovalet Tietê, Aeropark Guarulhos) guardam ali a
+regra de reembolso de quem fecha a reserva no site do estacionamento. Ela entra na FAQ automática
+("Qual a política de reserva deste estacionamento?"), na base da Mia (`location_policy`) e, na
+unidade que fecha na Movepark, como complemento da coluna "Política de cancelamento" da ficha. O
+rótulo voltou a dizer isso. Os dois campos convivem porque falam de coisas diferentes: um é regra
+de dinheiro de reserva que a Movepark não intermedeia; o outro é regra operacional que vale em
+qualquer modo de checkout e viaja com a reserva.
+
 ## Fora desta entrega
 
-- **Base de conhecimento da Mia.** O trigger `location_knowledge_enqueue` indexa `directions_text`,
-  `notice` e `reservation_policy`, não esta coluna. A Mia só responde sobre o aviso quando ganhar
-  uma fonte `location_partner_notice` em `knowledge-embed` e no trigger.
 - **Public API e MCP.** `api_update_location` e `get_location_info` não leem nem escrevem o campo.
   Entrar lá exige o checklist do ADR-003 (OpenAPI, card, escopo, doc).
 - **Gêmeo Markdown da ficha** (`scripts/generate-geo-artifacts.mjs`): o `.md` da unidade ainda não
   inclui o aviso.
 - **Lembretes** (`booking-reminders`): o lembrete de entrada, 24h antes, não repete o aviso.
+
+A migration `20261206130000_aviso_na_base_da_mia.sql` (trigger da fila da Mia) foi aplicada no vivo
+em 23/11/2026 do mesmo jeito que a primeira: `execute_sql`, fora do histórico remoto.

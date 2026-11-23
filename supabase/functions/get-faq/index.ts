@@ -23,6 +23,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { describeBusinessHours } from "./hours.ts";
+import { AVISO_QUESTION, avisoAutoAnswer } from "./aviso.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -103,6 +104,7 @@ type LocationRow = {
   notice: string | null;
   has_notice: boolean | null;
   reservation_policy: string | null;
+  partner_notice_md: string | null;
   latitude: number | null;
   longitude: number | null;
   google_maps_url: string | null;
@@ -134,7 +136,7 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
     supa
       .from("location")
       .select(
-        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, latitude, longitude, google_maps_url, is_24h, business_hours, tolerance_minutes",
+        "id, name, address, phone, email, timezone, notice, has_notice, reservation_policy, partner_notice_md, latitude, longitude, google_maps_url, is_24h, business_hours, tolerance_minutes",
       )
       .eq("id", locationId)
       .maybeSingle(),
@@ -336,6 +338,22 @@ async function buildAutoFaq(supa, locationId: string): Promise<FaqItem[]> {
       question: "Qual a política de reserva deste estacionamento?",
       answer: L.reservation_policy,
       sort_order: 8,
+      category: AUTO_CATEGORY,
+    });
+  }
+
+  // 9) Aviso do estacionamento (regra do parceiro, ex.: bagagem na van). A mesma fonte da
+  // seção própria da ficha, do checkout, do e-mail e do voucher; aqui em texto puro.
+  const aviso = avisoAutoAnswer(L.partner_notice_md);
+  if (aviso) {
+    items.push({
+      id: `auto:${L.id}:partner-notice`,
+      scope: "auto",
+      location_id: L.id,
+      destination_id: null,
+      question: AVISO_QUESTION,
+      answer: aviso,
+      sort_order: 9,
       category: AUTO_CATEGORY,
     });
   }

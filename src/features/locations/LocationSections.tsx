@@ -332,25 +332,25 @@ export function LocationSections({
       </Section>
 
       <Section
-        title="Observações da unidade"
-        description="Informação extra que o cliente lê no detalhe da unidade. Cancelamento e reembolso são regra fixa da Movepark, não deste campo."
+        title="Política de reserva do parceiro"
+        description="Regras de cancelamento e reembolso do próprio estacionamento, para a unidade que fecha a reserva no site dele. Entra na FAQ da unidade e nas respostas da Mia. Quando a reserva fecha na Movepark, a política de cancelamento é a da Movepark."
       >
         {/* Rótulo escondido: o título da seção já nomeia o campo na tela, e
             repetir a palavra logo abaixo é ruído. O leitor de tela continua
             recebendo o label. */}
-        <Field label={<span className="sr-only">Observações da unidade</span>} htmlFor="policy" wide>
+        <Field label={<span className="sr-only">Política de reserva do parceiro</span>} htmlFor="policy" wide>
           <Textarea
             id="policy"
             value={f.reservationPolicy}
             onChange={(e) => f.setReservationPolicy(e.target.value)}
-            placeholder="Ex.: Chegue com 15 minutos de antecedência para o check-in no balcão."
+            placeholder="Ex.: Cancelando com 3 dias ou mais de antecedência, o estacionamento devolve 90% do valor."
           />
         </Field>
       </Section>
 
       <Section
         title="Aviso do estacionamento"
-        description="Regra do estacionamento que o cliente precisa saber antes de chegar, como cobrança por mala extra. Sai na página da unidade, no checkout, no e-mail de confirmação e no voucher. Vazio, nada aparece."
+        description="Regra do estacionamento que o cliente precisa saber antes de chegar, como cobrança por mala extra. Sai na página da unidade, na FAQ dela, no checkout, no e-mail de confirmação, no voucher e nas respostas da Mia. Vazio, nada aparece."
       >
         <Field
           label={<span className="sr-only">Aviso do estacionamento</span>}

@@ -20,7 +20,8 @@ FAQ e sem vetorizar dado estruturado:
 
 - `faq.question` + `faq.answer` nas três camadas (`global`, `destination`, `location`);
 - `location.directions_text` (markdown "como chegar", pode ser longo, gera vários chunks);
-- `location.notice` (aviso crítico de entrada) e `location.reservation_policy`;
+- `location.notice` (aviso crítico de entrada) e `location.reservation_policy` (política de reserva do parceiro);
+- `location.partner_notice_md` (aviso do estacionamento, Markdown restrito lido como texto puro; fonte `location_partner_notice`, desde 23/11/2026);
 - `location_amenity.notes` (keyado por `location_id`, já que `location_amenity` não tem id próprio).
 
 ## Arquitetura

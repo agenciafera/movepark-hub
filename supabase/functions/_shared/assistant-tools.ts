@@ -415,7 +415,7 @@ export async function callRead(
           "id, name, slug, address, address_complement, latitude, longitude, google_maps_url, " +
             "phone, email, is_24h, business_hours, tolerance_minutes, directions_text, " +
             "has_shuttle, shuttle_frequency_minutes, shuttle_to_terminal_minutes, " +
-            "has_notice, notice, reservation_policy, review_avg, review_count, " +
+            "has_notice, notice, reservation_policy, partner_notice_md, review_avg, review_count, " +
             "company:company_id!inner(name, slug), destination:destination_id(short_name, code, city)",
         )
         .is("deleted_at", null)

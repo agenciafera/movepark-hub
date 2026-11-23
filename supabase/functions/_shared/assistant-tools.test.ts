@@ -311,6 +311,7 @@ Deno.test("callRead: get_location_info traz contato e dados operacionais", async
       "directions_text",
       "has_shuttle",
       "reservation_policy",
+      "partner_notice_md",
     ]
   ) {
     assertEquals(sel.includes(col), true, col);

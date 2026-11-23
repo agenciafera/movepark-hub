@@ -12,6 +12,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chunkFaq, chunkProse, estimateTokens } from "./chunking.ts";
 import { hashContent, nextBackoff, tabelaDosTrechos } from "./logic.ts";
+import { markdownRestritoToLinhas } from "../_shared/markdown-restrito.ts";
 
 const EMBED_MODEL = "gemini-embedding-001"; // via outputDimensionality=768, casa com vector(768)
 const EMBED_DIM = 768;
@@ -19,6 +20,9 @@ const PROSE_FIELD: Record<string, string> = {
   location_directions: "directions_text",
   location_notice: "notice",
   location_policy: "reservation_policy",
+  // Aviso do estacionamento (Markdown restrito). Entra como texto puro: o marcador de negrito
+  // não ajuda o embedding e a Mia responde em prosa (docs/specs/aviso-do-estacionamento.md).
+  location_partner_notice: "partner_notice_md",
 };
 
 function json(body: unknown, status = 200) {
@@ -56,7 +60,10 @@ async function loadSource(admin: any, sourceType: string, sourceId: string): Pro
   if (field) {
     const { data } = await admin.from("location").select(`${field}, deleted_at`).eq("id", sourceId).maybeSingle();
     if (!data || data.deleted_at) return null;
-    return { scope: "location", location_id: sourceId, destination_id: null, chunks: chunkProse(data[field]) };
+    const prosa = sourceType === "location_partner_notice"
+      ? markdownRestritoToLinhas(data[field]).join("\n")
+      : data[field];
+    return { scope: "location", location_id: sourceId, destination_id: null, chunks: chunkProse(prosa) };
   }
   if (sourceType === "blog_post") {
     const { data } = await admin

@@ -73,7 +73,7 @@ describe("OperatorLocationEdit", () => {
       "Chegada",
       "Fotos",
       "Comodidades",
-      "Observações da unidade",
+      "Política de reserva do parceiro",
       "Aviso do estacionamento",
     ]);
   });
