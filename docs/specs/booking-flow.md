@@ -451,6 +451,15 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   de exatamente-uma-vez em `booking.cancellation_email_sent_at` (migration
   `20261121010000_email_de_cancelamento.sql`), igual à da confirmação. Até então o cliente só
   recebia e-mail na confirmação; cancelamento e estorno passavam em silêncio.
+- **Reenviar a confirmação (23/11/2026, ✅):** a Edge `resend-booking-confirmation` (hub_admin
+  pelo JWT, ou a service role para operação interna pela CLI) recebe `{ code }` e dispara o MESMO
+  envio da confirmação original (`sendBookingConfirmationEmail`, assunto "Sua reserva MP-XXXXXX
+  está confirmada", voucher em anexo), zerando antes a guarda `confirmation_email_sent_at` de
+  propósito. Serve ao cliente que perdeu o e-mail e à conferência do template em produção sem
+  compra nova. Só reserva `confirmed` ou `checked_in` recebe (409 nas demais: o template afirma
+  que a reserva está confirmada); unidade com integração de cancela e entrega pendente devolve
+  `outcome: "held"`, e o e-mail sai quando o código chegar, como no fluxo original. A ficha do
+  Manager ainda não tem o botão; hoje o reenvio é pela CLI.
 - **Dois status, e tentar de novo (17/09/2026, ✅):** a reserva tem o status dela (Cancelada) e o
   dinheiro tem o dele (`paymentBadge`: Pago, Estorno em processamento, Devolvido, Devolução
   pendente, Pagamento recusado, Aguardando pagamento). Os dois aparecem lado a lado na ficha do
