@@ -416,6 +416,19 @@ export default function ListingPage() {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="space-y-2">
+          {/* Logo do estacionamento acima do nome (23/11/2026): o cliente confundia a marca do
+              parceiro com a Movepark. Sai do cadastro (unidade antes da empresa), então vale para
+              todo parceiro com logo; sem logo, a ficha abre direto no nome. Ver
+              docs/specs/logo-do-estacionamento.md. */}
+          {listing.logo?.light && (
+            <img
+              src={listing.logo.light}
+              alt={listing.company.name}
+              height={40}
+              className="mb-1 h-9 w-auto max-w-[180px] object-contain object-left tablet:h-10 tablet:max-w-[200px]"
+              data-testid="listing-logo"
+            />
+          )}
           {/* "{marca} - Estacionamento {destino}", o mesmo nome do card que trouxe o cliente
               até aqui, do <title> e do JSON-LD. Sai de `location.public_name`. */}
           <h1 className="text-balance text-display-xl text-ink">

@@ -188,3 +188,52 @@ describe("galeria por tipo de vaga", () => {
     await waitFor(async () => expect(await primeiraFoto()).toContain("fachada"), { timeout: 5000 });
   });
 });
+
+/**
+ * Logo do estacionamento acima do H1 (23/11/2026, docs/specs/logo-do-estacionamento.md). Sai do
+ * cadastro do parceiro, então vale para todos: com logo, a ficha abre nele; sem logo, no nome.
+ */
+describe("logo do estacionamento na ficha", () => {
+  function comLogo(logoUrl: string | null) {
+    const rows = [linha("covered", "Vaga Coberta", 20, 320)].map((r) => ({
+      ...r,
+      location: {
+        ...r.location,
+        logo_url: null,
+        logo_dark_url: null,
+        company: { ...r.location.company, logo_url: logoUrl, logo_dark_url: null },
+      },
+    }));
+    server.use(http.get(`${BASE}/rest/v1/location_parking_type`, () => HttpResponse.json(rows)));
+    return renderWithProviders(
+      <HelmetProvider>
+        <ListingPage />
+      </HelmetProvider>,
+      {
+        route: `/estacionamentos/${DESTINO}/${LOTE}`,
+        path: PATH,
+        loader: async () => ({
+          kind: "unidade",
+          listing: await fetchListing(DESTINO, LOTE),
+          faqs: null,
+          showcase: null,
+        }),
+      },
+    );
+  }
+
+  it("com logo cadastrado, ele vem antes do nome", async () => {
+    comLogo("https://cdn.test/aeropark.png");
+    const logo = await screen.findByTestId("listing-logo", {}, { timeout: 5000 });
+    expect(logo).toHaveAttribute("src", "https://cdn.test/aeropark.png");
+    expect(logo).toHaveAttribute("alt", "Aeropark");
+    const h1 = screen.getByRole("heading", { level: 1 });
+    expect(logo.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("sem logo, a ficha abre direto no nome", async () => {
+    comLogo(null);
+    await screen.findByRole("heading", { level: 1 }, { timeout: 5000 });
+    expect(screen.queryByTestId("listing-logo")).not.toBeInTheDocument();
+  });
+});

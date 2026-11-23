@@ -1,3 +1,4 @@
+import { resolveParkingLogo, type ParkingLogo } from "@/lib/parkingLogo";
 import { fetchUnitFares } from "@/features/fares/api";
 import type { FareOption } from "@/lib/fares";
 import type { BookingAttribution } from "@/lib/utm";
@@ -55,6 +56,11 @@ export type ListingDetail = {
     tax_id: string | null;
     created_at: string;
   };
+  /**
+   * Logo do estacionamento (unidade antes da empresa), acima do H1 da ficha. Pré-renderizado no
+   * build como o resto da página. Ver docs/specs/logo-do-estacionamento.md.
+   */
+  logo?: ParkingLogo;
   location: {
     id: string;
     slug: string;
@@ -150,8 +156,8 @@ const baseSelect = `
     id, slug, public_slug, public_name, name, address, phone, email, notice, has_notice, legal_name, tax_id, business_hours, is_24h,
     directions_text, shuttle_frequency_minutes, shuttle_to_terminal_minutes,
     reservation_policy, checkout_mode, go2park_enabled, go2park_whatsapp, timezone, latitude, longitude, google_place_id,
-    review_avg, review_count, photos, is_draft, ga4_measurement_id,
-    company:company!inner(id, slug, name, legal_name, tax_id, created_at),
+    review_avg, review_count, photos, is_draft, ga4_measurement_id, logo_url, logo_dark_url,
+    company:company!inner(id, slug, name, legal_name, tax_id, created_at, logo_url, logo_dark_url),
     destination:destination!inner(seo_label, short_name, name, type, city, code, public_slug),
     amenities:location_amenity(
       amenity:amenity(code, name, icon, category, sort_order)
@@ -259,7 +265,15 @@ export async function fetchListing(
     is_active: m.is_active,
     external_checkout_url: m.external_checkout_url ?? null,
     vaga_photos: escolhido.photos,
-    company: m.location.company,
+    company: {
+      id: m.location.company.id,
+      slug: m.location.company.slug,
+      name: m.location.company.name,
+      legal_name: m.location.company.legal_name,
+      tax_id: m.location.company.tax_id,
+      created_at: m.location.company.created_at,
+    },
+    logo: resolveParkingLogo(m.location, m.location.company),
     location: {
       id: m.location.id,
       slug: m.location.slug,
