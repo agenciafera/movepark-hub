@@ -6,6 +6,7 @@ import {
   filterByCategory,
   filterByDestinations,
   filterByOperators,
+  filterByVehicle,
   type FacetItem,
 } from "./facets.ts";
 
@@ -76,4 +77,17 @@ Deno.test("filterByCategory: filtrar 'uncovered' também traz 'avulsa' (Garagein
 
 Deno.test("filterByCategory: filtrar 'avulsa' direto não traz 'uncovered' de volta (equivalência é só um sentido)", () => {
   assertEquals(filterByCategory(categoryItems, ["avulsa"]), [avulsa]);
+});
+
+const van: CategoryItem = { company_parking_type: { parking_type: { code: "large_vehicle" } } };
+const moto: CategoryItem = { company_parking_type: { parking_type: { code: "motorcycle" } } };
+
+Deno.test("filterByVehicle: a busca por moto não mostra a vaga de van e utilitário", () => {
+  assertEquals(filterByVehicle([covered, uncovered, moto, van], "motorcycle"), [covered, uncovered, moto]);
+});
+
+Deno.test("filterByVehicle: carro, ou veículo não informado, não filtra nada", () => {
+  assertEquals(filterByVehicle([covered, moto, van], "car"), [covered, moto, van]);
+  assertEquals(filterByVehicle([covered, moto, van]), [covered, moto, van]);
+  assertEquals(filterByVehicle([covered, moto, van], null), [covered, moto, van]);
 });

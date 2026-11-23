@@ -20,6 +20,7 @@ import {
   sortRowsByPeriod,
   topRows,
   unitLabel,
+  vanUnits,
   type AirportMeta,
   type AirportSection,
   type IndexProspect,
@@ -132,6 +133,28 @@ describe("buildMatrix", () => {
     expect(m.rows).toHaveLength(1);
     expect(carUnits([moto, barato])).toHaveLength(1);
     expect(motoUnits([moto, barato])).toHaveLength(1);
+  });
+
+  // A Vaga Max da Pare Seguro (GRU) custa R$ 70 a diária. Dentro da tabela de carro ela virava
+  // a vaga mais cara do destino e entrava no "de R$ X a R$ Y" de quem só quer estacionar o carro.
+  it("vaga para van e utilitário fica fora da tabela de carro", () => {
+    const van = unit({
+      company_slug: "pare-seguro",
+      company_name: "Pare Seguro",
+      parking_type_code: "large_vehicle",
+      parking_type_name: "Vaga Max",
+      prices: DIAS.map((d) => ({ days: d, total: d * 70, old_total: null })),
+    });
+    const m = buildMatrix(dest([van, barato]), DIAS, 7);
+    expect(m.rows.map((r) => r.unit.parking_type_code)).toEqual(["uncovered"]);
+    expect(carUnits([van, barato])).toEqual([barato]);
+    expect(vanUnits([van, barato])).toEqual([van]);
+    expect(motoUnits([van, barato])).toHaveLength(0);
+  });
+
+  it("destino só com vaga de van não ganha resumo de carro", () => {
+    const van = unit({ parking_type_code: "large_vehicle", parking_type_name: "Vaga Max" });
+    expect(destinationSummary(dest([van]), DIAS).byDuration).toEqual([]);
   });
 });
 

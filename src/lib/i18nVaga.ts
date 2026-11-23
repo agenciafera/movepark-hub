@@ -6,8 +6,8 @@
  * restante na página em inglês.
  *
  * Mapa no código, e não coluna de tradução no banco, porque o conjunto é FECHADO e
- * pequeno (sete tipos) e é vocabulário do produto, não conteúdo editorial. Criar
- * `parking_type_i18n` para sete linhas que mudam quase nunca pagaria o custo de uma
+ * pequeno (oito tipos) e é vocabulário do produto, não conteúdo editorial. Criar
+ * `parking_type_i18n` para oito linhas que mudam quase nunca pagaria o custo de uma
  * tabela, uma RLS e uma tela de edição para nada.
  *
  * A chave é o `code`, e não o nome: nome é texto de exibição e pode ser reescrito no
@@ -22,6 +22,7 @@ const POR_CODIGO: Record<string, Partial<Record<Locale, string>>> = {
   avulsa: { en: "Single spot", es: "Plaza suelta" },
   covered: { en: "Covered spot", es: "Plaza cubierta" },
   garage: { en: "Garage / box", es: "Garaje / box" },
+  large_vehicle: { en: "Max spot for vans", es: "Plaza Max para furgonetas" },
   motorcycle: { en: "Motorcycle spot", es: "Plaza de moto" },
   premium: { en: "Premium spot", es: "Plaza premium" },
   uncovered: { en: "Uncovered spot", es: "Plaza descubierta" },

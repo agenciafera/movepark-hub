@@ -23,8 +23,12 @@ export const PRICE_INDEX_VERSION = 1;
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
-/** Moto compara com moto: fica no `units`, fora do "mais barato". */
-const ehCarro = (u) => u.parking_type_code !== "motorcycle";
+/**
+ * Moto compara com moto, e van e utilitário (`large_vehicle`, a Vaga Max) com van: ficam no
+ * `units`, fora do "mais barato". Espelha `carUnits` de src/features/price-index/priceIndex.logic.ts.
+ */
+const FORA_DO_CARRO = new Set(["motorcycle", "large_vehicle"]);
+const ehCarro = (u) => !FORA_DO_CARRO.has(u.parking_type_code);
 
 const totalDe = (u, dias) => (u.prices ?? []).find((p) => p.days === dias)?.total ?? null;
 

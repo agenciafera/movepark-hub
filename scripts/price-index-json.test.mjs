@@ -159,6 +159,28 @@ describe("buildPriceIndexJson", () => {
     expect(moto.prices[0]).toMatchObject({ days: 1, total: null, per_day: null });
   });
 
+  it("vaga para van e utilitário (large_vehicle) entra em units e fica fora do mais barato", () => {
+    const priceIndex = priceIndexFake();
+    const [gru] = priceIndex.destinations;
+    // Fixture artificial: a van mais barata que o carro em todas as durações. Na vida real a
+    // Vaga Max custa R$ 70 a diária, mas o corte não pode depender de ela ser cara.
+    gru.units.push({
+      ...gru.units[0],
+      company_slug: "pare-seguro",
+      company_name: "Pare Seguro",
+      parking_type_code: "large_vehicle",
+      parking_type_name: "Vaga Max",
+      public_path: "/estacionamentos/aeroporto-guarulhos/pare-seguro",
+      prices: [
+        { days: 1, total: 10, old_total: null },
+        { days: 7, total: 50, old_total: null },
+      ],
+    });
+    const [dest] = build({ priceIndex }).destinations;
+    expect(dest.units.map((u) => u.parking_type_code)).toContain("large_vehicle");
+    expect(dest.cheapest.map((c) => c.parking_type_name)).not.toContain("Vaga Max");
+  });
+
   it("moto entra em units e fica fora do mais barato", () => {
     const [dest] = build().destinations;
     expect(dest.units.map((u) => u.parking_type_code)).toContain("motorcycle");

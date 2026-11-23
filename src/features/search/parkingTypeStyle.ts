@@ -22,6 +22,7 @@ const PARKING_TYPE_CHIP: Record<string, string> = {
   garage: "bg-slate-100 text-slate-700",
   motorcycle: "bg-rose-50 text-rose-700",
   premium: "bg-emerald-50 text-emerald-700",
+  large_vehicle: "bg-lime-50 text-lime-800",
 };
 
 /** Neutro para tipo sem cor própria: não quebra o layout, só não destaca. */

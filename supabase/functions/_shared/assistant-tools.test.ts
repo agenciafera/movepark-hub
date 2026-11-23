@@ -67,6 +67,7 @@ Deno.test("simulate_price e search_parking: parking_type/category restritos aos 
   const declProps = (decl.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
   assertEquals(declProps.parking_type.enum, PARKING_TYPE_CODES);
   assertEquals(PARKING_TYPE_CODES.includes("motorcycle"), true);
+  assertEquals(PARKING_TYPE_CODES.includes("large_vehicle"), true);
 });
 
 // ── callRead ─────────────────────────────────────────────────────────────────

@@ -25,8 +25,10 @@ import {
   motoUnits,
   priceFor,
   unitLabel,
+  vanUnits,
   type MatrixRow,
   type PriceDestination,
+  type PriceUnit,
 } from "@/features/price-index/priceIndex.logic";
 import { temPaginaMaisBarato } from "@/features/price-index/maisBarato.logic";
 import { SITE_URL } from "@/lib/site";
@@ -101,6 +103,7 @@ export default function PrecosDestinoPage() {
   const matrix = buildMatrix(destination, days);
   const summary = destinationSummary(destination, days);
   const motos = motoUnits(destination.units);
+  const vans = vanUnits(destination.units);
   const temMinStay = matrix.rows.some((r) => r.cells.some((c) => c.minStayDays != null));
 
   const canonical = `${SITE_URL}${caminhoPrecos(destinoSlug)}`;
@@ -345,25 +348,9 @@ export default function PrecosDestinoPage() {
           </p>
         </section>
 
-        {motos.length > 0 && (
-          <section className="mt-8">
-            <h3 className="text-title-md text-ink">Vaga de moto</h3>
-            <ul className="mt-2 space-y-1">
-              {motos.map((moto) => (
-                <li key={`${moto.company_slug}/${moto.location_slug}`} className="text-body-sm text-body">
-                  {unitLabel(moto, motos)}:{" "}
-                  {days
-                    .map((d) => {
-                      const total = priceFor(moto, d)?.total;
-                      return total != null ? `${durationLabel(d)} ${formatBRL(total)}` : null;
-                    })
-                    .filter(Boolean)
-                    .join(", ")}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        <VagaForaDaTabela titulo="Vaga de moto" units={motos} days={days} />
+        <VagaForaDaTabela titulo="Vaga para van e utilitário" units={vans} days={days} />
+
 
         <section className="mt-10">
           <h2 className="text-display-sm text-ink">De onde vêm estes preços?</h2>
@@ -424,5 +411,40 @@ export default function PrecosDestinoPage() {
         )}
       </article>
     </>
+  );
+}
+
+/**
+ * Vaga que não compara com carro (moto, van e utilitário): fica fora da tabela e sai numa
+ * linha por unidade, com o preço de cada duração que o motor cota.
+ */
+function VagaForaDaTabela({
+  titulo,
+  units,
+  days,
+}: {
+  titulo: string;
+  units: PriceUnit[];
+  days: number[];
+}) {
+  if (units.length === 0) return null;
+  return (
+    <section className="mt-8">
+      <h3 className="text-title-md text-ink">{titulo}</h3>
+      <ul className="mt-2 space-y-1">
+        {units.map((u) => (
+          <li key={`${u.company_slug}/${u.location_slug}`} className="text-body-sm text-body">
+            {unitLabel(u, units)}:{" "}
+            {days
+              .map((d) => {
+                const total = priceFor(u, d)?.total;
+                return total != null ? `${durationLabel(d)} ${formatBRL(total)}` : null;
+              })
+              .filter(Boolean)
+              .join(", ")}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

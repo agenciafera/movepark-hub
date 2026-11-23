@@ -50,6 +50,7 @@ import {
   filterByCategory,
   filterByDestinations,
   filterByOperators,
+  filterByVehicle,
   type FacetItem,
 } from "./facets.ts";
 
@@ -249,6 +250,9 @@ Deno.serve(async (req: Request) => {
 
   // 5. Apply category filter (com equivalências — ver filterByCategory em facets.ts)
   filtered = filterByCategory(filtered, params.category);
+
+  // 5b. Busca por moto não mostra vaga de van e utilitário (ver filterByVehicle em facets.ts)
+  filtered = filterByVehicle(filtered, params.vehicle);
 
   // Estacionamento e destino NÃO são filtrados aqui — viram facetas (passo 10b) e só então
   // recortam o resultado. Manter os candidatos largos até a precificação permite calcular

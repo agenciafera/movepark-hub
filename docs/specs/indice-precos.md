@@ -35,8 +35,11 @@ precificada ganha página.
 - **Estadia mínima aparece como regra, não como buraco.** Célula abaixo do piso mostra
   "entrada a partir de N diárias" (o motor devolve null abaixo da primeira faixa; ver
   [espelhamento-preco-wl.md](./espelhamento-preco-wl.md)).
-- **Moto compara com moto.** `parking_type_code = motorcycle` sai da tabela de carro e
-  dos resumos; ganha seção própria quando existe.
+- **Moto compara com moto, van com van.** `parking_type_code = motorcycle` e
+  `large_vehicle` (Vaga Max, vans e utilitários, desde 23/11/2026) saem da tabela de carro,
+  dos resumos e do "mais barato" (`carUnits`; nos scripts de build, `price-index-json.mjs` e
+  `generate-geo-artifacts.mjs`); cada um ganha seção própria quando existe. Sem isso a diária
+  de R$ 70 da Vaga Max da Pare Seguro virava a vaga de carro mais cara de Guarulhos.
 - **Data à vista.** "Conferido no motor de reservas em <data do build>" e a data da
   tabela de parceiro mais recente (`max(pricing_rule.updated_at)`), nas duas páginas e no
   rodapé de metodologia do índice. Essa segunda data é a que o `dateModified` do schema

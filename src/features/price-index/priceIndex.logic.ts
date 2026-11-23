@@ -65,12 +65,24 @@ export type PriceIndexData = {
 /** Moto compara com moto: fica fora da tabela de carro e dos resumos. */
 const MOTO_CODE = "motorcycle";
 
+/**
+ * Vaga para van e utilitário (a "Vaga Max" da Pare Seguro) também fica fora da tabela de
+ * carro: a diária de R$ 70 apareceria como a vaga de carro mais cara do destino.
+ */
+export const VAN_CODE = "large_vehicle";
+
+const FORA_DA_TABELA_DE_CARRO = new Set([MOTO_CODE, VAN_CODE]);
+
 export function carUnits(units: PriceUnit[]): PriceUnit[] {
-  return units.filter((u) => u.parking_type_code !== MOTO_CODE);
+  return units.filter((u) => !FORA_DA_TABELA_DE_CARRO.has(u.parking_type_code));
 }
 
 export function motoUnits(units: PriceUnit[]): PriceUnit[] {
   return units.filter((u) => u.parking_type_code === MOTO_CODE);
+}
+
+export function vanUnits(units: PriceUnit[]): PriceUnit[] {
+  return units.filter((u) => u.parking_type_code === VAN_CODE);
 }
 
 export function unitKey(u: PriceUnit): string {

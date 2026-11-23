@@ -34,7 +34,7 @@ company (tenant / marca)
 |---|---|
 | **company** | Empresa/tenant. Opera N unidades. Detém a configuração-mãe de preços e serviços. |
 | **location** | Unidade física (estacionamento em um endereço). Pertence a uma `company`. |
-| **parking_type** | Catálogo global de tipos de vaga (`covered`, `uncovered`, `valet`, `premium`, `garage`, `motorcycle`, `avulsa`). `avulsa` é vaga sem local fixo reservado, sujeita à lotação do pátio; conta como `uncovered` no filtro de busca (`filterByCategory` em `supabase/functions/search/facets.ts`), mas é code próprio, editável em separado. |
+| **parking_type** | Catálogo global de tipos de vaga (`covered`, `uncovered`, `valet`, `premium`, `garage`, `motorcycle`, `avulsa`, `large_vehicle`). `avulsa` é vaga sem local fixo reservado, sujeita à lotação do pátio; conta como `uncovered` no filtro de busca (`filterByCategory` em `supabase/functions/search/facets.ts`), mas é code próprio, editável em separado. `large_vehicle` é a **Vaga Max** (vans e utilitários, 23/11/2026): fica fora da comparação de carro no índice de preços e não aparece na busca por moto (`filterByVehicle`, mesmo arquivo); não conta como `uncovered` no filtro, porque quem procura vaga descoberta para carro não quer pagar a diária de van. |
 | **company_parking_type** | Habilita um `parking_type` para uma `company`, definindo `base_price` e `default_capacity` padrão. |
 | **location_parking_type** | Instância do tipo de vaga em uma unidade específica. Tem sua própria capacidade e `pricing_rule`. |
 | **pricing_rule** | Configuração do motor de cálculo vinculada a um `location_parking_type`. Define estratégia, tolerâncias e old price. |

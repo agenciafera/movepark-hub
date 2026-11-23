@@ -14,6 +14,8 @@ describe("nomeDaVaga", () => {
     expect(nomeDaVaga("en", "uncovered", "Vaga Descoberta")).toBe("Uncovered spot");
     expect(nomeDaVaga("es", "covered", "Vaga Coberta")).toBe("Plaza cubierta");
     expect(nomeDaVaga("es", "motorcycle", "Vaga de Moto")).toBe("Plaza de moto");
+    expect(nomeDaVaga("en", "large_vehicle", "Vaga Max")).toBe("Max spot for vans");
+    expect(nomeDaVaga("es", "large_vehicle", "Vaga Max")).toBe("Plaza Max para furgonetas");
   });
 
   it("a chave é o código, não o nome", () => {

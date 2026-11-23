@@ -86,3 +86,15 @@ export function filterByCategory<T extends CategoryItem>(items: T[], codes?: str
   const set = new Set(codes.flatMap((c) => [c, ...(CATEGORY_FILTER_ALIASES[c] ?? [])]));
   return items.filter((i) => set.has(i.company_parking_type.parking_type.code));
 }
+
+// Tipos de vaga que não servem para moto. A Vaga Max (`large_vehicle`, vans e utilitários)
+// custa R$ 70 a diária: mostrar na busca por moto é oferecer a vaga errada pelo preço errado.
+// O filtro de moto não exclui as vagas de carro de propósito: é onde a moto para na maioria
+// dos pátios, e a vaga dedicada (`motorcycle`) é exceção.
+const NAO_SERVE_PARA_MOTO = new Set(["large_vehicle"]);
+
+/** Tira da busca por moto os tipos que não servem para ela. Carro (ou nada) não filtra. */
+export function filterByVehicle<T extends CategoryItem>(items: T[], vehicle?: string | null): T[] {
+  if (vehicle !== "motorcycle") return items;
+  return items.filter((i) => !NAO_SERVE_PARA_MOTO.has(i.company_parking_type.parking_type.code));
+}

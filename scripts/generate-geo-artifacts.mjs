@@ -484,8 +484,10 @@ function gerarFaqPaginasMd(precoPorSlug, dias) {
 const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const durLabel = (d) => (d === 1 ? "1 diária" : `${d} diárias`);
 const nomeCurto = (d) => d.short_name ?? d.name;
+// Moto e van/utilitário (`large_vehicle`) ficam fora da tabela de carro, como em `carUnits`.
+const FORA_DO_CARRO = new Set(["motorcycle", "large_vehicle"]);
 const unidadesCarro = (dest) =>
-  (dest.units ?? []).filter((u) => u.parking_type_code !== "motorcycle");
+  (dest.units ?? []).filter((u) => !FORA_DO_CARRO.has(u.parking_type_code));
 const totalDe = (u, d) => (u.prices ?? []).find((p) => p.days === d)?.total ?? null;
 
 /** "328 m" até 949 m; acima disso km com uma casa. Espelha `formatDistance` do app. */

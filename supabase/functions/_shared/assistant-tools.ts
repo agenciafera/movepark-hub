@@ -39,6 +39,8 @@ export const PARKING_TYPE_CODES = [
   "garage",
   "premium",
   "motorcycle",
+  // Vaga Max (vans e utilitários), desde 23/11/2026 na Pare Seguro GRU.
+  "large_vehicle",
 ];
 
 const S = (description?: string) => (description ? { type: "string", description } : { type: "string" });
@@ -61,7 +63,7 @@ export const READ_TOOLS: ReadToolDef[] = [
           type: "array",
           items: { type: "string", enum: PARKING_TYPE_CODES },
           description:
-            "codes do tipo de vaga (coberta=covered, descoberta=uncovered, valet=valet, garagem/box=garage, premium=premium, moto=motorcycle)",
+            "codes do tipo de vaga (coberta=covered, descoberta=uncovered, valet=valet, garagem/box=garage, premium=premium, moto=motorcycle, van/utilitário (Vaga Max)=large_vehicle)",
         },
         max_distance_km: { type: "number" },
         limit: INT("máximo de resultados"),
@@ -80,7 +82,7 @@ export const READ_TOOLS: ReadToolDef[] = [
           type: "string",
           enum: PARKING_TYPE_CODES,
           description:
-            "code do tipo de vaga (coberta=covered, descoberta=uncovered, valet=valet, garagem/box=garage, premium=premium, moto=motorcycle)",
+            "code do tipo de vaga (coberta=covered, descoberta=uncovered, valet=valet, garagem/box=garage, premium=premium, moto=motorcycle, van/utilitário (Vaga Max)=large_vehicle)",
         },
         days: { type: "integer", minimum: 1, default: 1, description: "número de diárias" },
       },

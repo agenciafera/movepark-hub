@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parkingTypeChipClass, PARKING_TYPE_CHIP_FALLBACK } from "./parkingTypeStyle";
 
-const KNOWN = ["covered", "uncovered", "valet", "garage", "motorcycle", "premium"];
+const KNOWN = ["covered", "uncovered", "valet", "garage", "motorcycle", "premium", "large_vehicle"];
 
 describe("parkingTypeChipClass", () => {
   it("dá uma cor distinta por tipo conhecido (nenhum repete, nenhum cai no fallback)", () => {

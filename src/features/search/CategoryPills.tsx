@@ -1,4 +1,4 @@
-import { Bicycle, Car, CircleDashed, CloudRain, Key, Package, Star } from "@phosphor-icons/react";
+import { Bicycle, Car, CircleDashed, CloudRain, Key, Package, Star, Van } from "@phosphor-icons/react";
 import { useParkingTypeCatalog } from "./api";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const iconByCode: Record<string, React.ComponentType<{ className?: string }>> = 
   motorcycle: Bicycle,
   garage: Package,
   avulsa: CircleDashed,
+  large_vehicle: Van,
 };
 
 type Props = {
