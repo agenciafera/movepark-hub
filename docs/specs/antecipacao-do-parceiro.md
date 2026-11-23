@@ -50,9 +50,9 @@ vista e 4,69% no parcelado, Pix 0,99%, antecipação de ~3,1% ao mês.
 | # | Pergunta | Decisão |
 |---|---|---|
 | 1 | Quem paga a antecipação da parte do parceiro | **Configurável**: padrão no **repasse da empresa** (Manager) e sobreposição nas **regras de origem** (como a da Pare Seguro). Congelado na reserva |
-| 2 | Padrão | **Movepark paga** (`app_setting.commission_default_anticipation_payer = 'movepark'`). O parceiro só paga quando a Movepark decidir no Manager |
+| 2 | Padrão | **Estacionamento paga, em todos** (decisão do Kallef em 23/11/2026; `app_setting.commission_default_anticipation_payer = 'partner'`, migration `20261206110100`). Até 23/11 era a Movepark, cedendo a estimativa no split. Empresa e regra de origem ainda podem sobrescrever; reserva já criada segue com o pagador congelado |
 | 3 | Como a Movepark paga, se o gateway desconta do parceiro | **Ajuste no split da venda**: a perna do parceiro recebe, na cobrança, a estimativa da taxa com folga, tirada da perna da Movepark. O parceiro nunca recebe menos que o prometido |
-| 4 | Liga para todos ou empresa a empresa | **Desligada por padrão; liga empresa a empresa no Manager.** Desligada, nada muda: o parceiro recebe mês a mês e ninguém paga taxa |
+| 4 | Liga para todos ou empresa a empresa | **Ligada para todos** (23/11/2026, Kallef: não repassar parcela a parcela, mês a mês). Recebedor novo nasce com a antecipação ligada no modelo do G2 (`app_setting.payout_anticipation_*`: 1025, 100%, 29 dias, todos os dias). O Manager ainda desliga empresa a empresa |
 | 5 | Prazo | **30 dias**, o mesmo modelo que já vale no recebedor da Movepark |
 | 6 | Vendas já feitas | Botão **"Antecipar agora"** no repasse da empresa: antecipação pontual com simulação do custo antes de confirmar. Se quem paga é a Movepark, a taxa volta ao parceiro como crédito na próxima venda |
 
@@ -92,6 +92,18 @@ Tabela `payout_anticipation`: `id`, `company_id`, `provider`, `external_id` (`ba
 `partner`, congelado no pedido a partir do padrão da empresa), `payment_date`, `created_by`,
 `created_at`, `updated_at`. RLS: leitura e escrita só `hub_admin`; o parceiro vê pela conta dele
 (RPC).
+
+## Previsão quando o estacionamento paga (23/11/2026)
+
+Com o estacionamento pagando, não há cessão no split e a taxa só aparece nos recebíveis quando a
+Pagar.me antecipa (~D+29). Para a tela mostrar a taxa desde a venda, `create-card-charge` grava em
+`payment.anticipation_estimate_cents` (migration `20261206110000`) a previsão de
+`estimatePartnerAnticipationFeeCents` (`_shared/payments/anticipation.ts`): base da perna do
+parceiro, taxa ao dia, um dia de folga por parcela (a 1ª é antecipada um dia útil antes), sem
+gross-up. Não vai ao split nem ao gateway. A conta da reserva (`buildMoneyBreakdown`) e o modal de
+taxas usam a cessão quando a Movepark paga e esta estimativa quando o estacionamento paga, até a
+releitura gravar a taxa real. O recebedor sem `anticipation_enabled` preenchido segue o padrão
+global (`payout_anticipation_enabled`).
 
 ## Estimativa da compensação
 

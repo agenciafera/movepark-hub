@@ -94,7 +94,11 @@ function descreve(l: FeeLine, pending: boolean) {
     case "anticipation": {
       let regra = "sem detalhe por parcela";
       if (l.expected) {
-        regra = `prevista${l.anticipatedAt ? ` para perto de ${formatDate(l.anticipatedAt)}` : ""}: as parcelas entram junto com a 1ª · a Movepark já cedeu ${brl(l.compCents)} no split para cobrir`;
+        regra = `prevista${l.anticipatedAt ? ` para perto de ${formatDate(l.anticipatedAt)}` : ""}: as parcelas entram junto com a 1ª`;
+        regra +=
+          l.compCents > 0
+            ? ` · a Movepark já cedeu ${brl(l.compCents)} no split para cobrir`
+            : " · sai da parte do estacionamento";
       } else if (l.cents === 0) regra = "ainda não antecipado";
       else if (l.cents != null) {
         regra = `estacionamento ${brl(l.partnerCents)} · Movepark ${brl(l.moveparkCents)}`;

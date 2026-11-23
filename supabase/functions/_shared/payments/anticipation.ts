@@ -34,6 +34,23 @@ export function estimateAnticipationCompCents(a: AnticipationEstimateArgs): numb
   return Math.ceil((net * f) / (1 - f) - 1e-9);
 }
 
+/**
+ * Taxa de antecipação PREVISTA quando o próprio parceiro paga (23/11/2026, Kallef: a antecipação
+ * fica por conta do estacionamento em todos). Não vai ao split: só fica gravada na cobrança
+ * (`payment.anticipation_estimate_cents`) para a tela mostrar a taxa desde a venda, antes de a
+ * Pagar.me antecipar (~D+29). Sem gross-up nem folga: base × taxa ao dia × média de dias.
+ */
+export function estimatePartnerAnticipationFeeCents(a: AnticipationEstimateArgs): number {
+  const n = Math.floor(a.installments);
+  const net = Math.floor(a.partnerLegCents) - Math.max(0, Math.floor(a.partnerMdrCents));
+  if (n < 1 || net <= 0 || a.monthlyRateBps <= 0) return 0;
+  let sumDays = 0;
+  for (let i = 1; i <= n; i++) sumDays += 30 * (i - 1) + Math.max(0, a.marginDays);
+  const f = (a.monthlyRateBps / 10000 / 30) * (sumDays / n);
+  if (f <= 0 || f >= 1) return 0;
+  return Math.ceil(net * f - 1e-9);
+}
+
 /** Taxa de antecipação real por perna, só dos recebíveis de crédito (a venda). */
 export function anticipationFeesByRecipient(
   payables: GatewayPayable[],

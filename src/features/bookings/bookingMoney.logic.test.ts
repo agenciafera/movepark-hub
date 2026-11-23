@@ -148,6 +148,15 @@ describe("antecipação do cartão (E0.3.14)", () => {
     expect(m.split?.movepark.netCents).toBe(1200 - 930);
   });
 
+  it("estacionamento pagando a antecipação: a prevista sai da parte dele desde a venda", () => {
+    const m = buildMoneyBreakdown(venda, 100, cartao({ anticipation_estimate_cents: 250 }));
+    expect(m.split?.partner).toMatchObject({ compCents: 0, anticipationCents: 250, anticipationExpected: true, netCents: 8150 });
+    expect(m.split?.movepark.netCents).toBe(1200);
+    const v = partnerMoneyView(m);
+    expect(v.anticipationCents).toBe(-250);
+    expect(v.parkingCents - v.discountCents - v.commissionCents - v.debtRecoveredCents - v.feeCents + v.anticipationCents).toBe(v.netCents);
+  });
+
   it("a conta do parceiro mostra o acerto da antecipação e fecha no líquido", () => {
     const v = partnerMoneyView(buildMoneyBreakdown(venda, 100, cartao({
       anticipation_comp_cents: 300, anticipation_fee_partner_cents: 250, anticipation_fee_movepark_cents: 20, gateway_fee_cents: 670,

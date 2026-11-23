@@ -6,7 +6,7 @@
 -- para ele. Transação com rollback.
 
 begin;
-select plan(16);
+select plan(17);
 
 -- ── fixture ─────────────────────────────────────────────────────────────────
 do $$
@@ -32,21 +32,22 @@ end $$;
 -- ── resolução ───────────────────────────────────────────────────────────────
 -- resolve_commission e booking_apply_commission só respondem a hub_admin ou service_role.
 select set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+-- Desde 23/11/2026 (Kallef) o padrão do Hub é o estacionamento pagar a antecipação, em todos.
 select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', null, null) ->> 'anticipation_payer',
-  'movepark', 'sem regra e sem padrão da empresa: a Movepark paga a antecipação');
+  'partner', 'sem regra e sem padrão da empresa: o estacionamento paga a antecipação');
 
-update public.company set anticipation_fee_payer = 'partner' where id = current_setting('test.a')::uuid;
+update public.company set anticipation_fee_payer = 'movepark' where id = current_setting('test.a')::uuid;
 select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', null, null) ->> 'anticipation_payer',
-  'partner', 'o padrão da empresa vale para a venda sem regra');
+  'movepark', 'o padrão da empresa vale para a venda sem regra');
 
 insert into public.commission_rule(company_id, name, utm_sources, take_rate_bps, gateway_fee_payer, chargeback_bearer, anticipation_fee_payer)
-  values (current_setting('test.a')::uuid, 'Site Ant', array['ant-site'], 1000, 'movepark', 'each', 'movepark');
+  values (current_setting('test.a')::uuid, 'Site Ant', array['ant-site'], 1000, 'movepark', 'each', 'partner');
 select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', 'ant-site', now()) ->> 'anticipation_payer',
-  'movepark', 'a regra vence a empresa');
+  'partner', 'a regra vence a empresa');
 
 update public.commission_rule set anticipation_fee_payer = null where name = 'Site Ant';
 select is(public.resolve_commission(current_setting('test.a')::uuid, 'hub_search', 'ant-site', now()) ->> 'anticipation_payer',
-  'partner', 'regra sem pagador herda a empresa');
+  'movepark', 'regra sem pagador herda a empresa');
 
 select throws_ok(
   format($$ update public.company set anticipation_fee_payer = 'cliente' where id = %L $$, current_setting('test.a')),
@@ -72,14 +73,14 @@ insert into public.booking(id, code, profile_id, location_id, check_in_at, check
   values ('00000000-0000-0000-0000-0000000ab001', 'MP-ANT-1', current_setting('test.cust')::uuid, current_setting('test.la')::uuid,
           '2026-12-10T12:00:00Z', '2026-12-12T12:00:00Z', 'pending', 200, 'hub_search');
 select is(public.booking_apply_commission('00000000-0000-0000-0000-0000000ab001', null) ->> 'anticipation_payer',
-  'movepark', 'a resolução devolve o pagador ao congelar');
+  'partner', 'a resolução devolve o pagador ao congelar');
 select is((select commission_anticipation_payer from public.booking where id = '00000000-0000-0000-0000-0000000ab001'),
-  'movepark', 'o pagador fica gravado na reserva');
+  'partner', 'o pagador fica gravado na reserva');
 
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('test.cust'), 'role', 'authenticated')::text, true);
 set local role authenticated;
 select throws_ok(
-  $$ update public.booking set commission_anticipation_payer = 'partner' where id = '00000000-0000-0000-0000-0000000ab001' $$,
+  $$ update public.booking set commission_anticipation_payer = 'movepark' where id = '00000000-0000-0000-0000-0000000ab001' $$,
   '42501', null, 'o cliente não muda o pagador da reserva');
 reset role;
 
@@ -126,6 +127,9 @@ select is(
     where m ->> 'kind' = 'anticipation_spot'),
   3, 'extrato lista as antecipações pontuais abertas e aprovadas');
 reset role;
+
+select has_column('public', 'payment', 'anticipation_estimate_cents',
+  'a cobrança guarda a taxa de antecipação prevista quando o estacionamento paga');
 
 select * from finish();
 rollback;

@@ -414,6 +414,7 @@ export function BookingDetailView({
             gateway_fee_cents: pagamento.gateway_fee_cents,
             anticipation_credit_cents: pagamento.anticipation_credit_cents ?? null,
             anticipation_comp_cents: pagamento.anticipation_comp_cents ?? null,
+            anticipation_estimate_cents: pagamento.anticipation_estimate_cents ?? null,
           }}
           booking={booking as unknown as FeeBookingLike}
         />

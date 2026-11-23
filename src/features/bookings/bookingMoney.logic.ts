@@ -45,6 +45,8 @@ export interface MoneyPaymentLike {
   anticipation_fee_movepark_cents?: number | null;
   /** Taxa de antecipação que a Movepark devolve ao parceiro como crédito. */
   anticipation_credit_cents?: number | null;
+  /** Taxa de antecipação prevista quando o próprio parceiro paga (gravada na cobrança). */
+  anticipation_estimate_cents?: number | null;
 }
 
 export type CustomerLineKind = "parking" | "fare" | "addon" | "discount" | "interest";
@@ -175,9 +177,11 @@ export function buildMoneyBreakdown(
     const antPartnerReal = custody ? 0 : pos(payment.anticipation_fee_partner_cents);
     const antMovepark = pos(payment.anticipation_fee_movepark_cents) + (custody ? pos(payment.anticipation_fee_partner_cents) : 0);
     const credit = custody ? 0 : pos(payment.anticipation_credit_cents);
+    const estimate = custody ? 0 : pos(payment.anticipation_estimate_cents);
     const mdrCents = Math.max(0, feeCents - antPartnerReal - antMovepark);
     const partnerFee = !custody && partnerPaysFee ? mdrCents : 0;
-    const partnerAnt = reread ? antPartnerReal : comp;
+    // Antes da releitura: a cessão quando a Movepark paga; a estimativa quando o parceiro paga.
+    const partnerAnt = reread ? antPartnerReal : comp > 0 ? comp : estimate;
     const moveparkFee = mdrCents - partnerFee + antMovepark;
     const moveparkNominal = chargedCents - partnerGross;
     const commissionCents = Math.max(0, moveparkNominal - fareCents - interestCents);
@@ -189,7 +193,7 @@ export function buildMoneyBreakdown(
         feeCents: partnerFee,
         compCents: comp,
         anticipationCents: partnerAnt,
-        anticipationExpected: !reread && comp > 0,
+        anticipationExpected: !reread && partnerAnt > 0,
         creditCents: credit,
         netCents: Math.max(0, partnerGross + comp - debt - partnerFee - partnerAnt + credit),
         releaseAt: payment.partner_release_at,

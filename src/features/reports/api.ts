@@ -29,7 +29,7 @@ type RevenueRow = {
 const REVENUE_SELECT = "check_in_at, total_amount";
 // O pagamento completo só na visão do parceiro: é de onde sai o líquido dele (split, taxa, dívida).
 const PARTNER_REVENUE_SELECT =
-  "check_in_at, total_amount, price_breakdown, payments:payment(status, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, paid_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents, created_at, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_fee_movepark_cents, anticipation_credit_cents)";
+  "check_in_at, total_amount, price_breakdown, payments:payment(status, method, amount, installments, split, split_sent_to_gateway, debt_recovered_cents, gateway_fee_cents, partner_release_at, paid_at, refunded_amount, refund_absorbed_by_master, refund_partner_cents, created_at, anticipation_comp_cents, anticipation_fee_partner_cents, anticipation_fee_movepark_cents, anticipation_credit_cents, anticipation_estimate_cents)";
 
 export function tallyRevenue(rows: RevenueRow[]): DailyRevenueRow[] {
   const map = new Map<string, DailyRevenueRow>();

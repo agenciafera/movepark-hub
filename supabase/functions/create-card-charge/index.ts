@@ -30,7 +30,10 @@ import {
   pixExpiresInSeconds,
 } from "../_shared/payments/index.ts";
 import { appliedAnticipationCompCents, appliedFeeCreditCents, debtFloorCents, effectiveSplitEnabled, maxDebtRecoveryCents, partnerRule, splitForGateway } from "../_shared/payments/split.ts";
-import { estimateAnticipationCompCents } from "../_shared/payments/anticipation.ts";
+import {
+  estimateAnticipationCompCents,
+  estimatePartnerAnticipationFeeCents,
+} from "../_shared/payments/anticipation.ts";
 import {
   applyInstallmentOverride,
   computeInstallmentPlan,
@@ -244,6 +247,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       "pagarme_split_enabled",
       "card_anticipation_rate_monthly_bps",
       "card_anticipation_margin_days",
+      "payout_anticipation_enabled",
     ]);
   const settingMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]));
   const moveparkRecipientId = (settingMap.pagarme_movepark_recipient_id ?? "").trim();
@@ -342,6 +346,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   let feeCreditReservationId: string | null = null;
   let anticipationCompCents = 0;
   let anticipationAppliedCents = 0;
+  let anticipationEstimateCents = 0;
   let gatewaySplit = split;
   if (splitEnabled) {
     const { data: reserva, error: reservaErr } = await admin.rpc("payout_debt_reserve", {
@@ -381,7 +386,11 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     const rateBps = Number(settingMap.card_anticipation_rate_monthly_bps || 0) || 0;
     const marginDays = Number(settingMap.card_anticipation_margin_days || 4) || 4;
     const partnerLeg = partnerRule(split);
-    if (recipient?.anticipation_enabled && commission.anticipationPayer === "movepark" && partnerLeg && rateBps > 0) {
+    // Recebedor sem a coluna preenchida (criado depois de 23/11 pelo padrão global) segue o padrão.
+    const anticipationOn =
+      recipient?.anticipation_enabled ??
+      String(settingMap.payout_anticipation_enabled ?? "").toLowerCase() === "true";
+    if (anticipationOn && commission.anticipationPayer === "movepark" && partnerLeg && rateBps > 0) {
       anticipationCompCents = estimateAnticipationCompCents({
         installments: input.installments,
         partnerLegCents: partnerLeg.amount,
@@ -392,6 +401,19 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
         marginDays,
       });
       anticipationAppliedCents = appliedAnticipationCompCents(split, debtRecoveryCents, feeCreditCents, anticipationCompCents);
+    }
+    // 4e. Antecipação paga pelo PARCEIRO (23/11/2026, Kallef: por conta do estacionamento em
+    // todos). Nada muda no split; a taxa prevista só fica gravada para a tela mostrá-la desde a
+    // venda, antes de a Pagar.me antecipar (~D+29). MDR fora da conta: a previsão sai um pouco
+    // acima, nunca abaixo. Um dia de folga: a 1ª parcela é antecipada um dia útil antes.
+    if (anticipationOn && commission.anticipationPayer === "partner" && partnerLeg && rateBps > 0) {
+      anticipationEstimateCents = estimatePartnerAnticipationFeeCents({
+        installments: input.installments,
+        partnerLegCents: partnerLeg.amount,
+        partnerMdrCents: 0,
+        monthlyRateBps: rateBps,
+        marginDays: 1,
+      });
     }
     try {
       gatewaySplit = splitForGateway(split, debtRecoveryCents, moveparkRecipientId, feeCreditCents, anticipationCompCents) as typeof split;
@@ -526,6 +548,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     fee_credit_reservation_id: feeCreditReservationId,
     anticipation_comp_cents: anticipationAppliedCents || null,
     anticipation_credit_cents: Math.max(0, anticipationCompCents - anticipationAppliedCents),
+    anticipation_estimate_cents: anticipationEstimateCents || null,
     });
     if (dc) {
       await admin.rpc("expire_paid_date_change_hold", { p_payment_id: failedId });
@@ -588,6 +611,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     fee_credit_reservation_id: feeCreditReservationId,
     anticipation_comp_cents: anticipationAppliedCents || null,
     anticipation_credit_cents: Math.max(0, anticipationCompCents - anticipationAppliedCents),
+    anticipation_estimate_cents: anticipationEstimateCents || null,
   });
   if (payErr) return await recusar(500, payErr.message);
   // Rastro do gateway (E0.3.9). O cartão nunca entra aqui: só ids, valor, parcelas e split.
@@ -606,7 +630,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       // Parcelamento que valeu nesta cobrança: nulo = política da plataforma (09/11/2026).
       installments_override: commission.installments,
       // Antecipação paga pela Movepark (E0.3.14): estimada e quanto coube no split.
-      anticipation: { payer: commission.anticipationPayer, comp_cents: anticipationCompCents, applied_cents: anticipationAppliedCents },
+      anticipation: { payer: commission.anticipationPayer, comp_cents: anticipationCompCents, applied_cents: anticipationAppliedCents, estimate_cents: anticipationEstimateCents },
     },
     response: result.raw,
   });

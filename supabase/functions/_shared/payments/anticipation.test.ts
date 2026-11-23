@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { anticipationFeesByRecipient, estimateAnticipationCompCents } from "./anticipation.ts";
+import { anticipationFeesByRecipient, estimateAnticipationCompCents, estimatePartnerAnticipationFeeCents } from "./anticipation.ts";
 
 const base = { partnerMdrCents: 0, monthlyRateBps: 310, marginDays: 4 };
 
@@ -48,4 +48,28 @@ Deno.test("taxa real por perna: soma só recebíveis de crédito", () => {
     anticipationFeesByRecipient([p("re_mp", 2), p("re_mp", 19), p("re_parc", 55), p("re_parc", -55, "refund")], "re_mp"),
     { partnerCents: 55, moveparkCents: 21 },
   );
+});
+
+// Estimativa da taxa quando o PRÓPRIO parceiro paga a antecipação (23/11/2026): sem folga e sem
+// gross-up, só para a tela mostrar a taxa prevista desde a venda. Taxas inventadas.
+const prevista = { partnerMdrCents: 0, monthlyRateBps: 200, marginDays: 1 };
+
+Deno.test("parceiro pagando: 3x de R$ 120 a 2% ao mês antecipa 1, 31 e 61 dias e prevê R$ 2,48", () => {
+  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 3, partnerLegCents: 12000 }), 248);
+});
+
+Deno.test("parceiro pagando: à vista só o dia de antecipação da 1ª parcela", () => {
+  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 1, partnerLegCents: 12000 }), 8);
+});
+
+Deno.test("parceiro pagando: o MDR da perna dele sai da base", () => {
+  const sem = estimatePartnerAnticipationFeeCents({ ...prevista, installments: 3, partnerLegCents: 12000 });
+  const com = estimatePartnerAnticipationFeeCents({ ...prevista, installments: 3, partnerLegCents: 12000, partnerMdrCents: 1000 });
+  assertEquals(com < sem, true);
+});
+
+Deno.test("parceiro pagando: entrada inválida devolve zero", () => {
+  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 0, partnerLegCents: 12000 }), 0);
+  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 3, partnerLegCents: 0 }), 0);
+  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 3, partnerLegCents: 12000, monthlyRateBps: 0 }), 0);
 });

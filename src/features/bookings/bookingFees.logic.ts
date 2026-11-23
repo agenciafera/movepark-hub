@@ -86,6 +86,8 @@ export interface FeePaymentLike {
   anticipation_credit_cents?: number | null;
   /** Quanto a Movepark cedeu no split para cobrir a antecipação do parceiro (E0.3.14). */
   anticipation_comp_cents?: number | null;
+  /** Taxa de antecipação prevista quando o próprio parceiro paga (gravada na cobrança). */
+  anticipation_estimate_cents?: number | null;
 }
 
 export interface FeeBookingLike {
@@ -257,10 +259,13 @@ export function buildFeeDetail(args: {
   // Antecipação (E0.3.14): a Pagar.me antecipa o cartão do parceiro por volta do D+29 e só então a
   // taxa aparece nos recebíveis. Antes disso, se a Movepark cedeu a estimativa no split, a taxa é
   // a prevista (a cessão) e as parcelas entram todas junto com a 1ª.
+  // Quando quem paga é o próprio estacionamento, não há cessão: a prevista é a estimativa que a
+  // cobrança gravou.
   const comp = Math.max(0, payment.anticipation_comp_cents ?? 0);
+  const previsto = comp > 0 ? comp : Math.max(0, payment.anticipation_estimate_cents ?? 0);
   const anticipatedRows = rows.filter((p) => p.anticipationFeeCents > 0);
   const anticipationReal = total(anticipatedRows, (p) => p.anticipationFeeCents);
-  const expected = method === "card" && comp > 0 && anticipationReal === 0;
+  const expected = method === "card" && previsto > 0 && anticipationReal === 0;
   const firstDate = earliest(
     rows.filter((p) => p.installment === 1).map((p) => p.originalPaymentDate),
   );
@@ -273,8 +278,8 @@ export function buildFeeDetail(args: {
     );
     lines.push({
       key: "anticipation",
-      cents: expected ? comp : payables ? anticipationReal : null,
-      partnerCents: expected ? comp : anticipationReal - moveparkCents,
+      cents: expected ? previsto : payables ? anticipationReal : null,
+      partnerCents: expected ? previsto : anticipationReal - moveparkCents,
       moveparkCents: expected ? 0 : moveparkCents,
       anticipatedAt: expected ? firstDate : earliest(anticipatedRows.map((p) => p.paymentDate)),
       creditCents: Math.max(0, payment.anticipation_credit_cents ?? 0),
@@ -300,11 +305,11 @@ export function buildFeeDetail(args: {
   const expectedShare = (k: number) => {
     if (!expected || weightSum === 0) return 0;
     if (k === n) {
-      let rest = comp;
-      for (let j = 1; j < n; j++) rest -= Math.floor((comp * (j - 1)) / weightSum);
+      let rest = previsto;
+      for (let j = 1; j < n; j++) rest -= Math.floor((previsto * (j - 1)) / weightSum);
       return rest;
     }
-    return Math.floor((comp * (k - 1)) / weightSum);
+    return Math.floor((previsto * (k - 1)) / weightSum);
   };
 
   const installments: FeeInstallmentRow[] =
@@ -344,7 +349,7 @@ export function buildFeeDetail(args: {
     gateway: {
       linesCents,
       recordedCents,
-      expectedCents: expected ? comp : 0,
+      expectedCents: expected ? previsto : 0,
       pending: recordedCents == null,
       stale: linesCents != null && recordedCents != null && linesCents !== recordedCents,
       detailed: payables != null,

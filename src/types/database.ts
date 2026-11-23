@@ -5592,6 +5592,7 @@ export type Database = {
           amount: number
           anticipation_comp_cents: number | null
           anticipation_credit_cents: number
+          anticipation_estimate_cents: number | null
           anticipation_fee_movepark_cents: number | null
           anticipation_fee_partner_cents: number | null
           anticipation_reread_at: string | null
@@ -5642,6 +5643,7 @@ export type Database = {
           amount: number
           anticipation_comp_cents?: number | null
           anticipation_credit_cents?: number
+          anticipation_estimate_cents?: number | null
           anticipation_fee_movepark_cents?: number | null
           anticipation_fee_partner_cents?: number | null
           anticipation_reread_at?: string | null
@@ -5692,6 +5694,7 @@ export type Database = {
           amount?: number
           anticipation_comp_cents?: number | null
           anticipation_credit_cents?: number
+          anticipation_estimate_cents?: number | null
           anticipation_fee_movepark_cents?: number | null
           anticipation_fee_partner_cents?: number | null
           anticipation_reread_at?: string | null

@@ -78,6 +78,7 @@ function cenario(
     custody?: boolean;
     refundedReais?: number | null;
     comp?: number | null;
+    estimate?: number | null;
   } = {},
 ) {
   const method = o.method ?? "card";
@@ -102,6 +103,7 @@ function cenario(
     refund_partner_cents: 0,
     created_at: "2026-11-01T12:00:00Z",
     anticipation_comp_cents: o.comp ?? null,
+    anticipation_estimate_cents: o.estimate ?? null,
   };
   const money = buildMoneyBreakdown(
     { days: 1, total: 100, line_items: [{ kind: "parking", quantity: 1, subtotal: 100 }] },
@@ -117,6 +119,7 @@ function cenario(
       gateway_fee_cents: payment.gateway_fee_cents,
       anticipation_credit_cents: 40,
       anticipation_comp_cents: o.comp ?? null,
+      anticipation_estimate_cents: o.estimate ?? null,
     },
     booking: {
       total_amount: 100,
@@ -419,6 +422,25 @@ describe("buildFeeDetail", () => {
       ["2026-12-01T03:00:00Z", 100, true],
       ["2026-12-01T03:00:00Z", 200, true],
     ]);
+  });
+
+  it("estacionamento pagando: a taxa prevista vem da estimativa gravada na cobrança", () => {
+    const d = cenario({
+      installments: 3,
+      payables: CARTAO_2X.map((p) => ({ ...p, anticipationFeeCents: 0, paymentDate: p.originalPaymentDate })),
+      feeCents: 130,
+      estimate: 300,
+      booking: { commission_anticipation_payer: "partner" },
+    });
+    expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({
+      cents: 300,
+      partnerCents: 300,
+      compCents: 0,
+      expected: true,
+      payer: "partner",
+    });
+    expect(d.gateway.expectedCents).toBe(300);
+    expect(d.installments.map((p) => p.anticipationCents)).toEqual([0, 100, 200]);
   });
 
   it("antecipação já feita mostra a real e quanto a Movepark cedeu no split", () => {
