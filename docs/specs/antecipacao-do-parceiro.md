@@ -105,6 +105,13 @@ taxas usam a cessão quando a Movepark paga e esta estimativa quando o estaciona
 releitura gravar a taxa real. O recebedor sem `anticipation_enabled` preenchido segue o padrão
 global (`payout_anticipation_enabled`).
 
+**À vista não tem antecipação (23/11/2026).** A parcela única já cai em ~30 dias: nas 5 vendas 1x
+relidas até 23/11 a taxa de antecipação do parceiro foi zero, e a tabela de 30 dias da Pagar.me dá
+ao 1x só a taxa do cartão. A estimativa da compensação e a previsão do parceiro passam a ser zero
+para 1x, e a tela diz "à vista não tem antecipação". Antes disso a folga de 4 dias gerava cessão em
+toda venda 1x: de 15/11 a 23/11 foram 11 vendas e R$ 7,06, que ficam com os estacionamentos como
+sobra.
+
 ## Estimativa da compensação
 
 Função pura `estimateAnticipationCompCents` em `_shared/payments/anticipation.ts` (com teste Deno),

@@ -450,6 +450,18 @@ describe("buildFeeDetail", () => {
     expect(d.installments.map((p) => p.anticipationCents)).toEqual([0, 100, 200]);
   });
 
+  it("à vista: sem antecipação prevista, mesmo com cessão antiga gravada", () => {
+    const d = cenario({
+      installments: 1,
+      payables: [payable({ installment: 1, recipientId: "re_p", amountCents: 8000 }), payable({ installment: 1, feeCents: 120 })],
+      feeCents: 120,
+      comp: 107,
+    });
+    expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({ cents: 0, expected: false, compCents: 107 });
+    expect(d.gateway.expectedCents).toBe(0);
+    expect(d.installments.map((p) => [p.expected, p.anticipationCents])).toEqual([[false, 0]]);
+  });
+
   it("antecipação já feita mostra a real e quanto a Movepark cedeu no split", () => {
     const d = cenario({ comp: 30 });
     expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({

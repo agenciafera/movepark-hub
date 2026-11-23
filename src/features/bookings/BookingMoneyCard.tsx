@@ -171,7 +171,7 @@ export function BookingMoneyCard({
               {split.partner.debtRecoveredCents > 0 && <Linha label="Abatimento de dívida" value={signed(-split.partner.debtRecoveredCents)} muted />}
               {split.partner.feeCents > 0 && <Linha label="Taxa do gateway" value={signed(-split.partner.feeCents)} muted />}
               {split.feePending && split.feePayer === "partner" && !split.custody && <Linha label="Taxa do gateway" value="apurando…" muted />}
-              {split.partner.compCents > 0 && <Linha label="Cessão da Movepark para a antecipação" value={brl(split.partner.compCents)} muted />}
+              {split.partner.compCents > 0 && <Linha label="Da parte da Movepark, para a antecipação" value={brl(split.partner.compCents)} muted />}
               {split.partner.anticipationCents > 0 && (
                 <Linha
                   label={split.partner.anticipationExpected ? "Antecipação prevista (Pagar.me)" : "Antecipação (Pagar.me)"}
@@ -195,7 +195,7 @@ export function BookingMoneyCard({
               {split.movepark.interestCents > 0 && <Linha label="Juros do parcelamento" value={brl(split.movepark.interestCents)} />}
               {split.movepark.debtRecoveredCents > 0 && <Linha label="Dívida recuperada" value={brl(split.movepark.debtRecoveredCents)} />}
               {split.movepark.feeCents > 0 && <Linha label="Taxa do gateway" value={signed(-split.movepark.feeCents)} muted />}
-              {split.movepark.compCents > 0 && <Linha label="Cessão para a antecipação do estacionamento" value={signed(-split.movepark.compCents)} muted />}
+              {split.movepark.compCents > 0 && <Linha label="Passado ao estacionamento para a antecipação" value={signed(-split.movepark.compCents)} muted />}
               {split.movepark.creditCents > 0 && <Linha label="Crédito de antecipação ao estacionamento" value={signed(-split.movepark.creditCents)} muted />}
               {split.feePending && split.feePayer === "movepark" && <Linha label="Taxa do gateway" value="apurando…" muted />}
               {/* Quando o estacionamento paga a taxa, o líquido da Movepark é a comissão inteira; a linha diz isso para ninguém procurar o desconto. */}

@@ -7,9 +7,10 @@ Deno.test("3x de R$ 120 com 3,1% ao mês: compensação de R$ 4,37 (exemplo da s
   assertEquals(estimateAnticipationCompCents({ ...base, installments: 3, partnerLegCents: 12000 }), 437);
 });
 
-Deno.test("à vista: só a margem de dias", () => {
-  // f = 0,031/30 × 4 = 0,4133%; δ = ceil(10000 × f / (1 − f)) = 42
-  assertEquals(estimateAnticipationCompCents({ ...base, installments: 1, partnerLegCents: 10000 }), 42);
+Deno.test("à vista: nada a compensar, a parcela única já cai em 30 dias", () => {
+  // Medido em 23/11/2026: nas 5 vendas 1x relidas a taxa de antecipação do parceiro foi zero, e a
+  // tabela de 30 dias da Pagar.me dá ao 1x só a taxa do cartão. A folga de dias criava cessão à toa.
+  assertEquals(estimateAnticipationCompCents({ ...base, installments: 1, partnerLegCents: 10000 }), 0);
 });
 
 Deno.test("MDR na perna do parceiro sai da base antecipada", () => {
@@ -58,8 +59,8 @@ Deno.test("parceiro pagando: 3x de R$ 120 a 2% ao mês antecipa 1, 31 e 61 dias 
   assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 3, partnerLegCents: 12000 }), 248);
 });
 
-Deno.test("parceiro pagando: à vista só o dia de antecipação da 1ª parcela", () => {
-  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 1, partnerLegCents: 12000 }), 8);
+Deno.test("parceiro pagando: à vista não tem antecipação", () => {
+  assertEquals(estimatePartnerAnticipationFeeCents({ ...prevista, installments: 1, partnerLegCents: 12000 }), 0);
 });
 
 Deno.test("parceiro pagando: o MDR da perna dele sai da base", () => {

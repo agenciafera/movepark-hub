@@ -59,7 +59,7 @@ function TaxaLinha({
   );
 }
 
-function descreve(l: FeeLine, pending: boolean) {
+function descreve(l: FeeLine, pending: boolean, cartao1x: boolean) {
   const v = (c: number | null) => (c != null ? brl(c) : pending ? "apurando" : "-");
   switch (l.key) {
     case "commission":
@@ -97,13 +97,18 @@ function descreve(l: FeeLine, pending: boolean) {
         regra = `prevista${l.anticipatedAt ? ` para perto de ${formatDate(l.anticipatedAt)}` : ""}: as parcelas entram junto com a 1ª`;
         regra +=
           l.compCents > 0
-            ? ` · a Movepark já cedeu ${brl(l.compCents)} no split para cobrir`
+            ? ` · a Movepark já passou ${brl(l.compCents)} da parte dela para o estacionamento cobrir`
             : " · sai da parte do estacionamento";
+      } else if (l.cents === 0 && cartao1x) {
+        regra = "à vista não tem antecipação: a parcela já entra em 30 dias";
+        if (l.compCents > 0)
+          regra += ` · os ${brl(l.compCents)} que a Movepark passou ao estacionamento ficam com ele`;
       } else if (l.cents === 0) regra = "ainda não antecipado";
       else if (l.cents != null) {
         regra = `estacionamento ${brl(l.partnerCents)} · Movepark ${brl(l.moveparkCents)}`;
         if (l.anticipatedAt) regra += ` · antecipado em ${formatDate(l.anticipatedAt)}`;
-        if (l.compCents > 0) regra += ` · a Movepark cedeu ${brl(l.compCents)} no split`;
+        if (l.compCents > 0)
+          regra += ` · a Movepark passou ${brl(l.compCents)} da parte dela para cobrir`;
         if (l.payer === "movepark" && l.creditCents > 0)
           regra += ` · a Movepark devolveu ${brl(l.creditCents)} ao estacionamento`;
       }
@@ -172,7 +177,7 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
           {d.lines.map((l) => (
             <TaxaLinha
               key={l.key}
-              {...descreve(l, g.pending)}
+              {...descreve(l, g.pending, cartao && s.installments === 1)}
               pagador={PAGADOR[l.payer]}
               testId={`taxa-${l.key}`}
             />

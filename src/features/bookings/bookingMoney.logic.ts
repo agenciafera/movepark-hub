@@ -180,8 +180,10 @@ export function buildMoneyBreakdown(
     const estimate = custody ? 0 : pos(payment.anticipation_estimate_cents);
     const mdrCents = Math.max(0, feeCents - antPartnerReal - antMovepark);
     const partnerFee = !custody && partnerPaysFee ? mdrCents : 0;
-    // Antes da releitura: a cessão quando a Movepark paga; a estimativa quando o parceiro paga.
-    const partnerAnt = reread ? antPartnerReal : comp > 0 ? comp : estimate;
+    // Antes da releitura: a cessão quando a Movepark paga; a estimativa quando o parceiro paga. À
+    // vista não tem antecipação (a parcela única já cai em ~30 dias): a cessão antiga fica com ele.
+    const parcelado = (payment.installments ?? 1) > 1;
+    const partnerAnt = reread ? antPartnerReal : !parcelado ? 0 : comp > 0 ? comp : estimate;
     const moveparkFee = mdrCents - partnerFee + antMovepark;
     const moveparkNominal = chargedCents - partnerGross;
     const commissionCents = Math.max(0, moveparkNominal - fareCents - interestCents);

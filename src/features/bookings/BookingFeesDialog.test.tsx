@@ -61,7 +61,10 @@ const payables = (method: "card" | "pix") => ({
   },
 });
 
-function abre(method: "card" | "pix", opts: { comp?: number; semAntecipacao?: boolean } = {}) {
+function abre(
+  method: "card" | "pix",
+  opts: { comp?: number; semAntecipacao?: boolean; installments?: number } = {},
+) {
   const ev: { payment_id: string; kind: string; created_at: string; response: { data: Record<string, unknown>[] } } =
     payables(method);
   if (opts.semAntecipacao)
@@ -70,13 +73,15 @@ function abre(method: "card" | "pix", opts: { comp?: number; semAntecipacao?: bo
       anticipation_fee: 0,
       payment_date: r.original_payment_date ?? r.payment_date,
     }));
+  if (opts.installments === 1)
+    ev.response.data = ev.response.data.filter((r) => r.installment === 1).map((r) => ({ ...r, anticipation_fee: 0 }));
   state.events = [ev];
   const fee = method === "card" ? (opts.semAntecipacao ? 130 : 175) : 80;
   const pay: MoneyPaymentLike = {
     status: "paid",
     method,
     amount: 100,
-    installments: method === "card" ? 2 : 1,
+    installments: opts.installments ?? (method === "card" ? 2 : 1),
     split: [
       { role: "partner", amount: 8000, chargeProcessingFee: false },
       { role: "movepark", amount: 2000, liable: true },
@@ -156,13 +161,22 @@ describe("BookingFeesDialog", () => {
     const ant = screen.getByTestId("taxa-anticipation");
     expect(ant).toHaveTextContent(/R\$\s?3,00 previstos/);
     expect(ant).toHaveTextContent(/prevista para perto de 01\/12\/2026/);
-    expect(ant).toHaveTextContent(/a Movepark já cedeu R\$\s?3,00 no split/);
+    expect(ant).toHaveTextContent(/a Movepark já passou R\$\s?3,00 da parte dela para o estacionamento cobrir/);
     expect(ant).not.toHaveTextContent("ainda não antecipado");
     expect(screen.getByTestId("taxa-total")).toHaveTextContent(/com a antecipação prevista: R\$\s?4,30/);
     const linhas = within(screen.getByTestId("taxas-parcelas")).getAllByRole("row");
     expect(linhas[2]).toHaveTextContent(/01\/12\/2026 \(prevista\)/);
     // A Movepark fica com a comissão menos a cessão: 2000 - 300 - 130 de MDR que ela paga.
     expect(screen.getByText("A Movepark fica com").nextSibling).toHaveTextContent(/15,70/);
+  });
+
+  it("à vista: diz que não tem antecipação e que a cessão antiga fica com o estacionamento", () => {
+    state.cardBps = 118;
+    abre("card", { installments: 1, comp: 107 });
+    const ant = screen.getByTestId("taxa-anticipation");
+    expect(ant).toHaveTextContent("à vista não tem antecipação: a parcela já entra em 30 dias");
+    expect(ant).toHaveTextContent(/os R\$\s?1,07 que a Movepark passou ao estacionamento ficam com ele/);
+    expect(ant).not.toHaveTextContent("previstos");
   });
 
   it("cartão fora do contrato ganha o aviso", () => {

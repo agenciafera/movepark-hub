@@ -270,7 +270,8 @@ export function buildFeeDetail(args: {
   const previsto = comp > 0 ? comp : Math.max(0, payment.anticipation_estimate_cents ?? 0);
   const anticipatedRows = rows.filter((p) => p.anticipationFeeCents > 0);
   const anticipationReal = total(anticipatedRows, (p) => p.anticipationFeeCents);
-  const expected = method === "card" && previsto > 0 && anticipationReal === 0;
+  // À vista não tem antecipação: a parcela única já cai em ~30 dias (taxa zero nas vendas 1x relidas).
+  const expected = method === "card" && n > 1 && previsto > 0 && anticipationReal === 0;
   const firstDate = earliest(
     rows.filter((p) => p.installment === 1).map((p) => p.originalPaymentDate),
   );

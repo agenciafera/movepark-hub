@@ -26,7 +26,9 @@ export type AnticipationEstimateArgs = {
 export function estimateAnticipationCompCents(a: AnticipationEstimateArgs): number {
   const n = Math.floor(a.installments);
   const net = Math.floor(a.partnerLegCents) - Math.max(0, Math.floor(a.partnerMdrCents));
-  if (n < 1 || net <= 0 || a.monthlyRateBps <= 0) return 0;
+  // À vista não há o que antecipar: a parcela única já cai em ~30 dias (medido em 23/11/2026: taxa
+  // zero no parceiro nas 5 vendas 1x relidas). A folga de dias criava cessão à toa.
+  if (n < 2 || net <= 0 || a.monthlyRateBps <= 0) return 0;
   let sumDays = 0;
   for (let i = 1; i <= n; i++) sumDays += 30 * (i - 1) + Math.max(0, a.marginDays);
   const f = (a.monthlyRateBps / 10000 / 30) * (sumDays / n);
@@ -43,7 +45,8 @@ export function estimateAnticipationCompCents(a: AnticipationEstimateArgs): numb
 export function estimatePartnerAnticipationFeeCents(a: AnticipationEstimateArgs): number {
   const n = Math.floor(a.installments);
   const net = Math.floor(a.partnerLegCents) - Math.max(0, Math.floor(a.partnerMdrCents));
-  if (n < 1 || net <= 0 || a.monthlyRateBps <= 0) return 0;
+  // À vista não tem antecipação: a parcela única já cai em ~30 dias.
+  if (n < 2 || net <= 0 || a.monthlyRateBps <= 0) return 0;
   let sumDays = 0;
   for (let i = 1; i <= n; i++) sumDays += 30 * (i - 1) + Math.max(0, a.marginDays);
   const f = (a.monthlyRateBps / 10000 / 30) * (sumDays / n);
