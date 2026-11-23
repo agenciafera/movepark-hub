@@ -210,10 +210,37 @@ Ao lado de cada taxa, a coluna **"Medido nas vendas (90 dias)"**, vinda da RPC n
   recebem `42501`; `anon` não executa; o MDR medido sai do último evento `payables` e ignora
   recebível de `refund`.
 
+## A tabela no Operator, para o estacionamento (23/11/2026)
+
+Atividade [Hub: tabela de taxas da Pagar.me fixa no dashboard admin](https://app.clickup.com/t/17tn9ea4359):
+o estacionamento abre o painel e encontra as taxas vigentes, sem precisar perguntar. Card
+**"Entenda as nossas taxas"** no Financeiro do Operator (`/operator/finance`, escopo `finance:read`:
+Dono, Gerente e Financeiro), logo abaixo de "Vendas que você traz".
+
+- **Quem paga o quê, por canal:** uma linha para "Vendas pela Movepark" (comissão da empresa,
+  padrões do Hub) e uma por regra de origem ativa da empresa, com comissão, quem paga a taxa do
+  cartão e do Pix e quem paga a antecipação (a mesma precedência de `resolve_commission`: regra,
+  empresa, padrão do Hub).
+- **Cartão, de 1x a 12x:** taxa do cartão (faixa do contrato), antecipação (custo em 30 dias menos a
+  taxa do cartão; à vista é zero) e total para receber em 30 dias (`cet30_bps`).
+- **Pix** (o dinheiro entra na hora) e **saque manual** (o repasse automático do mês não tem custo).
+- **Antifraude só se as vendas pagaram de fato** (decisão do Kallef em 23/11/2026): aparece quando
+  algum recebível dos últimos 90 dias trouxe `fraud_coverage_fee` maior que zero. O gateway por
+  transação (`processing_cents`) nunca aparece para o estacionamento, porque não vem nos recebíveis.
+- **Parcelamento do cliente:** a política da plataforma com o override do canal ou da empresa
+  (`applyInstallmentOverride`), mais a nota de que a condição é ajustada por canal com a Movepark.
+
+Dados pela RPC `partner_fee_table(p_company_id)` (`SECURITY DEFINER`, `hub_admin` ou
+`member_has_scope(company, 'finance:read')`, `42501` para os demais), porque `gateway_fee_schedule` e
+a política de parcelamento são `is_public = false`. Ela devolve a tabela contratada sem o gateway por
+transação, a taxa de antecipação ao mês, a taxa de saque, a política de parcelamento e os canais da
+empresa. Lógica de tela em `src/features/commission/partnerFees.logic.ts`; card em
+`PartnerFeesCard.tsx`.
+
 ## Fora de escopo
 
-- Visão do estacionamento (Operator) e texto para mandar ao parceiro: próxima etapa, depois de a
-  equipe conferir o modal.
+- O modal "Ver taxas" da reserva na visão do estacionamento (o Operator vê a tabela geral, não o
+  detalhe por venda) e o texto para mandar ao parceiro.
 - Mudar a política de parcelamento, a comissão ou quem paga cada taxa: esta entrega só mostra.
 - Histórico de versões da tabela de taxas (o que valia em cada data). Se precisar, vira tabela
   própria depois; por ora a tabela é a vigente e o modal compara com o efetivo da venda.

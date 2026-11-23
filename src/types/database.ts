@@ -10920,6 +10920,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: string[]
       }
+      partner_fee_table: { Args: { p_company_id: string }; Returns: Json }
       payment_charge_lock_claim: {
         Args: { p_booking_id: string; p_ttl_seconds?: number }
         Returns: string

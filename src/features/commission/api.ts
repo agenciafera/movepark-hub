@@ -8,12 +8,14 @@ import { supabase } from "@/lib/supabase";
 import type { CommissionRule } from "@/types/domain";
 import { bookingsKeys } from "@/features/bookings/api";
 import type { RulePayload } from "./rule.logic";
+import type { PartnerFeeTable } from "./partnerFees.logic";
 
 export const commissionKeys = {
   all: ["commission"] as const,
   rules: () => [...commissionKeys.all, "rules"] as const,
   channels: (companyId: string) => [...commissionKeys.all, "channels", companyId] as const,
   report: (from: string, to: string) => [...commissionKeys.all, "report", from, to] as const,
+  feeTable: (companyId: string) => [...commissionKeys.all, "fee-table", companyId] as const,
 };
 
 export type ChannelReport = {
@@ -155,3 +157,22 @@ export function useSetBookingCommission() {
     },
   });
 }
+
+/**
+ * Tabela de taxas para o estacionamento (RPC `partner_fee_table`, 23/11/2026): o contrato da
+ * Pagar.me, a antecipação, o saque, o parcelamento e quem paga cada taxa em cada canal. Só para
+ * quem tem finance:read na empresa; para os demais o servidor recusa e o card não aparece.
+ */
+export function usePartnerFeeTable(companyId: string | undefined) {
+  return useQuery({
+    queryKey: commissionKeys.feeTable(companyId ?? ""),
+    enabled: !!companyId,
+    retry: false,
+    queryFn: async (): Promise<PartnerFeeTable> => {
+      const { data, error } = await supabase.rpc("partner_fee_table", { p_company_id: companyId! });
+      if (error) throw error;
+      return data as unknown as PartnerFeeTable;
+    },
+  });
+}
+

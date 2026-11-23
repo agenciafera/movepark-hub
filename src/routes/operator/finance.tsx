@@ -30,6 +30,7 @@ import {
 import { PartnerAccount } from "@/features/payouts/PartnerAccount";
 import { PartnerDebtCard } from "@/features/payouts/PartnerDebtCard";
 import { PartnerChannelsCard } from "@/features/commission/PartnerChannelsCard";
+import { PartnerFeesCard } from "@/features/commission/PartnerFeesCard";
 import { resumoSaldo } from "@/features/payouts/saldo.logic";
 import { payoutStatusTone, recipientStatusLabel } from "@/features/payouts/status";
 import { formatBRL, formatDate } from "@/lib/format";
@@ -136,6 +137,9 @@ export default function OperatorFinance() {
 
       {/* Canais de venda com comissão reduzida e o link rastreado (E0.3.12). Some sem regra. */}
       <PartnerChannelsCard companyId={companyId} />
+
+      {/* Taxas que saem de cada venda (23/11/2026): docs/specs/taxas-da-reserva.md */}
+      <PartnerFeesCard companyId={companyId} />
 
       {/* Dívida com a Movepark e o que cada reserva abateu (E0.3.5). Some quando não há nada. */}
       <PartnerDebtCard companyId={companyId} />
