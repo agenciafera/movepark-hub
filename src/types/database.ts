@@ -9716,6 +9716,7 @@ export type Database = {
         Args: { p_actual: string; p_covered: string }
         Returns: number
       }
+      gateway_fee_measured: { Args: { p_days?: number }; Returns: Json }
       generate_unique_company_slug: {
         Args: { p_name: string }
         Returns: string
