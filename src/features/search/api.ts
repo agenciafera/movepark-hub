@@ -1,3 +1,4 @@
+import { resolveParkingLogo } from "@/lib/parkingLogo";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { mapLowestDaily, type LowestDailyRow } from "./menorDiaria";
@@ -130,6 +131,8 @@ export type FeaturedOffer = {
     sort_order: number;
     cover_image: string | null;
     company: { id: string; name: string; slug: string };
+    /** Logo colorido do parceiro (unidade antes da empresa), acima do nome no card. */
+    logo?: string | null;
     destination: {
       id: string;
       code: string;
@@ -186,8 +189,8 @@ export function useFeaturedOffers() {
         .from("location")
         .select(
           `
-          id, name, slug, public_name, review_avg, review_count,
-          company:company_id (id, name, slug, status),
+          id, name, slug, public_name, review_avg, review_count, logo_url, logo_dark_url,
+          company:company_id (id, name, slug, status, logo_url, logo_dark_url),
           destination:destination_id (id, code, name, short_name, slug),
           amenities:location_amenity (amenity_code),
           photos, go2park_enabled
@@ -252,7 +255,8 @@ export function useFeaturedOffers() {
             review_count: loc.review_count ?? 0,
             sort_order: ordem.get(r.id) ?? Number.MAX_SAFE_INTEGER,
             cover_image: photos[0] ?? null,
-            company: loc.company as { id: string; name: string; slug: string },
+            company: { id: loc.company.id, name: loc.company.name, slug: loc.company.slug },
+            logo: resolveParkingLogo(loc, loc.company).light,
             destination: loc.destination as FeaturedOffer["location"]["destination"],
             amenities: (loc.amenities ?? []) as { amenity_code: string }[],
             go2park: loc.go2park_enabled === true,

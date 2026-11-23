@@ -92,6 +92,7 @@ function FeaturedOfferCard({
       coverImage={location.cover_image}
       coverAlt={location.name}
       title={tituloDaUnidade(location.public_name, location.company.name, location.name)}
+      logo={location.logo ? { src: location.logo, alt: location.company.name } : null}
       parkingTypeName={parking_type.name}
       parkingTypeCode={parking_type.code}
       metaIcon={location.destination ? Airplane : undefined}

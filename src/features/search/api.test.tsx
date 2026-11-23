@@ -99,4 +99,35 @@ describe("useFeaturedOffers", () => {
 
     expect(result.current.data?.map((o) => o.id)).toEqual(["lpt-2", "lpt-1"]);
   });
+
+  it("traz o logo colorido do parceiro para o card (unidade antes da empresa)", async () => {
+    rpc("home_featured_offers", { json: [curadoria()] });
+    tabela("location", "get", {
+      json: [
+        unidade({
+          logo_url: null,
+          company: {
+            id: "c-1",
+            name: "Virapark",
+            slug: "virapark",
+            status: "active",
+            logo_url: "https://cdn.test/virapark.png",
+            logo_dark_url: null,
+          },
+        }),
+      ],
+    });
+    tabela("location_parking_type", "get", { json: [vaga()] });
+    rpc("lowest_daily_rate", { json: [diaria()] });
+
+    const { result } = renderMutation(() => useFeaturedOffers());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0].location.logo).toBe("https://cdn.test/virapark.png");
+    expect(result.current.data?.[0].location.company).toEqual({
+      id: "c-1",
+      name: "Virapark",
+      slug: "virapark",
+    });
+  });
 });

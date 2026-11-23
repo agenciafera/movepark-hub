@@ -54,7 +54,7 @@ outro.
 | Lugar | Arquivo | Como |
 |---|---|---|
 | Ficha da unidade (`/estacionamentos/<destino>/<lote>`) | `routes/listing.tsx` | logo colorido logo acima do H1, 36px no celular e 40px no computador. Pré-renderizado no build (`fetchListing` lê os logos); trocar o logo no Manager republica a página pelos gatilhos `company_site_rebuild` e `location_site_rebuild` |
-| Card da busca e da página de destino | `search/ParkingCard.tsx` (prop `logo`), `ResultCard.tsx` | logo colorido (28px, até 140px de largura) acima do título. A Edge `search` devolve `operator.logo` (unidade antes da empresa) |
+| Card da busca, da página de destino e da vitrine da home | `search/ParkingCard.tsx` (prop `logo`), `ResultCard.tsx`, `home/FeaturedParkingLots.tsx` | logo colorido (28px, até 140px de largura) acima do título. A Edge `search` devolve `operator.logo`; a vitrine lê os logos em `useFeaturedOffers` (`location.logo`). Unidade antes da empresa nos dois |
 | Checkout, desktop | `SummaryCard.tsx` | "Operado por [logo]" sob o nome e o "Ver endereço" do cartão de resumo |
 | Checkout, mobile | `routes/checkout.tsx` | mesma linha, centralizada acima do passo a passo (no mobile o resumo fica fechado na gaveta) |
 | Confirmação (passo 5) | `Step5Confirmation.tsx` | sob a instrução do QR |
@@ -102,8 +102,6 @@ então tem que ser **dedicada e restrita à Static Maps API**, nunca a chave do 
 
 ## Fora do escopo
 
-- Vitrine da home (`FeaturedParkingLots`): usa o mesmo `ParkingCard`, mas lê de outra fonte e
-  ainda não passa `logo`.
 - Lembretes, troca de datas e cancelamento: já saem com o parceiro no topo e a Movepark no rodapé,
   mas sem o bloco de foto e mapa. Ligar é chamar `parkingBlock` com os mesmos dados.
 - E-mails para o próprio parceiro (resumo diário, saque, KYC) seguem com a Movepark no topo: quem
