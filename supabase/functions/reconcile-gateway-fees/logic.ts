@@ -51,3 +51,13 @@ export function anticipationShortfallCents(a: {
   if (a.payer !== "movepark") return 0;
   return Math.max(0, Math.floor(a.partnerFeeCents) - Math.max(0, Math.floor(a.compCents ?? 0)));
 }
+
+/**
+ * A releitura só fecha (grava a taxa real e `anticipation_reread_at`) com resposta boa e com
+ * recebível. Erro da Pagar.me ou lista vazia ficam no rastro e a próxima volta do cron tenta de
+ * novo: fechar com zero escondia a antecipação e o crédito do parceiro (MP-573C3E, 19/11/2026).
+ */
+export function rereadUsable(result: { httpStatus: number | null | undefined; payables: unknown[] }): boolean {
+  const status = result.httpStatus ?? 0;
+  return status >= 200 && status < 400 && result.payables.length > 0;
+}

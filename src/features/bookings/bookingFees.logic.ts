@@ -64,17 +64,22 @@ export interface PayablesEventLike {
   created_at: string;
 }
 
-/** Recebíveis do último evento `payables` do pagamento; null sem evento ou sem recebível. */
+/**
+ * Recebíveis do último evento `payables` do pagamento que trouxe recebível; null sem nenhum. Uma
+ * leitura com erro da Pagar.me (ou vazia) não apaga a anterior (MP-573C3E, 19/11/2026).
+ */
 export function latestPayables(
   events: PayablesEventLike[] | null | undefined,
   paymentId: string,
 ): FeePayable[] | null {
-  const last = (events ?? [])
+  const ordered = (events ?? [])
     .filter((e) => e.kind === "payables" && e.payment_id === paymentId)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-  if (!last) return null;
-  const rows = parsePayables(last.response);
-  return rows.length ? rows : null;
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  for (const e of ordered) {
+    const rows = parsePayables(e.response);
+    if (rows.length) return rows;
+  }
+  return null;
 }
 
 export interface FeePaymentLike {

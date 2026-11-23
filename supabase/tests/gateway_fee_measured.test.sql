@@ -68,6 +68,8 @@ begin
                           'anticipation_fee',19,'payment_date','2026-12-01T03:00:00Z',
                           'original_payment_date','2026-12-31T03:00:00Z'),
        jsonb_build_object('type','refund','fee',-100,'amount',-3000,'installment',1))), now()),
+    -- releitura MAIS NOVA com erro da Pagar.me (MP-573C3E): não pode apagar o retrato bom
+    (card, b1, 'payables', 500, '{"reread":true}', '{"message":"Internal Server Error"}', now() + interval '1 hour'),
     (pix,  b2, 'payables', 200, '{}', '{"data":[{"type":"credit","fee":40,"amount":5000}]}', now()),
     -- pendente: não pode entrar
     (pend, b3, 'payables', 200, '{}', '{"data":[{"type":"credit","fee":777,"amount":10000,"installment":1}]}', now());

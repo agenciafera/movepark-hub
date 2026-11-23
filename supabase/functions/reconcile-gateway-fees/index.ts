@@ -28,7 +28,14 @@ import { getGateway, GatewayConfigError } from "../_shared/payments/index.ts";
 import { partnerReleaseAt, totalGatewayFeeCents } from "../_shared/payments/fees.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { partnerRule } from "../_shared/payments/split.ts";
-import { anticipationShortfallCents, BATCH_LIMIT, feeRetryCutoffIso, feeWindowIso, rereadCutoffIso } from "./logic.ts";
+import {
+  anticipationShortfallCents,
+  BATCH_LIMIT,
+  feeRetryCutoffIso,
+  feeWindowIso,
+  rereadCutoffIso,
+  rereadUsable,
+} from "./logic.ts";
 import { anticipationFeesByRecipient } from "../_shared/payments/anticipation.ts";
 
 // CORS porque a porta do hub_admin é chamada do navegador.
@@ -193,8 +200,12 @@ Deno.serve(async (req: Request) => {
           httpStatus: result.httpStatus,
           request: { charge_id: p.provider_charge_id, reread: true },
           response: result.raw,
-          note: `releitura · antecipação parceiro ${ant.partnerCents} c, Movepark ${ant.moveparkCents} c · crédito ${falta} c`,
+          note: rereadUsable(result)
+            ? `releitura · antecipação parceiro ${ant.partnerCents} c, Movepark ${ant.moveparkCents} c · crédito ${falta} c`
+            : `releitura sem recebível (HTTP ${result.httpStatus ?? "?"}): tenta de novo na próxima volta`,
         });
+        // Erro ou lista vazia não fecham a releitura: o rastro fica e a próxima volta tenta de novo.
+        if (!rereadUsable(result)) continue;
         await admin
           .from("payment")
           .update({

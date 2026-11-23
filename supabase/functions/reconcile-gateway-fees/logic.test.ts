@@ -57,3 +57,15 @@ Deno.test("falta da compensação vira crédito só com pagador Movepark", () =>
   assertEquals(anticipationShortfallCents({ payer: "movepark", partnerFeeCents: 55, compCents: null }), 55);
   assertEquals(anticipationShortfallCents({ payer: "partner", partnerFeeCents: 450, compCents: null }), 0);
 });
+
+import { rereadUsable } from "./logic.ts";
+
+// MP-573C3E (19/11/2026): a Pagar.me respondeu 500 na releitura e a venda foi marcada como relida
+// com antecipação zero, sem nunca mais ser lida. Resposta com erro ou sem recebível não fecha a
+// releitura: fica no rastro e a próxima volta do cron tenta de novo.
+Deno.test("releitura com erro ou sem recebível não fecha a venda", () => {
+  assertEquals(rereadUsable({ httpStatus: 500, payables: [] }), false);
+  assertEquals(rereadUsable({ httpStatus: 200, payables: [] }), false);
+  assertEquals(rereadUsable({ httpStatus: null, payables: [{}] }), false);
+  assertEquals(rereadUsable({ httpStatus: 200, payables: [{}] }), true);
+});

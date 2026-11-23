@@ -205,6 +205,13 @@ describe("latestPayables", () => {
     ];
     expect(latestPayables(events, "p1")?.map((p) => p.feeCents)).toEqual([60]);
   });
+  it("retrato mais novo com erro ou vazio não apaga o anterior (MP-573C3E)", () => {
+    const events = [
+      ev("p1", "2026-10-19T22:30:00Z", 60),
+      { payment_id: "p1", kind: "payables", created_at: "2026-11-19T22:30:00Z", response: { message: "Internal Server Error" } },
+    ];
+    expect(latestPayables(events, "p1")?.map((p) => p.feeCents)).toEqual([60]);
+  });
   it("sem evento, ou com evento vazio, devolve null", () => {
     expect(latestPayables([], "p1")).toBeNull();
     expect(
