@@ -105,6 +105,14 @@ Regras:
 
 O que isso não resolve sozinho: a compra chega ao GA4 do parceiro com a origem certa (o `gclid` e as UTMs vêm na URL, §6.2), mas como visitante novo, separado da visita ao site dele. Unir as duas visitas exige o vínculo entre domínios do GA4 do parceiro, que em 18/11/2026 não estava ativo (o `_gl` que saiu de `pareseguro.com` não levava o `_ga`).
 
+### 3.3 O fluxo inteiro, em uma imagem
+
+![Do anúncio do parceiro à compra na Movepark: o click ID nasce no anúncio, passa pelo site do parceiro, chega a movepark.co na URL do botão Reservar, fica guardado no navegador e volta ao Google Ads do parceiro junto com a conversão de compra, enviada pelo GTM da Movepark](img/fluxo-conversoes-parceiro.png)
+
+O site do parceiro tem só as tags dele (GTM, GA4 e Google Ads). Em `movepark.co` roda só o GTM da Movepark, que manda os eventos ao GA4 da Movepark, uma cópia dos eventos da unidade ao GA4 do parceiro (§3.2) e a conversão de compra ao Google Ads do parceiro (§3.1). O caminho em violeta é o click ID, que dá lastro à venda: ele chega na URL do botão Reservar e a tag do Google grava no cookie `_gcl_aw` de `movepark.co`, de onde a tag de conversão lê na hora da compra.
+
+Conferido em 23/11/2026 com um clique de teste só com `gclid`, como o anúncio real manda: o click ID chegou e ficou gravado, com e sem aceite de cookies no site. **O click ID fica no navegador do cliente, não na reserva.** `booking.attribution` não tem campo para ele, e nesse caminho o botão não manda `utm_source`, então a reserva guarda só a referência `pareseguro.com`. Gravar o `gclid` na reserva é o que falta para a conversão pelo servidor (fase 2 do piloto).
+
 ## 4. O formato
 
 Cada push é precedido de `{ ecommerce: null, partner: null }` (o `partner` entrou no reset em 18/11/2026, §3.2). O evento:
