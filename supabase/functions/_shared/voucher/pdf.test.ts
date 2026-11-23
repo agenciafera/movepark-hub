@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { buildVoucherPdf, fetchLogoImage, isOwnStorageUrl, logoKind } from "./pdf.ts";
+import { buildVoucherPdf, fetchLogoImage, isOwnStorageUrl, logoKind, wrapText } from "./pdf.ts";
 import type { VoucherBooking } from "./fields.ts";
 
 Deno.env.set("SUPABASE_URL", "https://proj.supabase.co");
@@ -103,4 +103,13 @@ Deno.test("buildVoucherPdf: logo fora do Storage do projeto nem é baixado", asy
   } finally {
     f.restore();
   }
+});
+
+Deno.test("wrapText: endereço longo quebra por palavra e nenhuma linha passa do limite", () => {
+  const medir = (t: string) => t.length * 6;
+  const rows = wrapText("Av. Monteiro Lobato, 2738 - Vila Miriam, Guarulhos - SP, 07190-000", 200, medir);
+  assertEquals(rows.length > 1, true);
+  for (const r of rows) assertEquals(medir(r) <= 200, true);
+  assertEquals(rows.join(" "), "Av. Monteiro Lobato, 2738 - Vila Miriam, Guarulhos - SP, 07190-000");
+  assertEquals(wrapText("Curto", 200, medir), ["Curto"]);
 });

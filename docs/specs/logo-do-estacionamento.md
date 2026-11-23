@@ -99,7 +99,11 @@ então tem que ser **dedicada e restrita à Static Maps API**, nunca a chave do 
 
 ## Pendências
 
-- Nenhuma empresa tem logo cadastrado (23/11/2026). O estudo visual vai ao Pedro antes de subir o
-  logo da Pare Seguro; só a partir do upload o logo aparece para o cliente.
+- **Pare Seguro cadastrada em 23/11/2026**, com os logos do site dela
+  (`pareseguro-website/assets/logo/pare-seguro-cor.svg` e `pare-seguro-negativo.svg`) convertidos
+  para PNG transparente de 160px de altura e gravados em `assets-public/<company_id>/`. As outras
+  empresas seguem sem logo. O original de todo parceiro é SVG: converta para PNG antes de subir.
+- O PDF do voucher passou a quebrar valor longo em linhas (`wrapText`): o endereço completo da
+  Pare Seguro passava da margem direita e saía cortado.
 - Mapa do e-mail: ativar a Static Maps API no Google Cloud, criar a chave restrita a ela e gravar
   `GOOGLE_STATIC_MAPS_KEY` nos segredos das Edges. Até lá, o cartão de endereço.

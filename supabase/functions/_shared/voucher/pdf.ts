@@ -142,14 +142,38 @@ export async function buildVoucherPdf(
     }
   }
 
+  // Valor longo (endereço completo) quebra em linhas alinhadas à direita; antes ele passava da
+  // margem e saía cortado da folha. 150pt ficam reservados para o rótulo.
+  const maxValueWidth = width - 2 * M - 150;
   for (const line of voucherFields(voucher)) {
     page.drawText(line.label, { x: M, y, size: 11, font: helv, color: muted });
-    const vw = helvB.widthOfTextAtSize(line.value, 11);
-    page.drawText(line.value, { x: width - M - vw, y, size: 11, font: helvB, color: ink });
-    y -= 22;
+    const rows = wrapText(line.value, maxValueWidth, (t) => helvB.widthOfTextAtSize(t, 11));
+    rows.forEach((row, i) => {
+      const vw = helvB.widthOfTextAtSize(row, 11);
+      page.drawText(row, { x: width - M - vw, y: y - i * 15, size: 11, font: helvB, color: ink });
+    });
+    y -= 22 + (rows.length - 1) * 15;
   }
 
   return await pdf.save();
+}
+
+/** Quebra o texto por palavra para caber em `maxWidth`. Palavra maior que a linha fica inteira. */
+export function wrapText(text: string, maxWidth: number, measure: (t: string) => number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const rows: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (cur && measure(next) > maxWidth) {
+      rows.push(cur);
+      cur = w;
+    } else {
+      cur = next;
+    }
+  }
+  if (cur) rows.push(cur);
+  return rows.length ? rows : [""];
 }
 
 /** URL pública da página de validação do voucher (QR). */
