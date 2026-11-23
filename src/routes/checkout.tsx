@@ -22,6 +22,7 @@ import { Step4Payment } from "@/features/checkout/Step4Payment";
 import { Step5Confirmation } from "@/features/checkout/Step5Confirmation";
 import { SummaryCard } from "@/features/checkout/SummaryCard";
 import { SummaryDrawer } from "@/features/checkout/SummaryDrawer";
+import { OperatedBy } from "@/components/shared/OperatedBy";
 import { formatDuration } from "@/lib/format";
 import { useLocationAddOns } from "@/features/listing/api";
 import {
@@ -161,6 +162,13 @@ export default function CheckoutPage() {
 
       <div className="mx-auto w-full max-w-[1080px] px-4 py-8 desktop:px-8">
         <h1 className="sr-only">Finalizar reserva</h1>
+        {/* No mobile o resumo fica fechado na gaveta, então quem opera a vaga aparece aqui em
+            cima. No desktop ele está no cartão de resumo ao lado. */}
+        <OperatedBy
+          logo={booking.location.logo}
+          name={booking.location.company.name}
+          className="mb-4 justify-center desktop:hidden"
+        />
         <div className="mb-6">
           {addonsCarregados ? (
             <Stepper current={step} steps={visibleSteps(hasAddons)} />

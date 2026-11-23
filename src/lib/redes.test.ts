@@ -24,40 +24,36 @@ describe("redes da marca", () => {
   });
 
   /**
-   * A Edge roda em Deno e não enxerga `src/`, então `_shared/email.ts` mantém a
-   * própria lista. É a mesma duplicação que deixou o telefone de suporte para
-   * trás (ver `suporte.test.ts`), e ler o arquivo é o que impede a segunda vez.
+   * O rodapé do e-mail não tem mais redes sociais desde 23/11/2026: o casco ficou minimalista
+   * para a marca Movepark não competir com a do estacionamento (docs/specs/logo-do-estacionamento.md).
    *
-   * A comparação é por rede presente nos dois lados, e não por conjunto igual: o
-   * rodapé do e-mail monta cada item como `<img>` de um PNG que precisa existir,
-   * e o do Facebook ainda não foi desenhado.
+   * As duas guardas abaixo continuam valendo se a lista voltar. A Edge roda em Deno e não enxerga
+   * `src/`, então `_shared/email.ts` mantém a própria lista: é a mesma duplicação que deixou o
+   * telefone de suporte para trás (ver `suporte.test.ts`). E cada rede vira `<img>` de
+   * `/brand/social-<name>-email.png`, que precisa existir, senão todo e-mail sai com imagem quebrada.
    */
-  it("as redes que existem nos dois lados apontam para o mesmo lugar", () => {
-    const edge = readFileSync("supabase/functions/_shared/email.ts", "utf-8");
-    const urlsDaEdge = [...edge.matchAll(/url:\s*"(https:\/\/[^"]+)"/g)].map((m) => m[1]);
-    expect(urlsDaEdge.length).toBeGreaterThan(0);
+  const edge = readFileSync("supabase/functions/_shared/email.ts", "utf-8");
+  const temRedes = edge.includes("const SOCIAL");
 
+  it("sem a lista de redes, o e-mail não referencia ícone de rede", () => {
+    if (temRedes) return;
+    expect(edge).not.toMatch(/social-\$\{|social-\w+-email\.png/);
+  });
+
+  it("com a lista de redes, as URLs batem com as do site", () => {
+    if (!temRedes) return;
+    const urlsDaEdge = [...edge.matchAll(/url:\s*"(https:\/\/[^"]+)"/g)].map((m) => m[1]);
     for (const plataforma of ["instagram", "linkedin"]) {
       const noSite = REDES.find((r) => r.url.includes(plataforma));
       const naEdge = urlsDaEdge.find((u) => u.includes(plataforma));
-      expect(noSite, `${plataforma} sumiu do site`).toBeTruthy();
-      expect(naEdge, `${plataforma} sumiu da Edge`).toBeTruthy();
-      expect(naEdge).toBe(noSite!.url);
+      if (naEdge) expect(naEdge).toBe(noSite?.url);
     }
   });
 
-  /**
-   * Guarda do ícone: cada rede do rodapé do e-mail vira `<img>` de
-   * `/brand/social-<name>-email.png`. Somar uma rede lá sem o PNG deixa imagem
-   * quebrada em todo e-mail transacional, e ninguém revisa rodapé de e-mail.
-   */
-  it("toda rede do e-mail tem o ícone correspondente no repo", () => {
-    const edge = readFileSync("supabase/functions/_shared/email.ts", "utf-8");
+  it("com a lista de redes, toda rede tem o ícone no repo", () => {
+    if (!temRedes) return;
     const bloco = edge.split("const SOCIAL")[1].split("];")[0];
-    const nomes = [...bloco.matchAll(/name:\s*"(\w+)"/g)].map((m) => m[1]);
-
-    expect(nomes.length).toBeGreaterThan(0);
-    for (const nome of nomes) {
+    for (const [, nome] of bloco.matchAll(/name:\s*"(\w+)"/g)) {
       const icone = `public/brand/social-${nome}-email.png`;
       expect(existsSync(icone), `falta ${icone}`).toBe(true);
     }

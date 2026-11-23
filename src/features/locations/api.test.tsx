@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { falha, renderMutation, tabela } from "@/test/msw/supabase";
-import { useCreateLocation, useSetCheckoutMode, useSetGo2Park, useUpdateLocation } from "./api";
+import {
+  useCreateLocation,
+  useSetCheckoutMode,
+  useSetGo2Park,
+  useSetLocationLogo,
+  useUpdateLocation,
+} from "./api";
 
 /**
  * Contrato do cliente para a virada de checkout (E0.14). O que o servidor decide
@@ -152,5 +158,39 @@ describe("useUpdateLocation", () => {
     });
 
     expect((atualizada as { phone: string }).phone).toBe("+551140028922");
+  });
+});
+
+/**
+ * Logo próprio da unidade (docs/specs/logo-do-estacionamento.md). Cada fundo grava só a sua coluna:
+ * mandar as duas sobrescreveria a outra com o valor da tela, e nulo volta a seguir a empresa.
+ */
+describe("useSetLocationLogo", () => {
+  it("grava só a coluna do fundo que mudou", async () => {
+    const patch = tabela("location", "patch", { json: [{ id: "loc-1" }] });
+    const { result } = renderMutation(() => useSetLocationLogo());
+
+    await result.current.mutateAsync({ id: "loc-1", background: "dark", url: "https://c/b.png" });
+
+    expect(patch.ultimoBody).toEqual({ logo_dark_url: "https://c/b.png" });
+    expect(patch.chamadas[0].url).toContain("id=eq.loc-1");
+  });
+
+  it("nulo limpa o logo da unidade, que volta a usar o da empresa", async () => {
+    const patch = tabela("location", "patch", { json: [{ id: "loc-1" }] });
+    const { result } = renderMutation(() => useSetLocationLogo());
+
+    await result.current.mutateAsync({ id: "loc-1", background: "light", url: null });
+
+    expect(patch.ultimoBody).toEqual({ logo_url: null });
+  });
+
+  it("propaga a recusa do banco (formato fora de PNG/JPG)", async () => {
+    falha("tabela", "location", 400, "violates check constraint \"location_logo_url_formato\"");
+    const { result } = renderMutation(() => useSetLocationLogo());
+
+    await expect(
+      result.current.mutateAsync({ id: "loc-1", background: "light", url: "https://c/a.svg" }),
+    ).rejects.toThrow(/location_logo_url_formato/);
   });
 });

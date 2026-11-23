@@ -155,6 +155,9 @@ export default function ManagerLocations() {
           mode={platformFor.checkout_mode as CheckoutMode}
           go2park={platformFor.go2park_enabled}
           go2parkWhatsapp={platformFor.go2park_whatsapp}
+          companyId={platformFor.company_id}
+          logoUrl={platformFor.logo_url}
+          logoDarkUrl={platformFor.logo_dark_url}
           onOpenChange={(o) => !o && setPlatformForId(null)}
         />
       )}

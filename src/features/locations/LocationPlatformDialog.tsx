@@ -13,7 +13,14 @@ import { PhoneField } from "@/components/ui/phone-field";
 import { normalizePhoneE164 } from "@/lib/identifiers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { useLocationExternalReadiness, useLocationHubReadiness, useSetCheckoutMode, useSetGo2Park } from "./api";
+import {
+  useLocationExternalReadiness,
+  useLocationHubReadiness,
+  useSetCheckoutMode,
+  useSetGo2Park,
+  useSetLocationLogo,
+} from "./api";
+import { LogoUploadField } from "@/features/companies/LogoUploadField";
 import type { CheckoutMode, HubReadinessItem, LocationExternalReadiness, LocationHubReadiness } from "@/types/domain";
 
 type Props = {
@@ -25,6 +32,11 @@ type Props = {
   go2park: boolean;
   /** WhatsApp da van desta unidade, em E.164 (`location.go2park_whatsapp`). */
   go2parkWhatsapp: string | null;
+  /** Empresa dona da unidade: o upload do logo vai para `assets-public/<company_id>/`. */
+  companyId?: string;
+  /** Logo próprio da unidade (`location.logo_url` / `logo_dark_url`). Nulo = segue a empresa. */
+  logoUrl?: string | null;
+  logoDarkUrl?: string | null;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -43,12 +55,16 @@ export function LocationPlatformDialog({
   mode,
   go2park,
   go2parkWhatsapp,
+  companyId,
+  logoUrl = null,
+  logoDarkUrl = null,
   onOpenChange,
 }: Props) {
   const readiness = useLocationExternalReadiness(locationId, open);
   const hubReadiness = useLocationHubReadiness(locationId, open && mode === "external");
   const setMode = useSetCheckoutMode();
   const setGo2Park = useSetGo2Park();
+  const setLogo = useSetLocationLogo();
   const isExternal = mode === "external";
 
   const blockers = readiness.data ? describeBlockers(readiness.data) : [];
@@ -73,6 +89,15 @@ export function LocationPlatformDialog({
       toast.success(valor ? "Número da van salvo." : "Número da van removido.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar o número.");
+    }
+  }
+
+  async function handleLogo(background: "light" | "dark", url: string | null) {
+    try {
+      await setLogo.mutateAsync({ id: locationId, background, url });
+      toast.success(url ? "Logo da unidade salvo." : "A unidade volta a usar o logo da empresa.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar o logo.");
     }
   }
 
@@ -193,6 +218,41 @@ export function LocationPlatformDialog({
               O selo continua aparecendo mesmo com o checkout externo: a van tem rastreio
               independentemente de onde a reserva fecha.
             </p>
+          )}
+
+          {companyId && (
+            <>
+              <Separator />
+              {/* ── Logo próprio da unidade (docs/specs/logo-do-estacionamento.md) ─── */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="text-body-sm font-medium text-ink">Logo desta unidade</p>
+                  <p className="text-caption text-muted">
+                    Só quando a unidade opera com outra marca. Vazio, ela usa o logo da empresa.
+                  </p>
+                </div>
+                <LogoUploadField
+                  id="location-logo-light"
+                  label="Para fundo claro"
+                  hint="Checkout, reserva, e-mail de confirmação e PDF do voucher."
+                  background="light"
+                  value={logoUrl}
+                  companyId={companyId}
+                  disabled={setLogo.isPending}
+                  onChange={(url) => handleLogo("light", url)}
+                />
+                <LogoUploadField
+                  id="location-logo-dark"
+                  label="Para fundo escuro"
+                  hint="Topo navy do voucher na conta. Use a versão branca."
+                  background="dark"
+                  value={logoDarkUrl}
+                  companyId={companyId}
+                  disabled={setLogo.isPending}
+                  onChange={(url) => handleLogo("dark", url)}
+                />
+              </div>
+            </>
           )}
 
           <div className="flex justify-end">

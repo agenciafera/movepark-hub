@@ -254,6 +254,36 @@ export function useSetCheckoutMode() {
  * Desligar importa tanto quanto ligar: o selo é uma promessa de serviço, e contrato encerrado com
  * o selo no ar vira promessa falsa no card e na página.
  */
+/**
+ * Troca o logo do estacionamento só nesta unidade (docs/specs/logo-do-estacionamento.md). Nulo
+ * volta a seguir o da empresa. Patch só do fundo que mudou, pelo mesmo motivo do Go2Park abaixo.
+ */
+export function useSetLocationLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      background,
+      url,
+    }: {
+      id: string;
+      background: "light" | "dark";
+      url: string | null;
+    }) => {
+      const patch = background === "dark" ? { logo_dark_url: url } : { logo_url: url };
+      const { data, error } = await supabase
+        .from("location")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Location;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: locationsKeys.all }),
+  });
+}
+
 export function useSetGo2Park() {
   const qc = useQueryClient();
   return useMutation({

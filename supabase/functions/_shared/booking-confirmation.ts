@@ -15,7 +15,9 @@ import {
   tplBookingConfirmation,
 } from "./email.ts";
 import {
+  emailPhotoUrl,
   mapBookingRowToVoucher,
+  staticMapUrl,
   VOUCHER_BOOKING_SELECT,
   type VoucherBooking,
   voucherFilename,
@@ -42,6 +44,36 @@ export async function voucherAttachment(admin: any, bookingId: string, voucher: 
     console.error("[booking-confirmation] voucher não anexado:", voucher.code, e);
     return [];
   }
+}
+
+/**
+ * Foto da fachada e miniatura do mapa para o e-mail de confirmação
+ * (docs/specs/logo-do-estacionamento.md). A foto só entra se a versão JPG responder 200, porque
+ * imagem quebrada no topo do e-mail é pior que nenhuma. O mapa depende de
+ * `GOOGLE_STATIC_MAPS_KEY`; sem ela o template mostra o cartão de endereço. Nunca lança.
+ */
+export async function withEmailMedia(
+  voucher: VoucherBooking,
+  opts: { site?: string; mapsKey?: string | null; fetcher?: typeof fetch } = {},
+): Promise<VoucherBooking> {
+  const site = opts.site ?? siteUrl();
+  const fetcher = opts.fetcher ?? fetch;
+  const candidate = emailPhotoUrl(site, voucher.location_photo);
+  let photo: string | null = null;
+  if (candidate) {
+    try {
+      const res = await fetcher(candidate, { method: "HEAD", signal: AbortSignal.timeout(2500) });
+      if (res.ok) photo = candidate;
+    } catch {
+      photo = null;
+    }
+  }
+  const mapsKey = opts.mapsKey !== undefined ? opts.mapsKey : (Deno.env.get("GOOGLE_STATIC_MAPS_KEY") ?? null);
+  return {
+    ...voucher,
+    email_photo_url: photo,
+    email_map_url: staticMapUrl(voucher.location_lat, voucher.location_lng, mapsKey),
+  };
 }
 
 /**
@@ -107,7 +139,7 @@ export async function sendBookingConfirmationEmail(admin: any, bookingId: string
     // 4. Monta e envia.
     const voucher = mapBookingRowToVoucher(b);
     const url = `${siteUrl()}/bookings/${voucher.code}`;
-    const tpl = tplBookingConfirmation(voucher, name, url);
+    const tpl = tplBookingConfirmation(await withEmailMedia(voucher), name, url);
     const attachments = await voucherAttachment(admin, bookingId, voucher);
     const res = await sendEmail({ from, to: email, subject: tpl.subject, html: tpl.html, attachments });
     if (!res.ok) throw new Error(res.error ?? "falha no SMTP");

@@ -174,4 +174,34 @@ describe("SummaryCard", () => {
     );
     expect(screen.getByRole("presentation")).toHaveAttribute("src", "/a.webp");
   });
+
+  it("mostra o logo de quem opera a vaga, na versão para fundo claro", () => {
+    const b = booking(null);
+    renderWithProviders(
+      <SummaryCard
+        booking={{
+          ...b,
+          location: {
+            ...b.location,
+            logo: { light: "https://cdn.test/aero.png", dark: "https://cdn.test/aero-branco.png" },
+          },
+        }}
+      />,
+    );
+    expect(screen.getByText("Operado por")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Aerovalet" })).toHaveAttribute(
+      "src",
+      "https://cdn.test/aero.png",
+    );
+  });
+
+  it("sem logo cadastrado, não mostra o \"Operado por\"", () => {
+    const b = booking(null);
+    renderWithProviders(
+      <SummaryCard
+        booking={{ ...b, location: { ...b.location, logo: { light: null, dark: "https://x/b.png" } } }}
+      />,
+    );
+    expect(screen.queryByText("Operado por")).not.toBeInTheDocument();
+  });
 });

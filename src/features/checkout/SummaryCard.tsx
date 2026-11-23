@@ -8,6 +8,7 @@ import {
 import { useAvailability } from "@/features/listing/api";
 import { getLocationCapabilities } from "@/features/listing/capabilities";
 import { CheckoutCouponRow } from "@/features/customer-coupons/CheckoutCouponRow";
+import { OperatedBy } from "@/components/shared/OperatedBy";
 import { dateCell } from "./summary.logic";
 import type { BookingForCheckout } from "./api";
 
@@ -101,6 +102,11 @@ export function SummaryCard({ booking, bare }: Props) {
                   <ArrowSquareOut className="h-3.5 w-3.5" />
                 </a>
               )}
+              <OperatedBy
+                logo={booking.location.logo}
+                name={booking.location.company.name}
+                className="pt-1.5"
+              />
             </div>
           </div>
 

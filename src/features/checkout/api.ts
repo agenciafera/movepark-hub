@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { resolveParkingLogo, type ParkingLogo } from "@/lib/parkingLogo";
 import { parseInstallmentPolicy, type InstallmentPolicy } from "@/lib/installments";
 import {
   resolveBookingCoupon,
@@ -70,6 +71,8 @@ export type BookingForCheckout = {
     /** Nome canônico da ficha, para o `item_name` do analytics bater com o da busca. */
     public_name: string | null;
     company: { slug: string; name: string };
+    /** Logo de quem opera a vaga (unidade antes da empresa). Ver `@/lib/parkingLogo`. */
+    logo?: ParkingLogo;
     /** Destino da unidade: vira `item_category` nos eventos de e-commerce. */
     destination: { code: string | null; name: string } | null;
     /**
@@ -124,8 +127,8 @@ export function useCheckoutBooking(code: string | undefined) {
            customer_tax_id, passenger_first_name, passenger_last_name, passenger_phone, fare_tier, flight_number,
            commission_installments_max, commission_installments_interest_free,
            location:location!inner(id, slug, name, address, photos, checkout_mode, public_name,
-             ads_conversion_id, ads_conversion_label, ga4_measurement_id,
-             company:company!inner(slug, name),
+             ads_conversion_id, ads_conversion_label, ga4_measurement_id, logo_url, logo_dark_url,
+             company:company!inner(slug, name, logo_url, logo_dark_url),
              destination:destination(code, name)),
            items:booking_item(id, item_type, quantity, unit_price, subtotal, add_on_service_id,
              parking_type:parking_type(code, name),
@@ -185,6 +188,7 @@ export function useCheckoutBooking(code: string | undefined) {
           ads_conversion_id: row.location?.ads_conversion_id ?? null,
           ads_conversion_label: row.location?.ads_conversion_label ?? null,
           ga4_measurement_id: row.location?.ga4_measurement_id ?? null,
+          logo: resolveParkingLogo(row.location, row.location?.company),
         },
         items: (row.items ?? []).map(
           // deno-lint-ignore no-explicit-any

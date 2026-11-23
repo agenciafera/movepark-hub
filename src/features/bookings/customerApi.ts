@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { resolveParkingLogo, type ParkingLogo } from "@/lib/parkingLogo";
 import { bucketBooking, type MyBookingStatus } from "./bookings.logic";
 
 export type { MyBookingStatus };
@@ -19,6 +20,8 @@ export type MyBookingListItem = {
     slug: string;
     address: string | null;
     company: { name: string; slug: string };
+    /** Logo de quem opera a vaga. Só o detalhe e o voucher pedem; a listagem não. */
+    logo?: ParkingLogo;
     /**
      * Aeroporto/destino da unidade. Opcional porque só a listagem da conta pede esse
      * join; o detalhe da reserva e o voucher não precisam dele.
@@ -201,8 +204,8 @@ export function useBookingDetail(code: string | undefined) {
            guarantee_claims:guarantee_claim(id, status, opened_at),
            location:location!inner(
              name, slug, address, phone, email, notice, reservation_policy,
-             latitude, longitude, tolerance_minutes,
-             company:company!inner(name, slug)
+             latitude, longitude, tolerance_minutes, logo_url, logo_dark_url,
+             company:company!inner(name, slug, logo_url, logo_dark_url)
            ),
            vehicle:vehicle(id, license_plate, model, color),
            items:booking_item(
@@ -256,6 +259,7 @@ export function useBookingDetail(code: string | undefined) {
           slug: r.location.slug,
           address: r.location.address,
           company: r.location.company,
+          logo: resolveParkingLogo(r.location, r.location?.company),
         },
         parking_type: parkingItem?.parking_type ?? null,
         vehicle: r.vehicle ?? null,

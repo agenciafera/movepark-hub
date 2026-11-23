@@ -1492,6 +1492,7 @@ export type Database = {
           installments_interest_free: number | null
           installments_max: number | null
           legal_name: string | null
+          logo_dark_url: string | null
           logo_url: string | null
           monthly_revenue_goal_cents: number | null
           name: string
@@ -1527,6 +1528,7 @@ export type Database = {
           installments_interest_free?: number | null
           installments_max?: number | null
           legal_name?: string | null
+          logo_dark_url?: string | null
           logo_url?: string | null
           monthly_revenue_goal_cents?: number | null
           name: string
@@ -1562,6 +1564,7 @@ export type Database = {
           installments_interest_free?: number | null
           installments_max?: number | null
           legal_name?: string | null
+          logo_dark_url?: string | null
           logo_url?: string | null
           monthly_revenue_goal_cents?: number | null
           name?: string
@@ -3582,6 +3585,8 @@ export type Database = {
           is_listed: boolean
           latitude: number | null
           legal_name: string | null
+          logo_dark_url: string | null
+          logo_url: string | null
           longitude: number | null
           name: string
           notice: string | null
@@ -3632,6 +3637,8 @@ export type Database = {
           is_listed?: boolean
           latitude?: number | null
           legal_name?: string | null
+          logo_dark_url?: string | null
+          logo_url?: string | null
           longitude?: number | null
           name: string
           notice?: string | null
@@ -3682,6 +3689,8 @@ export type Database = {
           is_listed?: boolean
           latitude?: number | null
           legal_name?: string | null
+          logo_dark_url?: string | null
+          logo_url?: string | null
           longitude?: number | null
           name?: string
           notice?: string | null

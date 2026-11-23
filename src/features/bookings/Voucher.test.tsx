@@ -94,6 +94,24 @@ describe("Voucher", () => {
     expect(await screen.findByRole("img", { name: /QR MP-A8K7P2/ })).toBeInTheDocument();
   });
 
+  it("logo do estacionamento: no topo navy vai a versão para fundo escuro", () => {
+    const b = booking("confirmed");
+    renderWithProviders(
+      <Voucher
+        booking={{
+          ...b,
+          location: {
+            ...b.location,
+            logo: { light: "https://cdn.test/abba.png", dark: "https://cdn.test/abba-branco.png" },
+          },
+        }}
+      />,
+    );
+    const srcs = screen.getAllByRole("img", { name: "Abbapark" }).map((i) => i.getAttribute("src"));
+    // Cabeçalho impresso (papel branco) e topo navy da tela, cada um com o arquivo do seu fundo.
+    expect(srcs).toEqual(["https://cdn.test/abba.png", "https://cdn.test/abba-branco.png"]);
+  });
+
   describe("QR da cancela integrada (docs/specs/integracoes.md § 5.6)", () => {
     beforeEach(() => vi.mocked(toDataUrl).mockClear());
 

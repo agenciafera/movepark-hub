@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import { useBookingAccessCode, useVoucherPdf } from "@/features/bookings/customerApi";
 import { voucherQrContent } from "@/features/bookings/voucher.logic";
+import { OperatedBy } from "@/components/shared/OperatedBy";
 import type { BookingForCheckout } from "./api";
 
 type Props = {
@@ -73,6 +74,11 @@ export function Step5Confirmation({ booking }: Props) {
         <p className="mt-4 text-body-sm text-muted">
           Apresente esse QR na chegada à vaga.
         </p>
+        <OperatedBy
+          logo={booking.location.logo}
+          name={booking.location.company.name}
+          className="mt-3 justify-center"
+        />
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button

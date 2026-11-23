@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateCompany, useUpdateCompany, type ManagedCompany } from "./api";
+import { LogoUploadField } from "./LogoUploadField";
 import { normalizeWlDomain, wlApiBaseUrl } from "./wl";
 import { cnpjMask } from "@/lib/masks";
 import type { Company, EntityStatus } from "@/types/domain";
@@ -55,6 +56,8 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
   const [wpsUrl, setWpsUrl] = React.useState("");
   const [wpsSecret, setWpsSecret] = React.useState("");
   const [wpsEnabled, setWpsEnabled] = React.useState(false);
+  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
+  const [logoDarkUrl, setLogoDarkUrl] = React.useState<string | null>(null);
   // Segredo é write-only: não exibimos o valor; só sabemos se já existe um.
   // O valor nunca chega ao navegador (manager_company_restricted devolve só se existe).
   const hasWpsSecret = !!(company as ManagedCompany | null | undefined)?.has_wps_webhook_secret;
@@ -74,6 +77,8 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       setWpsUrl(company?.wps_webhook_url ?? "");
       setWpsSecret("");
       setWpsEnabled(company?.wps_webhook_enabled ?? false);
+      setLogoUrl(company?.logo_url ?? null);
+      setLogoDarkUrl(company?.logo_dark_url ?? null);
     }
   }, [open, company]);
 
@@ -104,6 +109,9 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
       wl_sync_enabled: wlSyncEnabled,
       wps_webhook_url: wpsUrlTrim,
       wps_webhook_enabled: wpsEnabled,
+      // Logo só existe na edição: o arquivo mora em assets-public/<company_id>/, e na criação ainda
+      // não há id. Mandar na criação gravaria nulo em cima de nada, então fica de fora.
+      ...(isEdit ? { logo_url: logoUrl, logo_dark_url: logoDarkUrl } : {}),
       // só grava o segredo quando o usuário digita um novo (write-only)
       ...(wpsSecretTrim ? { wps_webhook_secret: wpsSecretTrim } : {}),
     };
@@ -177,6 +185,43 @@ export function CompanyForm({ open, company, onOpenChange }: Props) {
               </SelectContent>
             </Select>
           </div>
+          {/* Logo do estacionamento (docs/specs/logo-do-estacionamento.md): aparece no checkout, na
+              reserva, no e-mail de confirmação e no voucher. A unidade pode trocar o dela em
+              "Configuração da unidade". */}
+          <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
+            <div>
+              <p className="text-body-sm font-medium text-ink">Logo do estacionamento</p>
+              <p className="text-caption text-muted">
+                Aparece discreto no checkout, na reserva, no e-mail de confirmação e no voucher, para
+                o cliente saber onde vai estacionar. PNG ou JPG, de preferência com fundo transparente.
+              </p>
+            </div>
+            {isEdit && company ? (
+              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+                <LogoUploadField
+                  id="logo-light"
+                  label="Para fundo claro"
+                  hint="Checkout, reserva, e-mail de confirmação e PDF do voucher."
+                  background="light"
+                  value={logoUrl}
+                  companyId={company.id}
+                  onChange={setLogoUrl}
+                />
+                <LogoUploadField
+                  id="logo-dark"
+                  label="Para fundo escuro"
+                  hint="Topo navy do voucher na conta do cliente. Use a versão branca."
+                  background="dark"
+                  value={logoDarkUrl}
+                  companyId={company.id}
+                  onChange={setLogoDarkUrl}
+                />
+              </div>
+            ) : (
+              <p className="text-caption text-muted">Salve a empresa primeiro para enviar o logo.</p>
+            )}
+          </div>
+
           {/* Integração com o white-label legado (E2.5.1, sincronização de disponibilidade) */}
           <div className="mt-2 flex flex-col gap-4 rounded-md border border-hairline p-4 tablet:col-span-2">
             <div className="flex items-center justify-between gap-4">

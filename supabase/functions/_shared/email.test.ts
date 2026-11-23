@@ -158,23 +158,19 @@ Deno.test("tplBookingConfirmation: sem nome cai em saudação genérica", () => 
   assertStringIncludes(m.html, "Tudo certo!");
 });
 
-Deno.test("shell: casco da marca (hero, régua, banda de ajuda, redes, rodapé legal)", () => {
+Deno.test("shell: casco minimalista, marca Movepark pequena e rodapé sem endereço", () => {
   const html = tplLeadReceived("Kallef").html;
-  // Hero: símbolo branco da marca sobre fundo colorido.
-  assertStringIncludes(html, "/brand/simbolo-movepark-white-email.png");
-  // Régua de marca (as 4 cores da identidade).
-  for (const hex of ["#29263F", "#5D5FEF", "#DA455E", "#A6DBDF"]) {
-    assertStringIncludes(html, hex);
-  }
-  // Banda de ajuda.
-  assertStringIncludes(html, "Ficou com alguma dúvida?");
-  // Redes sociais como PNG hospedado (email-safe).
-  assertStringIncludes(html, "/brand/social-instagram-email.png");
-  assertStringIncludes(html, "/brand/social-linkedin-email.png");
-  assertStringIncludes(html, "/brand/social-whatsapp-email.png");
-  // Rodapé legal.
+  // Marca pequena no topo (wordmark de 16px), sem a faixa violeta com o símbolo branco.
+  assertStringIncludes(html, "/brand/logo-movepark-email.png");
+  assertStringIncludes(html, "height:16px");
+  assertEquals(html.includes("simbolo-movepark-white-email.png"), false);
+  // Sem régua de cores, banda de ajuda nem redes sociais.
+  assertEquals(html.includes("Ficou com alguma dúvida?"), false);
+  assertEquals(html.includes("/brand/social-"), false);
+  // Rodapé: razão social sim, endereço da Movepark não (o cliente confundia com o da vaga).
   assertStringIncludes(html, "Movepark Tecnologia Ltda.");
-  assertStringIncludes(html, "Rua Tito, 479");
+  assertEquals(html.includes("Rua Tito"), false);
+  assertEquals(html.includes("05051-000"), false);
   // Links institucionais apontam para as rotas reais do site.
   assertStringIncludes(html, "/termos");
   assertStringIncludes(html, "/privacidade");
@@ -608,4 +604,67 @@ Deno.test("composeRawEmail: header do configuration set só quando SES_CONFIGURA
     if (antes === undefined) Deno.env.delete("SES_CONFIGURATION_SET");
     else Deno.env.set("SES_CONFIGURATION_SET", antes);
   }
+});
+
+const PS: VoucherBooking = {
+  code: "MP-PS0001",
+  check_in_at: "2026-12-01T10:00:00-03:00",
+  check_out_at: "2026-12-05T10:00:00-03:00",
+  total_amount: 200,
+  company_name: "Pare Seguro",
+  location_name: "Aeroporto de Guarulhos",
+  location_address: "Av. Monteiro Lobato, 2738, Guarulhos",
+  parking_type_name: "Vaga coberta",
+  vehicle: null,
+};
+
+Deno.test("tplBookingConfirmation: endereço da unidade com Como chegar, e nenhum endereço da Movepark", () => {
+  const m = tplBookingConfirmation(PS, "Ana", "https://movepark.co/bookings/MP-PS0001");
+  assertStringIncludes(m.html, "Av. Monteiro Lobato, 2738, Guarulhos");
+  assertStringIncludes(m.html, "https://www.google.com/maps/search/?api=1&amp;query=Av.%20Monteiro%20Lobato");
+  assertEquals(m.html.includes("Rua Tito"), false);
+  // Sem logo, o nome do estacionamento vai em texto no bloco.
+  assertStringIncludes(m.html, "Pare Seguro · Aeroporto de Guarulhos");
+});
+
+Deno.test("tplBookingConfirmation: o logo colorido vai no corpo, e o branco não é usado", () => {
+  const m = tplBookingConfirmation(
+    { ...PS, parking_logo: { light: "https://cdn.test/ps.png", dark: "https://cdn.test/ps-branco.png" } },
+    null,
+    "https://movepark.co/bookings/MP-PS0001",
+  );
+  assertStringIncludes(m.html, 'src="https://cdn.test/ps.png"');
+  assertStringIncludes(m.html, 'alt="Pare Seguro"');
+  assertEquals(m.html.includes("ps-branco.png"), false);
+});
+
+Deno.test("tplBookingConfirmation: foto da fachada e mapa lado a lado, o mapa abre o Maps", () => {
+  const m = tplBookingConfirmation(
+    { ...PS, email_photo_url: "https://movepark.co/f.jpg", email_map_url: "https://maps.googleapis.com/maps/api/staticmap?x=1" },
+    null,
+    "https://movepark.co/bookings/MP-PS0001",
+  );
+  assertStringIncludes(m.html, 'src="https://movepark.co/f.jpg"');
+  assertStringIncludes(m.html, 'src="https://maps.googleapis.com/maps/api/staticmap?x=1"');
+  assertEquals((m.html.match(/class="mp-col"/g) ?? []).length, 2);
+  assertEquals(m.html.includes("Ver no mapa"), false);
+});
+
+Deno.test("tplBookingConfirmation: sem chave de mapa, cartão de endereço no lugar da miniatura", () => {
+  const m = tplBookingConfirmation(
+    { ...PS, email_photo_url: "https://movepark.co/f.jpg", email_map_url: null },
+    null,
+    "https://movepark.co/bookings/MP-PS0001",
+  );
+  assertStringIncludes(m.html, "Ver no mapa");
+  assertStringIncludes(m.html, "Abrir no Google Maps");
+  // O endereço não se repete embaixo quando o cartão já o mostra.
+  assertEquals((m.html.match(/Av\. Monteiro Lobato/g) ?? []).length, 1);
+});
+
+Deno.test("tplBookingConfirmation: sem foto, sem mapa e sem endereço, o bloco não deixa buraco", () => {
+  const m = tplBookingConfirmation({ ...PS, location_address: null }, null, "https://movepark.co/bookings/MP-PS0001");
+  assertEquals(m.html.includes("mp-col\""), false);
+  assertEquals(m.html.includes("Como chegar"), false);
+  assertEquals(m.html.includes("Ver no mapa"), false);
 });

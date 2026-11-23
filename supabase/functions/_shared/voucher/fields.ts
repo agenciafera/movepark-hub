@@ -13,6 +13,91 @@ export interface VoucherBooking {
   location_address: string | null;
   parking_type_name: string | null;
   vehicle: { license_plate: string; model: string | null } | null;
+  /**
+   * Logo de quem opera a vaga (docs/specs/logo-do-estacionamento.md): `light` para fundo claro
+   * (e-mail, PDF), `dark` para fundo escuro (só o topo navy do voucher na conta, no front). Sem ele
+   * o e-mail e o voucher saem como antes.
+   */
+  parking_logo?: ParkingLogo | null;
+  /** Coordenadas e primeira foto da unidade, para o bloco foto + mapa do e-mail. */
+  location_lat?: number | null;
+  location_lng?: number | null;
+  location_photo?: string | null;
+  /**
+   * Preenchidos por quem envia (`withEmailMedia`, em booking-confirmation.ts), não pelo select:
+   * a foto só entra se a versão JPG existir, e o mapa só com a chave do Google configurada.
+   */
+  email_photo_url?: string | null;
+  email_map_url?: string | null;
+}
+
+export interface ParkingLogo {
+  light: string | null;
+  dark: string | null;
+}
+
+type LogoFields = { logo_url?: string | null; logo_dark_url?: string | null } | null | undefined;
+
+function cleanUrl(url: string | null | undefined): string | null {
+  const v = (url ?? "").trim();
+  return v ? v : null;
+}
+
+/**
+ * Unidade antes da empresa, cada fundo por conta própria: o logo de fundo claro nunca vai para o
+ * topo escuro (some no violeta). Espelho de `src/lib/parkingLogo.ts`; ao mudar um, mude o outro.
+ */
+export function resolveParkingLogo(location: LogoFields, company: LogoFields): ParkingLogo {
+  return {
+    light: cleanUrl(location?.logo_url) ?? cleanUrl(company?.logo_url),
+    dark: cleanUrl(location?.logo_dark_url) ?? cleanUrl(company?.logo_dark_url),
+  };
+}
+
+/**
+ * Versão da foto que o e-mail consegue mostrar. As fotos do site são AVIF/WebP em
+ * `/Estacionamentos/<marca>/<arquivo>`, que o Outlook e parte dos clientes de e-mail não abrem; a
+ * versão de e-mail é um JPG de 560px em `/Estacionamentos/<marca>/email/<arquivo>.jpg`, gerado
+ * por `scripts/fotos-email.sh`. URL absoluta já em JPG/PNG passa direto; o resto não tem versão.
+ * Quem envia confere se o arquivo existe antes de usar (`withEmailMedia`).
+ */
+export function emailPhotoUrl(site: string, photo: string | null | undefined): string | null {
+  const p = (photo ?? "").trim();
+  if (!p) return null;
+  if (/^https:\/\/\S+\.(jpe?g|png)$/i.test(p)) return p;
+  const m = p.match(/^\/(Estacionamentos\/[^?#]+)\/([^/?#]+)\.(avif|webp|jpe?g|png)$/i);
+  if (!m) return null;
+  return `${site.replace(/\/+$/, "")}/${encodeURI(m[1])}/email/${encodeURIComponent(m[2])}.jpg`;
+}
+
+/**
+ * Miniatura do mapa (Google Static Maps) centrada na unidade, com o pino na cor da marca. Sem
+ * `key` não há mapa: a API não está ativada na chave do site (403 em 23/11/2026), e o e-mail cai
+ * num cartão com o endereço e o link do Maps. A chave é dedicada ao e-mail e restrita à Static
+ * Maps API, porque vai visível no HTML (docs/specs/logo-do-estacionamento.md).
+ */
+export function staticMapUrl(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+  key: string | null | undefined,
+): string | null {
+  const k = (key ?? "").trim();
+  if (!k || lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const c = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+  const params = new URLSearchParams({
+    center: c,
+    zoom: "15",
+    size: "280x210",
+    scale: "2",
+    markers: `color:0x5D5FEF|${c}`,
+    key: k,
+  });
+  return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
+}
+
+/** Link do Google Maps para o endereço da unidade (o mesmo que o checkout usa). */
+export function mapsSearchUrl(address: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
 export interface VoucherLine {
@@ -65,7 +150,8 @@ export const VOUCHER_BOOKING_STATUSES = ["confirmed", "checked_in", "completed"]
 /** Select padrão para montar o voucher (mesmas colunas no caminho RLS e no service role). */
 export const VOUCHER_BOOKING_SELECT =
   `id, code, status, check_in_at, check_out_at, total_amount, currency,
-   location:location!inner(name, address, company:company!inner(name)),
+   location:location!inner(name, address, logo_url, logo_dark_url, latitude, longitude, photos,
+     company:company!inner(name, logo_url, logo_dark_url)),
    vehicle:vehicle(license_plate, model),
    items:booking_item(item_type, parking_type:parking_type(name))`;
 
@@ -86,6 +172,12 @@ export function mapBookingRowToVoucher(b: any): VoucherBooking {
     parking_type_name: parkingItem?.parking_type?.name ?? null,
     vehicle: b.vehicle
       ? { license_plate: b.vehicle.license_plate, model: b.vehicle.model }
+      : null,
+    parking_logo: resolveParkingLogo(b.location, b.location.company),
+    location_lat: b.location.latitude != null ? Number(b.location.latitude) : null,
+    location_lng: b.location.longitude != null ? Number(b.location.longitude) : null,
+    location_photo: Array.isArray(b.location.photos) && typeof b.location.photos[0] === "string"
+      ? b.location.photos[0]
       : null,
   };
 }

@@ -14,7 +14,7 @@ import type { Company } from "@/types/domain";
  */
 export const COMPANY_COLUMNS =
   "id, name, slug, legal_name, tax_id, status, created_at, updated_at, deleted_at, " +
-  "onboarding_status, logo_url, wl_domain, wl_sync_enabled, wl_public_domain, hub_relationship, " +
+  "onboarding_status, logo_url, logo_dark_url, wl_domain, wl_sync_enabled, wl_public_domain, hub_relationship, " +
   "wps_webhook_url, wps_webhook_enabled, contract_accepted_at, contract_version, contract_sha256, " +
   "contract_accepted_by, monthly_revenue_goal_cents, gateway_split_enabled, payout_release_days, " +
   "payout_auto_day, payout_auto_enabled, installments_max, installments_interest_free, anticipation_fee_payer";

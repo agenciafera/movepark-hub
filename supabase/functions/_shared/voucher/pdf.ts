@@ -18,6 +18,52 @@ import { activeAccessCode } from "../integrations/access-code.ts";
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
 
+/**
+ * Baixa o logo do estacionamento para o PDF (docs/specs/logo-do-estacionamento.md). Só PNG e JPG,
+ * que é o que o pdf-lib embute e o que o banco aceita. Best-effort com prazo curto: logo que não
+ * baixa não segura o voucher, que sai sem ele, como antes.
+ *
+ * Só baixa do Storage do próprio projeto (host de `SUPABASE_URL`), que é para onde o upload do
+ * Manager manda o arquivo. A coluna aceita qualquer https, e quem tem escrita na unidade poderia
+ * apontar a Edge para outro host; o fetch do servidor não segue para fora do nosso Storage.
+ */
+export async function fetchLogoImage(
+  url: string | null | undefined,
+  timeoutMs = 4000,
+): Promise<{ bytes: Uint8Array; kind: "png" | "jpg" } | null> {
+  const u = (url ?? "").trim();
+  if (!isOwnStorageUrl(u)) return null;
+  try {
+    const res = await fetch(u, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const kind = logoKind(bytes);
+    return kind ? { bytes, kind } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** URL https do Storage deste projeto (mesmo host de `SUPABASE_URL`, caminho de objeto público). */
+export function isOwnStorageUrl(url: string, supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""): boolean {
+  try {
+    const u = new URL(url);
+    const own = new URL(supabaseUrl);
+    return u.protocol === "https:" && u.host === own.host && u.pathname.startsWith("/storage/v1/object/public/");
+  } catch {
+    return false;
+  }
+}
+
+/** Tipo pela assinatura do arquivo (não pela extensão nem pelo header, que podem mentir). */
+export function logoKind(bytes: Uint8Array): "png" | "jpg" | null {
+  if (bytes.length > 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return "png";
+  }
+  if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpg";
+  return null;
+}
+
 function pngFromDataUrl(dataUrl: string): Uint8Array {
   const b64 = dataUrl.split(",")[1];
   const bin = atob(b64);
@@ -73,6 +119,28 @@ export async function buildVoucherPdf(
   y -= 28;
   page.drawLine({ start: { x: M, y }, end: { x: width - M, y }, thickness: 1, color: hair });
   y -= 28;
+
+  // Quem opera a vaga, como primeira linha do quadro, no mesmo desenho rótulo × valor dos campos.
+  // A imagem vai alinhada à direita, com 22pt de altura e no máximo 140pt de largura.
+  const logo = await fetchLogoImage(voucher.parking_logo?.light);
+  if (logo) {
+    try {
+      const img = logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
+      const ratio = img.width / img.height;
+      let h = 22;
+      let w = ratio * h;
+      if (w > 140) {
+        w = 140;
+        h = w / ratio;
+      }
+      page.drawText("Operado por", { x: M, y, size: 11, font: helv, color: muted });
+      // Centro da imagem no centro óptico do texto de 11pt (baseline + 4).
+      page.drawImage(img, { x: width - M - w, y: y + 4 - h / 2, width: w, height: h });
+      y -= 34;
+    } catch (e) {
+      console.error("[voucher] logo não embutido:", voucher.code, e);
+    }
+  }
 
   for (const line of voucherFields(voucher)) {
     page.drawText(line.label, { x: M, y, size: 11, font: helv, color: muted });

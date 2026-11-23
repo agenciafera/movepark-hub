@@ -7,6 +7,7 @@ import { toDataUrl } from "@/lib/qr";
 import { formatBRL, formatDate, formatTime, formatWeekdayDate } from "@/lib/format";
 import { parkingTitle } from "@/lib/parkingName";
 import { Wordmark } from "@/components/shared/Brand";
+import { OperatedBy } from "@/components/shared/OperatedBy";
 import { FARE_TIER_LABEL } from "@/lib/fares";
 import { nightsOf } from "@/features/account/accountSummary.logic";
 import { useBookingAccessCode, useVoucherPdf, type MyBookingDetail } from "./customerApi";
@@ -69,14 +70,23 @@ export function Voucher({ booking }: Props) {
       {/* Cabeçalho impresso: no papel o navy não sai, então a marca entra em cima. */}
       <div className="hidden print:mb-4 print:flex print:items-center print:justify-between print:border-b print:border-hairline print:pb-4">
         <Wordmark height={18} />
+        <OperatedBy logo={booking.location.logo} name={booking.location.company.name} />
         <span className="text-caption text-muted">
           {receipt ? "Comprovante de estadia" : "Voucher de reserva"}
         </span>
       </div>
 
       <div className="bg-mp-navy p-6 text-white print:bg-transparent print:p-0 print:text-ink">
-        <div className="flex justify-end">
-          <span className="text-badge uppercase tracking-[0.5px] text-white/60 print:text-muted">
+        {/* O topo é navy na tela: vai a versão do logo para fundo escuro. No papel o navy não
+            sai, e o logo de fundo claro aparece no cabeçalho impresso acima. */}
+        <div className="flex items-center justify-between gap-3">
+          <OperatedBy
+            logo={booking.location.logo}
+            name={booking.location.company.name}
+            background="dark"
+            className="print:hidden"
+          />
+          <span className="ml-auto text-badge uppercase tracking-[0.5px] text-white/60 print:text-muted">
             {receipt ? "Comprovante" : "Voucher"}
           </span>
         </div>

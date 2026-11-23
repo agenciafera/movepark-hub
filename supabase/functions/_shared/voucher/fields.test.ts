@@ -2,6 +2,10 @@ import { assertEquals, assertStringIncludes } from "jsr:@std/assert";
 import {
   formatBRL,
   mapBookingRowToVoucher,
+  emailPhotoUrl,
+  mapsSearchUrl,
+  staticMapUrl,
+  resolveParkingLogo,
   voucherFields,
   voucherFilename,
   type VoucherBooking,
@@ -81,4 +85,60 @@ Deno.test("mapBookingRowToVoucher extrai a vaga do item 'parking' e relações a
   assertEquals(v.parking_type_name, "Coberta");
   assertEquals(v.total_amount, 200);
   assertEquals(v.vehicle?.license_plate, "AAA-1B11");
+});
+
+Deno.test("resolveParkingLogo: unidade antes da empresa, um fundo nunca usa o arquivo do outro", () => {
+  assertEquals(resolveParkingLogo(null, null), { light: null, dark: null });
+  assertEquals(
+    resolveParkingLogo({ logo_url: "https://c/u.png" }, { logo_url: "https://c/e.png", logo_dark_url: "https://c/e-b.png" }),
+    { light: "https://c/u.png", dark: "https://c/e-b.png" },
+  );
+  assertEquals(resolveParkingLogo(null, { logo_url: "https://c/e.png" }), { light: "https://c/e.png", dark: null });
+});
+
+Deno.test("mapBookingRowToVoucher: traz o logo resolvido da unidade e da empresa", () => {
+  const v = mapBookingRowToVoucher({
+    code: "MP-1",
+    check_in_at: "2026-10-10T12:00:00Z",
+    check_out_at: "2026-10-12T12:00:00Z",
+    total_amount: "10",
+    currency: "BRL",
+    location: {
+      name: "GRU",
+      address: "Rua A, 1",
+      logo_url: null,
+      logo_dark_url: null,
+      company: { name: "Pare Seguro", logo_url: "https://c/ps.png", logo_dark_url: "https://c/ps-b.png" },
+    },
+    vehicle: null,
+    items: [],
+  });
+  assertEquals(v.parking_logo, { light: "https://c/ps.png", dark: "https://c/ps-b.png" });
+});
+
+Deno.test("mapsSearchUrl codifica o endereço", () => {
+  assertEquals(
+    mapsSearchUrl("Rua A, 1 - Guarulhos"),
+    "https://www.google.com/maps/search/?api=1&query=Rua%20A%2C%201%20-%20Guarulhos",
+  );
+});
+
+Deno.test("emailPhotoUrl: foto AVIF do site vira o JPG da pasta email", () => {
+  assertEquals(
+    emailPhotoUrl("https://movepark.co/", "/Estacionamentos/pare-seguro/pare-seguro-2.avif"),
+    "https://movepark.co/Estacionamentos/pare-seguro/email/pare-seguro-2.jpg",
+  );
+  assertEquals(emailPhotoUrl("https://movepark.co", "https://cdn.x/a.JPG"), "https://cdn.x/a.JPG");
+  assertEquals(emailPhotoUrl("https://movepark.co", "https://cdn.x/a.webp"), null);
+  assertEquals(emailPhotoUrl("https://movepark.co", "/Estacionamentos/solta.avif"), null);
+  assertEquals(emailPhotoUrl("https://movepark.co", null), null);
+});
+
+Deno.test("staticMapUrl: só com chave e coordenadas, pino na cor da marca", () => {
+  assertEquals(staticMapUrl(-23.46, -46.5, null), null);
+  assertEquals(staticMapUrl(null, -46.5, "k"), null);
+  const u = new URL(staticMapUrl(-23.4637952, -46.5015367, "k")!);
+  assertEquals(u.searchParams.get("center"), "-23.463795,-46.501537");
+  assertEquals(u.searchParams.get("markers"), "color:0x5D5FEF|-23.463795,-46.501537");
+  assertEquals(u.searchParams.get("key"), "k");
 });

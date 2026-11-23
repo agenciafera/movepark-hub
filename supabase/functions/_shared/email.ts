@@ -17,7 +17,7 @@
 // branco (Pare Seguro). A nodemailer gera o MIME que o Outlook espera.
 import nodemailer from "https://esm.sh/nodemailer@6.9.16";
 import { Buffer } from "node:buffer";
-import { formatBRDateTime, formatBRL, type VoucherBooking } from "./voucher/fields.ts";
+import { formatBRDateTime, formatBRL, mapsSearchUrl, type VoucherBooking } from "./voucher/fields.ts";
 import { siteUrl } from "./site.ts";
 
 // @ts-expect-error - Deno env
@@ -212,43 +212,32 @@ function termsUrl(): string {
   return `${siteUrl()}/termos`;
 }
 
-// Redes sociais do rodapé. URLs reais da marca (atualizar aqui se mudarem).
-// Sem Facebook: cada item vira <img> de /brand/social-<name>-email.png, e o ícone dele
-// não existe. O site já mostra o Facebook (ver src/lib/redes.ts); aqui ele entra quando
-// alguém desenhar o PNG no mesmo padrão dos outros três.
-const SOCIAL: { name: string; url: string; alt: string }[] = [
-  { name: "instagram", url: "https://www.instagram.com/moveparkestacionamento", alt: "Instagram" },
-  { name: "linkedin", url: "https://www.linkedin.com/company/movepark", alt: "LinkedIn" },
-  { name: "whatsapp", url: "https://wa.me/5511994752952", alt: "WhatsApp" },
-];
-
-// Identificação legal no rodapé (endereço/razão social confirmados pelo time).
+// Identificação no rodapé: só a razão social. O endereço da Movepark saiu em 23/11/2026, porque o
+// cliente o confundia com o do estacionamento (docs/specs/logo-do-estacionamento.md).
 const LEGAL_NAME = "Movepark Tecnologia Ltda.";
-const LEGAL_ADDRESS = "Rua Tito, 479, 1º andar &middot; São Paulo, SP &middot; 05051-000 &middot; Brasil";
 
 /**
  * Casco do e-mail. Layout table-based (robusto em Gmail/Apple/Outlook), CSS inline.
- * Estrutura (identidade Movepark): hero colorido com símbolo branco + título → corpo →
- * régua de marca (4 cores) → banda de ajuda com wordmark e redes sociais → rodapé legal navy.
- * Todos os logos/ícones são PNG hospedados (SVG não renderiza no Gmail), servidos pelo site
- * em `${siteUrl()}/brand/...`. `preheader` controla o texto de preview na caixa de entrada;
- * `heroBg` permite variar a cor do topo (default = índigo da marca).
+ *
+ * Minimalista desde 23/11/2026: o cliente confundia a Movepark com o estacionamento (caso Pare
+ * Seguro e Movepark Estacionamento, os dois em Guarulhos). A marca Movepark ficou pequena e
+ * discreta: wordmark de 16px no topo sobre branco, sem a faixa violeta, sem a régua de cores e
+ * sem a banda de ajuda. O rodapé é uma linha de links, o aviso de mensagem automática e a razão
+ * social, **sem endereço**: o único endereço do e-mail de reserva é o de onde a pessoa vai
+ * estacionar. Ver docs/specs/logo-do-estacionamento.md.
+ *
+ * Logos e ícones são PNG hospedados (SVG não renderiza no Gmail), servidos pelo site em
+ * `${siteUrl()}/brand/...`. `preheader` controla o texto de preview na caixa de entrada.
  */
 function shell(
   title: string,
   bodyHtml: string,
-  opts?: { preheader?: string; heroBg?: string },
+  opts?: { preheader?: string },
 ): string {
-  const symbolWhite = `${siteUrl()}/brand/simbolo-movepark-white-email.png`;
   const wordmark = `${siteUrl()}/brand/logo-movepark-email.png`;
-  const heroBg = opts?.heroBg ?? BRAND.violetActive;
   const pre = (opts?.preheader ?? title).replace(/\s+/g, " ").trim();
-
-  // Redes sociais como PNG hospedado (SVG some no Gmail). Uma célula por ícone.
-  const social = SOCIAL.map(
-    (s, i) =>
-      `<td style="padding-right:${i < SOCIAL.length - 1 ? "20px" : "0"};"><a href="${s.url}" target="_blank" style="text-decoration:none;"><img src="${siteUrl()}/brand/social-${s.name}-email.png" width="22" height="22" alt="${s.alt}" style="display:block;border:0;outline:none;width:22px;height:22px;"></a></td>`,
-  ).join("");
+  const footLink = (href: string, label: string) =>
+    `<a href="${href}" class="mp-foot-link" style="color:${BRAND.muted};text-decoration:underline;">${label}</a>`;
 
   const html = `<!doctype html>
 <html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml">
@@ -262,55 +251,35 @@ function shell(
 <style>
   a{color:${BRAND.violetActive};}
   .mp-help-link{color:${BRAND.violetActive}!important;text-decoration:underline;}
-  .mp-foot-link{color:#ffffff!important;text-decoration:none;}
+  .mp-foot-link{color:${BRAND.muted}!important;}
   @media only screen and (max-width:480px){
     .mp-pad{padding-left:24px!important;padding-right:24px!important;}
-    .mp-hero{padding-left:24px!important;padding-right:24px!important;}
+    .mp-col{display:block!important;width:100%!important;padding:0 0 12px!important;}
   }
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background:${BRAND.pageBg};-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 <span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all;">${pre}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.pageBg};">
-<tr><td align="center" style="padding:40px 16px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:12px;">
 
-<tr><td class="mp-hero" style="padding:40px 40px 56px;background:${heroBg};font-family:${FONT};">
-<img src="${symbolWhite}" width="50" height="32" alt="Movepark" style="display:block;border:0;outline:none;height:32px;width:auto;margin:0 0 40px;">
-<h1 style="margin:0;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#ffffff;">${title}</h1>
+<tr><td class="mp-pad" style="padding:28px 40px 0;font-family:${FONT};">
+<img src="${wordmark}" width="108" height="16" alt="Movepark" style="display:block;border:0;outline:none;height:16px;width:auto;">
 </td></tr>
 
-<tr><td class="mp-pad" style="padding:44px 40px;font-family:${FONT};font-size:16px;line-height:1.65;color:${BRAND.body};">
+<tr><td class="mp-pad" style="padding:28px 40px 0;font-family:${FONT};">
+<h1 style="margin:0;font-family:${FONT};font-size:26px;line-height:1.25;font-weight:600;letter-spacing:-0.4px;color:${BRAND.navy};">${title}</h1>
+</td></tr>
+
+<tr><td class="mp-pad" style="padding:24px 40px 40px;font-family:${FONT};font-size:16px;line-height:1.65;color:${BRAND.body};">
 ${bodyHtml}
 </td></tr>
 
-<tr><td style="font-size:0;line-height:0;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td width="40%" height="6" style="height:6px;background:${BRAND.navy};font-size:0;line-height:6px;">&nbsp;</td>
-<td width="27%" height="6" style="height:6px;background:${BRAND.violet};font-size:0;line-height:6px;">&nbsp;</td>
-<td width="18%" height="6" style="height:6px;background:${BRAND.red};font-size:0;line-height:6px;">&nbsp;</td>
-<td width="15%" height="6" style="height:6px;background:${BRAND.cyan};font-size:0;line-height:6px;">&nbsp;</td>
-</tr></table>
-</td></tr>
-
-<tr><td class="mp-pad" style="padding:40px;background:${BRAND.surface};font-family:${FONT};">
-<img src="${wordmark}" width="135" height="20" alt="Movepark" style="display:block;border:0;outline:none;height:20px;width:auto;margin:0 0 24px;">
-<h3 style="margin:0 0 14px;font-family:${FONT};font-size:18px;line-height:1.25;font-weight:600;color:${BRAND.navy};">Ficou com alguma dúvida?</h3>
-<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${BRAND.body};">Acesse a <a href="${helpUrl()}" class="mp-help-link">Central de Ajuda</a>, disponível no app ou no nosso site.</p>
-<p style="margin:0 0 26px;font-size:14px;line-height:1.6;color:${BRAND.muted};">Esta é uma mensagem automática. Não responda este e-mail: não conseguimos dar sequência ao atendimento por aqui.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${social}</tr></table>
-</td></tr>
-
-<tr><td class="mp-pad" style="padding:36px 40px 44px;background:${BRAND.navy};font-family:${FONT};">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="padding-right:28px;"><a href="${helpUrl()}" class="mp-foot-link" style="font-size:13px;font-weight:500;color:#ffffff;text-decoration:none;">Central de Ajuda</a></td>
-<td style="padding-right:28px;"><a href="${privacyUrl()}" class="mp-foot-link" style="font-size:13px;font-weight:500;color:#ffffff;text-decoration:none;">Privacidade</a></td>
-<td><a href="${termsUrl()}" class="mp-foot-link" style="font-size:13px;font-weight:500;color:#ffffff;text-decoration:none;">Termos de Uso</a></td>
-</tr></table>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid rgba(255,255,255,0.14);padding-top:22px;">
-<p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:${BRAND.footMuted};">&copy; 2026 ${LEGAL_NAME}</p>
-<p style="margin:0;font-size:12px;line-height:1.6;color:${BRAND.footMuted};">${LEGAL_ADDRESS}</p>
-</td></tr></table>
+<tr><td class="mp-pad" style="padding:24px 40px 32px;border-top:1px solid ${BRAND.hairline};font-family:${FONT};font-size:12px;line-height:1.7;color:${BRAND.muted};">
+<p style="margin:0 0 6px;">${footLink(helpUrl(), "Central de Ajuda")} &nbsp;&middot;&nbsp; ${footLink(privacyUrl(), "Privacidade")} &nbsp;&middot;&nbsp; ${footLink(termsUrl(), "Termos de Uso")}</p>
+<p style="margin:0 0 6px;">Mensagem automática. Para falar com a gente, use a Central de Ajuda.</p>
+<p style="margin:0;">&copy; 2026 ${LEGAL_NAME}</p>
 </td></tr>
 
 </table>
@@ -976,6 +945,60 @@ function formatBRDayMonth(iso: string): string {
 }
 
 /**
+ * Bloco "onde você vai estacionar" do e-mail de reserva (23/11/2026,
+ * docs/specs/logo-do-estacionamento.md). De cima para baixo:
+ *   1. logo colorido do estacionamento (versão para fundo claro) ou, sem logo, o nome em texto;
+ *   2. duas colunas: foto da fachada e miniatura do mapa, que abre o Google Maps. Sem foto, o
+ *      mapa ocupa a linha; sem mapa (falta `GOOGLE_STATIC_MAPS_KEY`), um cartão com o endereço
+ *      e o link faz o papel dele; sem nenhum dos dois, a linha some;
+ *   3. endereço por extenso com "Como chegar".
+ * No celular as colunas empilham (`.mp-col`).
+ */
+function parkingBlock(b: VoucherBooking): string {
+  const name = `${b.company_name} · ${b.location_name}`;
+  const address = String(b.location_address ?? "").trim();
+  const maps = address ? mapsSearchUrl(address) : null;
+  const logo = b.parking_logo?.light ?? null;
+
+  const head = logo
+    ? `<img src="${escapeHtml(logo)}" height="36" alt="${escapeHtml(b.company_name)}" style="display:block;border:0;outline:none;height:36px;width:auto;max-width:220px;margin:0 0 8px;">
+       <p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:${BRAND.muted};">${escapeHtml(b.location_name)}</p>`
+    : `<p style="margin:0 0 16px;font-size:18px;line-height:1.35;font-weight:600;color:${BRAND.navy};">${escapeHtml(name)}</p>`;
+
+  const photo = b.email_photo_url
+    ? `<img src="${escapeHtml(b.email_photo_url)}" width="252" alt="Fachada do ${escapeHtml(b.company_name)}" style="display:block;border:0;outline:none;width:100%;max-width:252px;height:auto;border-radius:8px;">`
+    : null;
+  const mapImg = b.email_map_url && maps
+    ? `<a href="${escapeHtml(maps)}" target="_blank" style="text-decoration:none;"><img src="${escapeHtml(b.email_map_url)}" width="252" alt="Mapa: ${escapeHtml(address)}" style="display:block;border:0;outline:none;width:100%;max-width:252px;height:auto;border-radius:8px;"></a>`
+    : null;
+  const mapCard = !mapImg && maps
+    ? `<a href="${escapeHtml(maps)}" target="_blank" style="display:block;text-decoration:none;background:${BRAND.surface};border:1px solid ${BRAND.hairline};border-radius:8px;padding:20px;">
+         <span style="display:block;font-family:${FONT};font-size:13px;font-weight:600;color:${BRAND.navy};margin:0 0 6px;">Ver no mapa</span>
+         <span style="display:block;font-family:${FONT};font-size:13px;line-height:1.5;color:${BRAND.body};">${escapeHtml(address)}</span>
+         <span style="display:block;font-family:${FONT};font-size:13px;font-weight:600;color:${BRAND.violetActive};margin:10px 0 0;">Abrir no Google Maps</span>
+       </a>`
+    : null;
+  const right = mapImg ?? mapCard;
+
+  let media = "";
+  if (photo && right) {
+    media = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;"><tr>
+      <td class="mp-col" width="50%" valign="top" style="padding:0 8px 0 0;">${photo}</td>
+      <td class="mp-col" width="50%" valign="top" style="padding:0 0 0 8px;">${right}</td>
+    </tr></table>`;
+  } else if (photo || right) {
+    media = `<div style="margin:0 0 14px;max-width:252px;">${photo ?? right}</div>`;
+  }
+
+  // Com o cartão de endereço o texto já está ali; repetir embaixo seria ruído.
+  const addressLine = address && !mapCard
+    ? `<p style="margin:0;font-size:14px;line-height:1.55;color:${BRAND.body};">${escapeHtml(address)}<br><a href="${escapeHtml(maps!)}" target="_blank" class="mp-help-link" style="font-size:14px;font-weight:600;">Como chegar</a></p>`
+    : "";
+
+  return `<div style="margin:0 0 28px;">${head}${media}${addressLine}</div>`;
+}
+
+/**
  * Confirmação de reserva (cliente). Enviado quando o pagamento confirma a reserva.
  * Reaproveita a montagem de dados do voucher (`VoucherBooking`) e linka o cliente
  * para a própria reserva, onde o voucher fica disponível para download.
@@ -988,10 +1011,9 @@ export function tplBookingConfirmation(
   const fn = String(customerName ?? "").trim().split(/\s+/)[0];
   const greeting = fn ? `Tudo certo, ${escapeHtml(fn)}!` : "Tudo certo!";
 
+  // Estacionamento, unidade e endereço estão no bloco de cima; o resumo fica com a reserva.
   const rows: [string, string][] = [
     ["Reserva", escapeHtml(`#${b.code}`)],
-    ["Estacionamento", escapeHtml(b.company_name)],
-    ["Unidade", escapeHtml(b.location_name)],
     ["Tipo de vaga", escapeHtml(b.parking_type_name ?? "Vaga")],
     ["Check-in", escapeHtml(formatBRDateTime(b.check_in_at))],
     ["Check-out", escapeHtml(formatBRDateTime(b.check_out_at))],
@@ -1010,13 +1032,14 @@ export function tplBookingConfirmation(
     html: shell(
       "Sua reserva está confirmada",
       `
-      <p style="margin:0 0 24px;">${greeting} Sua reserva foi confirmada. Aqui está o resumo.</p>
+      <p style="margin:0 0 24px;">${greeting} Sua vaga está garantida. Confira onde você vai estacionar.</p>
+      ${parkingBlock(b)}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 32px;">${summary}</table>
-      ${checkItem(`O <strong style="color:${BRAND.navy};">${escapeHtml(b.location_name)}</strong> espera você em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDayMonth(b.check_in_at))}</strong>.`)}
+      ${checkItem(`O <strong style="color:${BRAND.navy};">${escapeHtml(b.company_name)}</strong> espera você em <strong style="color:${BRAND.navy};">${escapeHtml(formatBRDayMonth(b.check_in_at))}</strong>.`)}
       ${checkItem(`Precisa de ajuda? Fale com a gente no WhatsApp <a href="${SUPPORT_WHATSAPP.href}" class="mp-help-link">${SUPPORT_WHATSAPP.label}</a>.`)}
       ${checkItem(`O voucher vai em anexo neste e-mail e também fica na sua reserva, pronto para baixar quando quiser.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
-      { preheader: `Reserva ${b.code} confirmada no ${b.location_name}` },
+      { preheader: `Reserva ${b.code} confirmada no ${b.company_name}, ${b.location_name}` },
     ),
   };
 }
