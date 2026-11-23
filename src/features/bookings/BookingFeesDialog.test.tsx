@@ -24,7 +24,10 @@ vi.mock("@/features/settings/api", () => ({
           { from: 7, to: 12, bps: state.cardBps },
         ],
         antifraud_cents: 5,
+        processing_cents: 50,
+        cet30_bps: Array.from({ length: 12 }, (_, i) => 300 + i * 100),
       }),
+      card_anticipation_rate_monthly_bps: "200",
       card_installment_policy: JSON.stringify({
         version: 1,
         enabled: true,
@@ -132,6 +135,16 @@ describe("BookingFeesDialog", () => {
     expect(screen.getByTestId("taxa-total")).toHaveTextContent(/1,75/);
     expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(/devolveu/);
     expect(within(screen.getByTestId("taxas-parcelas")).getAllByRole("row")).toHaveLength(3);
+    // Condições acordadas: taxa por faixa e custo para receber em 30 dias, com a venda destacada.
+    const gateway = screen.getByTestId("tabela-gateway");
+    const linha2x = within(gateway).getByText("2x").closest("tr");
+    expect(linha2x).toHaveAttribute("aria-current", "true");
+    expect(linha2x).toHaveTextContent(/1,18%\s*4,00%/);
+    expect(gateway).toHaveTextContent(/Antecipação automática\s*2,00% ao mês/);
+    expect(gateway).toHaveTextContent(/Gateway por transação\s*R\$\s?0,50/);
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(
+      /contrato para receber em 30 dias: 4,00% \(R\$\s?4,00\)/,
+    );
     expect(
       within(screen.getByTestId("tabela-parcelamento")).getByText(/2x de/).closest("[aria-current]"),
     ).not.toBeNull();

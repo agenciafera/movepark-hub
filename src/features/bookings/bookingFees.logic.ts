@@ -13,6 +13,7 @@ import {
 } from "@/lib/installments";
 import {
   bandFor,
+  cet30For,
   differsFromContract,
   type FeeBand,
   type GatewayFeeSchedule,
@@ -173,6 +174,8 @@ export interface FeeDetail {
   installments: FeeInstallmentRow[];
   plan: { options: InstallmentOption[]; chosen: number; reproduces: boolean };
   band: FeeBand | null;
+  /** Custo para receber em 30 dias do contrato, para as parcelas desta venda (só cartão). */
+  cet30Bps: number | null;
   schedule: GatewayFeeSchedule | null;
 }
 
@@ -349,6 +352,7 @@ export function buildFeeDetail(args: {
     installments,
     plan: { options, chosen: n, reproduces },
     band,
+    cet30Bps: method === "card" ? cet30For(schedule, n) : null,
     schedule,
   };
 }

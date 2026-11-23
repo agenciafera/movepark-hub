@@ -23,10 +23,15 @@ type BandRow = { from: string; to: string; pct: string };
 type Form = {
   pix: string;
   antifraud: string;
+  processing: string;
   anticipation: string;
   withdrawal: string;
   bands: BandRow[];
+  /** Custo para receber em 30 dias, de 1x a 12x. */
+  cet: string[];
 };
+
+const PARCELAS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 const DEFAULT_BANDS: BandRow[] = [
   { from: "1", to: "1", pct: "" },
@@ -44,11 +49,13 @@ function formFrom(data: Record<string, string> | undefined): Form {
   return {
     pix: s ? hundredths(s.pix_bps) : "",
     antifraud: s ? hundredths(s.antifraud_cents) : "",
+    processing: s?.processing_cents != null ? hundredths(s.processing_cents) : "",
     anticipation: ant ? hundredths(Number(ant)) : "",
     withdrawal: wd ? hundredths(Number(wd)) : "",
     bands: s
       ? s.card.map((b) => ({ from: String(b.from), to: String(b.to), pct: hundredths(b.bps) }))
       : DEFAULT_BANDS,
+    cet: PARCELAS.map((n) => (s?.cet30_bps ? hundredths(s.cet30_bps[n - 1]) : "")),
   };
 }
 
@@ -62,6 +69,10 @@ function toSchedule(f: Form): GatewayFeeSchedule {
       bps: parseHundredths(b.pct),
     })),
     antifraud_cents: parseHundredths(f.antifraud),
+    // Vazios ficam fora do JSON (a tabela antiga não tinha estas chaves); pela metade, a
+    // validação recusa.
+    processing_cents: f.processing.trim() === "" ? undefined : parseHundredths(f.processing),
+    cet30_bps: f.cet.every((v) => v.trim() === "") ? undefined : f.cet.map(parseHundredths),
   };
 }
 
@@ -222,6 +233,35 @@ export function GatewayFeeScheduleSettings() {
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium text-ink">
+            Custo para receber em 30 dias (CET), por número de parcelas
+          </span>
+          <span className="text-caption text-muted text-pretty">
+            O que a Pagar.me cobra no total, taxa do cartão mais antecipação, para o dinheiro entrar
+            em 30 dias. É a coluna da direita da tabela de condições.
+          </span>
+          <div className="grid grid-cols-3 gap-2 tablet:grid-cols-6">
+            {PARCELAS.map((n) => (
+              <label key={n} className="flex flex-col gap-1 text-caption text-muted">
+                {n}x
+                <Input
+                  aria-label={`Custo em 30 dias ${n}x (%)`}
+                  inputMode="decimal"
+                  value={form.cet[n - 1]}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      cet: f.cet.map((v, j) => (j === n - 1 ? e.target.value : v)),
+                    }))
+                  }
+                  disabled={isLoading}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-2 tablet:grid-cols-[1fr_8rem_1fr] tablet:items-center">
           <Label htmlFor="fee-antifraud">Antifraude (R$ por transação)</Label>
           <Input
@@ -234,6 +274,16 @@ export function GatewayFeeScheduleSettings() {
           <span className="text-caption text-muted tabular-nums">
             {antifraudeMedio == null ? "sem venda" : `${formatBRL(antifraudeMedio / 100)} em média`}
           </span>
+
+          <Label htmlFor="fee-processing">Gateway (R$ por transação)</Label>
+          <Input
+            id="fee-processing"
+            inputMode="decimal"
+            value={form.processing}
+            onChange={(e) => setForm((f) => ({ ...f, processing: e.target.value }))}
+            disabled={isLoading}
+          />
+          <span className="text-caption text-muted">não aparece nos recebíveis</span>
 
           <Label htmlFor="fee-anticipation">Antecipação (% ao mês)</Label>
           <Input

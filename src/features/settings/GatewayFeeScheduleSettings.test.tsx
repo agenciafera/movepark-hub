@@ -99,4 +99,34 @@ describe("GatewayFeeScheduleSettings", () => {
       }),
     );
   });
+
+  it("mostra e salva o custo em 30 dias de 1x a 12x e o gateway por transação", async () => {
+    const CET = Array.from({ length: 12 }, (_, i) => 300 + i * 100);
+    settings.data = {
+      ...settings.data,
+      gateway_fee_schedule: JSON.stringify({ ...SCHEDULE, processing_cents: 50, cet30_bps: CET }),
+    };
+    renderWithProviders(<GatewayFeeScheduleSettings />);
+    expect((screen.getByLabelText("Custo em 30 dias 3x (%)") as HTMLInputElement).value).toBe("5.00");
+    expect((screen.getByLabelText("Gateway (R$ por transação)") as HTMLInputElement).value).toBe("0.50");
+    fireEvent.change(screen.getByLabelText("Custo em 30 dias 12x (%)"), { target: { value: "15" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    const cet = [...CET];
+    cet[11] = 1500;
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          gateway_fee_schedule: JSON.stringify({ ...SCHEDULE, processing_cents: 50, cet30_bps: cet }),
+        }),
+      ),
+    );
+  });
+
+  it("custo em 30 dias pela metade não salva", async () => {
+    renderWithProviders(<GatewayFeeScheduleSettings />);
+    fireEvent.change(screen.getByLabelText("Custo em 30 dias 1x (%)"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Preencha o custo em 30 dias de 2x.");
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
 });

@@ -117,9 +117,21 @@ flutuante):
   "version": 1,
   "pix_bps": 0,
   "card": [{ "from": 1, "to": 1, "bps": 0 }, { "from": 2, "to": 6, "bps": 0 }, { "from": 7, "to": 12, "bps": 0 }],
-  "antifraud_cents": 0
+  "antifraud_cents": 0,
+  "processing_cents": 0,
+  "cet30_bps": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
 ```
+
+`processing_cents` é a taxa fixa do gateway por transação e `cet30_bps` é o **custo efetivo total
+para receber em 30 dias** (taxa do cartão mais antecipação), de 1x a 12x, a coluna da direita da
+tabela de condições da Pagar.me. As duas chaves são opcionais (a tabela gravada antes de 23/11/2026
+não as tinha); preenchido pela metade, o formulário recusa. O teto do CET é 50% (o do 12x passa de
+20%). No modal, o quadro "Taxas do gateway" mostra de 1x a 12x a taxa da faixa e o custo em 30 dias,
+com a linha da venda destacada, mais Pix, antecipação automática ao mês, antifraude e gateway por
+transação; o total do gateway da venda ganha "contrato para receber em 30 dias: x% (R$ y)" para
+comparar. Pedido do Kallef em 23/11/2026, conforme a reunião do mesmo dia: a tabela que vai ao
+parceiro já leva as taxas de 30 dias, porque a antecipação acontece sempre.
 
 Os zeros acima são só a forma: os valores reais são digitados no Manager. Validação no formulário
 e na leitura (`parseGatewayFeeSchedule`): faixas contíguas, sem sobreposição, começando em 1 e

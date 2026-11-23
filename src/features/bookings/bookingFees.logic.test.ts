@@ -439,6 +439,20 @@ describe("buildFeeDetail", () => {
     expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({ cents: 0, expected: false });
   });
 
+  it("traz o custo em 30 dias do contrato para a venda no cartão", () => {
+    const CET = Array.from({ length: 12 }, (_, i) => 300 + i * 100);
+    expect(cenario({ installments: 3, schedule: { ...SCHEDULE(118), cet30_bps: CET } }).cet30Bps).toBe(500);
+    expect(cenario({ schedule: SCHEDULE(118) }).cet30Bps).toBeNull();
+    expect(
+      cenario({
+        method: "pix",
+        feeCents: 80,
+        payables: [payable({ installment: null, feeCents: 80 })],
+        schedule: { ...SCHEDULE(118), cet30_bps: CET },
+      }).cet30Bps,
+    ).toBeNull();
+  });
+
   it("sem split e com estorno aparecem no resumo", () => {
     expect(cenario({ custody: true }).summary.custody).toBe(true);
     expect(cenario({ refundedReais: 100 }).summary.refundedCents).toBe(10000);

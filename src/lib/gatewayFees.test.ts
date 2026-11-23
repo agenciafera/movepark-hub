@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bandFor,
+  cet30For,
   differsFromContract,
   formatBps,
   measuredAntifraudCents,
@@ -146,5 +147,43 @@ describe("formatação", () => {
     expect(parseHundredths("1.07")).toBe(107);
     expect(parseHundredths(" ")).toBeNaN();
     expect(parseHundredths("abc")).toBeNaN();
+  });
+});
+
+describe("condições em 30 dias (CET) e gateway por transação", () => {
+  const CET = Array.from({ length: 12 }, (_, i) => 300 + i * 100);
+  it("aceita a tabela com o custo em 30 dias de 1x a 12x e o gateway por transação", () => {
+    const s = { ...VALIDA, processing_cents: 50, cet30_bps: CET };
+    expect(validateGatewayFeeSchedule(s)).toBeNull();
+    expect(parseGatewayFeeSchedule(JSON.stringify(s))).toEqual(s);
+  });
+  it("tabela antiga, sem essas chaves, continua valendo", () => {
+    expect(parseGatewayFeeSchedule(JSON.stringify(VALIDA))).toEqual(VALIDA);
+  });
+  it("recusa custo em 30 dias incompleto ou fora de 0% a 50%, e gateway negativo", () => {
+    expect(validateGatewayFeeSchedule({ ...VALIDA, cet30_bps: CET.slice(0, 11) })).toBe(
+      "Preencha o custo em 30 dias de 1x a 12x.",
+    );
+    const furo = [...CET];
+    furo[3] = Number.NaN;
+    expect(validateGatewayFeeSchedule({ ...VALIDA, cet30_bps: furo })).toBe(
+      "Preencha o custo em 30 dias de 4x.",
+    );
+    const alto = [...CET];
+    alto[11] = 5001;
+    expect(validateGatewayFeeSchedule({ ...VALIDA, cet30_bps: alto })).toBe(
+      "Custo em 30 dias de 12x fora de 0% a 50%.",
+    );
+    expect(validateGatewayFeeSchedule({ ...VALIDA, processing_cents: -1 })).toBe(
+      "Taxa do gateway por transação precisa ser um valor em reais não negativo.",
+    );
+  });
+  it("acha o custo em 30 dias da venda", () => {
+    const s = { ...VALIDA, cet30_bps: CET };
+    expect(cet30For(s, 1)).toBe(300);
+    expect(cet30For(s, 3)).toBe(500);
+    expect(cet30For(s, 13)).toBeNull();
+    expect(cet30For(VALIDA, 3)).toBeNull();
+    expect(cet30For(null, 3)).toBeNull();
   });
 });

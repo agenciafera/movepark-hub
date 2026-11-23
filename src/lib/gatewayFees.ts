@@ -15,6 +15,13 @@ export interface GatewayFeeSchedule {
   pix_bps: number;
   card: FeeBand[];
   antifraud_cents: number;
+  /** Taxa fixa do gateway por transação, em centavos. */
+  processing_cents?: number;
+  /**
+   * Custo efetivo total para receber em 30 dias (taxa do cartão mais antecipação), de 1x a 12x:
+   * índice 0 é 1x. É a coluna "recebimento em 30 dias" da tabela da Pagar.me.
+   */
+  cet30_bps?: number[];
 }
 
 /** O que a RPC `gateway_fee_measured` devolve: somas por método e número de parcelas. */
@@ -39,6 +46,8 @@ export interface GatewayFeeMeasured {
 }
 
 export const MAX_FEE_BPS = 2000;
+/** O custo em 30 dias do 12x passa de 20%: o teto dele é outro. */
+export const MAX_CET_BPS = 5000;
 /** Diferença a partir da qual o efetivo "não bate" com o contratado: 0,05 ponto percentual. */
 export const FEE_TOLERANCE_BPS = 5;
 
@@ -66,6 +75,16 @@ export function validateGatewayFeeSchedule(s: GatewayFeeSchedule): string | null
     expected = b.to + 1;
   }
   if (expected !== 13) return faltam(expected, 12);
+  if (s.processing_cents != null && (!isInt(s.processing_cents) || s.processing_cents < 0))
+    return "Taxa do gateway por transação precisa ser um valor em reais não negativo.";
+  if (s.cet30_bps != null) {
+    if (!Array.isArray(s.cet30_bps) || s.cet30_bps.length !== 12)
+      return "Preencha o custo em 30 dias de 1x a 12x.";
+    const vazio = s.cet30_bps.findIndex((b) => !Number.isFinite(b));
+    if (vazio >= 0) return `Preencha o custo em 30 dias de ${vazio + 1}x.`;
+    const fora = s.cet30_bps.findIndex((b) => !isInt(b) || b < 0 || b > MAX_CET_BPS);
+    if (fora >= 0) return `Custo em 30 dias de ${fora + 1}x fora de 0% a 50%.`;
+  }
   return null;
 }
 
@@ -91,7 +110,19 @@ export function parseGatewayFeeSchedule(raw: string | null | undefined): Gateway
     card: [...card].sort((a, b) => Number(a.from) - Number(b.from)),
     antifraud_cents: o.antifraud_cents as number,
   };
+  if (o.processing_cents !== undefined) s.processing_cents = o.processing_cents as number;
+  if (o.cet30_bps !== undefined) s.cet30_bps = o.cet30_bps as number[];
   return validateGatewayFeeSchedule(s) ? null : s;
+}
+
+/** Custo em 30 dias do contrato para uma venda de N parcelas; null sem tabela ou fora de 1 a 12. */
+export function cet30For(
+  schedule: GatewayFeeSchedule | null,
+  installments: number | null | undefined,
+): number | null {
+  if (!schedule?.cet30_bps || installments == null || installments < 1 || installments > 12)
+    return null;
+  return schedule.cet30_bps[installments - 1] ?? null;
 }
 
 /** A faixa do cartão em que uma venda de N parcelas cai. */

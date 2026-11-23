@@ -8,7 +8,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL, formatDate } from "@/lib/format";
 import { parseInstallmentPolicy } from "@/lib/installments";
-import { formatBps, parseGatewayFeeSchedule } from "@/lib/gatewayFees";
+import { bandFor, formatBps, parseGatewayFeeSchedule } from "@/lib/gatewayFees";
 import { useAppSettings } from "@/features/settings/api";
 import { useBookingGatewayTrail } from "./api";
 import { Bloco, Linha } from "./BookingMoneyCard";
@@ -127,7 +127,9 @@ function LinhaTabela({ rotulo, valor, atual }: { rotulo: string; valor: string; 
   );
 }
 
-function Conteudo({ d }: { d: FeeDetail }) {
+const PARCELAS = Array.from({ length: 12 }, (_, i) => i + 1);
+
+function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: number | null }) {
   const s = d.summary;
   const cartao = s.method === "card";
   const comoPagou = cartao
@@ -174,11 +176,18 @@ function Conteudo({ d }: { d: FeeDetail }) {
           <TaxaLinha
             label="Total do gateway"
             regra={
-              g.expectedCents > 0 && totalGateway != null
-                ? `com a antecipação prevista: ${brl(totalGateway + g.expectedCents)}`
-                : !g.detailed && g.recordedCents != null
-                  ? "sem detalhe por parcela"
-                  : null
+              [
+                g.expectedCents > 0 && totalGateway != null
+                  ? `com a antecipação prevista: ${brl(totalGateway + g.expectedCents)}`
+                  : !g.detailed && g.recordedCents != null
+                    ? "sem detalhe por parcela"
+                    : null,
+                d.cet30Bps != null
+                  ? `contrato para receber em 30 dias: ${formatBps(d.cet30Bps)} (${brl(Math.round((s.chargedCents * d.cet30Bps) / 10000))})`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || null
             }
             pagador={null}
             valor={totalGateway != null ? brl(totalGateway) : "apurando"}
@@ -261,20 +270,58 @@ function Conteudo({ d }: { d: FeeDetail }) {
             <span className="text-body-sm font-medium text-ink">Taxas do gateway</span>
             {d.schedule ? (
               <>
+                <table className="w-full text-body-sm tabular-nums">
+                  <thead className="text-caption text-muted">
+                    <tr>
+                      <th className="px-2 py-1 text-left font-normal">Cartão</th>
+                      <th className="px-2 text-right font-normal">Taxa</th>
+                      {d.schedule.cet30_bps && (
+                        <th className="px-2 text-right font-normal">Em 30 dias</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PARCELAS.map((n) => {
+                      const atual = cartao && n === d.plan.chosen;
+                      const faixa = bandFor(d.schedule, n);
+                      return (
+                        <tr
+                          key={n}
+                          aria-current={atual ? "true" : undefined}
+                          className={atual ? "bg-canvas font-medium text-primary" : "text-body"}
+                        >
+                          <td className="px-2 py-1">{n}x</td>
+                          <td className="px-2 text-right">{faixa ? formatBps(faixa.bps) : "-"}</td>
+                          {d.schedule?.cet30_bps && (
+                            <td className="px-2 text-right">
+                              {formatBps(d.schedule.cet30_bps[n - 1])}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
                 <LinhaTabela rotulo="Pix" valor={formatBps(d.schedule.pix_bps)} atual={!cartao} />
-                {d.schedule.card.map((b) => (
+                {anticipationBps != null && (
                   <LinhaTabela
-                    key={b.from}
-                    rotulo={b.from === b.to ? `Cartão ${b.from}x` : `Cartão ${b.from}x a ${b.to}x`}
-                    valor={formatBps(b.bps)}
-                    atual={cartao && d.band?.from === b.from}
+                    rotulo="Antecipação automática"
+                    valor={`${formatBps(anticipationBps)} ao mês`}
+                    atual={false}
                   />
-                ))}
+                )}
                 <LinhaTabela
                   rotulo="Antifraude"
                   valor={brl(d.schedule.antifraud_cents)}
                   atual={false}
                 />
+                {d.schedule.processing_cents != null && (
+                  <LinhaTabela
+                    rotulo="Gateway por transação"
+                    valor={brl(d.schedule.processing_cents)}
+                    atual={false}
+                  />
+                )}
               </>
             ) : (
               <span className="text-caption text-muted text-pretty">
@@ -309,6 +356,8 @@ export function BookingFeesDialog({
 }) {
   const trail = useBookingGatewayTrail(bookingId, open);
   const settings = useAppSettings();
+  const rate = Number(settings.data?.card_anticipation_rate_monthly_bps);
+  const anticipationBps = settings.data?.card_anticipation_rate_monthly_bps && Number.isFinite(rate) ? rate : null;
   const d =
     trail.isLoading || settings.isLoading
       ? null
@@ -331,7 +380,11 @@ export function BookingFeesDialog({
             O que cada um pagou nesta venda e a tabela que valeu para ela.
           </DialogDescription>
         </DialogHeader>
-        {d ? <Conteudo d={d} /> : <Skeleton className="h-64 w-full" />}
+        {d ? (
+          <Conteudo d={d} anticipationBps={anticipationBps} />
+        ) : (
+          <Skeleton className="h-64 w-full" />
+        )}
       </DialogContent>
     </Dialog>
   );
