@@ -264,7 +264,9 @@ export default function OperatorDashboard() {
   // A contagem vale para todo papel (Origem das reservas); o dinheiro continua atrás de finance:read.
   const { hasWl } = useHasWl();
   const wlQ = useWlRevenue({ from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds }, hasWl);
-  const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds, true);
+  // Receita é financeiro (ADR-005): quem não tem finance:read (o balcão) nem pede os valores, o
+  // que também tira a série da "Leitura do período", que sem ela não fala de dinheiro.
+  const revenue = useRevenueByRange(rangeFrom, rangeTo, scopedLocationIds, true, canFinance);
   // Gráfico por dia do pagamento: só busca na base escolhida e só para quem vê dinheiro. No
   // white-label não há data de pagamento, e a mais próxima é a da compra (o site cobra na hora).
   const revenuePaid = useRevenueByPaymentDay(

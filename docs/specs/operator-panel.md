@@ -137,7 +137,9 @@ receita, gráfico e RevPAR; `payouts:read` libera o saldo; `reviews:read` libera
   base da visão por check-in); cobrança em dobro conta uma vez. O total do gráfico sai do próprio
   gráfico; o card "Receita do período", a meta e a leitura do período seguem por check-in. No
   white-label vale a data da compra. A consulta recarrega a cada 60 s com a tela aberta
-  (`useRevenueByPaymentDay`, também usada pelo Manager).
+  (`useRevenueByPaymentDay`, também usada pelo Manager). **Quem vê:** só quem tem `finance:read`
+  (Dono, Gerente e Financeiro). O balcão (papel Operação) não vê o gráfico nem o seletor, e a tela
+  nem pede os valores (23/11/2026).
 - **Reservas pagas:** o número, a conversão sobre o criado e a quebra por situação. O
   denominador é toda reserva criada no período, então `expired` (abandono) aparece do lado
   de `cancelled` em vez de sumir.
@@ -427,7 +429,9 @@ Lista as avaliações publicadas das unidades da empresa (nota, autor, data, com
   Brasília), nos últimos N dias até agora; por check-in, vale a janela de antes (check-in desde N
   dias, sem teto, que já incluía viagens futuras). Os três cards (diárias, o que você recebe,
   reservas), o gráfico e o CSV "Receita diária" seguem a base escolhida; o CSV por pagamento sai
-  como `receita-pagamento-<N>d.csv`. No white-label vale a data da compra.
+  como `receita-pagamento-<N>d.csv`. No white-label vale a data da compra. A aba, o CSV e as
+  consultas que os alimentam exigem `finance:read`: o balcão (papel Operação) fica só com a aba
+  Reservas.
 
 **Ocupação**
 - Taxa de ocupação por localização e tipo de vaga

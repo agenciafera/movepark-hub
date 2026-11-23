@@ -13,7 +13,15 @@ const SUPABASE_URL = "http://localhost:54321";
  * ficava parado o dia inteiro. Agora o padrão é o dia do pagamento (como no Manager), e o
  * check-in continua a um clique.
  */
-function renderDashboard(route = "/operator", pedidos: string[] = []) {
+const ESCOPOS_FINANCEIRO = ["finance:read", "payouts:read", "bookings:read", "occupancy:read"];
+// Papel Operação (o balcão do estacionamento): reserva, check-in e ocupação, sem dinheiro.
+const ESCOPOS_BALCAO = ["bookings:read", "bookings:write", "occupancy:read"];
+
+function renderDashboard(
+  route = "/operator",
+  pedidos: string[] = [],
+  escopos: string[] | null = null,
+) {
   server.use(
     http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
       const url = new URL(request.url);
@@ -41,7 +49,7 @@ function renderDashboard(route = "/operator", pedidos: string[] = []) {
     auth: mockAuth({
       session: mockSession("company_operator"),
       effectiveCompanyIds: ["c1"],
-      hasScope: () => true,
+      hasScope: escopos ? (e) => escopos.includes(e) : () => true,
     }),
     route,
   });
@@ -67,5 +75,29 @@ describe("OperatorDashboard: receita diária por dia do pagamento", () => {
     expect(await screen.findByText("Receita por dia de check-in,")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Check-in" })).toHaveAttribute("aria-selected", "true");
     expect(screen.queryByText("Receita por dia do pagamento,")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * Receita é financeiro (ADR-005): só quem tem `finance:read` (Dono, Gerente e Financeiro) vê o
+ * gráfico, e o balcão (papel Operação) não vê nem a tela nem pede os valores que a alimentam.
+ */
+describe("OperatorDashboard: receita só para quem tem finance:read", () => {
+  it("Financeiro vê o gráfico de receita", async () => {
+    renderDashboard("/operator", [], ESCOPOS_FINANCEIRO);
+    expect(await screen.findByText("Receita por dia do pagamento,")).toBeInTheDocument();
+  });
+
+  it("balcão (Operação): sem gráfico, sem seletor e sem pedir o dinheiro das reservas", async () => {
+    const pedidos: string[] = [];
+    renderDashboard("/operator", pedidos, ESCOPOS_BALCAO);
+    expect(await screen.findByText("Reservas pagas")).toBeInTheDocument();
+    // O resumo do período (contagens) também chama a tabela de reservas, então esperamos ele.
+    await waitFor(() => expect(pedidos.length).toBeGreaterThan(0));
+    expect(screen.queryByText(/Receita por dia/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Pagamento" })).not.toBeInTheDocument();
+    // Nenhuma consulta de receita do parceiro: nem por pagamento, nem a com o split do gateway.
+    expect(pedidos.some((q) => q.includes("payments.paid_at"))).toBe(false);
+    expect(pedidos.some((q) => q.includes("split"))).toBe(false);
   });
 });

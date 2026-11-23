@@ -88,7 +88,7 @@ export default function OperatorReports() {
   const porPagamento = of.data !== "checkin";
   const since = React.useMemo(() => subDays(new Date(), period).toISOString(), [period]);
   // Só busca a base escolhida. Por pagamento a reserva conta no dia em que foi paga (`paid_at`).
-  const revenueCheckin = useRevenueByDay(period, scopedLocationIds, true, !porPagamento);
+  const revenueCheckin = useRevenueByDay(period, scopedLocationIds, true, canFinance && !porPagamento);
   const revenuePaid = useRevenueByPaymentDay(
     since,
     SEM_TETO,

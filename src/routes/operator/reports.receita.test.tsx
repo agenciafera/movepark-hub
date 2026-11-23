@@ -38,7 +38,14 @@ const pb = {
   ],
 };
 
-function renderReports(route = "/operator/reports", pedidos: string[] = []) {
+// Papel Operação (o balcão do estacionamento): reserva, check-in e ocupação, sem dinheiro.
+const ESCOPOS_BALCAO = ["bookings:read", "bookings:write", "occupancy:read"];
+
+function renderReports(
+  route = "/operator/reports",
+  pedidos: string[] = [],
+  escopos: string[] | null = null,
+) {
   server.use(
     http.get(`${SUPABASE_URL}/rest/v1/booking`, ({ request }) => {
       const url = new URL(request.url);
@@ -58,7 +65,10 @@ function renderReports(route = "/operator/reports", pedidos: string[] = []) {
     }),
   );
   return renderWithProviders(<OperatorReports />, {
-    auth: mockAuth({ effectiveCompanyIds: ["c1"], hasScope: () => true }),
+    auth: mockAuth({
+      effectiveCompanyIds: ["c1"],
+      hasScope: escopos ? (e) => escopos.includes(e) : () => true,
+    }),
     route,
   });
 }
@@ -82,4 +92,22 @@ describe("OperatorReports: receita por dia do pagamento", () => {
     expect(screen.getByRole("tab", { name: "Check-in" })).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(screen.getByTestId("relatorio-diarias")).toHaveTextContent("R$ 50,00"));
   });
+});
+
+/** Receita é financeiro (ADR-005): o balcão (papel Operação) não vê a aba nem pede os valores. */
+describe("OperatorReports: receita só para quem tem finance:read", () => {
+  it.each(["/operator/reports", "/operator/reports?data=checkin", "/operator/reports?data=pagamento"])(
+    "balcão em %s: sem aba Receita e sem pedir o dinheiro das reservas",
+    async (rota) => {
+      const pedidos: string[] = [];
+      renderReports(rota, pedidos, ESCOPOS_BALCAO);
+      expect(screen.queryByRole("tab", { name: "Receita" })).not.toBeInTheDocument();
+      expect(await screen.findByRole("tab", { name: "Reservas" })).toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "Pagamento" })).not.toBeInTheDocument();
+      // O funil de status (Reservas) pode consultar a tabela; o que não pode é trazer o dinheiro.
+      await new Promise((r) => setTimeout(r, 50));
+      expect(pedidos.some((q) => q.includes("split"))).toBe(false);
+      expect(pedidos.some((q) => q.includes("payments.paid_at"))).toBe(false);
+    },
+  );
 });

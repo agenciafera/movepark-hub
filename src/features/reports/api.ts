@@ -79,9 +79,16 @@ export function useRevenueByDay(
  * Receita por dia num intervalo livre (o filtro do Manager escolhe o período, não
  * mais uma janela fixa de 7/30/90). `from` inclusivo, `to` exclusivo.
  */
-export function useRevenueByRange(fromIso: string, toIso: string, locationIds?: string[], partner = false) {
+export function useRevenueByRange(
+  fromIso: string,
+  toIso: string,
+  locationIds?: string[],
+  partner = false,
+  enabled = true,
+) {
   return useQuery({
     queryKey: ["reports", "revenue-range", fromIso, toIso, locationIds, partner],
+    enabled,
     queryFn: async (): Promise<DailyRevenueRow[]> => {
       let q = supabase
         .from("booking")

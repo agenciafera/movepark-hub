@@ -183,6 +183,10 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 > **Leitura vs. escrita:** o gating de **escrita** é server-authoritative (RPC + RLS). A **leitura**
 > de dados da própria empresa segue a RLS por associação (qualquer membro lê); a UI é que esconde as
 > seções por escopo. Um membro sem o item no menu não tem como agir (a ação é bloqueada no servidor).
+> Desde 23/11/2026 o front também **não pede** a receita (gráfico do dashboard e aba Receita de
+> Relatórios) a quem não tem `finance:read`, mas isso é higiene da tela: as políticas de `booking` e
+> `payment` ainda deixam qualquer membro da empresa ler esses valores direto pela API, e fechar isso
+> no servidor é trabalho à parte (as telas de check-in do balcão leem essas mesmas tabelas).
 
 ## Colunas de `company` (08/10/2026)
 
