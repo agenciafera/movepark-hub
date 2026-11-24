@@ -47,10 +47,15 @@ import {
   COMBUSTIVEL,
   KM_MAX,
   KM_MIN,
+  CORRIDA_MINIMA,
+  POR_KM_MEDIO,
+  REFERENCIAS_UBER,
   SURGE_OPCOES,
-  TARIFA_APP_PADRAO,
+  UBER_CONSULTADO_EM,
   breakEvenDays,
   comparar,
+  porKmDe,
+  referenciaApp,
   reservaWindow,
   sanitizeKm,
 } from "@/features/price-index/comparadorApp.logic";
@@ -210,21 +215,33 @@ const METODOLOGIA: { q: string; a: React.ReactNode }[] = [
     q: "Como vocês calculam o custo do app de transporte?",
     a: (
       <>
-        É estimativa: Uber e 99 não oferecem API pública de preço. Usamos a tarifa de referência da
-        categoria básica ({formatBRL(TARIFA_APP_PADRAO.bandeirada)} de partida,{" "}
-        {formatBRL(TARIFA_APP_PADRAO.porKm)} por km e {formatBRL(TARIFA_APP_PADRAO.porMinuto)} por
-        minuto, com mínima de {formatBRL(TARIFA_APP_PADRAO.minima)}), com o tempo estimado a 30 km/h
-        na cidade. Fonte:{" "}
-        <a
-          href={TARIFA_APP_PADRAO.fonteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-mp-indigo underline-offset-2 hover:underline"
-        >
-          {TARIFA_APP_PADRAO.fonte}
-        </a>
-        , {TARIFA_APP_PADRAO.coletadoEm}. Em pico, chuva ou madrugada a tarifa dinâmica sobe o valor
-        real: por isso o controle de dinâmica e o campo para colar a corrida que o seu app mostrou.
+        É estimativa: Uber e 99 não oferecem API pública de preço. Usamos o preço médio do UberX que
+        a própria Uber publica na página de cada aeroporto, referente ao último mês, e dividimos
+        pela distância média da mesma página. Isso dá um valor por km para cada praça, aplicado à
+        distância que você informar:
+        <ul className="mt-3 flex list-disc flex-col gap-1 pl-5">
+          {REFERENCIAS_UBER.map((r) => (
+            <li key={r.codigo}>
+              <a
+                href={r.fonteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-mp-indigo underline-offset-2 hover:underline"
+              >
+                {r.aeroporto} ({r.codigo})
+              </a>
+              : {formatBRL(r.precoMedio)} saindo de {r.origem}, {r.km} km em média, ou{" "}
+              {formatBRL(porKmDe(r))} por km.
+            </li>
+          ))}
+        </ul>
+        <span className="mt-3 block">
+          Páginas consultadas em {formatDate(UBER_CONSULTADO_EM)}. Destino sem página de aeroporto
+          na Uber usa a média das cinco praças, {formatBRL(POR_KM_MEDIO)} por km. Em trajeto curto a
+          corrida não fica abaixo de {formatBRL(CORRIDA_MINIMA)}. Em pico, chuva ou madrugada a
+          tarifa dinâmica sobe o valor real: por isso o controle de dinâmica e o campo para colar a
+          corrida que o seu app mostrou.
+        </span>
       </>
     ),
   },
@@ -419,6 +436,8 @@ export default function CalculadoraPage() {
           incluirCombustivel: comCombustivel,
         })
       : null;
+  // De onde sai o R$ por km do app: a página da Uber do aeroporto escolhido.
+  const refApp = referenciaApp(destinoCalc?.code);
   const breakEven =
     destinoCalc && km != null ? breakEvenDays(destinoCalc, km, surge, standardDays) : null;
   const estacionarVence = comparacao?.economia != null && comparacao.economia > 0;
@@ -949,7 +968,20 @@ export default function CalculadoraPage() {
                         </span>
                       )}
                       <span className="text-pretty text-caption-sm text-muted">
-                        O lado do app é estimativa. Uber e 99 não publicam tabela oficial.
+                        {refApp ? (
+                          <>
+                            O lado do app é estimativa pelo preço médio do UberX que a Uber publica
+                            entre {refApp.origem} e {refApp.aeroporto}:{" "}
+                            {formatBRL(refApp.precoMedio)} por {refApp.km} km no último mês,
+                            consultado em {formatDate(UBER_CONSULTADO_EM)}.
+                          </>
+                        ) : (
+                          <>
+                            O lado do app é estimativa pela média de {formatBRL(POR_KM_MEDIO)} por
+                            km dos aeroportos em que a Uber publica preço médio, consultada em{" "}
+                            {formatDate(UBER_CONSULTADO_EM)}.
+                          </>
+                        )}
                       </span>
                     </div>
                   </>

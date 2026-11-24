@@ -1,35 +1,122 @@
 /**
- * Lógica pura do comparador "de app ou de carro" (/uber-ou-estacionamento-aeroporto).
+ * Lógica pura do comparador "de app ou de carro" (/calculadora-estacionamento-aeroporto?modo=app).
  *
  * O lado do ESTACIONAMENTO é dado vivo do motor (o mesmo do checkout). O lado do
  * APP é estimativa declarada: Uber e 99 não oferecem API de preço para terceiros
- * (a do Uber proíbe comparação de preços nos termos), então a conta usa a tarifa
- * de referência abaixo, com fonte e data à vista, mais os controles de tarifa
- * dinâmica e de valor manual para o usuário aproximar da realidade dele.
+ * (a do Uber proíbe comparação de preços nos termos), então a conta usa o preço
+ * médio do UberX que a própria Uber publica na página de cada aeroporto
+ * (`uber.com/global/pt-br/r/airports/<iata>/`), dividido pela distância média da
+ * mesma página. O resultado é um R$ por km de cada praça, com fonte e data à
+ * vista, mais os controles de tarifa dinâmica e de valor manual para o usuário
+ * aproximar da realidade dele.
+ *
+ * Até 23/11/2026 a conta usava uma tarifa genérica (bandeirada + km + minuto, da
+ * Calculauto), que dava cerca de R$ 73 para 30 km enquanto a Uber publicava R$ 100
+ * entre São Paulo e Guarulhos. O post "vale a pena deixar o carro no aeroporto ou
+ * ir de Uber" usa estes mesmos números, então a calculadora e o post batem.
+ *
+ * Os números mudam todo mês: ao atualizar, reconfira as cinco páginas e troque
+ * `consultadoEm` junto.
  */
 
 import { carUnits, priceFor, type PriceDestination, type PriceUnit } from "./priceIndex.logic";
 
-/** Tarifa de referência de app (categoria básica). Fonte e data saem na página. */
-export type TarifaApp = {
-  bandeirada: number;
-  porKm: number;
-  porMinuto: number;
-  minima: number;
-  fonte: string;
+/** Preço médio publicado pela Uber para um aeroporto. Fonte e data saem na página. */
+export type ReferenciaApp = {
+  /** IATA, igual a `destination.code`. */
+  codigo: string;
+  aeroporto: string;
+  /** Cidade de saída que a Uber usa na média ("entre São Paulo e GRU"). */
+  origem: string;
+  /** Preço médio do UberX no último mês, em reais. */
+  precoMedio: number;
+  /** Distância média da viagem no último mês, em km. */
+  km: number;
+  /** Tempo médio da viagem no último mês, em minutos. */
+  minutos: number;
   fonteUrl: string;
-  coletadoEm: string;
 };
 
-export const TARIFA_APP_PADRAO: TarifaApp = {
-  bandeirada: 2.5,
-  porKm: 1.65,
-  porMinuto: 0.35,
-  minima: 10,
-  fonte: "Calculauto, tarifas UberX de referência (a Uber não publica tabela oficial)",
-  fonteUrl: "https://www.calculauto.com.br/blog/quanto-custa-viagem-uber-brasil-2026",
-  coletadoEm: "2026-08",
-};
+/** Data da última conferência das páginas da Uber (ISO). */
+export const UBER_CONSULTADO_EM = "2026-11-23";
+
+const uberUrl = (iata: string) =>
+  `https://www.uber.com/global/pt-br/r/airports/${iata.toLowerCase()}/`;
+
+export const REFERENCIAS_UBER: readonly ReferenciaApp[] = [
+  {
+    codigo: "GRU",
+    aeroporto: "Guarulhos",
+    origem: "São Paulo",
+    precoMedio: 100,
+    km: 30,
+    minutos: 46,
+    fonteUrl: uberUrl("GRU"),
+  },
+  {
+    codigo: "CGH",
+    aeroporto: "Congonhas",
+    origem: "São Paulo",
+    precoMedio: 43,
+    km: 11,
+    minutos: 26,
+    fonteUrl: uberUrl("CGH"),
+  },
+  {
+    codigo: "VCP",
+    aeroporto: "Viracopos",
+    origem: "Campinas",
+    precoMedio: 38,
+    km: 17,
+    minutos: 19,
+    fonteUrl: uberUrl("VCP"),
+  },
+  {
+    codigo: "CNF",
+    aeroporto: "Confins",
+    origem: "Belo Horizonte",
+    precoMedio: 96,
+    km: 41,
+    minutos: 45,
+    fonteUrl: uberUrl("CNF"),
+  },
+  {
+    codigo: "CWB",
+    aeroporto: "Afonso Pena",
+    origem: "Curitiba",
+    precoMedio: 40,
+    km: 19,
+    minutos: 29,
+    fonteUrl: uberUrl("CWB"),
+  },
+];
+
+/** R$ por km de uma referência: preço médio dividido pela distância média. */
+export function porKmDe(ref: ReferenciaApp): number {
+  return ref.precoMedio / ref.km;
+}
+
+/**
+ * Destino sem página de aeroporto da Uber (o Terminal Tietê, por exemplo): usa a
+ * média simples do R$ por km das referências publicadas. Declarado na página.
+ */
+export const POR_KM_MEDIO =
+  REFERENCIAS_UBER.reduce((soma, r) => soma + porKmDe(r), 0) / REFERENCIAS_UBER.length;
+
+/** Piso da corrida em trajeto curto, para a conta proporcional não dar R$ 4. */
+export const CORRIDA_MINIMA = 10;
+
+export function referenciaApp(codigo: string | null | undefined): ReferenciaApp | null {
+  if (!codigo) return null;
+  const c = codigo.toUpperCase();
+  return REFERENCIAS_UBER.find((r) => r.codigo === c) ?? null;
+}
+
+/** R$ por km do destino: o do aeroporto, ou a média quando a Uber não publica. */
+export function porKmDoDestino(codigo: string | null | undefined): number {
+  const ref = referenciaApp(codigo);
+  return ref ? porKmDe(ref) : POR_KM_MEDIO;
+}
 
 /** Combustível do trajeto de carro, para quem quiser a conta completa. */
 export const COMBUSTIVEL = {
@@ -50,15 +137,12 @@ export function sanitizeKm(value: string | number): number | null {
   return n;
 }
 
-/** Minutos estimados do trajeto: média urbana de 30 km/h, declarada na metodologia. */
-export function minutosEstimados(km: number): number {
-  return Math.round(km * 2);
-}
-
-/** Uma corrida (um trecho), na tarifa de referência com o multiplicador aplicado. */
-export function estimativaCorrida(km: number, surge: number, tarifa = TARIFA_APP_PADRAO): number {
-  const base = tarifa.bandeirada + tarifa.porKm * km + tarifa.porMinuto * minutosEstimados(km);
-  return Math.max(tarifa.minima, base) * surge;
+/**
+ * Uma corrida (um trecho): a distância vezes o R$ por km do destino, com o
+ * multiplicador de dinâmica aplicado e o piso de trajeto curto.
+ */
+export function estimativaCorrida(km: number, surge: number, porKm: number = POR_KM_MEDIO): number {
+  return Math.max(CORRIDA_MINIMA, porKm * km) * surge;
 }
 
 export function custoCombustivel(km: number): number {
@@ -92,7 +176,9 @@ export function comparar(
   opts: { tarifaManualIda?: number | null; incluirCombustivel?: boolean } = {},
 ): Comparacao {
   const manual = opts.tarifaManualIda != null && opts.tarifaManualIda > 0;
-  const corrida = manual ? (opts.tarifaManualIda as number) : estimativaCorrida(km, surge);
+  const corrida = manual
+    ? (opts.tarifaManualIda as number)
+    : estimativaCorrida(km, surge, porKmDoDestino(dest.code));
   const appTotal = corrida * 2;
 
   let melhor: { total: number; label: string; unidade: PriceUnit } | null = null;
@@ -146,7 +232,7 @@ export function breakEvenDays(
   surge: number,
   durations: number[],
 ): number | null {
-  const appTotal = estimativaCorrida(km, surge) * 2;
+  const appTotal = estimativaCorrida(km, surge, porKmDoDestino(dest.code)) * 2;
   for (const d of [...durations].sort((a, b) => a - b)) {
     let melhor: number | null = null;
     for (const u of carUnits(dest.units)) {

@@ -161,10 +161,7 @@ describe("CalculadoraPage", () => {
     setup();
     const tabela = await screen.findByRole("table", { name: /Preço de/ });
     const reservar = within(tabela).getAllByRole("link", { name: "Reservar" });
-    expect(reservar[0]).toHaveAttribute(
-      "href",
-      "/estacionamentos/aeroporto-guarulhos/aerovalet",
-    );
+    expect(reservar[0]).toHaveAttribute("href", "/estacionamentos/aeroporto-guarulhos/aerovalet");
     // O lote sem contrato não polui o ranking de quem tem preço (ADR-010).
     expect(tabela.textContent).not.toContain("Talentos Park");
 
@@ -253,12 +250,17 @@ describe("CalculadoraPage", () => {
     setup();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("radio", { name: /Carro ou app/ }));
-    // App a 25 km sem dinâmica: 2 corridas de 61,25 = 122,50; estacionar 7 diárias = 111,30.
+    // Guarulhos a 25 km sem dinâmica, no preço médio que a Uber publica (R$ 100 por 30 km):
+    // 2 corridas de 83,33 = 166,67; estacionar 7 diárias = 111,30.
     const veredito = await screen.findByText("Estacionar sai mais barato");
     const painel = veredito.closest("div")!.parentElement!;
-    expect(painel.textContent).toContain(formatBRL(11.2));
-    expect(painel.textContent).toContain(formatBRL(122.5));
+    expect(painel.textContent).toContain(formatBRL(166.67 - 111.3));
+    expect(painel.textContent).toContain(formatBRL(166.67));
     expect(painel.textContent).toContain(formatBRL(111.3));
+    // A fonte do lado do app fica à vista, com o aeroporto, o número e a data.
+    expect(painel.textContent).toContain("entre São Paulo e Guarulhos");
+    expect(painel.textContent).toContain(`${formatBRL(100)} por 30 km`);
+    expect(painel.textContent).toContain("23/11/2026");
     expect(painel.textContent).toContain("estacionar sai mais barato a partir de 1 diária");
     expect(screen.getByLabelText("Distância em km")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -268,13 +270,35 @@ describe("CalculadoraPage", () => {
     setup();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("radio", { name: /Carro ou app/ }));
-    // Estacionar vence (111,30 contra 122,50): o CTA já leva a duração calculada.
+    // Estacionar vence (111,30 contra 166,67): o CTA já leva a duração calculada.
     const cta = await screen.findByRole("link", { name: "Reservar a vaga mais barata" });
     const href = cta.getAttribute("href")!;
     expect(href).toContain("/estacionamentos/aeroporto-guarulhos/aerovalet?");
     expect(href).toContain("from=");
     expect(href).toContain("to=");
     expect(screen.getByText(/entrada amanhã às 22h/)).toBeInTheDocument();
+  });
+
+  it("a metodologia cita o preço médio da Uber de cada aeroporto, com link e data", async () => {
+    setup();
+    await screen.findByText("Como vocês calculam o custo do app de transporte?");
+    for (const [codigo, preco] of [
+      ["GRU", 100],
+      ["CGH", 43],
+      ["VCP", 38],
+      ["CNF", 96],
+      ["CWB", 40],
+    ] as const) {
+      const link = screen.getByRole("link", { name: new RegExp(`\\(${codigo}\\)`) });
+      expect(link).toHaveAttribute(
+        "href",
+        `https://www.uber.com/global/pt-br/r/airports/${codigo.toLowerCase()}/`,
+      );
+      expect(link.closest("li")!.textContent).toContain(formatBRL(preco));
+    }
+    const resposta = screen.getByRole("link", { name: /\(GRU\)/ }).closest("ul")!.parentElement!;
+    expect(resposta.textContent).toContain("Páginas consultadas em 23/11/2026");
+    expect(document.body.textContent).not.toContain("Calculauto");
   });
 
   it("a corrida manual sobrepõe a estimativa e pode virar o jogo", async () => {
