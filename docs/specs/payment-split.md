@@ -155,7 +155,8 @@ Migration `20261114101500_extrato_repasse_so_o_que_e_devido.sql`, pgTAP
 para o recebedor master, com `liable: true`. Esse `true` é exigência do gateway (o split precisa de
 um responsável por chargeback), não titularidade do dinheiro. Como a leitura classificava parceiro
 por `liable`, a Tarifa e a diferença de datas viravam repasse devido. Quem separa os casos agora é
-**`payment.kind`**: só `booking` tem perna de parceiro. Comparar o `recipientId` com
+**`payment.kind`**: só `booking` tem perna de parceiro (desde 17/11/2026 também `date_change`, cuja
+diferença é da vaga e grava as duas pernas, ver `booking-modifications.md` §8). Comparar o `recipientId` com
 `app_setting.pagarme_movepark_recipient_id` foi descartado, porque trocar o recebedor master
 reescreveria o passado de todo extrato já emitido.
 

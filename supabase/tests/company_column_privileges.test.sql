@@ -18,7 +18,7 @@ select set_eq(
       where c.table_schema = 'public' and c.table_name = 'company'
         and has_column_privilege('anon', 'public.company', c.column_name, 'select') $$,
   array['id', 'name', 'slug', 'legal_name', 'tax_id', 'status', 'created_at', 'updated_at',
-        'deleted_at', 'onboarding_status', 'logo_url'],
+        'deleted_at', 'onboarding_status', 'logo_url', 'logo_dark_url'],
   'anon lê exatamente as colunas da vitrine'
 );
 select ok(

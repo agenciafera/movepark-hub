@@ -1,11 +1,16 @@
 -- pgTAP: o que NÃO é devido ao parceiro sai do extrato. Duas correções sobre payout_statement /
 -- payout_balance (ver payment-split.md, "Pontos abertos que a custódia expõe"):
 --
--- 1. Receita de serviço da Movepark contada como dívida com o parceiro. `create-fare-upgrade` e
---    `change-booking-dates-paid` cobram valor 100% Movepark, mas gravam a perna única com
---    `liable: true` (o gateway exige um responsável por chargeback no split). Como a leitura
---    classificava parceiro por `liable`, a Tarifa e a diferença de datas entravam como repasse
---    devido. Quem separa é `payment.kind`: só `booking` tem perna de parceiro.
+-- 1. Receita de serviço da Movepark contada como dívida com o parceiro. `create-fare-upgrade`
+--    cobra valor 100% Movepark, mas grava a perna única com `liable: true` (o gateway exige um
+--    responsável por chargeback no split). Como a leitura classificava parceiro por `liable`, a
+--    Tarifa entrava como repasse devido. Quem separa é `payment.kind`: só `booking` e `date_change`
+--    têm perna de parceiro.
+--
+--    A diferença de troca de datas deixou de ser receita só da Movepark em 17/11/2026: ela é da
+--    vaga, divide como a reserva (comissão congelada) e entra no extrato do estacionamento
+--    (booking-modifications.md §8, decisão 3). Por isso a fixture C grava as duas pernas, com
+--    `role`, do jeito que `change-booking-dates-paid` monta o split hoje.
 --
 -- 2. Estorno parcial não descontado. Estorno total muda o status e some do líquido sozinho; o
 --    parcial deixa o pagamento em `paid` com `refunded_amount` preenchido, e o valor seguia
@@ -52,13 +57,15 @@ begin
     (bk,'pagarme','pix','fare_upgrade',12.90,'paid','2026-05-11T13:00:00Z',
      '[{"recipientId":"rp_mp","amount":1290,"liable":true,"chargeProcessingFee":true,"chargeRemainderFee":true,"type":"flat"}]'::jsonb);
 
-  -- C) diferença de troca de datas: mesma forma do upgrade
+  -- C) diferença de troca de datas: é da vaga, então o split tem as duas pernas (parceiro 80% /
+  --    Movepark 20% da diferença de R$ 49,70), como a Edge `change-booking-dates-paid` grava hoje
   bk := gen_random_uuid();
   insert into public.booking(id, code, profile_id, location_id, check_in_at, check_out_at, status, total_amount)
     values (bk,'MP-CORR-C',cust,loc,'2026-05-12T12:00:00Z','2026-05-14T12:00:00Z','confirmed',100);
   insert into public.payment(booking_id, provider, method, kind, amount, status, paid_at, split) values
     (bk,'pagarme','pix','date_change',49.70,'paid','2026-05-12T13:00:00Z',
-     '[{"recipientId":"rp_mp","amount":4970,"liable":true,"chargeProcessingFee":true,"chargeRemainderFee":true,"type":"flat"}]'::jsonb);
+     '[{"role":"partner","recipientId":"rp_a","amount":3976,"liable":false,"chargeProcessingFee":false,"chargeRemainderFee":false,"type":"flat"},
+       {"role":"movepark","recipientId":"rp_mp","amount":994,"liable":true,"chargeProcessingFee":true,"chargeRemainderFee":true,"type":"flat"}]'::jsonb);
 
   -- D) reserva paga com estorno PARCIAL de 25% (segue `paid`, com refunded_amount)
   bk := gen_random_uuid();
@@ -90,16 +97,16 @@ $$;
 
 -- ── 1. receita de serviço da Movepark não é dívida com o parceiro ────────────
 select is(
-  pg_temp.extrato('net_partner_cents'), 14000::bigint,
-  'líquido do parceiro = 8000 (A) + 6000 (D, menos 25%); upgrade e troca de datas fora');
+  pg_temp.extrato('net_partner_cents'), 17976::bigint,
+  'líquido do parceiro = 8000 (A) + 3976 (C, troca de datas) + 6000 (D, menos 25%); upgrade fora');
 
 select is(
-  pg_temp.extrato('gross_partner_cents'), 16000::bigint,
-  'bruto do parceiro = 8000 (A) + 8000 (D); upgrade e troca de datas não somam nada');
+  pg_temp.extrato('gross_partner_cents'), 19976::bigint,
+  'bruto do parceiro = 8000 (A) + 3976 (C) + 8000 (D); o upgrade não soma nada');
 
 select is(
-  pg_temp.extrato('movepark_commission_cents'), 9760::bigint,
-  'Movepark = 2000 (A) + 1290 (upgrade) + 4970 (datas) + 1500 (D, menos 25%)');
+  pg_temp.extrato('movepark_commission_cents'), 5784::bigint,
+  'Movepark = 2000 (A) + 1290 (upgrade) + 994 (C, comissão da troca de datas) + 1500 (D, menos 25%)');
 
 -- ── 2. estorno parcial desconta proporcionalmente ────────────────────────────
 select is(
@@ -114,13 +121,13 @@ select is(
 -- ── 3. o saldo bebe do mesmo cálculo ─────────────────────────────────────────
 select is(
   ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'net_partner_cents')::bigint),
-  14000::bigint,
-  'payout_balance: líquido corrigido = 14000');
+  17976::bigint,
+  'payout_balance: líquido corrigido = 17976');
 
 -- `balance_cents` mudou de significado em 11/09/2026: deixou de ser "líquido menos saques" e
 -- passou a ser "quanto a Movepark ainda deve", que é a pergunta que o botão Repassar precisa.
 -- Nesta fixture nenhuma cobrança está marcada como custódia (`split_sent_to_gateway` nulo, tratado
--- como enviado ao gateway), então não devemos nada, mesmo com R$ 140,00 de líquido do parceiro.
+-- como enviado ao gateway), então não devemos nada, mesmo com R$ 179,76 de líquido do parceiro.
 -- Ver payout_owed.test.sql para o caso em que a dívida existe.
 select is(
   ((public.payout_balance(current_setting('test.cid')::uuid) ->> 'balance_cents')::bigint),

@@ -54,9 +54,11 @@ select set_eq(
     'identity_assertion',    -- prova de identidade do agente (OTP de terceiro); só Edge, pelas RPCs identity_assertion_*
     'otp_verify_log',        -- freio da VERIFICAÇÃO do código de login (14/10/2026)
     'blog_post_redirect',    -- mapa de slug antigo do blog; lido só pela RPC url_legacy_map
-    'payment_charge_lock'    -- trava de cobrança por reserva (MP-07DAE9); só Edge de cobrança
+    'payment_charge_lock',   -- trava de cobrança por reserva (MP-07DAE9); só Edge de cobrança
+    'operator_assist_session', -- sessão da Mia do operador (hash do token); só Edge, o front nunca lê
+    'operator_knowledge_chunk' -- base da Mia do operador; leitura só pela RPC de busca, via Edge
   ],
-  'as tabelas fail-closed são exatamente estas treze'
+  'as tabelas fail-closed são exatamente estas quinze'
 );
 
 -- ── nenhuma escrita passa com predicado trivial ──────────────────────────────
