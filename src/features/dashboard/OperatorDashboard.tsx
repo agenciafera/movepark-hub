@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ResponsiveContainer,
@@ -46,6 +47,9 @@ import { useOperatorLocations } from "@/features/locations/api";
 import { useAuth } from "@/auth/context";
 import { useUrlFilters } from "@/lib/useUrlFilters";
 import { DayAgendaPanel } from "./DayAgendaPanel";
+import { BookingTable } from "@/features/bookings/BookingTable";
+import { useBookingsPage } from "@/features/bookings/api";
+import { defaultColumnSettings, visibleColumnIds } from "@/features/bookings/bookingColumns.logic";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
@@ -236,8 +240,11 @@ function GoalDialog({
   );
 }
 
+/** Reservas recentes do dashboard: sem Voucher (a coluna cortava na borda do card). Sem dinheiro, tira as colunas de valor. */
+const COLUNAS_RECENTES = visibleColumnIds(defaultColumnSettings()).filter((c) => c !== "voucher");
+
 export default function OperatorDashboard() {
-  const { session, effectiveCompanyIds, hasScope } = useAuth();
+  const { session, effectiveCompanyIds, hasScope, scopedCompanyId } = useAuth();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const companyId = effectiveCompanyIds[0];
 
@@ -265,6 +272,18 @@ export default function OperatorDashboard() {
   // Site white-label (fase 5): só para quem tem; quem não tem nem chama, e a tela fica como era.
   // A contagem vale para todo papel (Origem das reservas); o dinheiro continua atrás de finance:read.
   const { hasWl } = useHasWl();
+  const navigate = useNavigate();
+  // As 10 compras mais recentes (Hub + site), a mesma lista da tela de Reservas.
+  const recent = useBookingsPage({
+    status: undefined,
+    locationIds: scopedLocationIds,
+    companyIds: scopedCompanyId ? [scopedCompanyId] : undefined,
+    source: hasWl ? "all" : "hub",
+    partnerView: true,
+    counter,
+    page: 0,
+    pageSize: 10,
+  });
   const wlQ = useWlRevenue({ from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds }, hasWl);
   // Receita é financeiro (ADR-005): quem não tem finance:read (o balcão) nem pede os valores, o
   // que também tira a série da "Leitura do período", que sem ela não fala de dinheiro.
@@ -830,6 +849,34 @@ export default function OperatorDashboard() {
 
         <DayAgendaPanel locationIds={scopedLocationIds} counter={counter} />
       </div>
+
+      <Panel>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-title-md text-ink">Reservas recentes</div>
+          <Link
+            to="/operator/bookings"
+            className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+          >
+            Ver todas as reservas
+          </Link>
+        </div>
+        <div className="mt-5">
+          <BookingTable
+            rows={recent.data?.rows}
+            columns={
+              counter
+                ? COLUNAS_RECENTES.filter((c) => c !== "value" && c !== "paid")
+                : COLUNAS_RECENTES
+            }
+            isLoading={recent.isLoading}
+            showCompany={false}
+            showSource={hasWl}
+            valueMode="parking"
+            onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
+            onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
+          />
+        </div>
+      </Panel>
 
       <GoalDialog
         open={goalOpen}
