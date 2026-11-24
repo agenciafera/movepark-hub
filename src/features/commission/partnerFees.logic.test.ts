@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  asPartnerFeeTable,
   cardRows,
   channelInstallments,
   channelLabel,
@@ -66,5 +67,14 @@ describe("canais", () => {
     );
     expect(installmentText({ max: 3, interestFreeUpTo: 3, monthlyInterestPct: 2.99 })).toBe("Até 3x, sem juros.");
     expect(installmentText({ max: 1, interestFreeUpTo: 1, monthlyInterestPct: 2.99 })).toBe("Só à vista.");
+  });
+});
+
+describe("formato da resposta", () => {
+  it("só aceita objeto com a lista de canais; lista ou vazio viram null", () => {
+    expect(asPartnerFeeTable(TABELA)).toBe(TABELA);
+    expect(asPartnerFeeTable([])).toBeNull();
+    expect(asPartnerFeeTable(null)).toBeNull();
+    expect(asPartnerFeeTable({ pix_bps: 80 })).toBeNull();
   });
 });

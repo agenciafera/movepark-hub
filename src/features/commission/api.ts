@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import type { CommissionRule } from "@/types/domain";
 import { bookingsKeys } from "@/features/bookings/api";
 import type { RulePayload } from "./rule.logic";
-import type { PartnerFeeTable } from "./partnerFees.logic";
+import { asPartnerFeeTable, type PartnerFeeTable } from "./partnerFees.logic";
 
 export const commissionKeys = {
   all: ["commission"] as const,
@@ -168,10 +168,10 @@ export function usePartnerFeeTable(companyId: string | undefined) {
     queryKey: commissionKeys.feeTable(companyId ?? ""),
     enabled: !!companyId,
     retry: false,
-    queryFn: async (): Promise<PartnerFeeTable> => {
+    queryFn: async (): Promise<PartnerFeeTable | null> => {
       const { data, error } = await supabase.rpc("partner_fee_table", { p_company_id: companyId! });
       if (error) throw error;
-      return data as unknown as PartnerFeeTable;
+      return asPartnerFeeTable(data);
     },
   });
 }

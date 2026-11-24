@@ -26,6 +26,17 @@ export interface PartnerFeeTable {
   channels: PartnerFeeChannel[];
 }
 
+/**
+ * A resposta da `partner_fee_table` só vale com o formato dela (objeto com a lista de canais). Fora
+ * disso o card não aparece: um stub genérico de RPC devolve lista, e o card quebrava o Financeiro
+ * inteiro (Windup `operator-finance`, 23/11/2026).
+ */
+export function asPartnerFeeTable(raw: unknown): PartnerFeeTable | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const t = raw as Partial<PartnerFeeTable>;
+  return Array.isArray(t.channels) ? (t as PartnerFeeTable) : null;
+}
+
 export interface PartnerCardRow {
   installments: number;
   /** Taxa do cartão (MDR), sobre o valor da venda. */
