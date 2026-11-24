@@ -26,6 +26,14 @@ describe("unifiedRowView", () => {
     });
   });
 
+  it("valor pago: no Hub é o total da reserva (não as diárias); no site é o que o cliente pagou lá", () => {
+    const h = unifiedRowView(hub("hub_search"), { showSource: true, valueMode: "parking" });
+    expect(h.value).toBe(111.6);
+    expect(h.paid).toBe(136.5);
+    const w = unifiedRowView({ source: "wl", id: "w-1", wl }, { showSource: true, valueMode: "parking" });
+    expect(w.paid).toBe(150.5);
+  });
+
   it("com a cópia completa, a reserva do site mostra a forma de pagamento", () => {
     const v = unifiedRowView({ source: "wl", id: "w-1", wl: { ...wl, payment_method_name: "PIX" } }, { showSource: true, valueMode: "total" });
     expect(v.payment.method).toBe("PIX");

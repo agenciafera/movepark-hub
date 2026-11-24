@@ -185,6 +185,7 @@ export default function ManagerBookings() {
               settings={colunas.settings}
               save={colunas.save}
               canSave={colunas.canSave}
+              hide={["paid"]}
               labelFor={(id) => columnHeader(id, { showCompany: true, valueMode: "total" })}
             />
           </div>

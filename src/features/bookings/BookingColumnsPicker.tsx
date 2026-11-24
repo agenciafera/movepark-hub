@@ -22,9 +22,11 @@ type Props = {
   canSave: boolean;
   /** Nome que a coluna tem nesta tela (Unidade x Estacionamento, Diárias x Valor). */
   labelFor?: (id: BookingColumnId) => string;
+  /** Colunas que não existem nesta tela e não entram na lista. */
+  hide?: BookingColumnId[];
 };
 
-export function BookingColumnsPicker({ settings, save, canSave, labelFor }: Props) {
+export function BookingColumnsPicker({ settings, save, canSave, labelFor, hide }: Props) {
   const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState(settings);
 
@@ -64,6 +66,7 @@ export function BookingColumnsPicker({ settings, save, canSave, labelFor }: Prop
         </div>
         <ol className="max-h-[360px] overflow-y-auto py-1" aria-label="Colunas">
           {draft.map((s, i) => {
+            if (hide?.includes(s.id)) return null;
             const def = columnDef(s.id);
             const label = labelFor?.(s.id) ?? def.label;
             return (

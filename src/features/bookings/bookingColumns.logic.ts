@@ -21,6 +21,7 @@ export type BookingColumnId =
   | "stay"
   | "payment"
   | "value"
+  | "paid"
   | "status"
   | "voucher"
   | "plate"
@@ -47,6 +48,7 @@ export const BOOKING_COLUMNS: BookingColumnDef[] = [
   { id: "stay", label: "Estadia", defaultVisible: true },
   { id: "payment", label: "Pagamento", defaultVisible: true },
   { id: "value", label: "Valor", defaultVisible: true },
+  { id: "paid", label: "Valor pago", defaultVisible: true },
   { id: "status", label: "Status", defaultVisible: true },
   { id: "voucher", label: "Voucher", defaultVisible: true },
   { id: "plate", label: "Placa", defaultVisible: false },
@@ -165,6 +167,8 @@ export function columnHeader(
       return "Pagamento";
     case "value":
       return opts.valueMode === "parking" ? "Diárias" : "Valor";
+    case "paid":
+      return "Valor pago";
     case "status":
       return "Status";
     case "voucher":

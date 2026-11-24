@@ -32,6 +32,8 @@ export type UnifiedRowView = {
   checkOut: string | null;
   payment: { method: string | null; badge: PaymentBadge | null };
   value: number | null;
+  /** O que o cliente pagou (total da reserva, com taxas e desconto), para o operador conferir na lista. */
+  paid: number | null;
   status: BookingStatus;
   flightProtection: boolean;
   plate: string | null;
@@ -71,6 +73,7 @@ export function unifiedRowView(
       payment: { method: wlPaymentMethodLabel(w.payment_method_name) ?? "No site", badge: null },
       // O site guarda em centavos; o valor é o que o cliente pagou lá (D3).
       value: centavos(w.paid_total_cents ?? w.total_cents),
+      paid: centavos(w.paid_total_cents ?? w.total_cents),
       status: w.status,
       flightProtection: false,
       plate: w.license_plate,
@@ -107,6 +110,7 @@ export function unifiedRowView(
           )
         : Number(b.total_amount),
     status: b.status,
+    paid: Number(b.total_amount),
     flightProtection: !!b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at,
     plate: b.vehicle?.license_plate ?? null,
     phone: b.customer_phone ?? null,

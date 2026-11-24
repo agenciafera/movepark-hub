@@ -148,7 +148,9 @@ describe("OperatorBookings · estacionamento sem white-label", () => {
     setup({ hasWl: false, rows: [reservaHub("MP-PAGA")] });
     expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
     expect(screen.getByText(/111,60/)).toBeInTheDocument();
-    expect(screen.queryByText(/136,50/)).not.toBeInTheDocument();
+    // E ao lado vem o valor pago, para o operador conferir sem abrir a reserva.
+    expect(screen.getByRole("columnheader", { name: "Valor pago" })).toBeInTheDocument();
+    expect(screen.getByText(/136,50/)).toBeInTheDocument();
   });
 });
 
@@ -202,7 +204,8 @@ describe("OperatorBookings · estacionamento com white-label", () => {
     expect(within(tabela).queryByText("White-label")).not.toBeInTheDocument();
     expect(within(tabela).queryByText("Hub")).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Origem da reserva" })).toBeInTheDocument();
-    expect(screen.getByText(/150,50/)).toBeInTheDocument();
+    // O site mostra o mesmo valor em Diárias e em Valor pago.
+    expect(screen.getAllByText(/150,50/).length).toBeGreaterThan(0);
   });
 
   it("data de criação e canal ficam em colunas separadas", () => {
