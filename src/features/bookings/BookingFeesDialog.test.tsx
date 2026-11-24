@@ -93,7 +93,13 @@ const payables = (method: "card" | "pix") => ({
 
 function abre(
   method: "card" | "pix",
-  opts: { comp?: number; semAntecipacao?: boolean; installments?: number; operator?: boolean } = {},
+  opts: {
+    comp?: number;
+    semAntecipacao?: boolean;
+    installments?: number;
+    operator?: boolean;
+    semRecebivel?: boolean;
+  } = {},
 ) {
   const ev: { payment_id: string; kind: string; created_at: string; response: { data: Record<string, unknown>[] } } =
     payables(method);
@@ -117,7 +123,11 @@ function abre(
       })),
     },
   ];
-  const fee = method === "card" ? (opts.semAntecipacao ? 130 : 175) : 80;
+  if (opts.semRecebivel) {
+    state.events = [];
+    state.partner = [];
+  }
+  const fee = opts.semRecebivel ? null : method === "card" ? (opts.semAntecipacao ? 130 : 175) : 80;
   const pay: MoneyPaymentLike = {
     status: "paid",
     method,
@@ -266,5 +276,21 @@ describe("BookingFeesDialog", () => {
     expect(screen.queryByTestId("taxa-anticipation")).toBeNull();
     expect(screen.getByTestId("taxa-mdr")).toHaveTextContent(/Pix \(Pagar.me\)/);
     expect(screen.getByTestId("taxa-mdr")).toHaveTextContent(/0,80% nesta venda · contrato 0,80%/);
+  });
+});
+
+describe("BookingFeesDialog antes da Pagar.me informar (MP-89AC91, 24/11/2026)", () => {
+  it("Pix sem recebível: diz que a Pagar.me ainda não informou, sem antifraude e sem 'apurando'", () => {
+    state.cardBps = 118;
+    abre("pix", { operator: true, semRecebivel: true });
+    expect(screen.queryByText(/apurando/)).toBeNull();
+    const mdr = screen.getByTestId("taxa-mdr");
+    expect(mdr).toHaveTextContent("a Pagar.me ainda não informou");
+    expect(mdr).toHaveTextContent("a confirmar");
+    expect(mdr).not.toHaveTextContent("parcela");
+    expect(screen.queryByTestId("taxa-antifraud")).toBeNull();
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(
+      "a Pagar.me ainda não informou as taxas desta venda",
+    );
   });
 });

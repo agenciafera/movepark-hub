@@ -267,6 +267,19 @@ front, `partnerPayables` converte para o formato da conta e `buildFeeDetail` rod
 Manager. Migration `20261206160000_partner_booking_payables.sql`, pgTAP
 `partner_booking_payables.test.sql`.
 
+**Antes de a Pagar.me informar a taxa (MP-89AC91, 24/11/2026).** O cron lê os recebíveis a cada 30
+minutos, com 10 de atraso, e a reserva do Operator não pedia a apuração: uma venda de Pix paga às
+8h56 mostrava "apurando" no Pix, no antifraude e no total até a volta do cron. Mudou:
+
+- O Operator com `finance:read` pede a apuração ao abrir a reserva, como o Manager
+  (`reconcile-gateway-fees` aceita, na porta do JWT, `hub_admin` ou `finance:read` na empresa da
+  reserva). A taxa costuma existir segundos depois do pagamento.
+- Enquanto não chega, o valor diz **"a confirmar"**, a linha diz "a Pagar.me ainda não informou" e o
+  resumo avisa que a taxa ainda vai ser descontada quando ela é do estacionamento. "Sem detalhe por
+  parcela" ficou só para cartão.
+- Pix não tem antifraude: a linha não aparece no Pix, em nenhuma das visões. No Operator, o
+  antifraude do cartão só aparece quando a venda pagou.
+
 ## Fora de escopo
 
 - O texto para mandar ao parceiro fora do painel.

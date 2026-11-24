@@ -101,7 +101,7 @@ function PartnerMoney({ money, cliente, semPagamento, onShowFees }: { money: Mon
               {v.commissionCents > 0 && <Linha label="Comissão Movepark" value={signed(-v.commissionCents)} muted testId="valores-comissao" />}
               {v.debtRecoveredCents > 0 && <Linha label="Abatimento de dívida" value={signed(-v.debtRecoveredCents)} muted />}
               {v.feeCents > 0 && <Linha label="Taxa do gateway (por sua conta nesta venda)" value={signed(-v.feeCents)} muted />}
-              {v.feePending && <Linha label="Taxa do gateway (por sua conta nesta venda)" value="apurando…" muted />}
+              {v.feePending && <Linha label="Taxa do gateway (por sua conta nesta venda)" value="a confirmar" muted />}
               {v.anticipationCents !== 0 && (
                 <Linha
                   label={v.anticipationCents > 0 ? "Sobra da antecipação coberta pela Movepark" : "Antecipação (Pagar.me)"}
@@ -176,7 +176,7 @@ export function BookingMoneyCard({
               <Linha label="Parte do estacionamento" value={brl(split.partner.grossCents)} />
               {split.partner.debtRecoveredCents > 0 && <Linha label="Abatimento de dívida" value={signed(-split.partner.debtRecoveredCents)} muted />}
               {split.partner.feeCents > 0 && <Linha label="Taxa do gateway" value={signed(-split.partner.feeCents)} muted />}
-              {split.feePending && split.feePayer === "partner" && !split.custody && <Linha label="Taxa do gateway" value="apurando…" muted />}
+              {split.feePending && split.feePayer === "partner" && !split.custody && <Linha label="Taxa do gateway" value="a confirmar" muted />}
               {split.partner.compCents > 0 && <Linha label="Da parte da Movepark, para a antecipação" value={brl(split.partner.compCents)} muted />}
               {split.partner.anticipationCents > 0 && (
                 <Linha
@@ -203,7 +203,7 @@ export function BookingMoneyCard({
               {split.movepark.feeCents > 0 && <Linha label="Taxa do gateway" value={signed(-split.movepark.feeCents)} muted />}
               {split.movepark.compCents > 0 && <Linha label="Passado ao estacionamento para a antecipação" value={signed(-split.movepark.compCents)} muted />}
               {split.movepark.creditCents > 0 && <Linha label="Crédito de antecipação ao estacionamento" value={signed(-split.movepark.creditCents)} muted />}
-              {split.feePending && split.feePayer === "movepark" && <Linha label="Taxa do gateway" value="apurando…" muted />}
+              {split.feePending && split.feePayer === "movepark" && <Linha label="Taxa do gateway" value="a confirmar" muted />}
               {/* Quando o estacionamento paga a taxa, o líquido da Movepark é a comissão inteira; a linha diz isso para ninguém procurar o desconto. */}
               {!split.feePending && split.feePayer === "partner" && !split.custody && (
                 <Linha label="Taxa do gateway" value="por conta do estacionamento" muted testId="valores-taxa-parceiro" />

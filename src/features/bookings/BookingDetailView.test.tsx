@@ -114,8 +114,19 @@ describe("BookingDetailView", () => {
     state.trail = trailPago;
     abre();
     expect(reconcileFees).toHaveBeenCalledWith("bk-1");
-    expect(screen.getByText("apurando…")).toBeInTheDocument();
+    expect(screen.getByText("a confirmar")).toBeInTheDocument();
     expect(screen.queryByTestId("valores-taxa-parceiro")).not.toBeInTheDocument();
+  });
+
+  it("taxa ainda não apurada: o Operator com finance:read também pede ao abrir; o balcão não", () => {
+    state.booking = booking("confirmed", [{ ...pago, gateway_fee_cents: null, partner_release_at: null }]);
+    state.trail = trailPago;
+    reconcileFees.mockClear();
+    abre("operator", (escopo) => escopo !== "finance:read");
+    expect(reconcileFees).not.toHaveBeenCalled();
+    reconcileFees.mockClear();
+    abre("operator");
+    expect(reconcileFees).toHaveBeenCalledWith("bk-1");
   });
 
   it("o Manager vê o botão Ver taxas numa reserva paga", () => {
@@ -144,14 +155,6 @@ describe("BookingDetailView", () => {
     state.trail = { events: [], payments: [] };
     abre("manager");
     expect(screen.queryByRole("button", { name: "Ver taxas" })).toBeNull();
-  });
-
-  it("Operator não dispara a apuração da taxa (é porta de hub_admin)", () => {
-    reconcileFees.mockClear();
-    state.booking = booking("confirmed", [{ ...pago, gateway_fee_cents: null }]);
-    state.trail = trailPago;
-    abre("operator");
-    expect(reconcileFees).not.toHaveBeenCalled();
   });
 
   it("cancelada com estorno recusado avisa e aponta para a fila manual; não oferece cancelar de novo", () => {

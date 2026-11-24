@@ -74,8 +74,10 @@ primeiros minutos.
 cada lado; quando o estacionamento paga a taxa (regra de comissão), o bloco da Movepark diz "por
 conta do estacionamento" para o líquido dela não parecer sem desconto. A taxa sai de `/payables`,
 que o cron apura a cada 30 min com 10 min de atraso; ao abrir uma reserva paga sem taxa apurada, o
-Manager chama `reconcile-gateway-fees` com `{ booking_id }` (porta de hub_admin, sem atraso nem
-recuo) e a taxa aparece na hora. A data de saque da venda é `paid_at + payout_release_days`, a
+Manager chama `reconcile-gateway-fees` com `{ booking_id }` (porta do JWT, sem atraso nem
+recuo) e a taxa aparece na hora. Desde 24/11/2026 a mesma porta aceita quem tem `finance:read` na
+empresa da reserva, e o Operator também pede ao abrir; o balcão não. Enquanto a taxa não chega, a
+tela diz "a confirmar" (antes, "apurando", que não dizia o quê). A data de saque da venda é `paid_at + payout_release_days`, a
 mesma conta do extrato. Bug corrigido no mesmo dia: `totalGatewayFeeCents` somava os recebíveis de
 `refund` (taxa negativa, a Pagar.me devolve o MDR no estorno total) e zerava a taxa de qualquer
 cobrança apurada depois de estornada; agora só os de crédito contam.

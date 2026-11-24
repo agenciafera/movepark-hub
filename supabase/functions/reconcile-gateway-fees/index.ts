@@ -13,14 +13,16 @@
 // Segunda porta (22/09/2026): o Manager chama com o JWT de um hub_admin e `{ booking_id }` ao abrir
 // a reserva, para apurar a taxa daquela cobrança na hora, sem esperar a volta do cron (30 min) nem
 // o atraso de 10 min da varredura: o recebível costuma existir segundos depois do `charge.paid`.
+// Desde 24/11/2026 a mesma porta aceita quem tem finance:read na empresa da reserva: o Operator
+// pede ao abrir, e o "Ver taxas" do estacionamento não fica em "a confirmar" por até 40 minutos.
 //
 // Fase 2 (E0.3.14, só na porta do cron): relê UMA vez cada cobrança de cartão paga há mais de 31
 // dias (`anticipation_reread_at` nulo), depois da antecipação, e grava a taxa total real, a taxa de
 // antecipação por perna e o crédito do estacionamento quando a Movepark devia pagar e a
 // compensação do split não cobriu. Spec: docs/specs/antecipacao-do-parceiro.md
 //
-// POST /functions/v1/reconcile-gateway-fees   (header: x-reconcile-gateway-fees-key: <chave> | Authorization: Bearer <jwt hub_admin>)
-// { booking_id? }   só na porta do hub_admin
+// POST /functions/v1/reconcile-gateway-fees   (header: x-reconcile-gateway-fees-key: <chave> | Authorization: Bearer <jwt hub_admin ou finance:read da empresa>)
+// { booking_id? }   obrigatório na porta do JWT
 // → { ok, checked, updated, reread }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -52,7 +54,12 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function ehHubAdmin(req: Request): Promise<boolean> {
+/**
+ * Quem pode pedir a apuração de UMA reserva com o próprio JWT: hub_admin (Manager) e, desde
+ * 24/11/2026, quem tem finance:read na empresa da reserva (Operator). Só lê recebíveis da Pagar.me
+ * e grava a taxa daquela cobrança; não devolve dado do gateway.
+ */
+async function podePedir(req: Request, companyId: string | null): Promise<boolean> {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return false;
   try {
@@ -63,8 +70,14 @@ async function ehHubAdmin(req: Request): Promise<boolean> {
     );
     const { data: userData } = await userClient.auth.getUser();
     if (!userData?.user) return false;
-    const { data } = await userClient.rpc("is_hub_admin");
-    return data === true;
+    const { data: hub } = await userClient.rpc("is_hub_admin");
+    if (hub === true) return true;
+    if (!companyId) return false;
+    const { data: pode } = await userClient.rpc("member_has_scope", {
+      p_company_id: companyId,
+      p_scope: "finance:read",
+    });
+    return pode === true;
   } catch {
     return false;
   }
@@ -83,15 +96,23 @@ Deno.serve(async (req: Request) => {
   // A chave interna vem do Vault (mesma que o cron envia), sem env var, sem sincronizar segredo.
   const { data: expected } = await admin.rpc("reconcile_gateway_fees_expected_key");
   const pelaChave = !!expected && req.headers.get("x-reconcile-gateway-fees-key") === expected;
-  if (!pelaChave && !(await ehHubAdmin(req))) {
-    return json({ error: "unauthorized" }, 401);
-  }
-  // Uma reserva só, pedida pelo Manager: sem atraso e sem recuo entre tentativas.
+  // Uma reserva só, pedida pelo Manager ou pelo Operator: sem atraso e sem recuo entre tentativas.
   let bookingId: string | null = null;
   if (!pelaChave) {
+    if (!req.headers.get("Authorization")?.startsWith("Bearer ")) {
+      return json({ error: "unauthorized" }, 401);
+    }
     const body = await req.json().catch(() => null);
     bookingId = typeof body?.booking_id === "string" ? body.booking_id : null;
     if (!bookingId) return json({ error: "booking_id é obrigatório" }, 400);
+    const { data: reserva } = await admin
+      .from("booking")
+      .select("location:location_id(company_id)")
+      .eq("id", bookingId)
+      .maybeSingle();
+    const companyId =
+      (reserva?.location as { company_id?: string } | null | undefined)?.company_id ?? null;
+    if (!(await podePedir(req, companyId))) return json({ error: "unauthorized" }, 401);
   }
 
   let gateway;

@@ -56,7 +56,7 @@ function TaxaLinha({
     >
       <div className="flex flex-col">
         <span className="text-body-sm text-ink">{label}</span>
-        {regra && <span className="text-caption text-muted text-pretty">{regra}</span>}
+        {regra && <span className="text-pretty text-caption text-muted">{regra}</span>}
         {pagador && <span className="text-caption text-muted">quem paga: {pagador}</span>}
         {aviso && <span className="text-caption font-medium text-error">{aviso}</span>}
       </div>
@@ -67,7 +67,8 @@ function TaxaLinha({
 
 /** `op`: a visão do estacionamento, que fala com "você" e não traz a conferência com o contrato. */
 function descreve(l: FeeLine, pending: boolean, cartao1x: boolean, op: boolean) {
-  const v = (c: number | null) => (c != null ? brl(c) : pending ? "apurando" : "-");
+  // Sem recebível ainda, o valor espera a Pagar.me (24/11/2026: "apurando" não dizia o quê).
+  const v = (c: number | null) => (c != null ? brl(c) : pending ? "a confirmar" : "-");
   switch (l.key) {
     case "commission":
       return {
@@ -93,7 +94,11 @@ function descreve(l: FeeLine, pending: boolean, cartao1x: boolean, op: boolean) 
         label: l.method === "card" ? "Cartão (Pagar.me)" : "Pix (Pagar.me)",
         regra:
           l.effectiveBps == null
-            ? "sem detalhe por parcela"
+            ? pending
+              ? "a Pagar.me ainda não informou"
+              : l.method === "card"
+                ? "sem detalhe por parcela"
+                : "sem detalhe dos recebíveis"
             : op
               ? `${formatBps(l.effectiveBps)} nesta venda`
               : `${formatBps(l.effectiveBps)} nesta venda · contrato ${l.contractBps != null ? formatBps(l.contractBps) : "não cadastrado"}`,
@@ -170,19 +175,31 @@ function Conteudo({
           : ""
       }`
     : " no Pix";
+  const g = d.gateway;
+  // Enquanto a Pagar.me não informa, o líquido do estacionamento ainda não tem a taxa dele.
+  const taxaDoParceiroPendente =
+    g.pending && d.lines.some((l) => l.key === "mdr" && l.payer === "partner");
   const notas = [
     s.custody ? "sem split: o valor ficou com a Movepark" : null,
+    taxaDoParceiroPendente
+      ? op
+        ? "a taxa da Pagar.me ainda vai ser descontada"
+        : "a taxa da Pagar.me ainda vai sair da parte do estacionamento"
+      : null,
     s.refundedCents > 0 ? `estornado ao cliente: ${brl(s.refundedCents)}` : null,
   ]
     .filter(Boolean)
     .join("; ");
-  const g = d.gateway;
   const totalGateway = g.linesCents ?? g.recordedCents;
 
   return (
     <div className="flex flex-col gap-4">
       <Bloco title="Resumo" hint={notas || undefined}>
-        <Linha label={`O cliente pagou${comoPagou}`} value={brl(s.chargedCents)} testId="taxas-cobrado" />
+        <Linha
+          label={`O cliente pagou${comoPagou}`}
+          value={brl(s.chargedCents)}
+          testId="taxas-cobrado"
+        />
         {op ? (
           <Linha
             label={s.custody ? "A repassar" : "Você recebe"}
@@ -207,18 +224,26 @@ function Conteudo({
 
       <Bloco title="Taxas cobradas nesta venda">
         <div className="flex flex-col">
-          {d.lines.map((l) => (
-            <TaxaLinha
-              key={l.key}
-              {...descreve(l, g.pending, cartao && s.installments === 1, op)}
-              pagador={(op ? PAGADOR_OPERATOR : PAGADOR)[l.payer]}
-              testId={`taxa-${l.key}`}
-            />
-          ))}
+          {d.lines
+            // Pix não tem antifraude; e o estacionamento só vê o antifraude quando a venda pagou.
+            .filter(
+              (l) => l.key !== "antifraud" || (cartao && (!op || (l.cents != null && l.cents > 0))),
+            )
+            .map((l) => (
+              <TaxaLinha
+                key={l.key}
+                {...descreve(l, g.pending, cartao && s.installments === 1, op)}
+                pagador={(op ? PAGADOR_OPERATOR : PAGADOR)[l.payer]}
+                testId={`taxa-${l.key}`}
+              />
+            ))}
           <TaxaLinha
             label="Total do gateway"
             regra={
               [
+                g.pending && totalGateway == null
+                  ? "a Pagar.me ainda não informou as taxas desta venda"
+                  : null,
                 g.expectedCents > 0 && totalGateway != null
                   ? `com a antecipação prevista: ${brl(totalGateway + g.expectedCents)}`
                   : !g.detailed && g.recordedCents != null
@@ -232,7 +257,7 @@ function Conteudo({
                 .join(" · ") || null
             }
             pagador={null}
-            valor={totalGateway != null ? brl(totalGateway) : "apurando"}
+            valor={totalGateway != null ? brl(totalGateway) : "a confirmar"}
             aviso={
               !op && g.stale && g.recordedCents != null
                 ? `recebíveis desatualizados: o pagamento registra ${brl(g.recordedCents)}`
@@ -271,7 +296,9 @@ function Conteudo({
                   <tr key={p.installment} className="border-t border-hairline">
                     <td className="py-1">{p.installment}ª</td>
                     <td className="text-right">{brl(p.customerCents)}</td>
-                    <td className="text-right">{p.originalDate ? formatDate(p.originalDate) : "-"}</td>
+                    <td className="text-right">
+                      {p.originalDate ? formatDate(p.originalDate) : "-"}
+                    </td>
                     <td className="text-right">
                       {p.receivedDate
                         ? `${formatDate(p.receivedDate)}${p.expected ? " (prevista)" : ""}`
@@ -295,7 +322,7 @@ function Conteudo({
           <div className="flex flex-col gap-1" data-testid="tabela-parcelamento">
             <span className="text-body-sm font-medium text-ink">Parcelamento desta reserva</span>
             {!d.plan.reproduces && (
-              <span className="text-caption text-muted text-pretty">
+              <span className="text-pretty text-caption text-muted">
                 pela política de hoje; a venda seguiu outra condição
               </span>
             )}
@@ -368,7 +395,7 @@ function Conteudo({
                 )}
               </>
             ) : (
-              <span className="text-caption text-muted text-pretty">
+              <span className="text-pretty text-caption text-muted">
                 {op
                   ? "A tabela ainda não foi cadastrada. Fale com a Movepark."
                   : "Tabela não cadastrada. Cadastre em Configurações, aba Pagamentos."}
@@ -403,7 +430,10 @@ function Janela({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto" data-testid="taxas-da-reserva">
+      <DialogContent
+        className="max-h-[90vh] max-w-3xl overflow-y-auto"
+        data-testid="taxas-da-reserva"
+      >
         <DialogHeader>
           <DialogTitle>Taxas da reserva</DialogTitle>
           <DialogDescription>
@@ -465,9 +495,7 @@ function TaxasOperator(p: DialogProps & { companyId: string }) {
           ),
           moveparkRecipientId: PARTNER_VIEW_MOVEPARK,
         });
-  return (
-    <Janela {...p} op d={d} anticipationBps={table.data?.anticipation_rate_bps ?? null} />
-  );
+  return <Janela {...p} op d={d} anticipationBps={table.data?.anticipation_rate_bps ?? null} />;
 }
 
 /**

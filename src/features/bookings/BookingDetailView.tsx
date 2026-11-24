@@ -109,16 +109,23 @@ export function BookingDetailView({
   // Taxa do gateway sob demanda (22/09/2026): quando o Manager abre uma reserva paga cuja taxa
   // ainda não foi apurada, pede à Edge na hora, em vez de esperar até 30 min pelo cron. Uma vez
   // por reserva aberta; se o recebível ainda não existir, a próxima abertura tenta de novo.
+  // Desde 24/11/2026 o Operator com finance:read também pede: o "Ver taxas" dele mostrava "a
+  // confirmar" até a volta do cron (MP-89AC91).
   const pendingFeeId = React.useMemo(() => {
     const b = bookingQ.data;
-    if (!b || effectiveRole !== "hub_admin") return null;
+    if (!b) return null;
+    const podeApurar =
+      audience === "manager"
+        ? effectiveRole === "hub_admin"
+        : !counter && hasScope("finance:read", b.location?.company?.id);
+    if (!podeApurar) return null;
     const pago = (b.payments ?? []).find(
       (p) =>
         (p.status === "paid" || p.status === "refunded") &&
         (p as { gateway_fee_cents?: number | null }).gateway_fee_cents == null,
     );
     return pago ? b.id : null;
-  }, [bookingQ.data, effectiveRole]);
+  }, [bookingQ.data, effectiveRole, audience, counter, hasScope]);
   const askedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (!pendingFeeId || askedRef.current === pendingFeeId) return;
