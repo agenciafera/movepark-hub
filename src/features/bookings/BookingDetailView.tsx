@@ -197,12 +197,16 @@ export function BookingDetailView({
           : null,
         releaseDays,
       );
-  // Taxas da reserva (23/11/2026): só o Manager (hub_admin, que lê o rastro) e só com pagamento pago.
+  // Taxas da reserva (23/11/2026), só com pagamento pago. No Manager, o hub_admin (que lê o rastro);
+  // no Operator (24/11/2026), quem tem finance:read na empresa, que lê os recebíveis por RPC. O
+  // balcão não vê dinheiro e não tem o botão.
+  const empresaId = booking.location?.company?.id ?? null;
   const podeVerTaxas =
-    audience === "manager" &&
-    effectiveRole === "hub_admin" &&
     !!pagamento &&
-    (pagamento.status === "paid" || pagamento.status === "refunded");
+    (pagamento.status === "paid" || pagamento.status === "refunded") &&
+    (audience === "manager"
+      ? effectiveRole === "hub_admin"
+      : !counter && !!empresaId && hasScope("finance:read", empresaId));
   const formaPagamento = paymentMethodLabel(booking.payments, "long");
   const ultimoPagamento = lastPayment(booking.payments);
   const fareTier = (booking as unknown as { fare_tier?: string | null }).fare_tier ?? null;
@@ -420,6 +424,8 @@ export function BookingDetailView({
         <BookingFeesDialog
           open
           onOpenChange={setFeesOpen}
+          audience={audience}
+          companyId={empresaId}
           bookingId={booking.id}
           money={money}
           payment={{

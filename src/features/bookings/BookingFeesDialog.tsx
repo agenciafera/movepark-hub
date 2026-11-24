@@ -10,12 +10,16 @@ import { formatBRL, formatDate } from "@/lib/format";
 import { parseInstallmentPolicy } from "@/lib/installments";
 import { bandFor, formatBps, parseGatewayFeeSchedule } from "@/lib/gatewayFees";
 import { useAppSettings } from "@/features/settings/api";
-import { useBookingGatewayTrail } from "./api";
+import { usePartnerFeeTable } from "@/features/commission/api";
+import { partnerSchedule } from "@/features/commission/partnerFees.logic";
+import { useBookingGatewayTrail, usePartnerBookingPayables } from "./api";
 import { Bloco, Linha } from "./BookingMoneyCard";
 import type { MoneyBreakdown } from "./bookingMoney.logic";
 import {
   buildFeeDetail,
   latestPayables,
+  partnerPayables,
+  PARTNER_VIEW_MOVEPARK,
   type FeeBookingLike,
   type FeeDetail,
   type FeeLine,
@@ -24,6 +28,8 @@ import {
 
 const brl = (cents: number) => formatBRL(cents / 100);
 const PAGADOR = { partner: "estacionamento", movepark: "Movepark", customer: "cliente" } as const;
+// Na reserva do Operator (24/11/2026) quem lê é o próprio estacionamento.
+const PAGADOR_OPERATOR = { partner: "você", movepark: "Movepark", customer: "cliente" } as const;
 const pct = (n: number) => `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 
 function TaxaLinha({
@@ -59,7 +65,8 @@ function TaxaLinha({
   );
 }
 
-function descreve(l: FeeLine, pending: boolean, cartao1x: boolean) {
+/** `op`: a visão do estacionamento, que fala com "você" e não traz a conferência com o contrato. */
+function descreve(l: FeeLine, pending: boolean, cartao1x: boolean, op: boolean) {
   const v = (c: number | null) => (c != null ? brl(c) : pending ? "apurando" : "-");
   switch (l.key) {
     case "commission":
@@ -87,9 +94,11 @@ function descreve(l: FeeLine, pending: boolean, cartao1x: boolean) {
         regra:
           l.effectiveBps == null
             ? "sem detalhe por parcela"
-            : `${formatBps(l.effectiveBps)} nesta venda · contrato ${l.contractBps != null ? formatBps(l.contractBps) : "não cadastrado"}`,
+            : op
+              ? `${formatBps(l.effectiveBps)} nesta venda`
+              : `${formatBps(l.effectiveBps)} nesta venda · contrato ${l.contractBps != null ? formatBps(l.contractBps) : "não cadastrado"}`,
         valor: v(l.cents),
-        aviso: l.differs ? "diferente do contrato" : null,
+        aviso: !op && l.differs ? "diferente do contrato" : null,
       };
     case "anticipation": {
       let regra = "sem detalhe por parcela";
@@ -97,20 +106,24 @@ function descreve(l: FeeLine, pending: boolean, cartao1x: boolean) {
         regra = `prevista${l.anticipatedAt ? ` para perto de ${formatDate(l.anticipatedAt)}` : ""}: as parcelas entram junto com a 1ª`;
         regra +=
           l.compCents > 0
-            ? ` · a Movepark já passou ${brl(l.compCents)} da parte dela para o estacionamento cobrir`
-            : " · sai da parte do estacionamento";
+            ? ` · a Movepark já passou ${brl(l.compCents)} da parte dela para ${op ? "você" : "o estacionamento"} cobrir`
+            : op
+              ? " · sai da sua parte"
+              : " · sai da parte do estacionamento";
       } else if (l.cents === 0 && cartao1x) {
         regra = "à vista não tem antecipação: a parcela já entra em 30 dias";
         if (l.compCents > 0)
-          regra += ` · os ${brl(l.compCents)} que a Movepark passou ao estacionamento ficam com ele`;
+          regra += op
+            ? ` · os ${brl(l.compCents)} que a Movepark passou ficam com você`
+            : ` · os ${brl(l.compCents)} que a Movepark passou ao estacionamento ficam com ele`;
       } else if (l.cents === 0) regra = "ainda não antecipado";
       else if (l.cents != null) {
-        regra = `estacionamento ${brl(l.partnerCents)} · Movepark ${brl(l.moveparkCents)}`;
+        regra = `${op ? "você" : "estacionamento"} ${brl(l.partnerCents)} · Movepark ${brl(l.moveparkCents)}`;
         if (l.anticipatedAt) regra += ` · antecipado em ${formatDate(l.anticipatedAt)}`;
         if (l.compCents > 0)
           regra += ` · a Movepark passou ${brl(l.compCents)} da parte dela para cobrir`;
         if (l.payer === "movepark" && l.creditCents > 0)
-          regra += ` · a Movepark devolveu ${brl(l.creditCents)} ao estacionamento`;
+          regra += ` · a Movepark devolveu ${brl(l.creditCents)} ${op ? "para você" : "ao estacionamento"}`;
       }
       return {
         label: "Antecipação (Pagar.me)",
@@ -138,7 +151,16 @@ function LinhaTabela({ rotulo, valor, atual }: { rotulo: string; valor: string; 
 
 const PARCELAS = Array.from({ length: 12 }, (_, i) => i + 1);
 
-function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: number | null }) {
+function Conteudo({
+  d,
+  anticipationBps,
+  op,
+}: {
+  d: FeeDetail;
+  anticipationBps: number | null;
+  /** Visão do estacionamento: só a parte dele no resumo, sem a conferência interna. */
+  op: boolean;
+}) {
   const s = d.summary;
   const cartao = s.method === "card";
   const comoPagou = cartao
@@ -161,15 +183,26 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
     <div className="flex flex-col gap-4">
       <Bloco title="Resumo" hint={notas || undefined}>
         <Linha label={`O cliente pagou${comoPagou}`} value={brl(s.chargedCents)} testId="taxas-cobrado" />
-        <Linha
-          label="O estacionamento recebe"
-          value={s.partnerNetCents != null ? brl(s.partnerNetCents) : "-"}
-        />
-        <Linha
-          label="A Movepark fica com"
-          value={s.moveparkNetCents != null ? brl(s.moveparkNetCents) : "-"}
-          strong
-        />
+        {op ? (
+          <Linha
+            label={s.custody ? "A repassar" : "Você recebe"}
+            value={s.partnerNetCents != null ? brl(s.partnerNetCents) : "-"}
+            strong
+            testId="taxas-voce-recebe"
+          />
+        ) : (
+          <>
+            <Linha
+              label="O estacionamento recebe"
+              value={s.partnerNetCents != null ? brl(s.partnerNetCents) : "-"}
+            />
+            <Linha
+              label="A Movepark fica com"
+              value={s.moveparkNetCents != null ? brl(s.moveparkNetCents) : "-"}
+              strong
+            />
+          </>
+        )}
       </Bloco>
 
       <Bloco title="Taxas cobradas nesta venda">
@@ -177,8 +210,8 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
           {d.lines.map((l) => (
             <TaxaLinha
               key={l.key}
-              {...descreve(l, g.pending, cartao && s.installments === 1)}
-              pagador={PAGADOR[l.payer]}
+              {...descreve(l, g.pending, cartao && s.installments === 1, op)}
+              pagador={(op ? PAGADOR_OPERATOR : PAGADOR)[l.payer]}
               testId={`taxa-${l.key}`}
             />
           ))}
@@ -192,7 +225,7 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
                     ? "sem detalhe por parcela"
                     : null,
                 d.cet30Bps != null
-                  ? `contrato para receber em 30 dias: ${formatBps(d.cet30Bps)} (${brl(Math.round((s.chargedCents * d.cet30Bps) / 10000))})`
+                  ? `${op ? "tabela" : "contrato"} para receber em 30 dias: ${formatBps(d.cet30Bps)} (${brl(Math.round((s.chargedCents * d.cet30Bps) / 10000))})`
                   : null,
               ]
                 .filter(Boolean)
@@ -201,7 +234,7 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
             pagador={null}
             valor={totalGateway != null ? brl(totalGateway) : "apurando"}
             aviso={
-              g.stale && g.recordedCents != null
+              !op && g.stale && g.recordedCents != null
                 ? `recebíveis desatualizados: o pagamento registra ${brl(g.recordedCents)}`
                 : null
             }
@@ -319,12 +352,14 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
                     atual={false}
                   />
                 )}
-                <LinhaTabela
-                  rotulo="Antifraude"
-                  valor={brl(d.schedule.antifraud_cents)}
-                  atual={false}
-                />
-                {d.schedule.processing_cents != null && (
+                {(!op || d.schedule.antifraud_cents > 0) && (
+                  <LinhaTabela
+                    rotulo="Antifraude"
+                    valor={brl(d.schedule.antifraud_cents)}
+                    atual={false}
+                  />
+                )}
+                {!op && d.schedule.processing_cents != null && (
                   <LinhaTabela
                     rotulo="Gateway por transação"
                     valor={brl(d.schedule.processing_cents)}
@@ -334,7 +369,9 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
               </>
             ) : (
               <span className="text-caption text-muted text-pretty">
-                Tabela não cadastrada. Cadastre em Configurações, aba Pagamentos.
+                {op
+                  ? "A tabela ainda não foi cadastrada. Fale com a Movepark."
+                  : "Tabela não cadastrada. Cadastre em Configurações, aba Pagamentos."}
               </span>
             )}
           </div>
@@ -344,57 +381,108 @@ function Conteudo({ d, anticipationBps }: { d: FeeDetail; anticipationBps: numbe
   );
 }
 
-/**
- * Taxas da reserva (23/11/2026): resumo, cada taxa com regra e quem pagou, as parcelas e a tabela
- * que valeu para a venda. Só o Manager abre. Spec: docs/specs/taxas-da-reserva.md
- */
-export function BookingFeesDialog({
-  open,
-  onOpenChange,
-  bookingId,
-  money,
-  payment,
-  booking,
-}: {
+type DialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bookingId: string;
   money: MoneyBreakdown;
   payment: FeePaymentLike & { id: string };
   booking: FeeBookingLike;
-}) {
-  const trail = useBookingGatewayTrail(bookingId, open);
-  const settings = useAppSettings();
-  const rate = Number(settings.data?.card_anticipation_rate_monthly_bps);
-  const anticipationBps = settings.data?.card_anticipation_rate_monthly_bps && Number.isFinite(rate) ? rate : null;
-  const d =
-    trail.isLoading || settings.isLoading
-      ? null
-      : buildFeeDetail({
-          money,
-          payment,
-          booking,
-          payables: latestPayables(trail.data?.events, payment.id),
-          schedule: parseGatewayFeeSchedule(settings.data?.gateway_fee_schedule),
-          policy: parseInstallmentPolicy(settings.data?.card_installment_policy),
-          moveparkRecipientId: settings.data?.pagarme_movepark_recipient_id ?? null,
-        });
+};
 
+function Janela({
+  open,
+  onOpenChange,
+  op,
+  d,
+  anticipationBps,
+}: Pick<DialogProps, "open" | "onOpenChange"> & {
+  op: boolean;
+  d: FeeDetail | null;
+  anticipationBps: number | null;
+}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto" data-testid="taxas-da-reserva">
         <DialogHeader>
           <DialogTitle>Taxas da reserva</DialogTitle>
           <DialogDescription>
-            O que cada um pagou nesta venda e a tabela que valeu para ela.
+            {op
+              ? "Quem pagou cada taxa desta venda e quando o dinheiro entra."
+              : "O que cada um pagou nesta venda e a tabela que valeu para ela."}
           </DialogDescription>
         </DialogHeader>
         {d ? (
-          <Conteudo d={d} anticipationBps={anticipationBps} />
+          <Conteudo d={d} anticipationBps={anticipationBps} op={op} />
         ) : (
           <Skeleton className="h-64 w-full" />
         )}
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Manager (hub_admin): o rastro do gateway e a tabela contratada inteira, de app_setting. */
+function TaxasManager(p: DialogProps) {
+  const trail = useBookingGatewayTrail(p.bookingId, p.open);
+  const settings = useAppSettings();
+  const rate = Number(settings.data?.card_anticipation_rate_monthly_bps);
+  const anticipationBps =
+    settings.data?.card_anticipation_rate_monthly_bps && Number.isFinite(rate) ? rate : null;
+  const d =
+    trail.isLoading || settings.isLoading
+      ? null
+      : buildFeeDetail({
+          money: p.money,
+          payment: p.payment,
+          booking: p.booking,
+          payables: latestPayables(trail.data?.events, p.payment.id),
+          schedule: parseGatewayFeeSchedule(settings.data?.gateway_fee_schedule),
+          policy: parseInstallmentPolicy(settings.data?.card_installment_policy),
+          moveparkRecipientId: settings.data?.pagarme_movepark_recipient_id ?? null,
+        });
+  return <Janela {...p} op={false} d={d} anticipationBps={anticipationBps} />;
+}
+
+/**
+ * Operator (24/11/2026): o estacionamento não lê o rastro nem app_setting. Os recebíveis vêm da
+ * `partner_booking_payables` e a tabela da `partner_fee_table`, as duas com finance:read.
+ */
+function TaxasOperator(p: DialogProps & { companyId: string }) {
+  const payables = usePartnerBookingPayables(p.bookingId, p.open);
+  const table = usePartnerFeeTable(p.companyId);
+  const d =
+    payables.isLoading || table.isLoading
+      ? null
+      : buildFeeDetail({
+          money: p.money,
+          payment: p.payment,
+          booking: p.booking,
+          payables: partnerPayables(payables.data, p.payment.id),
+          schedule: table.data ? partnerSchedule(table.data) : null,
+          policy: parseInstallmentPolicy(
+            (table.data?.policy ?? null) as Parameters<typeof parseInstallmentPolicy>[0],
+          ),
+          moveparkRecipientId: PARTNER_VIEW_MOVEPARK,
+        });
+  return (
+    <Janela {...p} op d={d} anticipationBps={table.data?.anticipation_rate_bps ?? null} />
+  );
+}
+
+/**
+ * Taxas da reserva (23/11/2026): resumo, cada taxa com regra e quem pagou, as parcelas e a tabela
+ * que valeu para a venda. O Manager vê a conta inteira; desde 24/11/2026 o estacionamento abre o
+ * mesmo modal na reserva dele, com a parte dele. Spec: docs/specs/taxas-da-reserva.md
+ */
+export function BookingFeesDialog({
+  audience = "manager",
+  companyId,
+  ...p
+}: DialogProps & { audience?: "manager" | "operator"; companyId?: string | null }) {
+  if (audience === "operator") {
+    if (!companyId) return null;
+    return <TaxasOperator {...p} companyId={companyId} />;
+  }
+  return <TaxasManager {...p} />;
 }

@@ -6,6 +6,8 @@ import {
   buildFeeDetail,
   latestPayables,
   parsePayables,
+  partnerPayables,
+  PARTNER_VIEW_MOVEPARK,
   type FeeBookingLike,
   type FeePayable,
 } from "./bookingFees.logic";
@@ -497,5 +499,28 @@ describe("buildFeeDetail", () => {
   it("sem split e com estorno aparecem no resumo", () => {
     expect(cenario({ custody: true }).summary.custody).toBe(true);
     expect(cenario({ refundedReais: 100 }).summary.refundedCents).toBe(10000);
+  });
+});
+
+describe("partnerPayables (visão do estacionamento, 24/11/2026)", () => {
+  it("lê o recebedor como movepark/partner e devolve null sem recebível", () => {
+    const entries = [
+      {
+        payment_id: "p1",
+        created_at: "2026-11-02T10:00:00Z",
+        rows: [
+          { recipient: "partner", type: "credit", amount: 4000, fee: 0, anticipation_fee: 40, installment: 2 },
+          { recipient: "movepark", type: "credit", amount: 1000, fee: 60, installment: 1 },
+          { recipient: "partner", type: "refund", amount: -100, fee: 0 },
+        ],
+      },
+    ];
+    const rows = partnerPayables(entries, "p1")!;
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ recipientId: "partner", anticipationFeeCents: 40, installment: 2 });
+    expect(rows[1]).toMatchObject({ recipientId: PARTNER_VIEW_MOVEPARK, feeCents: 60 });
+    expect(partnerPayables(entries, "outro")).toBeNull();
+    expect(partnerPayables([{ payment_id: "p1", created_at: "x", rows: [] }], "p1")).toBeNull();
+    expect(partnerPayables(undefined, "p1")).toBeNull();
   });
 });

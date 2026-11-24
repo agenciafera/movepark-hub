@@ -82,6 +82,31 @@ export function latestPayables(
   return null;
 }
 
+/** Na visão do estacionamento o recebedor chega como "movepark" ou "partner", nunca o id na Pagar.me. */
+export const PARTNER_VIEW_MOVEPARK = "movepark";
+
+/** Um pagamento como a RPC `partner_booking_payables` devolve: o último evento com recebível. */
+export interface PartnerPayablesEntry {
+  payment_id: string;
+  created_at: string;
+  rows: unknown;
+}
+
+/** Recebíveis do pagamento na visão do estacionamento; null sem nenhum (24/11/2026). */
+export function partnerPayables(
+  entries: PartnerPayablesEntry[] | null | undefined,
+  paymentId: string,
+): FeePayable[] | null {
+  const e = (entries ?? []).find((x) => x.payment_id === paymentId);
+  if (!e || !Array.isArray(e.rows)) return null;
+  const rows = parsePayables({
+    data: (e.rows as Record<string, unknown>[]).map((r) =>
+      r && typeof r === "object" ? { ...r, recipient_id: r.recipient ?? null } : r,
+    ),
+  });
+  return rows.length ? rows : null;
+}
+
 export interface FeePaymentLike {
   method: string | null;
   /** Valor cobrado, em reais. */

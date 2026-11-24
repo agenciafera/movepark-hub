@@ -3,8 +3,9 @@
 **Origem:** a Pare Seguro viu descontos nas vendas online e não entendia de onde vinham (reunião de
 11/11/2026, atividade [Enviar tabela detalhada das taxas da Pagar.me](https://app.clickup.com/t/17tn9ea0amp)).
 Em 23/11/2026 ficou decidido que, antes de mandar qualquer tabela para fora, a explicação nasce
-**dentro do Manager**, para a equipe conferir o que vai aparecer. A visão do estacionamento
-(Operator) é uma etapa posterior e não faz parte desta spec.
+**dentro do Manager**, para a equipe conferir o que vai aparecer. A visão do estacionamento veio
+depois: a tabela geral no Financeiro do Operator (23/11/2026) e o mesmo "Ver taxas" na reserva do
+Operator (24/11/2026), as duas descritas no fim desta spec.
 **Estado:** implementado em 23/11/2026 (commits `28597bf1`, `d3773446`, `7bdcd446`, `e76e40c1`,
 `dc089ed6`). Plano: [`docs/superpowers/plans/2026-11-23-taxas-da-reserva.md`](../superpowers/plans/2026-11-23-taxas-da-reserva.md).
 **Relacionadas:** [payment-split.md](./payment-split.md) (split, parcelamento, ADR-004),
@@ -37,7 +38,7 @@ Em 23/11/2026 ficou decidido que, antes de mandar qualquer tabela para fora, a e
 
 | # | Pergunta | Decisão |
 |---|---|---|
-| 1 | Onde aparece primeiro | **Manager**, na reserva. Operator fica para depois |
+| 1 | Onde aparece primeiro | **Manager**, na reserva. No Operator desde 24/11/2026, com a parte do estacionamento |
 | 2 | Como abre | Botão **"Ver taxas"** no card Valores, que abre um modal |
 | 3 | De onde vem a tabela de taxas da Pagar.me | **Cadastrada no Manager**, com o valor **medido nas vendas** ao lado de cada taxa para mostrar divergência |
 | 4 | Onde mais a tabela fica | Também em **Configurações › Pagamentos**, junto da política de parcelamento e da comissão padrão |
@@ -204,8 +205,8 @@ Ao lado de cada taxa, a coluna **"Medido nas vendas (90 dias)"**, vinda da RPC n
   - aviso "diferente do contrato" acima de 0,05 p.p. e silêncio abaixo;
   - "condição da época da compra" quando a política de hoje não reproduz o valor cobrado.
 - **Vitest, componente:** o modal desenha os quatro blocos para cartão, esconde parcelas no Pix, e
-  o botão não existe para o Operator nem para reserva sem pagamento; o formulário recusa faixa com
-  buraco ou sobreposição.
+  o botão não existe para o balcão (Operator sem `finance:read`) nem para reserva sem pagamento; o
+  formulário recusa faixa com buraco ou sobreposição.
 - **pgTAP** (`gateway_fee_measured.test.sql`): `hub_admin` lê; `authenticated` comum e operador
   recebem `42501`; `anon` não executa; o MDR medido sai do último evento `payables` e ignora
   recebível de `refund`.
@@ -237,10 +238,38 @@ transação, a taxa de antecipação ao mês, a taxa de saque, a política de pa
 empresa. Lógica de tela em `src/features/commission/partnerFees.logic.ts`; card em
 `PartnerFeesCard.tsx`.
 
+## "Ver taxas" na reserva do Operator (24/11/2026)
+
+O estacionamento abre a reserva no Operator e tem o mesmo botão **"Ver taxas"** no card Valores,
+para conferir cada venda sem perguntar. Aparece para quem tem `finance:read` na empresa (Dono,
+Gerente, Financeiro) e só com pagamento pago ou estornado; o balcão (papel Operação) não vê
+dinheiro e não tem o botão.
+
+O modal é o mesmo do Manager, com a parte do estacionamento:
+
+- **Resumo:** o que o cliente pagou e "Você recebe" (ou "A repassar" sem split). O que a Movepark
+  fica com não aparece.
+- **Taxas:** as mesmas linhas, com "quem paga: você" e a antecipação dividida em "você" e
+  "Movepark". A taxa do cartão aparece como o efetivo da venda; a comparação com o contrato e o
+  aviso "diferente do contrato" são conferência interna e ficam só no Manager, assim como o aviso de
+  recebíveis desatualizados.
+- **Tabela:** a mesma do Financeiro (`partner_fee_table`): sem o gateway por transação, e com o
+  antifraude só quando as vendas pagam. "Contrato para receber em 30 dias" vira "tabela para receber
+  em 30 dias".
+
+O estacionamento não lê o rastro do gateway (`payment_gateway_event` é só de `hub_admin`) nem a
+tabela em `app_setting`. Os recebíveis vêm da RPC `partner_booking_payables(p_booking_id)`
+(`SECURITY DEFINER`, `hub_admin` ou `finance:read` na empresa da reserva; `42501` para os demais e
+também para reserva que não existe). Ela devolve, por pagamento, só o último evento `payables` que
+trouxe recebível, e de cada recebível só os campos da conta. O recebedor sai como `movepark` ou
+`partner`, nunca o id na Pagar.me, e o resto do evento (requisição, ids do gateway) não sai. No
+front, `partnerPayables` converte para o formato da conta e `buildFeeDetail` roda igual ao do
+Manager. Migration `20261206160000_partner_booking_payables.sql`, pgTAP
+`partner_booking_payables.test.sql`.
+
 ## Fora de escopo
 
-- O modal "Ver taxas" da reserva na visão do estacionamento (o Operator vê a tabela geral, não o
-  detalhe por venda) e o texto para mandar ao parceiro.
+- O texto para mandar ao parceiro fora do painel.
 - Mudar a política de parcelamento, a comissão ou quem paga cada taxa: esta entrega só mostra.
 - Histórico de versões da tabela de taxas (o que valia em cada data). Se precisar, vira tabela
   própria depois; por ora a tabela é a vigente e o modal compara com o efetivo da venda.

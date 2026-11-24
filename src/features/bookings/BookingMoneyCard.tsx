@@ -70,14 +70,19 @@ function Estorno({ refund, parceiro }: { refund: NonNullable<MoneyBreakdown["ref
  * plano saem do destaque e viram uma nota, somados como "taxas e custos da plataforma": não são
  * dinheiro do estacionamento e, em destaque, faziam a comissão parecer maior do que é.
  */
-function PartnerMoney({ money, cliente, semPagamento }: { money: MoneyBreakdown; cliente: { title: string; hint: string }; semPagamento: boolean }) {
+function PartnerMoney({ money, cliente, semPagamento, onShowFees }: { money: MoneyBreakdown; cliente: { title: string; hint: string }; semPagamento: boolean; onShowFees?: () => void }) {
   const v = partnerMoneyView(money);
   const itens = money.customer.lines.filter((l) => l.kind === "parking" || l.kind === "addon").map((l) => l.label);
   const nota = `${cliente.title} ${brl(v.chargedCents)} (${cliente.hint})${v.platformCents > 0 ? `, já com ${brl(v.platformCents)} de taxas e custos da plataforma` : ""}.`;
   return (
     <Card data-testid="reserva-valores">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
         <CardTitle>Valores</CardTitle>
+        {onShowFees && (
+          <Button variant="outline" size="sm" onClick={onShowFees}>
+            Ver taxas
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="grid gap-4 desktop:grid-cols-2">
         <div className="flex flex-col justify-center gap-1 rounded-md border border-hairline bg-surface-soft p-4">
@@ -136,7 +141,7 @@ export function BookingMoneyCard({
   /** Estado do pagamento visto pelo cliente (02/10/2026): "O cliente pagou" só quando pagou. */
   paymentState?: CustomerPaymentState;
   bookingStatus?: string;
-  /** Abre o modal de taxas (23/11/2026). Só o Manager passa, e só com pagamento pago. */
+  /** Abre o modal de taxas (23/11/2026; no Operator desde 24/11/2026). Só com pagamento pago. */
   onShowFees?: () => void;
 }) {
   const { customer, split, refund } = money;
@@ -145,7 +150,8 @@ export function BookingMoneyCard({
   const semPagamento = paymentState === "unpaid" || paymentState === "failed";
   // O estacionamento tem a própria conta: diárias, comissão e o que recebe. A coluna da Movepark
   // (plano, juros, taxa dela) não aparece para ele.
-  if (audience === "operator") return <PartnerMoney money={money} cliente={cliente} semPagamento={semPagamento} />;
+  if (audience === "operator")
+    return <PartnerMoney money={money} cliente={cliente} semPagamento={semPagamento} onShowFees={onShowFees} />;
   return (
     <Card data-testid="reserva-valores">
       <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">

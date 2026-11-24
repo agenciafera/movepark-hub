@@ -125,10 +125,17 @@ describe("BookingDetailView", () => {
     expect(screen.getByRole("button", { name: "Ver taxas" })).toBeInTheDocument();
   });
 
-  it("o Operator não vê o botão Ver taxas", () => {
+  it("o Operator com finance:read também vê o botão Ver taxas (24/11/2026)", () => {
     state.booking = booking("confirmed", [pago]);
     state.trail = trailPago;
     abre("operator");
+    expect(screen.getByRole("button", { name: "Ver taxas" })).toBeInTheDocument();
+  });
+
+  it("o balcão (sem finance:read) não vê o botão Ver taxas", () => {
+    state.booking = booking("confirmed", [pago]);
+    state.trail = trailPago;
+    abre("operator", (escopo) => escopo !== "finance:read");
     expect(screen.queryByRole("button", { name: "Ver taxas" })).toBeNull();
   });
 

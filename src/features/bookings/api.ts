@@ -8,6 +8,7 @@ import type {
   UnifiedBookingRow,
   WlListRow,
 } from "@/types/domain";
+import type { PartnerPayablesEntry } from "./bookingFees.logic";
 import type { BookingHistoryEntry } from "./bookingHistory.logic";
 import { CHANNEL_ORIGINS, type ChannelFilter, type PaymentMethodFilter } from "./bookingList.logic";
 
@@ -470,7 +471,25 @@ export function useBookingGatewayTrail(bookingId: string | undefined, enabled = 
   });
 }
 
-const REFUND_PAYMENT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refund-payment`;
+/**
+ * Recebíveis da reserva na visão do estacionamento (24/11/2026), para o "Ver taxas" do Operator.
+ * A RPC exige finance:read na empresa da reserva e não devolve o id do recebedor na Pagar.me.
+ */
+export function usePartnerBookingPayables(bookingId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "partner-payables", bookingId ?? "none"] as const,
+    enabled: enabled && !!bookingId,
+    queryFn: async (): Promise<PartnerPayablesEntry[]> => {
+      const { data, error } = await supabase.rpc("partner_booking_payables", {
+        p_booking_id: bookingId!,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as PartnerPayablesEntry[];
+    },
+  });
+}
+
+const REFUND_PAYMENT_URL =`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refund-payment`;
 
 /**
  * Estorna UM pagamento sem cancelar a reserva (hub_admin, Edge `refund-payment`, 19/10/2026).

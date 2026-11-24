@@ -10972,6 +10972,7 @@ export type Database = {
           saidas: Json
         }[]
       }
+      partner_booking_payables: { Args: { p_booking_id: string }; Returns: Json }
       partner_digest_expected_key: { Args: never; Returns: string }
       partner_digest_recipients: {
         Args: { p_company_id: string }

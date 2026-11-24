@@ -4,11 +4,41 @@ import { renderWithProviders } from "@/test/utils";
 import { buildMoneyBreakdown, type MoneyPaymentLike } from "./bookingMoney.logic";
 
 // Tudo inventado: o repo é público.
-const state = vi.hoisted(() => ({ cardBps: 118, events: [] as unknown[] }));
+const state = vi.hoisted(() => ({ cardBps: 118, events: [] as unknown[], partner: [] as unknown[] }));
 vi.mock("./api", () => ({
   useBookingGatewayTrail: () => ({
     data: { payments: [], events: state.events },
     isLoading: false,
+  }),
+  usePartnerBookingPayables: () => ({ data: state.partner, isLoading: false }),
+}));
+// A tabela como o estacionamento lê (partner_fee_table): sem o gateway por transação e, sem venda
+// pagando antifraude, sem antifraude.
+vi.mock("@/features/commission/api", () => ({
+  usePartnerFeeTable: () => ({
+    isLoading: false,
+    data: {
+      pix_bps: 80,
+      card: [
+        { from: 1, to: 1, bps: state.cardBps },
+        { from: 2, to: 6, bps: state.cardBps },
+        { from: 7, to: 12, bps: state.cardBps },
+      ],
+      cet30_bps: Array.from({ length: 12 }, (_, i) => 300 + i * 100),
+      antifraud_cents: null,
+      anticipation_rate_bps: 200,
+      withdrawal_fee_cents: 150,
+      policy: {
+        version: 1,
+        enabled: true,
+        maxInstallments: 6,
+        interestFreeUpTo: 2,
+        monthlyInterestPct: 2,
+        minInstallmentCents: 500,
+        absorb: "customer",
+      },
+      channels: [],
+    },
   }),
 }));
 vi.mock("@/features/settings/api", () => ({
@@ -63,7 +93,7 @@ const payables = (method: "card" | "pix") => ({
 
 function abre(
   method: "card" | "pix",
-  opts: { comp?: number; semAntecipacao?: boolean; installments?: number } = {},
+  opts: { comp?: number; semAntecipacao?: boolean; installments?: number; operator?: boolean } = {},
 ) {
   const ev: { payment_id: string; kind: string; created_at: string; response: { data: Record<string, unknown>[] } } =
     payables(method);
@@ -76,6 +106,17 @@ function abre(
   if (opts.installments === 1)
     ev.response.data = ev.response.data.filter((r) => r.installment === 1).map((r) => ({ ...r, anticipation_fee: 0 }));
   state.events = [ev];
+  // A RPC do estacionamento devolve o recebedor como movepark/partner, sem o id na Pagar.me.
+  state.partner = [
+    {
+      payment_id: ev.payment_id,
+      created_at: ev.created_at,
+      rows: ev.response.data.map(({ recipient_id, ...r }) => ({
+        ...r,
+        recipient: recipient_id === "re_m" ? "movepark" : "partner",
+      })),
+    },
+  ];
   const fee = method === "card" ? (opts.semAntecipacao ? 130 : 175) : 80;
   const pay: MoneyPaymentLike = {
     status: "paid",
@@ -106,6 +147,8 @@ function abre(
     <BookingFeesDialog
       open
       onOpenChange={() => {}}
+      audience={opts.operator ? "operator" : "manager"}
+      companyId="c1"
       bookingId="bk-1"
       money={money}
       payment={{
@@ -183,6 +226,37 @@ describe("BookingFeesDialog", () => {
     state.cardBps = 126;
     abre("card");
     expect(screen.getByTestId("taxa-mdr")).toHaveTextContent("diferente do contrato");
+  });
+
+  it("estacionamento: a parte dele, sem a conferência com o contrato nem o custo interno", () => {
+    state.cardBps = 126;
+    abre("card", { operator: true });
+    expect(screen.getByText("Quem pagou cada taxa desta venda e quando o dinheiro entra.")).toBeInTheDocument();
+    expect(screen.getByText("Você recebe")).toBeInTheDocument();
+    expect(screen.getByTestId("taxas-voce-recebe")).toHaveTextContent(/80,00/);
+    expect(screen.queryByText("A Movepark fica com")).toBeNull();
+    expect(screen.queryByText("O estacionamento recebe")).toBeNull();
+    expect(screen.getByTestId("taxa-commission")).toHaveTextContent("quem paga: você");
+    const mdr = screen.getByTestId("taxa-mdr");
+    expect(mdr).toHaveTextContent(/1,20% nesta venda/);
+    expect(mdr).not.toHaveTextContent("contrato");
+    expect(mdr).not.toHaveTextContent("diferente do contrato");
+    // Os recebíveis vieram da RPC do estacionamento, com a antecipação das duas partes.
+    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(/você R\$\s?0,40 · Movepark R\$\s?0,05/);
+    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(/devolveu R\$\s?0,40 para você/);
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(/1,75/);
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(/tabela para receber em 30 dias: 4,00%/);
+    const gateway = screen.getByTestId("tabela-gateway");
+    expect(gateway).toHaveTextContent(/Antecipação automática\s*2,00% ao mês/);
+    expect(gateway).not.toHaveTextContent("Gateway por transação");
+    expect(gateway).not.toHaveTextContent("Antifraude");
+  });
+
+  it("estacionamento antes da antecipação: a taxa prevista sai da parte dele", () => {
+    state.cardBps = 118;
+    abre("card", { operator: true, semAntecipacao: true, comp: 0 });
+    // Sem cessão: a prevista é a estimativa da cobrança, e aqui não há; então nada previsto.
+    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent("ainda não antecipado");
   });
 
   it("Pix: sem bloco de parcelas e sem antecipação", () => {
