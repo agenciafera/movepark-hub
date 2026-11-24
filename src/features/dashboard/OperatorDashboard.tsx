@@ -865,7 +865,7 @@ export default function OperatorDashboard() {
             rows={recent.data?.rows}
             columns={
               counter
-                ? COLUNAS_RECENTES.filter((c) => c !== "value" && c !== "paid")
+                ? COLUNAS_RECENTES.filter((c) => c !== "value")
                 : COLUNAS_RECENTES
             }
             isLoading={recent.isLoading}

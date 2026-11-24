@@ -110,7 +110,11 @@ export function unifiedRowView(
           )
         : Number(b.total_amount),
     status: b.status,
-    paid: Number(b.total_amount),
+    // O balcão não lê `total_amount` (vem nulo); a lista dele traz só o total pago em `paid_amount`.
+    paid:
+      b.total_amount !== null && b.total_amount !== undefined
+        ? Number(b.total_amount)
+        : ((b as { paid_amount?: number | null }).paid_amount ?? null),
     flightProtection: !!b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at,
     plate: b.vehicle?.license_plate ?? null,
     phone: b.customer_phone ?? null,

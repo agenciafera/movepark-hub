@@ -166,7 +166,7 @@ describe("OperatorBookings · balcão sem dinheiro", () => {
     const r = reservaHub("MP-BALCAO") as Extract<UnifiedBookingRow, { source: "hub" }>;
     return {
       ...r,
-      booking: { ...r.booking, total_amount: null, price_breakdown: null },
+      booking: { ...r.booking, total_amount: null, price_breakdown: null, paid_amount: 99.9 },
     } as unknown as UnifiedBookingRow;
   };
 
@@ -177,7 +177,9 @@ describe("OperatorBookings · balcão sem dinheiro", () => {
     expect(screen.getByText("MP-BALCAO")).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Diárias" })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Valor" })).not.toBeInTheDocument();
-    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+    // Só o total pago chega ao balcão (`paid_amount`), para conferir a reserva.
+    expect(screen.getByRole("columnheader", { name: "Valor pago" })).toBeInTheDocument();
+    expect(screen.getByText(/99,90/)).toBeInTheDocument();
     // O resto da linha segue: pagamento, estadia e o cliente.
     expect(screen.getByRole("columnheader", { name: "Pagamento" })).toBeInTheDocument();
     expect(screen.getByText("Cliente MP-BALCAO")).toBeInTheDocument();

@@ -301,7 +301,7 @@ export default function OperatorBookings() {
         valueMode="parking"
         columns={
           counter
-            ? colunas.visible.filter((id) => id !== "value" && id !== "paid")
+            ? colunas.visible.filter((id) => id !== "value")
             : colunas.visible
         }
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}

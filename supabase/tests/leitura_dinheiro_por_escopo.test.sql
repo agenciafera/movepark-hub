@@ -19,7 +19,7 @@
 --   5. Anon não executa nada disto.
 
 begin;
-select plan(44);
+select plan(46);
 
 -- ── Fixture ────────────────────────────────────────────────────────────────────────────────
 -- Um usuário por papel, na mesma empresa X; um membro da empresa Y (a vizinha); o cliente dono da
@@ -189,6 +189,14 @@ select is(
 select is(
   (public.operator_bookings_by_ids(array['00000000-0000-4000-9100-0000000000b1']::uuid[])) -> 0 ->> 'code', 'MP-LDX001',
   'a reserva do balcão traz o código'
+);
+select is(
+  ((public.operator_bookings_by_ids(array['00000000-0000-4000-9100-0000000000b1']::uuid[])) -> 0 ->> 'paid_amount')::numeric, 123.45,
+  'a lista do balcão traz só o total pago (paid_amount), para conferir a reserva'
+);
+select is(
+  (public.operator_booking_by_code('MP-LDX001') ->> 'paid_amount'), null,
+  'o detalhe do balcão segue sem nenhum valor'
 );
 select is(
   (select count(*)::int
