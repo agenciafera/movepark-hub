@@ -43,7 +43,10 @@ begin
   perform set_config('test.lpt', v_lpt::text, false);
   perform set_config('test.lpt2', v_lpt2::text, false);
   perform set_config('test.cpt', v_cpt::text, false);
-  perform set_config('test.dia', (current_date + 10)::text, false);
+  -- "Hoje" é o de São Paulo (fuso da unidade), não o do servidor: no CI o `current_date` é UTC e,
+  -- das 21h à meia-noite de Brasília, já é o dia seguinte. Foi o que derrubou o job db às 22h48.
+  perform set_config('test.hoje', (now() at time zone 'America/Sao_Paulo')::date::text, false);
+  perform set_config('test.dia', ((now() at time zone 'America/Sao_Paulo')::date + 10)::text, false);
 end $$;
 
 create or replace function pg_temp.as_user(p_uid text) returns void language plpgsql as $$
@@ -90,9 +93,9 @@ select throws_ok(
   '23505', null, 'não aceita duas tabelas programadas no mesmo dia');
 
 select throws_ok(
-  format($$ select public.pricing_schedule_create(%L::uuid, current_date, null,
+  format($$ select public.pricing_schedule_create(%L::uuid, %L::date, null,
             '{"strategy":"fixed_bracket"}'::jsonb, '[{"from_day":1,"to_day":30,"unit_price":30}]'::jsonb) $$,
-         current_setting('test.lpt')),
+         current_setting('test.lpt'), current_setting('test.hoje')),
   '22023', null, 'recusa data de hoje (para hoje, salva sem agendar)');
 
 select throws_ok(
