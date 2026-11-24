@@ -299,7 +299,11 @@ export default function OperatorBookings() {
         showCompany={false}
         showSource={hasWl}
         valueMode="parking"
-        columns={counter ? colunas.visible.filter((id) => id !== "value") : colunas.visible}
+        columns={
+          counter
+            ? colunas.visible.filter((id) => id !== "value")
+            : colunas.visible
+        }
         onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
         onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
         selected={canCheckin ? selected : undefined}

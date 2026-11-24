@@ -51,6 +51,15 @@ describe("OperatorDashboard: escopo dos cards", () => {
     expect(screen.queryByText("Avaliações")).not.toBeInTheDocument();
   });
 
+  it("papel Operação: Reservas pagas sobe para a primeira linha, ao lado de Leitura e Ocupação", () => {
+    renderWithScopes(["bookings:read", "occupancy:read"]);
+    const linha1 = screen.getByText("Leitura do período").closest("div.grid");
+    expect(linha1).toContainElement(screen.getByText("Ocupação"));
+    expect(linha1).toContainElement(screen.getByText("Reservas pagas"));
+    // E só aparece uma vez (não sobra o card da linha 2).
+    expect(screen.getAllByText("Reservas pagas")).toHaveLength(1);
+  });
+
   it("papel Financeiro (sem reviews): mostra dinheiro, esconde avaliações", () => {
     renderWithScopes(["finance:read", "payouts:read", "bookings:read", "occupancy:read"]);
     expect(screen.getByText("Receita do período")).toBeInTheDocument();

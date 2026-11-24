@@ -167,6 +167,12 @@ function BookingCell({
           {v.value === null ? "-" : formatBRL(v.value)}
         </TableCell>
       );
+    case "paid":
+      return (
+        <TableCell className="whitespace-nowrap text-right font-medium tabular-nums text-ink">
+          {v.paid === null ? "-" : formatBRL(v.paid)}
+        </TableCell>
+      );
     case "status":
       return (
         <TableCell>
@@ -261,7 +267,11 @@ export function BookingTable({
   columns,
 }: Props) {
   const selecionavel = !!onSelectedChange;
-  const cols = columns ?? DEFAULT_COLUMNS;
+  // "Valor pago" só existe onde a coluna de valor mostra as diárias (Operator); no Manager o
+  // "Valor" já é o total pago.
+  const cols = (columns ?? DEFAULT_COLUMNS).filter(
+    (id) => id !== "paid" || valueMode === "parking",
+  );
   const voucher = useVoucherOpener();
   const lista: UnifiedBookingRow[] | undefined =
     rows ?? bookings?.map((b) => ({ source: "hub" as const, id: b.id, booking: b }));
@@ -315,7 +325,10 @@ export function BookingTable({
               </TableHead>
             )}
             {cols.map((id) => (
-              <TableHead key={id} className={id === "value" ? "text-right" : undefined}>
+              <TableHead
+                key={id}
+                className={id === "value" || id === "paid" ? "text-right" : undefined}
+              >
                 {columnHeader(id, { showCompany, valueMode })}
               </TableHead>
             ))}

@@ -148,7 +148,9 @@ describe("OperatorBookings · estacionamento sem white-label", () => {
     setup({ hasWl: false, rows: [reservaHub("MP-PAGA")] });
     expect(screen.getByRole("columnheader", { name: "Diárias" })).toBeInTheDocument();
     expect(screen.getByText(/111,60/)).toBeInTheDocument();
-    expect(screen.queryByText(/136,50/)).not.toBeInTheDocument();
+    // E ao lado vem o valor pago, para o operador conferir sem abrir a reserva.
+    expect(screen.getByRole("columnheader", { name: "Valor pago" })).toBeInTheDocument();
+    expect(screen.getByText(/136,50/)).toBeInTheDocument();
   });
 });
 
@@ -164,7 +166,7 @@ describe("OperatorBookings · balcão sem dinheiro", () => {
     const r = reservaHub("MP-BALCAO") as Extract<UnifiedBookingRow, { source: "hub" }>;
     return {
       ...r,
-      booking: { ...r.booking, total_amount: null, price_breakdown: null },
+      booking: { ...r.booking, total_amount: null, price_breakdown: null, paid_amount: 99.9 },
     } as unknown as UnifiedBookingRow;
   };
 
@@ -175,7 +177,9 @@ describe("OperatorBookings · balcão sem dinheiro", () => {
     expect(screen.getByText("MP-BALCAO")).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Diárias" })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Valor" })).not.toBeInTheDocument();
-    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+    // Só o total pago chega ao balcão (`paid_amount`), para conferir a reserva.
+    expect(screen.getByRole("columnheader", { name: "Valor pago" })).toBeInTheDocument();
+    expect(screen.getByText(/99,90/)).toBeInTheDocument();
     // O resto da linha segue: pagamento, estadia e o cliente.
     expect(screen.getByRole("columnheader", { name: "Pagamento" })).toBeInTheDocument();
     expect(screen.getByText("Cliente MP-BALCAO")).toBeInTheDocument();
@@ -202,7 +206,8 @@ describe("OperatorBookings · estacionamento com white-label", () => {
     expect(within(tabela).queryByText("White-label")).not.toBeInTheDocument();
     expect(within(tabela).queryByText("Hub")).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Origem da reserva" })).toBeInTheDocument();
-    expect(screen.getByText(/150,50/)).toBeInTheDocument();
+    // O site mostra o mesmo valor em Diárias e em Valor pago.
+    expect(screen.getAllByText(/150,50/).length).toBeGreaterThan(0);
   });
 
   it("data de criação e canal ficam em colunas separadas", () => {

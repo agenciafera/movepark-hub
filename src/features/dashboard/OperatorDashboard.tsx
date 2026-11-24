@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ResponsiveContainer,
@@ -46,6 +47,9 @@ import { useOperatorLocations } from "@/features/locations/api";
 import { useAuth } from "@/auth/context";
 import { useUrlFilters } from "@/lib/useUrlFilters";
 import { DayAgendaPanel } from "./DayAgendaPanel";
+import { BookingTable } from "@/features/bookings/BookingTable";
+import { useBookingsPage } from "@/features/bookings/api";
+import { defaultColumnSettings, visibleColumnIds } from "@/features/bookings/bookingColumns.logic";
 import { useScopedLocationIds } from "@/auth/useScopedLocationIds";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
@@ -236,8 +240,11 @@ function GoalDialog({
   );
 }
 
+/** Reservas recentes do dashboard: sem Voucher (a coluna cortava na borda do card). Sem dinheiro, tira as colunas de valor. */
+const COLUNAS_RECENTES = visibleColumnIds(defaultColumnSettings()).filter((c) => c !== "voucher");
+
 export default function OperatorDashboard() {
-  const { session, effectiveCompanyIds, hasScope } = useAuth();
+  const { session, effectiveCompanyIds, hasScope, scopedCompanyId } = useAuth();
   const { ids: scopedLocationIds } = useScopedLocationIds();
   const companyId = effectiveCompanyIds[0];
 
@@ -265,6 +272,18 @@ export default function OperatorDashboard() {
   // Site white-label (fase 5): só para quem tem; quem não tem nem chama, e a tela fica como era.
   // A contagem vale para todo papel (Origem das reservas); o dinheiro continua atrás de finance:read.
   const { hasWl } = useHasWl();
+  const navigate = useNavigate();
+  // As 10 compras mais recentes (Hub + site), a mesma lista da tela de Reservas.
+  const recent = useBookingsPage({
+    status: undefined,
+    locationIds: scopedLocationIds,
+    companyIds: scopedCompanyId ? [scopedCompanyId] : undefined,
+    source: hasWl ? "all" : "hub",
+    partnerView: true,
+    counter,
+    page: 0,
+    pageSize: 10,
+  });
   const wlQ = useWlRevenue({ from: rangeFrom, to: rangeTo, locationIds: scopedLocationIds }, hasWl);
   // Receita é financeiro (ADR-005): quem não tem finance:read (o balcão) nem pede os valores, o
   // que também tira a série da "Leitura do período", que sem ela não fala de dinheiro.
@@ -343,7 +362,9 @@ export default function OperatorDashboard() {
     [porPagamento, revenuePaid.data, wlPaidQ.data, hasWl, daily],
   );
   const chartHub = porPagamento ? chartDaily.reduce((acc, d) => acc + d.hub, 0) : hubRevenue;
-  const chartWl = porPagamento ? chartDaily.reduce((acc, d) => acc + d.wl, 0) : (wl?.paid_amount ?? 0);
+  const chartWl = porPagamento
+    ? chartDaily.reduce((acc, d) => acc + d.wl, 0)
+    : (wl?.paid_amount ?? 0);
   const chartTotal = chartHub + chartWl;
   const chartTemSite = chartWl > 0;
   const chartLoading = porPagamento
@@ -374,6 +395,56 @@ export default function OperatorDashboard() {
   const label = periodLabel(period, range);
 
   const firstName = session?.firstName ?? "";
+
+  const reservasPagas = (
+    <Panel className="flex flex-col">
+      <div className="min-w-0">
+        <div className="text-title-md text-ink">Reservas pagas</div>
+        <div className="mt-1 text-body-sm text-muted">
+          de {int(conv.created)} criadas no período
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
+        <span className="text-display-2xl tabular-nums leading-none text-ink">
+          {int(conv.paid)}
+        </span>
+        {conv.created > 0 && (
+          <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
+            {conv.rate}% converteram
+          </span>
+        )}
+      </div>
+
+      <div className="mt-5 h-2 overflow-hidden rounded-full bg-surface-strong">
+        <div className="h-full rounded-full bg-mp-primary" style={{ width: `${conv.rate}%` }} />
+      </div>
+
+      <div className="mt-5 flex flex-col gap-0.5">
+        {rows.map((r) => (
+          <div key={r.status} className="flex items-center gap-2.5 rounded-md px-2 py-2.5">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: SITUATION_COLOR[r.status] ?? "hsl(var(--muted))" }}
+              aria-hidden
+            />
+            <span className="text-body-sm text-body">
+              {BOOKING_STATUS_LABELS[r.status as BookingStatus] ?? r.status}
+            </span>
+            <span className="ml-auto text-body-sm font-bold tabular-nums text-ink">
+              {int(r.count)}
+            </span>
+            <span className="w-9 shrink-0 text-right text-caption tabular-nums text-muted-soft">
+              {r.pct}%
+            </span>
+          </div>
+        ))}
+        {rows.length === 0 && (
+          <p className="py-4 text-body-sm text-muted">Nenhuma reserva criada no período.</p>
+        )}
+      </div>
+    </Panel>
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -517,179 +588,139 @@ export default function OperatorDashboard() {
                 : "Cadastre a capacidade das unidades para acompanhar a ocupação."}
           </p>
         </Panel>
+
+        {!canFinance && reservasPagas}
       </div>
 
-      {/* ===== Linha 2: receita diária e conversão ===== */}
-      <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {canFinance && (
-          <Panel className="flex flex-col">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-title-md text-ink" data-testid="titulo-grafico-receita">
-                  {porPagamento ? "Receita por dia do pagamento," : "Receita por dia de check-in,"}{" "}
-                  <span className="text-mp-primary">{formatRangeLabel(range)}</span>
-                </div>
-                <p className="mt-1.5 text-body-sm text-muted" data-testid="total-grafico-receita">
-                  Total do período {formatBRL(chartTotal)}
-                  {chartTemSite ? ` (${originBreakdown(chartHub, chartWl, formatBRL)})` : ""}
-                </p>
-                {porPagamento && hasWl && (
-                  <p className="mt-1 text-caption text-muted-soft">
-                    No white-label, vale a data da compra.
+      {/* ===== Linha 2: receita diária e conversão (sem financeiro, o card sobe pra linha 1) ===== */}
+      {canFinance && (
+        <div className="grid grid-cols-1 gap-5 desktop:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          {canFinance && (
+            <Panel className="flex flex-col">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="text-title-md text-ink" data-testid="titulo-grafico-receita">
+                    {porPagamento
+                      ? "Receita por dia do pagamento,"
+                      : "Receita por dia de check-in,"}{" "}
+                    <span className="text-mp-primary">{formatRangeLabel(range)}</span>
+                  </div>
+                  <p className="mt-1.5 text-body-sm text-muted" data-testid="total-grafico-receita">
+                    Total do período {formatBRL(chartTotal)}
+                    {chartTemSite ? ` (${originBreakdown(chartHub, chartWl, formatBRL)})` : ""}
                   </p>
-                )}
-                <Tabs
-                  value={porPagamento ? "pagamento" : "checkin"}
-                  onValueChange={(v) => setFiltro({ data: v })}
-                  className="mt-3"
-                >
-                  <TabsList aria-label="Agrupar a receita por">
-                    <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
-                    <TabsTrigger value="checkin">Check-in</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-              {best && (
-                <div className="shrink-0 text-right">
-                  <div className="text-caption text-muted">Melhor dia</div>
-                  <div className="text-display-sm tabular-nums text-mp-primary">
-                    {formatBRL(best.total)}
-                  </div>
-                  <div className="text-caption-sm text-muted-soft">
-                    {format(new Date(`${best.date}T12:00:00`), "d 'de' MMM", { locale: ptBR })}
-                  </div>
+                  {porPagamento && hasWl && (
+                    <p className="mt-1 text-caption text-muted-soft">
+                      No white-label, vale a data da compra.
+                    </p>
+                  )}
+                  <Tabs
+                    value={porPagamento ? "pagamento" : "checkin"}
+                    onValueChange={(v) => setFiltro({ data: v })}
+                    className="mt-3"
+                  >
+                    <TabsList aria-label="Agrupar a receita por">
+                      <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+                      <TabsTrigger value="checkin">Check-in</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
-              )}
-            </div>
+                {best && (
+                  <div className="shrink-0 text-right">
+                    <div className="text-caption text-muted">Melhor dia</div>
+                    <div className="text-display-sm tabular-nums text-mp-primary">
+                      {formatBRL(best.total)}
+                    </div>
+                    <div className="text-caption-sm text-muted-soft">
+                      {format(new Date(`${best.date}T12:00:00`), "d 'de' MMM", { locale: ptBR })}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            <div className="mt-6 h-[220px] flex-1">
-              {chartLoading ? (
-                <Skeleton className="h-full w-full" />
-              ) : chartDaily.length === 0 ? (
-                <EmptyState
-                  title="Sem receita no período"
-                  description="As reservas pagas aparecem aqui assim que entrarem."
-                />
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartDaily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="op-rev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--mp-primary))" stopOpacity={0.22} />
-                        <stop offset="100%" stopColor="hsl(var(--mp-primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      stroke="hsl(var(--hairline-soft))"
-                      strokeDasharray="4 4"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(d: string) =>
-                        format(new Date(`${d}T12:00:00`), "dd MMM", { locale: ptBR })
-                      }
-                      tick={{ fontSize: 11 }}
-                      stroke="hsl(var(--muted-soft))"
-                      minTickGap={32}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tickFormatter={(v: number) => formatBRL(v)}
-                      tick={{ fontSize: 11 }}
-                      stroke="hsl(var(--muted-soft))"
-                      width={78}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      formatter={(v: number, name: string) => [
-                        formatBRL(v),
-                        name === "wl" ? "White-label" : chartTemSite ? "Hub" : "Receita",
-                      ]}
-                      labelFormatter={(d: string) =>
-                        format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
-                      }
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="hub"
-                      stackId="origem"
-                      stroke="hsl(var(--mp-primary))"
-                      strokeWidth={2.5}
-                      fill="url(#op-rev)"
-                      dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
-                      activeDot={{ r: 5 }}
-                    />
-                    {chartTemSite && (
+              <div className="mt-6 h-[220px] flex-1">
+                {chartLoading ? (
+                  <Skeleton className="h-full w-full" />
+                ) : chartDaily.length === 0 ? (
+                  <EmptyState
+                    title="Sem receita no período"
+                    description="As reservas pagas aparecem aqui assim que entrarem."
+                  />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartDaily} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="op-rev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--mp-primary))" stopOpacity={0.22} />
+                          <stop offset="100%" stopColor="hsl(var(--mp-primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        stroke="hsl(var(--hairline-soft))"
+                        strokeDasharray="4 4"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(d: string) =>
+                          format(new Date(`${d}T12:00:00`), "dd MMM", { locale: ptBR })
+                        }
+                        tick={{ fontSize: 11 }}
+                        stroke="hsl(var(--muted-soft))"
+                        minTickGap={32}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tickFormatter={(v: number) => formatBRL(v)}
+                        tick={{ fontSize: 11 }}
+                        stroke="hsl(var(--muted-soft))"
+                        width={78}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        formatter={(v: number, name: string) => [
+                          formatBRL(v),
+                          name === "wl" ? "White-label" : chartTemSite ? "Hub" : "Receita",
+                        ]}
+                        labelFormatter={(d: string) =>
+                          format(new Date(`${d}T12:00:00`), "d 'de' MMMM", { locale: ptBR })
+                        }
+                      />
                       <Area
                         type="monotone"
-                        dataKey="wl"
+                        dataKey="hub"
                         stackId="origem"
-                        stroke="hsl(var(--mp-navy))"
-                        strokeWidth={2}
-                        fill="hsl(var(--mp-teal))"
-                        fillOpacity={0.45}
-                        dot={false}
-                        activeDot={{ r: 4 }}
+                        stroke="hsl(var(--mp-primary))"
+                        strokeWidth={2.5}
+                        fill="url(#op-rev)"
+                        dot={{ r: 3, fill: "hsl(var(--canvas))", strokeWidth: 2 }}
+                        activeDot={{ r: 5 }}
                       />
-                    )}
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </Panel>
-        )}
-
-        <Panel className="flex flex-col">
-          <div className="min-w-0">
-            <div className="text-title-md text-ink">Reservas pagas</div>
-            <div className="mt-1 text-body-sm text-muted">
-              de {int(conv.created)} criadas no período
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-baseline gap-2.5">
-            <span className="text-display-2xl tabular-nums leading-none text-ink">
-              {int(conv.paid)}
-            </span>
-            {conv.created > 0 && (
-              <span className="whitespace-nowrap rounded-full bg-mp-pale px-3 py-1.5 text-caption font-bold text-mp-indigo">
-                {conv.rate}% converteram
-              </span>
-            )}
-          </div>
-
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-surface-strong">
-            <div className="h-full rounded-full bg-mp-primary" style={{ width: `${conv.rate}%` }} />
-          </div>
-
-          <div className="mt-5 flex flex-col gap-0.5">
-            {rows.map((r) => (
-              <div key={r.status} className="flex items-center gap-2.5 rounded-md px-2 py-2.5">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: SITUATION_COLOR[r.status] ?? "hsl(var(--muted))" }}
-                  aria-hidden
-                />
-                <span className="text-body-sm text-body">
-                  {BOOKING_STATUS_LABELS[r.status as BookingStatus] ?? r.status}
-                </span>
-                <span className="ml-auto text-body-sm font-bold tabular-nums text-ink">
-                  {int(r.count)}
-                </span>
-                <span className="w-9 shrink-0 text-right text-caption tabular-nums text-muted-soft">
-                  {r.pct}%
-                </span>
+                      {chartTemSite && (
+                        <Area
+                          type="monotone"
+                          dataKey="wl"
+                          stackId="origem"
+                          stroke="hsl(var(--mp-navy))"
+                          strokeWidth={2}
+                          fill="hsl(var(--mp-teal))"
+                          fillOpacity={0.45}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                      )}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
-            ))}
-            {rows.length === 0 && (
-              <p className="py-4 text-body-sm text-muted">Nenhuma reserva criada no período.</p>
-            )}
-          </div>
-        </Panel>
-      </div>
+            </Panel>
+          )}
+
+          {reservasPagas}
+        </div>
+      )}
 
       {/* ===== Ocupação por dia, Hub e site (13/11/2026) ===== */}
       <OccupancyDailyPanel
@@ -818,6 +849,34 @@ export default function OperatorDashboard() {
 
         <DayAgendaPanel locationIds={scopedLocationIds} counter={counter} />
       </div>
+
+      <Panel>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-title-md text-ink">Reservas recentes</div>
+          <Link
+            to="/operator/bookings"
+            className="text-body-sm font-medium text-mp-indigo underline-offset-2 hover:underline"
+          >
+            Ver todas as reservas
+          </Link>
+        </div>
+        <div className="mt-5">
+          <BookingTable
+            rows={recent.data?.rows}
+            columns={
+              counter
+                ? COLUNAS_RECENTES.filter((c) => c !== "value")
+                : COLUNAS_RECENTES
+            }
+            isLoading={recent.isLoading}
+            showCompany={false}
+            showSource={hasWl}
+            valueMode="parking"
+            onRowClick={(b) => navigate(`/operator/bookings/${b.code}`)}
+            onWlRowClick={(w) => navigate(`/operator/bookings/site/${w.id}`)}
+          />
+        </div>
+      </Panel>
 
       <GoalDialog
         open={goalOpen}

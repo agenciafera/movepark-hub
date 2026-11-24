@@ -229,7 +229,7 @@ caminho. Quem tem `finance:read` vê e usa tudo como descrito acima.
 #### Tabela de Reservas
 
 Colunas padrão: `Reserva` · `Criada em` · `Cliente` · `Unidade` · `Estadia` · `Pagamento` ·
-`Diárias` · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
+`Diárias` · `Valor pago` (total que o cliente pagou, para conferir sem abrir a reserva; some no balcão e não existe no Manager) · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
 
 - **Colunas por pessoa (11/11/2026).** O botão **Colunas** liga, desliga e reordena as colunas
   (`Reserva` não sai). A escolha fica **no usuário, no banco** (`profiles.preferences.ui`, chave

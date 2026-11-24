@@ -23,6 +23,7 @@ describe("colunas da lista de reservas", () => {
       "stay",
       "payment",
       "value",
+      "paid",
       "status",
       "voucher",
     ]);
@@ -68,6 +69,7 @@ describe("colunas da lista de reservas", () => {
       "stay",
       "payment",
       "value",
+      "paid",
       "voucher",
       "phone",
       "email",
