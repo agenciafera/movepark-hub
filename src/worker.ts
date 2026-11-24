@@ -178,10 +178,8 @@ function applyIndexPolicy(response: Response, url: URL): Response {
  * numa consulta cuja dona é a praça. Reverter = republicar o post e tirar a entrada daqui.
  */
 export const BLOG_RETIRED_TO_DESTINATION: Record<string, string> = {
-  // Publicado em 10/10/2026 e despublicado em 14/10 sem 301. Em quatro dias levou 944
-  // impressões de "estacionamento aeroporto confins", e de 17 a 31/10 ainda tinha 314
-  // respondendo 404 (docs/specs/ataque-cnf-bepark.md §5.1).
-  "guia-completo-estacionamento-aeroporto-confins": "aeroporto-confins",
+  // Repositório removido 24/11/2026: post republicado como guia-completo do Confins
+  // com imagens e conteúdo expandido.
 };
 
 /**
