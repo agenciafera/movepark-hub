@@ -110,7 +110,9 @@ relidas até 23/11 a taxa de antecipação do parceiro foi zero, e a tabela de 3
 ao 1x só a taxa do cartão. A estimativa da compensação e a previsão do parceiro passam a ser zero
 para 1x, e a tela diz "à vista não tem antecipação". Antes disso a folga de 4 dias gerava cessão em
 toda venda 1x: de 15/11 a 23/11 foram 11 vendas e R$ 7,06, que ficam com os estacionamentos como
-sobra.
+sobra. Desde 24/11/2026 (MP-784999) a tela dessas vendas não fala em antecipação: o modal de taxas
+não tem a linha de antecipação no 1x, e a cessão antiga vira a linha "Ajuste a seu favor" no
+Operator ("Cessão ao estacionamento" no Manager); no card Valores, "Ajuste a seu favor (Movepark)".
 
 ## Estimativa da compensação
 

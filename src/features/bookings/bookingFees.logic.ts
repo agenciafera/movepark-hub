@@ -167,7 +167,12 @@ export type FeeLine =
       expected: boolean;
       payer: Payer;
     }
-  | { key: "antifraud"; cents: number | null; payer: Payer };
+  | { key: "antifraud"; cents: number | null; payer: Payer }
+  /**
+   * Venda à vista que nasceu com cessão para antecipação (regra antiga, 15 a 23/11/2026): à vista
+   * não tem antecipação, e o que a Movepark passou ficou com o estacionamento. Não é taxa.
+   */
+  | { key: "cession"; cents: number; payer: "movepark" };
 
 export interface FeeInstallmentRow {
   installment: number;
@@ -300,7 +305,11 @@ export function buildFeeDetail(args: {
   const firstDate = earliest(
     rows.filter((p) => p.installment === 1).map((p) => p.originalPaymentDate),
   );
-  if (method === "card") {
+  // À vista não fala em antecipação: a linha só existe parcelado ou se o recebível trouxer taxa.
+  // A cessão antiga de uma venda à vista vira linha própria (MP-784999, 24/11/2026).
+  if (method === "card" && n === 1 && anticipationReal === 0) {
+    if (comp > 0) lines.push({ key: "cession", cents: comp, payer: "movepark" });
+  } else if (method === "card") {
     const moveparkCents = total(
       anticipatedRows.filter(
         (p) => moveparkRecipientId != null && p.recipientId === moveparkRecipientId,

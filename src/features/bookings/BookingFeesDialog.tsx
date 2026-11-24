@@ -66,7 +66,7 @@ function TaxaLinha({
 }
 
 /** `op`: a visão do estacionamento, que fala com "você" e não traz a conferência com o contrato. */
-function descreve(l: FeeLine, pending: boolean, cartao1x: boolean, op: boolean) {
+function descreve(l: FeeLine, pending: boolean, op: boolean) {
   // Sem recebível ainda, o valor espera a Pagar.me (24/11/2026: "apurando" não dizia o quê).
   const v = (c: number | null) => (c != null ? brl(c) : pending ? "a confirmar" : "-");
   switch (l.key) {
@@ -115,12 +115,6 @@ function descreve(l: FeeLine, pending: boolean, cartao1x: boolean, op: boolean) 
             : op
               ? " · sai da sua parte"
               : " · sai da parte do estacionamento";
-      } else if (l.cents === 0 && cartao1x) {
-        regra = "à vista não tem antecipação: a parcela já entra em 30 dias";
-        if (l.compCents > 0)
-          regra += op
-            ? ` · os ${brl(l.compCents)} que a Movepark passou ficam com você`
-            : ` · os ${brl(l.compCents)} que a Movepark passou ao estacionamento ficam com ele`;
       } else if (l.cents === 0) regra = "ainda não antecipado";
       else if (l.cents != null) {
         regra = `${op ? "você" : "estacionamento"} ${brl(l.partnerCents)} · Movepark ${brl(l.moveparkCents)}`;
@@ -139,6 +133,21 @@ function descreve(l: FeeLine, pending: boolean, cartao1x: boolean, op: boolean) 
     }
     case "antifraud":
       return { label: "Antifraude (Pagar.me)", regra: null, valor: v(l.cents), aviso: null };
+    case "cession":
+      return op
+        ? {
+            label: "Ajuste a seu favor",
+            regra: "a Movepark passou da parte dela nesta venda; o valor fica com você",
+            valor: brl(l.cents),
+            aviso: null,
+          }
+        : {
+            label: "Cessão ao estacionamento",
+            regra:
+              "regra antiga (até 23/11/2026) cedia a antecipação também à vista; como à vista não tem antecipação, ficou com o estacionamento",
+            valor: brl(l.cents),
+            aviso: null,
+          };
   }
 }
 
@@ -232,7 +241,7 @@ function Conteudo({
             .map((l) => (
               <TaxaLinha
                 key={l.key}
-                {...descreve(l, g.pending, cartao && s.installments === 1, op)}
+                {...descreve(l, g.pending, op)}
                 pagador={(op ? PAGADOR_OPERATOR : PAGADOR)[l.payer]}
                 testId={`taxa-${l.key}`}
               />

@@ -459,7 +459,8 @@ describe("buildFeeDetail", () => {
       feeCents: 120,
       comp: 107,
     });
-    expect(d.lines.find((l) => l.key === "anticipation")).toMatchObject({ cents: 0, expected: false, compCents: 107 });
+    expect(d.lines.find((l) => l.key === "anticipation")).toBeUndefined();
+    expect(d.lines.find((l) => l.key === "cession")).toEqual({ key: "cession", cents: 107, payer: "movepark" });
     expect(d.gateway.expectedCents).toBe(0);
     expect(d.installments.map((p) => [p.expected, p.anticipationCents])).toEqual([[false, 0]]);
   });

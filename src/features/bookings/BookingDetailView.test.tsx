@@ -143,6 +143,15 @@ describe("BookingDetailView", () => {
     expect(screen.getByRole("button", { name: "Ver taxas" })).toBeInTheDocument();
   });
 
+  it("venda à vista com cessão antiga: o Operator vê um ajuste a favor, não antecipação (MP-784999)", () => {
+    state.booking = booking("confirmed", [{ ...pago, anticipation_comp_cents: 107 }]);
+    state.trail = trailPago;
+    abre("operator");
+    const valores = screen.getByTestId("reserva-valores");
+    expect(valores).toHaveTextContent("Ajuste a seu favor (Movepark)");
+    expect(valores).not.toHaveTextContent(/antecipação/i);
+  });
+
   it("o balcão (sem finance:read) não vê o botão Ver taxas", () => {
     state.booking = booking("confirmed", [pago]);
     state.trail = trailPago;

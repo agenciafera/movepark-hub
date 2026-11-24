@@ -4,7 +4,11 @@ import { renderWithProviders } from "@/test/utils";
 import { buildMoneyBreakdown, type MoneyPaymentLike } from "./bookingMoney.logic";
 
 // Tudo inventado: o repo é público.
-const state = vi.hoisted(() => ({ cardBps: 118, events: [] as unknown[], partner: [] as unknown[] }));
+const state = vi.hoisted(() => ({
+  cardBps: 118,
+  events: [] as unknown[],
+  partner: [] as unknown[],
+}));
 vi.mock("./api", () => ({
   useBookingGatewayTrail: () => ({
     data: { payments: [], events: state.events },
@@ -82,10 +86,43 @@ const payables = (method: "card" | "pix") => ({
     data:
       method === "card"
         ? [
-            { type: "credit", recipient_id: "re_p", amount: 4000, fee: 0, installment: 1, payment_date: "2026-12-01T03:00:00Z" },
-            { type: "credit", recipient_id: "re_m", amount: 1000, fee: 60, fraud_coverage_fee: 10, installment: 1, payment_date: "2026-12-01T03:00:00Z" },
-            { type: "credit", recipient_id: "re_p", amount: 4000, fee: 0, anticipation_fee: 40, installment: 2, payment_date: "2026-11-05T03:00:00Z", original_payment_date: "2027-01-01T03:00:00Z" },
-            { type: "credit", recipient_id: "re_m", amount: 1000, fee: 60, anticipation_fee: 5, installment: 2, payment_date: "2026-11-05T03:00:00Z", original_payment_date: "2027-01-01T03:00:00Z" },
+            {
+              type: "credit",
+              recipient_id: "re_p",
+              amount: 4000,
+              fee: 0,
+              installment: 1,
+              payment_date: "2026-12-01T03:00:00Z",
+            },
+            {
+              type: "credit",
+              recipient_id: "re_m",
+              amount: 1000,
+              fee: 60,
+              fraud_coverage_fee: 10,
+              installment: 1,
+              payment_date: "2026-12-01T03:00:00Z",
+            },
+            {
+              type: "credit",
+              recipient_id: "re_p",
+              amount: 4000,
+              fee: 0,
+              anticipation_fee: 40,
+              installment: 2,
+              payment_date: "2026-11-05T03:00:00Z",
+              original_payment_date: "2027-01-01T03:00:00Z",
+            },
+            {
+              type: "credit",
+              recipient_id: "re_m",
+              amount: 1000,
+              fee: 60,
+              anticipation_fee: 5,
+              installment: 2,
+              payment_date: "2026-11-05T03:00:00Z",
+              original_payment_date: "2027-01-01T03:00:00Z",
+            },
           ]
         : [{ type: "credit", recipient_id: "re_m", amount: 2000, fee: 80 }],
   },
@@ -101,8 +138,12 @@ function abre(
     semRecebivel?: boolean;
   } = {},
 ) {
-  const ev: { payment_id: string; kind: string; created_at: string; response: { data: Record<string, unknown>[] } } =
-    payables(method);
+  const ev: {
+    payment_id: string;
+    kind: string;
+    created_at: string;
+    response: { data: Record<string, unknown>[] };
+  } = payables(method);
   if (opts.semAntecipacao)
     ev.response.data = ev.response.data.map((r) => ({
       ...r,
@@ -110,7 +151,9 @@ function abre(
       payment_date: r.original_payment_date ?? r.payment_date,
     }));
   if (opts.installments === 1)
-    ev.response.data = ev.response.data.filter((r) => r.installment === 1).map((r) => ({ ...r, anticipation_fee: 0 }));
+    ev.response.data = ev.response.data
+      .filter((r) => r.installment === 1)
+      .map((r) => ({ ...r, anticipation_fee: 0 }));
   state.events = [ev];
   // A RPC do estacionamento devolve o recebedor como movepark/partner, sem o id na Pagar.me.
   state.partner = [
@@ -204,7 +247,9 @@ describe("BookingFeesDialog", () => {
       /contrato para receber em 30 dias: 4,00% \(R\$\s?4,00\)/,
     );
     expect(
-      within(screen.getByTestId("tabela-parcelamento")).getByText(/2x de/).closest("[aria-current]"),
+      within(screen.getByTestId("tabela-parcelamento"))
+        .getByText(/2x de/)
+        .closest("[aria-current]"),
     ).not.toBeNull();
   });
 
@@ -214,22 +259,44 @@ describe("BookingFeesDialog", () => {
     const ant = screen.getByTestId("taxa-anticipation");
     expect(ant).toHaveTextContent(/R\$\s?3,00 previstos/);
     expect(ant).toHaveTextContent(/prevista para perto de 01\/12\/2026/);
-    expect(ant).toHaveTextContent(/a Movepark já passou R\$\s?3,00 da parte dela para o estacionamento cobrir/);
+    expect(ant).toHaveTextContent(
+      /a Movepark já passou R\$\s?3,00 da parte dela para o estacionamento cobrir/,
+    );
     expect(ant).not.toHaveTextContent("ainda não antecipado");
-    expect(screen.getByTestId("taxa-total")).toHaveTextContent(/com a antecipação prevista: R\$\s?4,30/);
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(
+      /com a antecipação prevista: R\$\s?4,30/,
+    );
     const linhas = within(screen.getByTestId("taxas-parcelas")).getAllByRole("row");
     expect(linhas[2]).toHaveTextContent(/01\/12\/2026 \(prevista\)/);
     // A Movepark fica com a comissão menos a cessão: 2000 - 300 - 130 de MDR que ela paga.
     expect(screen.getByText("A Movepark fica com").nextSibling).toHaveTextContent(/15,70/);
   });
 
-  it("à vista: diz que não tem antecipação e que a cessão antiga fica com o estacionamento", () => {
+  it("à vista: sem linha de antecipação; a cessão antiga vira linha própria (MP-784999)", () => {
     state.cardBps = 118;
     abre("card", { installments: 1, comp: 107 });
-    const ant = screen.getByTestId("taxa-anticipation");
-    expect(ant).toHaveTextContent("à vista não tem antecipação: a parcela já entra em 30 dias");
-    expect(ant).toHaveTextContent(/os R\$\s?1,07 que a Movepark passou ao estacionamento ficam com ele/);
-    expect(ant).not.toHaveTextContent("previstos");
+    expect(screen.queryByTestId("taxa-anticipation")).toBeNull();
+    const cessao = screen.getByTestId("taxa-cession");
+    expect(cessao).toHaveTextContent("Cessão ao estacionamento");
+    expect(cessao).toHaveTextContent(/R\$\s?1,07/);
+    expect(cessao).toHaveTextContent("quem paga: Movepark");
+  });
+
+  it("à vista no Operator: ajuste a seu favor, sem falar em antecipação", () => {
+    state.cardBps = 118;
+    abre("card", { installments: 1, comp: 107, operator: true });
+    expect(screen.queryByTestId("taxa-anticipation")).toBeNull();
+    const cessao = screen.getByTestId("taxa-cession");
+    expect(cessao).toHaveTextContent("Ajuste a seu favor");
+    expect(cessao).toHaveTextContent("o valor fica com você");
+    expect(cessao).not.toHaveTextContent(/antecipa/i);
+  });
+
+  it("à vista sem cessão: nenhuma linha de antecipação", () => {
+    state.cardBps = 118;
+    abre("card", { installments: 1 });
+    expect(screen.queryByTestId("taxa-anticipation")).toBeNull();
+    expect(screen.queryByTestId("taxa-cession")).toBeNull();
   });
 
   it("cartão fora do contrato ganha o aviso", () => {
@@ -241,7 +308,9 @@ describe("BookingFeesDialog", () => {
   it("estacionamento: a parte dele, sem a conferência com o contrato nem o custo interno", () => {
     state.cardBps = 126;
     abre("card", { operator: true });
-    expect(screen.getByText("Quem pagou cada taxa desta venda e quando o dinheiro entra.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Quem pagou cada taxa desta venda e quando o dinheiro entra."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Você recebe")).toBeInTheDocument();
     expect(screen.getByTestId("taxas-voce-recebe")).toHaveTextContent(/80,00/);
     expect(screen.queryByText("A Movepark fica com")).toBeNull();
@@ -252,10 +321,16 @@ describe("BookingFeesDialog", () => {
     expect(mdr).not.toHaveTextContent("contrato");
     expect(mdr).not.toHaveTextContent("diferente do contrato");
     // Os recebíveis vieram da RPC do estacionamento, com a antecipação das duas partes.
-    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(/você R\$\s?0,40 · Movepark R\$\s?0,05/);
-    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(/devolveu R\$\s?0,40 para você/);
+    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(
+      /você R\$\s?0,40 · Movepark R\$\s?0,05/,
+    );
+    expect(screen.getByTestId("taxa-anticipation")).toHaveTextContent(
+      /devolveu R\$\s?0,40 para você/,
+    );
     expect(screen.getByTestId("taxa-total")).toHaveTextContent(/1,75/);
-    expect(screen.getByTestId("taxa-total")).toHaveTextContent(/tabela para receber em 30 dias: 4,00%/);
+    expect(screen.getByTestId("taxa-total")).toHaveTextContent(
+      /tabela para receber em 30 dias: 4,00%/,
+    );
     const gateway = screen.getByTestId("tabela-gateway");
     expect(gateway).toHaveTextContent(/Antecipação automática\s*2,00% ao mês/);
     expect(gateway).not.toHaveTextContent("Gateway por transação");

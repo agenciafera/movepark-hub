@@ -280,6 +280,12 @@ minutos, com 10 de atraso, e a reserva do Operator não pedia a apuração: uma 
 - Pix não tem antifraude: a linha não aparece no Pix, em nenhuma das visões. No Operator, o
   antifraude do cartão só aparece quando a venda pagou.
 
+**À vista não fala em antecipação (MP-784999, 24/11/2026).** A linha de antecipação só existe no
+cartão parcelado (ou se o recebível trouxer taxa de antecipação). As 11 vendas à vista de 15 a
+23/11/2026 que nasceram com cessão (`anticipation_comp_cents`) mostram a cessão como linha própria
+(`key: "cession"`): "Ajuste a seu favor" no Operator, "Cessão ao estacionamento" no Manager, quem
+paga Movepark. Ver [antecipacao-do-parceiro.md](./antecipacao-do-parceiro.md).
+
 ## Fora de escopo
 
 - O texto para mandar ao parceiro fora do painel.
