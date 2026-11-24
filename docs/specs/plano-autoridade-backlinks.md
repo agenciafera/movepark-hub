@@ -745,6 +745,15 @@ de janeiro abrir.
   ficha.
 - **[Conteúdo 71](https://app.clickup.com/t/17tn9e9gfhf):** índice de preço de estacionamento em aeroporto como pauta nacional de férias de
   fim de ano. As pautas de BH continuam nas Conteúdo 55 e 56.
+  **Em 24/11/2026:** a página-fonte está no ar em
+  [`/blog/preco-estacionamento-aeroporto-ferias`](https://movepark.co/blog/preco-estacionamento-aeroporto-ferias/),
+  com o oficial de 25 aeroportos consultado na fonte primária no mesmo dia (14 entram no ranking; 11
+  só têm "a partir de" online ou nenhum preço publicado), a comparação com os parceiros das cinco praças
+  e o método com link para `/metodologia`. O kit (nota, ganchos por praça, mensagens e os canais de
+  pauta de 37 veículos) está em [`docs/imprensa/2026-12-indice-ferias-nacional.md`](../imprensa/2026-12-indice-ferias-nacional.md).
+  **Gate:** o envio é de uma pessoa da equipe, com porta-voz definido; a janela vai até 05/12. Matéria
+  publicada entra em `dados/backlinks-controle.csv`. Lote mapeado ficou fora da nota, porque o preço
+  pesquisado dele é de agosto a outubro, e Aerovalet e Aeropark ficaram fora por estarem saindo do Hub.
 - **[Conteúdo 72](https://app.clickup.com/t/17tn9e9gfhh):** blogs de viagem e milhas, com a calculadora e o índice como motivo do link, e
   recuperação de menção sem link.
 
