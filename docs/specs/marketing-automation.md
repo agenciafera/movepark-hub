@@ -61,9 +61,14 @@ string com valor vindo da UI.
 
 ### 1.4 O disparo nasce travado
 
-`app_setting.marketing_dispatch_enabled` nasce `false`. Com ela desligada o motor roda inteiro,
-resolve o público, monta cada mensagem e grava em `marketing_message` com status `skipped`, com o
-corpo final. Dá para conferir exatamente o que sairia antes de deixar sair.
+`app_setting.marketing_dispatch_enabled` nasce `false`. Com ela desligada o motor resolve o público,
+monta a **próxima** mensagem de cada pessoa e grava em `marketing_message` com status `skipped`, com
+o corpo final. Dá para conferir exatamente o que sairia antes de deixar sair.
+
+**O ensaio não gasta o público (desde 25/11/2026).** Mensagem segurada não tira a pessoa do lugar
+no fluxo: quando o disparo for ligado, é essa mesma mensagem que sai. Antes o motor avançava a
+matrícula para depois do envio fosse qual fosse o resultado, e o disparo real depois de um ensaio
+pulava o e-mail. Ver § 11.
 
 Ferramenta de disparo em massa que nasce ligada manda e-mail para cliente real no primeiro teste.
 
@@ -116,6 +121,13 @@ compras. É o público de mensalista (E-mensalista).
 ## 4. Funil de conversão
 
 Os degraus são só o que os dados sustentam: **reserva criada → paga → check-in → concluída**.
+
+**A expirada e a cancelada entram na conta (desde 25/11/2026).** `cancel_booking_with_release`
+carimba `deleted_at` em toda reserva que encerra como `expired` ou `cancelled`, e a view
+`marketing_booking_fact` descartava apagadas: o funil de 30 dias mostrava 137 criadas, 137 pagas e
+0 expiradas quando o banco tinha 288 criadas e 142 expiradas. A view agora mantém as duas (o resto
+do que foi apagado continua fora). Quem lê a view conta compra só por `is_purchase`, que segue falso
+para elas, então métrica de contato e RFM não mudam.
 
 Não existe degrau de "visitas" porque o Hub não grava evento de sessão, e inventar um número de topo
 faria toda a taxa abaixo dele virar ficção. O clique de saída para o site do parceiro
@@ -271,7 +283,17 @@ mandar o e-mail do "sim" para quem deu "não" é pior do que não mandar nada.
 2. `marketing_due_enrollments` traz quem está pronto para avançar, com o documento do contato
    embutido para o nó de condição.
 3. O motor caminha pelos nós. **Entrega é um passo por execução**: uma campanha com dois e-mails
-   seguidos não dispara os dois na mesma rodada.
+   seguidos não dispara os dois na mesma rodada. A caminhada é a função pura `nextStep`
+   (`engine.ts`): do ponto onde a pessoa está, passa por gatilho e condição até achar um envio,
+   uma espera ou o fim do fluxo.
+4. **A pessoa só sai do envio quando a mensagem teve destino final** (`advancesAfterDelivery`):
+   enviada, ou bloqueada por decisão dela (supressão, sem consentimento, sem endereço), que não muda
+   sozinha. Segurada (disparo desligado, teto do dia) fica no lugar e sai na próxima execução.
+   Falha tenta de novo até `MAX_DELIVERY_ATTEMPTS` (3) e depois segue, para um endereço quebrado
+   não prender o fluxo.
+5. **Fim do fluxo conclui a matrícula**, com ou sem nó de saída (o editor não exige um), e uma
+   condição sem o ramo pedido também conclui. Se depois do envio vem o fim, conclui na hora; se vem
+   uma espera, ela começa a contar do envio.
 
 ### 7.3 As travas, nesta ordem
 
@@ -333,7 +355,8 @@ então não carregam gate de papel, e por isso têm `execute` revogado de `anon`
 | Canvas (ligar, ciclo, validação) | `src/features/marketing/canvas.logic.test.ts` |
 | Colunas da lista | `src/features/marketing/leadColumns.logic.test.ts` |
 | Contrato de rede das mutations | `src/features/marketing/api.test.tsx` |
-| Motor de campanha | `supabase/functions/marketing-run/engine.test.ts` |
+| Motor de campanha (caminhada, avanço, travas) | `supabase/functions/marketing-run/engine.test.ts` |
+| Matrícula, funil e detector de cancelamento | `supabase/tests/marketing_campaign_engine.test.sql` |
 | Descadastro | `supabase/functions/marketing-unsubscribe/logic.test.ts` |
 | Navegador | `e2e/windup/manager-marketing*.json`, `e2e/windup/descadastro.json` |
 
@@ -350,3 +373,33 @@ então não carregam gate de papel, e por isso têm `execute` revogado de `anon`
   API da Meta evitaria erro de digitação.
 - **Lead B2B.** O pipeline hoje é de consumidor. `partner_lead` (captação de estacionamento) segue em
   `/manager/partners`, sem integração com este funil.
+- **Consentimento de e-mail.** `marketing_contact.email_consent` nasce `true` e nenhum contato tem
+  `consent_source`, enquanto a Política de Privacidade v3 diz que oferta exige consentimento. A
+  preferência "Ofertas e promoções" da conta (`profiles.preferences.notifications.email_offers`)
+  não chega aqui. Levantado em 25/11/2026 e deixado para depois por decisão do Kallef; **precisa
+  ser resolvido antes de ligar o disparo**.
+- **Teto do dia em UTC.** O `marketing-run` conta o envio do dia a partir da meia-noite UTC (21h em
+  Brasília).
+- **Remetente.** `app_setting.marketing_email_from` está com um Gmail pessoal; o remetente de
+  campanha precisa ser um endereço do domínio da Movepark verificado no SES.
+- **Um cartão por tentativa.** Cada reserva iniciada vira um cartão no quadro de leads, então quem
+  tenta várias vezes aparece várias vezes (houve contato com 44 cartões).
+
+---
+
+## 11. Correções de 25/11/2026
+
+Estudo do módulo no banco vivo achou quatro defeitos, nenhum coberto por teste. Corrigidos na
+migration `20261207100000_marketing_automacao_correcoes.sql` e na Edge `marketing-run`, com
+`supabase/tests/marketing_campaign_engine.test.sql`, casos novos em `marketing_rfm.test.sql` e em
+`engine.test.ts`. Nenhuma campanha foi executada na correção; o disparo segue desligado.
+
+| # | Defeito | Efeito | Correção |
+|---|---|---|---|
+| 1 | O insert da matrícula declarava `(campaign_id, contact_id)` e o select vinha na ordem trocada | A FK recusava a linha: nenhuma campanha rodou desde 27/10/2026 (0 matrículas, 0 mensagens) | Select na ordem da lista de colunas |
+| 2 | O motor avançava a matrícula depois do envio fosse qual fosse o resultado | Ensaio, teto do dia e falha tiravam a pessoa do envio; o disparo real pulava a mensagem | `advancesAfterDelivery` e `nextStep` (§ 7.2) |
+| 3 | `marketing_booking_fact` descartava reserva apagada, e o cancelamento apaga a expirada e a cancelada | Funil com 100% de conversão; detector de cancelamento cego | View mantém as duas; o detector divide pelo que foi pago |
+| 4 | F do RFM em `ntile(5)` com desempate pela recência | 29 dos 31 "Campeões" e os 31 "Recorrentes" tinham uma compra só | Score por `percent_rank` (ver `marketing-rfm.md`) |
+
+Depois da correção, a base real ficou com 2 campeões e nenhum recorrente no RFM, e o funil de 30
+dias com 286 criadas, 137 pagas, 142 expiradas e 7 canceladas.

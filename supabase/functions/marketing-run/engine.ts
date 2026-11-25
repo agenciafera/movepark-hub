@@ -215,3 +215,70 @@ export function waitUntil(data: Record<string, unknown> | undefined, agora: Date
   const ms = Number.isFinite(horas) && horas > 0 ? horas * 3600_000 : 60_000;
   return new Date(agora.getTime() + Math.max(ms, 60_000));
 }
+
+// ── Onde o contato para e quando ele avança ─────────────────────────────────
+//
+// Correção de 25/11/2026. Antes, o motor gravava o nó de envio como "onde o contato está" fosse
+// qual fosse o resultado. Com o disparo desligado (ensaio), a mensagem saía como segurada e o
+// contato já ficava depois dela: o disparo real, mais tarde, pulava aquele e-mail. Falha de envio
+// e teto do dia faziam o mesmo, sem nova tentativa. E um envio sem aresta de saída nunca marcava o
+// contato como concluído, porque o editor não exige nó de saída.
+
+export type Step =
+  | { kind: "deliver"; node: CanvasNode }
+  | { kind: "wait"; node: CanvasNode }
+  | { kind: "end" };
+
+/**
+ * A partir de onde o contato está (`null` = ainda não começou), anda pelos nós que resolvem na
+ * hora (gatilho, condição) até achar um que precisa de execução (envio ou espera) ou o fim do
+ * fluxo. Fim é nó de saída, aresta que não leva a lugar nenhum ou condição sem o ramo pedido.
+ * `maxHops` segura um ciclo de condições, que o editor recusa mas um canvas importado pode ter.
+ */
+export function nextStep(
+  canvas: Canvas,
+  currentNodeId: string | null,
+  doc: Record<string, unknown>,
+  maxHops = 20,
+): Step {
+  let nodeId: string | null;
+  if (currentNodeId) {
+    nodeId = nextNodeId(canvas, currentNodeId);
+  } else {
+    const inicio = startNodeId(canvas);
+    const noInicial = findNode(canvas, inicio);
+    // Sem gatilho, o começo óbvio já é um passo real e precisa ser executado.
+    nodeId = noInicial && noInicial.type === "trigger" ? nextNodeId(canvas, noInicial.id) : inicio;
+  }
+
+  for (let i = 0; i < maxHops; i++) {
+    const node = findNode(canvas, nodeId);
+    if (!node || node.type === "exit") return { kind: "end" };
+    if (node.type === "condition") {
+      nodeId = nextNodeId(canvas, node.id, evaluateCondition(doc, node.data) ? "yes" : "no");
+      continue;
+    }
+    if (node.type === "wait") return { kind: "wait", node };
+    if (node.type === "email" || node.type === "whatsapp") return { kind: "deliver", node };
+    nodeId = nextNodeId(canvas, node.id);
+  }
+  return { kind: "end" };
+}
+
+/** Quantas falhas seguidas no mesmo envio antes de o contato seguir o fluxo sem ele. */
+export const MAX_DELIVERY_ATTEMPTS = 3;
+
+export type DeliveryOutcome = "sent" | "failed" | "skipped" | "suppressed";
+
+/**
+ * O contato só sai do nó de envio quando a mensagem teve destino final: enviada, ou bloqueada por
+ * decisão dele (supressão, falta de consentimento, sem endereço), que não muda sozinha. Segurada
+ * (disparo desligado, teto do dia) fica no lugar, para a próxima execução mandar a mesma mensagem.
+ * Falha tenta de novo até `MAX_DELIVERY_ATTEMPTS`, para um endereço quebrado não prender o fluxo.
+ * `failedAttempts` conta as falhas neste nó, incluindo a atual.
+ */
+export function advancesAfterDelivery(outcome: DeliveryOutcome, failedAttempts: number): boolean {
+  if (outcome === "sent" || outcome === "suppressed") return true;
+  if (outcome === "failed") return failedAttempts >= MAX_DELIVERY_ATTEMPTS;
+  return false;
+}

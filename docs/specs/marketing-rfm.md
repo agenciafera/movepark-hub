@@ -8,7 +8,8 @@ segmentos, campanhas, funil e leads. Aqui entra a camada que **classifica a base
 o gargalo que os dois documentos apontam: hoje o gestor precisa imaginar o público antes de
 conseguir encontrá-lo.
 
-Migration: `supabase/migrations/20261029093000_marketing_rfm_growth.sql`.
+Migration: `supabase/migrations/20261029093000_marketing_rfm_growth.sql`; score sem empate desde
+`20261207100000_marketing_automacao_correcoes.sql`.
 Front: `src/features/marketing/{rfm.logic.ts,RfmMatrix.tsx,Discoveries.tsx,RfmContactSheet.tsx}`.
 
 ## O que estava pedido e o que foi entregue
@@ -55,6 +56,17 @@ faixas. Com 6 clientes, alguém vai ser "campeão" por ser o melhor entre 6. Por
 `marketing_rfm_overview` devolve `totals.eligible` e a tela mostra um aviso enquanto a base for
 menor que 25 clientes com compra (`MINIMO_PARA_RFM_CONFIAVEL`). Abaixo disso cada faixa tem menos
 de cinco pessoas e o rótulo não se sustenta.
+
+**Empate dá a mesma nota (correção de 25/11/2026).** O score era `ntile(5)`, que reparte as linhas
+em cinco grupos do mesmo tamanho mesmo quando os valores são iguais, e o F desempatava pela
+recência. Com 169 de 175 clientes com uma compra só, quem tinha comprado mais recentemente ganhava
+F5: 29 dos 31 "Campeões" e os 31 "Recorrentes" tinham uma compra. Agora cada dimensão sai de
+`percent_rank` (a fração da base que fica estritamente abaixo), e a nota é o quinto em que essa
+fração cai: `least(5, 1 + floor(percent_rank * 5))`. Com valores distintos é o mesmo quintil de
+antes; com empate, todo mundo empatado recebe a nota mais baixa do grupo. Na base de 25/11/2026,
+quem comprou uma vez é F1 e os seis que voltaram são F5. Ficaram 2 campeões e nenhum recorrente,
+que é o retrato honesto de uma base onde 4,5% voltam para a segunda reserva. Teste:
+`marketing_rfm.test.sql` ("mesmo número de compras dá sempre o mesmo F").
 
 O M entra como terceira dimensão exatamente como a pág. 7 pede: ele não muda a célula, **promove
 dentro dela**. Um contato frio com M no topo vira `perdidos_vip`, que é a fila que o dinheiro manda

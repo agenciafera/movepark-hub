@@ -8,7 +8,7 @@
 -- Roda com: supabase test db. Transação + rollback.
 
 begin;
-select plan(17);
+select plan(19);
 
 -- ── 1. Marca e origem a partir do campo livre ───────────────────────────────
 -- O campo é digitado, não escolhido: pegar a primeira palavra devolveria "ONIX" como marca.
@@ -109,6 +109,48 @@ select ok(
     select 1 from public.marketing_contact_rfm() where contact_key = 'rfm-e@ex.com'
   ),
   'contato mais velho que a janela padrão de 365 dias fica fora do RFM');
+
+-- ── 3b. Empate na frequência dá o mesmo score ───────────────────────────────
+-- Regressão de 25/11/2026: o F era `ntile(5)` ordenado por compras e, no empate, por recência.
+-- Com 169 de 175 clientes reais com uma compra só, quem comprou ontem ganhava F5 e virava
+-- "Campeão" (29 dos 31 campeões tinham uma compra). Seis clientes de uma compra, todos de ontem,
+-- reproduzem o caso.
+do $$
+declare
+  v_loc uuid;
+  v_uid uuid;
+  i int;
+begin
+  select id into v_loc from public.location where deleted_at is null limit 1;
+  for i in 1..6 loop
+    v_uid := gen_random_uuid();
+    insert into auth.users(id, instance_id, aud, role, email, created_at, updated_at)
+      values (v_uid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+              'rfm-uma-' || i || '@ex.com', now(), now());
+    insert into public.profiles(id, role) values (v_uid, 'customer') on conflict (id) do nothing;
+    insert into public.booking (code, profile_id, location_id, status, total_amount,
+                                customer_email, created_at, check_in_at, check_out_at)
+    values ('MP-RFM-UMA-' || i, v_uid, v_loc, 'completed', 80, 'rfm-uma-' || i || '@ex.com',
+            now() - interval '1 day', now() - interval '1 day', now());
+  end loop;
+end $$;
+
+select ok(
+  not exists (
+    select 1 from public.marketing_contact_rfm(null, 500)
+    where contact_key like 'rfm-uma-%@ex.com' and f_score > 1),
+  'quem comprou uma vez só nunca passa de F1, por mais recente que seja');
+
+select ok(
+  not exists (
+    select 1
+    from public.marketing_contact_rfm(null, 500) r
+    join public.marketing_contact_metrics(null, now() - interval '500 days') m
+      using (contact_key)
+    where r.eligible
+    group by m.bookings_count
+    having count(distinct r.f_score) > 1),
+  'mesmo número de compras dá sempre o mesmo F');
 
 -- ── 4. O M é a terceira dimensão: promove dentro da célula ──────────────────
 -- Um contato frio com M no topo vira "perdidos VIP" em vez de sumir junto dos "perdidos".

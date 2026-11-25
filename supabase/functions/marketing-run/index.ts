@@ -26,13 +26,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail, siteUrl } from "../_shared/email.ts";
 import { sendWhatsAppTemplate } from "../_shared/whatsapp.ts";
 import {
+  advancesAfterDelivery,
   type Canvas,
   decideSend,
-  evaluateCondition,
-  findNode,
-  nextNodeId,
+  type DeliveryOutcome,
+  nextStep,
   renderMergeTags,
-  startNodeId,
   waitUntil,
 } from "./engine.ts";
 
@@ -180,179 +179,185 @@ Deno.serve(async (req: Request) => {
     .eq("id", campaignId);
 
   // ── Caminhada pelos nós ────────────────────────────────────────────────────
+  //
+  // Um passo por execução: cada contato anda até o próximo envio ou espera (`nextStep`), e só sai
+  // do envio quando a mensagem teve destino final (`advancesAfterDelivery`). Segurada (ensaio ou
+  // teto do dia) e falha deixam o contato onde estava, então a próxima execução manda a mesma
+  // mensagem. Antes o contato avançava sempre, e o disparo real depois de um ensaio pulava o envio.
   const stats = { processed: 0, sent: 0, skipped: 0, suppressed: 0, failed: 0, completed: 0 };
+
+  const concluir = async (enrollmentId: string) => {
+    await admin
+      .from("marketing_enrollment")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", enrollmentId);
+    stats.completed += 1;
+  };
+
+  const esperar = async (enrollmentId: string, node: { id: string; data?: Record<string, unknown> }) => {
+    await admin
+      .from("marketing_enrollment")
+      .update({
+        status: "waiting",
+        current_node_id: node.id,
+        wait_until: waitUntil(node.data, new Date()).toISOString(),
+      })
+      .eq("id", enrollmentId);
+  };
 
   for (const row of (due ?? []) as Array<Record<string, unknown>>) {
     const enrollmentId = String(row.enrollment_id);
     const contactId = String(row.contact_id);
     const doc = (row.doc ?? {}) as Record<string, unknown>;
 
-    // Onde parou. Sem nó corrente, começa no gatilho e já avança para o primeiro passo real.
-    let nodeId = (row.current_node_id as string | null) ?? null;
-    if (!nodeId) {
-      const inicio = startNodeId(canvas);
-      nodeId = inicio ? nextNodeId(canvas, inicio) : null;
-    } else {
-      nodeId = nextNodeId(canvas, nodeId);
-    }
-
     stats.processed += 1;
 
-    // Um passo por execução para os nós de entrega; condição e saída resolvem na hora. O limite
-    // de voltas evita que um canvas com ciclo prenda a função até o timeout.
-    let voltas = 0;
-    let terminou = false;
+    const passo = nextStep(canvas, (row.current_node_id as string | null) ?? null, doc);
 
-    while (nodeId && voltas < 20) {
-      voltas += 1;
-      const node = findNode(canvas, nodeId);
-      if (!node) break;
-
-      if (node.type === "exit") {
-        terminou = true;
-        break;
-      }
-
-      if (node.type === "condition") {
-        const passou = evaluateCondition(doc, node.data);
-        nodeId = nextNodeId(canvas, node.id, passou ? "yes" : "no");
-        continue;
-      }
-
-      if (node.type === "wait") {
-        await admin
-          .from("marketing_enrollment")
-          .update({
-            status: "waiting",
-            current_node_id: node.id,
-            wait_until: waitUntil(node.data, new Date()).toISOString(),
-          })
-          .eq("id", enrollmentId);
-        nodeId = null;
-        break;
-      }
-
-      if (node.type === "email" || node.type === "whatsapp") {
-        const canal = node.type;
-        const endereco = canal === "email" ? (row.email as string) : (row.phone as string);
-        const consent =
-          canal === "email" ? Boolean(row.email_consent) : Boolean(row.whatsapp_consent);
-        const suprimido =
-          canal === "email" ? Boolean(row.email_suppressed) : Boolean(row.whatsapp_suppressed);
-
-        const decisao = decideSend({
-          channel: canal,
-          address: endereco,
-          consent,
-          suppressed: suprimido,
-          dispatchEnabled,
-          capRemaining,
-        });
-
-        const assunto =
-          canal === "email"
-            ? renderMergeTags(String(node.data?.subject ?? "Movepark"), doc)
-            : null;
-        const corpo =
-          canal === "email"
-            ? renderMergeTags(String(node.data?.body ?? ""), doc, { escape: true })
-            : renderMergeTags(String(node.data?.preview ?? ""), doc);
-        const template = canal === "whatsapp" ? String(node.data?.template ?? "") : null;
-
-        // O destino real do ensaio. Guardado na própria linha para a tela não mentir sobre
-        // para onde a mensagem foi.
-        const destinoReal =
-          canal === "email" && testRecipient ? testRecipient : String(endereco ?? "");
-
-        const { data: msg } = await admin
-          .from("marketing_message")
-          .insert({
-            campaign_id: campaignId,
-            enrollment_id: enrollmentId,
-            contact_id: contactId,
-            node_id: node.id,
-            channel: canal,
-            status: decisao.status,
-            to_address: destinoReal,
-            subject: assunto,
-            body: corpo,
-            template_name: template,
-            error: decisao.reason ?? null,
-          })
-          .select("id")
-          .single();
-
-        if (decisao.status === "queued") {
-          let ok = false;
-          let erro: string | undefined;
-
-          if (canal === "email") {
-            const { data: contato } = await admin
-              .from("marketing_contact")
-              .select("unsubscribe_token")
-              .eq("id", contactId)
-              .maybeSingle();
-            const unsubscribeUrl = `${siteUrl()}/descadastro?t=${contato?.unsubscribe_token ?? ""}`;
-            const res = await sendEmail({
-              from,
-              to: destinoReal,
-              subject: assunto ?? "Movepark",
-              html: wrapEmail(corpo, unsubscribeUrl),
-            });
-            ok = res.ok;
-            erro = res.error;
-          } else {
-            const res = await sendWhatsAppTemplate({
-              to: destinoReal,
-              template: template ?? "",
-              bodyParams: Array.isArray(node.data?.params)
-                ? (node.data?.params as string[]).map((p) => renderMergeTags(String(p), doc))
-                : [],
-            });
-            ok = res.ok;
-            erro = res.error;
-          }
-
-          await admin
-            .from("marketing_message")
-            .update({
-              status: ok ? "sent" : "failed",
-              sent_at: ok ? new Date().toISOString() : null,
-              error: ok ? null : (erro ?? "falha no envio"),
-            })
-            .eq("id", msg?.id);
-
-          if (ok) {
-            stats.sent += 1;
-            capRemaining -= 1;
-          } else {
-            stats.failed += 1;
-          }
-        } else if (decisao.status === "suppressed") {
-          stats.suppressed += 1;
-        } else {
-          stats.skipped += 1;
-        }
-
-        // Entrega é um passo por execução: marca onde parou e sai. Assim uma campanha com dois
-        // e-mails seguidos não dispara os dois na mesma rodada.
-        await admin
-          .from("marketing_enrollment")
-          .update({ status: "active", current_node_id: node.id, wait_until: null })
-          .eq("id", enrollmentId);
-        nodeId = null;
-        break;
-      }
-
-      nodeId = nextNodeId(canvas, node.id);
+    if (passo.kind === "end") {
+      await concluir(enrollmentId);
+      continue;
     }
 
-    if (terminou || (!nodeId && voltas >= 20)) {
+    if (passo.kind === "wait") {
+      await esperar(enrollmentId, passo.node);
+      continue;
+    }
+
+    // Envio.
+    const node = passo.node;
+    const canal = node.type as "email" | "whatsapp";
+    const endereco = canal === "email" ? (row.email as string) : (row.phone as string);
+    const consent =
+      canal === "email" ? Boolean(row.email_consent) : Boolean(row.whatsapp_consent);
+    const suprimido =
+      canal === "email" ? Boolean(row.email_suppressed) : Boolean(row.whatsapp_suppressed);
+
+    const decisao = decideSend({
+      channel: canal,
+      address: endereco,
+      consent,
+      suppressed: suprimido,
+      dispatchEnabled,
+      capRemaining,
+    });
+
+    const assunto =
+      canal === "email" ? renderMergeTags(String(node.data?.subject ?? "Movepark"), doc) : null;
+    const corpo =
+      canal === "email"
+        ? renderMergeTags(String(node.data?.body ?? ""), doc, { escape: true })
+        : renderMergeTags(String(node.data?.preview ?? ""), doc);
+    const template = canal === "whatsapp" ? String(node.data?.template ?? "") : null;
+
+    // O destino real do ensaio. Guardado na própria linha para a tela não mentir sobre
+    // para onde a mensagem foi.
+    const destinoReal =
+      canal === "email" && testRecipient ? testRecipient : String(endereco ?? "");
+
+    const { data: msg } = await admin
+      .from("marketing_message")
+      .insert({
+        campaign_id: campaignId,
+        enrollment_id: enrollmentId,
+        contact_id: contactId,
+        node_id: node.id,
+        channel: canal,
+        status: decisao.status,
+        to_address: destinoReal,
+        subject: assunto,
+        body: corpo,
+        template_name: template,
+        error: decisao.reason ?? null,
+      })
+      .select("id")
+      .single();
+
+    let resultado: DeliveryOutcome;
+
+    if (decisao.status === "queued") {
+      let ok = false;
+      let erro: string | undefined;
+
+      if (canal === "email") {
+        const { data: contato } = await admin
+          .from("marketing_contact")
+          .select("unsubscribe_token")
+          .eq("id", contactId)
+          .maybeSingle();
+        const unsubscribeUrl = `${siteUrl()}/descadastro?t=${contato?.unsubscribe_token ?? ""}`;
+        const res = await sendEmail({
+          from,
+          to: destinoReal,
+          subject: assunto ?? "Movepark",
+          html: wrapEmail(corpo, unsubscribeUrl),
+        });
+        ok = res.ok;
+        erro = res.error;
+      } else {
+        const res = await sendWhatsAppTemplate({
+          to: destinoReal,
+          template: template ?? "",
+          bodyParams: Array.isArray(node.data?.params)
+            ? (node.data?.params as string[]).map((p) => renderMergeTags(String(p), doc))
+            : [],
+        });
+        ok = res.ok;
+        erro = res.error;
+      }
+
+      await admin
+        .from("marketing_message")
+        .update({
+          status: ok ? "sent" : "failed",
+          sent_at: ok ? new Date().toISOString() : null,
+          error: ok ? null : (erro ?? "falha no envio"),
+        })
+        .eq("id", msg?.id);
+
+      if (ok) {
+        stats.sent += 1;
+        capRemaining -= 1;
+        resultado = "sent";
+      } else {
+        stats.failed += 1;
+        resultado = "failed";
+      }
+    } else if (decisao.status === "suppressed") {
+      stats.suppressed += 1;
+      resultado = "suppressed";
+    } else {
+      stats.skipped += 1;
+      resultado = "skipped";
+    }
+
+    // Falhas neste nó, contando a de agora: é o que decide se ainda vale tentar de novo.
+    let falhas = 0;
+    if (resultado === "failed") {
+      const { count } = await admin
+        .from("marketing_message")
+        .select("id", { count: "exact", head: true })
+        .eq("enrollment_id", enrollmentId)
+        .eq("node_id", node.id)
+        .eq("status", "failed");
+      falhas = count ?? 1;
+    }
+
+    if (!advancesAfterDelivery(resultado, falhas)) continue;
+
+    // Saiu do envio. Se o que vem depois é fim ou espera, já resolve agora: concluir na hora
+    // evita que a campanha fique "em andamento" esperando um clique só para fechar, e a espera
+    // começa a contar do envio, não da próxima execução.
+    const depois = nextStep(canvas, node.id, doc);
+    if (depois.kind === "end") {
+      await concluir(enrollmentId);
+    } else if (depois.kind === "wait") {
+      await esperar(enrollmentId, depois.node);
+    } else {
       await admin
         .from("marketing_enrollment")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .update({ status: "active", current_node_id: node.id, wait_until: null })
         .eq("id", enrollmentId);
-      stats.completed += 1;
     }
   }
 

@@ -1,7 +1,10 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
+  advancesAfterDelivery,
   type Canvas,
   decideSend,
+  MAX_DELIVERY_ATTEMPTS,
+  nextStep,
   escapeHtml,
   evaluateCondition,
   nextNodeId,
@@ -195,4 +198,82 @@ Deno.test("waitUntil respeita as horas e tem piso de 1 minuto", () => {
   // Zero (ou lixo) não pode virar espera de 0s, senão a matrícula gira em laço apertado.
   assertEquals(waitUntil({ hours: 0 }, agora).toISOString(), "2026-01-01T00:01:00.000Z");
   assertEquals(waitUntil(undefined, agora).toISOString(), "2026-01-02T00:00:00.000Z");
+});
+
+// ── Onde o contato para e quando ele avança (correção de 25/11/2026) ──────────
+
+Deno.test("nextStep: do começo, passa pelo gatilho e pela condição e para no envio", () => {
+  const passo = nextStep(canvas, null, { bookings_count: 3 });
+  assertEquals(passo.kind, "deliver");
+  assertEquals(passo.kind === "deliver" ? passo.node.id : null, "e1");
+});
+
+Deno.test("nextStep: a condição manda quem deu 'não' para o outro ramo", () => {
+  const passo = nextStep(canvas, null, { bookings_count: 1 });
+  assertEquals(passo.kind === "deliver" ? passo.node.id : null, "e2");
+});
+
+Deno.test("nextStep: depois do envio, para na espera", () => {
+  const passo = nextStep(canvas, "e1", {});
+  assertEquals(passo.kind, "wait");
+  assertEquals(passo.kind === "wait" ? passo.node.id : null, "w1");
+});
+
+Deno.test("nextStep: nó de saída encerra o fluxo", () => {
+  assertEquals(nextStep(canvas, "w1", {}).kind, "end");
+});
+
+Deno.test("nextStep: envio sem aresta de saída também encerra (regressão: ficava ativo para sempre)", () => {
+  // e2 não tem nó de saída depois dele, e o editor não exige um.
+  assertEquals(nextStep(canvas, "e2", {}).kind, "end");
+});
+
+Deno.test("nextStep: condição sem o ramo pedido encerra em vez de cair no outro", () => {
+  const semNao: Canvas = {
+    nodes: [
+      { id: "t", type: "trigger" },
+      { id: "c", type: "condition", data: { field: "bookings_count", op: "gte", value: 2 } },
+      { id: "e", type: "email" },
+    ],
+    edges: [
+      { from: "t", to: "c" },
+      { from: "c", to: "e", branch: "yes" },
+    ],
+  };
+  assertEquals(nextStep(semNao, null, { bookings_count: 1 }).kind, "end");
+});
+
+Deno.test("nextStep: ciclo sem envio nem espera não prende o motor", () => {
+  const ciclo: Canvas = {
+    nodes: [
+      { id: "t", type: "trigger" },
+      { id: "a", type: "condition", data: { field: "x", op: "is_empty" } },
+      { id: "b", type: "condition", data: { field: "x", op: "is_empty" } },
+    ],
+    edges: [
+      { from: "t", to: "a" },
+      { from: "a", to: "b", branch: "yes" },
+      { from: "b", to: "a", branch: "yes" },
+    ],
+  };
+  assertEquals(nextStep(ciclo, null, {}).kind, "end");
+});
+
+Deno.test("advancesAfterDelivery: enviada avança", () => {
+  assertEquals(advancesAfterDelivery("sent", 0), true);
+});
+
+Deno.test("advancesAfterDelivery: bloqueada pelo contato avança (não vai mudar sozinha)", () => {
+  assertEquals(advancesAfterDelivery("suppressed", 0), true);
+});
+
+Deno.test("advancesAfterDelivery: segurada não avança (regressão: o ensaio queimava o público)", () => {
+  // Disparo desligado ou teto do dia: a próxima execução tem que tentar a MESMA mensagem.
+  assertEquals(advancesAfterDelivery("skipped", 0), false);
+});
+
+Deno.test("advancesAfterDelivery: falha tenta de novo até o teto e depois segue", () => {
+  assertEquals(advancesAfterDelivery("failed", 1), false);
+  assertEquals(advancesAfterDelivery("failed", MAX_DELIVERY_ATTEMPTS - 1), false);
+  assertEquals(advancesAfterDelivery("failed", MAX_DELIVERY_ATTEMPTS), true);
 });

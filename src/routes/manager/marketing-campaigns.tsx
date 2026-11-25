@@ -156,7 +156,7 @@ function PainelDeDisparo() {
             <p className="text-body-sm text-muted">
               {ligado
                 ? "Ligado. As campanhas mandam e-mail e WhatsApp para clientes de verdade."
-                : "Desligado. As campanhas rodam inteiras e gravam o que sairia, sem enviar nada."}
+                : "Desligado. As campanhas montam a próxima mensagem de cada pessoa e gravam como segurada, sem enviar nada."}
             </p>
           </div>
         </div>

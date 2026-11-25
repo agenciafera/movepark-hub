@@ -180,7 +180,7 @@ export default function ManagerMarketingCampaign() {
               onClick={async () => {
                 const aviso = config.data?.enabled
                   ? "O disparo está LIGADO: isto envia para clientes reais. Confirma?"
-                  : "O disparo está desligado. A campanha vai rodar e gravar o que sairia, sem enviar. Continuar?";
+                  : "O disparo está desligado. A campanha monta a próxima mensagem de cada pessoa e grava como segurada, sem enviar. Ninguém sai do lugar no fluxo. Continuar?";
                 if (!confirm(aviso)) return;
                 try {
                   await gravar();
@@ -202,8 +202,9 @@ export default function ManagerMarketingCampaign() {
 
       {!config.data?.enabled && (
         <p className="rounded-md border border-hairline bg-surface-soft px-3 py-2 text-body-sm text-muted">
-          O disparo real está desligado. Dá para rodar a campanha inteira: cada mensagem é montada e
-          fica gravada como segurada, com o texto final, para conferência.
+          O disparo real está desligado. O ensaio monta a próxima mensagem de cada pessoa e grava
+          como segurada, com o texto final, para você conferir. Ninguém avança no fluxo: quando o
+          disparo for ligado, é essa mesma mensagem que sai.
         </p>
       )}
 
