@@ -33,7 +33,7 @@ import {
   nextStep,
   renderMergeTags,
   waitUntil,
-} from "./engine.ts";
+} from "../_shared/marketing/engine.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

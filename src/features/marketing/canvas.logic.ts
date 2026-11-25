@@ -195,6 +195,9 @@ export type CanvasProblem = { nodeId: string | null; message: string };
 /**
  * Problemas que impedem uma execução honesta. A tela mostra tudo antes de deixar disparar, porque
  * campanha é irreversível: e-mail com assunto vazio já saiu quando alguém percebe.
+ *
+ * Espelho no motor: supabase/functions/_shared/marketing/canvas.ts, que é a regra que vale (o motor
+ * recusa fluxo com problema). Os mesmos casos de teste rodam dos dois lados; mudou aqui, muda lá.
  */
 export function validateCanvas(canvas: CampaignCanvas): CanvasProblem[] {
   const problemas: CanvasProblem[] = [];
