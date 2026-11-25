@@ -61,7 +61,7 @@ import {
 } from "./customer.logic.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { callMarketing } from "../_shared/marketing/handlers.ts";
-import { getEmailConfig, sendEmail, tplMarketingDispatchEnabled } from "../_shared/email.ts";
+import { alertarDisparoLigado } from "../_shared/marketing/alerta.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -877,23 +877,6 @@ async function atorDaChave(admin: any, apiKeyId: string | null) {
     if (data?.name) nome = String(data.name);
   }
   return { kind: "api_key" as const, id: apiKeyId, label: `${nome} (MCP)` };
-}
-
-/** Avisa a equipe que a chave geral do disparo foi ligada fora da tela. Nunca lança. */
-// deno-lint-ignore no-explicit-any
-async function alertarDisparoLigado(admin: any, info: { actorLabel: string; reason: string }) {
-  try {
-    const { data } = await admin.from("app_setting").select("value")
-      .eq("key", "team_daily_digest_recipients").maybeSingle();
-    const para = String(data?.value ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
-    const { from } = await getEmailConfig(admin);
-    if (para.length === 0 || !from) return;
-    const quando = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-    const mail = tplMarketingDispatchEnabled({ ...info, quando });
-    await sendEmail({ from, to: para, subject: mail.subject, html: mail.html });
-  } catch (e) {
-    console.warn("[mcp] aviso de disparo ligado falhou:", e instanceof Error ? e.message : e);
-  }
 }
 
 async function callManager(
