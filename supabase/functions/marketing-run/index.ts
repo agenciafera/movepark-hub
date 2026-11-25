@@ -14,6 +14,7 @@
 // @ts-expect-error - Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { runCampaign, RunError } from "../_shared/marketing/run.ts";
+import { lerPedido } from "./logic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,20 +55,18 @@ Deno.serve(async (req: Request) => {
   if (profile?.role !== "hub_admin") return json({ error: "forbidden" }, 403);
 
   // ── Entrada ────────────────────────────────────────────────────────────────
-  let campaignId = "";
-  let limit = 100;
+  let body: unknown;
   try {
-    const body = await req.json();
-    campaignId = String(body?.campaignId ?? "");
-    if (typeof body?.limit === "number") limit = body.limit;
+    body = await req.json();
   } catch {
     return json({ error: "payload inválido" }, 400);
   }
-  if (!campaignId) return json({ error: "campaignId obrigatório" }, 400);
+  const pedido = lerPedido(body);
+  if (!pedido.ok) return json({ error: pedido.erro }, 400);
 
   try {
-    const r = await runCampaign(admin, campaignId, {
-      limit,
+    const r = await runCampaign(admin, pedido.campaignId, {
+      limit: pedido.limit,
       actor: { kind: "hub_admin", id: userData.user.id, label: userData.user.email ?? "hub_admin" },
     });
     return json(r);
