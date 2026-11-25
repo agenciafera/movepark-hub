@@ -16,6 +16,8 @@ import { handle, type Deps } from "./index.ts";
 
 const CHAVE_PARCEIRO = "mp_live_parceiro_abcdefghijk";
 const CHAVE_PLATAFORMA = "mp_live_plataforma_abcdefgh";
+const CHAVE_MKT_EDICAO = "mp_live_mkt_edicao_abcdefgh";
+const CHAVE_MKT_DISPARO = "mp_live_mkt_disparo_abcdefg";
 const CHAVE_REVOGADA = "mp_live_revogada_abcdefghijk";
 const CHAVE_EXPIRADA = "mp_live_expirada_abcdefghijk";
 const CHAVE_BOT = "mp_live_bot_mia_abcdefghijkl";
@@ -43,6 +45,16 @@ function ambiente() {
           return Promise.resolve({
             ok: true, api_key_id: "k-plataforma", company_id: null,
             scopes: ["blog:write"], environment: "live",
+          });
+        case CHAVE_MKT_EDICAO:
+          return Promise.resolve({
+            ok: true, api_key_id: "k-mkt-edicao", company_id: null,
+            scopes: ["marketing:read", "marketing:write"], environment: "live",
+          });
+        case CHAVE_MKT_DISPARO:
+          return Promise.resolve({
+            ok: true, api_key_id: "k-mkt-disparo", company_id: null,
+            scopes: ["marketing:read", "marketing:write", "marketing:dispatch"], environment: "live",
           });
         case CHAVE_BOT:
           return Promise.resolve({
@@ -563,4 +575,49 @@ Deno.test("assert_verified_identity: telefone é obrigatório", async () => {
   const b = await corpo(r) as unknown as { error: { message: string } };
   assertEquals(b.error.message.includes("phone"), true);
   assertEquals(chamadas, []);
+});
+
+// ── Marketing no /manager ──────────────────────────────────────────────────
+// O disparo é escopo à parte: chave de edição não chega a executar campanha nem a ligar a chave
+// geral, nem sabendo o nome da tool. Spec: docs/specs/marketing-mcp.md § 4.
+
+Deno.test("marketing: chave sem escopo de marketing não lista tool de marketing", async () => {
+  const { deps } = ambiente();
+  const r = await handle(pedido("/manager", listar, { Authorization: `Bearer ${CHAVE_PLATAFORMA}` }), deps);
+  const b = await corpo(r) as unknown as { result: { tools: Array<{ name: string }> } };
+  assertEquals(b.result.tools.some((t) => t.name.startsWith("marketing_")), false);
+});
+
+Deno.test("marketing: chave de edição lista gravação mas não disparo", async () => {
+  const { deps } = ambiente();
+  const r = await handle(pedido("/manager", listar, { Authorization: `Bearer ${CHAVE_MKT_EDICAO}` }), deps);
+  const b = await corpo(r) as unknown as { result: { tools: Array<{ name: string }> } };
+  const nomes = b.result.tools.map((t) => t.name);
+  assertEquals(nomes.includes("marketing_save_segment"), true);
+  assertEquals(nomes.includes("marketing_run_campaign"), false);
+  assertEquals(nomes.includes("marketing_set_dispatch_enabled"), false);
+});
+
+Deno.test("marketing: chave de edição não executa campanha sabendo o nome", async () => {
+  const { deps, chamadas } = ambiente();
+  const r = await handle(
+    pedido("/manager", chamar("marketing_run_campaign", { campaign_id: "c-1" }),
+      { Authorization: `Bearer ${CHAVE_MKT_EDICAO}` }),
+    deps,
+  );
+  const b = await corpo(r) as unknown as { error?: { message: string } };
+  assertEquals(b.error?.message.includes("Tool indisponível"), true);
+  assertEquals(chamadas, []);
+});
+
+Deno.test("marketing: chave com disparo executa e o handler recebe o id da chave", async () => {
+  const { deps, chamadas, agentes } = ambiente();
+  await handle(
+    pedido("/manager", chamar("marketing_run_campaign", { campaign_id: "c-1" }),
+      { Authorization: `Bearer ${CHAVE_MKT_DISPARO}` }),
+    deps,
+  );
+  assertEquals(chamadas[0].endpoint, "manager");
+  assertEquals(chamadas[0].nome, "marketing_run_campaign");
+  assertEquals(agentes[0].apiKeyId, "k-mkt-disparo");
 });

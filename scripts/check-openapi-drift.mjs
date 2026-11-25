@@ -93,6 +93,7 @@ const agentSrc = readFileSync("supabase/functions/chat/agent.logic.ts", "utf8");
 const customerSrc = readFileSync("supabase/functions/mcp/customer.logic.ts", "utf8");
 // Tools próprias do assistente do operador (superfície interna /operator, sem card).
 const operatorSrc = readFileSync("supabase/functions/mcp/operator.logic.ts", "utf8");
+const marketingSrc = readFileSync("supabase/functions/_shared/marketing/tools.ts", "utf8");
 
 const literalNames = (s) => [...s.matchAll(/name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
 
@@ -109,6 +110,8 @@ const txnBody = arrayBody(customerSrc, "CUSTOMER_TXN_TOOLS");
 const CUSTOMER_AUTH = literalNames(authBody);
 const CUSTOMER_TXN = literalNames(txnBody);
 const OPERATOR_ASSIST = literalNames(arrayBody(operatorSrc, "OPERATOR_ASSIST_TOOLS"));
+// Automação de marketing: espalhada no MANAGER_TOOLS, interna, sem card (marketing-mcp.md).
+const MARKETING = literalNames(arrayBody(marketingSrc, "MARKETING_TOOLS"));
 
 // Um registro pode ser DERIVADO (spread de outro array) em vez de literal. Sem resolver isso as
 // tools derivadas somem do check em silêncio, que foi o que aconteceu ao fatorar. Casa a derivação,
@@ -119,12 +122,14 @@ const DERIVES_TXN = /\.\.\.CUSTOMER_TXN_TOOLS\b/;
 // O registro do /operator reaproveita leituras de parceiro por filtro (essas estão, com razão, no
 // card do parceiro) e espalha as próprias do assistente. Só as próprias contam como internas.
 const DERIVES_OPERATOR = /\.\.\.OPERATOR_ASSIST_TOOLS\b/;
+const DERIVES_MARKETING = /\.\.\.MARKETING_TOOLS\b/;
 const toolNames = (s) => [
   ...literalNames(s),
   ...(DERIVES_READ.test(s) ? SHARED_READ : []),
   ...(DERIVES_AUTH.test(s) ? CUSTOMER_AUTH : []),
   ...(DERIVES_TXN.test(s) ? CUSTOMER_TXN : []),
   ...(DERIVES_OPERATOR.test(s) ? OPERATOR_ASSIST : []),
+  ...(DERIVES_MARKETING.test(s) ? MARKETING : []),
 ];
 
 /** Corpo de um `export const NOME: ... = [ ... ];` (para não varrer o arquivo inteiro). */
@@ -263,7 +268,7 @@ const ASSIGNABLE_SCOPES = new Set([
   "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
   "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
   "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write", "wl:read", "identity:assert",
-  "operator:assist",
+  "operator:assist", "marketing:read", "marketing:write", "marketing:dispatch",
 ]);
 
 // `def(` e `internalRoute(`: escopo de rota interna também conta como usado, senão
@@ -272,7 +277,7 @@ const routerScopes = [
   ...router.matchAll(/\b(?:def|internalRoute)\(\s*"[A-Z]+",\s*"[^"]+",\s*\[[^\]]*\],\s*"([^"]+)"/g),
 ].map((m) => m[1]);
 // Escopos declarados em tools.ts E em customer.logic.ts (onde vivem `checkout:link` e `identity:assert`).
-const toolScopes = [toolsSrc, customerSrc, operatorSrc].flatMap((src) =>
+const toolScopes = [toolsSrc, customerSrc, operatorSrc, marketingSrc].flatMap((src) =>
   [...src.matchAll(/scope:\s*"([^"]+)"/g)].map((m) => m[1]),
 );
 const usedScopes = new Set([...routerScopes, ...toolScopes]);

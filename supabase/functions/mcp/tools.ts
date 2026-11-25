@@ -5,6 +5,7 @@
 import { READ_TOOLS, toMcpToolDef } from "../_shared/assistant-tools.ts";
 import { CUSTOMER_AUTH_TOOLS, CUSTOMER_TXN_TOOLS } from "./customer.logic.ts";
 import { OPERATOR_ASSIST_TOOLS, OPERATOR_PARTNER_READS } from "./operator.logic.ts";
+import { MARKETING_TOOLS } from "../_shared/marketing/tools.ts";
 
 export type Endpoint = "public" | "partner" | "customer" | "manager" | "operator";
 
@@ -342,6 +343,9 @@ export const MANAGER_TOOLS: ToolDef[] = [
     scope: "blog:write",
     inputSchema: obj({ slug: S }, ["slug"]),
   },
+  // Automação de marketing inteira (segmento, campanha, cupom, leads e disparo), em três escopos de
+  // plataforma. Registro único em _shared/marketing. Spec: docs/specs/marketing-mcp.md.
+  ...MARKETING_TOOLS,
 ];
 
 // ── Assistente do operador (a Mia para operadores) ────────────────────────────

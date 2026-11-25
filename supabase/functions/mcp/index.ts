@@ -60,6 +60,8 @@ import {
   verifyLoginOtp,
 } from "./customer.logic.ts";
 import { siteUrl } from "../_shared/site.ts";
+import { callMarketing } from "../_shared/marketing/handlers.ts";
+import { getEmailConfig, sendEmail, tplMarketingDispatchEnabled } from "../_shared/email.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -866,8 +868,47 @@ async function callCustomerTxn(
  * `_shared/blog-write.ts`. Quem autenticou já foi conferido na entrada (chave sem
  * empresa) e o escopo `blog:write` já passou pelo `isToolCallable`.
  */
+/** Quem está agindo pelo MCP: a chave de plataforma, pelo nome que ela tem no Manager. */
 // deno-lint-ignore no-explicit-any
-async function callManager(admin: any, name: string, a: Record<string, unknown>): Promise<unknown> {
+async function atorDaChave(admin: any, apiKeyId: string | null) {
+  let nome = "chave sem nome";
+  if (apiKeyId) {
+    const { data } = await admin.from("api_key").select("name").eq("id", apiKeyId).maybeSingle();
+    if (data?.name) nome = String(data.name);
+  }
+  return { kind: "api_key" as const, id: apiKeyId, label: `${nome} (MCP)` };
+}
+
+/** Avisa a equipe que a chave geral do disparo foi ligada fora da tela. Nunca lança. */
+// deno-lint-ignore no-explicit-any
+async function alertarDisparoLigado(admin: any, info: { actorLabel: string; reason: string }) {
+  try {
+    const { data } = await admin.from("app_setting").select("value")
+      .eq("key", "team_daily_digest_recipients").maybeSingle();
+    const para = String(data?.value ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
+    const { from } = await getEmailConfig(admin);
+    if (para.length === 0 || !from) return;
+    const quando = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const mail = tplMarketingDispatchEnabled({ ...info, quando });
+    await sendEmail({ from, to: para, subject: mail.subject, html: mail.html });
+  } catch (e) {
+    console.warn("[mcp] aviso de disparo ligado falhou:", e instanceof Error ? e.message : e);
+  }
+}
+
+async function callManager(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  name: string,
+  a: Record<string, unknown>,
+  apiKeyId: string | null,
+): Promise<unknown> {
+  // Automação de marketing: registro e handlers em _shared/marketing (marketing-mcp.md).
+  if (name.startsWith("marketing_")) {
+    return callMarketing(admin, await atorDaChave(admin, apiKeyId), name, a, {
+      alertarDisparoLigado: (info) => alertarDisparoLigado(admin, info),
+    });
+  }
   // Leitura: sai antes do bloco de escrita do blog, que assume `ok`/`message`.
   if (name === "get_wl_mapping") {
     const { data, error } = await admin.rpc("wl_agent_mapping", { p_include_hub: a.include_hub === true });
@@ -1095,7 +1136,7 @@ function depsDeProducao(): Deps {
             now: () => new Date(),
           })
         : endpoint === "manager"
-        ? callManager(admin, nome, args)
+        ? callManager(admin, nome, args, apiKeyId)
         : endpoint === "partner"
           ? callPartner(admin, partner!, nome, args)
           : endpoint === "customer"

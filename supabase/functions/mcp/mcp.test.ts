@@ -11,6 +11,7 @@ import {
   toolTextContent,
 } from "./protocol.ts";
 import { CUSTOMER_TOOLS, findTool, isToolCallable, listTools, MANAGER_TOOLS, missingRequired, PARTNER_TOOLS, PUBLIC_TOOLS } from "./tools.ts";
+import { MARKETING_TOOLS } from "../_shared/marketing/tools.ts";
 import { extractApiKey, hasScope, keyPrefix, sha256Hex } from "./auth.ts";
 
 // ── protocolo ────────────────────────────────────────────────────────────────
@@ -346,7 +347,10 @@ Deno.test("toda tool do Manager exige escopo de plataforma", () => {
   // A asserção era `=== "blog:write"` enquanto o blog era a única coisa aqui. Isso
   // testava o inventário, não a invariante: a regra é "declara escopo de plataforma",
   // e ela tem que continuar valendo para a próxima tool que chegar.
-  const DE_PLATAFORMA = new Set(["blog:write", "wl:read"]);
+  // Os de marketing são de plataforma desde 20261207110000_marketing_mcp_base (is_platform_scope).
+  const DE_PLATAFORMA = new Set([
+    "blog:write", "wl:read", "marketing:read", "marketing:write", "marketing:dispatch",
+  ]);
   for (const t of MANAGER_TOOLS) {
     assertEquals(typeof t.scope, "string", `${t.name} sem escopo`);
     assertEquals(DE_PLATAFORMA.has(t.scope!), true, `${t.name}: escopo ${t.scope}`);
@@ -375,4 +379,21 @@ Deno.test("Manager valida os obrigatórios antes de escrever", () => {
   assertEquals(missingRequired(upsert, { slug: "a", body_md: "y" }), "title");
   assertEquals(missingRequired(upsert, { slug: "a", title: "x", body_md: "y" }), null);
   assertEquals(missingRequired(findTool("manager", "delete_blog_post")!, {}), "slug");
+});
+
+Deno.test("MANAGER_TOOLS inclui todas as tools de marketing, cada uma com escopo de marketing", () => {
+  const nomes = new Set(MANAGER_TOOLS.map((t) => t.name));
+  for (const t of MARKETING_TOOLS) {
+    assertEquals(nomes.has(t.name), true, t.name);
+    assertEquals(t.scope?.startsWith("marketing:"), true, t.name);
+  }
+});
+
+Deno.test("nome de tool de marketing não colide com nenhum outro registro", () => {
+  // Numa URL só, quem escolhe o handler é o perfil; um nome repetido entre registros é o risco que
+  // a seção "Colisão de nome entre registros" do mcp.md descreve.
+  const outros = new Set([...PUBLIC_TOOLS, ...PARTNER_TOOLS, ...CUSTOMER_TOOLS].map((t) => t.name));
+  const manager = MANAGER_TOOLS.map((t) => t.name);
+  assertEquals(new Set(manager).size, manager.length);
+  for (const t of MARKETING_TOOLS) assertEquals(outros.has(t.name), false, t.name);
 });
