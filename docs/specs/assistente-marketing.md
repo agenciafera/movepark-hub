@@ -1,6 +1,8 @@
 # Assistente da Automação (IA dentro de /manager/marketing)
 
-> **Status:** desenho aprovado em 25/11/2026, a implementar. Nada daqui existe ainda.
+> **Status:** implementado e no ar em 25/11/2026. Edge `marketing-assistant` publicada, bolinha em
+> `/manager/marketing`. Conferido no vivo: sem token 401, cliente logado 403 antes do modelo e das
+> tools. Nenhuma campanha foi executada e a chave geral segue desligada.
 > **Base:** [marketing-mcp.md](./marketing-mcp.md), que criou o registro de tools de marketing
 > (`supabase/functions/_shared/marketing/`), a gravação auditada e o motor compartilhado. Padrões
 > reaproveitados: o chat do site ([chatbot.md](./chatbot.md), Edge `chat`, Gemini com function-calling)
@@ -129,9 +131,12 @@ dizendo que não deu para concluir, sem derrubar a tela.
 - Só `hub_admin` entra na Edge; o `service_role` fica dentro dela.
 - As duas tools de disparo nunca rodam dentro do laço: o modelo não consegue executar campanha nem
   ligar a chave geral, por mais que a conversa (ou um dado de cliente devolvido por uma tool) peça.
-- Dado de cliente que volta das tools (nome, modelo do carro) é texto não confiável dentro do
-  contexto do modelo. O pior que ele consegue induzir é uma gravação de rascunho, que fica na
-  auditoria e não sai para ninguém sem o clique.
+- Dado que volta das tools (nome de cliente, mensagem de lead do formulário público, texto de
+  campanha) é texto não confiável dentro do contexto do modelo. As instruções dizem que esse texto
+  é dado, nunca pedido, e que só o admin pede ação (teste em `logic.test.ts`). O que sobra de risco
+  está nas gravações que rodam sem clique por decisão (D2): o cupom nasce pausado por padrão, mas o
+  modelo pode ativá-lo. Toda gravação aparece como etiqueta no turno ("salvou o cupom") e fica em
+  `marketing_audit_log` com o admin como ator. Mensagem para cliente nunca sai sem o clique.
 - Cliente do white-label continua fora: o assistente só enxerga o que as tools de marketing leem.
 
 ## 6. Testes
@@ -140,7 +145,9 @@ dizendo que não deu para concluir, sem derrubar a tela.
 |---|---|
 | Deno `_shared/marketing/gemini.test.ts` | O adaptador tira `additionalProperties` e `format`, troca objeto livre por string, e devolve erro legível para JSON inválido |
 | Deno `marketing-assistant/logic.test.ts` | Com um Gemini falso: tool de leitura e de gravação executam pelo `callMarketing` com o admin como ator; as duas de disparo viram proposta e **não** executam; erro de tool volta ao modelo; o laço para em 8 rodadas; a confirmação aceita só as duas tools de disparo |
-| Vitest `MarketingAssistantWidget.test.tsx` | Envia a mensagem com a página; mostra o cartão e confirma; invalida a tela depois de gravar; a conversa sobrevive em `sessionStorage` |
+| Vitest `marketingAssistant.logic.test.ts` | Página aberta, rótulos das tools, últimas 20 mensagens, `sessionStorage` (cartão que executava quando a página recarregou não volta a oferecer o botão), texto dos cartões |
+| Vitest `api.test.tsx` | Contrato de rede: o corpo enviado, a invalidação só quando o turno gravou, o erro da Edge legível |
+| Vitest `MarketingAssistantWidget.test.tsx` | Não aparece fora da Automação; envia a mensagem com a página; mostra o cartão com público e estado da chave; Confirmar manda a tool e os argumentos; Descartar não chama a Edge; fluxo com problema não oferece Confirmar; a conversa sobrevive à troca de página |
 
 Nenhum teste chama o Gemini de verdade nem executa campanha.
 
