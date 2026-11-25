@@ -1385,6 +1385,27 @@ function firstName(name: string): string {
   return String(name ?? "").trim().split(/\s+/)[0] || "parceiro";
 }
 
+/**
+ * Aviso para a equipe quando a chave geral do disparo de marketing é ligada fora da tela (pelo MCP
+ * ou pelo assistente). Com ela ligada, campanha executada manda e-mail e WhatsApp para cliente
+ * real. Spec: docs/specs/marketing-mcp.md § 6.
+ */
+export function tplMarketingDispatchEnabled(i: {
+  actorLabel: string;
+  reason: string;
+  quando: string;
+}): { subject: string; html: string } {
+  return {
+    subject: "Disparo de marketing ligado pelo MCP",
+    html: shell("O disparo de campanhas foi ligado", `
+      <p style="margin:0 0 14px">A chave geral do disparo de campanhas foi ligada por <strong>${escapeHtml(i.actorLabel)}</strong> em ${escapeHtml(i.quando)}.</p>
+      <p style="margin:0 0 14px">Motivo informado: ${escapeHtml(i.reason)}</p>
+      <p style="margin:0 0 22px">Com ela ligada, toda campanha executada manda e-mail e WhatsApp para clientes reais.</p>
+      <p style="margin:0 0 22px;text-align:center">${button(`${siteUrl()}/manager/marketing/campanhas`, "Ver o disparo")}</p>
+      <p style="margin:0;font-size:14px;color:${BRAND.muted}">Para desligar, use o painel Disparo real em Automação › Campanhas.</p>`),
+  };
+}
+
 function escapeHtml(s: string): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!

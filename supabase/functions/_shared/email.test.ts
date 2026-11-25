@@ -13,6 +13,7 @@ import {
   tplBookingConfirmation,
   partnerNoticeBlock,
   tplLeadAlert,
+  tplMarketingDispatchEnabled,
   tplLeadReceived,
   tplRejection,
   tplReviewRequest,
@@ -725,4 +726,14 @@ Deno.test("partnerNoticeBlock: HTML cru no aviso sai como texto, nunca como tag"
   const html = partnerNoticeBlock({ partner_notice_md: 'Aviso <img src=x onerror="alert(1)"> **ok**' });
   assertEquals(html.includes("<img"), false);
   assertStringIncludes(html, "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
+});
+
+Deno.test("tplMarketingDispatchEnabled: diz quem ligou, o motivo e escapa o texto", () => {
+  const m = tplMarketingDispatchEnabled({
+    actorLabel: "Claude <marketing>", reason: "campanha & cupom", quando: "25/11/2026 10:00",
+  });
+  assertEquals(m.subject, "Disparo de marketing ligado pelo MCP");
+  assertEquals(m.html.includes("Claude &lt;marketing&gt;"), true);
+  assertEquals(m.html.includes("campanha &amp; cupom"), true);
+  assertEquals(m.html.includes("/manager/marketing/campanhas"), true);
 });
