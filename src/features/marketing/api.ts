@@ -303,35 +303,39 @@ export function useSegmentContacts(
   });
 }
 
+/**
+ * RPCs de gravação com auditoria (20261207120000_marketing_mcp_gravacao). Não estão no database.ts:
+ * o `gen:types` sai incompleto e apaga funções que existem no banco (memória do projeto), então a
+ * chamada passa por este cast localizado até a regeneração sair limpa. A tela e o MCP de marketing
+ * gravam pelas mesmas RPCs (docs/specs/marketing-mcp.md § 3).
+ */
+async function rpcAuditada(fn: string, args: Record<string, unknown>): Promise<unknown> {
+  const cliente = supabase as unknown as {
+    rpc: (f: string, a: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }>;
+  };
+  const { data, error } = await cliente.rpc(fn, args);
+  if (error) throw error;
+  return data;
+}
+
 export function useSaveSegment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
       id?: string;
       name: string;
-      slug: string;
       description?: string | null;
       definition: SegmentGroup;
       locationIds: string[];
-    }) => {
-      const payload = {
-        name: input.name,
-        slug: input.slug,
-        description: input.description ?? null,
-        definition: input.definition as unknown as Json,
-        location_ids: input.locationIds,
-      };
-      if (input.id) {
-        const { error } = await supabase
-          .from("marketing_segment")
-          .update(payload)
-          .eq("id", input.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("marketing_segment").insert(payload);
-        if (error) throw error;
-      }
-    },
+    }) =>
+      // O servidor valida a definição, gera o slug, recusa segmento do RFM e grava a auditoria.
+      (await rpcAuditada("marketing_save_segment", {
+        p_segment_id: input.id ?? null,
+        p_name: input.name,
+        p_definition: input.definition,
+        p_description: input.description ?? null,
+        p_location_ids: input.locationIds,
+      })) as string,
     onSuccess: () => qc.invalidateQueries({ queryKey: marketingKeys.all }),
   });
 }
@@ -340,13 +344,9 @@ export function useDeleteSegment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // Soft delete: campanha antiga aponta para o segmento, e apagar de verdade deixaria o
-      // histórico sem explicação de para quem aquilo foi.
-      const { error } = await supabase
-        .from("marketing_segment")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
+      // Soft delete no servidor: campanha antiga aponta para o segmento, e apagar de verdade
+      // deixaria o histórico sem explicação de para quem aquilo foi.
+      await rpcAuditada("marketing_delete_segment", { p_segment_id: id });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: marketingKeys.all }),
   });
@@ -393,46 +393,28 @@ export function useSaveCampaign() {
     mutationFn: async (input: {
       id?: string;
       name: string;
-      slug: string;
       segmentId?: string | null;
       locationIds?: string[];
       canvas?: CampaignCanvas;
       sendCap?: number;
       status?: MarketingCampaign["status"];
     }) => {
-      const payload: {
-        name: string;
-        slug: string;
-        segment_id: string | null;
-        location_ids: string[];
-        canvas?: Json;
-        send_cap?: number;
-        status?: MarketingCampaign["status"];
-      } = {
-        name: input.name,
-        slug: input.slug,
-        segment_id: input.segmentId ?? null,
-        location_ids: input.locationIds ?? [],
-      };
-      if (input.canvas) payload.canvas = input.canvas as unknown as Json;
-      if (input.sendCap !== undefined) payload.send_cap = input.sendCap;
-      if (input.status) payload.status = input.status;
-
-      if (input.id) {
-        const { error } = await supabase
-          .from("marketing_campaign")
-          .update(payload)
-          .eq("id", input.id);
-        if (error) throw error;
-        return input.id;
+      const id = (await rpcAuditada("marketing_save_campaign", {
+        p_campaign_id: input.id ?? null,
+        p_name: input.name,
+        p_segment_id: input.segmentId ?? null,
+        p_location_ids: input.locationIds ?? null,
+        // Nulo preserva o fluxo já salvo: um save que não mexe no fluxo não pode zerá-lo.
+        p_canvas: input.canvas ?? null,
+        p_send_cap: input.sendCap ?? null,
+      })) as string;
+      if (input.status) {
+        await rpcAuditada("marketing_set_campaign_status", {
+          p_campaign_id: id,
+          p_status: input.status,
+        });
       }
-      const { data, error } = await supabase
-        .from("marketing_campaign")
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data.id as string;
+      return id;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: marketingKeys.all }),
   });
@@ -530,22 +512,23 @@ export function useSaveDispatchConfig() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (patch: Partial<DispatchConfig>) => {
-      const linhas: Array<{ key: string; value: string }> = [];
-      if (patch.enabled !== undefined)
-        linhas.push({ key: "marketing_dispatch_enabled", value: String(patch.enabled) });
-      if (patch.dailyCap !== undefined)
-        linhas.push({ key: "marketing_daily_send_cap", value: String(patch.dailyCap) });
-      if (patch.testRecipient !== undefined)
-        linhas.push({ key: "marketing_test_recipient", value: patch.testRecipient });
-      if (patch.emailFrom !== undefined)
-        linhas.push({ key: "marketing_email_from", value: patch.emailFrom });
-
-      for (const linha of linhas) {
-        const { error } = await supabase
-          .from("app_setting")
-          .update({ value: linha.value })
-          .eq("key", linha.key);
-        if (error) throw error;
+      if (patch.enabled !== undefined) {
+        // Vai para a auditoria com o motivo fixo da tela; pelo MCP o motivo é obrigatório e livre.
+        await rpcAuditada("marketing_set_dispatch_enabled", {
+          p_enabled: patch.enabled,
+          p_reason: "Alterado pela tela do Manager",
+        });
+      }
+      if (
+        patch.dailyCap !== undefined ||
+        patch.testRecipient !== undefined ||
+        patch.emailFrom !== undefined
+      ) {
+        await rpcAuditada("marketing_set_dispatch_config", {
+          p_test_recipient: patch.testRecipient ?? null,
+          p_daily_cap: patch.dailyCap ?? null,
+          p_email_from: patch.emailFrom ?? null,
+        });
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: marketingKeys.dispatchConfig() }),

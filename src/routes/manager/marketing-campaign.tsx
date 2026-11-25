@@ -106,7 +106,6 @@ export default function ManagerMarketingCampaign() {
     return salvar.mutateAsync({
       id,
       name: campanha.data!.name,
-      slug: campanha.data!.slug,
       segmentId: segmentId || null,
       canvas: canvas!,
       sendCap,

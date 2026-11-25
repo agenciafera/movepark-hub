@@ -40,7 +40,6 @@ import {
   describeDefinition,
   EMPTY_DEFINITION,
   type SegmentGroup,
-  slugify,
   validateDefinition,
 } from "@/features/marketing/segmentBuilder.logic";
 import { cohortLabel } from "@/features/marketing/cohorts";
@@ -224,7 +223,6 @@ function SegmentDialog({
       {
         id: segment?.id,
         name: nome.trim(),
-        slug: segment?.slug ?? slugify(nome),
         description: descricao.trim() || null,
         definition: definicao,
         locationIds: locationIds ?? [],

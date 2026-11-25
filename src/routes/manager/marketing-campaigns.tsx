@@ -31,7 +31,6 @@ import {
   useSaveCampaign,
   useSaveDispatchConfig,
 } from "@/features/marketing/api";
-import { slugify } from "@/features/marketing/segmentBuilder.logic";
 import { emptyCanvas } from "@/features/marketing/canvas.logic";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -283,7 +282,7 @@ function DialogNovaCampanha({ onClose }: { onClose: () => void }) {
                 return;
               }
               salvar.mutate(
-                { name: nome.trim(), slug: slugify(nome), canvas: emptyCanvas() },
+                { name: nome.trim(), canvas: emptyCanvas() },
                 {
                   onSuccess: () => {
                     toast.success("Campanha criada. Monte o fluxo.");

@@ -156,87 +156,80 @@ const definicao: SegmentGroup = {
 };
 
 describe("useSaveSegment", () => {
-  it("cria segmento novo com a definição em jsonb", async () => {
-    const insert = tabela("marketing_segment", "post", { json: [{ id: "seg-1" }] });
+  it("cria pela RPC, sem slug (o servidor gera)", async () => {
+    const chamada = rpc("marketing_save_segment", { json: "seg-1" });
     const { result } = renderMutation(() => useSaveSegment());
 
-    await result.current.mutateAsync({
-      name: "Recorrentes",
-      slug: "recorrentes",
-      definition: definicao,
-      locationIds: ["loc-1"],
-    });
+    await result.current.mutateAsync({ name: "Recorrentes", definition: definicao, locationIds: ["loc-1"] });
 
-    expect(insert.ultimoBody).toMatchObject({
-      name: "Recorrentes",
-      slug: "recorrentes",
-      definition: definicao,
-      location_ids: ["loc-1"],
+    expect(chamada.ultimoBody).toEqual({
+      p_segment_id: null,
+      p_name: "Recorrentes",
+      p_definition: definicao,
+      p_description: null,
+      p_location_ids: ["loc-1"],
     });
   });
 
-  it("edita por id quando o segmento já existe", async () => {
-    const patch = tabela("marketing_segment", "patch", { json: [{ id: "seg-1" }] });
+  it("edita mandando o id", async () => {
+    const chamada = rpc("marketing_save_segment", { json: "seg-1" });
     const { result } = renderMutation(() => useSaveSegment());
 
-    await result.current.mutateAsync({
-      id: "seg-1",
-      name: "Recorrentes",
-      slug: "recorrentes",
-      definition: definicao,
-      locationIds: [],
-    });
+    await result.current.mutateAsync({ id: "seg-1", name: "Recorrentes", definition: definicao, locationIds: [] });
 
-    expect(patch.chamadas[0].url).toContain("id=eq.seg-1");
+    expect((chamada.ultimoBody as { p_segment_id: string }).p_segment_id).toBe("seg-1");
+  });
+
+  it("mostra a recusa do servidor", async () => {
+    falha("rpc", "marketing_save_segment", 400, "Segmento do modelo RFM não muda. Crie um novo a partir dele.");
+    const { result } = renderMutation(() => useSaveSegment());
+
+    await expect(
+      result.current.mutateAsync({ id: "seg-1", name: "x", definition: definicao, locationIds: [] }),
+    ).rejects.toThrow(/modelo RFM não muda/);
   });
 });
 
 describe("useDeleteSegment", () => {
-  it("apaga por soft delete, sem sumir com o histórico da campanha", async () => {
-    const patch = tabela("marketing_segment", "patch", { json: [{ id: "seg-1" }] });
-    const del = tabela("marketing_segment", "delete", { json: [] });
+  it("apaga pela RPC, que faz soft delete e grava a auditoria", async () => {
+    const chamada = rpc("marketing_delete_segment", { status: 204 });
     const { result } = renderMutation(() => useDeleteSegment());
 
     await result.current.mutateAsync("seg-1");
 
-    expect(del.chamadas.length).toBe(0);
-    expect(patch.ultimoBody).toHaveProperty("deleted_at");
+    expect(chamada.ultimoBody).toEqual({ p_segment_id: "seg-1" });
   });
 });
 
 describe("useSaveCampaign", () => {
-  it("cria a campanha e devolve o id", async () => {
-    // `.single()` pede objeto, não lista: o PostgREST responde `vnd.pgrst.object+json`.
-    const insert = tabela("marketing_campaign", "post", { json: { id: "camp-1" } });
+  it("cria pela RPC e devolve o id", async () => {
+    const chamada = rpc("marketing_save_campaign", { json: "camp-1" });
     const { result } = renderMutation(() => useSaveCampaign());
 
-    const id = await result.current.mutateAsync({
-      name: "Reativação",
-      slug: "reativacao",
-      canvas: emptyCanvas(),
-    });
+    const id = await result.current.mutateAsync({ name: "Reativação", canvas: emptyCanvas() });
 
     expect(id).toBe("camp-1");
-    expect(insert.ultimoBody).toMatchObject({ name: "Reativação", slug: "reativacao" });
+    expect(chamada.ultimoBody).toMatchObject({ p_campaign_id: null, p_name: "Reativação" });
   });
 
   it("não manda canvas quando a chamada não mexe no fluxo", async () => {
-    // Um patch sem canvas não pode zerar o fluxo já salvo por omissão.
-    const patch = tabela("marketing_campaign", "patch", { json: [{ id: "camp-1" }] });
+    // Canvas nulo na RPC preserva o fluxo já salvo.
+    const chamada = rpc("marketing_save_campaign", { json: "camp-1" });
     const { result } = renderMutation(() => useSaveCampaign());
 
-    await result.current.mutateAsync({ id: "camp-1", name: "Reativação", slug: "reativacao" });
+    await result.current.mutateAsync({ id: "camp-1", name: "Reativação" });
 
-    expect(patch.ultimoBody).not.toHaveProperty("canvas");
+    expect((chamada.ultimoBody as { p_canvas: unknown }).p_canvas).toBeNull();
   });
 
-  it("propaga slug repetido", async () => {
-    falha("tabela", "marketing_campaign", 409, "duplicate key value violates unique constraint");
+  it("troca o status pela RPC própria", async () => {
+    rpc("marketing_save_campaign", { json: "camp-1" });
+    const status = rpc("marketing_set_campaign_status", { status: 204 });
     const { result } = renderMutation(() => useSaveCampaign());
 
-    await expect(
-      result.current.mutateAsync({ name: "Reativação", slug: "reativacao" }),
-    ).rejects.toThrow(/duplicate key/);
+    await result.current.mutateAsync({ id: "camp-1", name: "Reativação", status: "paused" });
+
+    expect(status.ultimoBody).toEqual({ p_campaign_id: "camp-1", p_status: "paused" });
   });
 });
 
@@ -276,35 +269,37 @@ describe("useRunCampaign", () => {
 });
 
 describe("useSaveDispatchConfig", () => {
-  it("grava só a chave que mudou", async () => {
-    const patch = tabela("app_setting", "patch", { json: [] });
+  it("ligar a chave geral vai pela RPC com motivo da tela", async () => {
+    const chamada = rpc("marketing_set_dispatch_enabled", { json: { changed: true, enabled: true } });
     const { result } = renderMutation(() => useSaveDispatchConfig());
 
     await result.current.mutateAsync({ enabled: true });
 
-    expect(patch.chamadas.length).toBe(1);
-    expect(patch.ultimoBody).toEqual({ value: "true" });
-    expect(patch.chamadas[0].url).toContain("key=eq.marketing_dispatch_enabled");
+    expect(chamada.ultimoBody).toEqual({ p_enabled: true, p_reason: "Alterado pela tela do Manager" });
   });
 
-  it("grava várias chaves numa tacada só", async () => {
-    const patch = tabela("app_setting", "patch", { json: [] });
-    const { result } = renderMutation(() => useSaveDispatchConfig());
-
-    await result.current.mutateAsync({ dailyCap: 500, testRecipient: "qa@movepark.co" });
-
-    expect(patch.chamadas.length).toBe(2);
-  });
-
-  it("desligar o disparo grava a string 'false', não vazio", async () => {
+  it("desligar manda false, não vazio", async () => {
     // Regressão: `if (patch.enabled)` deixaria o desligamento passar batido, e a chave geral
     // ficaria ligada achando que tinha sido desligada.
-    const patch = tabela("app_setting", "patch", { json: [] });
+    const chamada = rpc("marketing_set_dispatch_enabled", { json: { changed: true, enabled: false } });
     const { result } = renderMutation(() => useSaveDispatchConfig());
 
     await result.current.mutateAsync({ enabled: false });
 
-    expect(patch.chamadas.length).toBe(1);
-    expect(patch.ultimoBody).toEqual({ value: "false" });
+    expect((chamada.ultimoBody as { p_enabled: boolean }).p_enabled).toBe(false);
+  });
+
+  it("teto e destinatário vão numa chamada só", async () => {
+    const chamada = rpc("marketing_set_dispatch_config", { json: {} });
+    const { result } = renderMutation(() => useSaveDispatchConfig());
+
+    await result.current.mutateAsync({ dailyCap: 500, testRecipient: "qa@movepark.co" });
+
+    expect(chamada.chamadas.length).toBe(1);
+    expect(chamada.ultimoBody).toEqual({
+      p_test_recipient: "qa@movepark.co",
+      p_daily_cap: 500,
+      p_email_from: null,
+    });
   });
 });
