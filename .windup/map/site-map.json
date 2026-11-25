@@ -13658,7 +13658,8 @@
     "sig:0ed6825918fbfd7f": {
       "urls_seen": [
         "http://localhost:5273/manager/conversas",
-        "http://localhost:5273/manager/users"
+        "http://localhost:5273/manager/users",
+        "http://localhost:5273/manager/emails"
       ],
       "url_pattern": "**/manager/conversas",
       "title": "Movepark Hub",
@@ -13684,17 +13685,21 @@
         "a text=Destaques da home",
         "a text=Avaliações",
         "a text=Blog",
+        "a text=Instagram",
         "a text=FAQ",
         "a text=Usuários",
         "a text=Documentos legais",
         "a text=API interna",
+        "a text=E-mails",
         "a text=Testar a Mia",
+        "a text=Mia para operadores",
         "button type=button text=Studio dos agentes",
         "a text=Configurações",
         "button type=button text=Buscar reserva, unidade, cupom⌘K",
         "button type=button",
         "button id=radix-:r6: type=button text=QW",
-        "input placeholder=Buscar por nome, e-mail, telefone ou ID",
+        "input placeholder=Buscar pelo e-mail do destinatário",
+        "button type=button",
         "a text=Início",
         "a text=Empresas",
         "a text=Reservas",
@@ -13703,8 +13708,8 @@
       ],
       "source": "execution",
       "first_seen": "2026-10-19T19:21:41.697Z",
-      "last_seen": "2026-10-19T19:24:39.431Z",
-      "seen_count": 3,
+      "last_seen": "2026-11-25T23:26:20.316Z",
+      "seen_count": 4,
       "stale": false
     },
     "sig:831a83a1b8169cbd": {
