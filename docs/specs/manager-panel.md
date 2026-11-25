@@ -596,6 +596,13 @@ erro e o botão "Reenviar") e cada vaga mapeada com o estado da leitura de venda
 preço (com a mensagem do último erro e o botão "Conferir preço agora"). Lê tudo da RPC
 `manager_wl_health` (hub_admin). Spec: `shared-availability.md` § Saúde da integração.
 
+### 4.15 Automação de marketing (25/11/2026)
+
+Perfis e funil, leads, segmentos, campanhas e cupons, em `/manager/marketing`. Regras em
+[marketing-automation.md](./marketing-automation.md) e [marketing-rfm.md](./marketing-rfm.md). Desde
+25/11/2026 a mesma Automação está no MCP do Manager ([marketing-mcp.md](./marketing-mcp.md)), e a
+bolinha de IA da tela está desenhada em [assistente-marketing.md](./assistente-marketing.md).
+
 ## 5. Componentes Adaptados do Design System
 
 | Airbnb Token | Uso no Manager Panel |
