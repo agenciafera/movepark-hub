@@ -111,6 +111,9 @@ não conta na invariante "o Dono tem todos", que vale sobre o catálogo de empre
 | `fares:write` | – | Editar plano de cancelamento (Básica/Flex/Superflex) por tipo de vaga |
 | `blog:write` | ✔ | Criar, publicar e excluir post pelas rotas internas do blog |
 | `wl:read` | ✔ | Ler o mapeamento unidade → slug do white-label, para o agente de WhatsApp |
+| `marketing:read` | ✔ | Ler a Automação inteira pelo MCP do Manager: análises, contatos com dados completos, segmentos, campanhas, leads, cupons e configuração do disparo ([marketing-mcp.md](./marketing-mcp.md)) |
+| `marketing:write` | ✔ | Criar e editar segmento, campanha, cupom e lead; trocar destinatário de ensaio e teto diário |
+| `marketing:dispatch` | ✔ | Executar campanha e ligar ou desligar a chave geral do disparo. Separado do de edição para uma chave de edição nunca enviar nada |
 
 ### Chave de plataforma (`api_key.company_id is null`)
 

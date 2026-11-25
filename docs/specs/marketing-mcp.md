@@ -1,6 +1,9 @@
 # MCP de marketing: a IA monta segmento, campanha e cupom
 
-> **Status:** desenho aprovado em 25/11/2026, a implementar. Nada daqui existe ainda.
+> **Status:** implementado em 25/11/2026 (migrations `20261207110000_marketing_mcp_base.sql` e
+> `20261207120000_marketing_mcp_gravacao.sql`, Edges `mcp` e `marketing-run`). Falta só a chave de
+> plataforma com os três escopos, gerada pelo Kallef em `/manager/api-interna`.
+> **Plano de implementação:** [`docs/superpowers/plans/2026-11-25-marketing-mcp.md`](../superpowers/plans/2026-11-25-marketing-mcp.md).
 > **Base:** [marketing-automation.md](./marketing-automation.md) (E3.1, inclusive o § 11 com as
 > correções de 25/11/2026), [marketing-rfm.md](./marketing-rfm.md) (E3.2) e [mcp.md](./mcp.md)
 > (superfície `/manager`, § 4). Escopos: [permissions.md](./permissions.md) (ADR-005, escopo de
@@ -88,8 +91,17 @@ Tabela nova `marketing_audit_log`: `id`, `actor_kind` (`hub_admin` ou `api_key`)
 toda execução de campanha deixam uma linha. O `api_request_log` continua registrando cada chamada
 do MCP (quem e com qual escopo), mas ele não guarda o que mudou; a auditoria guarda.
 
-As RPCs de gravação recebem `p_actor_label` e só o aceitam quando quem chama é o `service_role`. Com
-`hub_admin`, o ator é sempre `auth.uid()`, para ninguém se passar por outro pela tela.
+As RPCs de gravação recebem `p_actor` (`{kind, id, label}`) e só o aceitam quando quem chama é o
+`service_role`. Com `hub_admin`, o ator é sempre `auth.uid()`, para ninguém se passar por outro pela
+tela.
+
+Cupom e lead usam as RPCs que já existiam (`manager_upsert_platform_coupon`,
+`manager_set_platform_coupon_active`, `marketing_move_lead`), que não gravam auditoria. Pelo MCP, o
+handler grava a linha depois de cada uma; pela tela, essas três seguem sem auditoria.
+
+Toda recusa de negócio das RPCs novas sai em `P0001`, porque é o único código cuja mensagem o MCP
+repassa ao cliente (`safeToolError`); com outro código a IA receberia "Parâmetro inválido" e não
+saberia o que corrigir.
 
 ## 4. Escopos
 
@@ -116,6 +128,7 @@ entre registros" em `mcp.md`).
 
 | Tool | Entrada | Devolve |
 |---|---|---|
+| `marketing_list_locations` | nada | Unidades com id, nome, empresa e destino. Sem ela a IA não teria como recortar por estacionamento |
 | `marketing_get_rfm` | `location_ids?`, `window_days?` | Matriz RFM, totais, segmentos e oportunidades (`marketing_rfm_overview`) |
 | `marketing_get_funnel` | `from`, `to`, `location_ids?` | Funil do período, perdas e cliques de saída (`marketing_conversion_funnel`) |
 | `marketing_get_discoveries` | `location_ids?`, `window_days?` | As descobertas com estado `achado`/`estavel`/`sem_dados` |
@@ -140,7 +153,7 @@ leem só `marketing_*` e `booking`, e nunca `wl_booking`.
 
 | Tool | Entrada | O que faz |
 |---|---|---|
-| `marketing_save_segment` | `segment_id?`, `name`, `definition`, `description?` | Cria ou edita. Campo ou operador desconhecido é recusado. Segmento de sistema não muda |
+| `marketing_save_segment` | `segment_id?`, `name`, `definition`, `description?`, `location_ids?` | Cria ou edita. Campo ou operador desconhecido é recusado. Segmento de sistema não muda |
 | `marketing_delete_segment` | `segment_id` | Soft delete; recusa segmento de sistema e segmento de campanha em andamento |
 | `marketing_save_campaign` | `campaign_id?`, `name`, `segment_id`, `location_ids?`, `canvas?`, `send_cap?` | Cria ou edita, sempre como rascunho ou pausada. Devolve os problemas de prontidão |
 | `marketing_set_campaign_status` | `campaign_id`, `status` (`draft`, `paused`, `archived`) | `running` e `done` são do motor, não da tool |

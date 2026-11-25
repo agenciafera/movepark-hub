@@ -190,8 +190,9 @@ export async function callMarketing(
 
     case "marketing_get_contact": {
       const chave = contactKeyFrom(a);
+      // Sem o unsubscribe_token: ele é a credencial do link de descadastro e não tem uso aqui.
       const { data: contato, error } = await db.from("marketing_contact")
-        .select("*")
+        .select("id, contact_key, profile_id, marketing_email, marketing_phone, display_name, source, owner_id, tags, custom, email_consent, whatsapp_consent, consent_source, consent_at, unsubscribed_at, last_synced_at, created_at, updated_at")
         .eq("contact_key", chave)
         .is("deleted_at", null)
         .maybeSingle();

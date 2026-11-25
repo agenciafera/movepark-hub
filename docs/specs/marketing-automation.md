@@ -328,6 +328,14 @@ carimbar faria a matrícula excluir quem ainda aceita e-mail.
 
 ## 8. Segurança
 
+**Desde 25/11/2026 (MCP de marketing):** as RPCs de painel travam em `marketing_can_manage()`, que
+aceita `hub_admin` e o `service_role` (o MCP do Manager) e continua recusando cliente logado comum.
+Segmento, campanha e configuração do disparo só se gravam pelas RPCs `marketing_save_segment`,
+`marketing_delete_segment`, `marketing_save_campaign`, `marketing_set_campaign_status`,
+`marketing_set_dispatch_config` e `marketing_set_dispatch_enabled`, que validam no servidor e deixam
+linha em `marketing_audit_log`; as políticas de `marketing_segment` e `marketing_campaign` viraram
+só leitura. Ver [marketing-mcp.md](./marketing-mcp.md).
+
 `marketing_contact_metrics`, `marketing_contact_doc`, `marketing_contact_key`, `marketing_eval_rule` e
 `marketing_eval_definition` são **ajudantes internos**: `security definer` sem gate próprio, chamados
 de dentro das RPCs do painel.
