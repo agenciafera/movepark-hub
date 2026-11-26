@@ -23,7 +23,7 @@ let corpo = readFileSync(teste, "utf8")
   .replace(/^\s*rollback;\s*$/im, "");
 // Cada asserção de topo vira uma linha na temp table.
 corpo = corpo.replace(
-  /^select (is|isnt|ok|throws_ok|lives_ok|results_eq|has_table|has_function)\(/gim,
+  /^select (is|isnt|ok|throws_ok|lives_ok|results_eq|set_eq|bag_eq|has_table|has_function)\(/gim,
   "insert into _tap(line) select $1(",
 );
 

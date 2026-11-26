@@ -56,9 +56,10 @@ select set_eq(
     'blog_post_redirect',    -- mapa de slug antigo do blog; lido só pela RPC url_legacy_map
     'payment_charge_lock',   -- trava de cobrança por reserva (MP-07DAE9); só Edge de cobrança
     'operator_assist_session', -- sessão da Mia do operador (hash do token); só Edge, o front nunca lê
-    'operator_knowledge_chunk' -- base da Mia do operador; leitura só pela RPC de busca, via Edge
+    'operator_knowledge_chunk', -- base da Mia do operador; leitura só pela RPC de busca, via Edge
+    'marketing_assist_session' -- token mpm_ do assistente da Automação (26/11/2026); só a Edge marketing-assistant e o resolve do MCP
   ],
-  'as tabelas fail-closed são exatamente estas quinze'
+  'as tabelas fail-closed são exatamente estas dezesseis'
 );
 
 -- ── nenhuma escrita passa com predicado trivial ──────────────────────────────
