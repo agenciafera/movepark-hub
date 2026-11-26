@@ -3,7 +3,9 @@
 > **Status:** v2 implementada e no ar em 26/11/2026. Página `/manager/marketing/assistente`, Edge
 > `marketing-assistant` como ponte, superfície `/marketing` do MCP e agente `movepark-marketing` no
 > beast-bots (PR agenciafera/beast-bots#9; evals 6 de 6). A v1 (bolinha e laço do Gemini na Edge)
-> saiu. Conferido no vivo: sem token e com a chave anon 401, cliente 403, admin lista as conversas.
+> saiu. No mesmo dia, depois do primeiro uso, a tela passou a recolher os passos e a persona a
+> conversar antes de executar (beast-bots#10), e o agente virou especialista, com números medidos
+> na base e um manual por objetivo (beast-bots#11; evals 14 de 14). Conferido no vivo: sem token e com a chave anon 401, cliente 403, admin lista as conversas.
 > Nenhuma campanha foi executada e a chave geral segue desligada.
 > **Base:** [marketing-mcp.md](./marketing-mcp.md) (registro de tools de marketing em
 > `supabase/functions/_shared/marketing/`, gravação auditada, motor compartilhado) e
@@ -149,6 +151,23 @@ de `_shared/marketing/assistant-prompt.ts` da v1, que sai do Hub:
    resolvido (`marketing-automation.md` § 10), então avisar antes de propor disparo real.
 9. Resposta curta; tabela e gráfico já aparecem na tela, então o texto comenta o resultado em vez
    de repetir os números linha a linha.
+10. Conversa antes de executar (26/11/2026, beast-bots#10): a pergunta de opinião recebe opinião
+    em poucas linhas e um próximo passo; o agente só monta, mede ou salva quando o admin pede ou
+    topa, usa o mínimo de tools e nunca mostra id, nome de campo, título com `#`, tabela ou código.
+11. Especialista com dado da Movepark (26/11/2026, beast-bots#11). A persona traz o que foi
+    **medido** em `marketing_booking_fact` e `marketing_contact_doc` naquele dia, com a data no
+    texto para o agente saber a idade do número: 192 compras de 183 clientes desde 17/09/2026;
+    53% reservam até 2 dias antes, 72% até 7 e 82% até 14; estadia típica de 4 a 9 dias; ticket
+    típico de R$ 167; 60% Básica, 30% Flex, 10% Superflex; 59% no site e 26% pela Mia; 205
+    checkouts vencidos sem pagar, e 28% de quem abandona volta sozinho em cerca de 1h30; 7 clientes
+    com segunda compra; 87% com e-mail, 88% com telefone, nenhum consentimento de WhatsApp. E um
+    manual curto por objetivo: carrinho abandonado (primeira hora, primeiro toque sem desconto,
+    cupom com teto só no segundo, quadro de Leads mais e-mail executado duas vezes por dia, porque
+    não há agenda automática), segunda compra (1 a 3 dias depois da volta), feriado (de 7 a 3 dias
+    antes), reativação (mais de 60 dias, público pequeno), medição (reserva paga, 30 dias depois
+    contra 30 antes, porque a ferramenta não tem grupo de controle), frequência e copy. Toda
+    recomendação diz como medir e não promete resultado. **Remeça os números quando a base
+    crescer** e troque a data no texto.
 
 ## 6. Contrato da Edge `marketing-assistant` (tela ↔ Hub)
 
@@ -241,9 +260,10 @@ Sem tabela de conversa nem de mensagem: a conversa é a thread do Mastra (D3).
 | Deno, MCP `/marketing` | 401 sem uma das duas credenciais; leitura e gravação rodam com o admin como ator; as duas tools de disparo gravam proposta e **não** executam; proposta com problema nasce `blocked` |
 | Deno, Edge `marketing-assistant` | só `hub_admin`; teto de uso; o resource vem do JWT; confirmar usa os argumentos gravados; segundo clique não executa; proposta vencida ou de outro admin é recusada; token apagado no fim do stream |
 | Vitest | cada componente por tool (com dados de exemplo), lista de conversas (nova, abrir, renomear, apagar), cartão de proposta nos estados proposto, bloqueado, executando, feito, falhou, descartado e vencido, iframe da prévia sem script |
-| beast-bots (testes e evals) | contrato da rota (token, thread do resource, recusa do token de admin); evals com MCP falso: monta o segmento pelos campos certos, mede antes de salvar, não diz que disparou, ignora pedido escondido em mensagem de lead |
+| beast-bots (testes e evals) | contrato da rota (token, thread do resource, recusa do token de admin); evals com MCP falso e o modelo de verdade: monta o segmento pelos campos certos, mede antes de salvar, não diz que disparou, ignora pedido escondido em mensagem de lead, responde opinião curta e sem despejar dado, e recomenda como especialista (janela e limite honesto no abandono, desconto fora do primeiro toque, antecedência curta no feriado, por onde começar e como medir) |
 
-Nenhum teste chama o modelo de verdade nem executa campanha.
+Os testes não chamam o modelo. As evals chamam, contra um MCP falso, e julgam o texto real das
+respostas (`EVAL_MOSTRAR=1 bun run eval:marketing` imprime cada uma). Nenhuma executa campanha.
 
 ## 11. Ordem de entrega
 
