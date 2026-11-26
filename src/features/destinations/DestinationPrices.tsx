@@ -91,6 +91,15 @@ export function DestinationPriceTable({
             ? T.escolhaDuracao(true)
             : T.escolhaDuracao(false)}
         </p>
+        {/* A data no topo, e não só no rodapé miúdo. Em 26/11/2026 os comparadores da mesma
+            SERP mostravam "conferido em 17/11" e "atualizado hoje" acima da tabela, e a data é
+            o primeiro critério que buscador e IA usam para escolher a fonte de um preço. O
+            preço do parceiro é o do motor no build, então a data é a do build. */}
+        {generatedAt && !soPesquisa && (
+          <p className="text-body-sm font-medium text-ink">
+            {T.conferidoEm} <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>.
+          </p>
+        )}
       </div>
 
       {/* Resposta rápida: o menor preço por duração, extraível por buscador e IA
@@ -438,18 +447,11 @@ export function DestinationPriceTable({
               {T.avisoPesquisado}{" "}
             </>
           )}
-          {generatedAt && (
+          {/* A data de conferência subiu para o topo da tabela; aqui fica a procedência da
+              tabela do parceiro, que é outra data. */}
+          {generatedAt && lastUpdated && (
             <>
-              Conferido no motor de reservas em{" "}
-              <time dateTime={generatedAt}>{formatDate(generatedAt)}</time>
-              {lastUpdated && (
-                <>
-                  {" "}
-                  · tabela de parceiro mais recente de{" "}
-                  <time dateTime={lastUpdated}>{formatDate(lastUpdated)}</time>
-                </>
-              )}
-              .
+              {T.tabelaParceiroDe} <time dateTime={lastUpdated}>{formatDate(lastUpdated)}</time>.
             </>
           )}
         </p>

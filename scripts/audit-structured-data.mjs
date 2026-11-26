@@ -13,8 +13,10 @@
  *
  * Sai com código 1 quando há erro. Aviso não reprova: é campo recomendado, não obrigatório.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+
+import { perguntasFaltandoNoMd } from "./faq-camadas.mjs";
 
 const RAIZ = "dist";
 const erros = [];
@@ -185,6 +187,40 @@ for (const f of htmls(RAIZ).sort()) {
     }
   }
 }
+
+// Paridade do gêmeo Markdown da praça: toda pergunta do FAQPage da página de destino tem que
+// estar no `.md` da mesma rota, que é o que agente de IA lê. Em 26/11/2026 o `.md` de Congonhas
+// trazia 12 das 21, porque o gerador esquecia a camada global (ADR-002).
+const DESTINOS = join(RAIZ, "estacionamentos");
+let paridade = 0;
+if (existsSync(DESTINOS)) {
+  for (const e of readdirSync(DESTINOS).filter((n) => n.endsWith(".html")).sort()) {
+    const md = join(DESTINOS, e.replace(/\.html$/, ".md"));
+    if (!existsSync(md)) continue;
+    const html = readFileSync(join(DESTINOS, e), "utf8");
+    const perguntas = [];
+    for (const [, bruto] of html.matchAll(
+      /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g,
+    )) {
+      try {
+        for (const no of lista(JSON.parse(bruto))) {
+          if (lista(no["@type"]).includes("FAQPage")) {
+            for (const q of lista(no.mainEntity)) if (q?.name) perguntas.push(q.name);
+          }
+        }
+      } catch {
+        // JSON-LD inválido já virou erro no laço acima.
+      }
+    }
+    if (perguntas.length === 0) continue;
+    paridade++;
+    const rota = "/estacionamentos/" + e.replace(/\.html$/, "");
+    for (const q of perguntasFaltandoNoMd(perguntas, readFileSync(md, "utf8"))) {
+      erros.push({ rota, caminho: "FAQPage", m: `pergunta do FAQPage fora do .md: ${q}` });
+    }
+  }
+}
+console.log(`paridade FAQ html x md: ${paridade} páginas de destino conferidas`);
 
 const total = [...tipos.values()].reduce((a, b) => a + b, 0);
 console.log(`schema: ${paginas} páginas, ${total} nós, ${erros.length} erros, ${avisos.length} avisos`);

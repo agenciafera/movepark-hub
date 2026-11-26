@@ -980,9 +980,17 @@ describe("DestinoPage · quanto custa e distância", () => {
 
     render();
 
-    const nota = screen.getByText(/Conferido no motor de reservas em/i);
-    expect(nota.textContent).toMatch(/17\/08\/2026/);
-    expect(nota.textContent).toMatch(/tabela de parceiro mais recente de 16\/08\/2026/);
+    // A data de conferência fica no topo da tabela, junto do título (26/11/2026), e a da
+    // tabela do parceiro fica no rodapé: são duas datas diferentes.
+    const conferido = screen.getByText(/Conferido no motor de reservas em/i);
+    expect(conferido.textContent).toMatch(/17\/08\/2026/);
+    expect(
+      conferido.compareDocumentPosition(screen.getByRole("table")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByText(/Tabela de parceiro mais recente de/i).textContent).toMatch(
+      /16\/08\/2026/,
+    );
     expect(document.body.textContent).not.toMatch(/cobrado no checkout/i);
     expect(screen.getByRole("link", { name: /Ver a tabela completa de preços/i })).toHaveAttribute(
       "href",

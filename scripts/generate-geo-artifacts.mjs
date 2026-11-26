@@ -25,6 +25,7 @@ import path from "node:path";
 import { DEFAULT_SITE_URL } from "../src/lib/site-host.mjs";
 import { agruparGuiasPorDestino, rebaixarHeadings } from "./llms-indice.mjs";
 import { buildPriceIndexJson } from "./price-index-json.mjs";
+import { faqDaPaginaDeDestino } from "./faq-camadas.mjs";
 import { fraseTraslado } from "./traslado.mjs";
 import { respostaMaisBarato } from "../src/lib/resposta-mais-barato.mjs";
 
@@ -1074,13 +1075,21 @@ function tabelaTopMarkdown(dest, limit = 5) {
       linhas.push("");
     }
 
-    const faqsDest = porDestino.get(d.slug) ?? [];
-    if (faqsDest.length > 0) {
+    // As mesmas duas camadas da página (ADR-002): as do destino e, depois, as gerais, que a
+    // página mostra no accordion e põe no FAQPage. Sem as gerais o .md tinha metade das
+    // perguntas do HTML (12 contra 21 em Congonhas, 26/11/2026).
+    const { doDestino: faqsDest, gerais: faqsGerais } = faqDaPaginaDeDestino(faqs, d.slug);
+    const blocoPergunta = (f) => {
+      linhas.push(`### ${f.question}`, "");
+      if (f.slug) linhas.push(`URL: ${urlPergunta(f)}`, "");
+      linhas.push(f.answer, "");
+    };
+    if (faqsDest.length > 0 || faqsGerais.length > 0) {
       linhas.push("## Perguntas frequentes", "");
-      for (const f of faqsDest) {
-        linhas.push(`### ${f.question}`, "");
-        if (f.slug) linhas.push(`URL: ${urlPergunta(f)}`, "");
-        linhas.push(f.answer, "");
+      faqsDest.forEach(blocoPergunta);
+      if (faqsGerais.length > 0) {
+        linhas.push("## Perguntas gerais sobre reservar pela Movepark", "");
+        faqsGerais.forEach(blocoPergunta);
       }
     }
 

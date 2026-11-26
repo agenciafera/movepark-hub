@@ -142,6 +142,8 @@ export type Textos = {
   menorOnline: (pct: number) => string;
   precoBalcao: string;
   conferidoEm: string;
+  /** Rodapé da tabela da praça: a data da tabela de preço mais recente entre os parceiros. */
+  tabelaParceiroDe: string;
   tabelaCompleta: string;
   comoApuramos: string;
   verNaPagina: string;
@@ -361,6 +363,7 @@ const PT: Textos = {
   menorOnline: (p) => `${p}% menor online`,
   precoBalcao: "Preço riscado: balcão do estacionamento, sem reserva.",
   conferidoEm: "Conferido no motor de reservas em",
+  tabelaParceiroDe: "Tabela de parceiro mais recente de",
   tabelaCompleta: "Ver a tabela completa de preços",
   comoApuramos: "Como a Movepark apura preço e distância",
   verNaPagina: "ver na página",
@@ -581,6 +584,7 @@ const EN: Textos = {
   menorOnline: (p) => `${p}% cheaper online`,
   precoBalcao: "Struck-through price: the lot's walk-in rate, without a booking.",
   conferidoEm: "Checked against the booking engine on",
+  tabelaParceiroDe: "Most recent partner price list from",
   tabelaCompleta: "See the full price table",
   comoApuramos: "How Movepark sources price and distance",
   verNaPagina: "see on the lot page",
@@ -804,6 +808,7 @@ const ES: Textos = {
   menorOnline: (p) => `${p}% más barato en línea`,
   precoBalcao: "Precio tachado: tarifa de mostrador del estacionamiento, sin reserva.",
   conferidoEm: "Verificado en el motor de reservas el",
+  tabelaParceiroDe: "Tarifa de socio más reciente del",
   tabelaCompleta: "Ver la tabla completa de precios",
   comoApuramos: "Cómo Movepark obtiene precio y distancia",
   verNaPagina: "ver en la página",
