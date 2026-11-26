@@ -1,224 +1,193 @@
-// Assistente da tela de Automação: o laço de um turno com o Gemini, sem rede nem banco.
-//
-// As dependências (Gemini, execução de tool, resumo do cartão) chegam injetadas, para o teste
-// provar a regra que importa: as duas tools de disparo NUNCA executam dentro do laço; viram proposta
-// e esperam o clique do admin. Spec: docs/specs/assistente-marketing.md § 3 e § 5.
+// Lógica pura da Edge marketing-assistant: a ponte da página Assistente de IA com o agente
+// movepark-marketing do beast-bots. Ver docs/specs/assistente-marketing.md § 6.
 
-import { prepararArgs } from "../_shared/marketing/gemini.ts";
-import { MARKETING_TOOLS } from "../_shared/marketing/tools.ts";
-import type { PaginaDoAdmin } from "../_shared/marketing/assistant-prompt.ts";
-
-// ── Wire do Gemini (v1beta generateContent) ─────────────────────────────────
-export interface GeminiPart {
-  text?: string;
-  functionCall?: { name: string; args: Record<string, unknown> };
-  functionResponse?: { name: string; response: Record<string, unknown> };
-}
-export interface GeminiContent {
-  role: "user" | "model";
-  parts: GeminiPart[];
-}
-
-export const DISPATCH_TOOLS = new Set(["marketing_run_campaign", "marketing_set_dispatch_enabled"]);
-const WRITE_TOOLS = new Set(MARKETING_TOOLS.filter((t) => t.scope === "marketing:write").map((t) => t.name));
-export const MAX_ROUNDS = 8;
-export const MAX_MENSAGENS = 20;
-const MAX_TEXTO = 4000;
+export const TOKEN_MINUTOS = 30;
+const TETO_DA_FALA = 4000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type Mensagem = { papel: "usuario" | "assistente"; texto: string };
-export type Pagina = PaginaDoAdmin;
-export type Proposta = { tool: string; args: Record<string, unknown>; resumo: Record<string, unknown> };
-export type Turno = {
-  resposta: string;
-  ferramentas: Array<{ nome: string; ok: boolean }>;
-  propostas: Proposta[];
-  gravou: boolean;
-};
-export type ToolFn = (nome: string, args: Record<string, unknown>) => Promise<unknown>;
-export type TurnoDeps = {
-  gemini: (contents: GeminiContent[]) => Promise<GeminiContent | null>;
-  tool: ToolFn;
-  resumir: (nome: string, args: Record<string, unknown>) => Promise<Record<string, unknown>>;
-};
+export type MensagemDoUsuario = { id: string; role: "user"; parts: Array<{ type: "text"; text: string }> };
 
-const AVISO_FALHA = "Não consegui falar com o modelo agora. Tente de novo em alguns segundos.";
-const AVISO_LIMITE =
-  "Não consegui concluir em poucas etapas. Tente dividir o pedido em partes menores.";
+// Um membro por ação: o TypeScript não estreita um membro cuja `acao` é união de literais.
+export type Corpo =
+  | { acao: "conversar"; conversaId: string; mensagem: MensagemDoUsuario }
+  | { acao: "conversas" }
+  | { acao: "abrir"; conversaId: string }
+  | { acao: "apagar"; conversaId: string }
+  | { acao: "renomear"; conversaId: string; titulo: string }
+  | { acao: "confirmar"; propostaId: string }
+  | { acao: "descartar"; propostaId: string };
 
-function erroLegivel(e: unknown): string {
-  if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
-  return String(e);
+/** Uma linha só, sem caractere de controle nem separador de linha, com teto. */
+function umaLinha(v: unknown, teto: number): string {
+  if (typeof v !== "string") return "";
+  return v.replace(/[\p{Cc}\p{Zl}\p{Zp}]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, teto);
 }
 
-export function lerConversa(
-  body: unknown,
-): { ok: true; mensagens: Mensagem[]; pagina: Pagina } | { ok: false; erro: string } {
+function lerMensagem(v: unknown): MensagemDoUsuario | null {
+  const m = (v ?? {}) as { id?: unknown; role?: unknown; parts?: unknown };
+  if (m.role !== "user" || typeof m.id !== "string" || !Array.isArray(m.parts) || m.parts.length === 0) return null;
+  const partes = m.parts as Array<{ type?: unknown; text?: unknown }>;
+  if (!partes.every((p) => p?.type === "text" && typeof p.text === "string")) return null;
+  const texto = partes.map((p) => p.text as string).join("");
+  if (!texto.trim() || texto.length > TETO_DA_FALA) return null;
+  return { id: m.id.slice(0, 64), role: "user", parts: partes.map((p) => ({ type: "text" as const, text: p.text as string })) };
+}
+
+export function lerCorpo(body: unknown): { ok: true; corpo: Corpo } | { ok: false; erro: string } {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
-  const brutas = Array.isArray(b.mensagens) ? b.mensagens : [];
-  const mensagens = brutas
-    .filter((m): m is Record<string, unknown> => !!m && typeof m === "object")
-    .filter((m) => (m.papel === "usuario" || m.papel === "assistente") && typeof m.texto === "string")
-    .map((m) => ({ papel: m.papel as Mensagem["papel"], texto: String(m.texto).slice(0, MAX_TEXTO).trim() }))
-    .filter((m) => m.texto.length > 0)
-    .slice(-MAX_MENSAGENS);
-  if (mensagens.length === 0 || mensagens[mensagens.length - 1].papel !== "usuario") {
-    return { ok: false, erro: "Mande uma mensagem." };
-  }
-  const p = (b.pagina && typeof b.pagina === "object" ? b.pagina : {}) as Record<string, unknown>;
-  const pagina: Pagina = {};
-  if (typeof p.caminho === "string") pagina.caminho = p.caminho.slice(0, 200);
-  if (typeof p.campaign_id === "string" && UUID.test(p.campaign_id)) pagina.campaign_id = p.campaign_id;
-  if (typeof p.segment_id === "string" && UUID.test(p.segment_id)) pagina.segment_id = p.segment_id;
-  return { ok: true, mensagens, pagina };
-}
-
-export function toContents(mensagens: Mensagem[]): GeminiContent[] {
-  return mensagens.map((m) => ({
-    role: m.papel === "usuario" ? "user" : "model",
-    parts: [{ text: m.texto }],
-  }));
-}
-
-function chamadas(c: GeminiContent): Array<{ name: string; args: Record<string, unknown> }> {
-  return (c.parts ?? [])
-    .map((p) => p.functionCall)
-    .filter((f): f is { name: string; args: Record<string, unknown> } => !!f);
-}
-
-function textoDe(c: GeminiContent): string {
-  return (c.parts ?? []).map((p) => (typeof p.text === "string" ? p.text : "")).join("").trim();
-}
-
-export async function rodarTurno(mensagens: Mensagem[], deps: TurnoDeps): Promise<Turno> {
-  const contents = toContents(mensagens);
-  const ferramentas: Turno["ferramentas"] = [];
-  const propostas: Proposta[] = [];
-  let gravou = false;
-
-  for (let rodada = 0; rodada < MAX_ROUNDS; rodada++) {
-    let resp: GeminiContent | null;
-    try {
-      resp = await deps.gemini(contents);
-    } catch {
-      resp = null;
+  const conversa = typeof b.conversa_id === "string" && UUID.test(b.conversa_id) ? b.conversa_id : null;
+  const proposta = typeof b.proposta_id === "string" && UUID.test(b.proposta_id) ? b.proposta_id : null;
+  switch (b.acao) {
+    case "conversas":
+      return { ok: true, corpo: { acao: "conversas" } };
+    case "conversar": {
+      const mensagem = lerMensagem(b.mensagem);
+      if (!conversa || !mensagem) return { ok: false, erro: "Mande a conversa e uma fala de até 4000 caracteres." };
+      return { ok: true, corpo: { acao: "conversar", conversaId: conversa, mensagem } };
     }
-    if (!resp) return { resposta: AVISO_FALHA, ferramentas, propostas, gravou };
-
-    const pedidas = chamadas(resp);
-    if (pedidas.length === 0) {
-      return { resposta: textoDe(resp) || "Pronto.", ferramentas, propostas, gravou };
+    case "abrir":
+    case "apagar":
+      if (!conversa) return { ok: false, erro: "Falta a conversa." };
+      return { ok: true, corpo: { acao: b.acao, conversaId: conversa } };
+    case "renomear": {
+      const titulo = umaLinha(b.titulo, 80);
+      if (!conversa || !titulo) return { ok: false, erro: "O título precisa de 1 a 80 caracteres." };
+      return { ok: true, corpo: { acao: "renomear", conversaId: conversa, titulo } };
     }
-
-    contents.push(resp);
-    const resultados: Array<{ name: string; response: Record<string, unknown> }> = [];
-
-    for (const c of pedidas) {
-      const preparado = prepararArgs(c.name, c.args ?? {});
-      if (!preparado.ok) {
-        resultados.push({ name: c.name, response: { erro: preparado.erro } });
-        ferramentas.push({ nome: c.name, ok: false });
-        continue;
-      }
-
-      if (DISPATCH_TOOLS.has(c.name)) {
-        try {
-          const resumo = await deps.resumir(c.name, preparado.args);
-          propostas.push({ tool: c.name, args: preparado.args, resumo });
-          resultados.push({
-            name: c.name,
-            response: {
-              status: "proposta_criada",
-              mensagem: "O admin vê um cartão com o efeito e decide se confirma. Nada foi executado.",
-              resumo,
-            },
-          });
-          ferramentas.push({ nome: c.name, ok: true });
-        } catch (e) {
-          resultados.push({ name: c.name, response: { erro: erroLegivel(e) } });
-          ferramentas.push({ nome: c.name, ok: false });
-        }
-        continue;
-      }
-
-      try {
-        const r = await deps.tool(c.name, preparado.args);
-        resultados.push({ name: c.name, response: { resultado: r as unknown } as Record<string, unknown> });
-        ferramentas.push({ nome: c.name, ok: true });
-        if (WRITE_TOOLS.has(c.name)) gravou = true;
-      } catch (e) {
-        resultados.push({ name: c.name, response: { erro: erroLegivel(e) } });
-        ferramentas.push({ nome: c.name, ok: false });
-      }
-    }
-
-    contents.push({
-      role: "user",
-      parts: resultados.map((r) => ({ functionResponse: { name: r.name, response: r.response } })),
-    });
+    case "confirmar":
+    case "descartar":
+      if (!proposta) return { ok: false, erro: "Falta a proposta." };
+      return { ok: true, corpo: { acao: b.acao, propostaId: proposta } };
+    default:
+      return { ok: false, erro: "Ação desconhecida." };
   }
-
-  return { resposta: AVISO_LIMITE, ferramentas, propostas, gravou };
 }
 
-/** O que o cartão mostra antes do clique: o efeito, com número que veio das tools. */
-export async function resumirProposta(
-  nome: string,
-  args: Record<string, unknown>,
-  tool: ToolFn,
-): Promise<Record<string, unknown>> {
-  if (nome === "marketing_run_campaign") {
-    const c = (await tool("marketing_get_campaign", { campaign_id: args.campaign_id })) as {
-      campanha?: { name?: string; status?: string; segment_id?: string | null };
-      problemas?: string[];
-    };
-    const cfg = (await tool("marketing_get_dispatch_config", {})) as { enabled?: boolean };
-    let seg: { name?: string; total?: number; reachable_email?: number; reachable_whatsapp?: number } | null =
-      null;
-    if (c?.campanha?.segment_id) {
-      const l = (await tool("marketing_list_segments", {})) as {
-        segmentos?: Array<{ id: string; name?: string; total?: number; reachable_email?: number; reachable_whatsapp?: number }>;
-      };
-      seg = l?.segmentos?.find((s) => s.id === c.campanha?.segment_id) ?? null;
-    }
-    return {
-      campanha: c?.campanha?.name ?? null,
-      status: c?.campanha?.status ?? null,
-      segmento: seg?.name ?? null,
-      publico: seg?.total ?? 0,
-      alcance_email: seg?.reachable_email ?? 0,
-      alcance_whatsapp: seg?.reachable_whatsapp ?? 0,
-      disparo_ligado: cfg?.enabled === true,
-      problemas: c?.problemas ?? [],
-    };
+export interface Config {
+  enabled: boolean;
+  max_turns_per_user_hour: number;
+}
+const PADRAO: Config = { enabled: true, max_turns_per_user_hour: 60 };
+
+/** `app_setting.value` é texto. Valor torto cai no padrão, mas `enabled: false` explícito vale. */
+export function lerConfig(valor: string | null | undefined): Config {
+  if (!valor) return PADRAO;
+  try {
+    const v = JSON.parse(valor) as Partial<Config>;
+    const n = typeof v.max_turns_per_user_hour === "number" && v.max_turns_per_user_hour > 0
+      ? Math.floor(v.max_turns_per_user_hour)
+      : PADRAO.max_turns_per_user_hour;
+    return { enabled: v.enabled !== false, max_turns_per_user_hour: n };
+  } catch {
+    return PADRAO;
   }
-  if (nome === "marketing_set_dispatch_enabled") {
-    const cfg = (await tool("marketing_get_dispatch_config", {})) as { enabled?: boolean };
-    return {
-      ligar: args.enabled === true,
-      motivo: String(args.reason ?? ""),
-      disparo_ligado_agora: cfg?.enabled === true,
-    };
-  }
-  return {};
 }
 
-/** O clique em Confirmar: só as duas tools de disparo, com o que cada uma exige. */
-export function lerConfirmacao(
-  body: unknown,
-): { ok: true; tool: string; args: Record<string, unknown> } | { ok: false; erro: string } {
-  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
-  const tool = String(b.tool ?? "");
-  const args = (b.args && typeof b.args === "object" ? b.args : {}) as Record<string, unknown>;
-  if (!DISPATCH_TOOLS.has(tool)) return { ok: false, erro: "Só execução de campanha e chave geral passam por confirmação." };
+/** Teto de uso. O beast-bots não tem teto de custo; ele mora aqui. */
+export function dentroDoLimite(c: Config, turnosNaHora: number): string | null {
+  if (!c.enabled) return "O assistente está desligado agora.";
+  if (turnosNaHora >= c.max_turns_per_user_hour) {
+    return `Você chegou ao limite de ${c.max_turns_per_user_hour} mensagens por hora. Tente de novo daqui a pouco.`;
+  }
+  return null;
+}
+
+export function resourceDe(userId: string): string {
+  return `movepark-marketing:hub:${userId}`;
+}
+
+export function memoriaDe(userId: string, conversaId: string) {
+  const resource = resourceDe(userId);
+  return { resource, thread: `${resource}:${conversaId}` };
+}
+
+/** O corpo do `/marketing/conversas`, montado com o id do JWT. O corpo da página não escolhe dono. */
+export function pedidoDeConversa(
+  userId: string,
+  c: Extract<Corpo, { acao: "conversas" | "abrir" | "apagar" | "renomear" }>,
+): Record<string, unknown> {
+  if (c.acao === "conversas") return { acao: "listar", resource: resourceDe(userId) };
+  const m = memoriaDe(userId, c.conversaId);
+  return c.acao === "renomear"
+    ? { acao: "renomear", resource: m.resource, thread: m.thread, titulo: c.titulo }
+    : { acao: c.acao, resource: m.resource, thread: m.thread };
+}
+
+/** Token `mpm_`: 24 bytes aleatórios em hex. O banco guarda só o sha256. */
+export function novoToken(bytes: Uint8Array): string {
+  return "mpm_" + [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export type PropostaGravada = {
+  id: string;
+  profile_id: string;
+  status: string;
+  expires_at: string;
+  tool: string;
+  args: Record<string, unknown>;
+};
+
+export type Decisao =
+  | { tipo: "recusar"; status: 404 | 409 | 410; erro: string }
+  | { tipo: "estado" }
+  | { tipo: "executar" };
+
+/**
+ * O que fazer com um clique em Confirmar. Proposta já decidida devolve o estado como está, sem
+ * executar: é o que torna o segundo clique inofensivo.
+ */
+export function decidirConfirmacao(p: PropostaGravada | null, userId: string, agora: Date): Decisao {
+  if (!p || p.profile_id !== userId) return { tipo: "recusar", status: 404, erro: "Proposta não encontrada." };
+  if (p.status === "blocked") {
+    return { tipo: "recusar", status: 409, erro: "Esta proposta tem problemas e não pode ser confirmada." };
+  }
+  if (p.status !== "proposed") return { tipo: "estado" };
+  if (new Date(p.expires_at).getTime() <= agora.getTime()) {
+    return { tipo: "recusar", status: 410, erro: "Esta proposta venceu. Peça de novo ao assistente." };
+  }
+  return { tipo: "executar" };
+}
+
+export function resumoDoResultado(tool: string, r: unknown): string {
+  const o = (r && typeof r === "object" ? r : {}) as Record<string, unknown>;
   if (tool === "marketing_run_campaign") {
-    if (typeof args.campaign_id !== "string" || !args.campaign_id) {
-      return { ok: false, erro: "Falta a campanha." };
+    const base = `${Number(o.enrolled ?? 0)} matrículas, ${Number(o.sent ?? 0)} envios agora.`;
+    return o.dispatchEnabled === false ? `${base} Chave geral desligada: nada saiu para cliente.` : base;
+  }
+  if (tool === "marketing_set_dispatch_enabled") return o.enabled === true ? "Chave geral ligada." : "Chave geral desligada.";
+  return "Feito.";
+}
+
+/** Uma decisão de cartão, do jeito que o agente lê no contexto do turno seguinte. */
+export function acaoRecente(a: { id: string; tool: string; status: string; resultado: unknown; erro: string | null }) {
+  const r = (a.resultado ?? {}) as { resumo?: unknown };
+  return {
+    proposta_id: a.id,
+    tool: a.tool,
+    status: a.status,
+    resultado: typeof r.resumo === "string" ? r.resumo : (a.erro ?? null),
+  };
+}
+
+/**
+ * Repassa o stream do beast-bots para a página sem mexer, e chama `aoTerminar` uma vez quando ele
+ * acaba: fim normal, quebra da origem ou cancelamento pela página. É o que encerra o token.
+ */
+export function repassarStream(
+  origem: ReadableStream<Uint8Array>,
+  aoTerminar: () => unknown,
+): ReadableStream<Uint8Array> {
+  let feito = false;
+  const fim = async () => {
+    if (feito) return;
+    feito = true;
+    try {
+      await aoTerminar();
+    } catch {
+      // O token vence sozinho em 30 minutos.
     }
-    return { ok: true, tool, args: { campaign_id: args.campaign_id, ...(typeof args.limit === "number" ? { limit: args.limit } : {}) } };
-  }
-  if (typeof args.enabled !== "boolean" || !String(args.reason ?? "").trim()) {
-    return { ok: false, erro: "Falta dizer se liga ou desliga, e o motivo." };
-  }
-  return { ok: true, tool, args: { enabled: args.enabled, reason: String(args.reason) } };
+  };
+  const t = new TransformStream<Uint8Array, Uint8Array>({ flush: fim });
+  origem.pipeTo(t.writable).catch(fim);
+  return t.readable;
 }
