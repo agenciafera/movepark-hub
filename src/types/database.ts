@@ -4233,6 +4233,139 @@ export type Database = {
           },
         ]
       }
+      marketing_assist_session: {
+        Row: {
+          conversa_id: string
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          profile_id: string
+          token_hash: string
+        }
+        Insert: {
+          conversa_id: string
+          created_at?: string
+          ended_at?: string | null
+          expires_at: string
+          id?: string
+          profile_id: string
+          token_hash: string
+        }
+        Update: {
+          conversa_id?: string
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          profile_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_assist_session_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_assistant_action: {
+        Row: {
+          args: Json
+          conversa_id: string
+          created_at: string
+          decided_at: string | null
+          erro: string | null
+          expires_at: string
+          id: string
+          profile_id: string
+          resultado: Json | null
+          resumo: Json
+          status: string
+          tool: string
+        }
+        Insert: {
+          args?: Json
+          conversa_id: string
+          created_at?: string
+          decided_at?: string | null
+          erro?: string | null
+          expires_at?: string
+          id?: string
+          profile_id: string
+          resultado?: Json | null
+          resumo?: Json
+          status?: string
+          tool: string
+        }
+        Update: {
+          args?: Json
+          conversa_id?: string
+          created_at?: string
+          decided_at?: string | null
+          erro?: string | null
+          expires_at?: string
+          id?: string
+          profile_id?: string
+          resultado?: Json | null
+          resumo?: Json
+          status?: string
+          tool?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_assistant_action_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_kind: string
+          actor_label: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_kind: string
+          actor_label?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_kind?: string
+          actor_label?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       marketing_campaign: {
         Row: {
           canvas: Json
@@ -10363,6 +10496,27 @@ export type Database = {
         Returns: string
       }
       manager_wl_health: { Args: never; Returns: Json }
+      marketing_assist_resolve: {
+        Args: { p_token_hash: string }
+        Returns: Json
+      }
+      marketing_audit_write: {
+        Args: {
+          p_action: string
+          p_actor: Json
+          p_after?: Json
+          p_before?: Json
+          p_entity: string
+          p_entity_id: string
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      marketing_can_manage: { Args: never; Returns: boolean }
+      marketing_canvas_shape_problems: {
+        Args: { p_canvas: Json }
+        Returns: string[]
+      }
       marketing_contact_doc: {
         Args: { p_location_ids?: string[] }
         Returns: {
@@ -10434,10 +10588,15 @@ export type Database = {
         Args: { p_from: string; p_location_ids?: string[]; p_to: string }
         Returns: Json
       }
+      marketing_delete_segment: {
+        Args: { p_actor?: Json; p_segment_id: string }
+        Returns: undefined
+      }
       marketing_discoveries: {
         Args: { p_location_ids?: string[]; p_window_days?: number }
         Returns: Json
       }
+      marketing_dispatch_config: { Args: never; Returns: Json }
       marketing_due_enrollments: {
         Args: { p_campaign_id: string; p_limit?: number }
         Returns: {
@@ -10519,6 +10678,8 @@ export type Database = {
         Args: { p_location_ids?: string[] }
         Returns: Json
       }
+      marketing_require_manage: { Args: never; Returns: undefined }
+      marketing_resolve_actor: { Args: { p_actor: Json }; Returns: Json }
       marketing_rfm_contacts: {
         Args: {
           p_limit?: number
@@ -10533,6 +10694,29 @@ export type Database = {
         Returns: Json
       }
       marketing_rfm_window_days: { Args: never; Returns: number }
+      marketing_save_campaign: {
+        Args: {
+          p_actor?: Json
+          p_campaign_id: string
+          p_canvas?: Json
+          p_location_ids?: string[]
+          p_name: string
+          p_segment_id: string
+          p_send_cap?: number
+        }
+        Returns: string
+      }
+      marketing_save_segment: {
+        Args: {
+          p_actor?: Json
+          p_definition: Json
+          p_description?: string
+          p_location_ids?: string[]
+          p_name: string
+          p_segment_id: string
+        }
+        Returns: string
+      }
       marketing_segment_contacts: {
         Args: {
           p_definition: Json
@@ -10563,6 +10747,22 @@ export type Database = {
           total: number
         }[]
       }
+      marketing_segment_fields: {
+        Args: never
+        Returns: {
+          grupo: string
+          hint: string
+          key: string
+          kind: string
+          label: string
+          operators: string[]
+          options: Json
+        }[]
+      }
+      marketing_segment_operators: {
+        Args: { p_kind: string }
+        Returns: string[]
+      }
       marketing_segment_preview: {
         Args: {
           p_definition: Json
@@ -10570,6 +10770,27 @@ export type Database = {
           p_location_ids?: string[]
         }
         Returns: Json
+      }
+      marketing_set_campaign_status: {
+        Args: { p_actor?: Json; p_campaign_id: string; p_status: string }
+        Returns: undefined
+      }
+      marketing_set_dispatch_config: {
+        Args: {
+          p_actor?: Json
+          p_daily_cap?: number
+          p_email_from?: string
+          p_test_recipient?: string
+        }
+        Returns: Json
+      }
+      marketing_set_dispatch_enabled: {
+        Args: { p_actor?: Json; p_enabled: boolean; p_reason: string }
+        Returns: Json
+      }
+      marketing_slug: {
+        Args: { p_name: string; p_table: string }
+        Returns: string
       }
       marketing_stage_for_booking: {
         Args: { p_status: Database["public"]["Enums"]["booking_status"] }
@@ -10579,6 +10800,10 @@ export type Database = {
       marketing_upsert_lead_for_booking: {
         Args: { p_booking: Database["public"]["Tables"]["booking"]["Row"] }
         Returns: undefined
+      }
+      marketing_validate_definition: {
+        Args: { p_def: Json; p_path?: string }
+        Returns: string[]
       }
       marketing_vehicle_brand: { Args: { p_model: string }; Returns: string }
       marketing_vehicle_origin: { Args: { p_model: string }; Returns: string }
@@ -10961,6 +11186,10 @@ export type Database = {
         Args: { p_company_id: string; p_from: string; p_to: string }
         Returns: Json
       }
+      partner_booking_payables: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       partner_contract_current: { Args: never; Returns: Json }
       partner_daily_digest: {
         Args: { p_day: string }
@@ -10972,7 +11201,6 @@ export type Database = {
           saidas: Json
         }[]
       }
-      partner_booking_payables: { Args: { p_booking_id: string }; Returns: Json }
       partner_digest_expected_key: { Args: never; Returns: string }
       partner_digest_recipients: {
         Args: { p_company_id: string }
