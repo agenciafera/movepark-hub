@@ -42,6 +42,7 @@
     "test:e2e:smoke": "NODE_OPTIONS=\"--import ./scripts/ws-polyfill.mjs\" playwright test --project=e2e-public --project=smoke"
   },
   "dependencies": {
+    "@ai-sdk/react": "4.0.188",
     "@hookform/resolvers": "^3.10.0",
     "@microsoft/clarity": "^1.0.2",
     "@phosphor-icons/react": "^2.1.10",
@@ -67,6 +68,7 @@
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
     "@types/qrcode": "^1.5.6",
+    "ai": "7.0.183",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
