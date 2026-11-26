@@ -33,6 +33,7 @@ import {
   tplFlightProtectionUnit,
   tplAccessCodeUpdated,
   tplIntegrationAlert,
+  tplIntegrationOldReservation,
 } from "./email.ts";
 import { DEFAULT_SITE_URL } from "./site.ts";
 import type { VoucherBooking } from "./voucher/fields.ts";
@@ -421,6 +422,54 @@ Deno.test("tplIntegrationAlert: reserva, placa, motivo e a ação certa para cad
   assertEquals(parou.html.includes("Motivo"), false);
   assertEquals(parou.html.includes("placa"), false);
   for (const m of [tentando, parou]) assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
+});
+
+// 26/11/2026: troca de data ou de placa que vai de novo à cancela (docs/specs/integracoes.md § 5.8).
+Deno.test("tplAccessCodeUpdated: na alteração, explica por que o QR mudou", () => {
+  const b = { code: "MP-855347", location_name: "Aeroporto Afonso Pena", check_in_at: "2026-11-04T07:30:00Z", check_out_at: "2026-11-11T02:00:00Z", vehicle: null };
+  const m = tplAccessCodeUpdated(b, "Bruno Lima", "https://movepark.co/bookings/MP-855347", "alteracao");
+  assertEquals(m.subject, "Reserva MP-855347: novo QR de entrada");
+  assertStringIncludes(m.html, "Bruno, com a alteração da reserva");
+  assertStringIncludes(m.html, "abre a cancela do Aeroporto Afonso Pena");
+  assertEquals(/cloudpark/i.test(m.html + m.subject), false);
+  assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
+});
+
+Deno.test("tplIntegrationAlert: troca que não chegou diz que a cancela segue com a reserva antiga", () => {
+  const base = {
+    bookingCode: "MP-A67A17", providerName: "Cloudpark", locationName: "Aeroporto Afonso Pena",
+    checkInAt: "2026-12-05T10:00:00Z", plate: "BBR4H93", error: null,
+    bookingUrl: "https://movepark.co/operator/bookings/MP-A67A17",
+  };
+  const t = tplIntegrationAlert({
+    ...base, retrying: true, change: { previousCheckInAt: "2026-12-01T10:00:00Z", previousPlate: "AAA1A11" },
+  });
+  assertEquals(t.subject, "Reserva MP-A67A17: alteração não chegou à Cloudpark");
+  assertStringIncludes(t.html, "05/12/2026");
+  assertStringIncludes(t.html, "continua a reserva antiga, com entrada em 01/12/2026");
+  assertStringIncludes(t.html, "e placa AAA1A11");
+  assertStringIncludes(t.html, "segue tentando");
+  const mesmaPlaca = tplIntegrationAlert({
+    ...base, retrying: false, change: { previousCheckInAt: "2026-12-01T10:00:00Z", previousPlate: "BBR4H93" },
+  });
+  assertStringIncludes(mesmaPlaca.html, "parou de tentar");
+  assertEquals(mesmaPlaca.html.includes("e placa"), false);
+  for (const m of [t, mesmaPlaca]) assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
+});
+
+Deno.test("tplIntegrationOldReservation: os dois códigos, qual vale e qual bloquear", () => {
+  const m = tplIntegrationOldReservation({
+    bookingCode: "MP-A67A17", providerName: "Cloudpark", locationName: "Aeroporto Afonso Pena",
+    current: { code: "9001", checkInAt: "2026-12-05T10:00:00Z", checkOutAt: "2026-12-09T10:00:00Z", plate: "BBR4H93" },
+    previous: { code: "8001<x>", checkInAt: "2026-12-01T10:00:00Z", checkOutAt: "2026-12-04T10:00:00Z", plate: null },
+    bookingUrl: "https://movepark.co/operator/bookings/MP-A67A17",
+  });
+  assertEquals(m.subject, "Reserva MP-A67A17 mudou: bloqueie a antiga na Cloudpark");
+  assertStringIncludes(m.html, "Vale a nova:</strong> código 9001, de 05/12/2026");
+  assertStringIncludes(m.html, "placa BBR4H93");
+  assertStringIncludes(m.html, "Bloqueie a antiga:</strong> código 8001&lt;x&gt;, de 01/12/2026");
+  assertStringIncludes(m.html, "https://movepark.co/operator/bookings/MP-A67A17");
+  assertEquals(/[\u2014\u2013]/.test(m.html + m.subject), false);
 });
 
 const resumoEquipe = {

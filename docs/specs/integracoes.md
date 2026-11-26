@@ -233,16 +233,20 @@ Sem API de cancelar ou alterar (§ 3), o desenho é honesto sobre o limite:
 - **Cancelou** (Hub ou site): o código vira `block_pending`, o Dono e a equipe da unidade recebem
   e-mail "Bloqueie o cartão <código> na Cloudpark" e a tela da integração lista "Cartões para
   bloquear", com o botão "Já bloqueei".
-- **Mudou data ou placa:** nova reserva na Cloudpark (novo código), voucher refeito e reenviado, e
-  o código antigo entra em "Cartões para bloquear".
+- **Mudou data ou placa** (implementado em 26/11/2026, migration `20261208140000`): nova reserva na
+  Cloudpark (novo código), voucher refeito e reenviado, e o código antigo vira `block_pending`. Como
+  a tela "Cartões para bloquear" é da Fase 2 e ainda não existe, a unidade (quem recebe o resumo
+  diário, `partner_digest_recipients`) e a equipe da Movepark recebem o e-mail "Reserva X mudou:
+  bloqueie a antiga na Cloudpark", com o código, a janela e a placa da nova e da antiga. Detalhe em
+  § 11.
 - Se a Cloudpark liberar rota de cancelamento ou a "Autorização de Acesso" (§ 7, G1), esses passos
   manuais viram chamada automática, sem mudar o resto.
 - **Como a cancela trata quem passa do horário** (resposta da Nationpark, 26/11/2026): a reserva vai
   com a folga da conexão (`entry_margin_min`/`exit_margin_min`, 1 hora nas duas pontas). Passada a
   folga, a cancela barra a placa, e a portaria faz uma validação (ou cobrança) no sistema da Cloudpark
   para liberar. Por isso a extensão da saída pelo Hub, com o carro dentro (`booking-modifications.md`
-  §8.8), avisa a equipe para validar a saída lá sem cobrar. Enquanto a Fase 4 não existir, a troca de
-  data feita antes da entrada também não chega à Cloudpark: a reserva de lá fica com a janela antiga.
+  §8.8), avisa a equipe para validar a saída lá sem cobrar. A troca de data ou de placa feita antes
+  da entrada vai como reserva nova (item acima).
 
 ### 5.9 Telas
 
@@ -327,8 +331,10 @@ para essas reservas não serem criadas de novo.
   na tela de envios, e o n8n da Cloudpark desativado.
 
 **Fase 4 · Cancelamento e alteração.** Tamanho: pequeno, mais o gate G1.
-- "Cartões para bloquear" (§ 5.8), e-mail ao Dono, nova reserva em troca de data ou placa
-  (`booking-modifications.md`, `change-booking-vehicle`), reenvio do voucher.
+- Feito em 26/11/2026 (§ 11): nova reserva em troca de data ou placa, reenvio do voucher e e-mail à
+  unidade com a reserva antiga para bloquear.
+- Falta: cancelamento (o código vira `block_pending` e a unidade recebe o e-mail) e o botão "Já
+  bloqueei", que depende da tela da Fase 2.
 - Se G1 trouxer rota de cancelamento ou "Autorização de Acesso", vira chamada automática.
 
 **Fase 5 · Demais integrações do n8n.** Uma spec curta por provedor (WPS Garageinn, Xpark,
@@ -406,3 +412,46 @@ vitrine): reserva confirmada por SQL → entrega criada pelo trigger → cron no
 
 **Não validado ao vivo:** a soltura do e-mail retido (precisa de confirmação pelo `pagarme-webhook`
 com pagamento real), coberta por pgTAP (reivindicação única) e pela lógica testada.
+
+## 11. Fase 4, troca de data e de placa (26/11/2026)
+
+**Por quê.** A fila só nascia na confirmação, então a troca feita depois (pelo cliente, pela equipe,
+pela Mia ou pela API) deixava a reserva antiga na Cloudpark. Pela resposta da Nationpark, passada a
+folga de 1 hora a cancela barra a placa: quem trocou a data chegava e caía na validação ou na
+cobrança do balcão. Na conferência de 26/11, nenhuma das 27 reservas entregues estava desatualizada
+(só uma de teste, já cancelada), então não houve reenvio retroativo.
+
+**Banco** (`20261208140000_integracao_troca_de_data.sql`):
+- Trigger `booking_integration_enqueue_change` (`AFTER UPDATE OF check_in_at, check_out_at,
+  vehicle_id`): reserva `confirmed`, sem `checked_in_at`, com código ativo na conexão e sem entrega
+  pendente → entrega nova com `payload = { reason: "change", previous: { check_in_at, check_out_at,
+  plate } }` e `hold_until` de 15 minutos (só para o alerta de demora; há código ativo, então nenhum
+  e-mail é retido). Não manda quando a entrada é a mesma e já passou (extensão no pátio, § 5.8).
+  Pega todo caminho de alteração porque mora no banco. Erro vira WARNING.
+- RPC `integration_store_access_code(delivery, code)` (só `service_role`): numa transação, o código
+  anterior vira `block_pending` e o novo nasce ativo. Retentativa, código igual (o sandbox devolve
+  sempre o mesmo) e entrega da confirmação que perdeu a corrida não mexem em nada. A entrega da
+  confirmação também grava por ela.
+
+**Edges** (`_shared/integrations/process.ts`, `change.ts`): troca entregue com código novo → voucher
+refeito, e-mail ao cliente (`tplAccessCodeUpdated` com `motivo: "alteracao"`, "Seu QR de entrada
+mudou") e, havendo código anterior, `tplIntegrationOldReservation` para a unidade e a equipe. Troca
+que não chega → `tplIntegrationAlert` com `change`: "a alteração não chegou; lá continua a reserva
+antiga", com a entrada e a placa antigas. Republicadas `integration-deliver`, `pagarme-webhook`,
+`reconcile-confirmations` e `resend-booking-confirmation`.
+
+**Testes:** pgTAP `integration_booking_change.test.sql` (20 asserções, rodado no vivo em transação
+desfeita); Deno `change.test.ts` e os três templates em `email.test.ts`.
+
+**Não validado ao vivo:** a ida ao sandbox. A unidade de teste "Agência Fera" não tem tabela de
+preço, e a reserva de teste não pôde ser criada pelo caminho real. Fica coberto pelo pgTAP (gatilho e
+RPC contra o banco vivo) e pela checagem de tipos do Deno.
+
+**Limites conhecidos:**
+- A reserva antiga continua valendo na Cloudpark até alguém bloquear lá: a API não cancela (§ 3, G1).
+- Se a data mudar nos segundos em que a entrega já está sendo enviada, a troca seguinte não gera
+  entrega (há uma pendente), e a Cloudpark fica com a janela da primeira. Janela de segundos, sem
+  mitigação.
+- Extensão com o carro dentro (balcão ou proteção de voo) não vai à Cloudpark: a portaria valida a
+  saída lá (§ 5.8).
+

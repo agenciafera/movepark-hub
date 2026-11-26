@@ -4,6 +4,9 @@
 //
 // Depois do código:      voucher refeito com o QR da cancela; e-mail retido sai agora; se o
 //                        e-mail já tinha saído com o QR do Hub, o cliente recebe o voucher novo.
+// Troca de data/placa:   (§ 5.8, payload `reason: "change"`) o código novo aposenta o anterior; o
+//                        cliente recebe o voucher novo e a unidade, os dois códigos para bloquear
+//                        a reserva antiga na cancela.
 // Retenção vencida:      o e-mail retido sai com o QR do Hub e a equipe e o parceiro são avisados.
 // Falha definitiva:      idem, avisando que a fila parou de tentar.
 
@@ -11,6 +14,7 @@ import { getProvider } from "./registry.ts";
 import { redactForTrail } from "./trail.ts";
 import { nextRetryDelaySeconds, shouldGiveUp } from "./schedule.ts";
 import { BOOKING_INPUT_SELECT, bookingRowToReserveInput, SENDABLE } from "./input.ts";
+import { type DeliveryChange, deliveryChange, parseStoredCode, type StoredCode } from "./change.ts";
 import { generateAndStoreVoucher } from "../voucher/pdf.ts";
 import { mapBookingRowToVoucher, VOUCHER_BOOKING_SELECT } from "../voucher/fields.ts";
 import { customerRecipient, sendBookingConfirmationEmail, voucherAttachment } from "../booking-confirmation.ts";
@@ -21,6 +25,7 @@ import {
   siteUrl,
   tplAccessCodeUpdated,
   tplIntegrationAlert,
+  tplIntegrationOldReservation,
 } from "../email.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -119,15 +124,14 @@ export async function processDelivery(
     });
 
     if (out.ok) {
-      const { error: codeErr } = await admin.from("integration_access_code").insert({
-        connection_id: d.connection_id,
-        company_id: d.company_id,
-        booking_id: d.booking_id,
-        delivery_id: d.id,
-        code: out.code,
+      // Uma transação: o anterior vira `block_pending` (só na troca) e o novo passa a valer. Na
+      // entrega da confirmação que perdeu a corrida, vale o primeiro código, como antes.
+      const { data: storedRaw, error: codeErr } = await admin.rpc("integration_store_access_code", {
+        p_delivery_id: d.id,
+        p_code: out.code,
       });
-      // 23505: já há código ativo (corrida com outra tentativa). O que vale é o primeiro.
-      if (codeErr && codeErr.code !== "23505") throw new Error(codeErr.message);
+      if (codeErr) throw new Error(codeErr.message);
+      const stored = parseStoredCode(storedRaw);
       await finish(admin, d.id, {
         status: "delivered",
         attempts,
@@ -136,7 +140,9 @@ export async function processDelivery(
         last_status: out.httpStatus,
         last_error: null,
       });
-      await afterAccessCode(admin, d.id, d.booking_id);
+      const change = deliveryChange(d.payload);
+      if (change) await afterChangedCode(admin, d, stored, change, out.code);
+      else await afterAccessCode(admin, d.id, d.booking_id);
       return "delivered";
     }
 
@@ -188,6 +194,57 @@ async function afterAccessCode(admin: Admin, deliveryId: string, bookingId: stri
     await sendAccessCodeUpdatedEmail(admin, bookingId).catch((e) =>
       console.error("[integrations] falha ao mandar o voucher atualizado:", bookingId, e)
     );
+  }
+}
+
+/**
+ * Troca que chegou à cancela: voucher novo para o cliente e, como o provedor não cancela a reserva
+ * antiga, os dois códigos para a unidade bloquear a antiga. Mesmo código ou retentativa: nada muda.
+ */
+async function afterChangedCode(
+  admin: Admin,
+  d: ClaimedDelivery,
+  stored: StoredCode,
+  change: DeliveryChange,
+  code: string,
+): Promise<void> {
+  if (!stored.stored || !d.booking_id) return;
+  const bookingId = d.booking_id;
+  await generateAndStoreVoucher(admin, bookingId, siteUrl()).catch((e) =>
+    console.error("[integrations] falha ao refazer o voucher:", bookingId, e)
+  );
+  await sendAccessCodeUpdatedEmail(admin, bookingId, "alteracao").catch((e) =>
+    console.error("[integrations] falha ao mandar o voucher da troca:", bookingId, e)
+  );
+  if (!stored.previousCode) return;
+  const previousCode = stored.previousCode;
+  try {
+    const [{ data: b }, providerName] = await Promise.all([
+      admin
+        .from("booking")
+        .select("code, check_in_at, check_out_at, location:location!inner(name), vehicle:vehicle(license_plate)")
+        .eq("id", bookingId)
+        .maybeSingle(),
+      providerNameOf(admin, d.connection_id),
+    ]);
+    if (!b) return;
+    await notifyTeamAndPartner(admin, d.company_id, b.code, (bookingUrl) =>
+      tplIntegrationOldReservation({
+        bookingCode: b.code,
+        providerName,
+        locationName: b.location?.name ?? "",
+        current: { code, checkInAt: b.check_in_at, checkOutAt: b.check_out_at, plate: b.vehicle?.license_plate ?? null },
+        previous: {
+          code: previousCode,
+          checkInAt: change.previousCheckInAt,
+          checkOutAt: change.previousCheckOutAt,
+          plate: change.previousPlate,
+        },
+        bookingUrl,
+      })
+    );
+  } catch (e) {
+    console.error("[integrations] aviso da reserva antiga não enviado:", bookingId, e);
   }
 }
 
@@ -248,54 +305,78 @@ async function supportInbox(admin: Admin): Promise<string | null> {
   return (await getEmailConfig(admin)).inbox;
 }
 
+async function providerNameOf(admin: Admin, connectionId: string): Promise<string> {
+  const { data: conn } = await admin.from("integration_connection").select("provider").eq("id", connectionId).maybeSingle();
+  return conn ? getProvider(conn.provider).name : "integração";
+}
+
+/** Mesmo aviso para a equipe da Movepark (link do Manager) e para a unidade (link do painel). */
+async function notifyTeamAndPartner(
+  admin: Admin,
+  companyId: string,
+  bookingCode: string,
+  build: (bookingUrl: string) => { subject: string; html: string },
+): Promise<void> {
+  const { from } = await getEmailConfig(admin);
+  if (!from) return;
+  const team = await supportInbox(admin);
+  if (team) {
+    const t = build(`${siteUrl()}/manager/bookings/${bookingCode}`);
+    await sendEmail({ from, to: team, subject: t.subject, html: t.html });
+  }
+  const { data: membros } = await admin.rpc("partner_digest_recipients", { p_company_id: companyId });
+  const para = ((membros ?? []) as unknown[]).map((m) => String(m)).filter(Boolean);
+  if (para.length) {
+    const p = build(`${siteUrl()}/operator/bookings/${bookingCode}`);
+    await sendPartnerEmail(admin, { companyId, from, to: para, subject: p.subject, html: p.html });
+  }
+}
+
 async function sendIntegrationAlert(
   admin: Admin,
-  row: { booking_id: string | null; company_id: string; connection_id: string },
+  row: { id?: string; booking_id: string | null; company_id: string; connection_id: string },
   o: { retrying: boolean; error: string | null },
 ): Promise<void> {
   try {
     if (!row.booking_id) return;
-    const [{ data: b }, { data: conn }] = await Promise.all([
+    const [{ data: b }, providerName, { data: dl }] = await Promise.all([
       admin
         .from("booking")
         .select("code, check_in_at, location:location!inner(name), vehicle:vehicle(license_plate)")
         .eq("id", row.booking_id)
         .maybeSingle(),
-      admin.from("integration_connection").select("provider").eq("id", row.connection_id).maybeSingle(),
+      providerNameOf(admin, row.connection_id),
+      row.id
+        ? admin.from("integration_delivery").select("payload").eq("id", row.id).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
     if (!b) return;
-    const providerName = conn ? getProvider(conn.provider).name : "integração";
-    const { from } = await getEmailConfig(admin);
-    if (!from) return;
-    const base = {
-      bookingCode: b.code,
-      providerName,
-      locationName: b.location?.name ?? "",
-      checkInAt: b.check_in_at,
-      plate: b.vehicle?.license_plate ?? null,
-      error: o.error,
-      retrying: o.retrying,
-    };
-
-    const team = await supportInbox(admin);
-    if (team) {
-      const t = tplIntegrationAlert({ ...base, bookingUrl: `${siteUrl()}/manager/bookings/${b.code}` });
-      await sendEmail({ from, to: team, subject: t.subject, html: t.html });
-    }
-
-    const { data: membros } = await admin.rpc("partner_digest_recipients", { p_company_id: row.company_id });
-    const para = ((membros ?? []) as unknown[]).map((m) => String(m)).filter(Boolean);
-    if (para.length) {
-      const p = tplIntegrationAlert({ ...base, bookingUrl: `${siteUrl()}/operator/bookings/${b.code}` });
-      await sendPartnerEmail(admin, { companyId: row.company_id, from, to: para, subject: p.subject, html: p.html });
-    }
+    // Troca que não chegou: a cancela segue com a reserva antiga, e o texto diz isso.
+    const change = deliveryChange((dl as { payload?: unknown } | null)?.payload);
+    await notifyTeamAndPartner(admin, row.company_id, b.code, (bookingUrl) =>
+      tplIntegrationAlert({
+        bookingCode: b.code,
+        providerName,
+        locationName: b.location?.name ?? "",
+        checkInAt: b.check_in_at,
+        plate: b.vehicle?.license_plate ?? null,
+        error: o.error,
+        retrying: o.retrying,
+        bookingUrl,
+        change: change ? { previousCheckInAt: change.previousCheckInAt, previousPlate: change.previousPlate } : null,
+      })
+    );
   } catch (e) {
     console.error("[integrations] alerta não enviado:", row.booking_id, e);
   }
 }
 
-/** O QR da cancela chegou depois do voucher: manda o voucher novo, em anexo. */
-async function sendAccessCodeUpdatedEmail(admin: Admin, bookingId: string): Promise<void> {
+/** QR da cancela novo (chegou depois do voucher, ou a reserva mudou): manda o voucher novo, em anexo. */
+async function sendAccessCodeUpdatedEmail(
+  admin: Admin,
+  bookingId: string,
+  motivo: "atraso" | "alteracao" = "atraso",
+): Promise<void> {
   const { data: b } = await admin
     .from("booking")
     .select(`${VOUCHER_BOOKING_SELECT}, customer_name, customer_email, profile_id`)
@@ -307,7 +388,7 @@ async function sendAccessCodeUpdatedEmail(admin: Admin, bookingId: string): Prom
   const { from } = await getEmailConfig(admin);
   if (!from) return;
   const voucher = mapBookingRowToVoucher(b);
-  const tpl = tplAccessCodeUpdated(voucher, name, `${siteUrl()}/bookings/${voucher.code}`);
+  const tpl = tplAccessCodeUpdated(voucher, name, `${siteUrl()}/bookings/${voucher.code}`, motivo);
   const attachments = await voucherAttachment(admin, bookingId, voucher);
   const res = await sendEmail({ from, to: email, subject: tpl.subject, html: tpl.html, attachments });
   if (!res.ok) throw new Error(res.error ?? "falha no SMTP");

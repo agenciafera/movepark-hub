@@ -10083,6 +10083,10 @@ export type Database = {
         Args: { p_connection_id: string; p_secret: string }
         Returns: undefined
       }
+      integration_store_access_code: {
+        Args: { p_code: string; p_delivery_id: string }
+        Returns: Json
+      }
       integration_upsert_connection: {
         Args: {
           p_config?: Json

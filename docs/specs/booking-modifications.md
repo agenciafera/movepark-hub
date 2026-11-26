@@ -325,6 +325,10 @@ segura em reserva confirmada antes do check-in.
   `access_provider` e `access_exit_margin_min`, e a tela avisa até quando a placa passa e que a
   saída se valida lá **sem cobrar**, porque o cliente pagou pelo Hub. O aviso continua com o PIX na
   tela e depois do pagamento.
+- **Troca antes da entrada em unidade com Cloudpark** (26/11/2026): qualquer troca de datas ou de
+  placa de reserva confirmada, antes da entrada, vai à cancela como reserva nova, por trigger no
+  banco (vale para cliente, equipe, Mia e API). O cliente recebe o voucher com o QR novo e a unidade
+  recebe os dois códigos para bloquear a reserva antiga lá. Ver `integracoes.md` § 11.
 - **Termos v7** (`20261208130000`): 4.3 com as duas formas de cobrar e "sair antes não devolve";
   6.3 com "depois do check-in, só o estacionamento estende". As FAQs que dizem "paga na saída pela
   tabela do próprio estacionamento" continuam verdade (é uma das formas) e não foram reescritas.

@@ -1227,18 +1227,29 @@ export function tplBookingVehicleChanged(b: BookingNoticeData, customerName: str
 }
 
 /**
- * QR de entrada que chegou depois do voucher (docs/specs/integracoes.md § 5.6): o provedor da
- * cancela demorou mais que a retenção de 15 minutos, o cliente recebeu o voucher com o QR do Hub,
- * e agora recebe o voucher novo, em anexo, com o QR que abre a cancela.
+ * QR de entrada novo (docs/specs/integracoes.md § 5.6 e § 5.8), com o voucher em anexo:
+ *   "atraso"    o provedor da cancela demorou mais que a retenção de 15 minutos, o cliente recebeu o
+ *               voucher com o QR do Hub, e agora recebe o que abre a cancela;
+ *   "alteracao" a reserva mudou de data ou de placa e foi mandada de novo à cancela, que devolveu
+ *               outro QR.
  */
-export function tplAccessCodeUpdated(b: BookingNoticeData, customerName: string | null, bookingUrl: string): { subject: string; html: string } {
+export function tplAccessCodeUpdated(
+  b: BookingNoticeData,
+  customerName: string | null,
+  bookingUrl: string,
+  motivo: "atraso" | "alteracao" = "atraso",
+): { subject: string; html: string } {
   const fn = primeiroNome(customerName);
+  const reserva = `<strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong>`;
+  const abertura = motivo === "alteracao"
+    ? `${fn ? `${escapeHtml(fn)}, com` : "Com"} a alteração da reserva ${reserva}, o QR de entrada mudou.`
+    : `${fn ? `${escapeHtml(fn)}, o` : "O"} QR de entrada da reserva ${reserva} mudou.`;
   return {
-    subject: `Reserva ${b.code}: seu QR de entrada chegou`,
+    subject: motivo === "alteracao" ? `Reserva ${b.code}: novo QR de entrada` : `Reserva ${b.code}: seu QR de entrada chegou`,
     html: shell(
-      "Seu QR de entrada chegou",
+      motivo === "alteracao" ? "Seu QR de entrada mudou" : "Seu QR de entrada chegou",
       `
-      <p style="margin:0 0 24px;">${fn ? `${escapeHtml(fn)}, o` : "O"} QR de entrada da reserva <strong style="color:${BRAND.navy};">${escapeHtml(b.code)}</strong> mudou. O voucher novo vai em anexo e é ele que abre a cancela do ${escapeHtml(b.location_name)}.</p>
+      <p style="margin:0 0 24px;">${abertura} O voucher novo vai em anexo e é ele que abre a cancela do ${escapeHtml(b.location_name)}.</p>
       ${checkItem(`Se você salvou o voucher anterior, troque pelo novo.`)}
       <p style="margin:28px 0 0;">${button(bookingUrl, "Ver minha reserva")}</p>`,
       { preheader: `Use o voucher novo na cancela do ${b.location_name}`, partner: partnerFrom(b) },
@@ -1248,7 +1259,8 @@ export function tplAccessCodeUpdated(b: BookingNoticeData, customerName: string 
 
 /**
  * Alerta de integração (equipe Movepark e parceiro): o provedor não devolveu o QR de entrada
- * dentro da retenção, ou recusou a reserva. `retrying` diz se a fila ainda tenta.
+ * dentro da retenção, ou recusou a reserva. `retrying` diz se a fila ainda tenta. Com `change`, é a
+ * reserva nova de uma troca de data ou de placa (§ 5.8) que não chegou: a cancela segue com a antiga.
  */
 export function tplIntegrationAlert(a: {
   bookingCode: string;
@@ -1259,17 +1271,74 @@ export function tplIntegrationAlert(a: {
   error: string | null;
   retrying: boolean;
   bookingUrl: string;
+  change?: { previousCheckInAt: string | null; previousPlate: string | null } | null;
 }): { subject: string; html: string } {
+  const prov = escapeHtml(a.providerName);
   const placa = a.plate ? `, placa ${escapeHtml(a.plate)}` : "";
+  const motivo = a.error ? `<p style="color:${BRAND.muted};font-size:13px">Motivo: ${escapeHtml(a.error)}</p>` : "";
+  const abrir = `<p style="margin-top:16px">${button(a.bookingUrl, "Abrir a reserva")}</p>`;
+  if (a.change) {
+    const antes = [
+      a.change.previousCheckInAt ? `com entrada em ${escapeHtml(formatBRDateTime(a.change.previousCheckInAt))}` : "",
+      a.change.previousPlate && a.change.previousPlate !== a.plate ? `placa ${escapeHtml(a.change.previousPlate)}` : "",
+    ].filter(Boolean).join(" e ");
+    const acao = a.retrying
+      ? `Ajuste a reserva na ${prov} à mão. A Movepark segue tentando e, se der certo, manda o voucher novo ao cliente.`
+      : `A Movepark parou de tentar. Ajuste a reserva na ${prov} à mão.`;
+    return {
+      subject: `Reserva ${a.bookingCode}: alteração não chegou à ${a.providerName}`,
+      html: shell(`A alteração não chegou à ${prov}`, `
+      <p>A reserva <strong>${escapeHtml(a.bookingCode)}</strong> (${escapeHtml(a.locationName)}) mudou para a entrada em ${escapeHtml(formatBRDateTime(a.checkInAt))}${placa}, e a ${prov} não recebeu a reserva nova. Lá continua a reserva antiga${antes ? `, ${antes}` : ""}.</p>
+      <p>${acao}</p>
+      ${motivo}
+      ${abrir}`),
+    };
+  }
   const acao = a.retrying
-    ? `Cadastre a entrada na ${escapeHtml(a.providerName)} à mão. A Movepark segue tentando e, se o QR chegar, manda o voucher novo ao cliente.`
-    : `A Movepark parou de tentar. Cadastre a entrada na ${escapeHtml(a.providerName)} à mão.`;
+    ? `Cadastre a entrada na ${prov} à mão. A Movepark segue tentando e, se o QR chegar, manda o voucher novo ao cliente.`
+    : `A Movepark parou de tentar. Cadastre a entrada na ${prov} à mão.`;
   return {
     subject: `Reserva ${a.bookingCode} sem QR da ${a.providerName}`,
-    html: shell(`A ${escapeHtml(a.providerName)} não devolveu o QR`, `
-      <p>A reserva <strong>${escapeHtml(a.bookingCode)}</strong> (${escapeHtml(a.locationName)}, entrada em ${escapeHtml(formatBRDateTime(a.checkInAt))}${placa}) ficou sem o QR de entrada da ${escapeHtml(a.providerName)}. O cliente recebeu o voucher com o código da reserva.</p>
+    html: shell(`A ${prov} não devolveu o QR`, `
+      <p>A reserva <strong>${escapeHtml(a.bookingCode)}</strong> (${escapeHtml(a.locationName)}, entrada em ${escapeHtml(formatBRDateTime(a.checkInAt))}${placa}) ficou sem o QR de entrada da ${prov}. O cliente recebeu o voucher com o código da reserva.</p>
       <p>${acao}</p>
-      ${a.error ? `<p style="color:${BRAND.muted};font-size:13px">Motivo: ${escapeHtml(a.error)}</p>` : ""}
+      ${motivo}
+      ${abrir}`),
+  };
+}
+
+type JanelaNaCancela = { code: string; checkInAt: string | null; checkOutAt: string | null; plate: string | null };
+
+function janela(j: JanelaNaCancela): string {
+  const partes = [`código ${escapeHtml(j.code)}`];
+  if (j.checkInAt && j.checkOutAt) {
+    partes.push(`de ${escapeHtml(formatBRDateTime(j.checkInAt))} a ${escapeHtml(formatBRDateTime(j.checkOutAt))}`);
+  }
+  if (j.plate) partes.push(`placa ${escapeHtml(j.plate)}`);
+  return partes.join(", ");
+}
+
+/**
+ * Troca de data ou de placa que chegou à cancela (docs/specs/integracoes.md § 5.8): o provedor não
+ * tem rota para cancelar, então a reserva antiga continua valendo lá. A unidade (e a equipe da
+ * Movepark) recebe os dois códigos para bloquear a antiga e manter a nova.
+ */
+export function tplIntegrationOldReservation(a: {
+  bookingCode: string;
+  providerName: string;
+  locationName: string;
+  current: JanelaNaCancela;
+  previous: JanelaNaCancela;
+  bookingUrl: string;
+}): { subject: string; html: string } {
+  const prov = escapeHtml(a.providerName);
+  return {
+    subject: `Reserva ${a.bookingCode} mudou: bloqueie a antiga na ${a.providerName}`,
+    html: shell(`Bloqueie a reserva antiga na ${prov}`, `
+      <p>A reserva <strong>${escapeHtml(a.bookingCode)}</strong> (${escapeHtml(a.locationName)}) mudou, e a Movepark já mandou a reserva nova para a ${prov}. A antiga continua valendo lá.</p>
+      <p><strong>Vale a nova:</strong> ${janela(a.current)}.</p>
+      <p><strong>Bloqueie a antiga:</strong> ${janela(a.previous)}.</p>
+      <p>Bloqueie ou cancele a antiga no sistema da ${prov} e mantenha a nova.</p>
       <p style="margin-top:16px">${button(a.bookingUrl, "Abrir a reserva")}</p>`),
   };
 }

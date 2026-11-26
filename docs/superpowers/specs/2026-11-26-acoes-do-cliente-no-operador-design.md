@@ -142,9 +142,9 @@ Bloco **Operação**, reserva do Hub, `confirmed`, antes da entrada, com `bookin
   unidade com `integration_connection` ativa a tela diz até quando a cancela libera a placa (a folga
   `exit_margin_min` da conexão, devolvida em `access_exit_margin_min`) e pede para validar a saída na
   Cloudpark **sem cobrar**, porque o cliente pagou pelo Hub. O aviso fica na prévia, com o PIX na tela
-  e depois do pagamento. Mandar a saída nova à Cloudpark depende da Fase 4 de
-  [`integracoes.md`](../../specs/integracoes.md) (nova reserva lá), e com o carro já dentro a portaria
-  continua validando.
+  e depois do pagamento. Com o carro dentro a portaria continua validando. A troca de data ou de
+  placa feita **antes** da entrada (cliente ou equipe) vai à Cloudpark como reserva nova desde
+  26/11/2026 ([`integracoes.md`](../../specs/integracoes.md) § 11).
 
 ## 5. Fora do escopo
 
