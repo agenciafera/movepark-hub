@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChangePaidDatesQuote } from "./customerApi";
 import {
+  cloudparkExtensionWarning,
   datesLanded,
   pixMessage,
   staffQuoteSummary,
@@ -90,5 +91,20 @@ describe("pixMessage", () => {
     expect(sp(pixMessage({ code: "MP-1", amount: 31.8, what: "datas" }))).toBe(
       "Olá! Segue o PIX de R$ 31,80 para a alteração de datas da reserva MP-1 na Movepark. É só copiar o código abaixo no app do seu banco.",
     );
+  });
+});
+
+describe("cloudparkExtensionWarning", () => {
+  it("diz até quando a cancela libera a placa e pede para validar sem cobrar", () => {
+    expect(cloudparkExtensionWarning(60)).toBe(
+      "A extensão não chega à cancela da Cloudpark, que libera esta placa só até 1 hora depois da saída reservada. Depois disso, valide a saída no sistema da Cloudpark sem cobrar: o cliente já pagou pelo Hub.",
+    );
+  });
+
+  it("escreve a folga em horas ou minutos, e 1 hora quando não vem", () => {
+    expect(cloudparkExtensionWarning(120)).toContain("até 2 horas depois");
+    expect(cloudparkExtensionWarning(90)).toContain("até 90 minutos depois");
+    expect(cloudparkExtensionWarning(null)).toContain("até 1 hora depois");
+    expect(cloudparkExtensionWarning(0)).toContain("só até a saída reservada.");
   });
 });

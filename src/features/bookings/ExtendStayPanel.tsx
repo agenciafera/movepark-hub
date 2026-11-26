@@ -9,7 +9,7 @@ import {
   useQuotePaidBookingDates,
 } from "./customerApi";
 import { PixChargePanel } from "./PixChargePanel";
-import { pixMessage } from "./staffChange.logic";
+import { cloudparkExtensionWarning, pixMessage } from "./staffChange.logic";
 
 export type ExtendTarget = {
   bookingCode: string;
@@ -28,6 +28,22 @@ type Etapa =
 
 const mesmoInstante = (a: string, b: string) => new Date(a).getTime() === new Date(b).getTime();
 
+/** Aviso da cancela da Cloudpark: aparece na prévia e continua depois do pagamento. */
+function AvisoCloudpark({ margem }: { margem: number | null | undefined }) {
+  return (
+    <p
+      className="text-pretty rounded-sm border border-warning/40 bg-warning/5 p-2 text-body-sm text-ink"
+      data-testid="aviso-cloudpark"
+    >
+      {cloudparkExtensionWarning(margem)}
+    </p>
+  );
+}
+
+function cancelaDe(q: ChangePaidDatesQuote): { margem: number | null } | null {
+  return q.access_provider === "cloudpark" ? { margem: q.access_exit_margin_min ?? null } : null;
+}
+
 /**
  * Cobrar pelo Hub os dias a mais de quem já entrou (26/11/2026, parte 2). A saída da reserva passa
  * para a saída escolhida no card, e a diferença pela tabela da compra vai num PIX dividido como a
@@ -38,6 +54,8 @@ export function ExtendStayPanel({ alvo, saida }: { alvo: ExtendTarget; saida: st
   const cotar = useQuotePaidBookingDates();
   const estender = useChangePaidBookingDates();
   const [etapa, setEtapa] = React.useState<Etapa>({ tipo: "fechado" });
+  // Guardada da prévia: o PIX e a tela de pago não trazem a conexão de novo.
+  const [cancela, setCancela] = React.useState<{ margem: number | null } | null>(null);
   const { onWaitingChange } = alvo;
 
   // Mudou a saída escolhida no card: a prévia antiga não vale mais.
@@ -62,7 +80,9 @@ export function ExtendStayPanel({ alvo, saida }: { alvo: ExtendTarget; saida: st
 
   async function verValor() {
     try {
-      setEtapa({ tipo: "previa", cotacao: await cotar.mutateAsync(pedido) });
+      const cotacao = await cotar.mutateAsync(pedido);
+      setCancela(cancelaDe(cotacao));
+      setEtapa({ tipo: "previa", cotacao });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não consegui calcular o valor.");
     }
@@ -108,12 +128,7 @@ export function ExtendStayPanel({ alvo, saida }: { alvo: ExtendTarget; saida: st
               A saída da reserva passa para {formatDateTime(saida)}.
               {valor > 0 ? " Ela muda quando o PIX for pago." : ""}
             </p>
-            {q.access_provider === "cloudpark" && (
-              <p className="rounded-sm border border-warning/40 bg-warning/5 p-2 text-body-sm text-ink" data-testid="aviso-cloudpark">
-                Esta unidade manda as reservas para a cancela da Cloudpark, e a extensão não chega lá.
-                Ajuste a saída desta placa na Cloudpark para o cliente não pagar de novo na saída.
-              </p>
-            )}
+            {cancela && <AvisoCloudpark margem={cancela.margem} />}
             <Button size="sm" onClick={() => void confirmar(q)} disabled={estender.isPending}>
               {estender.isPending ? "Um instante…" : valor > 0 ? "Gerar o PIX" : "Estender a saída"}
             </Button>
@@ -129,16 +144,24 @@ export function ExtendStayPanel({ alvo, saida }: { alvo: ExtendTarget; saida: st
   if (etapa.tipo === "pix") {
     const valor = etapa.cobranca.charge_amount ?? etapa.cobranca.delta;
     return (
-      <PixChargePanel
-        amount={valor}
-        qrCode={etapa.cobranca.qr_code}
-        expiresAt={etapa.cobranca.expires_at}
-        message={pixMessage({ code: alvo.bookingCode, amount: valor, what: "dias" })}
-        paid={false}
-        paidText=""
-      />
+      <div className="flex flex-col gap-3">
+        <PixChargePanel
+          amount={valor}
+          qrCode={etapa.cobranca.qr_code}
+          expiresAt={etapa.cobranca.expires_at}
+          message={pixMessage({ code: alvo.bookingCode, amount: valor, what: "dias" })}
+          paid={false}
+          paidText=""
+        />
+        {cancela && <AvisoCloudpark margem={cancela.margem} />}
+      </div>
     );
   }
 
-  return <PixChargePanel amount={0} qrCode={null} expiresAt={null} message="" paid paidText={etapa.texto} />;
+  return (
+    <div className="flex flex-col gap-3">
+      <PixChargePanel amount={0} qrCode={null} expiresAt={null} message="" paid paidText={etapa.texto} />
+      {cancela && <AvisoCloudpark margem={cancela.margem} />}
+    </div>
+  );
 }

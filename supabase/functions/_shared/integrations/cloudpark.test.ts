@@ -4,6 +4,7 @@ import {
   cloudpark,
   cloudparkLocalDateTime,
   interpretCloudparkResponse,
+  cloudparkExitMarginMin,
   parseCloudparkConfig,
   parseCloudparkPlans,
 } from "./cloudpark.ts";
@@ -74,6 +75,14 @@ Deno.test("buildCloudparkReservation: plano, folga própria e nome do tipo de va
   assertEquals(body.final_date, "2026-11-02 10:00:00");
   assertEquals(body.product, "Vaga Coberta");
   assert(!("whitelabel" in body));
+});
+
+Deno.test("cloudparkExitMarginMin: folga de saída da conexão, 1 hora quando não vem", () => {
+  assertEquals(cloudparkExitMarginMin({ exit_margin_min: 90 }), 90);
+  assertEquals(cloudparkExitMarginMin({ exit_margin_min: "30" }), 30);
+  assertEquals(cloudparkExitMarginMin({}), 60);
+  assertEquals(cloudparkExitMarginMin(null), 60);
+  assertEquals(cloudparkExitMarginMin({ exit_margin_min: 999 }), 240);
 });
 
 Deno.test("parseCloudparkConfig: só aceita o link de nuvem da Cloudpark", () => {

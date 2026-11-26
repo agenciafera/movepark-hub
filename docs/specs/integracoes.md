@@ -237,6 +237,12 @@ Sem API de cancelar ou alterar (§ 3), o desenho é honesto sobre o limite:
   o código antigo entra em "Cartões para bloquear".
 - Se a Cloudpark liberar rota de cancelamento ou a "Autorização de Acesso" (§ 7, G1), esses passos
   manuais viram chamada automática, sem mudar o resto.
+- **Como a cancela trata quem passa do horário** (resposta da Nationpark, 26/11/2026): a reserva vai
+  com a folga da conexão (`entry_margin_min`/`exit_margin_min`, 1 hora nas duas pontas). Passada a
+  folga, a cancela barra a placa, e a portaria faz uma validação (ou cobrança) no sistema da Cloudpark
+  para liberar. Por isso a extensão da saída pelo Hub, com o carro dentro (`booking-modifications.md`
+  §8.8), avisa a equipe para validar a saída lá sem cobrar. Enquanto a Fase 4 não existir, a troca de
+  data feita antes da entrada também não chega à Cloudpark: a reserva de lá fica com a janela antiga.
 
 ### 5.9 Telas
 

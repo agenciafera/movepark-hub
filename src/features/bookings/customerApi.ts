@@ -476,6 +476,8 @@ export type ChangePaidDatesQuote = {
   extension?: boolean;
   /** A unidade manda as reservas para a cancela de um provedor (hoje só "cloudpark"). */
   access_provider?: string | null;
+  /** Minutos depois da saída reservada em que a cancela ainda libera a placa (Cloudpark). */
+  access_exit_margin_min?: number | null;
 };
 
 export type FareUpgradeQuote = { tier: "flex"; cents: number; amount: number };

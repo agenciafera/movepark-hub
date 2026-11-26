@@ -77,11 +77,25 @@ describe("ExtendStayPanel", () => {
     expect(onWaitingChange).toHaveBeenLastCalledWith(false);
   });
 
-  it("unidade com a cancela da Cloudpark avisa para ajustar a saída lá", async () => {
-    cotar.mockResolvedValue({ ...cotacao, access_provider: "cloudpark" });
-    abre();
+  it("unidade com a cancela da Cloudpark avisa até quando ela libera e pede para validar sem cobrar", async () => {
+    cotar.mockResolvedValue({ ...cotacao, access_provider: "cloudpark", access_exit_margin_min: 60 });
+    estender.mockResolvedValue({
+      mode: "charge", payment_id: "p1", status: "pending", qr_code: "pixdias", qr_code_url: null,
+      expires_at: "2026-12-19T09:30:00Z", delta: 37.8, charge_amount: 37.8,
+    });
+    const { rerender } = abre();
     fireEvent.click(screen.getByRole("button", { name: "Cobrar pelo Hub" }));
-    expect(await screen.findByTestId("aviso-cloudpark")).toHaveTextContent("Ajuste a saída desta placa na Cloudpark");
+    const aviso = await screen.findByTestId("aviso-cloudpark");
+    expect(aviso).toHaveTextContent("libera esta placa só até 1 hora depois da saída reservada");
+    expect(aviso).toHaveTextContent("valide a saída no sistema da Cloudpark sem cobrar");
+
+    // O aviso continua com o PIX na tela e depois do pagamento, quando a portaria precisa dele.
+    fireEvent.click(screen.getByRole("button", { name: "Gerar o PIX" }));
+    expect(await screen.findByTestId("pix-cobranca")).toBeInTheDocument();
+    expect(screen.getByTestId("aviso-cloudpark")).toBeInTheDocument();
+    rerender("2026-12-19T09:00:00+00:00");
+    expect(await screen.findByTestId("pix-pago")).toBeInTheDocument();
+    expect(screen.getByTestId("aviso-cloudpark")).toBeInTheDocument();
   });
 
   it("sem diferença (pacote mais barato), estende a saída sem PIX", async () => {

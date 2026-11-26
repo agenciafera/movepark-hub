@@ -318,10 +318,13 @@ segura em reserva confirmada antes do check-in.
   escolhida: prévia do servidor, PIX com QR e mensagem para o WhatsApp, e "Pagamento recebido"
   quando a reserva relida já tem a saída nova. O balcão segue podendo cobrar na retirada, por fora do
   Hub, como antes: as duas formas estão nos Termos v7 (item 4.3).
-- **Cloudpark (gate G-CP):** a extensão não chega à cancela (a fila de integração só dispara na
-  confirmação). Na unidade com `integration_connection` ativa a prévia traz `access_provider` e a
-  tela avisa para ajustar a saída da placa na Cloudpark. Falta confirmar com Nationpark e Abbapark
-  como a cancela trata quem sai depois do horário.
+- **Cloudpark (gate G-CP, fechado em 26/11/2026):** a extensão não chega à cancela (a fila de
+  integração só dispara na confirmação). A cancela libera a placa até a folga de saída da conexão
+  (1 hora em Nationpark e Abbapark) e depois barra; a portaria valida a saída no sistema da Cloudpark
+  (resposta da Nationpark). Na unidade com `integration_connection` ativa a prévia traz
+  `access_provider` e `access_exit_margin_min`, e a tela avisa até quando a placa passa e que a
+  saída se valida lá **sem cobrar**, porque o cliente pagou pelo Hub. O aviso continua com o PIX na
+  tela e depois do pagamento.
 - **Termos v7** (`20261208130000`): 4.3 com as duas formas de cobrar e "sair antes não devolve";
   6.3 com "depois do check-in, só o estacionamento estende". As FAQs que dizem "paga na saída pela
   tabela do próprio estacionamento" continuam verdade (é uma das formas) e não foram reescritas.

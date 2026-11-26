@@ -37,6 +37,16 @@ function minutes(v: unknown, fallback: number): number {
   return Math.min(240, Math.max(0, Math.round(n)));
 }
 
+/**
+ * Folga de saída que a conexão manda à cancela, em minutos. Depois dela a cancela barra a placa e a
+ * portaria precisa validar a saída no sistema da Cloudpark (resposta da Nationpark, 26/11/2026).
+ * Não valida o endereço: serve à tela que avisa a equipe, não ao envio.
+ */
+export function cloudparkExitMarginMin(raw: unknown): number {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return minutes(r.exit_margin_min, DEFAULT_MARGIN_MIN);
+}
+
 export function parseCloudparkConfig(raw: unknown): CloudparkConfig {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const base = (text(r.base_url) ?? "").toLowerCase().replace(/\/+$/, "");

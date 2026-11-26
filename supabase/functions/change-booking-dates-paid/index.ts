@@ -28,7 +28,8 @@
 //     `fare_upgrade_first`); só o hub_admin dispensa, com `waive_fare_upgrade` + `reason`;
 //   - `extend: true` estende a saída com o carro no pátio: depois da entrada, a entrada igual à da
 //     reserva, a saída maior; cota e segura a vaga em modo extensão, sem upgrade e com piso zero. A
-//     prévia diz em `access_provider` se a unidade manda as reservas para a cancela (Cloudpark).
+//     prévia diz em `access_provider` se a unidade manda as reservas para a cancela (Cloudpark) e,
+//     em `access_exit_margin_min`, até quantos minutos depois da saída reservada a cancela libera.
 // → 200 { mode: "quote", ... } | 200 { mode: "applied", delta, total_amount, refunded, refund_pending, refund_manual }
 //   | 201 { mode: "charge", payment_id, qr_code, qr_code_url, expires_at, delta }
 //   | 409 { code: "quote_changed", ... } quando o valor mudou desde a prévia.
@@ -68,6 +69,7 @@ import {
   upgradePlan,
 } from "./logic.ts";
 import { actorSeesMoney, resolveBookingActor } from "../_shared/booking-actor.ts";
+import { cloudparkExitMarginMin } from "../_shared/integrations/cloudpark.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -234,20 +236,24 @@ Deno.serve(async (req: Request) => {
   const plano = upgradePlan(deltaCents, upgrade);
   const upgradeView = upgrade ? { tier: upgrade.tier, cents: upgrade.cents, amount: upgrade.cents / 100 } : null;
 
-  // Unidade cuja cancela recebe as reservas do Hub (Cloudpark): a extensão não chega lá, e a tela
-  // avisa a equipe para ajustar a saída no sistema do pátio (gate G-CP da spec).
+  // Unidade cuja cancela recebe as reservas do Hub (Cloudpark): a extensão não chega lá. A cancela
+  // libera a placa até a folga de saída da conexão e depois barra, e a portaria valida a saída no
+  // sistema dela (resposta da Nationpark, 26/11/2026; gate G-CP da spec). A tela avisa a equipe.
   let accessProvider: string | null = null;
+  let accessExitMarginMin: number | null = null;
   if (extend) {
     const { data: conn } = await admin
       .from("integration_connection")
-      .select("provider")
+      .select("provider, config")
       .eq("location_id", booking.location_id)
       .eq("enabled", true)
       .eq("send_hub_bookings", true)
       .is("deleted_at", null)
       .limit(1)
       .maybeSingle();
-    accessProvider = (conn as { provider?: string } | null)?.provider ?? null;
+    const c = conn as { provider?: string; config?: unknown } | null;
+    accessProvider = c?.provider ?? null;
+    if (accessProvider === "cloudpark") accessExitMarginMin = cloudparkExitMarginMin(c?.config);
   }
 
   if (input.dryRun) {
@@ -256,6 +262,7 @@ Deno.serve(async (req: Request) => {
       ...view,
       extension: extend,
       access_provider: accessProvider,
+      access_exit_margin_min: accessExitMarginMin,
       // Cartão é do próprio cliente, na tela dele; a equipe gera PIX e manda o copia-e-cola.
       card_allowed: isOwner && deltaCents > 0,
       fare_upgrade: upgradeView,

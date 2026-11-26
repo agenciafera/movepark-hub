@@ -135,11 +135,16 @@ Bloco **Operação**, reserva do Hub, `confirmed`, antes da entrada, com `bookin
   do card quando a reserva tem cupom (3 reservas em 192 têm cupom, nenhuma ativa).
 - **Termos v7:** o item 6.3 ganha a frase de que, depois da entrada, a saída é estendida pelo
   estacionamento, pela tabela do dia da compra, e paga por PIX.
-- **Gate G-CP (Cloudpark):** Nationpark e Abbapark (Afonso Pena) mandam as reservas do Hub para a
-  Cloudpark, e o QR de lá tem a saída antiga mais 1h. Antes de ligar a extensão nessas unidades,
-  confirmar com o parceiro como a cancela trata a saída depois do horário, para o cliente não pagar
-  duas vezes. Até a resposta, nas unidades com `integration_connection` ativa, a tela mostra
-  "Ajuste a saída desta placa na Cloudpark" ao lado do botão.
+- **Gate G-CP (Cloudpark), fechado em 26/11/2026:** Nationpark e Abbapark (Afonso Pena) mandam as
+  reservas do Hub para a Cloudpark com 1 hora de folga antes da entrada e depois da saída. A resposta
+  da Nationpark: passada a folga, a cancela barra a placa e a portaria precisa fazer uma validação
+  (ou cobrança) no sistema da Cloudpark para liberar a saída. A extensão não chega lá, então na
+  unidade com `integration_connection` ativa a tela diz até quando a cancela libera a placa (a folga
+  `exit_margin_min` da conexão, devolvida em `access_exit_margin_min`) e pede para validar a saída na
+  Cloudpark **sem cobrar**, porque o cliente pagou pelo Hub. O aviso fica na prévia, com o PIX na tela
+  e depois do pagamento. Mandar a saída nova à Cloudpark depende da Fase 4 de
+  [`integracoes.md`](../../specs/integracoes.md) (nova reserva lá), e com o carro já dentro a portaria
+  continua validando.
 
 ## 5. Fora do escopo
 

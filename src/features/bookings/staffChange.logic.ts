@@ -95,3 +95,22 @@ export function pixMessage(o: { code: string; amount: number; what: "datas" | "u
   const valor = formatBRL(o.amount).replace(/\u00a0/g, " ");
   return `Olá! Segue o PIX de ${valor} para ${motivo} da reserva ${o.code} na Movepark. É só copiar o código abaixo no app do seu banco.`;
 }
+
+function duracao(min: number): string {
+  if (min % 60 === 0) {
+    const h = min / 60;
+    return h === 1 ? "1 hora" : `${h} horas`;
+  }
+  return `${min} minutos`;
+}
+
+/**
+ * Aviso da extensão no pátio em unidade com a cancela da Cloudpark. A extensão não chega lá: a
+ * cancela libera a placa até a folga de saída e depois barra, e a portaria valida a saída no sistema
+ * dela (resposta da Nationpark, 26/11/2026). Sem cobrar de novo, porque o cliente pagou pelo Hub.
+ */
+export function cloudparkExtensionWarning(exitMarginMin: number | null | undefined): string {
+  const m = Math.max(0, Math.round(exitMarginMin ?? 60));
+  const ate = m > 0 ? `até ${duracao(m)} depois da saída reservada` : "até a saída reservada";
+  return `A extensão não chega à cancela da Cloudpark, que libera esta placa só ${ate}. Depois disso, valide a saída no sistema da Cloudpark sem cobrar: o cliente já pagou pelo Hub.`;
+}

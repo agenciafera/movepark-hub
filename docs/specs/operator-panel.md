@@ -276,7 +276,9 @@ diária ao lado do "Valor das diárias" (Manager: campo "Diária"). Código em `
 vê, embaixo do valor a cobrar, o botão **Cobrar pelo Hub**: a saída da reserva passa para a saída
 escolhida e a diferença vai num PIX dividido como a reserva (`ExtendStayPanel`, regra em
 `booking-modifications.md` §8.8). Cobrar na retirada, por fora do Hub, continua valendo. Em unidade
-cuja cancela recebe as reservas (Cloudpark), a tela avisa para ajustar a saída da placa lá.
+cuja cancela recebe as reservas (Cloudpark), a tela avisa que a cancela só libera a placa até a
+folga de saída (1 hora) e que, depois disso, a portaria valida a saída no sistema da Cloudpark sem
+cobrar de novo.
 
 #### Alterar reserva pelo cliente (26/11/2026)
 
