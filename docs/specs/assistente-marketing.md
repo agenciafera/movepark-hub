@@ -1,8 +1,10 @@
 # Assistente de IA da Automação (página própria, agente no beast-bots)
 
-> **Status:** v2 com desenho aprovado em 26/11/2026, **ainda não implementada**. Até ela entrar, segue
-> no ar a v1 de 25/11/2026: bolinha em `/manager/marketing` e laço do Gemini dentro da Edge
-> `marketing-assistant` (descrita no § 12, que diz o que sai).
+> **Status:** v2 implementada e no ar em 26/11/2026. Página `/manager/marketing/assistente`, Edge
+> `marketing-assistant` como ponte, superfície `/marketing` do MCP e agente `movepark-marketing` no
+> beast-bots (PR agenciafera/beast-bots#9; evals 6 de 6). A v1 (bolinha e laço do Gemini na Edge)
+> saiu. Conferido no vivo: sem token e com a chave anon 401, cliente 403, admin lista as conversas.
+> Nenhuma campanha foi executada e a chave geral segue desligada.
 > **Base:** [marketing-mcp.md](./marketing-mcp.md) (registro de tools de marketing em
 > `supabase/functions/_shared/marketing/`, gravação auditada, motor compartilhado) e
 > [assistente-do-operador.md](./assistente-do-operador.md), que é o molde da ponte Hub → beast-bots
@@ -96,8 +98,10 @@ MCP em `MOVEPARK_MARKETING_MCP_KEY`.
 
 **Memória.** `resource = movepark-marketing:hub:<user_id>`,
 `thread = movepark-marketing:hub:<user_id>:<conversa_id>`. Toda rota confere que a thread nasce do
-resource. Título automático (`generateTitle` com `emitEvent: true`, que manda o título no próprio
-stream). Configuração de memória sem recall semântico: a conversa é curta e o dado da base vem das
+resource. Título automático pelo `generateTitle` da memória da plataforma, que roda em segundo plano
+depois da resposta: o `emitEvent`, que mandaria o título no próprio stream, não existe no
+`@mastra/core` 1.62 do beast-bots (só nas versões novas). A tela recarrega a lista a cada 3 segundos
+enquanto houver conversa do último minuto sem título (`esperandoTitulo`). Configuração de memória sem recall semântico: a conversa é curta e o dado da base vem das
 tools, não da memória.
 
 | Rota | Corpo | Resposta |
@@ -190,7 +194,7 @@ Sem tabela de conversa nem de mensagem: a conversa é a thread do Mastra (D3).
   `/manager/marketing/assistente/:conversa`. Item "Assistente de IA" no grupo Automação do menu
   lateral (`src/components/shared/nav-items.ts`), junto de Segmentos, Campanhas e as demais.
 - **Coluna da esquerda:** "Nova conversa" e a lista (título e data). Cada item tem renomear (edição
-  no lugar) e apagar (com confirmação, porque não volta). Título novo chega pelo próprio stream.
+  no lugar) e apagar (com confirmação, porque não volta). Título novo aparece quando o agente termina de gerá-lo.
 - **Centro:** a conversa, com `useChat` do AI SDK (pacotes novos `ai` e `@ai-sdk/react`) e um
   transporte que fala com a Edge e manda o JWT. Texto do agente em markdown pelo
   `MarkdownRestrito` (`src/components/shared/MarkdownRestrito.tsx`), o mesmo do chat do site. Caixa de texto embaixo e sugestões quando a conversa está vazia.
@@ -249,7 +253,7 @@ Nenhum teste chama o modelo de verdade nem executa campanha.
 3. Hub: Edge `marketing-assistant` vira ponte.
 4. Hub: página nova e aba no menu; a bolinha sai no mesmo commit.
 
-## 12. O que sai da v1
+## 12. O que saiu da v1 (26/11/2026)
 
 - `src/features/marketing-assistant/MarketingAssistantWidget.tsx`, a lógica de `sessionStorage` e a
   montagem no layout do Manager.
