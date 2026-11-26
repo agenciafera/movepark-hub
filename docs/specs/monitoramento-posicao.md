@@ -117,3 +117,12 @@ Janela de 07/09 a 04/10/2026, em
 O padrão que mais pesa: **no celular a Movepark já está perto da primeira página em quase todos
 os aeroportos; no computador, cai 15 a 35 posições** em preço e proximidade de Guarulhos e
 Viracopos.
+
+## 7. Rodada de 23/11/2026
+
+Janela de 27/10 a 23/11/2026, em
+[`dados/gsc-posicao-2026-11-23/`](./dados/gsc-posicao-2026-11-23/RESUMO.md).
+**17 de 59 no top 10** (14 em 02/11). Guarulhos segue com 0; Confins subiu de 3 para 5 nas caudas
+de preço e caiu na cabeça ("estacionamento aeroporto confins" de 12,1 para 16,5). Desta rodada em
+diante a medição é semanal, na segunda-feira, pela
+[rotina-semanal-busca-e-ia.md](./rotina-semanal-busca-e-ia.md).
