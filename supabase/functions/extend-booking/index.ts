@@ -22,6 +22,7 @@ import { getEmailConfig, sendEmail, tplBookingExtended, tplFlightProtectionUnit 
 import { LOCATION_BRAND_SELECT, locationBrand } from "../_shared/voucher/fields.ts";
 import { siteUrl } from "../_shared/site.ts";
 import { fmtBRDateTime, fmtBRL, parseExtendInput, pickExtendedEvent } from "./logic.ts";
+import { resolveBookingActor } from "../_shared/booking-actor.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,29 +84,18 @@ Deno.serve(async (req: Request) => {
   // deno-lint-ignore no-explicit-any
   const companyId = (booking as any).location?.company_id as string | undefined;
 
-  // Autorização: dono (customer) ou staff (hub_admin / operador da empresa).
-  let actor: "customer" | "staff" | null = null;
-  if (booking.profile_id === userId) {
-    actor = "customer";
-  } else {
-    const { data: caller } = await admin
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
-    if (caller?.role === "hub_admin") {
-      actor = "staff";
-    } else if (caller?.role === "company_operator" && companyId) {
-      const { data: membership } = await admin
-        .from("profile_company")
-        .select("company_id")
-        .eq("profile_id", userId)
-        .eq("company_id", companyId)
-        .maybeSingle();
-      if (membership) actor = "staff";
-    }
-  }
-  if (!actor) return jsonResponse({ error: "Sem permissão para alterar esta reserva." }, 403);
+  // Autorização: dono (customer) ou equipe com `bookings:write` (26/11/2026; antes bastava ser da
+  // empresa).
+  const quem = await resolveBookingActor({
+    admin,
+    userClient,
+    userId,
+    ownerId: booking.profile_id,
+    companyId,
+    scope: "bookings:write",
+  });
+  if (quem.kind === "denied") return jsonResponse({ error: quem.error }, quem.status);
+  const actor: "customer" | "staff" = quem.kind === "owner" ? "customer" : "staff";
 
   // Server-authoritative: a RPC valida Superflex, status, datas e re-segura capacidade.
   const { data: result, error: rpcErr } = await admin.rpc("extend_booking_flight_delay", {

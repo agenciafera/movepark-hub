@@ -28,6 +28,7 @@ import { sweepDebtEmails } from "../_shared/debt-email.ts";
 import { cancellationRefund, sendBookingCancellationEmail } from "../_shared/booking-cancellation.ts";
 import { notifyBooking } from "../_shared/notify.ts";
 import { desfechoDoCancelamento, parseCancelInput, refundDecision, remainingCents, type Actor } from "./logic.ts";
+import { resolveBookingActor, SEM_PERMISSAO } from "../_shared/booking-actor.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -93,29 +94,23 @@ Deno.serve(async (req: Request) => {
   // deno-lint-ignore no-explicit-any
   const companyId = (booking as any).location?.company_id as string | undefined;
 
-  // Autorização: dono (customer) ou staff (hub_admin / operador da empresa).
-  let actor: Actor | null = null;
-  if (booking.profile_id === userId) {
-    actor = "customer";
-  } else {
-    const { data: caller } = await admin
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
-    if (caller?.role === "hub_admin") {
-      actor = "staff";
-    } else if (caller?.role === "company_operator" && companyId) {
-      const { data: membership } = await admin
-        .from("profile_company")
-        .select("company_id")
-        .eq("profile_id", userId)
-        .eq("company_id", companyId)
-        .maybeSingle();
-      if (membership) actor = "staff";
-    }
+  // Autorização: dono (customer) ou equipe com `bookings:cancel` (hub_admin ou papel da empresa que
+  // tem o escopo). Antes bastava ser da empresa, e o Financeiro cancelava com estorno (26/11/2026).
+  const quem = await resolveBookingActor({
+    admin,
+    userClient,
+    userId,
+    ownerId: booking.profile_id,
+    companyId,
+    scope: "bookings:cancel",
+  });
+  if (quem.kind === "denied") {
+    return jsonResponse(
+      { error: quem.error === SEM_PERMISSAO ? "Sem permissão para cancelar esta reserva." : quem.error },
+      403,
+    );
   }
-  if (!actor) return jsonResponse({ error: "Sem permissão para cancelar esta reserva." }, 403);
+  const actor: Actor = quem.kind === "owner" ? "customer" : "staff";
 
   // O pagamento que sustenta a reserva: o mais recente ainda pago e sem estorno; sem nenhum, o
   // último (pendente, recusado). Com o estorno avulso (19/10/2026) a reserva pode ter um pagamento

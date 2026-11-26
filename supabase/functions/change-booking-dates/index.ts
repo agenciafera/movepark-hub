@@ -14,6 +14,7 @@ import { LOCATION_BRAND_SELECT, locationBrand } from "../_shared/voucher/fields.
 import { siteUrl } from "../_shared/site.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { dateChangeAllowed, parseChangeDatesInput } from "./logic.ts";
+import { resolveBookingActor } from "../_shared/booking-actor.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,19 +74,17 @@ Deno.serve(async (req: Request) => {
   const companyId = (booking as any).location?.company_id as string | undefined;
   let isStaff = false;
   if (booking.profile_id !== userId) {
-    const { data: caller } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-    if (caller?.role === "hub_admin") {
-      isStaff = true;
-    } else if (caller?.role === "company_operator" && companyId) {
-      const { data: m } = await admin
-        .from("profile_company")
-        .select("company_id")
-        .eq("profile_id", userId)
-        .eq("company_id", companyId)
-        .maybeSingle();
-      if (m) isStaff = true;
-    }
-    if (!isStaff) return jsonResponse({ error: "Sem permissão para alterar esta reserva." }, 403);
+    // Equipe só com `bookings:write` (26/11/2026): antes bastava ser da empresa.
+    const quem = await resolveBookingActor({
+      admin,
+      userClient,
+      userId,
+      ownerId: booking.profile_id,
+      companyId,
+      scope: "bookings:write",
+    });
+    if (quem.kind === "denied") return jsonResponse({ error: quem.error }, quem.status);
+    isStaff = quem.kind === "staff";
   }
 
   // deno-lint-ignore no-explicit-any
