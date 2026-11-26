@@ -241,6 +241,19 @@ Implementação E2.8-h (jul/2026): **B1** cotação `reprice_booking_dates` (mig
 gravação, extrato) e `20261204150000` (reembolso manual parcial). Até 17/11/2026 nenhuma cobrança de
 diferença nem estorno parcial tinha acontecido em produção (3 trocas, todas com diferença zero).
 
+### 8.6 Dias a mais no balcão (26/11/2026)
+
+A mesma tabela da compra serve o balcão para cobrar quem sai depois do combinado (pedido do Kallef em
+26/11/2026). A RPC `booking_extra_days_table(booking)` (migration `20261208110000`) devolve as
+diárias pagas (`price_breakdown.days`, ou as datas com a tolerância), a tolerância da unidade e o
+preço de tabela da estadia reservada e de até 30 dias a mais: pela `price_by_days` quando ela cobre a
+estadia, senão pelo `simulate_price` de hoje (`price_source` diz qual). O valor a cobrar é
+`tabela(diárias da saída real) − tabela(diárias pagas)`, a regra da decisão 1 acima, com piso zero
+(estadia maior que custa menos não vira devolução no portão). A conta da saída real está em
+`extraDays.logic.ts` e a tela no card **Dias a mais** (`operator-panel.md` §4.2). Isto só informa: a
+cobrança acontece no balcão, fora do Hub, como o excedente da proteção de voo. pgTAP
+`booking_extra_days_table`.
+
 ## 9. Divergência conhecida a alinhar
 
 A página estática `src/routes/cancelamento.tsx` (marketing) ainda anuncia uma política de **3 faixas**

@@ -372,7 +372,11 @@ lista traz até 500 linhas; passou disso, a tela avisa que mostra só as mais re
 Colunas (04/10/2026, `BookingTable`, a mesma do Operator e do dashboard): `Reserva` ·
 `Criada em` (data da compra, com o canal embaixo) · `Cliente` · `Estacionamento` (empresa e
 unidade) · `Estadia` (check-in, check-out e dias) · `Pagamento` (forma pelo pagamento mais
-recente, "Cartão 3x" quando parcelado, e o estado do dinheiro) · `Valor` · `Status`.
+recente, "Cartão 3x" quando parcelado, e o estado do dinheiro) · `Diárias` · `Valor pago` · `Status`.
+Desde 26/11/2026 o Manager usa as duas colunas de valor do Operator no lugar do `Valor` único:
+`Diárias` com quantas e quanto cada uma embaixo, e `Valor pago` com o plano e o cupom que explicam a
+diferença (ver `operator-panel.md` §4.2, "Diária e o que explica o valor pago"). O detalhe da reserva
+ganhou o card **Dias a mais** (mesma seção).
 
 - Sort em todas as colunas
 - Export CSV

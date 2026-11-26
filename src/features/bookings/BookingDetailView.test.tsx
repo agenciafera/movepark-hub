@@ -3,7 +3,12 @@ import { fireEvent, screen } from "@testing-library/react";
 import { Route, Routes } from "react-router-dom";
 import { mockAuth, renderWithProviders } from "@/test/utils";
 
-const state = vi.hoisted(() => ({ booking: null as unknown, trail: null as unknown, history: [] as unknown[] }));
+const state = vi.hoisted(() => ({
+  booking: null as unknown,
+  trail: null as unknown,
+  history: [] as unknown[],
+  extraDays: null as unknown,
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const updateMutate = vi.hoisted(() => vi.fn());
 const byCodeArgs = vi.hoisted(() => vi.fn());
@@ -22,15 +27,29 @@ vi.mock("./api", () => ({
     return { mutate: updateMutate, isPending: false };
   },
   useBookingHistory: () => ({ data: state.history ?? [] }),
+  useExtraDaysTable: () => ({ data: state.extraDays, isLoading: false, isError: false }),
+  useRecordFlightCheckout: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 const voucherPdf = vi.hoisted(() => vi.fn());
 vi.mock("./customerApi", () => ({
   useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useVoucherPdf: () => ({ mutateAsync: voucherPdf, isPending: false }),
+  useExtendBookingFlightDelay: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 vi.mock("@/features/payouts/api", () => ({ usePayoutReleaseDays: () => ({ data: 30 }) }));
 
 import { BookingDetailView } from "./BookingDetailView";
+import { parseExtraDaysTable } from "./extraDays.logic";
+
+// Tabela de dias a mais da reserva do fixture (1 diária, entrada 10/10 12:00 UTC): R$ 18 por dia.
+state.extraDays = parseExtraDaysTable({
+  booked_days: 1,
+  tolerance_minutes: 0,
+  check_in_at: "2026-10-10T12:00:00Z",
+  check_out_at: "2026-10-11T12:00:00Z",
+  price_source: "compra",
+  prices: { "1": 18, "2": 36, "3": 54, "4": 72 },
+});
 
 function booking(status: string, payments: unknown[]) {
   return {
@@ -282,6 +301,51 @@ describe("BookingDetailView", () => {
     expect(screen.getByTestId("linha-do-tempo")).not.toHaveTextContent(/: Paga/);
   });
 
+  // 26/11/2026: a diária ao lado do valor das diárias, e a tabela de dias a mais na reserva.
+  it("Operator com finance:read vê quantas diárias e quanto cada uma", () => {
+    state.booking = booking("confirmed", [pago]);
+    abre("operator", () => true);
+    expect(screen.getByText("1 × R$ 18,00")).toBeInTheDocument();
+    expect(screen.getByTestId("dias-a-mais")).toBeInTheDocument();
+  });
+
+  it("Manager vê a diária e a tabela de dias a mais", () => {
+    state.booking = booking("checked_in", [pago]);
+    abre("manager");
+    expect(screen.getByText("Diária")).toBeInTheDocument();
+    expect(screen.getByTestId("dias-a-mais")).toBeInTheDocument();
+  });
+
+  it("sem dias a mais na reserva pendente e com a proteção de voo acionada (ela tem a própria conta)", () => {
+    state.booking = booking("pending", []);
+    abre("operator", () => true);
+    expect(screen.queryByTestId("dias-a-mais")).not.toBeInTheDocument();
+  });
+
+  it("com a proteção de voo acionada, o excedente segue a conta dela e o card sai", () => {
+    state.booking = {
+      ...booking("checked_in", [pago]),
+      fare_extensions: [
+        { kind: "delay", old_check_out_at: "2026-10-11T12:00:00Z", new_check_out_at: "2026-10-12T12:00:00Z",
+          overage_cents: 0, overage_daily_cents: 1800, actual_check_out_at: null, flight_number: "LA1" },
+      ],
+    };
+    abre("operator", () => true);
+    expect(screen.getByTestId("flight-notice")).toBeInTheDocument();
+    expect(screen.queryByTestId("dias-a-mais")).not.toBeInTheDocument();
+  });
+
+  it("vaga sem tabela de preço: o card diz isso em vez de inventar valor", () => {
+    const antes = state.extraDays;
+    state.extraDays = null;
+    state.booking = booking("confirmed", [pago]);
+    abre("operator", () => true);
+    expect(screen.getByTestId("dias-a-mais")).toHaveTextContent(
+      "A tabela de preço desta vaga não está disponível.",
+    );
+    state.extraDays = antes;
+  });
+
   // Fase 6: a linha do tempo da reserva do Hub diz quem fez, como a do site.
   it("linha do tempo com quem fez o check-in", () => {
     state.booking = booking("checked_in", [{ id: "p", status: "paid", method: "pix", paid_at: "2026-10-01T10:05:00Z", created_at: "2026-10-01T10:00:00Z" }]);
@@ -301,6 +365,11 @@ describe("BookingDetailView", () => {
  * split, sem taxa) e a tela não mostra dinheiro. O que o balcão precisa continua: quem é, a placa,
  * as datas, se pagou e como, o check-in e o excedente da proteção de voo que ele cobra.
  */
+/** Elementos com o texto fora do card de dias a mais (o único lugar com preço para o balcão). */
+function foraDoCardDeDiasAMais(re: RegExp) {
+  return screen.queryAllByText(re).filter((el) => !el.closest('[data-testid="dias-a-mais"]'));
+}
+
 describe("BookingDetailView: balcão sem dinheiro", () => {
   const SEM_FINANCEIRO = (escopo: string) => escopo !== "finance:read";
   // O que a RPC do balcão devolve: a mesma forma, com os valores nulos e o pagamento sem valor.
@@ -324,7 +393,23 @@ describe("BookingDetailView: balcão sem dinheiro", () => {
     expect(screen.queryByTestId("reserva-valores")).not.toBeInTheDocument();
     expect(screen.queryByTestId("valores-diarias")).not.toBeInTheDocument();
     expect(screen.queryByTestId("valores-comissao")).not.toBeInTheDocument();
-    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+    // Desde 26/11/2026 o único R$ da tela do balcão é preço de TABELA, no card de dias a mais.
+    expect(foraDoCardDeDiasAMais(/R\$/)).toHaveLength(0);
+  });
+
+  it("vê a tabela de dias a mais, porque é o balcão quem cobra a diferença no portão", () => {
+    state.booking = semValor("checked_in");
+    abre("operator", SEM_FINANCEIRO);
+    const card = screen.getByTestId("dias-a-mais");
+    expect(card).toHaveTextContent("Dias a mais");
+    expect(card).toHaveTextContent("tabela de preço do dia da compra");
+    // Saída real dois dias depois: 3 diárias pela tabela, contra 1 reservada.
+    fireEvent.change(screen.getByLabelText("Saída real"), { target: { value: "2026-10-12T12:30" } });
+    expect(screen.getByTestId("dias-a-mais-cobrar").textContent?.replace(/\u00a0/g, " ")).toBe(
+      "2 diárias a mais: cobrar R$ 36,00",
+    );
+    expect(card).toHaveTextContent("reservada");
+    expect(card).toHaveTextContent("+1 dia");
   });
 
   it("o que o balcão precisa segue na tela: cliente, placa, pagamento e as operações", () => {
@@ -348,6 +433,8 @@ describe("BookingDetailView: balcão sem dinheiro", () => {
     abre("operator", SEM_FINANCEIRO);
     expect(screen.getByTestId("reserva-estado")).toHaveTextContent("O pagamento foi devolvido ao cliente");
     expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+    // Cancelada não tem saída para cobrar: o card de dias a mais nem aparece.
+    expect(screen.queryByTestId("dias-a-mais")).not.toBeInTheDocument();
   });
 
   it("Gerente, Financeiro e Dono (com finance:read) seguem vendo os valores", () => {

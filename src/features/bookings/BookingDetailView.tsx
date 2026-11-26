@@ -25,6 +25,8 @@ import { usePayoutReleaseDays } from "@/features/payouts/api";
 import { useChangeBookingVehicle, useVoucherPdf } from "./customerApi";
 import { canDownloadVoucher } from "./voucher.logic";
 import { BookingMoneyCard } from "./BookingMoneyCard";
+import { ExtraDaysCard } from "./ExtraDaysCard";
+import { dailyRate, dailyRateLabel } from "./unifiedBookingRow.logic";
 import { useSeesMoney } from "@/auth/useSeesMoney";
 import { BookingFeesDialog } from "./BookingFeesDialog";
 import type { FeeBookingLike } from "./bookingFees.logic";
@@ -60,6 +62,9 @@ const OPERACAO: Record<BookingStatus, BookingStatus[]> = {
   expired: [],
   no_show: [],
 };
+
+/** Reserva em que a saída ainda importa para o balcão: confirmada, no pátio ou concluída. */
+const DIAS_A_MAIS_STATUS = new Set<BookingStatus>(["confirmed", "checked_in", "completed"]);
 
 function Campo({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -214,6 +219,12 @@ export function BookingDetailView({
     (audience === "manager"
       ? effectiveRole === "hub_admin"
       : !counter && !!empresaId && hasScope("finance:read", empresaId));
+  // Quantas diárias e quanto cada uma (26/11/2026), pelo snapshot de preço. O balcão não o recebe.
+  const diaria = counter
+    ? null
+    : dailyRate(
+        (booking as unknown as { price_breakdown?: PriceBreakdownLike | null }).price_breakdown,
+      );
   const formaPagamento = paymentMethodLabel(booking.payments, "long");
   const ultimoPagamento = lastPayment(booking.payments);
   const fareTier = (booking as unknown as { fare_tier?: string | null }).fare_tier ?? null;
@@ -370,10 +381,20 @@ export function BookingDetailView({
             {counter ? null : audience === "operator" ? (
               <Campo
                 label="Valor das diárias"
-                value={formatBRL(partnerMoneyView(money!).parkingCents / 100)}
+                value={
+                  <>
+                    {formatBRL(partnerMoneyView(money!).parkingCents / 100)}
+                    {diaria && (
+                      <span className="block text-caption text-muted">{dailyRateLabel(diaria)}</span>
+                    )}
+                  </>
+                }
               />
             ) : (
-              <Campo label="Valor total" value={formatBRL(booking.total_amount)} />
+              <>
+                <Campo label="Valor total" value={formatBRL(booking.total_amount)} />
+                {diaria && <Campo label="Diária" value={dailyRateLabel(diaria)} />}
+              </>
             )}
             <Campo
               label="Forma de pagamento"
@@ -552,6 +573,11 @@ export function BookingDetailView({
           </CardContent>
         </Card>
       )}
+
+      {/* Dias a mais (26/11/2026): quanto cobrar de quem sai depois do combinado, pela tabela da
+          compra. O balcão vê, porque é ele quem cobra. Com a proteção de voo acionada, o excedente
+          segue a conta dela (diária congelada a partir da saída coberta), então o card sai. */}
+      {!ext && DIAS_A_MAIS_STATUS.has(booking.status) && <ExtraDaysCard bookingId={booking.id} />}
 
       {/* Proteção de voo (Superflex): o staff aciona pelo cliente que ligou do aeroporto. */}
       {/* O card fica depois de concluída: os três números (crédito, excedente, cobrado) contam a história. */}

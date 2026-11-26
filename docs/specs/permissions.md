@@ -191,6 +191,8 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 
 ## Dinheiro da reserva: `booking` e `payment` só com `finance:read` (23/11/2026)
 
+> **Exceção (26/11/2026): o balcão vê preço de tabela no card "Dias a mais".** Para cobrar quem sai depois do combinado, a reserva mostra a tabela da estadia e de cada dia a mais (RPC `booking_extra_days_table`, migration `20261208110000`, `hub_admin` ou membro com `bookings:read` na empresa). É preço de TABELA, o mesmo da vitrine: a RPC nunca devolve o que a reserva pagou, comissão ou repasse, e `counter_booking_json` não mudou. Ver `operator-panel.md` §4.2.
+>
 > **Exceção (24/11/2026): o balcão vê o total pago.** A lista de reservas do balcão (`operator_bookings_by_ids` e, no site, `paid_total_cents` de `bookings_list_page`) devolve só o total que o cliente pagou, para conferir a reserva sem abrir o detalhe (migration `20261206170000`). Diárias, comissão, repasse, taxas e o detalhe seguem sem valor.
 
 Até 23/11/2026 as policies `booking_select` e `payment_select` liberavam toda linha da empresa a

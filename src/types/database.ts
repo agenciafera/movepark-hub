@@ -9557,6 +9557,10 @@ export type Database = {
         Args: { p_from: string; p_location_ids?: string[]; p_to: string }
         Returns: Json
       }
+      booking_extra_days_table: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       booking_gateway_trail: { Args: { p_booking_id: string }; Returns: Json }
       booking_history: { Args: { p_booking_id: string }; Returns: Json }
       booking_priority_for_phones: {

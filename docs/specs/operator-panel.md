@@ -229,7 +229,16 @@ caminho. Quem tem `finance:read` vê e usa tudo como descrito acima.
 #### Tabela de Reservas
 
 Colunas padrão: `Reserva` · `Criada em` · `Cliente` · `Unidade` · `Estadia` · `Pagamento` ·
-`Diárias` · `Valor pago` (total que o cliente pagou, para conferir sem abrir a reserva; some no balcão e não existe no Manager) · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
+`Diárias` · `Valor pago` (total que o cliente pagou, para conferir sem abrir a reserva) · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
+
+- **Diária e o que explica o valor pago (26/11/2026).** "Diárias" e "Valor pago" pareciam o mesmo
+  número com valores diferentes. Embaixo das diárias sai quantas e quanto cada uma ("8 × R$ 18,90");
+  no pacote, que não fecha na multiplicação, "29 diárias, média de R$ 12,07". Embaixo do valor pago
+  sai o que leva das diárias a ele: "+ plano Flex R$ 12,90", "- cupom R$ 10,00". Tudo sai do
+  `price_breakdown` (`dailyRate`, `paidNote` em `unifiedBookingRow.logic.ts`), então o balcão, que
+  não o recebe, segue vendo só o valor pago; a reserva do site também não tem esse detalhe. O CSV
+  ganha `Qtd. diárias`, `Valor da diária (R$)` e `Valor pago (R$)`. O Manager passou a usar as mesmas
+  duas colunas (antes tinha só `Valor`, o total).
 
 - **Colunas por pessoa (11/11/2026).** O botão **Colunas** liga, desliga e reordena as colunas
   (`Reserva` não sai). A escolha fica **no usuário, no banco** (`profiles.preferences.ui`, chave
@@ -248,6 +257,20 @@ Colunas padrão: `Reserva` · `Criada em` · `Cliente` · `Unidade` · `Estadia`
 - Export CSV
 - Click na linha → drawer lateral (ver 4.2.1)
 - Ações inline: confirmar · cancelar (com permissão)
+
+#### Dias a mais na reserva (26/11/2026)
+
+Card **Dias a mais** no detalhe da reserva do Hub (Operator e Manager), em reserva confirmada, no
+pátio ou concluída. Serve para o balcão cobrar quem sai depois do combinado: mostra a estadia
+reservada e cada dia seguinte (uma semana aberta, até 30 no botão) com o total de tabela e o valor a
+cobrar, e um campo **Saída real** que conta as diárias com a tolerância da unidade e diz quanto
+cobrar. A conta é a da troca de datas (`booking-modifications.md` §8.6): diferença entre as durações
+pela tabela da compra (`booking.price_by_days`), ou pela de hoje em reserva anterior a 17/11/2026.
+**O balcão vê o card**, porque é ele quem cobra: a RPC `booking_extra_days_table` devolve só preço
+de tabela, nunca o que a reserva pagou. Com a proteção de voo acionada o card sai, porque o
+excedente segue a conta dela (diária congelada a partir da saída coberta). A ficha mostra também a
+diária ao lado do "Valor das diárias" (Manager: campo "Diária"). Código em `ExtraDaysCard.tsx` e
+`extraDays.logic.ts`.
 
 #### 4.2.1 Drawer — Detalhe da Reserva
 

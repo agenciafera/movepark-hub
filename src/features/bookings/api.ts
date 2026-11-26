@@ -10,6 +10,7 @@ import type {
 } from "@/types/domain";
 import type { PartnerPayablesEntry } from "./bookingFees.logic";
 import type { BookingHistoryEntry } from "./bookingHistory.logic";
+import { parseExtraDaysTable, type ExtraDaysTable } from "./extraDays.logic";
 import { CHANNEL_ORIGINS, type ChannelFilter, type PaymentMethodFilter } from "./bookingList.logic";
 
 type BookingUpdate = Database["public"]["Tables"]["booking"]["Update"];
@@ -467,6 +468,25 @@ export function useBookingGatewayTrail(bookingId: string | undefined, enabled = 
       const { data, error } = await rpc("booking_gateway_trail", { p_booking_id: bookingId! });
       if (error) throw new Error(error.message);
       return data;
+    },
+  });
+}
+
+/**
+ * Tabela de dias a mais da reserva (26/11/2026), para o balcão cobrar quem sai depois do combinado.
+ * Preço de tabela (o da compra, ou o de hoje em reserva antiga), nunca o que a reserva pagou; por
+ * isso o balcão, que não lê `booking`, também chama. Nulo quando a vaga não tem tabela.
+ */
+export function useExtraDaysTable(bookingId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: [...bookingsKeys.all, "extra-days", bookingId ?? "none"] as const,
+    enabled: enabled && !!bookingId,
+    queryFn: async (): Promise<ExtraDaysTable | null> => {
+      const { data, error } = await supabase.rpc("booking_extra_days_table", {
+        p_booking_id: bookingId!,
+      });
+      if (error) throw error;
+      return parseExtraDaysTable(data);
     },
   });
 }
