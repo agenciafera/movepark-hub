@@ -20,6 +20,14 @@ describe("historyText", () => {
     expect(historyText(e({ type: "vehicle_change", actor_role: "system", changes: { from: { license_plate: "AAA1A11" }, to: { license_plate: "BBB2B22" } } }), fmt))
       .toBe("Placa trocada de AAA1A11 para BBB2B22 (automático)");
   });
+  it("upgrade pago diz para qual plano e quanto entrou", () => {
+    expect(historyText(e({ type: "fare_upgrade", actor_role: "system", amount_delta_cents: 1290, changes: { to: { fare_tier: "flex" } } }), fmt))
+      .toBe("Plano alterado para Flex (cobrado R$12.9) (automático)");
+  });
+  it("dispensa do upgrade pela Movepark, com o motivo e quem dispensou", () => {
+    expect(historyText(e({ type: "fare_upgrade", amount_delta_cents: 0, reason: "voo cancelado", actor_name: "Kallef", changes: { waived: true, required_tier: "flex" } }), fmt))
+      .toBe("Datas alteradas sem cobrar o upgrade para o Flex: voo cancelado por Kallef");
+  });
 });
 
 describe("buildHubTimeline", () => {

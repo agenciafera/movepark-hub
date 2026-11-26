@@ -184,6 +184,17 @@ export interface Situacao {
 
 const centavos = (v: number | string | null | undefined): number => Math.round(Number(v ?? 0) * 100);
 
+/**
+ * Upgrade que a troca de datas pela equipe cobra junto (26/11/2026): o plano Básica não inclui
+ * alterar datas, então a Edge `change-booking-dates-paid` soma o upgrade para o Flex. Zero quando o
+ * plano já inclui ou a reserva ainda não foi paga. A Mia repete a conta da Edge só para avisar.
+ */
+export function upgradeParaTrocarDatas(s: Pick<Situacao, "status" | "fare_benefits" | "fare_price_cents" | "fares">): number {
+  if (s.status === "pending" || s.fare_benefits?.date_change === true) return 0;
+  const flex = (s.fares ?? []).find((f) => f.tier === "flex");
+  return flex ? Math.max(0, flex.price_cents - (s.fare_price_cents ?? 0)) : 0;
+}
+
 /** "R$ 164,10", com espaço comum (o Intl põe espaço rígido, que o markdown do chat mostra torto). */
 export function reais(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/\u00a0/g, " ");
@@ -339,7 +350,7 @@ export function analisarReserva(s: Situacao, now: Date): Analise {
   if (!veiculoAberto) placaMotivo = "o veículo já entrou ou a reserva não está ativa";
   else if (!clienteTrocaPlaca) placaMotivo = "a tarifa do cliente não inclui trocar placa";
 
-  // Upgrade: o cliente compra na conta dele (create-fare-upgrade exige o dono).
+  // Upgrade: o cliente compra na conta dele, ou a equipe gera o PIX pela tela da reserva (26/11/2026).
   const atual = s.fare_tier ?? "basica";
   const precoAtual = s.fare_price_cents ?? 0;
   const benefAtual = s.fare_benefits;
@@ -534,15 +545,26 @@ export function montarProposta(input: {
         };
       }
       const d = c.delta_cents;
+      const up = upgradeParaTrocarDatas(s);
+      // Básica sem diferença a cobrar: o upgrade vem antes, e isso a tela da reserva faz (gera o PIX
+      // do upgrade e troca quando ele entra). A proposta da Mia não tem esse segundo passo.
+      if (up > 0 && d <= 0) {
+        return {
+          ok: false,
+          erro: `No plano Básica, alterar datas exige o upgrade para o Flex (${reais(up)}), pago antes da troca. Use o botão Alterar datas na tela da reserva: ele gera o PIX do upgrade e faz a troca quando o pagamento entra.`,
+        };
+      }
       const efeito = d < 0
         ? `e estornar ${reais(-d)} ao cliente, na mesma forma de pagamento.`
         : d > 0
-          ? `e gerar um PIX de ${reais(d)} para o cliente pagar. As datas só mudam quando o PIX for pago.`
+          ? up > 0
+            ? `e gerar um PIX de ${reais(d + up)} para o cliente pagar: ${reais(d)} das diárias e ${reais(up)} do upgrade para o Flex, que o plano Básica exige. As datas só mudam quando o PIX for pago.`
+            : `e gerar um PIX de ${reais(d)} para o cliente pagar. As datas só mudam quando o PIX for pago.`
           : "sem diferença de valor.";
       return {
         ok: true,
         summary: `Alterar a reserva ${s.code} para ${novas} ${efeito}`,
-        effect_cents: d === 0 ? null : d,
+        effect_cents: d === 0 ? null : d + (d > 0 ? up : 0),
         // A diferença que o operador vê no cartão: se a cotação mudar até o clique, a Edge recusa.
         params: { check_in_at: ini, check_out_at: fim, expected_delta_cents: d },
       };

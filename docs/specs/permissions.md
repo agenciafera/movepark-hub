@@ -169,6 +169,16 @@ Três pontos, todos a partir dos helpers `member_has_scope(company_id, scope)` e
 3. **UI** — `useAuth().hasScope(scope)` gateia rota (`<RequireScope>` em `routes.tsx`), itens da
    sidebar (`filterNavByScopes`) e ações na página (botões/seletor de papel). hub_admin → sempre
    `true`. Os escopos vêm no `loadSession` (cruza `company_role_scope` com o papel do usuário).
+4. **Edges de alteração de reserva (26/11/2026):** `cancel-booking` (`bookings:cancel`),
+   `change-booking-vehicle`, `change-booking-dates`, `change-booking-dates-paid`, `extend-booking` e
+   `create-fare-upgrade` (`bookings:write`) decidem o ator por `resolveBookingActor`
+   (`_shared/booking-actor.ts`): o dono da reserva segue os gates de cliente, o hub_admin é equipe, e
+   o membro da empresa só é equipe com o escopo, conferido por `member_has_scope` com o JWT de quem
+   chama. Antes bastava ter linha em `profile_company`, e o papel Financeiro (só `bookings:read`)
+   cancelava com estorno chamando a Edge; a tela do Operator também mostrava "Cancelar" a todo
+   membro. Sem o escopo: 403 "Seu papel na empresa não permite esta ação." A tela da reserva
+   espelha: Cancelar com `bookings:cancel`, Trocar placa e o card "Alterar reserva" com
+   `bookings:write`.
 
 > **Exceção de leitura com escopo no servidor: `wl-bookings:read` (08/10/2026).** As reservas do
 > site white-label (`wl_booking`) não têm RLS de membro: o único caminho do parceiro é a RPC

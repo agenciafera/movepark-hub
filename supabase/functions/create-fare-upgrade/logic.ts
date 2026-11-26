@@ -41,16 +41,19 @@ export interface UpgradableBooking {
  *
  * `booking` nulo cobre reserva inexistente. A checagem de dono é explícita porque a leitura roda no
  * client de serviço, sem RLS: sem ela, qualquer usuário logado compraria upgrade da reserva alheia.
+ * A equipe da empresa com `bookings:write` também gera o upgrade (26/11/2026), e quem confere isso
+ * é a Edge (`resolveBookingActor`) antes de chamar com `isStaff`.
  */
 export function checkBookingUpgradable(input: {
   booking: UpgradableBooking | null;
   userId: string;
+  isStaff?: boolean;
   targetTier: FareTier;
   now: Date;
 }): UpgradeDenial | null {
   const { booking, userId, targetTier, now } = input;
   if (!booking) return { status: 404, error: "Reserva não encontrada" };
-  if (booking.profile_id !== userId) return { status: 403, error: "Reserva não pertence a você" };
+  if (booking.profile_id !== userId && !input.isStaff) return { status: 403, error: "Reserva não pertence a você" };
   if (!(UPGRADABLE_BOOKING_STATUSES as readonly string[]).includes(booking.status)) {
     return { status: 400, error: "Esta reserva não permite upgrade." };
   }

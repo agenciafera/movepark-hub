@@ -159,7 +159,11 @@ export function useCreateFareUpgrade() {
       if (!res.ok) throw new Error(body.error ?? `Falha (HTTP ${res.status})`);
       return body as FareUpgradeResponse;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["booking-detail"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["booking-detail"] });
+      // A tela da reserva no Manager e no Operator, onde a equipe gera o upgrade (26/11/2026).
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+    },
   });
 }
 

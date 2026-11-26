@@ -180,7 +180,8 @@ export function resumoDoResultado(kind: string, r: Record<string, unknown>): str
       return r.status === "expired" ? "Reserva encerrada (não tinha pagamento)." : "Reserva cancelada, sem estorno.";
     case "change_dates": {
       if (r.mode === "charge") {
-        const d = Number(r.delta ?? 0);
+        // O PIX pode levar o upgrade para o Flex junto (reserva Básica, 26/11/2026): vale o que foi cobrado.
+        const d = Number(r.charge_amount ?? r.delta ?? 0);
         return `PIX de ${reais(Math.round(d * 100))} gerado para o cliente. As datas mudam quando ele pagar.`;
       }
       if (r.refund_manual) {

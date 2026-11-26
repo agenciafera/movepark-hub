@@ -152,3 +152,23 @@ Deno.test("C-17: upgrade real passa e Tarifa-alvo ausente devolve 404", () => {
     error: "Tarifa-alvo indisponível.",
   });
 });
+
+Deno.test("equipe da empresa (já conferida pela Edge) gera o upgrade pelo cliente", () => {
+  assertEquals(
+    checkBookingUpgradable({ booking: bookingBase, userId: OUTRO, isStaff: true, targetTier: "flex", now: NOW }),
+    null,
+  );
+});
+
+Deno.test("equipe segue os mesmos gates: depois da entrada não tem upgrade", () => {
+  assertEquals(
+    checkBookingUpgradable({
+      booking: { ...bookingBase, check_in_at: inHours(-1) },
+      userId: OUTRO,
+      isStaff: true,
+      targetTier: "flex",
+      now: NOW,
+    })?.status,
+    400,
+  );
+});

@@ -455,14 +455,26 @@ export type ChangePaidDatesQuote = {
   days: number;
   days_before: number;
   price_source: "compra" | "hoje";
-  current_total: number;
+  /** Nulos para quem não vê o dinheiro da reserva (o balcão, sem `finance:read`). */
+  current_total: number | null;
   new_total: number | null;
   delta: number | null;
   delta_cents: number | null;
   effect: "charge" | "refund" | "none" | null;
   /** O próprio cliente pode pagar a diferença no cartão. */
   card_allowed: boolean;
+  /**
+   * Upgrade que a troca exige (26/11/2026): a equipe alterando as datas de reserva Básica cobra o
+   * Flex junto. Nulo para o cliente e para plano que já inclui alterar datas.
+   */
+  fare_upgrade?: FareUpgradeQuote | null;
+  /** Diferença zero ou negativa com upgrade: o cliente paga o upgrade antes, e a troca vem depois. */
+  fare_upgrade_first?: boolean;
+  /** O que o PIX cobra: a diferença das diárias, mais o upgrade quando ele vai junto. */
+  charge_amount?: number;
 };
+
+export type FareUpgradeQuote = { tier: "flex"; cents: number; amount: number };
 
 async function postDatesPaid(body: Record<string, unknown>): Promise<Response> {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -482,12 +494,19 @@ async function postDatesPaid(body: Record<string, unknown>): Promise<Response> {
 /** Cota a troca sem mexer em nada: o que a tela mostra antes do botão de confirmar. */
 export function useQuotePaidBookingDates() {
   return useMutation({
-    mutationFn: async (args: { bookingCode: string; checkInAt: string; checkOutAt: string }): Promise<ChangePaidDatesQuote> => {
+    mutationFn: async (args: {
+      bookingCode: string;
+      checkInAt: string;
+      checkOutAt: string;
+      /** Só hub_admin: cota sem o upgrade da Básica. */
+      waiveFareUpgrade?: boolean;
+    }): Promise<ChangePaidDatesQuote> => {
       const res = await postDatesPaid({
         booking_code: args.bookingCode,
         check_in_at: args.checkInAt,
         check_out_at: args.checkOutAt,
         dry_run: true,
+        ...(args.waiveFareUpgrade ? { waive_fare_upgrade: true } : {}),
       });
       const body = await res.json().catch(() => ({}));
       // Período que a unidade não vende chega como 409 com a cotação: a tela mostra o motivo.
@@ -516,6 +535,9 @@ export type ChangePaidDatesResult =
       qr_code_url: string | null;
       expires_at: string | null;
       delta: number;
+      /** O que o PIX cobra (diferença mais upgrade, quando vai junto). */
+      charge_amount?: number;
+      fare_upgrade?: FareUpgradeQuote | null;
     };
 
 /**
@@ -531,12 +553,16 @@ export function useChangePaidBookingDates() {
       checkInAt: string;
       checkOutAt: string;
       expectedDeltaCents?: number | null;
+      /** Só hub_admin: troca a Básica sem cobrar o upgrade, com o motivo no histórico. */
+      waiveFareUpgrade?: boolean;
+      reason?: string | null;
     }): Promise<ChangePaidDatesResult> => {
       const res = await postDatesPaid({
         booking_code: args.bookingCode,
         check_in_at: args.checkInAt,
         check_out_at: args.checkOutAt,
         ...(args.expectedDeltaCents == null ? {} : { expected_delta_cents: args.expectedDeltaCents }),
+        ...(args.waiveFareUpgrade ? { waive_fare_upgrade: true, reason: args.reason ?? null } : {}),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -547,6 +573,8 @@ export function useChangePaidBookingDates() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-bookings"] });
       qc.invalidateQueries({ queryKey: ["booking-detail"] });
+      // A tela da reserva no Manager e no Operator (26/11/2026).
+      qc.invalidateQueries({ queryKey: ["bookings"] });
     },
   });
 }

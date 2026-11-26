@@ -50,7 +50,15 @@ import {
   partnerShareOfRefundCents,
   quoteView,
 } from "../_shared/payments/date-change.ts";
-import { parseChangeDatesPaidInput, quoteChanged, refundableCents } from "./logic.ts";
+import {
+  fareUpgradeFor,
+  parseChangeDatesPaidInput,
+  quoteChanged,
+  refundableCents,
+  stripTotals,
+  upgradePlan,
+} from "./logic.ts";
+import { actorSeesMoney, resolveBookingActor } from "../_shared/booking-actor.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,7 +73,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 const BOOKING_COLS =
-  "id, code, status, check_in_at, fare_benefits, profile_id, location_id, " +
+  "id, code, status, check_in_at, fare_benefits, fare_tier, fare_price_cents, profile_id, location_id, " +
   "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
   "commission_installments_max, commission_installments_interest_free, commission_anticipation_payer, " +
   "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id, " +
@@ -77,6 +85,8 @@ interface BookingRow extends BookingCommissionColumns {
   status: string;
   check_in_at: string;
   fare_benefits: Record<string, unknown> | null;
+  fare_tier: string | null;
+  fare_price_cents: number | null;
   profile_id: string;
   location_id: string;
   customer_name: string | null;
@@ -128,26 +138,26 @@ Deno.serve(async (req: Request) => {
   if (!bookingRow) return jsonResponse({ error: "Reserva não encontrada." }, 404);
   const booking = bookingRow as unknown as BookingRow;
 
-  // Autorização: dono ou equipe (hub_admin, ou membro da empresa da unidade).
+  // Autorização: dono ou equipe com `bookings:write` (26/11/2026: antes bastava ser da empresa).
   const companyId = booking.location?.company_id;
-  const isOwner = booking.profile_id === userId;
-  let isStaff = false;
-  if (!isOwner) {
-    const { data: caller } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-    if (caller?.role === "hub_admin") {
-      isStaff = true;
-    } else if (companyId) {
-      const { data: m } = await admin
-        .from("profile_company")
-        .select("company_id")
-        .eq("profile_id", userId)
-        .eq("company_id", companyId)
-        .maybeSingle();
-      if (m) isStaff = true;
-    }
-    if (!isStaff) return jsonResponse({ error: "Sem permissão para alterar esta reserva." }, 403);
-  }
+  const quem = await resolveBookingActor({
+    admin,
+    userClient,
+    userId,
+    ownerId: booking.profile_id,
+    companyId,
+    scope: "bookings:write",
+  });
+  if (quem.kind === "denied") return jsonResponse({ error: quem.error }, quem.status);
+  const isOwner = quem.kind === "owner";
+  const isStaff = quem.kind === "staff";
+  const isHubAdmin = quem.kind === "staff" && quem.hubAdmin;
   const actorRole = isStaff ? "staff" : "customer";
+  // O balcão (sem finance:read) não recebe o total da reserva, só a diferença (23/11/2026).
+  const seesMoney = await actorSeesMoney({ actor: quem, userClient, companyId });
+  if (input.waiveFareUpgrade && !isHubAdmin) {
+    return jsonResponse({ error: "Só a equipe da Movepark pode trocar sem cobrar o upgrade." }, 403);
+  }
 
   if (booking.status !== "confirmed") {
     return jsonResponse(
@@ -174,11 +184,28 @@ Deno.serve(async (req: Request) => {
   });
   if (qErr) return jsonResponse({ error: qErr.message }, 400);
   const quote = quoteRaw as DateChangeQuote;
-  const view = quoteView(quote);
+  const view = stripTotals(quoteView(quote), seesMoney);
   if (!quote.available || quote.delta_cents == null) {
     return jsonResponse({ error: quote.reason ?? "Datas indisponíveis.", ...view }, 409);
   }
   const deltaCents = quote.delta_cents;
+
+  // Básica pela equipe da empresa (26/11/2026, D1): a troca leva o upgrade para o Flex junto.
+  let flexCents: number | null = null;
+  if (isStaff && benefits.date_change !== true) {
+    const { data: flex } = await admin.from("fare").select("price_cents").eq("tier", "flex").eq("is_active", true).maybeSingle();
+    flexCents = flex?.price_cents ?? null;
+  }
+  const upgrade = fareUpgradeFor({
+    isStaff,
+    isHubAdmin,
+    waive: input.waiveFareUpgrade,
+    benefits,
+    currentFareCents: booking.fare_price_cents,
+    flexCents,
+  });
+  const plano = upgradePlan(deltaCents, upgrade);
+  const upgradeView = upgrade ? { tier: upgrade.tier, cents: upgrade.cents, amount: upgrade.cents / 100 } : null;
 
   if (input.dryRun) {
     return jsonResponse({
@@ -186,6 +213,10 @@ Deno.serve(async (req: Request) => {
       ...view,
       // Cartão é do próprio cliente, na tela dele; a equipe gera PIX e manda o copia-e-cola.
       card_allowed: isOwner && deltaCents > 0,
+      fare_upgrade: upgradeView,
+      // Diferença zero ou negativa: o cliente paga o upgrade antes, e a troca vem depois.
+      fare_upgrade_first: plano.kind === "upgrade_first",
+      charge_amount: plano.kind === "together" ? plano.chargeCents / 100 : deltaCents > 0 ? deltaCents / 100 : 0,
     });
   }
   if (quoteChanged(input.expectedDeltaCents, deltaCents)) {
@@ -194,6 +225,31 @@ Deno.serve(async (req: Request) => {
       409,
     );
   }
+  if (plano.kind === "upgrade_first") {
+    return jsonResponse(
+      {
+        error: "Antes de alterar as datas, o cliente paga o upgrade para o Flex.",
+        code: "fare_upgrade_first",
+        fare_upgrade: upgradeView,
+        ...view,
+      },
+      409,
+    );
+  }
+  const chargeCents = plano.kind === "together" ? plano.chargeCents : deltaCents;
+  // A dispensa do upgrade pela Movepark fica no histórico, com o motivo (D6).
+  const logWaiver = async () => {
+    if (!(input.waiveFareUpgrade && isHubAdmin && benefits.date_change !== true)) return;
+    await admin.rpc("log_booking_modification", {
+      p_booking_id: booking.id,
+      p_type: "fare_upgrade",
+      p_actor_id: userId,
+      p_actor_role: "staff",
+      p_changes: { waived: true, required_tier: "flex" },
+      p_amount_delta_cents: 0,
+      p_reason: input.reason,
+    });
+  };
 
   let gateway;
   try {
@@ -364,11 +420,12 @@ Deno.serve(async (req: Request) => {
     await notifyDatesChanged(admin, booking.id, refundCents > 0
       ? { refundedCents: refundCents, refundManual, method: payment?.method === "card" ? "card" : "pix" }
       : null);
+    await logWaiver();
 
     return jsonResponse({
       mode: "applied",
       delta: deltaCents / 100,
-      total_amount: (applied as { total_amount?: number })?.total_amount ?? null,
+      total_amount: seesMoney ? ((applied as { total_amount?: number })?.total_amount ?? null) : null,
       refunded,
       refund_pending: refundPending,
       refund_manual: refundManual,
@@ -414,7 +471,9 @@ Deno.serve(async (req: Request) => {
   try {
     const base = chargeSplitBase(quote);
     split = buildSplit({
-      chargedCents: base.chargedCents,
+      // O upgrade é 100% Movepark: entra no valor cobrado e não na base do estacionamento, então
+      // vai inteiro para a perna da Movepark (26/11/2026).
+      chargedCents: base.chargedCents + (upgrade && plano.kind === "together" ? upgrade.cents : 0),
       baseCents: base.baseCents,
       platformFundedCents: base.platformFundedCents,
       takeRateBps: commission.takeRateBps,
@@ -439,9 +498,13 @@ Deno.serve(async (req: Request) => {
 
   const paymentId = crypto.randomUUID();
   const externalCode = `${booking.code}-DT-${crypto.randomUUID().slice(0, 4).toUpperCase()}`;
+  const items = [{ amount: deltaCents, description: `Alteração de datas · ${booking.code}`, quantity: 1 }];
+  if (upgrade && plano.kind === "together") {
+    items.push({ amount: upgrade.cents, description: `Upgrade para Flex · ${booking.code}`, quantity: 1 });
+  }
   const result = await gateway.createPixCharge({
     externalCode,
-    amountCents: deltaCents,
+    amountCents: chargeCents,
     customer: {
       name: payerName,
       email,
@@ -449,7 +512,7 @@ Deno.serve(async (req: Request) => {
       type: customerTypeFor(booking.customer_tax_id),
       phone,
     },
-    items: [{ amount: deltaCents, description: `Alteração de datas · ${booking.code}`, quantity: 1 }],
+    items,
     // Com a custódia ligada o gateway não recebe split: o valor cai inteiro na Movepark.
     // O snapshot gravado em `payment.split` segue sendo o razão do que devemos ao parceiro.
     split: splitEnabled ? split : undefined,
@@ -465,7 +528,7 @@ Deno.serve(async (req: Request) => {
       bookingId: booking.id,
       kind: "charge_failed",
       httpStatus: result.httpStatus,
-      request: { method: "pix", amount_cents: deltaCents, kind: "date_change" },
+      request: { method: "pix", amount_cents: chargeCents, kind: "date_change" },
       response: result.raw,
       note: "PIX da diferença de datas recusado pelo gateway",
     });
@@ -473,7 +536,7 @@ Deno.serve(async (req: Request) => {
     const { data: tmp } = await admin.from("payment").insert({
       id: paymentId, booking_id: booking.id, provider: "pagarme", method: "pix", kind: "date_change",
       date_change_check_in_at: input.checkInAt, date_change_check_out_at: input.checkOutAt,
-      amount: deltaCents / 100, status: "pending",
+      amount: chargeCents / 100, status: "pending",
     }).select("id").maybeSingle();
     if (tmp) await admin.rpc("expire_paid_date_change_hold", { p_payment_id: paymentId });
     return jsonResponse({ error: "Falha ao gerar a cobrança da diferença." }, 502);
@@ -487,10 +550,13 @@ Deno.serve(async (req: Request) => {
     kind: "date_change",
     date_change_check_in_at: input.checkInAt,
     date_change_check_out_at: input.checkOutAt,
-    date_change_quote: quote,
+    // A cotação vai com o upgrade e com quem pediu: o webhook aplica as datas, depois o upgrade, e
+    // registra a troca em nome da equipe quando foi ela.
+    date_change_quote: { ...quote, actor_role: actorRole, fare_upgrade: upgradeView },
+    fare_target_tier: upgrade && plano.kind === "together" ? upgrade.tier : null,
     provider_payment_id: result.orderId,
     provider_charge_id: result.chargeId,
-    amount: deltaCents / 100,
+    amount: chargeCents / 100,
     status: chargeStatusToPaymentStatus(result.status),
     pix_qr_code: result.qrCode,
     pix_qr_code_url: result.qrCodeUrl,
@@ -507,7 +573,8 @@ Deno.serve(async (req: Request) => {
     request: {
       method: "pix",
       kind: "date_change",
-      amount_cents: deltaCents,
+      amount_cents: chargeCents,
+      fare_upgrade_cents: upgrade && plano.kind === "together" ? upgrade.cents : 0,
       split: splitEnabled ? split : null,
       commission: { channel: commission.channel, take_rate_bps: commission.takeRateBps, fee_payer: commission.feePayer },
       price_source: quote.price_source,
@@ -516,10 +583,13 @@ Deno.serve(async (req: Request) => {
     response: result.raw,
   });
 
+  await logWaiver();
   return jsonResponse(
     {
       ...view,
       mode: "charge",
+      charge_amount: chargeCents / 100,
+      fare_upgrade: upgrade && plano.kind === "together" ? upgradeView : null,
       payment_id: paymentId,
       status: result.status,
       qr_code: result.qrCode,

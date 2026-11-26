@@ -60,7 +60,7 @@ exigem `bookings:read`; as de conhecimento exigem só `operator:assist`. O handl
 | `find_booking(query)` | `bookings:read` | Busca por código, placa, nome, e-mail ou telefone (até 10) |
 | `get_booking_situation(booking)` | `bookings:read` | Status, tarifa, até quando cancela com estorno, se troca data/placa, pagamentos e estornos, check-in/out, histórico de alterações e **o que dá para fazer agora** (calculado pelas mesmas regras das Edges) |
 | `quote_date_change(booking, check_in_at, check_out_at)` | `bookings:read` | Novo total, diferença pela tabela da compra (17/11/2026), se cobra ou estorna parcial, disponibilidade. A proposta guarda a diferença e a Edge recusa se ela mudar até o clique |
-| `quote_fare_upgrade(booking, target_tier)` | `bookings:read` | Quanto custa ir para Flex/Superflex e o que libera |
+| `quote_fare_upgrade(booking, target_tier)` | `bookings:read` | Quanto custa ir para Flex/Superflex e o que libera; desde 26/11/2026 diz que o estacionamento também gera o PIX pela tela |
 | `search_operator_knowledge(query, k?)` | `operator:assist` | Busca semântica na base do operador |
 | `report_knowledge_gap(question, context?)` | `operator:assist` | Registra pergunta sem resposta para a equipe |
 | `propose_booking_action(booking, kind, …)` | conforme `kind` | Cria a proposta (10 min) e devolve o resumo; **não executa** |
@@ -191,9 +191,13 @@ não se libera nem lê a lista, empresa alheia, hub_admin, chave global, config 
 
 ## Decisões de conteúdo
 
-- **Básica que quer mudar a data** (Kallef, 17/11/2026): a orientação padrão é o upgrade para a
-  Flex e o próprio cliente alterar as datas; alterar pelo painel sem cobrar é exceção do
-  estacionamento.
+- **Básica que quer mudar a data** (Kallef, 17/11/2026, revisto em 26/11/2026): a orientação padrão
+  segue sendo o upgrade para a Flex e o próprio cliente alterar as datas. Desde 26/11/2026 o
+  estacionamento **não** altera sem cobrar: a troca pela equipe cobra junto o upgrade para o Flex
+  (decisão D1 de `docs/superpowers/specs/2026-11-26-acoes-do-cliente-no-operador-design.md`). Com
+  diferença positiva, a proposta da Mia já mostra o PIX com as duas partes
+  (`upgradeParaTrocarDatas`); sem diferença a cobrar, a Mia manda para o botão Alterar datas da
+  tela, que faz o upgrade antes. Só a equipe da Movepark dispensa o upgrade, com motivo.
 - **Depois da entrada não há devolução de diárias** (já era a FAQ global; não se reabre).
 
 ## Estado (17/11/2026)

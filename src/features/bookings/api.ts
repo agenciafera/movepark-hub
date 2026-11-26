@@ -243,11 +243,15 @@ const detailSelect = baseSelect.replace(
  * Uma reserva pelo código, com as relações da lista e o pagamento completo (tela de detalhe).
  * `counter` (balcão, sem `finance:read`): vem da RPC `operator_booking_by_code`, sem valor.
  */
-export function useBookingByCode(code: string | undefined, opts: { counter?: boolean } = {}) {
+export function useBookingByCode(
+  code: string | undefined,
+  opts: { counter?: boolean; /** Relê a cada 3 s, enquanto um PIX gerado pela equipe espera. */ poll?: boolean } = {},
+) {
   const counter = opts.counter ?? false;
   return useQuery({
     queryKey: [...bookingsKeys.all, "by-code", code ?? "", counter] as const,
     enabled: !!code,
+    refetchInterval: opts.poll ? 3000 : false,
     queryFn: async (): Promise<BookingWithRelations | null> => {
       if (counter) {
         const { data, error } = await rpc("operator_booking_by_code", { p_code: code! });

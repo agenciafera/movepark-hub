@@ -131,9 +131,12 @@ O front usa os mesmos snapshots para não oferecer ações que o servidor vai re
 
 ## 5. Override de staff e Public API
 
-- **Painel (staff):** hub_admin e operador da empresa cancelam/alteram como override no back-end
-  (autorização por `profile_company`). Hoje não há botão de cancelar nas telas de operador/manager;
-  o override existe na Edge e é usado por fluxos internos (webhook, delete-account, reconciliação).
+- **Painel (staff):** hub_admin e a equipe da empresa cancelam/alteram como override no back-end.
+  Desde 26/11/2026 a equipe precisa do **escopo** da ação (`bookings:cancel` para cancelar,
+  `bookings:write` para datas, placa, proteção de voo e upgrade), conferido em
+  `_shared/booking-actor.ts`; antes bastava o vínculo em `profile_company`. A tela da reserva tem
+  Cancelar, Trocar placa e o card **Alterar reserva** (§8.7). Exceção ao override: a troca de datas
+  de reserva Básica pela equipe da empresa cobra o upgrade para o Flex (§8.7).
 - **Public API por parceiro** (`POST /v1/bookings/:id/cancel`, escopo `bookings:cancel`): é
   **company-scoped** (`api_cancel_booking(p_company_id, ...)`), ou seja o parceiro cancelando reserva
   da própria empresa, equivalente a staff. **Não** passa pelo gate de janela do cliente. Ver
@@ -253,6 +256,43 @@ estadia, senão pelo `simulate_price` de hoje (`price_source` diz qual). O valor
 `extraDays.logic.ts` e a tela no card **Dias a mais** (`operator-panel.md` §4.2). Isto só informa: a
 cobrança acontece no balcão, fora do Hub, como o excedente da proteção de voo. pgTAP
 `booking_extra_days_table`.
+
+### 8.7 A equipe altera datas e faz upgrade pelo cliente (26/11/2026)
+
+Pedido do Kallef em 26/11/2026; desenho e decisões em
+[`docs/superpowers/specs/2026-11-26-acoes-do-cliente-no-operador-design.md`](../superpowers/specs/2026-11-26-acoes-do-cliente-no-operador-design.md).
+Card **Alterar reserva** na tela da reserva do Hub (Operator e Manager), reserva confirmada, antes da
+entrada, com `bookings:write`:
+
+- **Alterar datas** (`StaffChangeDatesDialog`): a mesma Edge `change-booking-dates-paid` e a mesma
+  conta do cliente (§8.1). A equipe só gera PIX (cartão é do cliente, ADR-004), com QR na tela, o
+  código para copiar e uma mensagem pronta para o WhatsApp. A tela relê a reserva a cada 3 segundos
+  enquanto o PIX espera e avisa "Pagamento recebido".
+- **Básica (sem `date_change`) pela equipe da empresa:** a troca cobra o **upgrade para o Flex**
+  junto (D1). Com diferença das diárias positiva, um PIX só: `kind = date_change`,
+  `fare_target_tier = flex`, valor = diferença + upgrade, e o `buildSplit` põe o upgrade inteiro na
+  perna da Movepark (`chargedCents` somado, `baseCents` = diferença), então o extrato do
+  estacionamento, que lê a perna dele no `payment.split`, não conta o plano. O webhook aplica
+  **primeiro** as datas (`apply_paid_date_change` grava o total da cotação) e **depois** o upgrade
+  (`apply_fare_upgrade` soma o plano e refaz a janela de cancelamento). Com diferença zero ou
+  negativa, a Edge responde 409 `fare_upgrade_first`: a janela gera o PIX do upgrade
+  (`create-fare-upgrade`) e, quando a reserva vira Flex, faz a troca, que vale na hora e devolve a
+  diferença pelo caminho de sempre.
+- **Equipe da Movepark (hub_admin):** pode mandar `waive_fare_upgrade` com `reason` (o upgrade é
+  receita da Movepark, D6); o histórico registra `fare_upgrade` com `changes.waived`.
+- **Balcão sem `finance:read`:** a Edge tira `current_total`, `new_total` e `total_amount` da
+  resposta; fica a diferença e o upgrade, que são preço de tabela.
+- **Fazer upgrade** (`StaffFareUpgradeDialog`): a Edge `create-fare-upgrade` aceita a equipe com
+  `bookings:write` (antes só o dono). PIX 100% Movepark, mesmas regras do cliente.
+- **Histórico:** o upgrade aplicado passa a entrar em `booking_modification` ("Plano alterado para
+  Flex"), o que antes não acontecia; a troca paga pela equipe fica como `staff` (o papel vai na
+  cotação gravada no pagamento).
+- Testes: `deno test` em `_shared/booking-actor.test.ts`, `change-booking-dates-paid/logic.test.ts`,
+  `create-fare-upgrade/logic.test.ts`, `mcp/operator.logic.test.ts`; Vitest em
+  `staffChange.logic.test.ts`, `StaffChangeDatesDialog.test.tsx`, `StaffFareUpgradeDialog.test.tsx`,
+  `BookingDetailView.test.tsx` e `bookingHistory.logic.test.ts`.
+
+Parte 2 (estender a saída com o carro no pátio) está no mesmo desenho e ainda não foi feita.
 
 ## 9. Divergência conhecida a alinhar
 

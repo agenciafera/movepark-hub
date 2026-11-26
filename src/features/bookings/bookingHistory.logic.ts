@@ -37,6 +37,8 @@ function statusText(to: string): string {
   return `Status: ${to}`;
 }
 
+const PLANO_LABEL: Record<string, string> = { basica: "Básica", flex: "Flex", superflex: "Superflex" };
+
 function quem(e: BookingHistoryEntry): string {
   if (e.actor_name) return ` por ${e.actor_name}`;
   if (e.actor_role === "system") return " (automático)";
@@ -73,9 +75,17 @@ export function historyText(e: BookingHistoryEntry, fmt: Fmt): string {
     case "refund":
       t = "Estorno";
       break;
-    case "fare_upgrade":
-      t = "Plano alterado";
+    case "fare_upgrade": {
+      // 26/11/2026: o upgrade aplicado diz para qual plano; a dispensa da Movepark diz que não cobrou.
+      const to = ch.to as Record<string, unknown> | undefined;
+      const plano = PLANO_LABEL[String(to?.fare_tier ?? "")];
+      t = (ch as Record<string, unknown>).waived === true
+        ? "Datas alteradas sem cobrar o upgrade para o Flex"
+        : plano
+          ? `Plano alterado para ${plano}`
+          : "Plano alterado";
       break;
+    }
     default:
       t = e.type;
   }

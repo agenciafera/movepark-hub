@@ -272,6 +272,17 @@ excedente segue a conta dela (diária congelada a partir da saída coberta). A f
 diária ao lado do "Valor das diárias" (Manager: campo "Diária"). Código em `ExtraDaysCard.tsx` e
 `extraDays.logic.ts`.
 
+#### Alterar reserva pelo cliente (26/11/2026)
+
+Card **Alterar reserva** no detalhe da reserva do Hub (Operator e Manager), em reserva confirmada,
+antes da entrada, para quem tem `bookings:write` (Dono, Gerente, Operação): **Alterar datas**, com a
+diferença pela tabela da compra cobrada por PIX ou devolvida na hora, e **Fazer upgrade** de plano,
+por PIX. Na Básica, alterar datas cobra junto o upgrade para o Flex. O PIX aparece com QR, código
+para copiar e mensagem pronta para o WhatsApp, e a tela avisa quando ele entra. O balcão vê só a
+diferença, nunca o total. Cancelar passou a exigir `bookings:cancel` e Trocar placa
+`bookings:write` também no Operator (antes todo membro via os dois, e o Financeiro cancelava com
+estorno). Regra completa em `booking-modifications.md` §8.7.
+
 #### 4.2.1 Drawer — Detalhe da Reserva
 
 Layout em 2 colunas:

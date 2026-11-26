@@ -35,6 +35,12 @@ vi.mock("./customerApi", () => ({
   useChangeBookingVehicle: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useVoucherPdf: () => ({ mutateAsync: voucherPdf, isPending: false }),
   useExtendBookingFlightDelay: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useQuotePaidBookingDates: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useChangePaidBookingDates: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+vi.mock("@/features/fares/api", () => ({
+  useCreateFareUpgrade: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useFareCatalog: () => ({ data: [], isLoading: false }),
 }));
 vi.mock("@/features/payouts/api", () => ({ usePayoutReleaseDays: () => ({ data: 30 }) }));
 
@@ -386,7 +392,7 @@ describe("BookingDetailView: balcão sem dinheiro", () => {
     updateArgs.mockClear();
     state.booking = semValor("confirmed");
     abre("operator", SEM_FINANCEIRO);
-    expect(byCodeArgs).toHaveBeenCalledWith("MP-7E2482", { counter: true });
+    expect(byCodeArgs).toHaveBeenCalledWith("MP-7E2482", { counter: true, poll: false });
     expect(updateArgs).toHaveBeenCalledWith({ counter: true });
     expect(screen.queryByText("Valor das diárias")).not.toBeInTheDocument();
     expect(screen.queryByText("Valor total")).not.toBeInTheDocument();
@@ -441,9 +447,65 @@ describe("BookingDetailView: balcão sem dinheiro", () => {
     byCodeArgs.mockClear();
     state.booking = booking("confirmed", [pago]);
     abre("operator", () => true);
-    expect(byCodeArgs).toHaveBeenCalledWith("MP-7E2482", { counter: false });
+    expect(byCodeArgs).toHaveBeenCalledWith("MP-7E2482", { counter: false, poll: false });
     expect(screen.getAllByText("Valor das diárias").length).toBeGreaterThan(0);
     expect(screen.getByTestId("reserva-valores")).toBeInTheDocument();
   });
 });
 
+
+// Ações do cliente no painel (26/11/2026): a equipe altera datas e faz upgrade até a entrada, e a
+// tela espelha o escopo de cada papel.
+describe("BookingDetailView: alterar a reserva pelo cliente", () => {
+  const futura = (tier: string) => ({
+    ...booking("confirmed", [pago]),
+    check_in_at: "2099-12-10T12:00:00Z",
+    check_out_at: "2099-12-12T12:00:00Z",
+    fare_tier: tier,
+  });
+  const escopos = (lista: string[]) => (e: string) => lista.includes(e);
+
+  it("Operação (bookings:write) vê Alterar datas e o upgrade para o plano acima", () => {
+    state.booking = futura("flex");
+    state.trail = trailPago;
+    abre("operator", escopos(["bookings:read", "bookings:write", "bookings:cancel", "bookings:checkin"]));
+    const card = screen.getByTestId("alterar-reserva");
+    expect(card).toHaveTextContent("Alterar reserva");
+    expect(screen.getByRole("button", { name: "Alterar datas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fazer upgrade" })).toBeInTheDocument();
+    expect(card).not.toHaveTextContent("upgrade para o Flex");
+  });
+
+  it("na Básica, a tela avisa que alterar datas inclui o upgrade para o Flex", () => {
+    state.booking = futura("basica");
+    abre("operator", escopos(["bookings:write"]));
+    expect(screen.getByTestId("alterar-reserva")).toHaveTextContent("alterar datas inclui o upgrade para o Flex");
+  });
+
+  it("Superflex não tem para onde subir: só Alterar datas", () => {
+    state.booking = futura("superflex");
+    abre("operator", escopos(["bookings:write"]));
+    expect(screen.getByRole("button", { name: "Alterar datas" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Fazer upgrade" })).not.toBeInTheDocument();
+  });
+
+  it("Financeiro (só leitura de reservas) não altera, não troca placa e não cancela", () => {
+    state.booking = futura("flex");
+    abre("operator", escopos(["bookings:read", "finance:read", "finance:write"]));
+    expect(screen.queryByTestId("alterar-reserva")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Trocar placa" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancelar reserva" })).not.toBeInTheDocument();
+  });
+
+  it("depois do horário de entrada, o card sai (a troca é até o check-in)", () => {
+    state.booking = { ...futura("flex"), check_in_at: "2020-01-01T12:00:00Z", check_out_at: "2020-01-03T12:00:00Z" };
+    abre("operator", escopos(["bookings:write"]));
+    expect(screen.queryByTestId("alterar-reserva")).not.toBeInTheDocument();
+  });
+
+  it("o Manager vê o mesmo card", () => {
+    state.booking = futura("basica");
+    abre("manager");
+    expect(screen.getByTestId("alterar-reserva")).toBeInTheDocument();
+  });
+});

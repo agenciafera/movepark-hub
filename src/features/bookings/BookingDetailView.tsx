@@ -36,6 +36,9 @@ import { GatewayTrail } from "./GatewayTrail";
 import { BookingCommissionCard } from "@/features/commission/BookingCommissionCard";
 import { SupportTicketsCard } from "@/features/support/SupportTicketsCard";
 import { FlightProtectionDialog } from "./FlightProtectionDialog";
+import { StaffChangeDatesDialog } from "./StaffChangeDatesDialog";
+import { StaffFareUpgradeDialog } from "./StaffFareUpgradeDialog";
+import { upgradeTargets } from "./staffChange.logic";
 import { bookingCustomerName } from "./bookings.logic";
 import {
   buildMoneyBreakdown,
@@ -94,7 +97,11 @@ export function BookingDetailView({
   // pagamento, então a reserva vem pela RPC do balcão e a tela não mostra dinheiro.
   const seesMoney = useSeesMoney();
   const counter = audience === "operator" && !seesMoney;
-  const bookingQ = useBookingByCode(code, { counter });
+  // Enquanto um PIX gerado pela equipe espera pagamento, a reserva é relida para a janela saber
+  // quando ele entrou (26/11/2026).
+  const [pixDatas, setPixDatas] = React.useState(false);
+  const [pixUpgrade, setPixUpgrade] = React.useState(false);
+  const bookingQ = useBookingByCode(code, { counter, poll: pixDatas || pixUpgrade });
   const booking = bookingQ.data ?? null;
   const cancelMutation = useCancelBookingStaff();
   const statusMutation = useUpdateBookingStatus({ counter });
@@ -105,6 +112,8 @@ export function BookingDetailView({
   const [flightOpen, setFlightOpen] = React.useState(false);
   const [flightCheckoutOpen, setFlightCheckoutOpen] = React.useState(false);
   const [feesOpen, setFeesOpen] = React.useState(false);
+  const [datasOpen, setDatasOpen] = React.useState(false);
+  const [upgradeOpen, setUpgradeOpen] = React.useState(false);
   const reconcileFees = useReconcileBookingFees();
   // Prazo de repasse só entra na conta de valores, que o balcão não vê.
   const releaseDaysQ = usePayoutReleaseDays(counter ? undefined : bookingQ.data?.location?.company?.id);
@@ -168,11 +177,13 @@ export function BookingDetailView({
   const dinheiro = paymentBadge(booking.payments, booking.status);
   const janela = pay.canRefund ? refundWindow(booking.payments) : null;
   const podeCancelarStatus = booking.status === "pending" || booking.status === "confirmed";
-  // No Manager a UI espelha o escopo; no Operator o servidor é a barreira (a ficha antiga também
-  // oferecia sem checar), e o dono do estacionamento cancela as próprias reservas.
-  const canCancel =
-    podeCancelarStatus &&
-    (audience === "operator" || hasScope("bookings:cancel", booking.location?.company?.id));
+  // A tela espelha o escopo nas duas audiências (26/11/2026). Antes o Operator oferecia Cancelar a
+  // todo mundo da empresa, e a Edge aceitava: o Financeiro cancelava com estorno.
+  const canCancel = podeCancelarStatus && hasScope("bookings:cancel", booking.location?.company?.id);
+  // Alterar a reserva pelo cliente: datas, plano e placa, com `bookings:write`.
+  const podeAlterar = hasScope("bookings:write", booking.location?.company?.id);
+  const antesDaEntrada = new Date(booking.check_in_at).getTime() > Date.now();
+  const alteraReserva = podeAlterar && booking.status === "confirmed" && antesDaEntrada;
   const refundHint = pay.canRefund
     ? counter
       ? "estorna o pagamento ao cliente"
@@ -557,7 +568,7 @@ export function BookingDetailView({
                 )}
               </div>
             )}
-            {trocandoPlaca ? (
+            {!podeAlterar ? null : trocandoPlaca ? (
               <PlateChangeForm
                 onSubmit={savePlate}
                 onCancel={() => setTrocandoPlaca(false)}
@@ -570,6 +581,54 @@ export function BookingDetailView({
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Alterar reserva (26/11/2026): o que o cliente faz na conta dele, a equipe faz por ele, até a
+          entrada. A diferença e o upgrade vão por PIX, que o cliente paga ali ou pelo WhatsApp. */}
+      {alteraReserva && (
+        <Card data-testid="alterar-reserva">
+          <CardHeader>
+            <CardTitle>Alterar reserva</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-body-sm text-muted">
+              Troque as datas ou suba o plano pelo cliente. Se tiver diferença a pagar, você gera o PIX
+              aqui; se ficar mais barato, a diferença volta para ele.
+              {fareTier === "basica" || !fareTier
+                ? " No plano Básica, alterar datas inclui o upgrade para o Flex."
+                : ""}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => setDatasOpen(true)}>
+                Alterar datas
+              </Button>
+              {upgradeTargets(fareTier).length > 0 && (
+                <Button size="sm" variant="secondary" onClick={() => setUpgradeOpen(true)}>
+                  Fazer upgrade
+                </Button>
+              )}
+            </div>
+            <StaffChangeDatesDialog
+              booking={{
+                code: booking.code,
+                check_in_at: booking.check_in_at,
+                check_out_at: booking.check_out_at,
+                fare_tier: fareTier,
+              }}
+              canWaiveUpgrade={audience === "manager" && effectiveRole === "hub_admin"}
+              open={datasOpen}
+              onOpenChange={setDatasOpen}
+              onWaitingChange={setPixDatas}
+            />
+            <StaffFareUpgradeDialog
+              bookingCode={booking.code}
+              currentTier={fareTier}
+              open={upgradeOpen}
+              onOpenChange={setUpgradeOpen}
+              onWaitingChange={setPixUpgrade}
+            />
           </CardContent>
         </Card>
       )}

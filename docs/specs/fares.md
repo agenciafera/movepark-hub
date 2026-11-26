@@ -155,6 +155,10 @@ disparo (best-effort, pós-resposta):
   `apply_fare_upgrade`), Edge `create-fare-upgrade`, ramo `fare_upgrade` no `pagarme-webhook` (promove
   a Tarifa quando pago — sem confirmar/voucher), UI `FareUpgradeDialog` + botão no detalhe. Sem
   downgrade; idempotente. Validado e2e (Flex→Superflex, delta R$12 → reserva vira Superflex).
+  Desde 26/11/2026 a equipe da empresa com `bookings:write` também gera o upgrade, pela tela da
+  reserva (`StaffFareUpgradeDialog`), e a troca de datas de reserva Básica pela equipe cobra o
+  upgrade para o Flex no mesmo PIX ([booking-modifications.md §8.7](./booking-modifications.md)).
+  O upgrade aplicado entra no histórico da reserva.
 
 ## E2.8-f · Config de Tarifa por unidade — REMOVIDA (fonte única global, 23/07)
 

@@ -79,6 +79,21 @@ async function markProcessed(admin: any, eventId: string): Promise<void> {
     .eq("id", eventId);
 }
 
+// Upgrade de plano aplicado entra no histórico da reserva (26/11/2026). Antes não entrava, e a
+// equipe não via quando a reserva tinha virado Flex. Best-effort: não derruba o webhook.
+// deno-lint-ignore no-explicit-any
+async function logFareUpgrade(admin: any, bookingId: string, tier: string, up: { delta?: number }): Promise<void> {
+  const { error } = await admin.rpc("log_booking_modification", {
+    p_booking_id: bookingId,
+    p_type: "fare_upgrade",
+    p_actor_role: "system",
+    p_changes: { to: { fare_tier: tier } },
+    p_amount_delta_cents: up.delta == null ? null : Math.round(Number(up.delta) * 100),
+    p_reason: null,
+  });
+  if (error) console.error("[pagarme-webhook] log do upgrade falhou:", error.message);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -439,11 +454,14 @@ Deno.serve(async (req: Request) => {
 
   // Upgrade de Tarifa pago (E2.8-d): promove a Tarifa da reserva, sem confirmar/voucher.
   if (status === "paid" && payment.kind === "fare_upgrade" && payment.fare_target_tier) {
-    const { error: upErr } = await admin.rpc("apply_fare_upgrade", {
+    const { data: up, error: upErr } = await admin.rpc("apply_fare_upgrade", {
       p_booking_id: payment.booking_id,
       p_target_tier: payment.fare_target_tier,
     });
     if (upErr) console.error("[pagarme-webhook] apply_fare_upgrade falhou:", upErr.message);
+    else if ((up as { upgraded?: boolean } | null)?.upgraded) {
+      await logFareUpgrade(admin, payment.booking_id, payment.fare_target_tier, up as { delta?: number });
+    }
     await markProcessed(admin, ev.eventId);
     return json({ ok: true, status: paymentStatus, fare_upgrade: true });
   }
@@ -458,16 +476,32 @@ Deno.serve(async (req: Request) => {
     // Grava a cotação que o cliente PAGOU (17/11/2026), não um re-preço na hora do webhook: se a
     // tabela mudou entre o QR e o pagamento, vale o que ele viu. Cobrança antiga, sem cotação
     // gravada, re-cota como antes.
+    const quoteGravada = (payment.date_change_quote ?? null) as { actor_role?: string } | null;
     const { error: dcErr } = await admin.rpc("apply_paid_date_change", {
       p_booking_id: payment.booking_id,
       p_check_in: payment.date_change_check_in_at,
       p_check_out: payment.date_change_check_out_at,
       p_actor_id: null,
       p_acquire: false,
+      // Quem pediu a troca (26/11/2026): a equipe aparece como equipe no histórico.
+      p_actor_role: quoteGravada?.actor_role === "staff" ? "staff" : null,
       p_quote: payment.date_change_quote ?? null,
     });
     if (dcErr) console.error("[pagarme-webhook] apply_paid_date_change falhou:", dcErr.message);
-    else {
+    // Troca de reserva Básica pela equipe (26/11/2026): o mesmo PIX pagou o upgrade para o Flex. Vem
+    // DEPOIS das datas, porque `apply_paid_date_change` grava o total da cotação (sem o plano) e
+    // `apply_fare_upgrade` soma o plano a esse total e refaz a janela de cancelamento pela entrada nova.
+    if (!dcErr && payment.fare_target_tier) {
+      const { data: up, error: upErr } = await admin.rpc("apply_fare_upgrade", {
+        p_booking_id: payment.booking_id,
+        p_target_tier: payment.fare_target_tier,
+      });
+      if (upErr) console.error("[pagarme-webhook] apply_fare_upgrade (troca de datas) falhou:", upErr.message);
+      else if ((up as { upgraded?: boolean } | null)?.upgraded) {
+        await logFareUpgrade(admin, payment.booking_id, payment.fare_target_tier, up as { delta?: number });
+      }
+    }
+    if (!dcErr) {
       // Aviso das novas datas, com a diferença paga. Best-effort.
       await notifyDatesChanged(admin, payment.booking_id, {
         chargedCents: Math.round(Number(payment.amount ?? 0) * 100),

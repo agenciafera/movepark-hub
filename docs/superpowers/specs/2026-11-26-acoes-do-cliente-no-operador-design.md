@@ -1,5 +1,7 @@
 # Ações do cliente no painel do operador (26/11/2026)
 
+**Estado:** parte 1 (§3) implementada em 26/11/2026; parte 2 (§4) ainda não.
+
 **Pedido do Kallef em 26/11/2026:** o que o cliente faz na própria reserva (upgrade de plano, alterar
 datas cobrando ou devolvendo a diferença) também precisa estar com o operador, que atende o cliente
 no balcão e no telefone. Decisões tomadas na mesma conversa, todas na opção recomendada.

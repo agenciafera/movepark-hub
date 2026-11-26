@@ -141,9 +141,11 @@ Deno.test("proposta de cancelamento sem motivo é recusada", () => {
   assertEquals(p.ok, false);
 });
 
+const flex = () => reserva({ fare_tier: "flex", fare_price_cents: 1290, fare_benefits: BENEF_FLEX });
+
 Deno.test("volta antes: troca de datas paga com diferença negativa vira estorno parcial", () => {
   const p = montarProposta({
-    kind: "change_dates", s: reserva(), now: AGORA, scopes: TODOS,
+    kind: "change_dates", s: flex(), now: AGORA, scopes: TODOS,
     params: { check_in_at: "2026-11-20T10:00:00-03:00", check_out_at: "2026-11-23T10:00:00-03:00" },
     cotacao: { available: true, reason: null, delta_cents: -8000, new_total_cents: 12000, days: 3 },
   });
@@ -155,7 +157,7 @@ Deno.test("volta antes: troca de datas paga com diferença negativa vira estorno
 
 Deno.test("troca de datas mais cara gera PIX e avisa que só muda quando pagar", () => {
   const p = montarProposta({
-    kind: "change_dates", s: reserva(), now: AGORA, scopes: TODOS,
+    kind: "change_dates", s: flex(), now: AGORA, scopes: TODOS,
     params: { check_in_at: "2026-11-20T10:00:00-03:00", check_out_at: "2026-11-27T10:00:00-03:00" },
     cotacao: { available: true, reason: null, delta_cents: 5000, new_total_cents: 25000, days: 7 },
   });
@@ -217,4 +219,32 @@ Deno.test("a superfície /operator não expõe escrita de parceiro", () => {
   const nomes = OPERATOR_TOOLS.map((t) => t.name);
   for (const w of escritasDeParceiro) assertEquals(nomes.includes(w), false, w);
   assert(nomes.includes("propose_booking_action"));
+});
+
+// Regra de 26/11/2026: a equipe alterando datas de reserva Básica cobra o upgrade para o Flex junto.
+Deno.test("Básica mais cara: o PIX da proposta leva as diárias e o upgrade para o Flex", () => {
+  const p = montarProposta({
+    kind: "change_dates", s: reserva(), now: AGORA, scopes: TODOS,
+    params: { check_in_at: "2026-11-20T10:00:00-03:00", check_out_at: "2026-11-27T10:00:00-03:00" },
+    cotacao: { available: true, reason: null, delta_cents: 5000, new_total_cents: 25000, days: 7 },
+  });
+  assert(p.ok);
+  if (!p.ok) return;
+  assertEquals(p.effect_cents, 6290);
+  assertStringIncludes(p.summary, "PIX de R$ 62,90");
+  assertStringIncludes(p.summary, "R$ 12,90 do upgrade para o Flex");
+  // A diferença conferida na Edge continua a das diárias.
+  assertEquals(p.params.expected_delta_cents, 5000);
+});
+
+Deno.test("Básica sem diferença a cobrar: a Mia manda para a tela, que faz o upgrade antes", () => {
+  const p = montarProposta({
+    kind: "change_dates", s: reserva(), now: AGORA, scopes: TODOS,
+    params: { check_in_at: "2026-11-20T10:00:00-03:00", check_out_at: "2026-11-23T10:00:00-03:00" },
+    cotacao: { available: true, reason: null, delta_cents: -8000, new_total_cents: 12000, days: 3 },
+  });
+  assertEquals(p.ok, false);
+  if (p.ok) return;
+  assertStringIncludes(p.erro, "upgrade para o Flex (R$ 12,90)");
+  assertStringIncludes(p.erro, "botão Alterar datas");
 });

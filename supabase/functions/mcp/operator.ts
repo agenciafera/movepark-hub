@@ -13,6 +13,7 @@ import {
   quando,
   reais,
   type Situacao,
+  upgradeParaTrocarDatas,
 } from "./operator.logic.ts";
 
 export interface OperatorCtx {
@@ -120,13 +121,19 @@ export async function callOperator(admin: any, ctx: OperatorCtx, name: string, a
           motivo_indisponivel: c.reason ?? "A unidade não vende esse período.",
         };
       }
+      // Básica pela equipe (26/11/2026): a troca cobra junto o upgrade para o Flex.
+      const up = upgradeParaTrocarDatas(s);
       const efeito = s.status === "pending"
         ? `A reserva ainda não foi paga: o novo total passa a ser ${reais(c.new_total_cents)}, sem cobrança agora.`
-        : c.delta_cents < 0
-          ? `Estorno de ${reais(-c.delta_cents)} ao cliente, na mesma forma de pagamento da reserva. Sai só das diárias: a tarifa não volta.`
-          : c.delta_cents > 0
-            ? `O cliente paga ${reais(c.delta_cents)}: ele mesmo, em Minhas reservas, por PIX ou cartão, ou o estacionamento gera um PIX pela Mia. As datas só mudam quando o pagamento for aprovado.`
-            : "Sem diferença de valor.";
+        : up > 0
+          ? c.delta_cents > 0
+            ? `O plano Básica não inclui alterar datas. Pelo estacionamento, o cliente paga ${reais(c.delta_cents + up)} num PIX só: ${reais(c.delta_cents)} das diárias e ${reais(up)} do upgrade para o Flex. As datas só mudam quando o PIX for pago.`
+            : `O plano Básica não inclui alterar datas. Pelo estacionamento, o cliente paga antes ${reais(up)} do upgrade para o Flex, e a troca vale quando esse PIX entra${c.delta_cents < 0 ? `, com estorno de ${reais(-c.delta_cents)} das diárias` : ""}. Isso se faz no botão Alterar datas da tela da reserva.`
+          : c.delta_cents < 0
+            ? `Estorno de ${reais(-c.delta_cents)} ao cliente, na mesma forma de pagamento da reserva. Sai só das diárias: a tarifa não volta.`
+            : c.delta_cents > 0
+              ? `O cliente paga ${reais(c.delta_cents)}: ele mesmo, em Minhas reservas, por PIX ou cartão, ou o estacionamento gera um PIX pela tela da reserva ou pela Mia. As datas só mudam quando o pagamento for aprovado.`
+              : "Sem diferença de valor.";
       return {
         reserva: s.code,
         novas_datas: { entrada: quando(texto(a.check_in_at, 40)), saida: quando(texto(a.check_out_at, 40)) },
@@ -156,7 +163,7 @@ export async function callOperator(admin: any, ctx: OperatorCtx, name: string, a
         tarifa_atual: analise.tarifa,
         upgrade: analise.pode_agora.upgrade,
         como_o_cliente_faz:
-          "Em movepark.co, Minhas reservas, abre a reserva e toca em \"Fazer upgrade de Tarifa\". Paga a diferença por PIX e a tarifa nova vale assim que o PIX é aprovado. O estacionamento não consegue fazer o upgrade pelo cliente.",
+          "Em movepark.co, Minhas reservas, abre a reserva e toca em \"Fazer upgrade de Tarifa\". Paga a diferença por PIX e a tarifa nova vale assim que o PIX é aprovado. O estacionamento também gera esse PIX pelo cliente: na tela da reserva, em Alterar reserva, botão Fazer upgrade.",
       };
     }
 

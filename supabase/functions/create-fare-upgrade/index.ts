@@ -25,6 +25,7 @@ import {
 } from "./logic.ts";
 import { customerTypeFor, isValidChargeDocument } from "../_shared/payments/documents.ts";
 import { parseBrPhone } from "../_shared/payments/contact.ts";
+import { resolveBookingActor } from "../_shared/booking-actor.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,19 +69,36 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  // 1. Reserva (dona, ainda upgradável: antes da entrada, não terminal).
+  // 1. Reserva (dona ou da empresa de quem pede, ainda upgradável: antes da entrada, não terminal).
   const { data: booking } = await admin
     .from("booking")
     .select(
-      "id, code, status, check_in_at, fare_tier, fare_price_cents, profile_id, " +
-        "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id",
+      "id, code, status, check_in_at, fare_tier, fare_price_cents, profile_id, location_id, " +
+        "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id, " +
+        "location:location!inner(company_id)",
     )
     .eq("code", input.bookingCode)
     .is("deleted_at", null)
     .maybeSingle();
+  // A equipe da empresa com `bookings:write` também gera o upgrade pelo cliente (26/11/2026).
+  let isStaff = false;
+  if (booking && booking.profile_id !== userData.user.id) {
+    const quem = await resolveBookingActor({
+      admin,
+      userClient,
+      userId: userData.user.id,
+      ownerId: booking.profile_id,
+      // deno-lint-ignore no-explicit-any
+      companyId: (booking as any).location?.company_id ?? null,
+      scope: "bookings:write",
+    });
+    if (quem.kind === "denied") return jsonResponse({ error: quem.error }, quem.status);
+    isStaff = quem.kind === "staff";
+  }
   const bookingDenial = checkBookingUpgradable({
     booking,
     userId: userData.user.id,
+    isStaff,
     targetTier: input.targetTier,
     now: new Date(),
   });
