@@ -5,7 +5,8 @@
 > beast-bots (PR agenciafera/beast-bots#9; evals 6 de 6). A v1 (bolinha e laço do Gemini na Edge)
 > saiu. No mesmo dia, depois do primeiro uso, a tela passou a recolher os passos e a persona a
 > conversar antes de executar (beast-bots#10), e o agente virou especialista, com números medidos
-> na base e um manual por objetivo (beast-bots#11; evals 14 de 14). Conferido no vivo: sem token e com a chave anon 401, cliente 403, admin lista as conversas.
+> na base e um manual por objetivo (beast-bots#11). Toda recomendação traz a frase "Para medir," e
+> o agente não supõe site white-label da unidade (beast-bots#12; evals 16 de 16, turno real conferido). Conferido no vivo: sem token e com a chave anon 401, cliente 403, admin lista as conversas.
 > Nenhuma campanha foi executada e a chave geral segue desligada.
 > **Base:** [marketing-mcp.md](./marketing-mcp.md) (registro de tools de marketing em
 > `supabase/functions/_shared/marketing/`, gravação auditada, motor compartilhado) e
