@@ -207,13 +207,14 @@ describe("itens com subitens", () => {
   });
 });
 
-/** O menu do manager tem uma linha só para marketing, com as cinco telas dentro. */
+/** O menu do manager tem uma linha só para marketing, com as seis telas dentro. */
 describe("marketing ocupa uma linha do menu do manager", () => {
-  it("existe um item Automação com os cinco subitens", () => {
+  it("existe um item Automação com os seis subitens, o assistente primeiro", () => {
     const automacao = managerSections
       .flatMap((s) => s.items)
       .find((i) => i.label === "Automação");
     expect(automacao?.children?.map((c) => c.label)).toEqual([
+      "Assistente de IA",
       "Perfis e funil",
       "Leads",
       "Segmentos",

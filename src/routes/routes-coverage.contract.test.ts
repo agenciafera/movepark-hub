@@ -54,6 +54,11 @@ const SEM_COBERTURA: string[] = [
   // pela Edge com JWT de hub_admin, que a fixture do Windup não tem; entra no Playwright junto
   // com o roteiro do piloto de venda pelo Hub.
   "/acesso/:token",
+  // 26/11/2026: página Assistente de IA da Automação. O cenário Windup precisa do planner, e o
+  // perfil dele está deslogado; o plano teria de ser escrito à mão. Sai daqui no commit que
+  // escrever o cenário (abrir a página como hub_admin, ver a lista e o convite, sem mandar mensagem).
+  "/manager/marketing/assistente",
+  "/manager/marketing/assistente/:conversa",
 ];
 
 /** Uma URL cobre uma rota quando os segmentos casam, com `:param` como coringa. */

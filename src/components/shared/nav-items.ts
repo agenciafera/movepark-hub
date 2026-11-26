@@ -50,6 +50,7 @@ export const managerSections: Section[] = [
         label: "Automação",
         icon: Megaphone,
         children: [
+          { to: "/manager/marketing/assistente", label: "Assistente de IA", icon: Sparkle },
           { to: "/manager/marketing", label: "Perfis e funil", icon: ChartPie },
           { to: "/manager/marketing/leads", label: "Leads", icon: Kanban },
           { to: "/manager/marketing/segmentos", label: "Segmentos", icon: UsersThree },

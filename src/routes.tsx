@@ -175,6 +175,7 @@ import ManagerMarketingSegments from "@/routes/manager/marketing-segments";
 import ManagerMarketingCampaigns from "@/routes/manager/marketing-campaigns";
 import ManagerMarketingCampaign from "@/routes/manager/marketing-campaign";
 import ManagerMarketingCupons from "@/routes/manager/marketing-cupons";
+import ManagerMarketingAssistente from "@/routes/manager/marketing-assistente";
 
 import OperatorLayout from "@/routes/operator/layout";
 import OperatorDashboard from "@/routes/operator/dashboard";
@@ -1661,6 +1662,8 @@ export const routes: RouteRecord[] = [
               { path: "marketing/campanhas", element: <ManagerMarketingCampaigns /> },
               { path: "marketing/campanhas/:id", element: <ManagerMarketingCampaign /> },
               { path: "marketing/cupons", element: <ManagerMarketingCupons /> },
+              { path: "marketing/assistente", element: <ManagerMarketingAssistente /> },
+              { path: "marketing/assistente/:conversa", element: <ManagerMarketingAssistente /> },
               { path: "reviews", element: <ManagerReviews /> },
               { path: "destaques", element: <ManagerDestaques /> },
               { path: "faq", element: <ManagerFaq /> },
