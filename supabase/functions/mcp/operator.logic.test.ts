@@ -248,3 +248,10 @@ Deno.test("Básica sem diferença a cobrar: a Mia manda para a tela, que faz o u
   assertStringIncludes(p.erro, "upgrade para o Flex (R$ 12,90)");
   assertStringIncludes(p.erro, "botão Alterar datas");
 });
+
+Deno.test("depois da entrada, a Mia manda estender a saída pela tela (Cobrar pelo Hub)", () => {
+  const a = analisarReserva(reserva({ check_in_at: "2026-11-15T13:00:00Z", check_out_at: "2026-11-16T13:00:00Z", status: "completed" }), AGORA);
+  assert(a.avisos.some((t) => t.includes("Cobrar pelo Hub")));
+  const antes = analisarReserva(reserva(), AGORA);
+  assert(!antes.avisos.some((t) => t.includes("Cobrar pelo Hub")));
+});

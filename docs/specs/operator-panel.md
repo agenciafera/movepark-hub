@@ -272,6 +272,12 @@ excedente segue a conta dela (diária congelada a partir da saída coberta). A f
 diária ao lado do "Valor das diárias" (Manager: campo "Diária"). Código em `ExtraDaysCard.tsx` e
 `extraDays.logic.ts`.
 
+**Cobrar pelo Hub (26/11/2026, parte 2).** Depois do horário de entrada, quem tem `bookings:write`
+vê, embaixo do valor a cobrar, o botão **Cobrar pelo Hub**: a saída da reserva passa para a saída
+escolhida e a diferença vai num PIX dividido como a reserva (`ExtendStayPanel`, regra em
+`booking-modifications.md` §8.8). Cobrar na retirada, por fora do Hub, continua valendo. Em unidade
+cuja cancela recebe as reservas (Cloudpark), a tela avisa para ajustar a saída do cartão lá.
+
 #### Alterar reserva pelo cliente (26/11/2026)
 
 Card **Alterar reserva** no detalhe da reserva do Hub (Operator e Manager), em reserva confirmada,

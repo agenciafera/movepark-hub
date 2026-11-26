@@ -472,6 +472,10 @@ export type ChangePaidDatesQuote = {
   fare_upgrade_first?: boolean;
   /** O que o PIX cobra: a diferença das diárias, mais o upgrade quando ele vai junto. */
   charge_amount?: number;
+  /** Prévia de extensão da saída com o carro no pátio (26/11/2026, parte 2). */
+  extension?: boolean;
+  /** A unidade manda as reservas para a cancela de um provedor (hoje só "cloudpark"). */
+  access_provider?: string | null;
 };
 
 export type FareUpgradeQuote = { tier: "flex"; cents: number; amount: number };
@@ -500,6 +504,8 @@ export function useQuotePaidBookingDates() {
       checkOutAt: string;
       /** Só hub_admin: cota sem o upgrade da Básica. */
       waiveFareUpgrade?: boolean;
+      /** Estender a saída com o carro no pátio (só a equipe, depois da entrada). */
+      extend?: boolean;
     }): Promise<ChangePaidDatesQuote> => {
       const res = await postDatesPaid({
         booking_code: args.bookingCode,
@@ -507,6 +513,7 @@ export function useQuotePaidBookingDates() {
         check_out_at: args.checkOutAt,
         dry_run: true,
         ...(args.waiveFareUpgrade ? { waive_fare_upgrade: true } : {}),
+        ...(args.extend ? { extend: true } : {}),
       });
       const body = await res.json().catch(() => ({}));
       // Período que a unidade não vende chega como 409 com a cotação: a tela mostra o motivo.
@@ -556,6 +563,8 @@ export function useChangePaidBookingDates() {
       /** Só hub_admin: troca a Básica sem cobrar o upgrade, com o motivo no histórico. */
       waiveFareUpgrade?: boolean;
       reason?: string | null;
+      /** Estender a saída com o carro no pátio (só a equipe, depois da entrada). */
+      extend?: boolean;
     }): Promise<ChangePaidDatesResult> => {
       const res = await postDatesPaid({
         booking_code: args.bookingCode,
@@ -563,6 +572,7 @@ export function useChangePaidBookingDates() {
         check_out_at: args.checkOutAt,
         ...(args.expectedDeltaCents == null ? {} : { expected_delta_cents: args.expectedDeltaCents }),
         ...(args.waiveFareUpgrade ? { waive_fare_upgrade: true, reason: args.reason ?? null } : {}),
+        ...(args.extend ? { extend: true } : {}),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

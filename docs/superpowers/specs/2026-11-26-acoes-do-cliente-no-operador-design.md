@@ -1,6 +1,10 @@
 # Ações do cliente no painel do operador (26/11/2026)
 
-**Estado:** parte 1 (§3) implementada em 26/11/2026; parte 2 (§4) ainda não.
+**Estado:** partes 1 (§3) e 2 (§4) implementadas em 26/11/2026. Na parte 2, duas correções ao
+desenho depois de ler o código: o status **não** volta de concluída para no pátio (a conclusão
+dispara cashback, clube e indicação, e a trava de transição não deixa voltar), e os Termos v7
+mudaram também o item 4.3, que dizia que o dia a mais era cobrado só pelo estacionamento, na
+retirada. Ver `docs/specs/booking-modifications.md` §8.8.
 
 **Pedido do Kallef em 26/11/2026:** o que o cliente faz na própria reserva (upgrade de plano, alterar
 datas cobrando ou devolvendo a diferença) também precisa estar com o operador, que atende o cliente

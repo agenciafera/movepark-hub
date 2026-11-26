@@ -88,8 +88,9 @@ export function upgradeTargets(current: string | null | undefined): FareTier[] {
 }
 
 /** Texto pronto para o operador mandar no WhatsApp junto com o código do PIX. */
-export function pixMessage(o: { code: string; amount: number; what: "datas" | "upgrade" }): string {
-  const motivo = o.what === "datas" ? "a alteração de datas" : "o upgrade de plano";
+export function pixMessage(o: { code: string; amount: number; what: "datas" | "upgrade" | "dias" }): string {
+  const motivo =
+    o.what === "datas" ? "a alteração de datas" : o.what === "dias" ? "os dias a mais" : "o upgrade de plano";
   // Espaço comum no lugar do espaço fino do formatador: o texto vai colado no WhatsApp.
   const valor = formatBRL(o.amount).replace(/\u00a0/g, " ");
   return `Olá! Segue o PIX de ${valor} para ${motivo} da reserva ${o.code} na Movepark. É só copiar o código abaixo no app do seu banco.`;

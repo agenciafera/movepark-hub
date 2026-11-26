@@ -19,6 +19,11 @@ export interface ChangeDatesPaidInput {
   waiveFareUpgrade: boolean;
   /** Motivo da dispensa, que vai para o histórico da reserva. */
   reason: string | null;
+  /**
+   * Estender a saída com o carro no pátio (26/11/2026, parte 2): só a equipe, depois do horário de
+   * entrada. A entrada vem igual à da reserva e só a saída muda.
+   */
+  extend: boolean;
 }
 
 /** Valida { booking_code, check_in_at, check_out_at, dry_run?, expected_delta_cents? }. */
@@ -54,8 +59,51 @@ export function parseChangeDatesPaidInput(
       expectedDeltaCents: typeof expected === "number" ? expected : null,
       waiveFareUpgrade: waive,
       reason: reason || null,
+      extend: b.extend === true,
     },
   };
+}
+
+/** Estados em que o carro pode estar no pátio. `completed` entra: o sistema conclui sozinho. */
+export const EXTENSION_STATUSES = ["confirmed", "checked_in", "completed"] as const;
+/** Até quantos dias depois da saída prevista ainda dá para estender (o alcance da tabela da compra). */
+export const EXTENSION_MAX_DAYS_AFTER = 30;
+
+/**
+ * Quem e quando estende a saída depois da entrada (decisões D2 e D4 de 26/11/2026). A conta e a
+ * vaga são do banco (`reprice_booking_dates` e `hold_paid_date_change` em modo extensão); aqui o
+ * que a Edge recusa antes de cotar.
+ */
+export function extensionDenial(i: {
+  isStaff: boolean;
+  status: string;
+  checkInAt: string;
+  checkOutAt: string;
+  checkedOutAt: string | null;
+  requestedCheckInAt: string;
+  requestedCheckOutAt: string;
+  now: Date;
+}): { status: number; error: string } | null {
+  if (!i.isStaff) {
+    return { status: 403, error: "Depois da entrada, quem estende a saída é o estacionamento." };
+  }
+  if (!(EXTENSION_STATUSES as readonly string[]).includes(i.status) || i.checkedOutAt) {
+    return { status: 400, error: "Esta reserva não está mais no pátio." };
+  }
+  if (new Date(i.checkInAt).getTime() > i.now.getTime()) {
+    return { status: 400, error: "A reserva ainda não começou. Use Alterar datas." };
+  }
+  if (new Date(i.requestedCheckInAt).getTime() !== new Date(i.checkInAt).getTime()) {
+    return { status: 400, error: "Na extensão, a entrada não muda." };
+  }
+  const limite = new Date(i.checkOutAt).getTime() + EXTENSION_MAX_DAYS_AFTER * 86_400_000;
+  if (limite < i.now.getTime()) {
+    return { status: 400, error: `Esta reserva terminou há mais de ${EXTENSION_MAX_DAYS_AFTER} dias.` };
+  }
+  if (new Date(i.requestedCheckOutAt).getTime() <= new Date(i.checkOutAt).getTime()) {
+    return { status: 400, error: "A nova saída precisa ser depois da saída reservada." };
+  }
+  return null;
 }
 
 /** Upgrade que a troca exige: a Básica não inclui alterar datas, então vai para o Flex. */

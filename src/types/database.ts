@@ -9947,7 +9947,12 @@ export type Database = {
         }[]
       }
       hold_paid_date_change: {
-        Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
+        Args: {
+          p_booking_id: string
+          p_check_in: string
+          p_check_out: string
+          p_extension?: boolean
+        }
         Returns: Json
       }
       home_featured_offers: {
@@ -11432,7 +11437,12 @@ export type Database = {
       }
       renew_booking_hold: { Args: { p_booking_id: string }; Returns: Json }
       reprice_booking_dates: {
-        Args: { p_booking_id: string; p_check_in: string; p_check_out: string }
+        Args: {
+          p_booking_id: string
+          p_check_in: string
+          p_check_out: string
+          p_extension?: boolean
+        }
         Returns: Json
       }
       resolve_commission: {

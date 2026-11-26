@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
 import { useExtraDaysTable } from "./api";
 import { extraDaysRows, quoteExit, type ExitQuote, type ExtraDaysTable } from "./extraDays.logic";
+import { ExtendStayPanel, type ExtendTarget } from "./ExtendStayPanel";
 
 /** Linhas abertas de saída: uma semana. O resto da tabela (até 30 dias) abre no botão. */
 const LINHAS_INICIAIS = 7;
@@ -123,7 +124,17 @@ function Tabela({ t, destaque }: { t: ExtraDaysTable; destaque: number | null })
  * `booking_extra_days_table`, que o balcão também chama (só preço de tabela, nada do que a reserva
  * pagou).
  */
-export function ExtraDaysCard({ bookingId }: { bookingId: string }) {
+export function ExtraDaysCard({
+  bookingId,
+  extend = null,
+}: {
+  bookingId: string;
+  /**
+   * Cobrar pelo Hub (26/11/2026, parte 2): só para a equipe com `bookings:write` e depois do
+   * horário de entrada. Nulo, o card só informa, como antes.
+   */
+  extend?: ExtendTarget | null;
+}) {
   const q = useExtraDaysTable(bookingId);
   const t = q.data ?? null;
   const [saida, setSaida] = React.useState<string | null>(null);
@@ -151,6 +162,7 @@ export function ExtraDaysCard({ bookingId }: { bookingId: string }) {
               {t.source === "compra"
                 ? "Se o cliente sair depois do combinado, cobre a diferença pela tabela de preço do dia da compra."
                 : "Se o cliente sair depois do combinado, cobre a diferença pela tabela de hoje, porque esta reserva é de antes de o Hub guardar a tabela da compra."}
+              {extend ? " Você pode cobrar aqui pelo Hub, num PIX, ou na retirada." : ""}
             </p>
             <div className="flex flex-col gap-2 tablet:flex-row tablet:items-end tablet:gap-4">
               <div className="flex flex-col gap-1.5">
@@ -167,6 +179,9 @@ export function ExtraDaysCard({ bookingId }: { bookingId: string }) {
                 <Resultado q={cotacao} />
               </div>
             </div>
+            {extend && cotacao?.kind === "charge" && data && (
+              <ExtendStayPanel alvo={extend} saida={data.toISOString()} />
+            )}
             <Tabela t={t} destaque={cotacao && cotacao.kind !== "beyond" ? cotacao.days : null} />
           </>
         )}

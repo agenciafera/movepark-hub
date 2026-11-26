@@ -20,7 +20,15 @@
 //
 // POST /functions/v1/change-booking-dates-paid
 // Authorization: Bearer <JWT>
-// { booking_code, check_in_at, check_out_at, dry_run?, expected_delta_cents? }
+// { booking_code, check_in_at, check_out_at, dry_run?, expected_delta_cents?, waive_fare_upgrade?, reason?, extend? }
+//
+// Equipe (26/11/2026, docs/superpowers/specs/2026-11-26-acoes-do-cliente-no-operador-design.md):
+//   - escopo `bookings:write` (_shared/booking-actor.ts); quem não tem `finance:read` não recebe totais;
+//   - reserva Básica cobra junto o upgrade para o Flex (PIX único) ou pede o upgrade antes (409
+//     `fare_upgrade_first`); só o hub_admin dispensa, com `waive_fare_upgrade` + `reason`;
+//   - `extend: true` estende a saída com o carro no pátio: depois da entrada, a entrada igual à da
+//     reserva, a saída maior; cota e segura a vaga em modo extensão, sem upgrade e com piso zero. A
+//     prévia diz em `access_provider` se a unidade manda as reservas para a cancela (Cloudpark).
 // → 200 { mode: "quote", ... } | 200 { mode: "applied", delta, total_amount, refunded, refund_pending, refund_manual }
 //   | 201 { mode: "charge", payment_id, qr_code, qr_code_url, expires_at, delta }
 //   | 409 { code: "quote_changed", ... } quando o valor mudou desde a prévia.
@@ -51,6 +59,7 @@ import {
   quoteView,
 } from "../_shared/payments/date-change.ts";
 import {
+  extensionDenial,
   fareUpgradeFor,
   parseChangeDatesPaidInput,
   quoteChanged,
@@ -73,7 +82,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 const BOOKING_COLS =
-  "id, code, status, check_in_at, fare_benefits, fare_tier, fare_price_cents, profile_id, location_id, " +
+  "id, code, status, check_in_at, check_out_at, checked_out_at, fare_benefits, fare_tier, fare_price_cents, profile_id, location_id, " +
   "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
   "commission_installments_max, commission_installments_interest_free, commission_anticipation_payer, " +
   "customer_name, customer_first_name, customer_last_name, customer_email, customer_phone, customer_tax_id, " +
@@ -84,6 +93,8 @@ interface BookingRow extends BookingCommissionColumns {
   code: string;
   status: string;
   check_in_at: string;
+  check_out_at: string;
+  checked_out_at: string | null;
   fare_benefits: Record<string, unknown> | null;
   fare_tier: string | null;
   fare_price_cents: number | null;
@@ -159,17 +170,31 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Só a equipe da Movepark pode trocar sem cobrar o upgrade." }, 403);
   }
 
-  if (booking.status !== "confirmed") {
+  // Estender a saída com o carro no pátio (26/11/2026, parte 2): só a equipe, depois da entrada, e
+  // só a saída muda. Sem upgrade (D5) e sem devolução (D4): o banco põe piso zero na diferença.
+  const extend = input.extend;
+  if (extend) {
+    const negado = extensionDenial({
+      isStaff,
+      status: booking.status,
+      checkInAt: booking.check_in_at,
+      checkOutAt: booking.check_out_at,
+      checkedOutAt: booking.checked_out_at,
+      requestedCheckInAt: input.checkInAt,
+      requestedCheckOutAt: input.checkOutAt,
+      now: new Date(),
+    });
+    if (negado) return jsonResponse({ error: negado.error }, negado.status);
+  } else if (booking.status !== "confirmed") {
     return jsonResponse(
       { error: "Este fluxo é para reserva paga. Reserva pendente altera datas em /change-booking-dates." },
       400,
     );
-  }
-  if (new Date(booking.check_in_at) <= new Date()) {
+  } else if (new Date(booking.check_in_at) <= new Date()) {
     return jsonResponse({ error: "A reserva já começou." }, 400);
   }
   const benefits = (booking.fare_benefits ?? {}) as Record<string, unknown>;
-  if (!isStaff && benefits.date_change !== true) {
+  if (!extend && !isStaff && benefits.date_change !== true) {
     return jsonResponse(
       { error: "Sua Tarifa não permite alterar datas. Faça upgrade para Flex ou Superflex." },
       403,
@@ -179,8 +204,10 @@ Deno.serve(async (req: Request) => {
   // Cotação (só leitura): a mesma conta para a prévia, a cobrança e a gravação.
   const { data: quoteRaw, error: qErr } = await admin.rpc("reprice_booking_dates", {
     p_booking_id: booking.id,
-    p_check_in: input.checkInAt,
+    // Na extensão, a entrada é a da reserva, no formato do banco (a conferência já foi feita).
+    p_check_in: extend ? booking.check_in_at : input.checkInAt,
     p_check_out: input.checkOutAt,
+    p_extension: extend,
   });
   if (qErr) return jsonResponse({ error: qErr.message }, 400);
   const quote = quoteRaw as DateChangeQuote;
@@ -192,11 +219,11 @@ Deno.serve(async (req: Request) => {
 
   // Básica pela equipe da empresa (26/11/2026, D1): a troca leva o upgrade para o Flex junto.
   let flexCents: number | null = null;
-  if (isStaff && benefits.date_change !== true) {
+  if (!extend && isStaff && benefits.date_change !== true) {
     const { data: flex } = await admin.from("fare").select("price_cents").eq("tier", "flex").eq("is_active", true).maybeSingle();
     flexCents = flex?.price_cents ?? null;
   }
-  const upgrade = fareUpgradeFor({
+  const upgrade = extend ? null : fareUpgradeFor({
     isStaff,
     isHubAdmin,
     waive: input.waiveFareUpgrade,
@@ -207,10 +234,28 @@ Deno.serve(async (req: Request) => {
   const plano = upgradePlan(deltaCents, upgrade);
   const upgradeView = upgrade ? { tier: upgrade.tier, cents: upgrade.cents, amount: upgrade.cents / 100 } : null;
 
+  // Unidade cuja cancela recebe as reservas do Hub (Cloudpark): a extensão não chega lá, e a tela
+  // avisa a equipe para ajustar a saída no sistema do pátio (gate G-CP da spec).
+  let accessProvider: string | null = null;
+  if (extend) {
+    const { data: conn } = await admin
+      .from("integration_connection")
+      .select("provider")
+      .eq("location_id", booking.location_id)
+      .eq("enabled", true)
+      .eq("send_hub_bookings", true)
+      .is("deleted_at", null)
+      .limit(1)
+      .maybeSingle();
+    accessProvider = (conn as { provider?: string } | null)?.provider ?? null;
+  }
+
   if (input.dryRun) {
     return jsonResponse({
       mode: "quote",
       ...view,
+      extension: extend,
+      access_provider: accessProvider,
       // Cartão é do próprio cliente, na tela dele; a equipe gera PIX e manda o copia-e-cola.
       card_allowed: isOwner && deltaCents > 0,
       fare_upgrade: upgradeView,
@@ -493,12 +538,18 @@ Deno.serve(async (req: Request) => {
     p_booking_id: booking.id,
     p_check_in: input.checkInAt,
     p_check_out: input.checkOutAt,
+    // Na extensão, segura só os dias acrescentados, com o carro já no pátio.
+    p_extension: extend,
   });
   if (hErr) return jsonResponse({ error: hErr.message }, 409);
 
   const paymentId = crypto.randomUUID();
   const externalCode = `${booking.code}-DT-${crypto.randomUUID().slice(0, 4).toUpperCase()}`;
-  const items = [{ amount: deltaCents, description: `Alteração de datas · ${booking.code}`, quantity: 1 }];
+  const items = [{
+    amount: deltaCents,
+    description: extend ? `Dias a mais · ${booking.code}` : `Alteração de datas · ${booking.code}`,
+    quantity: 1,
+  }];
   if (upgrade && plano.kind === "together") {
     items.push({ amount: upgrade.cents, description: `Upgrade para Flex · ${booking.code}`, quantity: 1 });
   }
@@ -573,6 +624,7 @@ Deno.serve(async (req: Request) => {
     request: {
       method: "pix",
       kind: "date_change",
+      extension: extend,
       amount_cents: chargeCents,
       fare_upgrade_cents: upgrade && plano.kind === "together" ? upgrade.cents : 0,
       split: splitEnabled ? split : null,

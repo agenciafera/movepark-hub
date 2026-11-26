@@ -416,6 +416,23 @@ describe("BookingDetailView: balcão sem dinheiro", () => {
     );
     expect(card).toHaveTextContent("reservada");
     expect(card).toHaveTextContent("+1 dia");
+    // Parte 2 (26/11/2026): depois da entrada, a Operação cobra os dias a mais pelo Hub.
+    expect(screen.getByRole("button", { name: "Cobrar pelo Hub" })).toBeInTheDocument();
+  });
+
+  it("sem bookings:write, o card só informa: não cobra pelo Hub", () => {
+    state.booking = semValor("checked_in");
+    abre("operator", (e: string) => e === "bookings:read");
+    fireEvent.change(screen.getByLabelText("Saída real"), { target: { value: "2026-10-12T12:30" } });
+    expect(screen.getByTestId("dias-a-mais-cobrar")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cobrar pelo Hub" })).not.toBeInTheDocument();
+  });
+
+  it("com a saída já registrada, não estende mais", () => {
+    state.booking = { ...semValor("completed"), checked_out_at: "2026-10-12T13:00:00Z" };
+    abre("operator", SEM_FINANCEIRO);
+    fireEvent.change(screen.getByLabelText("Saída real"), { target: { value: "2026-10-12T12:30" } });
+    expect(screen.queryByRole("button", { name: "Cobrar pelo Hub" })).not.toBeInTheDocument();
   });
 
   it("o que o balcão precisa segue na tela: cliente, placa, pagamento e as operações", () => {

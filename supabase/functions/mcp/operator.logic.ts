@@ -369,6 +369,11 @@ export function analisarReserva(s: Situacao, now: Date): Analise {
   if (upgradeAberto && !opcoes.length) upgradeMotivo = "a reserva já está na tarifa mais alta";
 
   const checkOutBloqueado = status === "checked_in" && protecaoDeVooAberta(s);
+  // Parte 2 (26/11/2026): depois da entrada, a saída se estende pela tela, não pela Mia.
+  const noPatio = ["confirmed", "checked_in", "completed"].includes(status) && !s.checked_out_at;
+  if (jaComecou && noPatio && !protecaoDeVooAberta(s)) {
+    avisos.push("Depois da entrada, a saída se estende pela tela da reserva: no card Dias a mais, escolha a saída e toque em Cobrar pelo Hub. A diferença sai da tabela da compra e vai num PIX. Sair antes não devolve nada.");
+  }
   if (checkOutBloqueado) {
     avisos.push("Proteção de voo acionada: registre a saída pela tela da reserva, que pede a hora real e o excedente cobrado no balcão.");
   }

@@ -101,7 +101,8 @@ export function BookingDetailView({
   // quando ele entrou (26/11/2026).
   const [pixDatas, setPixDatas] = React.useState(false);
   const [pixUpgrade, setPixUpgrade] = React.useState(false);
-  const bookingQ = useBookingByCode(code, { counter, poll: pixDatas || pixUpgrade });
+  const [pixDias, setPixDias] = React.useState(false);
+  const bookingQ = useBookingByCode(code, { counter, poll: pixDatas || pixUpgrade || pixDias });
   const booking = bookingQ.data ?? null;
   const cancelMutation = useCancelBookingStaff();
   const statusMutation = useUpdateBookingStatus({ counter });
@@ -184,6 +185,12 @@ export function BookingDetailView({
   const podeAlterar = hasScope("bookings:write", booking.location?.company?.id);
   const antesDaEntrada = new Date(booking.check_in_at).getTime() > Date.now();
   const alteraReserva = podeAlterar && booking.status === "confirmed" && antesDaEntrada;
+  // Depois da entrada, a equipe estende a saída pelo card Dias a mais (26/11/2026, parte 2). Sem saída
+  // registrada: o sistema conclui sozinho uma hora depois da saída prevista, com o carro lá.
+  const estendeSaida =
+    podeAlterar &&
+    !antesDaEntrada &&
+    !(booking as unknown as { checked_out_at?: string | null }).checked_out_at;
   const refundHint = pay.canRefund
     ? counter
       ? "estorna o pagamento ao cliente"
@@ -636,7 +643,21 @@ export function BookingDetailView({
       {/* Dias a mais (26/11/2026): quanto cobrar de quem sai depois do combinado, pela tabela da
           compra. O balcão vê, porque é ele quem cobra. Com a proteção de voo acionada, o excedente
           segue a conta dela (diária congelada a partir da saída coberta), então o card sai. */}
-      {!ext && DIAS_A_MAIS_STATUS.has(booking.status) && <ExtraDaysCard bookingId={booking.id} />}
+      {!ext && DIAS_A_MAIS_STATUS.has(booking.status) && (
+        <ExtraDaysCard
+          bookingId={booking.id}
+          extend={
+            estendeSaida
+              ? {
+                  bookingCode: booking.code,
+                  checkInAt: booking.check_in_at,
+                  checkOutAt: booking.check_out_at,
+                  onWaitingChange: setPixDias,
+                }
+              : null
+          }
+        />
+      )}
 
       {/* Proteção de voo (Superflex): o staff aciona pelo cliente que ligou do aeroporto. */}
       {/* O card fica depois de concluída: os três números (crédito, excedente, cobrado) contam a história. */}

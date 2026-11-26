@@ -292,7 +292,42 @@ entrada, com `bookings:write`:
   `staffChange.logic.test.ts`, `StaffChangeDatesDialog.test.tsx`, `StaffFareUpgradeDialog.test.tsx`,
   `BookingDetailView.test.tsx` e `bookingHistory.logic.test.ts`.
 
-Parte 2 (estender a saída com o carro no pátio) está no mesmo desenho e ainda não foi feita.
+### 8.8 Estender a saída com o carro no pátio (26/11/2026)
+
+Parte 2 do mesmo desenho. O caso mais comum do balcão é "a volta atrasou e o carro já está aí", e
+até aqui ninguém resolvia isso pelo Hub: a cotação recusava entrada no passado e a vaga só era
+segura em reserva confirmada antes do check-in.
+
+- **Quem e quando:** só a equipe com `bookings:write`, depois do horário de entrada, em reserva
+  `confirmed`, `checked_in` ou `completed` **sem `checked_out_at`** (o `cron_complete_bookings`
+  conclui uma hora depois da saída prevista, com o carro lá) e com a saída prevista há no máximo 30
+  dias. O cliente não estende pela conta (Termos 6.3).
+- **Conta:** a Edge `change-booking-dates-paid` com `extend: true` chama `reprice_booking_dates` e
+  `hold_paid_date_change` com `p_extension` (migration `20261208120000`). A entrada não muda, a saída
+  tem de ser maior que a reservada, a diferença é a da troca (tabela da compra, cupom continua) com
+  **piso zero**: estadia maior que custa menos (pacote) não devolve, e o valor da vaga fica como
+  estava (D4; Termos 7.3). Sem upgrade da Básica (D5): é cobrança de dias a mais, não troca de
+  reserva. Estadia mínima, data mínima e antecedência não se aplicam.
+- **Dinheiro:** diferença positiva vira PIX `kind = date_change`, dividido como a reserva, com a vaga
+  dos dias novos segura até o PIX vencer (a liberação é a mesma da troca). Diferença zero aplica na
+  hora. O webhook grava pela mesma `apply_paid_date_change`.
+- **Status:** a reserva **não** volta de `completed` para `checked_in`. A conclusão dispara cashback,
+  clube e indicação, e `booking_guard_status_transition` não deixa voltar; a extensão muda só a
+  saída. (O desenho falava em voltar o status; ficou assim depois de ler os gatilhos.)
+- **Tela:** o card **Dias a mais** ganha **Cobrar pelo Hub** (`ExtendStayPanel`) para a saída
+  escolhida: prévia do servidor, PIX com QR e mensagem para o WhatsApp, e "Pagamento recebido"
+  quando a reserva relida já tem a saída nova. O balcão segue podendo cobrar na retirada, por fora do
+  Hub, como antes: as duas formas estão nos Termos v7 (item 4.3).
+- **Cloudpark (gate G-CP):** a extensão não chega à cancela (a fila de integração só dispara na
+  confirmação). Na unidade com `integration_connection` ativa a prévia traz `access_provider` e a
+  tela avisa para ajustar a saída do cartão na Cloudpark. Falta confirmar com Nationpark e Abbapark
+  como a cancela trata quem sai depois do horário.
+- **Termos v7** (`20261208130000`): 4.3 com as duas formas de cobrar e "sair antes não devolve";
+  6.3 com "depois do check-in, só o estacionamento estende". As FAQs que dizem "paga na saída pela
+  tabela do próprio estacionamento" continuam verdade (é uma das formas) e não foram reescritas.
+- Testes: pgTAP `booking_extension` (16, no vivo dentro de transação desfeita) e a regressão
+  `paid_date_change_tabela_da_compra` (24, com e sem a migration); `deno test` de `extensionDenial`;
+  Vitest `ExtendStayPanel.test.tsx` e os casos do card em `BookingDetailView.test.tsx`.
 
 ## 9. Divergência conhecida a alinhar
 

@@ -1,6 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 // `parseBrPhone` mora em _shared/payments/contact.ts e é testada lá.
 import {
+  extensionDenial,
   fareUpgradeFor,
   parseChangeDatesPaidInput,
   quoteChanged,
@@ -39,6 +40,7 @@ Deno.test("parseChangeDatesPaidInput: check_out após check_in + normaliza ISO",
     expectedDeltaCents: null,
     waiveFareUpgrade: false,
     reason: null,
+    extend: false,
   });
 });
 
@@ -106,4 +108,42 @@ Deno.test("parseChangeDatesPaidInput: dispensa do upgrade exige motivo (menos na
   const ok = parseChangeDatesPaidInput({ ...datas, waive_fare_upgrade: true, reason: "  cortesia combinada  " }).input;
   assertEquals([ok?.waiveFareUpgrade, ok?.reason], [true, "cortesia combinada"]);
   assertEquals(parseChangeDatesPaidInput(datas).input?.waiveFareUpgrade, false);
+});
+
+// Parte 2 (26/11/2026): estender a saída com o carro no pátio.
+Deno.test("extensionDenial: equipe estende depois da entrada; cliente não; antes da entrada é Alterar datas", () => {
+  const base = {
+    isStaff: true,
+    status: "completed",
+    checkInAt: "2026-11-20T12:00:00Z",
+    checkOutAt: "2026-11-22T12:00:00Z",
+    checkedOutAt: null,
+    requestedCheckInAt: "2026-11-20T12:00:00.000Z",
+    requestedCheckOutAt: "2026-11-24T12:00:00Z",
+    now: new Date("2026-11-23T10:00:00Z"),
+  };
+  assertEquals(extensionDenial(base), null);
+  assertEquals(extensionDenial({ ...base, isStaff: false })?.status, 403);
+  assertEquals(extensionDenial({ ...base, now: new Date("2026-11-19T10:00:00Z") })?.error, "A reserva ainda não começou. Use Alterar datas.");
+});
+
+Deno.test("extensionDenial: saída já registrada, cancelada, outra entrada, saída menor ou reserva antiga", () => {
+  const base = {
+    isStaff: true,
+    status: "checked_in",
+    checkInAt: "2026-11-20T12:00:00Z",
+    checkOutAt: "2026-11-22T12:00:00Z",
+    checkedOutAt: null,
+    requestedCheckInAt: "2026-11-20T12:00:00Z",
+    requestedCheckOutAt: "2026-11-24T12:00:00Z",
+    now: new Date("2026-11-23T10:00:00Z"),
+  };
+  assertEquals(extensionDenial({ ...base, checkedOutAt: "2026-11-22T13:00:00Z" })?.error, "Esta reserva não está mais no pátio.");
+  assertEquals(extensionDenial({ ...base, status: "cancelled" })?.error, "Esta reserva não está mais no pátio.");
+  assertEquals(extensionDenial({ ...base, requestedCheckInAt: "2026-11-21T12:00:00Z" })?.error, "Na extensão, a entrada não muda.");
+  assertEquals(
+    extensionDenial({ ...base, requestedCheckOutAt: "2026-11-22T11:00:00Z" })?.error,
+    "A nova saída precisa ser depois da saída reservada.",
+  );
+  assertEquals(extensionDenial({ ...base, now: new Date("2026-12-23T12:00:01Z") })?.error, "Esta reserva terminou há mais de 30 dias.");
 });
