@@ -7,7 +7,7 @@ import { CUSTOMER_AUTH_TOOLS, CUSTOMER_TXN_TOOLS } from "./customer.logic.ts";
 import { OPERATOR_ASSIST_TOOLS, OPERATOR_PARTNER_READS } from "./operator.logic.ts";
 import { MARKETING_TOOLS } from "../_shared/marketing/tools.ts";
 
-export type Endpoint = "public" | "partner" | "customer" | "manager" | "operator";
+export type Endpoint = "public" | "partner" | "customer" | "manager" | "operator" | "marketing";
 
 export interface ToolDef {
   name: string;
@@ -361,12 +361,28 @@ export const OPERATOR_TOOLS: ToolDef[] = [
   ...OPERATOR_ASSIST_TOOLS,
 ];
 
+// ── Assistente da Automação (agente movepark-marketing do beast-bots) ─────────
+//
+// Superfície interna `/mcp/marketing`, sem card. O registro de marketing inteiro, com uma troca:
+// as duas tools de disparo valem aqui pelo escopo do agente e só criam proposta
+// (marketing-assist.ts). Ver docs/specs/assistente-marketing.md § 4.
+const AVISO_DE_PROPOSTA =
+  " Nesta superfície a chamada não executa: cria uma proposta, e o admin confirma no cartão da tela.";
+export const MARKETING_ASSIST_TOOLS: ToolDef[] = [
+  ...MARKETING_TOOLS.map((t) =>
+    t.scope === "marketing:dispatch"
+      ? { ...t, scope: "marketing:assist", description: t.description + AVISO_DE_PROPOSTA }
+      : t
+  ),
+];
+
 const REGISTRY: Record<Endpoint, ToolDef[]> = {
   public: PUBLIC_TOOLS,
   partner: PARTNER_TOOLS,
   customer: CUSTOMER_TOOLS,
   manager: MANAGER_TOOLS,
   operator: OPERATOR_TOOLS,
+  marketing: MARKETING_ASSIST_TOOLS,
 };
 
 function registry(endpoint: Endpoint): ToolDef[] {

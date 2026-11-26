@@ -399,6 +399,28 @@ aparecer em card. O proxy `mcp.movepark.co` aceita o path (`SUPERFICIES_MCP`), m
 docs não o menciona. Toda chamada vai ao `api_request_log` com `api_key_id` do agente,
 `company_id` e `acting_user_id` ("agente agindo por fulano"). Matriz em `resolver.test.ts`.
 
+### Assistente da Automação (`/marketing`, interna)
+
+Quinta superfície credenciada, da página **Assistente de IA** da Automação (agente
+`movepark-marketing` no beast-bots). Spec completa: [assistente-marketing.md](./assistente-marketing.md).
+
+Mesmo desenho do `/operator`, com as duas credenciais obrigatórias:
+
+| Header | O que é |
+|---|---|
+| `Authorization: Bearer mpm_…` | o **sujeito**: token emitido pela Edge `marketing-assistant`, que vale um turno (teto de 30 min), um hub_admin, uma conversa e só esta superfície |
+| `X-API-Key: mp_…` | o **agente**: chave de plataforma com o escopo `marketing:assist` (a "Movepark-Assistente-Marketing") |
+
+O token é resolvido por `marketing_assist_resolve`, que confere a cada chamada se a pessoa ainda é
+hub_admin. **Escopo efetivo** fixo: `marketing:assist`, `marketing:read` e `marketing:write`, nunca
+`marketing:dispatch`. O ator na auditoria de marketing é o admin, com "(assistente)" no rótulo.
+
+Tools: o registro `MARKETING_TOOLS` inteiro, em `MARKETING_ASSIST_TOOLS` (`mcp/tools.ts`), com uma
+troca: `marketing_run_campaign` e `marketing_set_dispatch_enabled` valem aqui pelo escopo do agente
+e só criam proposta em `marketing_assistant_action` (`mcp/marketing-assist.ts`). Quem executa é o
+clique do admin na Edge. Sem card; o `lint:openapi` reprova se um nome daqui aparecer em card, e o
+proxy aceita o path sem que a página de docs o mencione.
+
 ### Uma URL só
 
 `https://mcp.movepark.co` atende todo mundo. Na **raiz** é a credencial que

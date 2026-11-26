@@ -621,3 +621,61 @@ Deno.test("marketing: chave com disparo executa e o handler recebe o id da chave
   assertEquals(chamadas[0].nome, "marketing_run_campaign");
   assertEquals(agentes[0].apiKeyId, "k-mkt-disparo");
 });
+
+// ── /marketing: o assistente da Automação ───────────────────────────────────
+
+const TOKEN_MKT = "mpm_token_valido_abcdefghijk";
+const CHAVE_AGENTE_MKT = "mp_live_agentemkt_abcdefghij";
+
+function ambienteMarketing() {
+  const a = ambiente();
+  const marketingVisto: unknown[] = [];
+  const verificarOriginal = a.deps.verificar;
+  a.deps.verificar = (chave) =>
+    chave === CHAVE_AGENTE_MKT
+      ? Promise.resolve({ ok: true, api_key_id: "k-agente-mkt", company_id: null, scopes: ["marketing:assist"], environment: "live" })
+      : verificarOriginal(chave);
+  a.deps.verificarAssistenteMarketing = (token) =>
+    Promise.resolve(
+      token === TOKEN_MKT
+        ? { ok: true, profile_id: "u-adm", conversa_id: "conv-1", email: "adm@fera.ag" }
+        : { ok: false, reason: "token_invalido" },
+    );
+  const chamarOriginal = a.deps.chamarTool;
+  a.deps.chamarTool = (ctx) => {
+    marketingVisto.push(ctx.marketing ?? null);
+    return chamarOriginal(ctx);
+  };
+  return { ...a, marketingVisto };
+}
+
+const credMkt = { Authorization: `Bearer ${TOKEN_MKT}`, "X-API-Key": CHAVE_AGENTE_MKT };
+
+Deno.test("/marketing lista as tools de marketing, com as de disparo, e nenhuma outra", async () => {
+  const { deps } = ambienteMarketing();
+  const r = await handle(pedido("/marketing", listar, credMkt), deps);
+  assertEquals(r.status, 200);
+  const nomes = ((await corpo(r)) as unknown as { result: { tools: Array<{ name: string }> } }).result.tools.map((t) => t.name);
+  assertEquals(nomes.includes("marketing_preview_segment"), true);
+  assertEquals(nomes.includes("marketing_run_campaign"), true);
+  assertEquals(nomes.includes("upsert_blog_post"), false);
+  assertEquals(nomes.every((n) => n.startsWith("marketing_")), true);
+});
+
+Deno.test("/marketing chama a tool com o admin e a conversa do token, e audita quem agiu", async () => {
+  const { deps, chamadas, auditoria, marketingVisto } = ambienteMarketing();
+  const r = await handle(pedido("/marketing", chamar("marketing_run_campaign", { campaign_id: "c-1" }), credMkt), deps);
+  assertEquals(r.status, 200);
+  assertEquals(chamadas[0].endpoint, "marketing");
+  assertEquals(marketingVisto[0], { profile_id: "u-adm", conversa_id: "conv-1", label: "adm@fera.ag (assistente)" });
+  const linha = auditoria[auditoria.length - 1];
+  assertEquals(linha.acting_user_id, "u-adm");
+  assertEquals(linha.api_key_id, "k-agente-mkt");
+});
+
+Deno.test("token mpm_ no /manager recusa", async () => {
+  const { deps, chamadas } = ambienteMarketing();
+  const r = await handle(pedido("/manager", chamar("marketing_get_rfm"), credMkt), deps);
+  assertEquals(r.status, 401);
+  assertEquals(chamadas.length, 0);
+});

@@ -193,9 +193,11 @@ function json(body: unknown, status: number, extra: Record<string, string> = {})
  *
  * `/manager` e `/operator` são internas (sem card nem menção na página de docs): o
  * `/operator` é a do assistente do operador, chamada pelo beast-bots com o token
- * `mpo_` e a chave do agente. Ver docs/specs/assistente-do-operador.md.
+ * `mpo_` e a chave do agente. Ver docs/specs/assistente-do-operador.md. `/marketing` é a do
+ * assistente da Automação, chamada pelo beast-bots com o token `mpm_` do turno. Ver
+ * docs/specs/assistente-marketing.md.
  */
-const SUPERFICIES_MCP = new Set(["/", "/public", "/partner", "/customer", "/manager", "/operator"]);
+const SUPERFICIES_MCP = new Set(["/", "/public", "/partner", "/customer", "/manager", "/operator", "/marketing"]);
 
 /**
  * Tools que custam dinheiro ou criam conta, e por isso passam pelo freio de

@@ -22,6 +22,10 @@ Dois consumidores, um registro só:
    ([assistente-do-operador.md](./assistente-do-operador.md)). Ele usa o mesmo registro de tools por
    um adaptador, como o chat do site já faz com o registro do consumidor
    (`_shared/assistant-tools.ts`). O assistente tem spec própria quando for a vez dele.
+   - **Superfície `/marketing`** (26/11/2026): o mesmo registro, para o agente da página Assistente de
+     IA. Escopo fixo de leitura e gravação; `marketing_run_campaign` e
+     `marketing_set_dispatch_enabled` viram proposta em `marketing_assistant_action`
+     ([assistente-marketing.md](./assistente-marketing.md) § 4).
 
 ## 2. Decisões (Kallef, 25/11/2026)
 

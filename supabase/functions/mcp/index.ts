@@ -30,15 +30,18 @@ import {
 } from "./protocol.ts";
 import { findTool, isToolCallable, listTools, missingRequired, type Endpoint } from "./tools.ts";
 import { callOperator, type OperatorCtx } from "./operator.ts";
+import { callMarketingAssist, type MarketingAssistCtx } from "./marketing-assist.ts";
 import { keyPrefix, sha256Hex } from "./auth.ts";
 import {
   resolverPerfil,
   superficieDoPath,
+  type AssistenteMarketingVerificado,
   type AssistenteVerificado,
   type ChaveVerificada,
   type Resolucao,
   type Verificacao,
   type VerificacaoAssistente,
+  type VerificacaoAssistenteMarketing,
 } from "./resolver.ts";
 import { generateAndStoreVoucher } from "../_shared/voucher/pdf.ts";
 import { deleteBlogPost, publishBlogPost, upsertBlogPost } from "../_shared/blog-write.ts";
@@ -104,6 +107,8 @@ export interface Deps {
   verificar: Verificacao;
   /** Consulta `operator_assist_resolve` (token `mpo_` da superfície /operator). */
   verificarAssistente?: VerificacaoAssistente;
+  /** Consulta `marketing_assist_resolve` (token `mpm_` da superfície /marketing). */
+  verificarAssistenteMarketing?: VerificacaoAssistenteMarketing;
   /** Executa a tool já autorizada. */
   chamarTool: (ctx: {
     endpoint: Endpoint;
@@ -112,6 +117,8 @@ export interface Deps {
     partner: PartnerCtx | null;
     /** Só na superfície /operator: o operador, a empresa e os escopos efetivos. */
     operador?: OperatorCtx | null;
+    /** Só na superfície /marketing: o admin, a conversa e o rótulo da auditoria. */
+    marketing?: MarketingAssistCtx | null;
     authorization: string | null;
     ip: string | null;
     /** Chave `mp_` aceita no `X-API-Key` do consumidor (o agente), para auditoria. */
@@ -190,6 +197,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     xApiKey: req.headers.get("x-api-key"),
     verificar: deps.verificar,
     verificarAssistente: deps.verificarAssistente,
+    verificarAssistenteMarketing: deps.verificarAssistenteMarketing,
   });
 
   /*
@@ -245,8 +253,20 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           scopes: resolucao.escopos,
         }
       : null;
+  const marketing: MarketingAssistCtx | null =
+    resolucao.status === 200 && endpoint === "marketing" && resolucao.actingUserId && resolucao.conversaId
+      ? {
+          profile_id: resolucao.actingUserId,
+          conversa_id: resolucao.conversaId,
+          label: resolucao.actingLabel ?? "hub_admin (assistente)",
+        }
+      : null;
   const callerScopes: string[] =
-    endpoint === "customer" ? resolucao.escopos : endpoint === "operator" ? (operador?.scopes ?? []) : [];
+    endpoint === "customer" || endpoint === "marketing"
+      ? resolucao.escopos
+      : endpoint === "operator"
+        ? (operador?.scopes ?? [])
+        : [];
 
   // Notificações (sem id) não recebem resposta.
   if (isNotification(reqMsg) && reqMsg.method.startsWith("notifications/")) {
@@ -267,7 +287,9 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
                 ? "movepark-manager"
                 : endpoint === "operator"
                   ? "movepark-operator"
-                  : "movepark";
+                  : endpoint === "marketing"
+                    ? "movepark-marketing"
+                    : "movepark";
         // O perfil só sai com credencial aceita. Anônimo não recebe nada que
         // ajude a triar uma chave.
         resp = json(
@@ -301,6 +323,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           args,
           partner,
           operador,
+          marketing,
           authorization: req.headers.get("Authorization"),
           ip: clientIp(req),
           apiKeyId: resolucao.status === 200 ? resolucao.apiKeyId : null,
@@ -356,12 +379,13 @@ function auditar(
       : null;
   const tool = toolName ? findTool(endpoint, toolName) : null;
 
-  const doOperador = endpoint === "operator" && resolucao.status === 200;
+  // "Agente agindo por fulano": nas duas superfícies de assistente, a chave é do beast-bots e a
+  // pessoa é quem está logado no Hub.
+  const comAgente = (endpoint === "operator" || endpoint === "marketing") && resolucao.status === 200;
   deps.auditar({
-    api_key_id: doOperador ? resolucao.apiKeyId : (partner?.api_key_id ?? null),
-    company_id: doOperador ? resolucao.companyId : (partner?.company_id ?? null),
-    // "Agente agindo por fulano": a chave é do beast-bots, a pessoa é o operador.
-    acting_user_id: doOperador ? resolucao.actingUserId : null,
+    api_key_id: comAgente ? resolucao.apiKeyId : (partner?.api_key_id ?? null),
+    company_id: comAgente ? resolucao.companyId : (partner?.company_id ?? null),
+    acting_user_id: comAgente ? resolucao.actingUserId : null,
     surface: "mcp",
     method: reqMsg.method,
     // O motivo entra no `path` quando a credencial foi recusada: é onde a
@@ -1110,8 +1134,16 @@ function depsDeProducao(): Deps {
       const { data } = await admin.rpc("operator_assist_resolve", { p_token_hash: await sha256Hex(token) });
       return (data ?? { ok: false }) as AssistenteVerificado;
     },
-    chamarTool: ({ endpoint, nome, args, partner, operador, authorization, ip, apiKeyId }) =>
-      endpoint === "operator"
+    verificarAssistenteMarketing: async (token) => {
+      const { data } = await admin.rpc("marketing_assist_resolve", { p_token_hash: await sha256Hex(token) });
+      return (data ?? { ok: false }) as AssistenteMarketingVerificado;
+    },
+    chamarTool: ({ endpoint, nome, args, partner, operador, marketing, authorization, ip, apiKeyId }) =>
+      endpoint === "marketing"
+        ? callMarketingAssist(admin, marketing!, nome, args, {
+            alertarDisparoLigado: (info) => alertarDisparoLigado(admin, info),
+          })
+        : endpoint === "operator"
         ? callOperator(admin, operador!, nome, args, {
             callPartner: (n, a) =>
               callPartner(admin, { api_key_id: operador!.api_key_id ?? "", company_id: operador!.company_id, scopes: operador!.scopes }, n, a),

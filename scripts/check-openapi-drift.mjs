@@ -163,6 +163,8 @@ const CARD_BY_REGISTRY = {
   MANAGER_TOOLS: { label: "manager", card: null },
   // Assistente do operador (Mia para operadores): superfície interna, sem card.
   OPERATOR_TOOLS: { label: "operador", card: null },
+  // Assistente da Automação (agente movepark-marketing): superfície interna, sem card.
+  MARKETING_ASSIST_TOOLS: { label: "assistente de marketing", card: null },
 };
 
 const marks = [...toolsSrc.matchAll(/export const ([A-Z][A-Z0-9_]*_TOOLS)\s*:/g)].map((m) => ({
@@ -268,7 +270,7 @@ const ASSIGNABLE_SCOPES = new Set([
   "discounts:write", "faq:read", "locations:read", "locations:write", "occupancy:read",
   "parking-types:read", "parking-types:write", "pricing:read", "pricing:write", "reviews:read",
   "reviews:write", "wps:write", "checkout:link", "blog:read", "blog:write", "wl:read", "identity:assert",
-  "operator:assist", "marketing:read", "marketing:write", "marketing:dispatch",
+  "operator:assist", "marketing:read", "marketing:write", "marketing:dispatch", "marketing:assist",
 ]);
 
 // `def(` e `internalRoute(`: escopo de rota interna também conta como usado, senão
