@@ -111,7 +111,7 @@ export function ExtendStayPanel({ alvo, saida }: { alvo: ExtendTarget; saida: st
             {q.access_provider === "cloudpark" && (
               <p className="rounded-sm border border-warning/40 bg-warning/5 p-2 text-body-sm text-ink" data-testid="aviso-cloudpark">
                 Esta unidade manda as reservas para a cancela da Cloudpark, e a extensão não chega lá.
-                Ajuste a saída deste cartão na Cloudpark para o cliente não pagar de novo na saída.
+                Ajuste a saída desta placa na Cloudpark para o cliente não pagar de novo na saída.
               </p>
             )}
             <Button size="sm" onClick={() => void confirmar(q)} disabled={estender.isPending}>

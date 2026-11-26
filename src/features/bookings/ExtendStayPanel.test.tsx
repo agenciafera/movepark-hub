@@ -81,7 +81,7 @@ describe("ExtendStayPanel", () => {
     cotar.mockResolvedValue({ ...cotacao, access_provider: "cloudpark" });
     abre();
     fireEvent.click(screen.getByRole("button", { name: "Cobrar pelo Hub" }));
-    expect(await screen.findByTestId("aviso-cloudpark")).toHaveTextContent("Ajuste a saída deste cartão na Cloudpark");
+    expect(await screen.findByTestId("aviso-cloudpark")).toHaveTextContent("Ajuste a saída desta placa na Cloudpark");
   });
 
   it("sem diferença (pacote mais barato), estende a saída sem PIX", async () => {

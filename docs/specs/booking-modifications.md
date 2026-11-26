@@ -320,7 +320,7 @@ segura em reserva confirmada antes do check-in.
   Hub, como antes: as duas formas estão nos Termos v7 (item 4.3).
 - **Cloudpark (gate G-CP):** a extensão não chega à cancela (a fila de integração só dispara na
   confirmação). Na unidade com `integration_connection` ativa a prévia traz `access_provider` e a
-  tela avisa para ajustar a saída do cartão na Cloudpark. Falta confirmar com Nationpark e Abbapark
+  tela avisa para ajustar a saída da placa na Cloudpark. Falta confirmar com Nationpark e Abbapark
   como a cancela trata quem sai depois do horário.
 - **Termos v7** (`20261208130000`): 4.3 com as duas formas de cobrar e "sair antes não devolve";
   6.3 com "depois do check-in, só o estacionamento estende". As FAQs que dizem "paga na saída pela

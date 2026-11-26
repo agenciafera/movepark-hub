@@ -139,7 +139,7 @@ Bloco **Operação**, reserva do Hub, `confirmed`, antes da entrada, com `bookin
   Cloudpark, e o QR de lá tem a saída antiga mais 1h. Antes de ligar a extensão nessas unidades,
   confirmar com o parceiro como a cancela trata a saída depois do horário, para o cliente não pagar
   duas vezes. Até a resposta, nas unidades com `integration_connection` ativa, a tela mostra
-  "Ajuste a saída deste cartão na Cloudpark" ao lado do botão.
+  "Ajuste a saída desta placa na Cloudpark" ao lado do botão.
 
 ## 5. Fora do escopo
 
