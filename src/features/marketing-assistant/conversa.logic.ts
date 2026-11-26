@@ -261,3 +261,66 @@ export function pedidoDoTurno(
 export function esperandoTitulo(conversas: Array<{ titulo: string; atualizada_em: string }>, agora: number): boolean {
   return conversas.some((c) => !c.titulo.trim() && agora - new Date(c.atualizada_em).getTime() < 60_000);
 }
+
+/**
+ * A tela desenha parágrafo, lista, negrito, itálico e link (`MarkdownRestrito`). O que o modelo
+ * escrever fora disso vira algo legível em vez de aparecer cru: título vira negrito, linha
+ * horizontal some, crase some.
+ */
+export function normalizarMarkdown(texto: string): string {
+  return texto
+    .split("\n")
+    .filter((l) => !/^\s*([-*_])\s*\1\s*\1[\s\-*_]*$/.test(l))
+    .map((l) => l.replace(/^\s*#{1,6}\s+(.+?)\s*#*\s*$/, (_m, t: string) => `**${t.replace(/\*\*/g, "")}**`))
+    .join("\n")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Onde o resultado de cada tool aparece. `destaque`: aberto, depois do texto, porque é o que o
+ * admin decide ou confere (proposta, o que foi gravado, quantas pessoas o segmento pega, a
+ * mensagem). `sob_demanda`: dentro dos passos, a um clique (gráficos e números da campanha).
+ * `nada`: consulta de bastidor, que só serve ao agente.
+ */
+export function ondeMostrar(grupo: Grupo): "destaque" | "sob_demanda" | "nada" {
+  if (grupo === "proposta" || grupo === "gravacao" || grupo === "segmento" || grupo === "mensagem") return "destaque";
+  if (grupo === "rfm" || grupo === "funil" || grupo === "perfis" || grupo === "descobertas" || grupo === "campanha") {
+    return "sob_demanda";
+  }
+  return "nada";
+}
+
+export type MensagemOrganizada = { passos: ParteDeTool[]; textos: string[]; destaques: ParteDeTool[] };
+
+/**
+ * Uma resposta do agente, do jeito que a tela mostra: os passos juntos (recolhidos), o texto, e
+ * só então os destaques. Segmento e mensagem medidos mais de uma vez aparecem uma vez, com o
+ * último resultado; proposta e gravação aparecem todas, porque cada uma é uma coisa.
+ */
+export function organizarMensagem(parts: Array<{ type: string } & Record<string, unknown>>): MensagemOrganizada {
+  const passos: ParteDeTool[] = [];
+  const textos: string[] = [];
+  for (const p of parts) {
+    if (p.type === "text") {
+      const t = normalizarMarkdown(String(p.text ?? ""));
+      if (t) textos.push(t);
+      continue;
+    }
+    const tool = parteDeTool(p);
+    if (tool) passos.push(tool);
+  }
+  const destaques: ParteDeTool[] = [];
+  const unicos = new Set(["segmento", "mensagem"]);
+  for (const t of passos) {
+    const grupo = grupoDaTool(t.nome);
+    if (t.estado !== "pronta" || ondeMostrar(grupo) !== "destaque") continue;
+    if (unicos.has(grupo)) {
+      const i = destaques.findIndex((d) => grupoDaTool(d.nome) === grupo);
+      if (i !== -1) destaques.splice(i, 1);
+    }
+    destaques.push(t);
+  }
+  return { passos, textos, destaques };
+}

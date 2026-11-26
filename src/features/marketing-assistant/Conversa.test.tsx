@@ -66,6 +66,16 @@ describe("Conversa", () => {
     expect(screen.getByText("Estou medindo.")).toBeInTheDocument();
   });
 
+  it("título, linha e crase do modelo não aparecem crus", () => {
+    estado = {
+      status: "ready",
+      messages: [{ id: "a1", role: "assistant", parts: [{ type: "text", text: "### Diagnóstico\n---\nUse `abandoned`." }] }],
+    };
+    const { container } = desenhar();
+    expect(container.textContent).not.toMatch(/###|---|`/);
+    expect(screen.getByText("Diagnóstico")).toBeInTheDocument();
+  });
+
   it("não deixa enviar enquanto responde", () => {
     estado = { messages: [], status: "streaming" };
     desenhar();

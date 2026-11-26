@@ -1,4 +1,4 @@
-import { CheckCircle, CircleNotch, WarningCircle } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
 import { ConversionFunnel } from "@/features/marketing/ConversionFunnel";
 import { Discoveries } from "@/features/marketing/Discoveries";
@@ -22,20 +22,9 @@ import { CartaoDaProposta } from "./CartaoDaProposta";
 import { NumerosDaCampanha } from "./NumerosDaCampanha";
 import { PreviaDaMensagem } from "./PreviaDaMensagem";
 import { PreviaDeSegmento } from "./PreviaDeSegmento";
-import { TabelaGenerica } from "./TabelaGenerica";
 
-function Linha({ parte }: { parte: ParteDeTool }) {
-  const Icone = parte.estado === "rodando" ? CircleNotch : parte.estado === "erro" ? WarningCircle : CheckCircle;
-  return (
-    <p className={"flex items-center gap-2 text-body-sm " + (parte.estado === "erro" ? "text-error" : "text-muted")}>
-      <Icone size={16} className={parte.estado === "rodando" ? "shrink-0 animate-spin" : "shrink-0"} />
-      {rotuloDaTool(parte.nome, parte.estado)}
-      {parte.erro ? `: ${parte.erro}` : null}
-    </p>
-  );
-}
-
-function Corpo({ parte, propostas }: { parte: ParteDeTool; propostas: Proposta[] }) {
+/** O resultado de uma tool desenhado do jeito que serve ao admin. Consulta de bastidor não tem. */
+export function VisualDaTool({ parte, propostas }: { parte: ParteDeTool; propostas: Proposta[] }) {
   const s = parte.saida;
   switch (grupoDaTool(parte.nome)) {
     case "segmento":
@@ -54,15 +43,21 @@ function Corpo({ parte, propostas }: { parte: ParteDeTool; propostas: Proposta[]
       return <PreviaDaMensagem saida={s} />;
     case "gravacao": {
       const link = linkDaGravacao(parte.nome, parte.entrada, s);
-      return link ? (
-        <Link to={link.href} className="text-body-sm font-medium text-mp-primary underline-offset-2 hover:underline">
-          {link.rotulo}
-        </Link>
-      ) : null;
+      return (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-ink">
+          <CheckCircle size={16} weight="fill" className="shrink-0 text-success" />
+          {rotuloDaTool(parte.nome, "pronta")}
+          {link ? (
+            <Link to={link.href} className="font-medium text-mp-primary underline-offset-2 hover:underline">
+              {link.rotulo}
+            </Link>
+          ) : null}
+        </p>
+      );
     }
     case "proposta": {
       const p = propostaDaSaida(s);
-      if (!p) return <TabelaGenerica saida={s} />;
+      if (!p) return null;
       return (
         <CartaoDaProposta
           id={p.id}
@@ -73,16 +68,6 @@ function Corpo({ parte, propostas }: { parte: ParteDeTool; propostas: Proposta[]
       );
     }
     default:
-      return <TabelaGenerica saida={s} />;
+      return null;
   }
-}
-
-/** Uma tool dentro da conversa: a linha do que fez e, quando terminou bem, o componente dela. */
-export function ParteDaTool({ parte, propostas }: { parte: ParteDeTool; propostas: Proposta[] }) {
-  return (
-    <div className="space-y-2">
-      <Linha parte={parte} />
-      {parte.estado === "pronta" ? <Corpo parte={parte} propostas={propostas} /> : null}
-    </div>
-  );
 }

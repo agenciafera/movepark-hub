@@ -7,6 +7,9 @@ import {
   houveGravacao,
   linhasDoCartao,
   linkDaGravacao,
+  normalizarMarkdown,
+  ondeMostrar,
+  organizarMensagem,
   parteDeTool,
   pedidoDoTurno,
   propostaDaSaida,
@@ -130,5 +133,76 @@ describe("esperandoTitulo", () => {
     expect(esperandoTitulo([{ titulo: "", atualizada_em: "2026-11-26T11:59:30Z" }], agora)).toBe(true);
     expect(esperandoTitulo([{ titulo: "Volta", atualizada_em: "2026-11-26T11:59:30Z" }], agora)).toBe(false);
     expect(esperandoTitulo([{ titulo: "", atualizada_em: "2026-11-26T11:58:00Z" }], agora)).toBe(false);
+  });
+});
+
+describe("normalizarMarkdown", () => {
+  it("troca título por negrito, tira linha e crase", () => {
+    const entrada = "Oi.\n\n### Filtros indicados:\n1. **Carrinho:** `abandoned = true`\n\n---\n\n## Diagnóstico\nTexto.";
+    expect(normalizarMarkdown(entrada)).toBe("Oi.\n\n**Filtros indicados:**\n1. **Carrinho:** abandoned = true\n\n**Diagnóstico**\nTexto.");
+  });
+
+  it("não deixa três quebras seguidas", () => {
+    expect(normalizarMarkdown("a\n\n\n\nb")).toBe("a\n\nb");
+  });
+});
+
+describe("ondeMostrar", () => {
+  it("o que o admin precisa ver fica aberto; gráfico fica a um clique; bastidor não aparece", () => {
+    expect(ondeMostrar("proposta")).toBe("destaque");
+    expect(ondeMostrar("gravacao")).toBe("destaque");
+    expect(ondeMostrar("segmento")).toBe("destaque");
+    expect(ondeMostrar("mensagem")).toBe("destaque");
+    expect(ondeMostrar("rfm")).toBe("sob_demanda");
+    expect(ondeMostrar("campanha")).toBe("sob_demanda");
+    expect(ondeMostrar("generico")).toBe("nada");
+    expect(ondeMostrar("campanhas")).toBe("nada");
+  });
+});
+
+describe("organizarMensagem", () => {
+  const tool = (nome: string, output: unknown, state = "output-available") => ({
+    type: `tool-${nome}`,
+    toolCallId: `${nome}-${Math.random()}`,
+    state,
+    input: {},
+    output,
+  });
+
+  it("separa passos, texto e destaques, e o segmento medido três vezes aparece uma vez só", () => {
+    const m = organizarMensagem([
+      tool("marketing_list_locations", { unidades: [] }),
+      tool("marketing_preview_segment", { problems: [], preview: { total: 1 } }),
+      tool("marketing_list_leads", { leads: [] }),
+      tool("marketing_preview_segment", { problems: [], preview: { total: 3 } }),
+      { type: "step-start" },
+      { type: "text", text: "### Título\nTexto." },
+    ]);
+    expect(m.passos.map((p) => p.nome)).toEqual([
+      "marketing_list_locations",
+      "marketing_preview_segment",
+      "marketing_list_leads",
+      "marketing_preview_segment",
+    ]);
+    expect(m.textos).toEqual(["**Título**\nTexto."]);
+    expect(m.destaques.map((d) => (d.saida as { preview: { total: number } }).preview.total)).toEqual([3]);
+  });
+
+  it("cada proposta e cada gravação viram destaque próprio", () => {
+    const m = organizarMensagem([
+      tool("marketing_save_segment", { segment_id: "s1" }),
+      tool("marketing_save_coupon", { coupon_id: "c1" }),
+      tool("marketing_run_campaign", { status: "proposta", proposta_id: "p1", tool: "marketing_run_campaign", resumo: {} }),
+    ]);
+    expect(m.destaques.map((d) => d.nome)).toEqual(["marketing_save_segment", "marketing_save_coupon", "marketing_run_campaign"]);
+  });
+
+  it("tool que ainda roda ou falhou não vira destaque", () => {
+    const m = organizarMensagem([
+      tool("marketing_preview_segment", undefined, "input-available"),
+      tool("marketing_save_segment", { ok: false, erro: "x" }),
+    ]);
+    expect(m.destaques).toEqual([]);
+    expect(m.passos).toHaveLength(2);
   });
 });
