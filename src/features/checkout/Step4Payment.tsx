@@ -27,7 +27,6 @@ import {
   paymentMethodsLine,
   summarizeInstallmentOption,
 } from "@/features/checkout/installments.logic";
-import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import {
   antifraudOutcome,
   cardFailureEvent,
@@ -36,22 +35,13 @@ import {
 } from "./checkoutTrail";
 import { trackEcommerce } from "@/lib/analytics";
 import { partnerFromBooking, paymentEcommerce, type PaymentType } from "@/lib/analytics-ecommerce";
-import { parseValidade } from "@/lib/card-expiry";
-import { documentMask, onlyDigits, cardExpiryMask, cardNumberMask } from "@/lib/masks";
-import { brandLabel, detectBrand, isCvvValid } from "@/lib/card-brand";
-import { CardBrandMark } from "@/components/shared/CardBrandMark";
+import { documentMask, onlyDigits } from "@/lib/masks";
+import { detectBrand } from "@/lib/card-brand";
 import { isValidCnpj, isValidCpf } from "@/lib/documents";
 import { useAuth } from "@/auth/context";
 import { useProfile, useUpdateProfile } from "@/features/profile/api";
-import {
-  addressPartsFrom,
-  buildBillingAddress,
-  formatCep,
-  normalizeCep,
-  parseViaCep,
-  viaCepUrl,
-} from "./billingAddress.logic";
-import { useMyPaymentMethods } from "@/features/payment-methods/api";
+import { CardEntryFields } from "./CardEntry";
+import { useCardEntry } from "./useCardEntry";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAcceptTerms } from "@/features/legal/api";
 import { LegalDocumentModal } from "@/features/legal/LegalDocumentModal";
@@ -110,7 +100,8 @@ export function Step4Payment({
   const profileQ = useProfile(session?.userId);
   const updateProfile = useUpdateProfile();
   const updateCustomer = useUpdateBookingCustomer();
-  const savedCards = useMyPaymentMethods(session?.userId);
+  // O cartão (salvo ou novo, endereço, salvar para a próxima) é o mesmo da troca de datas e do upgrade.
+  const entry = useCardEntry(session?.userId);
 
   const [pixPayload, setPixPayload] = React.useState<string | null>(null);
   const [pixSvg, setPixSvg] = React.useState<string | null>(null);
@@ -144,74 +135,7 @@ export function Step4Payment({
     return true;
   }
 
-  // cartão: escolher salvo ou "new"
-  const [cardChoice, setCardChoice] = React.useState<string>("new");
-  // Cartão salvo já vem selecionado: a lista chega ordenada (padrão primeiro, depois o mais
-  // recente), e quem paga de novo quer um clique, não redigitar. Só na primeira carga: depois que
-  // a pessoa escolhe "Usar outro cartão", a escolha é dela.
-  const cardChoiceInit = React.useRef(false);
-  React.useEffect(() => {
-    if (cardChoiceInit.current) return;
-    const first = savedCards.data?.[0];
-    if (!first) return;
-    setCardChoice(first.id);
-    cardChoiceInit.current = true;
-  }, [savedCards.data]);
-  const [cardNumber, setCardNumber] = React.useState("");
-  const [cardName, setCardName] = React.useState("");
-  const [cardExpiry, setCardExpiry] = React.useState("");
-  const [cardCvv, setCardCvv] = React.useState("");
   const [installments, setInstallments] = React.useState(1);
-  const [saveCard, setSaveCard] = React.useState(false);
-
-  // Endereço de cobrança (17/09/2026): o antifraude da Pagar.me exige em cartão novo. Só CEP e
-  // número são digitados; o resto vem do ViaCEP e fica salvo no perfil para a próxima compra.
-  const [cep, setCep] = React.useState("");
-  const [addrNumber, setAddrNumber] = React.useState("");
-  const [addrComplement, setAddrComplement] = React.useState("");
-  const [addr, setAddr] = React.useState({ street: "", neighborhood: "", city: "", state: "" });
-  const [cepStatus, setCepStatus] = React.useState<"idle" | "loading" | "ok" | "notfound">("idle");
-  const addrInit = React.useRef(false);
-  React.useEffect(() => {
-    if (addrInit.current || !profileQ.data) return;
-    const saved = addressPartsFrom(profileQ.data.preferences?.billing_address);
-    if (saved) {
-      setCep(formatCep(saved.cep));
-      setAddrNumber(saved.number);
-      setAddrComplement(saved.complement ?? "");
-      setAddr({ street: saved.street, neighborhood: saved.neighborhood, city: saved.city, state: saved.state });
-      setCepStatus(saved.city ? "ok" : "idle");
-    }
-    addrInit.current = true;
-  }, [profileQ.data]);
-  const cepDigits = normalizeCep(cep);
-  React.useEffect(() => {
-    if (!cepDigits) {
-      setCepStatus("idle");
-      return;
-    }
-    let vivo = true;
-    setCepStatus("loading");
-    fetch(viaCepUrl(cepDigits))
-      .then((r) => r.json())
-      .then((j) => {
-        if (!vivo) return;
-        const parsed = parseViaCep(j);
-        if (!parsed) {
-          setAddr({ street: "", neighborhood: "", city: "", state: "" });
-          setCepStatus("notfound");
-          return;
-        }
-        setAddr(parsed);
-        setCepStatus("ok");
-      })
-      .catch(() => {
-        if (vivo) setCepStatus("notfound");
-      });
-    return () => {
-      vivo = false;
-    };
-  }, [cepDigits]);
 
   // A política da plataforma com o parcelamento da reserva por cima (regra de repasse > padrão da
   // empresa, 09/11/2026). É o mesmo cálculo da Edge de cobrança: o que aparece aqui é o que ela aceita.
@@ -282,11 +206,11 @@ export function Step4Payment({
     e.preventDefault();
     if (!comecaEnvio()) return;
     // Rastro do checkout: cada tentativa e onde ela morreu vão para a reserva no Manager.
-    const savedCard = cardChoice !== "new";
+    const savedCard = entry.isSaved;
     const ctx = {
       saved_card: savedCard,
       installments,
-      brand: savedCard ? null : detectBrand(onlyDigits(cardNumber)),
+      brand: savedCard ? null : detectBrand(onlyDigits(entry.cardNumber)),
     };
     let stage: CardFailureStage = "validation";
     logCheckoutEvent(bookingCode, "client:card_attempt", null, ctx);
@@ -303,54 +227,20 @@ export function Step4Payment({
       trackPayment("card", installments);
       if (savedCard) {
         stage = "charge";
-        await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: cardChoice });
+        await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: entry.cardChoice });
       } else {
-        const validade = parseValidade(cardExpiry, new Date());
-        if (!validade) {
-          falhaLocal("Validade inválida (use MM/AA).");
-          return;
-        }
-        if (!isCvvValid(cardCvv, detectBrand(onlyDigits(cardNumber)))) {
-          falhaLocal("Confira o CVV: são 3 dígitos no verso do cartão (4 na frente, no Amex).");
-          return;
-        }
-        // Endereço antes de tokenizar: sem ele o antifraude recusa, e o token é de uso único.
-        const parts = { cep, number: addrNumber, complement: addrComplement, ...addr };
-        const cobranca = buildBillingAddress(parts);
-        if (cobranca.error) {
-          falhaLocal(cobranca.error);
+        // Validade, CVV e endereço antes de tokenizar: sem endereço o antifraude recusa, e o token é
+        // de uso único.
+        const conferido = entry.validateNew();
+        if ("error" in conferido) {
+          falhaLocal(conferido.error);
           return;
         }
         stage = "tokenize";
-        const tok = await tokenizeCard(config.data!.public_key, {
-          number: cardNumber,
-          holder_name: cardName,
-          exp_month: validade.mes,
-          exp_year: validade.ano,
-          cvv: cardCvv,
-        });
+        const cartao = await entry.tokenizeNew(config.data!.public_key, conferido);
         stage = "charge";
-        await card.mutateAsync({
-          booking_code: bookingCode,
-          installments,
-          card_token: tok.token,
-          save_card: saveCard,
-          holder_name: cardName,
-          brand: tok.brand,
-          last4: tok.last4,
-          exp_month: validade.mes,
-          exp_year: validade.ano,
-          billing_address: cobranca.address,
-        });
-        // Guarda para a próxima compra (best-effort: não atrapalha o pagamento que já passou).
-        if (session?.userId) {
-          updateProfile
-            .mutateAsync({
-              id: session.userId,
-              preferences: { ...(profileQ.data?.preferences ?? {}), billing_address: parts },
-            })
-            .catch(() => {});
-        }
+        await card.mutateAsync({ booking_code: bookingCode, installments, ...cartao });
+        entry.rememberAddress(conferido.parts);
       }
       logCheckoutEvent(bookingCode, "client:card_charge_ok", null, ctx);
       toast.success("Pagamento aprovado. Confirmando…");
@@ -491,144 +381,7 @@ export function Step4Payment({
             </div>
           ) : (
             <form onSubmit={payCard} className="mt-2 space-y-4 rounded-md border border-hairline bg-canvas p-6">
-              {/* Cartão salvo ou novo */}
-              {(savedCards.data ?? []).length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="card-choice">Cartão</Label>
-                  <Select value={cardChoice} onValueChange={setCardChoice}>
-                    <SelectTrigger id="card-choice">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(savedCards.data ?? []).map((pm) => (
-                        <SelectItem key={pm.id} value={pm.id}>
-                          <span className="inline-flex items-center gap-2">
-                            <CardBrandMark brand={pm.brand} />
-                            <span>
-                              {brandLabel(pm.brand)} •••• {pm.last4}
-                            </span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="new">Usar outro cartão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {cardChoice === "new" && (
-                <>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="card-number">Número do cartão</Label>
-                    <div className="relative">
-                      <Input
-                        id="card-number"
-                        inputMode="numeric"
-                        autoComplete="cc-number"
-                        placeholder="0000 0000 0000 0000"
-                        className="pr-14"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(cardNumberMask(e.target.value))}
-                        required
-                      />
-                      {/* A bandeira aparece assim que dá para reconhecer, antes de o cliente terminar. */}
-                      {detectBrand(cardNumber) !== "card" && (
-                        <CardBrandMark brand={detectBrand(cardNumber)} className="absolute right-3 top-1/2 -translate-y-1/2" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="card-name">Nome no cartão</Label>
-                    <Input
-                      id="card-name"
-                      placeholder="NOME SOBRENOME"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="card-expiry">Validade (MM/AA)</Label>
-                      <Input
-                        id="card-expiry"
-                        inputMode="numeric"
-                        placeholder="12/27"
-                        autoComplete="cc-exp"
-                        maxLength={5}
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(cardExpiryMask(e.target.value))}
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="card-cvv">CVV</Label>
-                      <Input
-                        id="card-cvv"
-                        inputMode="numeric"
-                        placeholder="123"
-                        maxLength={4}
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(onlyDigits(e.target.value))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  {/* Endereço de cobrança: o antifraude exige; só CEP e número são digitados. */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="card-cep">CEP do endereço do cartão</Label>
-                      <Input
-                        id="card-cep"
-                        inputMode="numeric"
-                        placeholder="00000-000"
-                        value={cep}
-                        onChange={(e) => setCep(formatCep(e.target.value))}
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="card-addr-number">Número</Label>
-                      <Input
-                        id="card-addr-number"
-                        placeholder="123"
-                        value={addrNumber}
-                        onChange={(e) => setAddrNumber(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="card-addr-complement">Complemento (opcional)</Label>
-                    <Input
-                      id="card-addr-complement"
-                      placeholder="apto, bloco, sala"
-                      value={addrComplement}
-                      onChange={(e) => setAddrComplement(e.target.value)}
-                    />
-                  </div>
-                  {cepStatus === "loading" && <p className="text-caption text-muted">Buscando o endereço…</p>}
-                  {cepStatus === "notfound" && (
-                    <p className="text-caption text-error" data-testid="cep-nao-encontrado">Não achamos esse CEP. Confira os dígitos.</p>
-                  )}
-                  {cepStatus === "ok" && (
-                    <p className="text-caption text-muted" data-testid="cep-endereco">
-                      {[addr.street, addr.neighborhood].filter(Boolean).join(", ")}
-                      {addr.street || addr.neighborhood ? " · " : ""}
-                      {addr.city}/{addr.state}
-                    </p>
-                  )}
-                  <label className="flex cursor-pointer items-center gap-2 text-body-sm text-body">
-                    <input
-                      type="checkbox"
-                      checked={saveCard}
-                      onChange={(e) => setSaveCard(e.target.checked)}
-                      className="h-4 w-4 rounded border-hairline accent-mp-indigo"
-                    />
-                    Salvar este cartão para as próximas reservas
-                  </label>
-                </>
-              )}
+              <CardEntryFields entry={entry} />
 
               {/* Parcelas. Cada opção com juros diz a taxa, o acréscimo em reais e o CET ao
                   mês e ao ano (CDC art. 52), e o resumo abaixo repete a escolhida por extenso:

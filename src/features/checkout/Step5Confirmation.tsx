@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Check, Download } from "@phosphor-icons/react";
+import { Calendar as CalendarIcon, Check, Download, QrCode } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toDataUrl } from "@/lib/qr";
@@ -16,8 +16,15 @@ type Props = {
   booking: BookingForCheckout;
 };
 
+/**
+ * Confirmação do checkout. Na reunião de 26/11/2026, quem acabou de pagar no PIX via o QR do PIX sumir
+ * e outro QR, do mesmo tamanho, aparecer no lugar, e achava que tinha de pagar de novo. O QR de entrada
+ * só serve na portaria, no dia: aqui ele fica recolhido, e o que aparece é que o pagamento entrou e
+ * os botões do que a pessoa faz agora (ver a reserva, baixar o voucher, pôr na agenda).
+ */
 export function Step5Confirmation({ booking }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
+  const [mostrarQr, setMostrarQr] = React.useState(false);
   const pdf = useVoucherPdf();
   // Unidade com cancela integrada (Cloudpark): o QR é o código do provedor, que pode levar alguns
   // segundos para chegar depois do pagamento. Enquanto isso, o QR fica em carregamento.
@@ -52,8 +59,8 @@ export function Step5Confirmation({ booking }: Props) {
           <Check className="h-7 w-7" />
         </span>
         <h2 className="text-display-xl text-ink">Reserva confirmada!</h2>
-        <p className="text-body-md text-muted">
-          Mostre o QR Code ou informe o código na entrada do estacionamento.
+        <p className="text-pretty text-body-md text-muted" data-testid="confirmacao-pagamento">
+          Pagamento recebido. Não falta pagar nada: sua vaga está garantida.
         </p>
       </div>
 
@@ -63,16 +70,8 @@ export function Step5Confirmation({ booking }: Props) {
           {booking.code}
         </div>
 
-        <div className="mt-5 flex justify-center">
-          {qrUrl ? (
-            <img src={qrUrl} width={240} height={240} alt={`QR ${booking.code}`} />
-          ) : (
-            <Skeleton className="h-60 w-60" />
-          )}
-        </div>
-
-        <p className="mt-4 text-body-sm text-muted">
-          Apresente esse QR na chegada à vaga.
+        <p className="mt-2 text-body-sm text-muted">
+          Na entrada, mostre o QR da reserva ou diga este código.
         </p>
         <OperatedBy
           logo={booking.location.logo}
@@ -80,10 +79,12 @@ export function Step5Confirmation({ booking }: Props) {
           className="mt-3 justify-center"
         />
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 flex flex-col gap-2 tablet:flex-row tablet:flex-wrap tablet:justify-center">
+          <Button asChild>
+            <Link to={`/bookings/${booking.code}`}>Ver minha reserva</Link>
+          </Button>
           <Button
             variant="secondary"
-            size="sm"
             onClick={downloadPdf}
             disabled={pdf.isPending}
             data-testid="voucher-download-pdf-step4"
@@ -91,11 +92,7 @@ export function Step5Confirmation({ booking }: Props) {
             <Download className="h-4 w-4" />
             {pdf.isPending ? "Gerando…" : "Baixar voucher PDF"}
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            asChild
-          >
+          <Button variant="secondary" asChild>
             <a
               href={buildIcsHref(booking)}
               download={`movepark-${booking.code}.ics`}
@@ -104,6 +101,31 @@ export function Step5Confirmation({ booking }: Props) {
               Adicionar ao calendário
             </a>
           </Button>
+        </div>
+        {/* O QR de entrada fica recolhido: ele só serve na portaria e fica salvo na reserva. */}
+        <div className="mt-6 border-t border-hairline pt-5">
+          {mostrarQr ? (
+            <div className="flex flex-col items-center gap-3" data-testid="qr-entrada">
+              <p className="text-body-sm font-semibold text-ink">QR de entrada na portaria</p>
+              {qrUrl ? (
+                <img src={qrUrl} width={240} height={240} alt={`QR de entrada da reserva ${booking.code}`} />
+              ) : (
+                <Skeleton className="h-60 w-60" />
+              )}
+              <p className="text-pretty text-caption-sm text-muted">
+                Ele também fica salvo em Minhas reservas, para mostrar no dia.
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMostrarQr(true)}
+              className="inline-flex items-center gap-2 text-body-sm font-semibold text-mp-indigo hover:underline"
+            >
+              <QrCode className="h-4 w-4" aria-hidden />
+              Mostrar o QR de entrada
+            </button>
+          )}
         </div>
       </div>
 
@@ -122,8 +144,8 @@ export function Step5Confirmation({ booking }: Props) {
       </div>
 
       <div className="flex flex-wrap justify-center gap-2">
-        <Button asChild>
-          <Link to="/bookings">Ir pras minhas reservas</Link>
+        <Button variant="secondary" asChild>
+          <Link to="/bookings">Minhas reservas</Link>
         </Button>
         <Button variant="secondary" asChild>
           <Link to="/">Voltar pra home</Link>

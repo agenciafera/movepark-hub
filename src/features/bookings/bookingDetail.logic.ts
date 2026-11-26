@@ -5,7 +5,7 @@
  */
 
 import type { BookingStatus } from "@/types/domain";
-import { formatDate, formatDayTimeInline, formatTime } from "@/lib/format";
+import { formatBRL, formatDate, formatDayTimeInline, formatTime } from "@/lib/format";
 
 export type DetailHeadline = { title: string; subtitle: string };
 
@@ -139,4 +139,30 @@ export function freeCancelNote(
   const prazo = new Date(fareCancelUntil);
   if (Number.isNaN(prazo.getTime()) || prazo.getTime() <= now.getTime()) return null;
   return `Cancelamento grátis até ${formatDate(fareCancelUntil)}, ${formatTime(fareCancelUntil)}.`;
+}
+
+type RefundRow = { refunded_amount?: number | string | null; refunded_at?: string | null };
+
+/**
+ * Quanto já voltou ao cliente nesta reserva (26/11/2026). A troca de datas mais barata devolve parte
+ * do valor e a tela só mostrava o total menor, sem dizer que o dinheiro voltou. Soma todas as
+ * cobranças da reserva e guarda a data da devolução mais recente. Null quando nada voltou.
+ */
+export function refundSummary(rows: RefundRow[]): { amount: number; at: string | null } | null {
+  let cents = 0;
+  let at: string | null = null;
+  for (const r of rows) {
+    const v = Math.round(Number(r.refunded_amount ?? 0) * 100);
+    if (!Number.isFinite(v) || v <= 0) continue;
+    cents += v;
+    if (r.refunded_at && (!at || r.refunded_at > at)) at = r.refunded_at;
+  }
+  return cents > 0 ? { amount: cents / 100, at } : null;
+}
+
+/** A linha do card Pagamento que confirma a devolução, curta, sem o detalhe que o operador vê. */
+export function refundLine(refund: { amount: number; at: string | null } | null | undefined): string | null {
+  if (!refund) return null;
+  const quando = refund.at ? ` em ${formatDate(refund.at)}` : "";
+  return `Devolvemos ${formatBRL(refund.amount)}${quando}, pelo mesmo meio de pagamento.`;
 }

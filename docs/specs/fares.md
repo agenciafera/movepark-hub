@@ -159,6 +159,27 @@ disparo (best-effort, pós-resposta):
   reserva (`StaffFareUpgradeDialog`), e a troca de datas de reserva Básica pela equipe cobra o
   upgrade para o Flex no mesmo PIX ([booking-modifications.md §8.7](./booking-modifications.md)).
   O upgrade aplicado entra no histórico da reserva.
+- **Upgrade depois da reunião de 26/11/2026 (decisões alinhadas com o Pedro):**
+  - **Comparativo em tabela.** O `FareUpgradeDialog` (cliente) e o `StaffFareUpgradeDialog` (equipe)
+    mostram a `FareUpgradeTable`: a tarifa atual e as de cima em colunas, os benefícios em linhas,
+    saídas da mesma `buildFareMatrix` do comparativo da página da unidade (uma promessa só). A sugestão
+    inicial é a tarifa `is_popular` do catálogo, senão a primeira acima (`fareUpgrade.logic.ts`).
+  - **PIX e cartão, sem parcelamento.** Na reserva já paga (`confirmed`), o cliente paga o upgrade no
+    cartão pela Edge `create-card-charge` com `fare_upgrade: { target_tier, expected_delta_cents }`,
+    fluxo próprio em `create-card-charge/fare-upgrade.ts`: à vista (`installments` diferente de 1 é
+    recusado), 100% Movepark como o PIX, mesmo antifraude e mesmo "salvar cartão". Aprovado na hora,
+    a Edge aplica `apply_fare_upgrade` e registra no histórico; em análise, o webhook aplica quando
+    virar `paid`. O PIX do upgrade que ficou aberto é anulado (`voidOpenPixCharges` com `kind`). Reserva
+    pendente segue só no PIX. A diferença de datas continua parcelando pela regra da reserva (09/11).
+  - **O PIX se atualiza sozinho.** Enquanto o PIX do upgrade ou da diferença de datas espera, a página
+    da reserva relê a cada 3 s (`useBookingDetail(code, { poll })`) e o diálogo mostra "Pagamento
+    recebido" quando a tarifa (ou as datas) mudam, como o painel da equipe já fazia.
+  - **Um formulário de cartão só.** `useCardEntry` + `CardEntryFields` (checkout) são os mesmos no
+    checkout, na diferença de datas e no upgrade (`ExtraChargeCardForm`): cartão salvo ou novo,
+    endereço pelo CEP e "Salvar este cartão para as próximas reservas".
+  - **Cancelamento grátis com prazo.** Na lista "o que está incluso" do detalhe da reserva, o
+    benefício diz até quando vale ("Cancelamento grátis até 24h antes da entrada",
+    `benefitLabelWithWindow`), em vez do rótulo solto que lia como "a qualquer momento".
 
 ## E2.8-f · Config de Tarifa por unidade — REMOVIDA (fonte única global, 23/07)
 

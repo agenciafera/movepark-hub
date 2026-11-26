@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  benefitLabelWithWindow,
+  bookingCancelWindowMinutes,
   cancelWindowLabel,
   fareCancelDeadline,
   fareReais,
@@ -101,5 +103,26 @@ describe("fareUpgradeDeltaCents", () => {
   });
   it("sem downgrade: alvo mais barato → 0", () => {
     expect(fareUpgradeDeltaCents(2490, 1290)).toBe(0);
+  });
+});
+
+describe("benefitLabelWithWindow (26/11/2026: o cancelamento grátis diz até quando)", () => {
+  it("Básica com 24h: o rótulo leva o prazo, não fica genérico", () => {
+    const min = bookingCancelWindowMinutes("2026-12-01T21:00:00-03:00", "2026-11-30T21:00:00-03:00");
+    expect(min).toBe(1440);
+    expect(benefitLabelWithWindow("free_cancellation", min)).toBe("Cancelamento grátis até 24h antes da entrada");
+  });
+  it("Superflex com 1 min antes", () => {
+    expect(benefitLabelWithWindow("free_cancellation", 1)).toBe("Cancelamento grátis até 1 min antes da entrada");
+  });
+  it("janela zero: até a entrada", () => {
+    expect(benefitLabelWithWindow("free_cancellation", 0)).toBe("Cancelamento grátis até a entrada");
+  });
+  it("sem prazo conhecido: o rótulo curto", () => {
+    expect(bookingCancelWindowMinutes("2026-12-01T21:00:00Z", null)).toBeNull();
+    expect(benefitLabelWithWindow("free_cancellation", null)).toBe("Cancelamento grátis");
+  });
+  it("os outros benefícios não mudam", () => {
+    expect(benefitLabelWithWindow("date_change", 1440)).toBe("Alteração de data/horário");
   });
 });

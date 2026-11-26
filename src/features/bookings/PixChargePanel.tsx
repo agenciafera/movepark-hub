@@ -9,18 +9,21 @@ type Props = {
   amount: number;
   qrCode: string | null;
   expiresAt: string | null;
-  /** Texto pronto para o WhatsApp, que vai antes do código. */
-  message: string;
+  /** Texto pronto para o WhatsApp, que vai antes do código. Sem ele, só o "Copiar código". */
+  message?: string;
+  /** Quem paga é o próprio cliente (conta dele): a instrução fala com ele, não com a equipe. */
+  forCustomer?: boolean;
   /** O pagamento já entrou (a tela relê a reserva enquanto espera). */
   paid: boolean;
   paidText: string;
 };
 
 /**
- * PIX que a equipe gera pelo cliente (26/11/2026): o QR para ele pagar ali no balcão e o código para
- * mandar no WhatsApp. Quem diz que entrou é a reserva relida (`paid`), não um clique do operador.
+ * PIX de uma cobrança depois da compra (26/11/2026). Na equipe: o QR para o cliente pagar no balcão e
+ * o código para mandar no WhatsApp. Na conta do cliente (`forCustomer`): o QR e o "Copiar código" para
+ * colar no app do banco. Nos dois, quem diz que entrou é a reserva relida (`paid`), não um clique.
  */
-export function PixChargePanel({ amount, qrCode, expiresAt, message, paid, paidText }: Props) {
+export function PixChargePanel({ amount, qrCode, expiresAt, message, forCustomer, paid, paidText }: Props) {
   const [qrUrl, setQrUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -57,10 +60,12 @@ export function PixChargePanel({ amount, qrCode, expiresAt, message, paid, paidT
     <div className="flex flex-col gap-3 text-center" data-testid="pix-cobranca">
       <p className="text-body-sm text-muted">
         PIX de <strong className="text-ink">{formatBRL(amount)}</strong>
-        {expiresAt ? `, vale até ${formatDateTime(expiresAt)}` : ""}. Mostre o QR ao cliente ou mande o
-        código no WhatsApp.
+        {expiresAt ? `, vale até ${formatDateTime(expiresAt)}` : ""}.{" "}
+        {forCustomer
+          ? "Leia o QR no app do seu banco ou copie o código."
+          : "Mostre o QR ao cliente ou mande o código no WhatsApp."}
       </p>
-      {qrUrl && <img src={qrUrl} alt="QR code do PIX" className="mx-auto h-[220px] w-[220px]" />}
+      {qrUrl && <img src={qrUrl} alt="QR code do PIX" className="mx-auto h-[220px] w-[220px]" data-testid="pix-qr" />}
       {qrCode && (
         <p className="break-all rounded-sm bg-surface-soft p-2 text-caption text-muted">{qrCode}</p>
       )}
@@ -73,14 +78,16 @@ export function PixChargePanel({ amount, qrCode, expiresAt, message, paid, paidT
         >
           Copiar código
         </Button>
-        <Button
-          className="flex-1"
-          variant="secondary"
-          disabled={!qrCode}
-          onClick={() => qrCode && void copiar(`${message}\n\n${qrCode}`, "Mensagem e código copiados.")}
-        >
-          Copiar com mensagem
-        </Button>
+        {message && (
+          <Button
+            className="flex-1"
+            variant="secondary"
+            disabled={!qrCode}
+            onClick={() => qrCode && void copiar(`${message}\n\n${qrCode}`, "Mensagem e código copiados.")}
+          >
+            Copiar com mensagem
+          </Button>
+        )}
       </div>
       <p className="text-caption text-muted" aria-live="polite">
         Aguardando o pagamento. Esta tela atualiza sozinha.

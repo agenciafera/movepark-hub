@@ -1,12 +1,14 @@
 import { assertEquals } from "jsr:@std/assert";
 import {
   buildCardItems,
+  buildFareUpgradeItems,
   buildDateChangeItems,
   cardFieldMessage,
   clientIp,
   extractCardId,
   parseBillingAddress,
   parseCardInput,
+  parseFareUpgrade,
   reaisToCents,
 } from "./logic.ts";
 
@@ -53,6 +55,7 @@ Deno.test("parseCardInput: cartão novo válido normaliza os campos", () => {
     saveCard: true,
     billingAddress: { zip_code: "80020310", line_1: "123, Rua XV, Centro", city: "Curitiba", state: "PR", country: "BR" },
     dateChange: null,
+    fareUpgrade: null,
     card: { holderName: "Tony Stark", brand: "visa", last4: "1234", expMonth: 12, expYear: 2030 },
   });
 });
@@ -135,4 +138,53 @@ Deno.test("itens da diferença de datas: a diferença + juros, somando o cobrado
   const itens = buildDateChangeItems("MP-ABC123", 5400, 312);
   assertEquals(itens[0], { amount: 5400, description: "Alteração de datas · MP-ABC123", quantity: 1 });
   assertEquals(itens.reduce((a, i) => a + i.amount, 0), 5712);
+});
+
+// Upgrade de tarifa no cartão (reunião de 26/11/2026): PIX e cartão, sem parcelamento.
+const CARTAO = { booking_code: "MP-1", payment_method_id: "pm_1" };
+
+Deno.test("parseCardInput: fare_upgrade à vista passa, com a tarifa e a diferença vista na tabela", () => {
+  const { input, error } = parseCardInput({
+    ...CARTAO,
+    installments: 1,
+    fare_upgrade: { target_tier: "flex", expected_delta_cents: 1290 },
+  });
+  assertEquals(error, undefined);
+  assertEquals(input?.fareUpgrade, { targetTier: "flex", expectedDeltaCents: 1290 });
+  assertEquals(input?.dateChange, null);
+});
+
+Deno.test("parseCardInput: o upgrade não parcela (2x é recusado)", () => {
+  assertEquals(
+    parseCardInput({ ...CARTAO, installments: 2, fare_upgrade: { target_tier: "superflex", expected_delta_cents: 2490 } }).error,
+    "O upgrade de tarifa no cartão é à vista.",
+  );
+});
+
+Deno.test("parseCardInput: upgrade e troca de datas na mesma cobrança, não", () => {
+  assertEquals(
+    parseCardInput({
+      ...CARTAO,
+      installments: 1,
+      fare_upgrade: { target_tier: "flex", expected_delta_cents: 1290 },
+      date_change: { check_in_at: "2027-01-01T10:00:00Z", check_out_at: "2027-01-03T10:00:00Z", expected_delta_cents: 500 },
+    }).error,
+    "Use date_change OU fare_upgrade, não os dois.",
+  );
+});
+
+Deno.test("parseFareUpgrade: sem downgrade para a Básica e diferença obrigatória", () => {
+  assertEquals(parseFareUpgrade(null), { value: null });
+  assertEquals(parseFareUpgrade({ target_tier: "basica", expected_delta_cents: 100 }).error, "target_tier inválido.");
+  assertEquals(
+    parseFareUpgrade({ target_tier: "flex" }).error,
+    "expected_delta_cents é obrigatório (centavos da diferença a pagar).",
+  );
+  assertEquals(parseFareUpgrade({ target_tier: "flex", expected_delta_cents: 0 }).error !== undefined, true);
+});
+
+Deno.test("buildFareUpgradeItems: uma linha só, sem juros, soma igual à cobrança", () => {
+  assertEquals(buildFareUpgradeItems("MP-1", "Flex", 1290), [
+    { amount: 1290, description: "Upgrade Tarifa Flex · MP-1", quantity: 1 },
+  ]);
 });

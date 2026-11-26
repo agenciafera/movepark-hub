@@ -23,6 +23,11 @@ export interface CardInput {
    * é o que o cliente viu na prévia: se mudou, a Edge recusa em vez de cobrar outro valor.
    */
   dateChange: { checkInAt: string; checkOutAt: string; expectedDeltaCents: number } | null;
+  /**
+   * Upgrade de tarifa no cartão (26/11/2026). À vista e 100% Movepark, como o upgrade no PIX:
+   * `expected_delta_cents` é a diferença que o cliente viu na tabela; se mudou, a Edge recusa.
+   */
+  fareUpgrade: { targetTier: "flex" | "superflex"; expectedDeltaCents: number } | null;
   /** Dados não-sensíveis do cartão (p/ salvar): brand + last4 + titular + validade. */
   card: {
     holderName: string | null;
@@ -64,6 +69,11 @@ export function parseCardInput(body: unknown): { input: CardInput | null; error?
 
   const dc = parseDateChange(b.date_change);
   if (dc.error) return { input: null, error: dc.error };
+  const up = parseFareUpgrade(b.fare_upgrade);
+  if (up.error) return { input: null, error: up.error };
+  if (dc.value && up.value) return { input: null, error: "Use date_change OU fare_upgrade, não os dois." };
+  // Reunião de 26/11/2026: o upgrade de tarifa aceita PIX e cartão, sem parcelamento.
+  if (up.value && installments !== 1) return { input: null, error: "O upgrade de tarifa no cartão é à vista." };
 
   return {
     input: {
@@ -74,6 +84,7 @@ export function parseCardInput(body: unknown): { input: CardInput | null; error?
       saveCard: b.save_card === true,
       billingAddress: billing.address ?? null,
       dateChange: dc.value,
+      fareUpgrade: up.value,
       card: {
         holderName: str(b.holder_name),
         brand: str(b.brand),
@@ -192,4 +203,23 @@ export function buildDateChangeItems(bookingCode: string, baseCents: number, int
   return buildCardItems(bookingCode, baseCents, interestCents).map((it, i) =>
     i === 0 ? { ...it, description: `Alteração de datas · ${bookingCode}` } : it
   );
+}
+
+/** `fare_upgrade` do corpo: tarifa-alvo acima da Básica e a diferença vista na tabela (centavos). */
+export function parseFareUpgrade(raw: unknown): { value: CardInput["fareUpgrade"]; error?: string } {
+  if (raw == null) return { value: null };
+  if (typeof raw !== "object") return { value: null, error: "fare_upgrade inválido." };
+  const d = raw as Record<string, unknown>;
+  const tier = typeof d.target_tier === "string" ? d.target_tier.trim() : "";
+  if (tier !== "flex" && tier !== "superflex") return { value: null, error: "target_tier inválido." };
+  const exp = d.expected_delta_cents;
+  if (!(typeof exp === "number" && Number.isInteger(exp) && exp > 0)) {
+    return { value: null, error: "expected_delta_cents é obrigatório (centavos da diferença a pagar)." };
+  }
+  return { value: { targetTier: tier, expectedDeltaCents: exp } };
+}
+
+/** Item único da cobrança do upgrade: a diferença entre as tarifas, sem juros (é à vista). */
+export function buildFareUpgradeItems(bookingCode: string, fareLabel: string, deltaCents: number): ChargeItem[] {
+  return [{ amount: deltaCents, description: `Upgrade Tarifa ${fareLabel} · ${bookingCode}`, quantity: 1 }];
 }

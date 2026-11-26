@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { resolveParkingLogo, type ParkingLogo } from "@/lib/parkingLogo";
 import { bucketBooking, type MyBookingStatus } from "./bookings.logic";
+import { refundSummary } from "./bookingDetail.logic";
 
 export type { MyBookingStatus };
 
@@ -175,7 +176,10 @@ export type MyBookingDetail = MyBookingListItem & {
     parking_type: { name: string } | null;
     add_on_service: { name: string } | null;
   }[];
+  /** O pagamento da reserva em si (não o do upgrade nem o da diferença de datas). */
   payment: { status: string; provider: string; paid_at: string | null } | null;
+  /** Quanto já voltou ao cliente, somando todas as cobranças da reserva (troca de datas, cancelamento). */
+  refund?: { amount: number; at: string | null } | null;
   location_detail: {
     phone: string | null;
     email: string | null;
@@ -190,9 +194,13 @@ export type MyBookingDetail = MyBookingListItem & {
   };
 };
 
-export function useBookingDetail(code: string | undefined) {
+export function useBookingDetail(
+  code: string | undefined,
+  opts: { /** Relê a cada 3 s, enquanto um PIX gerado pelo cliente espera o pagamento. */ poll?: boolean } = {},
+) {
   return useQuery({
     queryKey: ["booking-detail", code] as const,
+    refetchInterval: opts.poll ? 3000 : false,
     queryFn: async (): Promise<MyBookingDetail | null> => {
       if (!code) return null;
       const { data, error } = await supabase
@@ -215,7 +223,7 @@ export function useBookingDetail(code: string | undefined) {
              parking_type:parking_type(name, code),
              add_on_service:add_on_service(name)
            ),
-           payments:payment(status, provider, paid_at, created_at)`,
+           payments:payment(status, provider, paid_at, created_at, kind, refunded_amount, refunded_at)`,
         )
         .eq("code", code)
         .maybeSingle();
@@ -231,7 +239,10 @@ export function useBookingDetail(code: string | undefined) {
         .slice()
         // deno-lint-ignore no-explicit-any
         .sort((a: any, b: any) => b.created_at.localeCompare(a.created_at));
-      const lastPayment = payments[0] ?? null;
+      // A reserva tem uma cobrança por ação (upgrade, diferença de datas). "Confirmado em" e "aguardando
+      // confirmação" falam da compra: um PIX de upgrade em aberto não deixa a reserva paga como pendente.
+      // deno-lint-ignore no-explicit-any
+      const lastPayment = payments.find((p: any) => (p.kind ?? "booking") === "booking") ?? payments[0] ?? null;
 
       return {
         id: r.id,
@@ -283,6 +294,7 @@ export function useBookingDetail(code: string | undefined) {
               paid_at: lastPayment.paid_at,
             }
           : null,
+        refund: refundSummary(payments),
         location_detail: {
           phone: r.location.phone,
           email: r.location.email,

@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DateRangeField } from "@/features/search/DateRangeField";
 import { formatBRL } from "@/lib/format";
-import { toDataUrl } from "@/lib/qr";
 import {
   type ChangePaidDatesQuote,
   type ChangePaidDatesResult,
@@ -20,7 +19,9 @@ import {
   useQuotePaidBookingDates,
 } from "./customerApi";
 import { descreverCotacao, mensagemDaTroca } from "./changeDatesPaid.logic";
-import { DateChangeCardForm } from "./DateChangeCardForm";
+import { ExtraChargeCardForm } from "./ExtraChargeCardForm";
+import { PixChargePanel } from "./PixChargePanel";
+import { datesLanded } from "./staffChange.logic";
 
 type Props = {
   bookingCode: string;
@@ -31,6 +32,8 @@ type Props = {
   installmentsInterestFree?: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Avisa a página que um PIX espera: ela relê a reserva até as datas mudarem. */
+  onWaitingChange?: (waiting: boolean) => void;
 };
 
 type Etapa = "datas" | "valor" | "pix";
@@ -49,6 +52,7 @@ export function ChangeDatesPaidDialog({
   installmentsInterestFree,
   open,
   onOpenChange,
+  onWaitingChange,
 }: Props) {
   const qc = useQueryClient();
   const cotar = useQuotePaidBookingDates();
@@ -58,20 +62,33 @@ export function ChangeDatesPaidDialog({
   const [etapa, setEtapa] = React.useState<Etapa>("datas");
   const [cotacao, setCotacao] = React.useState<ChangePaidDatesQuote | null>(null);
   const [charge, setCharge] = React.useState<Extract<ChangePaidDatesResult, { mode: "charge" }> | null>(null);
-  const [qrUrl, setQrUrl] = React.useState<string | null>(null);
 
+  // Zera só ao ABRIR. Antes zerava também quando as datas da reserva mudavam, e é exatamente isso que
+  // acontece quando o PIX entra: a tela voltaria para o calendário em vez de dizer que deu certo.
+  const abertoAntes = React.useRef(false);
   React.useEffect(() => {
-    if (open) {
+    if (open && !abertoAntes.current) {
       setFrom(new Date(currentCheckIn));
       setTo(new Date(currentCheckOut));
       setEtapa("datas");
       setCotacao(null);
       setCharge(null);
-      setQrUrl(null);
     }
+    abertoAntes.current = open;
   }, [open, currentCheckIn, currentCheckOut]);
 
   const periodo = from && to ? { checkInAt: from.toISOString(), checkOutAt: to.toISOString() } : null;
+
+  // O PIX entrou quando a reserva relida já tem as datas pedidas (a página relê a cada 3 s).
+  const pago =
+    etapa === "pix" && !!periodo && datesLanded({ check_in_at: currentCheckIn, check_out_at: currentCheckOut }, periodo);
+  React.useEffect(() => {
+    onWaitingChange?.(open && etapa === "pix" && !pago);
+  }, [open, etapa, pago, onWaitingChange]);
+  React.useEffect(() => {
+    if (!pago) return;
+    void qc.invalidateQueries({ queryKey: ["my-bookings"] });
+  }, [pago, qc]);
 
   async function verValor() {
     if (!from || !to || to <= from || !periodo) {
@@ -100,7 +117,6 @@ export function ChangeDatesPaidDialog({
       const res = await change.mutateAsync({ bookingCode, ...periodo, expectedDeltaCents: cotacao.delta_cents });
       if (res.mode === "charge") {
         setCharge(res);
-        if (res.qr_code) setQrUrl(await toDataUrl(res.qr_code, 220));
         setEtapa("pix");
         return;
       }
@@ -121,7 +137,9 @@ export function ChangeDatesPaidDialog({
           <DialogTitle>Alterar datas</DialogTitle>
           <DialogDescription>
             {etapa === "pix"
-              ? "Pague a diferença por PIX para confirmar as novas datas."
+              ? pago
+                ? "As novas datas já estão na sua reserva."
+                : "Pague a diferença por PIX para confirmar as novas datas."
               : "Escolha o novo período. Antes de confirmar, você vê quanto paga ou recebe de volta."}
           </DialogDescription>
         </DialogHeader>
@@ -167,11 +185,10 @@ export function ChangeDatesPaidDialog({
                 {cotacao.card_allowed && (
                   <TabsContent value="card">
                     <div className="mt-2">
-                      <DateChangeCardForm
+                      <ExtraChargeCardForm
                         bookingCode={bookingCode}
                         amountCents={cotacao.delta_cents}
-                        checkInAt={periodo.checkInAt}
-                        checkOutAt={periodo.checkOutAt}
+                        charge={{ kind: "date_change", checkInAt: periodo.checkInAt, checkOutAt: periodo.checkOutAt }}
                         installmentsMax={installmentsMax}
                         installmentsInterestFree={installmentsInterestFree}
                         onPaid={(applied) =>
@@ -192,13 +209,15 @@ export function ChangeDatesPaidDialog({
         )}
 
         {etapa === "pix" && charge && (
-          <div className="space-y-3 text-center">
-            <p className="text-body-sm text-muted">
-              Diferença de <strong className="text-ink">{formatBRL(charge.delta)}</strong>. As novas datas valem assim que o
-              pagamento for confirmado.
-            </p>
-            {qrUrl && <img src={qrUrl} alt="QR code do PIX" className="mx-auto h-[220px] w-[220px]" />}
-            <p className="break-all rounded-sm bg-surface-soft p-2 text-caption text-muted">{charge.qr_code}</p>
+          <div className="space-y-3">
+            <PixChargePanel
+              amount={charge.charge_amount ?? charge.delta}
+              qrCode={charge.qr_code}
+              expiresAt={charge.expires_at}
+              forCustomer
+              paid={pago}
+              paidText="Pagamento recebido. As novas datas já valem e o voucher foi atualizado."
+            />
             <Button variant="secondary" className="w-full" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>

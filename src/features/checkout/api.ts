@@ -579,6 +579,11 @@ export type CardChargeArgs = {
    * `expected_delta_cents` é a diferença que o cliente viu na prévia.
    */
   date_change?: { check_in_at: string; check_out_at: string; expected_delta_cents: number };
+  /**
+   * Upgrade de tarifa no cartão (26/11/2026): só à vista (`installments` = 1), 100% Movepark.
+   * `expected_delta_cents` é a diferença que o cliente viu na tabela do upgrade.
+   */
+  fare_upgrade?: { target_tier: "flex" | "superflex"; expected_delta_cents: number };
 };
 
 export type CardChargeResponse = {
@@ -588,8 +593,9 @@ export type CardChargeResponse = {
   charged_amount: number;
   interest_amount: number;
   saved_card: boolean;
-  /** Só na diferença de datas: `applied` = aprovado na hora e as datas já mudaram. */
+  /** Só na diferença de datas e no upgrade: `applied` = aprovado na hora e a reserva já mudou. */
   date_change?: boolean;
+  fare_upgrade?: boolean;
   applied?: boolean;
 };
 

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Check } from "@phosphor-icons/react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -10,138 +10,195 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatBRL } from "@/lib/format";
-import { toDataUrl } from "@/lib/qr";
-import { fareReais, FARE_TIER_LABEL, FARE_TIER_ORDER, type FareTier } from "@/lib/fares";
+import { fareReais, FARE_TIER_LABEL, type FareTier } from "@/lib/fares";
+import { PixChargePanel } from "@/features/bookings/PixChargePanel";
+import { ExtraChargeCardForm } from "@/features/bookings/ExtraChargeCardForm";
+import { tierLanded } from "@/features/bookings/staffChange.logic";
 import { useCreateFareUpgrade, useFareCatalog, type FareUpgradeResponse } from "./api";
+import { FareUpgradeTable } from "./FareUpgradeTable";
+import { defaultUpgradeTarget, upgradeColumns } from "./fareUpgrade.logic";
 
 type Props = {
   bookingCode: string;
   currentTier: FareTier;
   currentFarePriceCents: number;
+  /** Cartão só em reserva já paga; reserva pendente faz o upgrade no PIX (ou junto da compra). */
+  cardAllowed?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Avisa a página que um PIX espera: ela relê a reserva até a tarifa mudar. */
+  onWaitingChange?: (waiting: boolean) => void;
 };
 
-/** Upgrade de Tarifa pós-reserva (E2.8-d): escolhe o nível-alvo, paga o delta via PIX. */
+type Etapa = "escolher" | "pix" | "pago";
+
+/**
+ * Upgrade de Tarifa depois da compra (E2.8-d; reunião de 26/11/2026). O cliente compara as tarifas
+ * numa tabela, escolhe e paga só a diferença, no PIX ou no cartão à vista. Com o PIX, a página relê a
+ * reserva e o diálogo mostra "Pagamento recebido" quando a tarifa muda, sem precisar fechar.
+ */
 export function FareUpgradeDialog({
   bookingCode,
   currentTier,
   currentFarePriceCents,
+  cardAllowed = false,
   open,
   onOpenChange,
+  onWaitingChange,
 }: Props) {
+  const qc = useQueryClient();
   const catalog = useFareCatalog();
   const upgrade = useCreateFareUpgrade();
   const [target, setTarget] = React.useState<FareTier | null>(null);
+  const [etapa, setEtapa] = React.useState<Etapa>("escolher");
   const [charge, setCharge] = React.useState<FareUpgradeResponse | null>(null);
-  const [qrUrl, setQrUrl] = React.useState<string | null>(null);
 
-  // Só níveis acima da Tarifa atual (delta > 0).
-  // Alvos = tiers ACIMA do atual pela ordem (mesmo sinal do gate do botão de upgrade). Antes filtrava
-  // por preço, o que divergia do tier se os dois não batessem; a ordem é a fonte única de "mais alto".
-  const currentIdx = FARE_TIER_ORDER.indexOf(currentTier);
-  const targets = (catalog.data ?? []).filter((f) => FARE_TIER_ORDER.indexOf(f.tier) > currentIdx);
+  const fares = React.useMemo(() => catalog.data ?? [], [catalog.data]);
+  const alvos = upgradeColumns(fares, currentTier).filter((f) => f.tier !== currentTier);
+  const escolhida = alvos.find((f) => f.tier === target) ?? null;
+  const deltaCents = escolhida ? Math.max(0, escolhida.price_cents - currentFarePriceCents) : 0;
 
   React.useEffect(() => {
-    if (open && !target && targets.length > 0) setTarget(targets[targets.length - 1].tier);
-  }, [open, target, targets]);
+    if (open && !target) setTarget(defaultUpgradeTarget(fares, currentTier));
+  }, [open, target, fares, currentTier]);
 
-  async function handleUpgrade() {
+  // O PIX entrou quando a reserva relida já está na tarifa escolhida (ou acima).
+  const pago = etapa === "pago" || (etapa === "pix" && !!target && tierLanded(currentTier, target));
+  React.useEffect(() => {
+    onWaitingChange?.(open && etapa === "pix" && !pago);
+  }, [open, etapa, pago, onWaitingChange]);
+  React.useEffect(() => {
+    if (pago) void qc.invalidateQueries({ queryKey: ["my-bookings"] });
+  }, [pago, qc]);
+
+  async function gerarPix() {
     if (!target) return;
     try {
       const res = await upgrade.mutateAsync({ booking_code: bookingCode, target_tier: target });
       setCharge(res);
-      if (res.qr_code) setQrUrl(await toDataUrl(res.qr_code, 220));
+      setEtapa("pix");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao gerar o upgrade");
     }
   }
 
+  function pagoNoCartao(applied: boolean) {
+    void qc.invalidateQueries({ queryKey: ["booking-detail", bookingCode] });
+    if (applied) {
+      setEtapa("pago");
+      return;
+    }
+    toast.success("Pagamento em análise. A tarifa muda quando ele for aprovado.");
+    close(false);
+  }
+
   function close(o: boolean) {
     if (!o) {
       setCharge(null);
-      setQrUrl(null);
       setTarget(null);
+      setEtapa("escolher");
     }
     onOpenChange(o);
   }
 
+  const novaTarifa = target ? FARE_TIER_LABEL[target] : "a nova tarifa";
+
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Fazer upgrade de Tarifa</DialogTitle>
           <DialogDescription>
-            Suba o nível da sua reserva pagando só a diferença.
+            {pago
+              ? `Sua reserva agora é ${novaTarifa}.`
+              : "Compare o que cada tarifa inclui e pague só a diferença."}
           </DialogDescription>
         </DialogHeader>
 
-        {charge ? (
-          <div className="space-y-3 text-center">
-            <p className="text-body-sm text-muted">
-              Pague <strong className="text-ink">{formatBRL(charge.delta)}</strong> via PIX para
-              concluir o upgrade. A Tarifa é atualizada assim que o pagamento for confirmado.
-            </p>
-            {qrUrl && (
-              <img
-                src={qrUrl}
-                alt="QR code do PIX"
-                className="mx-auto h-[220px] w-[220px]"
-                data-testid="fare-upgrade-qr"
-              />
-            )}
-            <p className="break-all rounded-sm bg-surface-soft p-2 text-caption text-muted">
-              {charge.qr_code}
-            </p>
+        {pago ? (
+          <div className="space-y-3">
+            <PixChargePanel
+              amount={0}
+              qrCode={null}
+              expiresAt={null}
+              paid
+              paidText={`Pagamento recebido. Os benefícios da ${novaTarifa} já valem nesta reserva.`}
+            />
+            <Button variant="secondary" className="w-full" onClick={() => close(false)}>
+              Fechar
+            </Button>
+          </div>
+        ) : etapa === "pix" && charge ? (
+          <div className="space-y-3">
+            <PixChargePanel
+              amount={charge.delta}
+              qrCode={charge.qr_code}
+              expiresAt={charge.expires_at}
+              forCustomer
+              paid={false}
+              paidText=""
+            />
             <Button variant="secondary" className="w-full" onClick={() => close(false)}>
               Fechar
             </Button>
           </div>
         ) : catalog.isLoading ? (
           <Skeleton className="h-40 w-full" />
-        ) : targets.length === 0 ? (
+        ) : alvos.length === 0 ? (
           <p className="text-body-sm text-muted">Você já está na Tarifa mais alta.</p>
         ) : (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              {targets.map((f) => {
-                const delta = fareReais(f.price_cents - currentFarePriceCents);
-                const isSel = target === f.tier;
-                return (
-                  <button
-                    key={f.tier}
-                    type="button"
-                    data-testid={`fare-upgrade-option-${f.tier}`}
-                    onClick={() => setTarget(f.tier)}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-md border p-3 text-left transition-colors",
-                      isSel ? "border-ink ring-1 ring-ink" : "border-hairline hover:border-ink/40",
-                    )}
-                  >
-                    <span className="flex items-center gap-2 text-body-sm text-ink">
-                      {isSel && <Check className="h-4 w-4 text-badge-confirmed-fg" />}
-                      {f.label}
-                    </span>
-                    <span className="text-body-sm font-semibold text-ink tabular-nums">
-                      + {formatBRL(delta)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="space-y-4">
+            <FareUpgradeTable
+              catalog={fares}
+              currentTier={currentTier}
+              currentPriceCents={currentFarePriceCents}
+              selected={target}
+              onSelect={setTarget}
+            />
             <p className="text-caption text-muted">
               Você está na Tarifa {FARE_TIER_LABEL[currentTier]}. Sem reembolso se mudar de ideia.
             </p>
-            <Button
-              className="w-full"
-              onClick={handleUpgrade}
-              disabled={!target || upgrade.isPending}
-              data-testid="fare-upgrade-submit"
-            >
-              {upgrade.isPending ? "Gerando PIX…" : "Pagar diferença com PIX"}
-            </Button>
+
+            {escolhida && (
+              <Tabs defaultValue="pix">
+                <TabsList className="w-full">
+                  <TabsTrigger value="pix" className="flex-1">
+                    PIX
+                  </TabsTrigger>
+                  {cardAllowed && (
+                    <TabsTrigger value="card" className="flex-1">
+                      Cartão
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+                <TabsContent value="pix">
+                  <Button
+                    className="mt-2 w-full"
+                    onClick={() => void gerarPix()}
+                    disabled={upgrade.isPending}
+                    data-testid="fare-upgrade-submit"
+                  >
+                    {upgrade.isPending ? "Gerando o PIX…" : `Pagar ${formatBRL(fareReais(deltaCents))} no PIX`}
+                  </Button>
+                </TabsContent>
+                {cardAllowed && escolhida.tier !== "basica" && (
+                  <TabsContent value="card">
+                    <div className="mt-2">
+                      <ExtraChargeCardForm
+                        key={escolhida.tier}
+                        bookingCode={bookingCode}
+                        amountCents={deltaCents}
+                        charge={{ kind: "fare_upgrade", targetTier: escolhida.tier }}
+                        onPaid={pagoNoCartao}
+                        onUsePix={() => void gerarPix()}
+                      />
+                    </div>
+                  </TabsContent>
+                )}
+              </Tabs>
+            )}
           </div>
         )}
       </DialogContent>

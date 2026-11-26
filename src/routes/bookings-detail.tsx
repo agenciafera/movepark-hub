@@ -38,11 +38,18 @@ import { useMyReview } from "@/features/reviews/api";
 import { ReviewForm } from "@/features/reviews/ReviewForm";
 import { RatingStars } from "@/features/reviews/RatingStars";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
-import { FARE_BENEFIT_LABELS, FARE_TIER_LABEL, fareReais } from "@/lib/fares";
+import {
+  benefitLabelWithWindow,
+  bookingCancelWindowMinutes,
+  FARE_BENEFIT_LABELS,
+  FARE_TIER_LABEL,
+  fareReais,
+} from "@/lib/fares";
 import {
   detailHeadline,
   entrySteps,
   freeCancelNote,
+  refundLine,
   statusPillDetail,
 } from "@/features/bookings/bookingDetail.logic";
 import { cn } from "@/lib/utils";
@@ -50,7 +57,11 @@ import { cn } from "@/lib/utils";
 export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: string }) {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { data: booking, isLoading, error } = useBookingDetail(code);
+  // Enquanto um PIX do upgrade ou da diferença de datas espera, a tela relê a reserva: é assim que o
+  // diálogo sabe que o pagamento entrou, sem o cliente fechar e recarregar (reunião de 26/11/2026).
+  const [pixUpgrade, setPixUpgrade] = React.useState(false);
+  const [pixDatas, setPixDatas] = React.useState(false);
+  const { data: booking, isLoading, error } = useBookingDetail(code, { poll: pixUpgrade || pixDatas });
   const [searchParams] = useSearchParams();
   const { session } = useAuth();
   const [cancelOpen, setCancelOpen] = React.useState(false);
@@ -166,7 +177,12 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
     toleranceMinutes: booking.location_detail.tolerance_minutes,
   });
   const cancelNote = freeCancelNote(booking.fare_cancel_until);
-  const beneficios = FARE_BENEFIT_LABELS.filter((b) => booking.fare_benefits?.[b.key] === true);
+  const janelaCancelamento = bookingCancelWindowMinutes(booking.check_in_at, booking.fare_cancel_until);
+  const beneficios = FARE_BENEFIT_LABELS.filter((b) => booking.fare_benefits?.[b.key] === true).map((b) => ({
+    key: b.key,
+    label: benefitLabelWithWindow(b.key, janelaCancelamento),
+  }));
+  const devolucao = refundLine(booking.refund);
   // Proteção de voo (Superflex): uma vez, até 120 min depois da saída prevista.
   const canExtendFlight = canCustomerExtendFlight(
     booking.fare_benefits,
@@ -302,6 +318,11 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
               </div>
               {booking.payment && !booking.payment.paid_at && (
                 <p className="mt-4 text-caption-sm text-muted">Pagamento aguardando confirmação.</p>
+              )}
+              {devolucao && (
+                <p className="mt-4 text-caption-sm text-muted" data-testid="booking-refund-line">
+                  {devolucao}
+                </p>
               )}
             </section>
 
@@ -533,8 +554,10 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
         bookingCode={booking.code}
         currentTier={booking.fare_tier}
         currentFarePriceCents={booking.fare_price_cents}
+        cardAllowed={booking.status === "confirmed"}
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
+        onWaitingChange={setPixUpgrade}
       />
 
       <FlightProtectionDialog
@@ -564,6 +587,7 @@ export default function BookingDetailPage({ backTo = "/bookings" }: { backTo?: s
           installmentsInterestFree={booking.commission_installments_interest_free}
           open={datesOpen}
           onOpenChange={setDatesOpen}
+          onWaitingChange={setPixDatas}
         />
       ) : (
         <ChangeDatesDialog

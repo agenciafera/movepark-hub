@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  refundLine,
+  refundSummary,
   detailHeadline,
   entrySteps,
   freeCancelNote,
@@ -125,5 +127,25 @@ describe("freeCancelNote", () => {
 
   it("sem prazo, não inventa", () => {
     expect(freeCancelNote(null, AGORA)).toBeNull();
+  });
+});
+
+describe("refundSummary / refundLine (26/11/2026: o cliente vê que o dinheiro voltou)", () => {
+  it("soma as devoluções da reserva e usa a data mais recente", () => {
+    const r = refundSummary([
+      { refunded_amount: 18.9, refunded_at: "2026-11-26T18:31:00Z" },
+      { refunded_amount: null, refunded_at: null },
+      { refunded_amount: "5.10", refunded_at: "2026-11-27T10:00:00Z" },
+    ]);
+    expect(r).toEqual({ amount: 24, at: "2026-11-27T10:00:00Z" });
+  });
+  it("nada devolvido: null, e a tela não mostra linha nenhuma", () => {
+    expect(refundSummary([{ refunded_amount: 0 }, {}])).toBeNull();
+    expect(refundLine(null)).toBeNull();
+  });
+  it("a frase é curta e diz quanto e quando", () => {
+    expect(refundLine({ amount: 18.9, at: "2026-11-26T18:31:00Z" })).toMatch(
+      /^Devolvemos R\$\s?18,90 em 26\/11\/2026, pelo mesmo meio de pagamento\.$/,
+    );
   });
 });

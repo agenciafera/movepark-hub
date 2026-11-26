@@ -151,7 +151,7 @@ test.describe.serial("C-21", () => {
     await page.getByTestId("fare-upgrade-trigger").click();
     await page.getByTestId("fare-upgrade-option-superflex").click();
     await page.getByTestId("fare-upgrade-submit").click();
-    await expect(page.getByTestId("fare-upgrade-qr")).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByTestId("pix-qr")).toBeVisible({ timeout: 45_000 });
 
     await expect
       .poll(async () => (await getBookingFareByCode(code))?.fare_tier ?? null, {

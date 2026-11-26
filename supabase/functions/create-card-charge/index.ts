@@ -15,7 +15,11 @@
 // POST /functions/v1/create-card-charge
 // Authorization: Bearer <JWT>
 // { booking_code, card_token? | payment_method_id?, installments, save_card?, holder_name?, brand?, last4?, exp_month?, exp_year?, billing_address? (obrigatório com card_token),
-//   date_change?: { check_in_at, check_out_at, expected_delta_cents } }
+//   date_change?: { check_in_at, check_out_at, expected_delta_cents },
+//   fare_upgrade?: { target_tier: "flex" | "superflex", expected_delta_cents } }
+//
+// Upgrade de tarifa no cartão (26/11/2026): com `fare_upgrade`, cobra à vista (installments = 1) só a
+// diferença entre as tarifas, 100% Movepark, de reserva já paga. Fluxo próprio em ./fare-upgrade.ts.
 //
 // Resposta (201): { payment_id, status, installments, charged_amount, interest_amount, saved_card }
 
@@ -71,6 +75,7 @@ import {
   type DateChangeQuote,
   notifyDatesChanged,
 } from "../_shared/payments/date-change.ts";
+import { chargeFareUpgradeByCard, type FareUpgradeBooking } from "./fare-upgrade.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -140,7 +145,7 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   const { data: booking } = await admin
     .from("booking")
     .select(
-      "id, code, status, total_amount, fare_price_cents, expires_at, profile_id, location_id, check_in_at, fare_benefits, " +
+      "id, code, status, total_amount, fare_tier, fare_price_cents, expires_at, profile_id, location_id, check_in_at, fare_benefits, " +
         "price_breakdown, " +
         "commission_rule_id, commission_channel, commission_take_rate_bps, commission_fee_payer, commission_chargeback_bearer, " +
         "commission_installments_max, commission_installments_interest_free, commission_anticipation_payer, " +
@@ -168,6 +173,18 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     });
     return jsonResponse(extra?.code ? { error, code: extra.code } : { error }, status);
   };
+  if (input.fareUpgrade) {
+    return await chargeFareUpgradeByCard({
+      admin,
+      req,
+      userId: userData.user.id,
+      booking: booking as unknown as FareUpgradeBooking,
+      input: { ...input, fareUpgrade: input.fareUpgrade },
+      lock,
+      recusar,
+      jsonResponse,
+    });
+  }
   const dc = input.dateChange;
   if (dc) {
     // Diferença de troca de datas: reserva paga, antes da entrada, tarifa que permite alterar.

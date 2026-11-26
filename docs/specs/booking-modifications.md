@@ -217,6 +217,11 @@ pacote e deixava o estacionamento sem receber pelos dias a mais.
   cobrança da reserva voltava.
 - **Aviso ao cliente** (`notifyDatesChanged`): novas datas e o que aconteceu com o dinheiro (pagou,
   devolvido no PIX ou no cartão, ou devolução pela equipe). O caminho do estorno não mandava aviso.
+- **Na tela do cliente (26/11/2026):** o PIX da diferença se atualiza sozinho (a página relê a
+  reserva a cada 3 s enquanto ele espera e o diálogo mostra "Pagamento recebido" quando as datas
+  mudam), e o card Pagamento confirma a devolução em uma linha ("Devolvemos R$ 18,90 em 26/11/2026,
+  pelo mesmo meio de pagamento"), somando `payment.refunded_amount` da reserva. O detalhe de quem
+  alterou e quanto fica na linha do tempo do operador.
 
 ### 8.3 Onde a regra aparece para o cliente
 
@@ -231,8 +236,9 @@ Mia para operadores (`quote_date_change`).
   estacionamento segue a proporção do total; o extrato registra a parte certa das diárias.
 - Os relatórios de canal e os resumos diários (`commission_channel_report`, `team_digest_*`,
   `partner_daily_digest`) ainda contam só a cobrança da reserva.
-- O formulário de cartão da troca (`DateChangeCardForm`) repete os campos do checkout em vez de
-  compartilhar um componente com o `Step4Payment`.
+- ~~O formulário de cartão da troca repete os campos do checkout.~~ Resolvido em 26/11/2026: o
+  checkout, a troca de datas e o upgrade usam o mesmo `useCardEntry` + `CardEntryFields`
+  (`ExtraChargeCardForm` na conta do cliente), com cartão salvo e "Salvar este cartão".
 
 ### 8.5 Histórico
 

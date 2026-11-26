@@ -20,20 +20,27 @@ export function pixToVoid(rows: OpenPix[]): OpenPix[] {
   return rows.filter((r) => Boolean(r.provider_charge_id));
 }
 
-/** Anula os PIX pendentes da reserva. Best-effort: nunca lança e devolve quantos anulou. */
+/**
+ * Anula os PIX pendentes da reserva. Best-effort: nunca lança e devolve quantos anulou.
+ * `kind` restringe a um tipo de cobrança: o upgrade pago no cartão anula só o PIX do upgrade, e não o
+ * da diferença de datas, que segura uma vaga (26/11/2026).
+ */
 export async function voidOpenPixCharges(
   // deno-lint-ignore no-explicit-any
   admin: any,
   gateway: Pick<PaymentGateway, "refundCharge">,
   bookingId: string,
+  opts: { kind?: string; note?: string } = {},
 ): Promise<number> {
   try {
-    const { data, error } = await admin
+    let q = admin
       .from("payment")
       .select("id, provider_charge_id")
       .eq("booking_id", bookingId)
       .eq("method", "pix")
       .eq("status", "pending");
+    if (opts.kind) q = q.eq("kind", opts.kind);
+    const { data, error } = await q;
     if (error) {
       console.error("[open-pix] não consegui listar os PIX abertos:", bookingId, error.message);
       return 0;
@@ -50,7 +57,7 @@ export async function voidOpenPixCharges(
         request: { charge_id: pix.provider_charge_id },
         response: res.raw,
         note: ok
-          ? "PIX aberto anulado: a reserva foi paga no cartão"
+          ? (opts.note ?? "PIX aberto anulado: a reserva foi paga no cartão")
           : `não consegui anular o PIX aberto (status ${res.status})`,
       });
       if (!ok) continue;

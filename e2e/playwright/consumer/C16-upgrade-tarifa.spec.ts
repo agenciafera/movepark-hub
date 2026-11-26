@@ -55,12 +55,12 @@ test.describe.serial("C-16", () => {
     await page.goto(`/bookings/${code}`);
     await page.getByTestId("fare-upgrade-trigger").click();
 
-    // O dialog já pré-seleciona o nível mais alto; o clique deixa a escolha
+    // O dialog pré-seleciona a tarifa mais popular do catálogo; o clique deixa a escolha
     // explícita no rastro do teste em vez de depender desse default.
     await page.getByTestId("fare-upgrade-option-superflex").click();
     await page.getByTestId("fare-upgrade-submit").click();
 
-    await expect(page.getByTestId("fare-upgrade-qr")).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByTestId("pix-qr")).toBeVisible({ timeout: 45_000 });
 
     // Quem aplica o upgrade é o webhook, depois da liquidação do PIX do delta.
     await expect

@@ -123,3 +123,30 @@ export function cancelWindowLabel(cancelWindowMinutes: number | null | undefined
   }
   return `até ${cancelWindowMinutes} min antes`;
 }
+
+/**
+ * Minutos entre o prazo de cancelamento grátis da reserva e a entrada (`check_in_at − fare_cancel_until`).
+ * Null quando a reserva não tem prazo ou as datas não fecham.
+ */
+export function bookingCancelWindowMinutes(
+  checkInAt: string,
+  fareCancelUntil: string | null | undefined,
+): number | null {
+  if (!fareCancelUntil) return null;
+  const diff = new Date(checkInAt).getTime() - new Date(fareCancelUntil).getTime();
+  if (!Number.isFinite(diff) || diff < 0) return null;
+  return Math.round(diff / 60_000);
+}
+
+/**
+ * Rótulo do benefício com o que ele vale de fato (26/11/2026). "Cancelamento grátis" solto, na Básica,
+ * lia como "cancelo quando quiser": o rótulo leva o prazo ("até 24h antes da entrada"). Sem prazo
+ * conhecido, cai no rótulo curto.
+ */
+export function benefitLabelWithWindow(key: FareBenefitKey, cancelWindowMinutes: number | null | undefined): string {
+  const base = fareBenefitLabel(key);
+  if (key !== "free_cancellation") return base;
+  const janela = cancelWindowLabel(cancelWindowMinutes);
+  if (!janela) return base;
+  return janela.endsWith("antes") ? `${base} ${janela} da entrada` : `${base} ${janela}`;
+}

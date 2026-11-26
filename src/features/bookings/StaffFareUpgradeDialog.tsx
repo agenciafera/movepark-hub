@@ -1,6 +1,5 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { Check } from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { formatBRL } from "@/lib/format";
 import { FARE_TIER_LABEL, type FareTier } from "@/lib/fares";
 import { useCreateFareUpgrade, useFareCatalog, type FareUpgradeResponse } from "@/features/fares/api";
+import { FareUpgradeTable } from "@/features/fares/FareUpgradeTable";
 import { PixChargePanel } from "./PixChargePanel";
 import { pixMessage, tierLanded, upgradeTargets } from "./staffChange.logic";
 
@@ -65,7 +63,7 @@ export function StaffFareUpgradeDialog({ bookingCode, currentTier, open, onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Fazer upgrade de plano</DialogTitle>
           <DialogDescription>
@@ -93,34 +91,14 @@ export function StaffFareUpgradeDialog({ bookingCode, currentTier, open, onOpenC
           <p className="text-body-sm text-muted">A reserva já está no plano mais completo.</p>
         ) : (
           <div className="space-y-3">
-            <div className="space-y-2">
-              {alvos.map((tier) => {
-                const preco = precos.get(tier);
-                const sel = target === tier;
-                return (
-                  <button
-                    key={tier}
-                    type="button"
-                    data-testid={`staff-upgrade-${tier}`}
-                    onClick={() => setTarget(tier)}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-md border p-3 text-left transition-colors",
-                      sel ? "border-ink ring-1 ring-ink" : "border-hairline hover:border-ink/40",
-                    )}
-                  >
-                    <span className="flex items-center gap-2 text-body-sm text-ink">
-                      {sel && <Check className="h-4 w-4 text-badge-confirmed-fg" />}
-                      {FARE_TIER_LABEL[tier]}
-                    </span>
-                    {preco != null && (
-                      <span className="text-body-sm font-semibold tabular-nums text-ink">
-                        + {formatBRL(Math.max(0, preco - atual) / 100)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <FareUpgradeTable
+              catalog={catalog.data ?? []}
+              currentTier={(currentTier ?? "basica") as FareTier}
+              currentPriceCents={atual}
+              selected={target}
+              onSelect={setTarget}
+              testIdPrefix="staff-upgrade"
+            />
             <p className="text-caption text-muted">
               Plano atual: {FARE_TIER_LABEL[(currentTier ?? "basica") as FareTier]}. Upgrade pago não tem
               devolução.
