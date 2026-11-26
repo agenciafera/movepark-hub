@@ -14,6 +14,7 @@ import {
   paymentMethodLabel,
 } from "./bookingList.logic";
 import { bookingParkingAmount, type PriceBreakdownLike } from "./bookingMoney.logic";
+import { formatBRL } from "@/lib/format";
 import { wlPaymentMethodLabel } from "@/features/wl-bookings/wlBooking.logic";
 import type { BookingStatus, UnifiedBookingRow, WlBookingRow, WlListRow } from "@/types/domain";
 
@@ -34,12 +35,65 @@ export type UnifiedRowView = {
   value: number | null;
   /** O que o cliente pagou (total da reserva, com taxas e desconto), para o operador conferir na lista. */
   paid: number | null;
+  /**
+   * Quantas diárias e quanto cada uma (26/11/2026), embaixo do valor das diárias. Só com o snapshot
+   * de preço da reserva do Hub e no modo "parking"; o balcão não recebe o snapshot.
+   */
+  daily: DailyRate | null;
+  /** O que leva das diárias ao valor pago: plano e desconto. Nulo quando os dois são iguais. */
+  paidNote: string | null;
   status: BookingStatus;
   flightProtection: boolean;
   plate: string | null;
   phone: string | null;
   email: string | null;
 };
+
+export type DailyRate = {
+  days: number;
+  /** Valor de uma diária, arredondado ao centavo. */
+  perDay: number;
+  /** As diárias fecham o valor na multiplicação. Falso no pacote (15 a 30 dias pelo mesmo preço). */
+  exact: boolean;
+};
+
+const toCents = (v: unknown) => Math.round((Number(v) || 0) * 100);
+
+/** Diária da reserva pelo snapshot: só a linha da vaga, dividida pelas diárias cobradas. */
+export function dailyRate(pb: PriceBreakdownLike | null | undefined): DailyRate | null {
+  const days = Number(pb?.days);
+  const vaga = (pb?.line_items ?? []).filter((li) => li.kind === "parking");
+  if (!Number.isInteger(days) || days < 1 || vaga.length === 0) return null;
+  const cents = vaga.reduce((a, li) => a + toCents(li.subtotal), 0);
+  const perDayCents = Math.round(cents / days);
+  return { days, perDay: perDayCents / 100, exact: perDayCents * days === cents };
+}
+
+/** "8 × R$ 18,90"; no pacote, que não fecha na conta, "29 diárias, média de R$ 12,07". */
+export function dailyRateLabel(d: DailyRate): string {
+  return d.exact
+    ? `${d.days} × ${formatBRL(d.perDay)}`
+    : `${d.days} diárias, média de ${formatBRL(d.perDay)}`;
+}
+
+/**
+ * Por que o valor pago difere das diárias: o plano (Flex, Superflex) soma e o cupom tira. Serviço
+ * extra já está dentro das diárias (`bookingParkingAmount`), então não entra aqui.
+ */
+export function paidNote(pb: PriceBreakdownLike | null | undefined, total: number): string | null {
+  const itens = pb?.line_items ?? [];
+  if (itens.length === 0) return null;
+  const partes: string[] = [];
+  for (const li of itens) {
+    if (li.kind !== "fare" || toCents(li.subtotal) <= 0) continue;
+    partes.push(`+ plano ${li.name ?? "da reserva"} ${formatBRL(toCents(li.subtotal) / 100)}`);
+  }
+  const desconto = itens.reduce((a, li) => a + toCents(li.subtotal), 0) - toCents(total);
+  if (desconto > 0) {
+    partes.push(`- ${pb?.coupon?.code ? "cupom" : "desconto"} ${formatBRL(desconto / 100)}`);
+  }
+  return partes.length ? partes.join(" · ") : null;
+}
 
 /** Canal da reserva do site: o legado grava `reserva-online` para a compra feita no próprio site. */
 export function wlOriginLabel(origin: string | null | undefined): string | null {
@@ -74,6 +128,8 @@ export function unifiedRowView(
       // O site guarda em centavos; o valor é o que o cliente pagou lá (D3).
       value: centavos(w.paid_total_cents ?? w.total_cents),
       paid: centavos(w.paid_total_cents ?? w.total_cents),
+      daily: null,
+      paidNote: null,
       status: w.status,
       flightProtection: false,
       plate: w.license_plate,
@@ -83,6 +139,9 @@ export function unifiedRowView(
   }
 
   const b = row.booking;
+  const pb = b.price_breakdown as PriceBreakdownLike | null;
+  // Diária e nota só onde a tela separa diárias de valor pago, e com o snapshot (o balcão não tem).
+  const detalhar = opts.valueMode === "parking" && b.total_amount !== null && b.total_amount !== undefined;
   const veioDoSite = CHANNEL_ORIGINS.white_label.includes(b.origin ?? "");
   return {
     key: `hub:${b.id}`,
@@ -104,10 +163,7 @@ export function unifiedRowView(
     payment: { method: paymentMethodLabel(b.payments), badge: paymentBadge(b.payments, b.status) },
     value:
       opts.valueMode === "parking"
-        ? bookingParkingAmount(
-            b.price_breakdown as PriceBreakdownLike | null,
-            Number(b.total_amount),
-          )
+        ? bookingParkingAmount(pb, Number(b.total_amount))
         : Number(b.total_amount),
     status: b.status,
     // O balcão não lê `total_amount` (vem nulo); a lista dele traz só o total pago em `paid_amount`.
@@ -115,6 +171,8 @@ export function unifiedRowView(
       b.total_amount !== null && b.total_amount !== undefined
         ? Number(b.total_amount)
         : ((b as { paid_amount?: number | null }).paid_amount ?? null),
+    daily: detalhar ? dailyRate(pb) : null,
+    paidNote: detalhar ? paidNote(pb, Number(b.total_amount)) : null,
     flightProtection: !!b.fare_extensions?.[0] && !b.fare_extensions[0].actual_check_out_at,
     plate: b.vehicle?.license_plate ?? null,
     phone: b.customer_phone ?? null,

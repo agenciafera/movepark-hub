@@ -4,7 +4,8 @@
  *
  * As linhas saem da mesma consulta da tela (`bookings_list_page`, paginada), então o arquivo tem
  * exatamente o recorte dos filtros. A coluna Origem só existe para quem tem white-label (§ 2), e
- * Empresa só no Manager. Valor segue a tela: diárias no Operator, total no Manager.
+ * Empresa só no Manager. Valor segue a tela: no modo diárias (Operator e, desde 26/11/2026,
+ * Manager) saem as diárias, quantas, a diária e o valor pago; no modo total, só o total.
  */
 import { BOOKING_STATUS_LABELS } from "@/components/shared/StatusBadge";
 import { formatDateTime } from "@/lib/format";
@@ -33,7 +34,9 @@ export function exportHeaders(o: ExportOptions): string[] {
     "Check-in",
     "Check-out",
     "Pagamento",
-    o.valueMode === "parking" ? "Diárias (R$)" : "Valor (R$)",
+    ...(o.valueMode === "parking"
+      ? ["Diárias (R$)", "Qtd. diárias", "Valor da diária (R$)", "Valor pago (R$)"]
+      : ["Valor (R$)"]),
   ];
 }
 
@@ -64,6 +67,13 @@ export function exportRow(row: UnifiedBookingRow, o: ExportOptions): Record<stri
   out["Check-in"] = data(v.checkIn);
   out["Check-out"] = data(v.checkOut);
   out["Pagamento"] = [v.payment.method, v.payment.badge?.label].filter(Boolean).join(" · ");
-  out[o.valueMode === "parking" ? "Diárias (R$)" : "Valor (R$)"] = csvMoney(v.value);
+  if (o.valueMode === "parking") {
+    out["Diárias (R$)"] = csvMoney(v.value);
+    out["Qtd. diárias"] = v.daily ? String(v.daily.days) : "";
+    out["Valor da diária (R$)"] = v.daily ? csvMoney(v.daily.perDay) : "";
+    out["Valor pago (R$)"] = csvMoney(v.paid);
+  } else {
+    out["Valor (R$)"] = csvMoney(v.value);
+  }
   return out;
 }

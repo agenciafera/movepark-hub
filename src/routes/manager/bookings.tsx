@@ -178,15 +178,14 @@ export default function ManagerBookings() {
             <ManagerFilterBar showCompare={false} />
             <ExportBookingsButton
               filters={filters}
-              options={{ showSource: true, showCompany: true, valueMode: "total" }}
+              options={{ showSource: true, showCompany: true, valueMode: "parking" }}
               filePrefix="reservas-rede"
             />
             <BookingColumnsPicker
               settings={colunas.settings}
               save={colunas.save}
               canSave={colunas.canSave}
-              hide={["paid"]}
-              labelFor={(id) => columnHeader(id, { showCompany: true, valueMode: "total" })}
+              labelFor={(id) => columnHeader(id, { showCompany: true, valueMode: "parking" })}
             />
           </div>
         }
@@ -300,10 +299,12 @@ export default function ManagerBookings() {
       {/* Cliente chegou e não tinha vaga (garantia). Some sem acionamento aberto. */}
       <GuaranteeClaimsCard />
 
+      {/* Diárias (com a diária) e Valor pago lado a lado, como no Operator (26/11/2026). */}
       <BookingTable
         rows={data?.rows}
         isLoading={isLoading}
         showSource
+        valueMode="parking"
         columns={colunas.visible}
         emptyDescription={
           temFiltro

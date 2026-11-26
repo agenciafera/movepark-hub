@@ -28,6 +28,32 @@ const hub = (code: string, status: string) =>
   }) as unknown as UnifiedBookingRow;
 
 describe("BookingTable", () => {
+  // 26/11/2026: "Diárias" e "Valor pago" pareciam o mesmo número com valores diferentes. A linha
+  // agora diz quantas diárias e quanto cada uma, e o que leva das diárias ao valor pago.
+  it("Diárias com a diária embaixo e Valor pago com o plano que explica a diferença", () => {
+    const r = hub("MP-B59849", "confirmed");
+    if (r.source !== "hub") throw new Error("fixture");
+    Object.assign(r.booking, {
+      total_amount: 164.1,
+      price_breakdown: {
+        days: 8,
+        line_items: [
+          { kind: "parking", subtotal: 151.2 },
+          { kind: "fare", name: "Flex", tier: "flex", subtotal: 12.9 },
+        ],
+      },
+    });
+    renderWithProviders(
+      <BookingTable rows={[r]} isLoading={false} valueMode="parking" columns={["code", "value", "paid"]} />,
+    );
+    const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(headers).toEqual(["Reserva", "Diárias", "Valor pago"]);
+    const [, diarias, pago] = within(screen.getAllByRole("row")[1]!).getAllByRole("cell");
+    const norm = (el: HTMLElement | undefined) => (el?.textContent ?? "").replace(/\u00a0/g, " ");
+    expect(norm(diarias)).toBe("R$ 151,208 × R$ 18,90");
+    expect(norm(pago)).toBe("R$ 164,10+ plano Flex R$ 12,90");
+  });
+
   it("desenha as colunas na ordem pedida, inclusive as opcionais", () => {
     renderWithProviders(
       <BookingTable

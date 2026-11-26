@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { FilePdf } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import * as React from "react";
-import { unifiedRowView, type UnifiedRowView } from "./unifiedBookingRow.logic";
+import { dailyRateLabel, unifiedRowView, type UnifiedRowView } from "./unifiedBookingRow.logic";
 import {
   columnHeader,
   defaultColumnSettings,
@@ -45,7 +45,10 @@ type Props = {
   showSource?: boolean;
   /** Texto do estado vazio quando há filtro ligado (a tela sabe; a tabela não). */
   emptyDescription?: string;
-  /** "parking": a coluna Valor mostra as diárias (visão do estacionamento, 08/10/2026). */
+  /**
+   * "parking": a coluna Valor mostra as diárias, com a diária embaixo, e "Valor pago" vem ao lado
+   * (Operator desde 08/10/2026, Manager desde 26/11/2026). "total": só o total (dashboard).
+   */
   valueMode?: "total" | "parking";
   /**
    * Seleção para ação em massa (fase 6). A chave é `hub:<id>` ou `wl:<id>`, a mesma de
@@ -162,15 +165,20 @@ function BookingCell({
         </TableCell>
       );
     case "value":
+      // Quantas diárias e quanto cada uma (26/11/2026): o total sozinho não dizia a diária.
       return (
-        <TableCell className="whitespace-nowrap text-right tabular-nums text-ink">
-          {v.value === null ? "-" : formatBRL(v.value)}
+        <TableCell className="whitespace-nowrap text-right tabular-nums">
+          <div className="text-ink">{v.value === null ? "-" : formatBRL(v.value)}</div>
+          {v.daily && <div className="text-caption text-muted">{dailyRateLabel(v.daily)}</div>}
         </TableCell>
       );
     case "paid":
+      // O que leva das diárias ao valor pago (plano, cupom), para as duas colunas não parecerem
+      // o mesmo número com valores diferentes.
       return (
-        <TableCell className="whitespace-nowrap text-right font-medium tabular-nums text-ink">
-          {v.paid === null ? "-" : formatBRL(v.paid)}
+        <TableCell className="whitespace-nowrap text-right tabular-nums">
+          <div className="font-medium text-ink">{v.paid === null ? "-" : formatBRL(v.paid)}</div>
+          {v.paidNote && <div className="text-caption text-muted">{v.paidNote}</div>}
         </TableCell>
       );
     case "status":
@@ -267,8 +275,8 @@ export function BookingTable({
   columns,
 }: Props) {
   const selecionavel = !!onSelectedChange;
-  // "Valor pago" só existe onde a coluna de valor mostra as diárias (Operator); no Manager o
-  // "Valor" já é o total pago.
+  // "Valor pago" só existe onde a coluna de valor mostra as diárias (Operator e, desde 26/11/2026,
+  // Manager); no modo "total" (dashboard) o "Valor" já é o total pago.
   const cols = (columns ?? DEFAULT_COLUMNS).filter(
     (id) => id !== "paid" || valueMode === "parking",
   );

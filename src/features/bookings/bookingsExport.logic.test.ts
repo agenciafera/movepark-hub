@@ -20,7 +20,7 @@ const hub = {
     check_in_at: "2026-10-10T08:30:00Z", check_out_at: "2026-10-14T01:00:00Z", customer_name: "Bia",
     customer_phone: "21988887777", customer_email: "bia@ex.com", vehicle: { license_plate: "XYZ9K88" },
     payments: [], fare_extensions: [], location: { name: "Afonso Pena", company: { name: "Abba" } },
-    price_breakdown: { line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", subtotal: 24.9 }] },
+    price_breakdown: { days: 4, line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", subtotal: 24.9 }] },
   },
 } as unknown as UnifiedBookingRow;
 
@@ -45,6 +45,11 @@ describe("exportação da lista de reservas", () => {
     expect(r["Canal"]).toBe("");
     expect(r["Diárias (R$)"]).toBe("111,60");
     expect(r["Status"]).toBe("Concluída");
+    // Desde 26/11/2026 a planilha leva o que a tela mostra: quantas diárias, a diária e o valor pago.
+    expect(r["Qtd. diárias"]).toBe("4");
+    expect(r["Valor da diária (R$)"]).toBe("27,90");
+    expect(r["Valor pago (R$)"]).toBe("136,50");
+    expect(Object.keys(r)).toEqual(exportHeaders(o));
     expect(r["Placa"]).toBe("XYZ9K88");
   });
 
@@ -55,6 +60,15 @@ describe("exportação da lista de reservas", () => {
       Origem: "White-label", Reserva: "271001-0001", Canal: "Reserva online", Telefone: "11999990000",
       Placa: "ABC1D23", Empresa: "Abba", Pagamento: "PIX", "Valor (R$)": "150,50",
     });
+    expect(Object.keys(r)).toEqual(exportHeaders(o));
+  });
+
+  it("reserva do site no modo diárias: sem detalhe de diária, com o valor pago", () => {
+    const o = { showSource: true, showCompany: true, valueMode: "parking" as const };
+    const r = exportRow(site, o);
+    expect(r["Qtd. diárias"]).toBe("");
+    expect(r["Valor da diária (R$)"]).toBe("");
+    expect(r["Valor pago (R$)"]).toBe("150,50");
     expect(Object.keys(r)).toEqual(exportHeaders(o));
   });
 });
