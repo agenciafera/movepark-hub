@@ -523,3 +523,89 @@ Deno.test("superfície /operator é reconhecida pelos dois caminhos", () => {
   assertEquals(superficieDoPath("/functions/v1/mcp/operator"), "operator");
   assertEquals(superficieDoPath("/operatorX"), null);
 });
+
+// ── Superfície /marketing (assistente da Automação) ─────────────────────────
+// Mesmo desenho do /operator: token `mpm_` (o admin naquela conversa) + chave da Movepark com
+// `marketing:assist` (o agente). Escopo fixo de leitura e gravação, nunca o de disparo.
+
+const TOKEN_MKT = "mpm_token_valido_abcdefghijk";
+const TOKEN_MKT_VENCIDO = "mpm_token_vencido_abcdefghij";
+const CHAVE_AGENTE_MKT = "mp_live_agentemkt_abcdefghij";
+
+const verificarComAgenteMkt: Verificacao = (chave) =>
+  chave === CHAVE_AGENTE_MKT
+    ? Promise.resolve({ ok: true, api_key_id: "k-agente-mkt", company_id: null, scopes: ["marketing:assist"], environment: "live" })
+    : verificarComAgente(chave);
+
+const verificarAssistenteMarketing = (token: string) =>
+  Promise.resolve(
+    token === TOKEN_MKT
+      ? { ok: true, profile_id: "u-adm", conversa_id: "conv-1", email: "adm@fera.ag", user_name: "Adm" }
+      : { ok: false, reason: "token_invalido" },
+  );
+
+function resolverMarketing(authorization: string | null, xApiKey: string | null, path = "/marketing") {
+  return resolverPerfil({
+    path, authorization, xApiKey, verificar: verificarComAgenteMkt, verificarAssistente, verificarAssistenteMarketing,
+  });
+}
+
+Deno.test("/marketing: token do assistente + chave do agente abre o perfil marketing", async () => {
+  const r = await resolverMarketing(`Bearer ${TOKEN_MKT}`, CHAVE_AGENTE_MKT);
+  assertEquals(r.status, 200);
+  assertEquals(r.perfil, "marketing");
+  assertEquals(r.actingUserId, "u-adm");
+  assertEquals(r.conversaId, "conv-1");
+  assertEquals(r.actingLabel, "adm@fera.ag (assistente)");
+  assertEquals(r.apiKeyId, "k-agente-mkt");
+  assertEquals(r.companyId, null);
+  // Nunca o escopo de disparo.
+  assertEquals(r.escopos, ["marketing:assist", "marketing:read", "marketing:write"]);
+});
+
+Deno.test("/marketing: cada credencial sozinha recusa", async () => {
+  const casos: Array<[string | null, string | null, string]> = [
+    [`Bearer ${TOKEN_MKT}`, null, "agente_ausente"],
+    [null, CHAVE_AGENTE_MKT, "credencial_ausente"],
+    [`Bearer ${JWT_USUARIO}`, CHAVE_AGENTE_MKT, "credencial_ausente"],
+    [`Bearer ${TOKEN_MKT}`, CHAVE_PLATAFORMA, "agente_sem_marketing_assist"],
+    [`Bearer ${TOKEN_MKT}`, CHAVE_AGENTE, "agente_sem_marketing_assist"],
+    [`Bearer ${TOKEN_MKT}`, CHAVE_PARCEIRO, "agente_sem_marketing_assist"],
+    [`Bearer ${TOKEN_MKT_VENCIDO}`, CHAVE_AGENTE_MKT, "assistente_marketing_token_invalido"],
+    [`Bearer ${TOKEN_OPERADOR}`, CHAVE_AGENTE_MKT, "assistente_fora_da_superficie_marketing"],
+  ];
+  for (const [auth, x, motivo] of casos) {
+    const r = await resolverMarketing(auth, x);
+    assertEquals([r.status, r.perfil, r.motivo], [401, "public", motivo], `${auth} + ${x}`);
+    assertEquals(r.escopos, []);
+    assertEquals(r.actingUserId, null);
+  }
+});
+
+Deno.test("token do assistente de marketing fora do /marketing recusa, inclusive na raiz", async () => {
+  for (const path of ["/", "/public", "/partner", "/customer", "/manager", "/operator"]) {
+    const r = await resolverMarketing(`Bearer ${TOKEN_MKT}`, CHAVE_AGENTE_MKT, path);
+    assertEquals([r.status, r.perfil], [401, "public"], path);
+  }
+});
+
+Deno.test("/marketing sem verificador injetado recusa tudo", async () => {
+  const r = await resolverPerfil({
+    path: "/marketing",
+    authorization: `Bearer ${TOKEN_MKT}`,
+    xApiKey: CHAVE_AGENTE_MKT,
+    verificar: verificarComAgenteMkt,
+  });
+  assertEquals([r.status, r.motivo], [401, "assistente_marketing_sem_verificador"]);
+});
+
+Deno.test("o token do assistente de marketing nunca chega ao api_key_verify", async () => {
+  consultasAoBanco = [];
+  await resolverMarketing(`Bearer ${TOKEN_MKT}`, CHAVE_AGENTE_MKT);
+  assertEquals(consultasAoBanco.includes(TOKEN_MKT), false);
+});
+
+Deno.test("superficieDoPath reconhece /marketing nos dois caminhos", () => {
+  assertEquals(superficieDoPath("/marketing"), "marketing");
+  assertEquals(superficieDoPath("/functions/v1/mcp/marketing"), "marketing");
+});
