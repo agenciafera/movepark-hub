@@ -148,6 +148,11 @@ entre registros" em `mcp.md`).
 | `marketing_list_leads` | `stage_key?`, `location_ids?`, `search?` | Cartões do quadro |
 | `marketing_list_coupons` | nada | Cupons da Movepark com uso |
 | `marketing_get_dispatch_config` | nada | Chave geral, teto diário, enviados hoje, destinatário de ensaio e remetente |
+| `marketing_get_opportunities` | `location_ids?` | Oportunidades de hoje (27/11/2026): por jogada do manual, público, alcance por e-mail, ticket médio, porquê, segmento pronto e a frase do pedido. Ver [assistente-marketing-proativo.md](./assistente-marketing-proativo.md) § 4 |
+| `marketing_get_breakdown` | `dimension`, `definition?`, `location_ids?` | A base de compradores, ou um segmento, dividida por aeroporto, tarifa, canal, origem do tráfego, pagamento, faixa de ticket ou dia da semana da entrada |
+| `marketing_get_trend` | `granularity?`, `from?`, `to?`, `location_ids?` | Compras, abandonos e receita por dia ou semana, até 20 períodos |
+| `marketing_get_calendar` | `days?` | Feriados nacionais e férias com a janela de envio (de 7 a 3 dias antes), calculados em código |
+| `marketing_measure_campaign` | `campaign_id`, `window_days?` | Reservas pagas e receita de quem entrou na campanha, N dias depois contra N dias antes. Comparação, não prova |
 
 **Reserva do white-label fica de fora de toda leitura.** O contrato diz que o cliente do
 white-label é dado do parceiro ([reservas-wl-no-hub.md](./reservas-wl-no-hub.md) § 3.4). As tools

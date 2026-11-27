@@ -10,6 +10,8 @@
 import { validateCanvas } from "./canvas.ts";
 import { type Canvas, renderMergeTags } from "./engine.ts";
 import { type Actor, actorJson, runCampaign } from "./run.ts";
+import { calendario, hojeEmBrasilia } from "./calendario.ts";
+import { oportunidadesDeHoje } from "./oportunidades.ts";
 
 // deno-lint-ignore no-explicit-any
 type Db = any;
@@ -25,6 +27,8 @@ export const MARKETING_HANDLED = [
   "marketing_list_segments", "marketing_list_contacts", "marketing_get_contact",
   "marketing_list_campaigns", "marketing_get_campaign", "marketing_render_message",
   "marketing_list_leads", "marketing_list_coupons", "marketing_get_dispatch_config",
+  "marketing_get_opportunities", "marketing_get_breakdown", "marketing_get_trend",
+  "marketing_get_calendar", "marketing_measure_campaign",
   "marketing_save_segment", "marketing_delete_segment", "marketing_save_campaign",
   "marketing_set_campaign_status", "marketing_move_lead", "marketing_save_coupon",
   "marketing_set_coupon_active", "marketing_set_dispatch_config", "marketing_run_campaign",
@@ -331,6 +335,41 @@ export async function callMarketing(
 
     case "marketing_get_dispatch_config":
       return await rpc(db, "marketing_dispatch_config");
+
+    case "marketing_get_opportunities":
+      return await oportunidadesDeHoje((fn, args) => rpc(db, fn, args), ids(a.location_ids), hojeEmBrasilia());
+
+    case "marketing_get_breakdown": {
+      const definicao = a.definition ?? null;
+      if (definicao !== null) {
+        const problems = ((await rpc(db, "marketing_validate_definition", { p_def: definicao })) as string[] | null) ?? [];
+        if (problems.length > 0) return { problems };
+      }
+      return await rpc(db, "marketing_breakdown", {
+        p_dimension: txt(a.dimension),
+        p_definition: definicao,
+        p_location_ids: ids(a.location_ids),
+      });
+    }
+
+    case "marketing_get_trend":
+      return await rpc(db, "marketing_trend", {
+        p_granularity: txt(a.granularity) ?? "semana",
+        p_from: txt(a.from),
+        p_to: txt(a.to),
+        p_location_ids: ids(a.location_ids),
+      });
+
+    case "marketing_get_calendar": {
+      const hoje = hojeEmBrasilia();
+      return { hoje, datas: calendario(hoje, num(a.days) ?? 90) };
+    }
+
+    case "marketing_measure_campaign":
+      return await rpc(db, "marketing_campaign_result", {
+        p_campaign_id: String(a.campaign_id),
+        p_window_days: num(a.window_days) ?? 30,
+      });
 
     // ── Gravação ─────────────────────────────────────────────────────────────
     case "marketing_save_segment":

@@ -150,6 +150,56 @@ export const MARKETING_TOOLS: MarketingToolDef[] = [
     description: "Configuração do disparo: chave geral, teto diário, enviados hoje, destinatário de ensaio e remetente.",
     inputSchema: obj({}),
   },
+  {
+    name: "marketing_get_opportunities",
+    scope: "marketing:read",
+    description:
+      "Oportunidades de hoje. Para cada jogada do manual (abandono recente, segunda compra, troca para a Flex antes da viagem, feriado com janela de envio abrindo, pedido de indicação), devolve quantas pessoas cabem agora, quantas dá para alcançar por e-mail, o ticket médio, o porquê, o segmento pronto e a frase do pedido. Comece por aqui quando perguntarem por onde começar ou o que fazer hoje.",
+    inputSchema: obj({ location_ids: LOCS }),
+  },
+  {
+    name: "marketing_get_breakdown",
+    scope: "marketing:read",
+    description:
+      "Divide a base de compradores, ou um segmento, por uma dimensão: aeroporto, tarifa, canal, origem_trafego, pagamento, faixa_ticket ou dia_semana_entrada. Devolve pessoas e percentual por valor.",
+    inputSchema: obj(
+      {
+        dimension: {
+          type: "string",
+          enum: ["aeroporto", "tarifa", "canal", "origem_trafego", "pagamento", "faixa_ticket", "dia_semana_entrada"],
+        },
+        definition: DEFINICAO,
+        location_ids: LOCS,
+      },
+      ["dimension"],
+    ),
+  },
+  {
+    name: "marketing_get_trend",
+    scope: "marketing:read",
+    description:
+      "Compras, abandonos (checkout vencido) e receita por dia ou por semana, no fuso de Brasília, até 20 períodos. Padrão: as últimas 12 semanas.",
+    inputSchema: obj({
+      granularity: { type: "string", enum: ["dia", "semana"] },
+      from: { type: "string", format: "date-time" },
+      to: { type: "string", format: "date-time" },
+      location_ids: LOCS,
+    }),
+  },
+  {
+    name: "marketing_get_calendar",
+    scope: "marketing:read",
+    description:
+      "Feriados nacionais e férias escolares dos próximos dias (padrão 90), cada um com a janela de envio (de 7 a 3 dias antes) e em quantos dias ela abre.",
+    inputSchema: obj({ days: INT }),
+  },
+  {
+    name: "marketing_measure_campaign",
+    scope: "marketing:read",
+    description:
+      "Resultado de uma campanha: quantas pessoas entraram, mensagens enviadas, e reservas pagas e receita dessas pessoas nos N dias depois da entrada contra os N dias antes (padrão 30). É comparação, não prova: não há grupo de controle.",
+    inputSchema: obj({ campaign_id: UUID, window_days: INT }, ["campaign_id"]),
+  },
   // ── Gravação ───────────────────────────────────────────────────────────────
   {
     name: "marketing_save_segment",

@@ -98,3 +98,57 @@ Deno.test("list_contacts sem critério explica o que falta", async () => {
 Deno.test("tool desconhecida é recusada", async () => {
   await assertRejects(() => callMarketing(bancoFalso(), ator, "marketing_nao_existe", {}, semAviso));
 });
+Deno.test("oportunidades medem as jogadas numa chamada só, com as unidades", async () => {
+  const db = bancoFalso({
+    marketing_segment_summaries: [{ chave: "abandono_recente", publico: 5, alcance_email: 4, ticket_medio: 190.83 }],
+  });
+  const r = await callMarketing(db, ator, "marketing_get_opportunities", { location_ids: ["l-1"] }, semAviso) as {
+    oportunidades: Array<{ chave: string }>;
+  };
+  assertEquals(r.oportunidades.map((o) => o.chave), ["abandono_recente"]);
+  assertEquals(db.chamadas.length, 1);
+  assertEquals(db.chamadas[0].args.p_location_ids, ["l-1"]);
+});
+
+Deno.test("distribuição com segmento inválido não consulta a base", async () => {
+  const db = bancoFalso({ marketing_validate_definition: ['campo desconhecido "x"'] });
+  const r = await callMarketing(db, ator, "marketing_get_breakdown", {
+    dimension: "tarifa",
+    definition: { match: "all", rules: [{ field: "x", op: "eq", value: 1 }] },
+  }, semAviso) as { problems: string[] };
+  assertEquals(r.problems.length, 1);
+  assertEquals(db.chamadas.some((c) => c.fn === "marketing_breakdown"), false);
+});
+
+Deno.test("distribuição sem segmento vai direto, com definição nula", async () => {
+  const db = bancoFalso({ marketing_breakdown: { dimensao: "aeroporto", total: 0, itens: [] } });
+  await callMarketing(db, ator, "marketing_get_breakdown", { dimension: "aeroporto" }, semAviso);
+  assertEquals(db.chamadas[0], {
+    fn: "marketing_breakdown",
+    args: { p_dimension: "aeroporto", p_definition: null, p_location_ids: null },
+  });
+});
+
+Deno.test("tendência por semana é o padrão", async () => {
+  const db = bancoFalso({ marketing_trend: { granularidade: "semana", serie: [] } });
+  await callMarketing(db, ator, "marketing_get_trend", {}, semAviso);
+  assertEquals(db.chamadas[0].args.p_granularity, "semana");
+});
+
+Deno.test("calendário não consulta o banco e traz a janela", async () => {
+  const db = bancoFalso();
+  const r = await callMarketing(db, ator, "marketing_get_calendar", { days: 366 }, semAviso) as {
+    datas: Array<{ janela_de: string }>;
+  };
+  assertEquals(db.chamadas.length, 0);
+  assertEquals(typeof r.datas[0]?.janela_de, "string");
+});
+
+Deno.test("resultado da campanha usa 30 dias por padrão", async () => {
+  const db = bancoFalso({ marketing_campaign_result: { executada: false } });
+  await callMarketing(db, ator, "marketing_measure_campaign", { campaign_id: "c-1" }, semAviso);
+  assertEquals(db.chamadas[0], {
+    fn: "marketing_campaign_result",
+    args: { p_campaign_id: "c-1", p_window_days: 30 },
+  });
+});
