@@ -1,7 +1,9 @@
 # Assistente de marketing proativo (filtros, ferramentas e painéis novos)
 
-> **Status:** desenho aprovado pelo Kallef em 27/11/2026, ainda não implementado. Entrega em três
-> fases, cada uma vai ao ar sozinha (§ 7).
+> **Status:** no ar desde 27/11/2026. Fase 1 (filtros) e fase 2 (ferramentas e painéis) no Hub;
+> fase 3 (abertura com oportunidades, botões e persona) no Hub e no beast-bots (PR
+> agenciafera/beast-bots#13, evals 24 de 24, turno real conferido). Nenhuma campanha foi executada e
+> a chave geral segue desligada.
 > **Base:** [assistente-marketing.md](./assistente-marketing.md) (página Assistente de IA, agente
 > `movepark-marketing` no beast-bots, ponte na Edge `marketing-assistant`, superfície `/marketing`
 > do MCP, proposta que só executa no clique), [marketing-mcp.md](./marketing-mcp.md) (registro
@@ -196,7 +198,19 @@ Os evals do agente cobram estes comportamentos:
 
 Em nenhuma fase uma campanha é executada, e a chave geral do envio segue desligada.
 
-## 8. Fora desta spec
+## 8. O que mudou na execução (27/11/2026)
+
+- `marketing_segment_fields()` continuou sem `security definer`: quem chama é o MCP com a chave de
+  serviço, e um definer liberado a usuário logado viraria achado novo no advisor.
+- A jogada de feriado também pega as férias, cuja data é aproximada: o título diz "por volta de".
+  Em 27/11 ela já aparece (a janela das férias de fim de ano abre em 11 dias).
+- A leitura das respostas dos evals pegou dois erros que viraram regra na persona e no eval: o
+  agente sugeria "agendar a execução" (a Automação não agenda) e dizia que o segmento não filtra por
+  unidade (filtra, por `location_ids` e pelos campos de aeroporto).
+- No turno real de 27/11, "Por onde eu começo hoje?" trouxe as oportunidades e os botões "Segunda
+  compra (13 pessoas)", "Férias de fim de ano (148 pessoas)" e "Recuperar abandono (4 pessoas)".
+
+## 9. Fora desta spec
 
 - Rotina do agente fora do chat (resumo diário, rascunhos sozinho): descartada na D1.
 - Ferramenta genérica de gráfico: descartada na D2.
