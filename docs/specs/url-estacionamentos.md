@@ -363,3 +363,32 @@ No banco: 1 post e 7 trechos da base de conhecimento (o que o chatbot cita) com 
 
 **Guard de conteúdo aponta para a FONTE, nunca para o artefato.** Se o texto vive no banco, o
 guard lê o banco ou roda no gerador; ler o arquivo gerado só prova que o gerador rodou.
+
+## Parceiro que sai da Movepark (27/11/2026)
+
+A Aerovalet deixou a Movepark e a empresa e as três unidades foram despublicadas no Manager às
+11:38. O build seguinte parou no `check-internal-links.mjs`: 27 links em 20 versões de post
+apontavam para as fichas de Guarulhos e Congonhas, que deixaram de ser geradas. Nada foi ao ar
+até o conserto, nem conteúdo editado no Manager (o rebuild automático também passa pelo guarda).
+
+### O conserto
+
+1. **Os links do blog vão para a página do aeroporto** (migration `20261209130000`, troca do
+   alvo inteiro do link, com contagem conferida antes e depois). Decisão do Kallef: o tráfego do
+   parceiro que saiu vai para a lista dos outros estacionamentos do aeroporto.
+2. **A ficha antiga responde 301 para o aeroporto** (`FICHA_DE_PARCEIRO_QUE_SAIU`, no
+   `src/worker.ts`), em vez do 404 do `fichaPublicada`. As URLs do WordPress da Aerovalet, que
+   apontavam para a ficha, passaram a apontar direto para o aeroporto, sem salto.
+
+### Regra
+
+**Despublicar parceiro tem três passos, no mesmo dia:** os links de conteúdo para a ficha
+(blog, FAQ, traduções) mudam de alvo, a ficha ganha entrada no `FICHA_DE_PARCEIRO_QUE_SAIU` e
+as entradas do `WP_ESTACIONAMENTO_REDIRECTS` que apontavam para ela passam a apontar para o
+aeroporto. Se o parceiro voltar, a entrada sai do mapa no mesmo PR que o republica, senão o 301
+rouba a própria ficha (o caso `bandeira-park`).
+
+### Continua em aberto
+
+- **O texto dos posts ainda chama a Aerovalet de parceira** ("parceiro Movepark", "preço vivo
+  no Movepark", tabela com R$ 28,90). Só o destino do link mudou.

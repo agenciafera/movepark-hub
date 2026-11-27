@@ -540,13 +540,15 @@ const WP_REDIRECTION_PLUGIN_REDIRECTS: Record<string, string> = {
  * no sitemap e respondia 301.
  */
 const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
-  // Parceiros ativos do Hub
+  // A Aerovalet deixou a Movepark em 27/11/2026: vai direto para o aeroporto, sem passar pela
+  // ficha que saiu do ar (ver `FICHA_DE_PARCEIRO_QUE_SAIU`).
   "/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos":
-    "/estacionamentos/aeroporto-guarulhos/aerovalet",
+    "/estacionamentos/aeroporto-guarulhos",
   "/estacionamentos/aeroporto-congonhas/aerovalet-congonhas-estacionamento-aeroporto-congonhas":
-    "/estacionamentos/aeroporto-congonhas/aerovalet",
+    "/estacionamentos/aeroporto-congonhas",
   "/estacionamentos/terminal-rodoviario-tiete/aerovalet-tiete-terminal-rodoviario-tiete":
-    "/estacionamentos/rodoviaria-tiete/aerovalet",
+    "/estacionamentos/rodoviaria-tiete",
+  // Parceiros ativos do Hub
   "/estacionamentos/aeroporto-guarulhos/aeropark-guarulhos": "/estacionamentos/aeroporto-guarulhos/aeropark",
   "/estacionamentos/aeroporto-afonso-pena/abba-park-estacionamento-aeroporto-afonso-pena":
     "/estacionamentos/aeroporto-curitiba/abbapark",
@@ -613,6 +615,21 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
 };
 
 /**
+ * Ficha do Hub de parceiro que deixou a Movepark: 301 para a página do aeroporto, onde estão
+ * os outros estacionamentos. A ficha tem busca de marca e link de fora, e sem a entrada aqui ela
+ * viraria 404 assim que o build seguinte deixasse de gerá-la (`fichaPublicada`).
+ *
+ * Se o parceiro voltar, a entrada SAI deste mapa no mesmo PR que o republica: com a página no
+ * ar, o 301 roubaria a própria ficha (o caso do `bandeira-park`, no mapa acima).
+ */
+const FICHA_DE_PARCEIRO_QUE_SAIU: Record<string, string> = {
+  // Aerovalet, 27/11/2026: empresa e as três unidades despublicadas no Manager.
+  "/estacionamentos/aeroporto-guarulhos/aerovalet": "/estacionamentos/aeroporto-guarulhos",
+  "/estacionamentos/aeroporto-congonhas/aerovalet": "/estacionamentos/aeroporto-congonhas",
+  "/estacionamentos/rodoviaria-tiete/aerovalet": "/estacionamentos/rodoviaria-tiete",
+};
+
+/**
  * 301 das URLs institucionais, de aeroporto e de ficha de estacionamento do WordPress. Junta
  * os três mapas acima num só lookup, pela mesma razão do `BLOG_LEGACY_PATHS`: são URLs que já
  * têm clique e/ou backlink e não podem virar 404 silencioso no dia do corte. Roda antes de
@@ -625,6 +642,7 @@ function wpLegacyTarget(path: string): string | undefined {
     WP_AEROPORTO_REDIRECTS[path] ??
     WP_ESTACIONAMENTO_REDIRECTS[path] ??
     WP_REDIRECTION_PLUGIN_REDIRECTS[path] ??
+    FICHA_DE_PARCEIRO_QUE_SAIU[path] ??
     fichaSobApelido(path)
   );
 }
