@@ -345,9 +345,8 @@ próxima rodada" e esta skill no mesmo commit. Mensagem de commit no padrão
   o nome: só a cifra (R$ 16,90, R$ 6,90 por dia no mês) e a data da tabela dela (28/10/2026).
   Varra pelo nome, pela data da tabela e pelos valores, nos três idiomas, e comece pelas FAQs de
   destino, que ficam justamente na página que recebe o 301 da ficha.
-- **Confirme que o parceiro saiu antes de reescrever.** A saída de 27/11 nasceu de unidade tirada
-  da vitrine por outro motivo (o subdomínio dela estava redirecionado), e a parceria voltou no
-  mesmo dia. Unidade com `is_listed = false` não prova saída: pergunte.
+- **Saída de parceiro pode ser desfeita no mesmo dia.** A Aerovalet saiu de manhã em 27/11 e
+  voltou à tarde. Antes de reescrever em massa, guarde o texto original e junte a rodada num push.
 - **Desfazer uma rodada não é voltar o texto antigo.** A migration guarda só o md5 do antigo, então
   guarde o original fora da pasta temporária. E o texto de antes pode ter cifra vencida de outro
   parceiro que a reescrita corrigiu de carona: na volta da Aerovalet, 104 cifras do Aeropark ainda

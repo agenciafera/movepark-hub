@@ -511,9 +511,9 @@ agosto a outubro ficam como histórico datado na dona de "como estacionar barato
 
 A parceria voltou no fim da tarde do mesmo dia, e os 143 campos (87 documentos) que a rodada acima
 reescreveu voltaram a citar a Aerovalet pela migration `20261209200000_aerovalet_volta_textos.sql`.
-A saída tinha começado de um mal-entendido: as três unidades foram tiradas da vitrine às 11:38
-porque o subdomínio `aerovalet.movepark.co` estava sendo redirecionado, e isso foi lido como saída
-do parceiro. O post mortem da queda do banco do mesmo dia está em `deploy-automatico.md`.
+A parceria tinha acabado de manhã (por isso a rodada acima) e voltou à tarde, "por hora". O post
+mortem da queda do banco do mesmo dia, causada pelos oito pushes da rodada de saída, está em
+`deploy-automatico.md`.
 
 ### De onde veio o texto
 
