@@ -146,6 +146,17 @@ propósito: a falta de dono é o que fez o placar de IA parar em agosto.
 | **Quinta** | Fontes que a IA lê | 1 fonte de terceiro com o número da Movepark: perfil de parceiro no Google, site do parceiro, diretório, matéria, resposta no Reclame Aqui, vídeo | | URL anotada na seção 5 |
 | **Sexta** (1h) | Revisar | Comparar com a semana anterior, anotar o que subiu e caiu, decidir se algo da fila muda de lugar | | Uma linha na seção 5 |
 
+**O que roda sozinho (desde 27/11/2026).** Duas tarefas agendadas no app do Claude, na máquina do
+Diego (rodam com o app aberto; se ele estiver fechado na hora, rodam quando abrir):
+
+| Tarefa | Quando | O que faz |
+|---|---|---|
+| `seo-medicao-segunda` | segunda, 9h30 | `bun run seo:posicao`, cliques de 28 dias, auditoria e saúde da publicação, o que foi publicado, preço pesquisado passando de 60 dias; escreve a linha da semana na seção 5 e propõe a fila da semana |
+| `placar-citacao-ia` | dias 13 e 28, 10h | as 12 consultas nos 6 motores, no Chrome logado; grava `dados/placar-ia/placar-<data>.csv` e tenta a planilha |
+
+As duas fazem **um push só** por execução (seção 4.2). O resto da rotina (peças, FAQs, link, fonte de
+terceiro) é trabalho de gente e precisa de dono no ClickUp.
+
 **A cada 15 dias (dias 13 e 28): placar de citação em IA.** As 12 consultas da planilha, nos cinco
 motores (ChatGPT, Gemini, Perplexity, visão geral e Modo IA do Google), logado sempre nas mesmas
 contas, com print. Somar o Claude com busca como sexto motor a partir da próxima rodada, numa coluna
@@ -165,7 +176,7 @@ Em ordem. Cada semana tira de cima o que couber.
 | 3 | **Uma URL por cabeça em Guarulhos e Confins.** GRU: decidir entre a praça (16,6) e `/mais-barato` (14,4) quem é dona de "estacionamento aeroporto guarulhos", e tirar da cabeça os posts `estacionamento-gru-airport-guia-completo-...` e `preco-estacionamento-aeroporto-guarulhos-saiba-tudo-aqui`. CNF: o post `guia-completo-dos-estacionamentos-proximos-ao-aeoroporto-de-confins` (12,9) é dono de proximidade, não da cabeça; a praça (13,8) é a dona e a ficha da BePark fica com a marca. Registrar em `canonicalizacao-vcp-cnf.md` | Onde há uma URL (CGH, CWB) a Movepark está entre 7 e 9. Onde há duas ou três, está entre 14 e 23 | conteúdo 2 dias |
 | 4 | **Title e topo da praça no molde que ganha:** "Estacionamento Aeroporto <X> (<sigla>): preços de hoje de <N> opções", e acima da dobra a menor diária com data, a nota do Google das unidades e quem opera. Testar primeiro em Congonhas (controle) e medir 4 semanas antes de levar às outras. **Viracopos foi antes, a pedido (27/11/2026, migration `20261209140000`):** o title virou "Estacionamento Viracopos: preços no aeroporto (VCP) \| Movepark" (`destination.meta_title`), a abertura da description e a primeira frase do intro começam pelo termo exato, e a dona de preço e o guia do aeroporto ganharam âncora "estacionamento Viracopos" para a praça. Antes disso a forma exata aparecia zero vezes no HTML da praça, que estava em 18,8 contra 7,8 da ficha do Virapark. O H1 ficou como estava, para não perder "estacionamento aeroporto viracopos" (9,8). A ficha do parceiro continua sem link para a praça (pedido da Pare Seguro, `cascaDaFicha.logic.ts`). Medir as duas consultas na segunda-feira por 4 semanas | A Bandeira ganha Congonhas em 2º com o termo exato e prova no topo. "Mais barato" no title só se a praça tiver o menor preço verificado (ADR-009) | dev 1 dia |
 | 5 | **Trocar as 10 vagas do Semrush:** 5 cabeças (Congonhas, Viracopos, Guarulhos, Confins, Curitiba) + 5 perguntas do placar sem impressão no GSC | O GSC dá média; o Semrush dá o retrato diário da cabeça, que é o que esta spec persegue | 30 min |
-| 6 | **Placar de IA de volta:** dono, rodada em 28/11 e 13/12, tarefa agendada nova | Sem ele a meta de IA não tem medida desde agosto | 3h por rodada |
+| 6 | ✅ **Placar de IA de volta** (27/11/2026): tarefa agendada `placar-citacao-ia`, dias 13 e 28, com o Claude como sexto motor; primeira rodada em 28/11 | Sem ele a meta de IA não tem medida desde agosto | 3h por rodada |
 | 7 | **Preço e "mais barato" nas praças sem parceiro** (Brasília, Galeão, Santos Dumont, Porto Alegre, Florianópolis, Salvador), com preço pesquisado datado do lote mapeado (ADR-010) | Xpark tem 15 + 14 dessas páginas e ranqueia 3 a 9 nessas praças; a Movepark tem 6 + 6 | conteúdo 1 dia por praça |
 | 8 | **`/conector-claude` (e ChatGPT):** página que ensina o viajante a ligar o MCP da Movepark e perguntar o preço; linkada do `llms.txt`, do rodapé e da `/metodologia` | Xpark tem e é a única fonte que a IA encontra sobre "conector de estacionamento" | dev 1 dia, copy pela `revisar-texto` |
 | 9 | **Imprensa com o índice de preços:** pauta de férias de janeiro e Carnaval com o ranking nacional (Conteúdo 71) para O Tempo, Itatiaia, g1 regional, SBT e rádios das praças | Bandeira tem 6 matérias em 2026 e AS 29 com 386 domínios. É o link que sobe autoridade e a fonte que a IA cruza | 1 pauta por quinzena |
