@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatBRL } from "@/lib/format";
 import { useRefundPayment, type GatewayTrailPayment } from "./api";
+import { refundToastMessage } from "./refundPayment.logic";
 
 type Props = {
   payment: GatewayTrailPayment | null;
@@ -46,11 +47,7 @@ export function RefundPaymentDialog({ payment, lastLivePayment, open, onOpenChan
   async function confirmar() {
     try {
       const r = await refund.mutateAsync({ paymentId: payment!.id, reason: reason.trim() });
-      toast.success(
-        r.refund_pending
-          ? "Estorno pedido. A reserva continua como estava; o PIX volta ao cliente em até 1 dia útil."
-          : "Estorno feito. A reserva continua como estava.",
-      );
+      toast.success(refundToastMessage(payment!.method, r.refund_pending));
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível estornar.");

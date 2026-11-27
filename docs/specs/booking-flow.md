@@ -573,6 +573,10 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   - **Cron:** `cron_expire_pending_bookings` dá como `failed` a linha sem ids cujo prazo venceu, e a
     reserva expira no mesmo passe. `failed` não é terminal: se a cobrança aparecer depois, o
     webhook ainda a pendura e a reserva volta (migration `20261208180000`).
+  - **Uma cobrança, um pagamento:** índice único `payment (provider, provider_charge_id)` (migration
+    `20261208150000`, 27/11/2026). A Pagar.me entrega o mesmo aviso mais de uma vez (a
+    ch_QOXZKxhm0cyjdKeR chegou quatro vezes em 15 min); se dois avisos tentarem pendurar a mesma
+    cobrança em linhas diferentes, a segunda escrita falha em vez de contar o dinheiro em dobro.
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
   `cancel_booking_with_release` (noop se já `cancelled` ou `expired`), chamada **tanto** pela Edge
   **quanto** pelo webhook: a vaga nunca é liberada em dobro (`release_booking_capacity` não é
