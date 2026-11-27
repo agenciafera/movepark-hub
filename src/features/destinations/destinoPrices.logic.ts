@@ -351,9 +351,39 @@ export type ProximityRow = {
    *  quando não dá para saber (parceiro com estadia mínima maior que 1, ou mapeado sem
    *  pesquisa) — nunca um chute. Alimenta o selo de "menor preço" da seção. */
   dailyFrom: number | null;
+  /**
+   * A menor diária das estadias longas (7, 15 e 30 dias), com a duração em que ela vale.
+   * Só existe quando fica ABAIXO da `dailyFrom`: é o "R$ 29,90 por diária na estadia de 7
+   * dias" do Virapark, que a linha escondia atrás dos R$ 40,00 da diária avulsa. Sai sempre
+   * com a duração ao lado (regra do "a partir de", Conteúdo 40) e não entra no selo de
+   * menor diária, que compara a avulsa de todo mundo.
+   */
+  menorDiaria: { daily: number; days: number } | null;
   path: string;
   kind: "partner" | "mapped";
 };
+
+/** As estadias longas que a lista de distância consulta para a menor diária. */
+const DURACOES_LONGAS = [7, 15, 30] as const;
+
+/**
+ * A menor diária entre as estadias longas, na MENOR duração em que ela aparece, e só quando
+ * fica abaixo da avulsa. Arredonda ao centavo antes de comparar, para R$ 209,30 / 7 e
+ * R$ 897,00 / 30 contarem como o mesmo R$ 29,90 e a duração citada ser a de 7 dias.
+ */
+export function menorDiariaLonga(
+  totais: { days: number; total: number | null }[],
+  avulsa: number | null,
+): { daily: number; days: number } | null {
+  let melhor: { daily: number; days: number } | null = null;
+  for (const { days, total } of [...totais].sort((a, b) => a.days - b.days)) {
+    if (total == null || !(total > 0) || days <= 1) continue;
+    const daily = Math.round((total / days) * 100) / 100;
+    if (melhor === null || daily < melhor.daily) melhor = { daily, days };
+  }
+  if (melhor === null) return null;
+  return avulsa == null || melhor.daily < Math.round(avulsa * 100) / 100 ? melhor : null;
+}
 
 /** O que a lista precisa saber de um lote mapeado para desenhar a linha. */
 export type ProximityProspect = {
@@ -376,6 +406,10 @@ export type ProximityProspect = {
   rating?: { avg: number; count: number } | null;
   /** Diária pesquisada (ADR-010, E0.17-k). Nulo na maioria: cobre só quem já foi cotado. */
   researched_daily_brl?: number | null;
+  /** Totais pesquisados de 7, 15 e 30 diárias, para a menor diária da linha. */
+  researched_weekly_brl?: number | null;
+  researched_biweekly_brl?: number | null;
+  researched_monthly_brl?: number | null;
   /** Data da pesquisa. Sem ela, ou vencida, a diária não entra na lista nem no selo. */
   researched_at?: string | null;
 };
@@ -436,12 +470,18 @@ export function proximityRanking(args: {
     meters: u.distance_m as number,
     distanceLabel: `${formatDistance(u.distance_m)}${sufixo}`,
     dailyFrom: perDay(priceFor(u, 1)),
+    menorDiaria: menorDiariaLonga(
+      DURACOES_LONGAS.map((d) => ({ days: d, total: priceFor(u, d)?.total ?? null })),
+      perDay(priceFor(u, 1)),
+    ),
     path: u.public_path ?? "",
     kind: "partner",
   }));
 
   const mapeados: ProximityRow[] = args.prospects.map((p) => {
     const meters = p.distance_km == null ? null : Math.round(p.distance_km * 1000);
+    const fresco = !!p.researched_at && isPesquisaFresca(p.researched_at, args.now);
+    const avulsa = fresco ? (p.researched_daily_brl ?? null) : null;
     return {
       key: `m:${p.slug}`,
       name: p.name,
@@ -458,10 +498,18 @@ export function proximityRanking(args: {
       // A mesma validade da tabela. Sem ela, no 90º dia a tabela escondia o preço e esta
       // lista seguia com "a partir de R$ 22,90/dia", sem data, e com o selo de menor
       // diária da região (medido em 27/11/2026). Vence o preço, a linha do lote fica.
-      dailyFrom:
-        p.researched_at && isPesquisaFresca(p.researched_at, args.now)
-          ? (p.researched_daily_brl ?? null)
-          : null,
+      dailyFrom: avulsa,
+      // A mesma validade: preço vencido não volta pela porta da estadia longa.
+      menorDiaria: fresco
+        ? menorDiariaLonga(
+            [
+              { days: 7, total: p.researched_weekly_brl ?? null },
+              { days: 15, total: p.researched_biweekly_brl ?? null },
+              { days: 30, total: p.researched_monthly_brl ?? null },
+            ],
+            avulsa,
+          )
+        : null,
       path: p.public_path ?? caminhoFicha(args.destinationSlug, p.public_slug ?? p.slug),
       kind: "mapped" as const,
     };

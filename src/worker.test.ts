@@ -950,6 +950,14 @@ describe("mapa do WordPress com entrada identidade", () => {
   });
 });
 
+describe("ficha de lote mapeado cujo endereço mudou de dono", () => {
+  it("o KM64 vai para o Ouro Park, que ocupa o mesmo endereço desde novembro de 2026", () => {
+    const r = wpLegacyRedirect(new URL("https://movepark.co/estacionamentos/aeroporto-viracopos/km64"));
+    expect(r?.status).toBe(301);
+    expect(r?.headers.get("Location")).toBe("/estacionamentos/aeroporto-viracopos/ouro-park");
+  });
+});
+
 describe("ficha de parceiro que saiu da Movepark", () => {
   /**
    * A Aerovalet deixou a Movepark em 27/11/2026 e as três unidades saíram do ar. A ficha dela

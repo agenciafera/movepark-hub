@@ -1094,12 +1094,13 @@ describe("DestinoPage · quanto custa e distância", () => {
     expect(linhas).toEqual([
       {
         texto:
-          "GarageinnParceiro Movepark · Reserva onlineMenor diária da regiãoa partir de R$ 40,00/dia328 m do terminal",
+          "GarageinnParceiro Movepark · Reserva onlineMenor diária da regiãoa partir de R$ 40,00/diaR$ 24,90/dia na estadia de 7 dias328 m do terminal",
         kind: "partner",
       },
       { texto: "Talentos ParkSem reserva online1,2 km do terminal", kind: "mapped" },
       {
-        texto: "ViraparkParceiro Movepark · Reserva onlinea partir de R$ 40,00/dia1,3 km do terminal",
+        texto:
+          "ViraparkParceiro Movepark · Reserva onlinea partir de R$ 40,00/diaR$ 24,90/dia na estadia de 7 dias1,3 km do terminal",
         kind: "partner",
       },
     ]);

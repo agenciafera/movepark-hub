@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   diariaAvulsa,
+  menorDiariaDoResumo,
   pickRelatedDestinations,
   pointsSummary,
 } from "./destino.logic";
@@ -67,5 +68,41 @@ describe("diariaAvulsa", () => {
     expect(diariaAvulsa(null)).toBeNull();
     expect(diariaAvulsa(resumo([]))).toBeNull();
     expect(diariaAvulsa(resumo([{ days: 1, from: 0 }]))).toBeNull();
+  });
+});
+
+describe("menorDiariaDoResumo", () => {
+  const resumo = (byDuration: { days: number; from: number }[]) => ({ byDuration });
+
+  it("é a menor diária das estadias longas, na duração mais curta em que ela vale", () => {
+    // Virapark em 27/11/2026: R$ 40,00 avulsa, R$ 29,90 por dia de 7 a 30 diárias. O topo
+    // mostrava só os R$ 40,00 e escondia o preço que o próprio parceiro anuncia.
+    expect(
+      menorDiariaDoResumo(
+        resumo([
+          { days: 1, from: 40 },
+          { days: 7, from: 209.3 },
+          { days: 15, from: 448.5 },
+          { days: 30, from: 897 },
+        ]),
+      ),
+    ).toEqual({ daily: 29.9, days: 7 });
+  });
+
+  it("não aparece quando a estadia longa não fica mais barata que a avulsa", () => {
+    expect(
+      menorDiariaDoResumo(
+        resumo([
+          { days: 1, from: 40 },
+          { days: 7, from: 280 },
+          { days: 30, from: 1200 },
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it("sem resumo devolve null", () => {
+    expect(menorDiariaDoResumo(null)).toBeNull();
+    expect(menorDiariaDoResumo(resumo([]))).toBeNull();
   });
 });

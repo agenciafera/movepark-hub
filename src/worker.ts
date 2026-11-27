@@ -630,6 +630,19 @@ const FICHA_DE_PARCEIRO_QUE_SAIU: Record<string, string> = {
 };
 
 /**
+ * Ficha de lote mapeado (ADR-010) que saiu do ar porque OUTRO estacionamento passou a ocupar o
+ * mesmo endereço: o 301 vai para a ficha de quem está lá hoje, que é o que a busca pelo endereço
+ * ou pela marca antiga encontra no mapa.
+ *
+ * Mesma regra do mapa acima: se a ficha antiga voltar a ser publicada, a entrada sai daqui.
+ */
+const LOTE_MAPEADO_QUE_MUDOU: Record<string, string> = {
+  // KM64, 27/11/2026: site fora do ar e ficha sumida do Google. O Ouro Park ocupa o endereço
+  // (R. Laviere Pereira da Silva, 1305). Migration 20261209150000.
+  "/estacionamentos/aeroporto-viracopos/km64": "/estacionamentos/aeroporto-viracopos/ouro-park",
+};
+
+/**
  * 301 das URLs institucionais, de aeroporto e de ficha de estacionamento do WordPress. Junta
  * os três mapas acima num só lookup, pela mesma razão do `BLOG_LEGACY_PATHS`: são URLs que já
  * têm clique e/ou backlink e não podem virar 404 silencioso no dia do corte. Roda antes de
@@ -643,6 +656,7 @@ function wpLegacyTarget(path: string): string | undefined {
     WP_ESTACIONAMENTO_REDIRECTS[path] ??
     WP_REDIRECTION_PLUGIN_REDIRECTS[path] ??
     FICHA_DE_PARCEIRO_QUE_SAIU[path] ??
+    LOTE_MAPEADO_QUE_MUDOU[path] ??
     fichaSobApelido(path)
   );
 }

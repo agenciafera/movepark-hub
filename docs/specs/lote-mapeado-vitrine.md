@@ -679,6 +679,24 @@ Quando **não há parceiro nenhum**, a página ganha a resposta curta a partir d
 que um motor de IA extrai. Com parceiro, essa resposta curta continua sendo a nossa oferta:
 duas respostas para "quanto custa" na mesma tela seriam duas verdades.
 
+**A menor diária das estadias longas aparece ao lado da avulsa (27/11/2026).** A lista de
+distância e o destaque do topo mostravam só a diária de 1 dia, e o Virapark aparecia por
+R$ 40,00 quando o próprio parceiro anuncia R$ 29,90 a partir de 7 dias. Agora cada linha da
+lista traz, quando é menor, "R$ 29,90/dia na estadia de 7 dias" (parceiro pelo motor, mapeado
+pelos `researched_*` de 7, 15 e 30, com a mesma validade de 90 dias), e o destaque do topo ganha a
+mesma frase embaixo do "a partir de". A regra do Conteúdo 40 segue de pé: o "a partir de" sem
+rótulo é a avulsa, e a menor diária só sai com a duração ao lado. O selo "Menor diária da região"
+continua comparando a avulsa. Código: `menorDiariaLonga` (`destinoPrices.logic.ts`) e
+`menorDiariaDoResumo` (`src/routes/destino.logic.ts`).
+
+**Viracopos completo (27/11/2026, migration `20261209150000`).** A página listava 9 lotes; o Google
+Maps mostrava mais dois. Entraram o JF Parking (R. Waldemar Amstalden, 250, sem tarifa pública) e o
+Ouro Park, que ocupa o endereço do KM64 (o site do KM64 não resolve e a ficha dele no Google sumiu).
+O KM64 foi despublicado e `/estacionamentos/aeroporto-viracopos/km64` responde 301 para o Ouro Park
+(`LOTE_MAPEADO_QUE_MUDOU` no `src/worker.ts`). Multipark e Aerovalet Viracopos anunciam o endereço e
+a tabela do Bandeira Park (R. Antônio Luchiari, 1100): é o mesmo pátio e fica uma linha só. Aeroparking,
+oficial e Yellow ganharam as durações que publicam (Aeroparking conferido no simulador de reserva).
+
 ### A primeira carga, e o que ficou de fora
 
 Entrou só o que foi conferido em agosto de 2026: Park Confins, Central Park e Multipark em

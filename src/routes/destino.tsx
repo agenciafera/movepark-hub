@@ -76,6 +76,7 @@ import { optimizedImageUrl } from "@/lib/storage";
 import { formatBRL } from "@/lib/format";
 import {
   diariaAvulsa,
+  menorDiariaDoResumo,
   pickRelatedDestinations,
   pointsSummary,
 } from "./destino.logic";
@@ -395,6 +396,9 @@ export default function DestinoPage() {
       reference_name: p.reference_name,
       rating: badge ? { avg: badge.avg, count: badge.count } : null,
       researched_daily_brl: p.researched_daily_brl,
+      researched_weekly_brl: p.researched_weekly_brl,
+      researched_biweekly_brl: p.researched_biweekly_brl,
+      researched_monthly_brl: p.researched_monthly_brl,
       // A data vai junto para o ranking conferir a validade, como a tabela confere.
       researched_at: p.researched_at,
     };
@@ -478,6 +482,8 @@ export default function DestinoPage() {
   // cliente: ela devolve a menor diária de qualquer duração, e era esse fallback que podia
   // trazer de volta o R$ 13,33 de Confins (Conteúdo 40).
   const fromPrice = diariaAvulsa(prices?.summary);
+  // Embaixo dele, a menor diária das estadias longas, sempre com a duração ao lado.
+  const menorDiaria = menorDiariaDoResumo(prices?.summary);
 
   // Meta description: a abertura escrita à mão no banco (a geografia que dado nenhum sabe)
   // MAIS o menor preço do motor MAIS o CTA. A estrutura mora em `destinationMetaDescription`;
@@ -573,6 +579,9 @@ export default function DestinoPage() {
           rotulo: T.aPartirDeRotulo,
           valor: formatBRL(fromPrice),
           sufixo: T.sufixoDiaria,
+          nota: menorDiaria
+            ? T.menorDiariaNota(formatBRL(menorDiaria.daily), menorDiaria.days)
+            : null,
           cta: { label: T.verVagas, href: "#parceiros" },
         }
       : prospectItems.length > 0

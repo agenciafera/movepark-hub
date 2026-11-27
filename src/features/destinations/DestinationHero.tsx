@@ -32,6 +32,8 @@ export type DestinationHeroDestaque = {
   valor: React.ReactNode;
   /** Complemento do valor, em cinza ("/ diária"). */
   sufixo?: string;
+  /** Linha embaixo do número: a menor diária da tabela, com a duração em que ela vale. */
+  nota?: string | null;
   cta: { label: string; href: string };
 };
 
@@ -117,6 +119,7 @@ export function DestinationHero({
                     <span className="text-body-sm text-muted"> {destaque.sufixo}</span>
                   )}
                 </span>
+                {destaque.nota && <span className="text-body-sm text-ink">{destaque.nota}</span>}
               </span>
               <Button asChild>
                 <a href={destaque.cta.href}>{destaque.cta.label}</a>

@@ -10,6 +10,7 @@ import {
   isPesquisaFresca,
   longStayInsight,
   marketSuperlatives,
+  menorDiariaLonga,
   pesquisadoRows,
   pesquisadoSummary,
   proximityRanking,
@@ -599,5 +600,74 @@ describe("preço pesquisado do lote mapeado", () => {
     // como `<ISO>T12:00:00Z` ele dava NaN, e NaN reprovava calado um preço em dia.
     expect(isPesquisaFresca("2026-06-05T00:00:00Z")).toBe(true);
     expect(isPesquisaFresca("2026-06-04T00:00:00Z")).toBe(false);
+  });
+});
+
+describe("menor diária das estadias longas na lista de distância", () => {
+  const agora = new Date("2026-11-27T12:00:00Z");
+
+  it("o parceiro mostra a diária da estadia longa ao lado da avulsa", () => {
+    const [linha] = proximityRanking({
+      units: [
+        unit({
+          prices: [
+            { days: 1, total: 40, old_total: 40 },
+            { days: 7, total: 209.3, old_total: 280 },
+            { days: 15, total: 448.5, old_total: 600 },
+            { days: 30, total: 897, old_total: 1200 },
+          ],
+        }),
+      ],
+      prospects: [],
+      destinationSlug: "aeroporto-viracopos",
+      now: agora,
+    });
+    expect(linha.dailyFrom).toBe(40);
+    expect(linha.menorDiaria).toEqual({ daily: 29.9, days: 7 });
+  });
+
+  it("o lote mapeado usa os totais pesquisados, e o vencido não volta por aqui", () => {
+    const bandeira = {
+      name: "Bandeira Park",
+      slug: "bandeira",
+      distance_km: 2.9,
+      researched_daily_brl: 18.49,
+      researched_weekly_brl: 93.17,
+      researched_biweekly_brl: 199.65,
+      researched_monthly_brl: 305.4,
+    };
+    const [fresco] = proximityRanking({
+      units: [],
+      prospects: [{ ...bandeira, researched_at: "2026-11-26" }],
+      destinationSlug: "aeroporto-viracopos",
+      now: agora,
+    });
+    expect(fresco.menorDiaria).toEqual({ daily: 10.18, days: 30 });
+
+    const [vencido] = proximityRanking({
+      units: [],
+      prospects: [{ ...bandeira, researched_at: "2026-08-01" }],
+      destinationSlug: "aeroporto-viracopos",
+      now: agora,
+    });
+    expect(vencido.dailyFrom).toBeNull();
+    expect(vencido.menorDiaria).toBeNull();
+  });
+
+  it("diária fixa não ganha linha extra, e o selo segue comparando a avulsa", () => {
+    expect(
+      menorDiariaLonga(
+        [
+          { days: 7, total: 280 },
+          { days: 30, total: 1200 },
+        ],
+        40,
+      ),
+    ).toBeNull();
+    // Sem avulsa (lote que só publica pacote), a estadia longa é o único preço e aparece.
+    expect(menorDiariaLonga([{ days: 15, total: 260 }], null)).toEqual({
+      daily: 17.33,
+      days: 15,
+    });
   });
 });

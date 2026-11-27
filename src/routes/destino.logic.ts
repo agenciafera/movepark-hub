@@ -22,6 +22,26 @@ export function diariaAvulsa(
 }
 
 /**
+ * A menor diária da tabela das estadias longas, com a duração em que ela vale, quando fica
+ * abaixo da avulsa. O "a partir de" do topo continua sendo a avulsa (Conteúdo 40); esta é a
+ * linha que vai embaixo dele, sempre com a duração ao lado ("R$ 29,90 por diária na estadia
+ * de 7 dias", no Virapark). Empate fica com a duração mais curta, que é a condição mais fácil.
+ */
+export function menorDiariaDoResumo(
+  summary: { byDuration: { days: number; from: number }[] } | null | undefined,
+): { daily: number; days: number } | null {
+  const avulsa = diariaAvulsa(summary);
+  let melhor: { daily: number; days: number } | null = null;
+  for (const { days, from } of [...(summary?.byDuration ?? [])].sort((a, b) => a.days - b.days)) {
+    if (days <= 1 || !(from > 0)) continue;
+    const daily = Math.round((from / days) * 100) / 100;
+    if (melhor === null || daily < melhor.daily) melhor = { daily, days };
+  }
+  if (melhor === null) return null;
+  return avulsa == null || melhor.daily < Math.round(avulsa * 100) / 100 ? melhor : null;
+}
+
+/**
  * Destinos relacionados p/ cross-link: exclui o atual, prioriza os populares e
  * depois `sort_order`, limitando a `limit`.
  */

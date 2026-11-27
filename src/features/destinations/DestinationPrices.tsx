@@ -599,6 +599,12 @@ export function DestinationProximity({
                     a partir de {formatBRL(row.dailyFrom)}/dia
                   </span>
                 )}
+                {row.menorDiaria != null && (
+                  <span className="text-body-sm text-ink">
+                    {formatBRL(row.menorDiaria.daily)}/dia na estadia de {row.menorDiaria.days}{" "}
+                    dias
+                  </span>
+                )}
               </span>
 
               <span className="col-start-2 row-start-1 text-right text-body-md tabular-nums text-ink desktop:col-start-3">

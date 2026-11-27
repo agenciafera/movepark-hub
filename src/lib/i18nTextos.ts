@@ -201,6 +201,8 @@ export type Textos = {
   /** Hero: rótulos da ficha e do destaque. */
   aPartirDeRotulo: string;
   sufixoDiaria: string;
+  /** Embaixo do "a partir de": a menor diária da tabela, sempre com a duração ao lado. */
+  menorDiariaNota: (valor: string, dias: number) => string;
   verVagas: string;
   verALista: string;
   terminal: (n: number) => string;
@@ -420,6 +422,7 @@ const PT: Textos = {
     "Onde aparece a entrada mínima, o parceiro só aceita estadias a partir daquele número de diárias.",
   aPartirDeRotulo: "A partir de",
   sufixoDiaria: "/ diária",
+  menorDiariaNota: (valor, dias) => `${valor} por diária na estadia de ${dias} dias`,
   verVagas: "Ver vagas",
   verALista: "Ver a lista",
   terminal: (n) => (n === 1 ? "Terminal" : "Terminais"),
@@ -641,6 +644,7 @@ const EN: Textos = {
     "Where a minimum stay is shown, the lot only takes bookings from that number of days up.",
   aPartirDeRotulo: "From",
   sufixoDiaria: "/ day",
+  menorDiariaNota: (valor, dias) => `${valor} per day on a ${dias}-day stay`,
   verVagas: "See spots",
   verALista: "See the list",
   terminal: (n) => (n === 1 ? "Terminal" : "Terminals"),
@@ -865,6 +869,7 @@ const ES: Textos = {
     "Donde aparece la estadía mínima, el estacionamiento solo acepta reservas a partir de esa cantidad de días.",
   aPartirDeRotulo: "Desde",
   sufixoDiaria: "/ día",
+  menorDiariaNota: (valor, dias) => `${valor} por día en una estadía de ${dias} días`,
   verVagas: "Ver plazas",
   verALista: "Ver la lista",
   terminal: (n) => (n === 1 ? "Terminal" : "Terminales"),
