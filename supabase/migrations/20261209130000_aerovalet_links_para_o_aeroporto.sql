@@ -30,6 +30,12 @@ begin
     from public.blog_post_i18n
    where body_md like '%/estacionamentos/aeroporto-guarulhos/aerovalet)%'
       or body_md like '%/estacionamentos/aeroporto-congonhas/aerovalet)%';
+  -- Replay (CI, `supabase db reset`): o stack novo não tem o acervo do blog, então não há link
+  -- para trocar. Sem este retorno a trava abaixo abortava o reset e nenhum pgTAP rodava
+  -- (aconteceu no próprio dia, run do commit 3b506d37). No vivo a migration já rodou.
+  if v_pt = 0 and v_i18n = 0 then
+    return;
+  end if;
   if v_pt <> 15 or v_i18n <> 12 then
     raise exception 'Contagem de links da Aerovalet mudou: % em português (esperado 15), % nas traduções (esperado 12)', v_pt, v_i18n;
   end if;
