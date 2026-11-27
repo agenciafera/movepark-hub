@@ -20,6 +20,7 @@ const hub = {
     check_in_at: "2026-10-10T08:30:00Z", check_out_at: "2026-10-14T01:00:00Z", customer_name: "Bia",
     customer_phone: "21988887777", customer_email: "bia@ex.com", vehicle: { license_plate: "XYZ9K88" },
     payments: [], fare_extensions: [], location: { name: "Afonso Pena", company: { name: "Abba" } },
+    items: [{ item_type: "parking", parking_type: { name: "Vaga Coberta" } }],
     price_breakdown: { days: 4, line_items: [{ kind: "parking", subtotal: 111.6 }, { kind: "fare", subtotal: 24.9 }] },
   },
 } as unknown as UnifiedBookingRow;
@@ -51,6 +52,9 @@ describe("exportação da lista de reservas", () => {
     expect(r["Valor pago (R$)"]).toBe("136,50");
     expect(Object.keys(r)).toEqual(exportHeaders(o));
     expect(r["Placa"]).toBe("XYZ9K88");
+    // Tipo de vaga (27/11/2026) sai logo depois da unidade, como na tela.
+    expect(exportHeaders(o).indexOf("Tipo de vaga")).toBe(exportHeaders(o).indexOf("Unidade") + 1);
+    expect(r["Tipo de vaga"]).toBe("Vaga Coberta");
   });
 
   it("com white-label: origem, contato e pagamento do site sem o nome do gateway", () => {

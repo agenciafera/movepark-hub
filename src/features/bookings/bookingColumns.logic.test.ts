@@ -20,6 +20,7 @@ describe("colunas da lista de reservas", () => {
       "channel",
       "customer",
       "parking",
+      "parking_type",
       "stay",
       "payment",
       "value",
@@ -27,6 +28,23 @@ describe("colunas da lista de reservas", () => {
       "status",
       "voucher",
     ]);
+  });
+
+  it("quem salvou antes de existir Tipo de vaga ganha a coluna, ligada, logo depois de Estacionamento", () => {
+    // Escolha gravada antes de 27/11/2026, com Estacionamento levado para o começo.
+    const s = resolveColumnSettings({
+      version: 1,
+      columns: [
+        { id: "code", visible: true },
+        { id: "parking", visible: true },
+        { id: "customer", visible: true },
+        { id: "status", visible: true },
+      ],
+    });
+    const ids = s.map((c) => c.id);
+    expect(ids.indexOf("parking_type")).toBe(ids.indexOf("parking") + 1);
+    expect(ids.indexOf("parking")).toBeLessThan(ids.indexOf("customer"));
+    expect(s.find((c) => c.id === "parking_type")!.visible).toBe(true);
   });
 
   it("respeita a ordem e a visibilidade salvas", () => {
@@ -78,12 +96,17 @@ describe("colunas da lista de reservas", () => {
       version: 1,
       columns: antigas.map((id) => ({ id, visible: !["phone", "email"].includes(id) })),
     });
+    // Tipo de vaga (27/11/2026) também faltava nessa escolha: entra logo depois de Estacionamento.
     expect(s.map((c) => c.id)).toEqual([
       "code",
       "customer",
       "created",
       "channel",
-      ...antigas.slice(3),
+      "status",
+      "plate",
+      "parking",
+      "parking_type",
+      ...antigas.slice(6),
     ]);
     expect(s.find((c) => c.id === "channel")!.visible).toBe(true);
   });
@@ -124,6 +147,10 @@ describe("colunas da lista de reservas", () => {
     const o = { showCompany: false, valueMode: "parking" as const };
     expect(columnHeader("created", o)).toBe("Criada em");
     expect(columnHeader("channel", o)).toBe("Canal");
+    expect(columnHeader("parking_type", o)).toBe("Tipo de vaga");
+    expect(columnHeader("parking_type", { showCompany: true, valueMode: "parking" })).toBe(
+      "Tipo de vaga",
+    );
   });
 
   it("o cabeçalho segue a tela: Unidade e Diárias no Operator", () => {

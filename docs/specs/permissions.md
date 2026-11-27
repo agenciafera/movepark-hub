@@ -269,6 +269,16 @@ placa) e o excedente da proteção de voo, que é o que ele cobra no balcão.
   dinheiro da reserva e continuam legíveis para quem já lia: as policies passaram a chamar os
   ajudantes `counter_can_see_vehicle()` e `counter_can_see_booking()` (SECURITY DEFINER, mesma regra
   de antes), em vez de depender da RLS de `booking`. Migrations `20261206140100` e `20261206150000`.
+- **`booking_item` é só leitura para cliente e equipe (27/11/2026).** A policy
+  `booking_item_owner_write` (ALL para o dono da reserva) e o grant padrão de INSERT/UPDATE/DELETE
+  deixavam o cliente logado trocar, pelo PostgREST, o tipo de vaga, a quantidade, o preço unitário e
+  o subtotal dos itens da própria reserva, além de incluir e apagar item (provado no vivo, em
+  rollback, antes do conserto). Ninguém escreve ali com o token do usuário: as quatro funções que
+  escrevem (`_create_booking_core`, `change_booking_dates`, `set_booking_addons`,
+  `apply_paid_date_change`) são SECURITY DEFINER. A policy saiu e a escrita foi revogada de `anon` e
+  `authenticated`; a leitura não mudou. Medido antes: nenhum item com tipo de vaga que a unidade não
+  oferece. Achado ao pôr o tipo de vaga na lista de reservas, que passou a confiar nesse dado.
+  Migration `20261209120000`, pgTAP `tipo_de_vaga_na_lista`.
 - A reserva do white-label (`wl_booking`) ainda tem o detalhe em outra RPC, e a policy de SELECT da
   tabela segue o mesmo predicado de `wl-bookings:read` (que a Operação tem), então `total_cents` e
   `paid_total_cents` ainda podem ser lidos direto por quem tem esse escopo. Nesta rodada só a lista

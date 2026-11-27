@@ -378,6 +378,11 @@ export type BookingWithRelations = Booking & {
   payments?: Pick<Payment, "id" | "status" | "refunded_at" | "created_at" | "paid_at" | "method" | "installments">[] | null;
   /** Proteção de voo acionada (uma por reserva): coberta, pedida, excedente e saída real. */
   fare_extensions?: Pick<Tables<"booking_fare_extension">, "id" | "kind" | "flight_number" | "new_check_out_at" | "requested_check_out_at" | "overage_daily_cents" | "overage_cents" | "actual_check_out_at" | "overage_charged_cents" | "overage_note" | "partner_credit_cents">[] | null;
+  /**
+   * Itens da reserva, só o tipo e o nome do tipo de vaga (coluna "Tipo de vaga" da lista,
+   * 27/11/2026). Sem valor: o balcão recebe o mesmo formato por `counter_booking_json(id, true)`.
+   */
+  items?: { item_type: Enums<"booking_item_type">; parking_type: { name: string } | null }[] | null;
 };
 
 export type Session = {

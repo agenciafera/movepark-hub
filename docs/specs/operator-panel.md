@@ -228,8 +228,19 @@ caminho. Quem tem `finance:read` vê e usa tudo como descrito acima.
 
 #### Tabela de Reservas
 
-Colunas padrão: `Reserva` · `Criada em` · `Cliente` · `Unidade` · `Estadia` · `Pagamento` ·
-`Diárias` · `Valor pago` (total que o cliente pagou, para conferir sem abrir a reserva) · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
+Colunas padrão: `Reserva` · `Criada em` · `Canal` · `Cliente` · `Unidade` · `Tipo de vaga` ·
+`Estadia` · `Pagamento` · `Diárias` · `Valor pago` (total que o cliente pagou, para conferir sem abrir a reserva) · `Status` · `Voucher`. Opcionais: `Placa`, `Telefone`, `E-mail`.
+
+- **Tipo de vaga (27/11/2026).** Coluna nova, ligada por padrão, logo depois de Unidade (no Manager,
+  de Estacionamento), também para quem já tinha salvo a escolha de colunas. Na reserva do Hub o nome
+  vem do item de vaga (`booking_item` com `item_type = parking` → `parking_type.name`: "Vaga
+  Coberta", "Vaga Descoberta"...), pelo select da lista (`items:booking_item(item_type,
+  parking_type(name))`); na do site, de `parking_type_name` do pedido. O balcão, que não lê
+  `booking_item`, recebe os itens pela RPC `operator_bookings_by_ids`, que passou a pedir
+  `counter_booking_json(id, true)`: só o tipo do item e o nome do tipo de vaga, sem preço. O CSV
+  ganha a coluna `Tipo de vaga` depois de `Unidade`. Na mesma entrega o cliente perdeu a escrita em
+  `booking_item` (ver permissions.md, "Dinheiro da reserva"). Migration `20261209120000`, pgTAP
+  `tipo_de_vaga_na_lista`.
 
 - **Diária e o que explica o valor pago (26/11/2026).** "Diárias" e "Valor pago" pareciam o mesmo
   número com valores diferentes. Embaixo das diárias sai quantas e quanto cada uma ("8 × R$ 18,90");
@@ -244,8 +255,9 @@ Colunas padrão: `Reserva` · `Criada em` · `Cliente` · `Unidade` · `Estadia`
   (`Reserva` não sai). A escolha fica **no usuário, no banco** (`profiles.preferences.ui`, chave
   `bookings_table.operator`; no Manager, `bookings_table.manager`), gravada pela RPC
   `set_my_ui_preference`, que mexe só nessa chave e não apaga o resto do JSON. Vale em qualquer
-  navegador. Coluna que deixar de existir é descartada; coluna nova entra no fim com o padrão
-  dela. "Restaurar padrão" apaga a escolha. Regra pura em `bookingColumns.logic.ts`.
+  navegador. Coluna que deixar de existir é descartada; coluna nova entra logo depois da vizinha
+  que vem antes dela no catálogo, com o padrão dela (desde 13/11/2026; antes entrava no fim).
+  "Restaurar padrão" apaga a escolha. Regra pura em `bookingColumns.logic.ts`.
 - **Voucher na lista (11/11/2026).** Botão **Abrir** na coluna Voucher, nos mesmos status do
   detalhe (`canDownloadVoucher`). Reserva do Hub gera o PDF na Edge `voucher-pdf`; reserva do
   site abre o PDF que o site emitiu (buscado no clique por `wl_booking_detail`). A aba abre no

@@ -31,6 +31,7 @@ export function exportHeaders(o: ExportOptions): string[] {
     "Placa",
     ...(o.showCompany ? ["Empresa"] : []),
     "Unidade",
+    "Tipo de vaga",
     "Check-in",
     "Check-out",
     "Pagamento",
@@ -64,6 +65,7 @@ export function exportRow(row: UnifiedBookingRow, o: ExportOptions): Record<stri
   out["Placa"] = contato.plate ?? "";
   if (o.showCompany) out["Empresa"] = v.companyName ?? "";
   out["Unidade"] = v.unitName ?? "";
+  out["Tipo de vaga"] = v.parkingType ?? "";
   out["Check-in"] = data(v.checkIn);
   out["Check-out"] = data(v.checkOut);
   out["Pagamento"] = [v.payment.method, v.payment.badge?.label].filter(Boolean).join(" · ");

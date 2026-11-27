@@ -144,6 +144,36 @@ describe("diária e o que explica o valor pago", () => {
   });
 });
 
+/** Tipo de vaga na lista (27/11/2026): do item de vaga da reserva no Hub, do pedido no site. */
+describe("tipo de vaga", () => {
+  it("reserva do Hub: o nome do tipo de vaga do item de vaga, sem os serviços extras", () => {
+    const r = hub("hub_search");
+    if (r.source !== "hub") throw new Error("fixture");
+    Object.assign(r.booking, {
+      items: [
+        { item_type: "add_on", parking_type: null },
+        { item_type: "parking", parking_type: { name: "Vaga Coberta" } },
+      ],
+    });
+    expect(unifiedRowView(r, { showSource: false, valueMode: "parking" }).parkingType).toBe(
+      "Vaga Coberta",
+    );
+  });
+
+  it("reserva do Hub sem itens na linha (ou sem tipo no item): vazio, sem quebrar", () => {
+    expect(unifiedRowView(hub("hub_search"), { showSource: false, valueMode: "parking" }).parkingType).toBeNull();
+    const r = hub("hub_search");
+    if (r.source !== "hub") throw new Error("fixture");
+    Object.assign(r.booking, { items: [{ item_type: "parking", parking_type: null }] });
+    expect(unifiedRowView(r, { showSource: false, valueMode: "total" }).parkingType).toBeNull();
+  });
+
+  it("reserva do site: o tipo de vaga do pedido", () => {
+    const v = unifiedRowView({ source: "wl", id: "w-1", wl }, { showSource: true, valueMode: "parking" });
+    expect(v.parkingType).toBe("Vaga Coberta");
+  });
+});
+
 describe("canal da reserva que veio do site do estacionamento", () => {
   it("UTM da Pare Seguro numa unidade dela: Site Pare Seguro, e não Site Movepark", () => {
     const r = hub("hub_direct");

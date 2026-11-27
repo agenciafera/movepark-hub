@@ -16,7 +16,13 @@ import {
 import { bookingParkingAmount, type PriceBreakdownLike } from "./bookingMoney.logic";
 import { formatBRL } from "@/lib/format";
 import { wlPaymentMethodLabel } from "@/features/wl-bookings/wlBooking.logic";
-import type { BookingStatus, UnifiedBookingRow, WlBookingRow, WlListRow } from "@/types/domain";
+import type {
+  BookingStatus,
+  BookingWithRelations,
+  UnifiedBookingRow,
+  WlBookingRow,
+  WlListRow,
+} from "@/types/domain";
 
 export type UnifiedRowView = {
   key: string;
@@ -29,6 +35,8 @@ export type UnifiedRowView = {
   customer: string | null;
   companyName: string | null;
   unitName: string | null;
+  /** Tipo de vaga ("Vaga Coberta"): do item de vaga no Hub, do pedido no site. */
+  parkingType: string | null;
   checkIn: string | null;
   checkOut: string | null;
   payment: { method: string | null; badge: PaymentBadge | null };
@@ -101,6 +109,19 @@ export function wlOriginLabel(origin: string | null | undefined): string | null 
   return channelShortLabel(origin);
 }
 
+/**
+ * Tipo de vaga da reserva do Hub: o do item de vaga (`booking_item` com `item_type = parking`). Toda
+ * reserva tem exatamente um no vivo (212 de 212 em 27/11/2026); se um dia vierem dois tipos, saem
+ * os dois. Sem `items` na linha (consulta antiga em cache), fica vazio.
+ */
+export function bookingParkingTypeName(b: Pick<BookingWithRelations, "items">): string | null {
+  const nomes = (b.items ?? [])
+    .filter((i) => i.item_type === "parking")
+    .map((i) => i.parking_type?.name?.trim())
+    .filter((n): n is string => !!n);
+  return nomes.length ? [...new Set(nomes)].join(", ") : null;
+}
+
 function centavos(c: number | null | undefined): number | null {
   return c === null || c === undefined ? null : c / 100;
 }
@@ -121,6 +142,7 @@ export function unifiedRowView(
       customer: w.customer_name,
       companyName: w.company_name,
       unitName: w.location_name ?? w.parking_type_name,
+      parkingType: w.parking_type_name,
       checkIn: w.check_in_at,
       checkOut: w.check_out_at,
       // Forma de pagamento do site quando a cópia já trouxe; senão, só que foi pago lá.
@@ -158,6 +180,7 @@ export function unifiedRowView(
     customer: bookingCustomerName(b),
     companyName: b.location?.company?.name ?? null,
     unitName: b.location?.name ?? null,
+    parkingType: bookingParkingTypeName(b),
     checkIn: b.check_in_at,
     checkOut: b.check_out_at,
     payment: { method: paymentMethodLabel(b.payments), badge: paymentBadge(b.payments, b.status) },

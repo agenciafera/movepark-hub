@@ -139,6 +139,8 @@ function BookingCell({
           </div>
         </TableCell>
       );
+    case "parking_type":
+      return <TableCell className="text-ink">{v.parkingType ?? "-"}</TableCell>;
     case "stay":
       return (
         <TableCell className="whitespace-nowrap tabular-nums">

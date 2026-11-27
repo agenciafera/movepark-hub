@@ -67,6 +67,21 @@ describe("BookingTable", () => {
     expect(screen.getByText("ABC1D23")).toBeInTheDocument();
   });
 
+  it("coluna Tipo de vaga mostra o tipo de vaga da reserva", () => {
+    const r = hub("MP-TV", "confirmed");
+    if (r.source !== "hub") throw new Error("fixture");
+    Object.assign(r.booking, {
+      items: [{ item_type: "parking", parking_type: { name: "Vaga Descoberta" } }],
+    });
+    renderWithProviders(
+      <BookingTable rows={[r]} isLoading={false} columns={["code", "parking", "parking_type"]} />,
+    );
+    const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(headers).toEqual(["Reserva", "Estacionamento", "Tipo de vaga"]);
+    const [, , tipo] = within(screen.getAllByRole("row")[1]!).getAllByRole("cell");
+    expect(tipo).toHaveTextContent("Vaga Descoberta");
+  });
+
   it("voucher na lista só para reserva que tem voucher (confirmada, em uso, concluída)", () => {
     renderWithProviders(
       <BookingTable

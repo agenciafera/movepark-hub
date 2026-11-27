@@ -18,6 +18,7 @@ export type BookingColumnId =
   | "channel"
   | "customer"
   | "parking"
+  | "parking_type"
   | "stay"
   | "payment"
   | "value"
@@ -45,6 +46,9 @@ export const BOOKING_COLUMNS: BookingColumnDef[] = [
   { id: "channel", label: "Canal", defaultVisible: true },
   { id: "customer", label: "Cliente", defaultVisible: true },
   { id: "parking", label: "Estacionamento", defaultVisible: true },
+  // Tipo de vaga na lista (27/11/2026), sem precisar abrir a reserva. Entra ligada, inclusive para
+  // quem já salvou a escolha (ver `resolveColumnSettings`).
+  { id: "parking_type", label: "Tipo de vaga", defaultVisible: true },
   { id: "stay", label: "Estadia", defaultVisible: true },
   { id: "payment", label: "Pagamento", defaultVisible: true },
   { id: "value", label: "Valor", defaultVisible: true },
@@ -161,6 +165,8 @@ export function columnHeader(
       return "Cliente";
     case "parking":
       return opts.showCompany ? "Estacionamento" : "Unidade";
+    case "parking_type":
+      return "Tipo de vaga";
     case "stay":
       return "Estadia";
     case "payment":

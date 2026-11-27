@@ -171,7 +171,7 @@ booking_coupon  (pivot)
 | `profiles` | Owner-only: SELECT e UPDATE apenas para `auth.uid() = id`. **O UPDATE é cortado por coluna, não só por linha:** `role` e `deleted_at` saíram do grant de `authenticated` em `20261017103000`, porque policy corta linha e o dono editava a linha inteira, inclusive o próprio papel. Trocar papel é a RPC `admin_set_user_role` (gate `is_hub_admin()`); apagar conta é a RPC de anonimização. Ver [permissions.md](./permissions.md) |
 | `vehicle` | Owner-only: todas as operações para `profile_id = auth.uid()` |
 | `booking` | Owner-only: SELECT/INSERT/UPDATE para `profile_id = auth.uid()` |
-| `booking_item`, `payment`, `booking_coupon` | Acesso via ownership da `booking` pai |
+| `booking_item`, `payment`, `booking_coupon` | Acesso via ownership da `booking` pai. `booking_item` é **só leitura** para `anon`/`authenticated` desde `20261209120000` (27/11/2026): quem escreve são as funções SECURITY DEFINER da reserva. Ver [permissions.md](./permissions.md) |
 | `app_setting` | Escrita só `hub_admin` (`app_setting_admin_all`). Leitura pública **por chave**, não por tabela: `app_setting_public_read` é SELECT para `anon`+`authenticated` com `USING (is_public)`, e `is_public` nasce `false`. A tabela guarda recebedor do split, remetente de e-mail e prompt do chatbot, então chave nova só vira pública por decisão explícita. Hoje a única marcada é `social_proof_customers`, que alimenta o selo do Hero. |
 
 > Nenhuma política de escrita existe ainda para staff/admin. Isso será coberto
