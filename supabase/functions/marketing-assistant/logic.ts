@@ -15,7 +15,8 @@ export type Corpo =
   | { acao: "apagar"; conversaId: string }
   | { acao: "renomear"; conversaId: string; titulo: string }
   | { acao: "confirmar"; propostaId: string }
-  | { acao: "descartar"; propostaId: string };
+  | { acao: "descartar"; propostaId: string }
+  | { acao: "oportunidades"; locationIds: string[] | null };
 
 /** Uma linha só, sem caractere de controle nem separador de linha, com teto. */
 function umaLinha(v: unknown, teto: number): string {
@@ -44,6 +45,14 @@ export function lerCorpo(body: unknown): { ok: true; corpo: Corpo } | { ok: fals
       const mensagem = lerMensagem(b.mensagem);
       if (!conversa || !mensagem) return { ok: false, erro: "Mande a conversa e uma fala de até 4000 caracteres." };
       return { ok: true, corpo: { acao: "conversar", conversaId: conversa, mensagem } };
+    }
+    case "oportunidades": {
+      const v = b.location_ids;
+      if (v === undefined || v === null) return { ok: true, corpo: { acao: "oportunidades", locationIds: null } };
+      if (!Array.isArray(v) || v.length > 50 || !v.every((x) => typeof x === "string" && UUID.test(x))) {
+        return { ok: false, erro: "location_ids precisa ser uma lista de ids de unidade." };
+      }
+      return { ok: true, corpo: { acao: "oportunidades", locationIds: v.length > 0 ? v : null } };
     }
     case "abrir":
     case "apagar":

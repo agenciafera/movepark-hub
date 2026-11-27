@@ -11,6 +11,7 @@
 //   { acao: "apagar", conversa_id }                → { ok }
 //   { acao: "confirmar", proposta_id }             → { proposta }
 //   { acao: "descartar", proposta_id }             → { proposta }
+//   { acao: "oportunidades", location_ids? }       → { data, oportunidades } (direto do Hub, sem o modelo)
 //
 // ## Esta Edge é a fronteira de confiança
 //
@@ -143,6 +144,20 @@ export async function handler(req: Request): Promise<Response> {
 
   if (corpo.acao === "confirmar" || corpo.acao === "descartar") {
     return decidir(admin, userId, email, corpo.acao, corpo.propostaId);
+  }
+
+  // A abertura da conversa: as oportunidades vêm do Hub direto, sem passar pelo modelo.
+  if (corpo.acao === "oportunidades") {
+    const ator: Actor = { kind: "hub_admin", id: userId, label: email };
+    try {
+      const dados = await callMarketing(admin, ator, "marketing_get_opportunities",
+        { location_ids: corpo.locationIds ?? undefined },
+        { alertarDisparoLigado: (info) => alertarDisparoLigado(admin, info) });
+      return json(dados);
+    } catch (e) {
+      console.error(`[marketing-assistant] oportunidades: ${mensagemDe(e)}`);
+      return json({ error: "Não consegui ler as oportunidades agora." }, 502);
+    }
   }
 
   const base = env("MASTRA_BASE_URL").replace(/\/+$/, "");

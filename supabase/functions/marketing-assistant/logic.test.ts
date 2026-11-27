@@ -160,3 +160,15 @@ Deno.test("repassarStream encerra o token quando a origem quebra", async () => {
   await new Promise((r) => setTimeout(r, 0));
   assertEquals(encerrou, 1);
 });
+Deno.test("oportunidades sem unidade vale para todas", () => {
+  assertEquals(lerCorpo({ acao: "oportunidades" }), { ok: true, corpo: { acao: "oportunidades", locationIds: null } });
+});
+
+Deno.test("oportunidades com unidades aceita só uuid", () => {
+  const id = "0b8f4f0e-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
+  assertEquals(lerCorpo({ acao: "oportunidades", location_ids: [id] }), {
+    ok: true,
+    corpo: { acao: "oportunidades", locationIds: [id] },
+  });
+  assertEquals(lerCorpo({ acao: "oportunidades", location_ids: ["x"] }).ok, false);
+});
