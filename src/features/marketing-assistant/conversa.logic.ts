@@ -319,7 +319,23 @@ export function ondeMostrar(grupo: Grupo): "destaque" | "sob_demanda" | "nada" {
   return "nada";
 }
 
-export type MensagemOrganizada = { passos: ParteDeTool[]; textos: string[]; destaques: ParteDeTool[] };
+export type MensagemOrganizada = {
+  passos: ParteDeTool[];
+  textos: string[];
+  destaques: ParteDeTool[];
+  /** Os botões de próximo passo, da ferramenta de tela `sugerir_proximos_passos`. */
+  proximos: string[];
+};
+
+/** Até 3 passos com texto, cada um com até 48 caracteres (o mesmo teto da ferramenta). */
+export function passosSugeridos(t: ParteDeTool): string[] {
+  const lista = (t.entrada as { passos?: unknown }).passos;
+  if (!Array.isArray(lista)) return [];
+  return lista
+    .filter((x): x is string => typeof x === "string" && x.trim() !== "")
+    .map((x) => x.trim().slice(0, 48))
+    .slice(0, 3);
+}
 
 /**
  * Uma resposta do agente, do jeito que a tela mostra: os passos juntos (recolhidos), o texto, e
@@ -329,6 +345,7 @@ export type MensagemOrganizada = { passos: ParteDeTool[]; textos: string[]; dest
 export function organizarMensagem(parts: Array<{ type: string } & Record<string, unknown>>): MensagemOrganizada {
   const passos: ParteDeTool[] = [];
   const textos: string[] = [];
+  let proximos: string[] = [];
   for (const p of parts) {
     if (p.type === "text") {
       const t = normalizarMarkdown(String(p.text ?? ""));
@@ -336,7 +353,12 @@ export function organizarMensagem(parts: Array<{ type: string } & Record<string,
       continue;
     }
     const tool = parteDeTool(p);
-    if (tool) passos.push(tool);
+    if (!tool) continue;
+    if (tool.nome === "sugerir_proximos_passos") {
+      proximos = passosSugeridos(tool);
+      continue;
+    }
+    passos.push(tool);
   }
   const destaques: ParteDeTool[] = [];
   const unicos = new Set(["segmento", "mensagem", "oportunidades", "calendario"]);
@@ -349,5 +371,5 @@ export function organizarMensagem(parts: Array<{ type: string } & Record<string,
     }
     destaques.push(t);
   }
-  return { passos, textos, destaques };
+  return { passos, textos, destaques, proximos };
 }

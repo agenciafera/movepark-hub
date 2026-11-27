@@ -4,8 +4,11 @@ import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { MarkdownRestrito } from "@/components/shared/MarkdownRestrito";
 import { Button } from "@/components/ui/button";
-import { criarTransporte } from "./api";
+import { criarTransporte, useOportunidades } from "./api";
 import { houveGravacao, organizarMensagem, type Proposta } from "./conversa.logic";
+import { listaDeOportunidades } from "./paineis.logic";
+import { Oportunidades } from "./partes/Oportunidades";
+import { ProximosPassos } from "./partes/ProximosPassos";
 import { PassosDoAgente } from "./partes/PassosDoAgente";
 import { VisualDaTool } from "./partes/VisualDaTool";
 
@@ -30,7 +33,19 @@ function Avatar() {
   );
 }
 
-function Mensagem({ m, propostas }: { m: UIMessage; propostas: Proposta[] }) {
+function Mensagem({
+  m,
+  propostas,
+  ultima,
+  ocupado,
+  onPedir,
+}: {
+  m: UIMessage;
+  propostas: Proposta[];
+  ultima: boolean;
+  ocupado: boolean;
+  onPedir: (texto: string) => void;
+}) {
   if (m.role === "user") {
     const texto = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
     return (
@@ -41,7 +56,7 @@ function Mensagem({ m, propostas }: { m: UIMessage; propostas: Proposta[] }) {
       </div>
     );
   }
-  const { passos, textos, destaques } = organizarMensagem(m.parts as never);
+  const { passos, textos, destaques, proximos } = organizarMensagem(m.parts as never);
   return (
     <div className="flex gap-3">
       <Avatar />
@@ -51,8 +66,9 @@ function Mensagem({ m, propostas }: { m: UIMessage; propostas: Proposta[] }) {
           <MarkdownRestrito key={i} markdown={t} className="space-y-3 text-body-sm leading-relaxed text-body" />
         ))}
         {destaques.map((d, i) => (
-          <VisualDaTool key={d.id || i} parte={d} propostas={propostas} />
+          <VisualDaTool key={d.id || i} parte={d} propostas={propostas} onPedir={ultima && !ocupado ? onPedir : undefined} />
         ))}
+        {ultima ? <ProximosPassos passos={proximos} onPedir={onPedir} desligado={ocupado} /> : null}
       </div>
     </div>
   );
@@ -70,6 +86,8 @@ export function Conversa({ conversaId, inicial, propostas, onTurnoTerminou }: Pr
   const [texto, setTexto] = React.useState("");
   const fim = React.useRef<HTMLDivElement>(null);
   const ocupado = status === "submitted" || status === "streaming";
+  const abertura = useOportunidades(messages.length === 0);
+  const temOportunidade = listaDeOportunidades(abertura.data).length > 0;
 
   React.useEffect(() => {
     fim.current?.scrollIntoView?.({ block: "end" });
@@ -87,23 +105,41 @@ export function Conversa({ conversaId, inicial, propostas, onTurnoTerminou }: Pr
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl space-y-8 px-1 pb-6 pt-2">
           {messages.length === 0 ? (
-            <div className="mx-auto mt-16 max-w-md space-y-5 text-center">
+            <div className="mx-auto mt-12 max-w-2xl space-y-5 text-center">
               <span className="mx-auto flex size-10 items-center justify-center rounded-full bg-mp-primary/10 text-mp-primary">
                 <Sparkle size={20} weight="fill" />
               </span>
               <p className="text-pretty text-body-md text-ink">
                 Peça em uma frase. Eu consulto a base e deixo tudo pronto para você revisar.
               </p>
-              <div className="flex flex-col gap-2">
-                {SUGESTOES.map((s) => (
-                  <Button key={s} variant="outline" className="h-auto whitespace-normal py-2.5" onClick={() => enviar(s)}>
-                    {s}
-                  </Button>
-                ))}
-              </div>
+              {temOportunidade ? (
+                <div className="space-y-3 text-left">
+                  <h2 className="text-balance text-body-md font-semibold text-ink">Oportunidades de hoje</h2>
+                  <Oportunidades saida={abertura.data} onPedir={enviar} />
+                </div>
+              ) : abertura.isLoading ? (
+                <p className="text-body-sm text-muted">Procurando as oportunidades de hoje…</p>
+              ) : (
+                <div className="mx-auto flex max-w-md flex-col gap-2">
+                  {SUGESTOES.map((s) => (
+                    <Button key={s} variant="outline" className="h-auto whitespace-normal py-2.5" onClick={() => enviar(s)}>
+                      {s}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
-            messages.map((m) => <Mensagem key={m.id} m={m} propostas={propostas} />)
+            messages.map((m, i) => (
+              <Mensagem
+                key={m.id}
+                m={m}
+                propostas={propostas}
+                ultima={i === messages.length - 1}
+                ocupado={ocupado}
+                onPedir={enviar}
+              />
+            ))
           )}
           {status === "submitted" ? (
             <div className="flex gap-3">

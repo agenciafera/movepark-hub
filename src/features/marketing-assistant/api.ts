@@ -3,6 +3,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { marketingKeys } from "@/features/marketing/api";
 import { supabase } from "@/lib/supabase";
 import { esperandoTitulo, pedidoDoTurno, type Proposta } from "./conversa.logic";
+import type { Oportunidade } from "./paineis.logic";
 
 /**
  * A página Assistente de IA, pela Edge `marketing-assistant`. O navegador nunca fala com o
@@ -18,6 +19,7 @@ export const assistenteKeys = {
   all: ["marketing-assistant"] as const,
   conversas: () => [...assistenteKeys.all, "conversas"] as const,
   conversa: (id: string) => [...assistenteKeys.all, "conversa", id] as const,
+  oportunidades: () => [...assistenteKeys.all, "oportunidades"] as const,
 };
 
 export type ConversaResumo = { id: string; titulo: string; atualizada_em: string };
@@ -58,6 +60,18 @@ export function useConversa(id: string | undefined, nova: boolean) {
     enabled: !!id && !nova,
     staleTime: Infinity,
     queryFn: () => chamar<ConversaAberta>({ acao: "abrir", conversa_id: id }, "Não consegui abrir a conversa."),
+  });
+}
+
+/** A abertura da conversa: as oportunidades de hoje, direto do Hub, sem passar pelo modelo. */
+export function useOportunidades(ligado: boolean) {
+  return useQuery({
+    queryKey: assistenteKeys.oportunidades(),
+    queryFn: () =>
+      chamar<{ data: string; oportunidades: Oportunidade[] }>({ acao: "oportunidades" }, "Não consegui ler as oportunidades."),
+    enabled: ligado,
+    staleTime: 5 * 60_000,
+    retry: false,
   });
 }
 

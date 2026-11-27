@@ -9,9 +9,11 @@ let estado: { messages: unknown[]; status: string; error?: Error } = { messages:
 vi.mock("@ai-sdk/react", () => ({
   useChat: () => ({ ...estado, sendMessage: enviar, stop: vi.fn() }),
 }));
+let oportunidades: { data?: unknown; isError?: boolean; isLoading?: boolean } = {};
 vi.mock("./api", () => ({
   criarTransporte: () => ({}),
   useDecidirProposta: () => ({ mutate: vi.fn(), isPending: false }),
+  useOportunidades: () => oportunidades,
 }));
 
 function desenhar() {
@@ -26,6 +28,7 @@ function desenhar() {
 
 describe("Conversa", () => {
   it("vazia, convida e oferece sugestões que enviam", () => {
+    oportunidades = { isError: true };
     estado = { messages: [], status: "ready" };
     enviar.mockReset();
     desenhar();
@@ -86,5 +89,54 @@ describe("Conversa", () => {
     estado = { messages: [], status: "error", error: new Error("x") };
     desenhar();
     expect(screen.getByText("A resposta parou no meio. Tente de novo.")).toBeInTheDocument();
+  });
+
+  it("vazia, abre com as oportunidades de hoje e o cartão começa a conversa", () => {
+    estado = { messages: [], status: "ready" };
+    oportunidades = {
+      data: {
+        data: "2026-11-27",
+        oportunidades: [
+          {
+            chave: "abandono_recente",
+            titulo: "Abandonou o checkout nas últimas 24 horas",
+            por_que: "Começou a reserva e não pagou.",
+            publico: 5,
+            alcance_email: 4,
+            ticket_medio: 190.83,
+            pedido: "Quero recuperar quem abandonou o checkout nas últimas 24 horas",
+          },
+        ],
+      },
+    };
+    enviar.mockReset();
+    desenhar();
+    expect(screen.getByText("Oportunidades de hoje")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Montar esse público" }));
+    expect(enviar).toHaveBeenCalledWith({ text: "Quero recuperar quem abandonou o checkout nas últimas 24 horas" });
+  });
+
+  it("próximos passos só na última resposta, e o clique envia", () => {
+    oportunidades = {};
+    estado = {
+      status: "ready",
+      messages: [
+        { id: "a0", role: "assistant", parts: [{ type: "tool-sugerir_proximos_passos", toolCallId: "p0", state: "input-available", input: { passos: ["Passo velho"] } }] },
+        { id: "u1", role: "user", parts: [{ type: "text", text: "E agora?" }] },
+        {
+          id: "a1",
+          role: "assistant",
+          parts: [
+            { type: "text", text: "Dá para montar." },
+            { type: "tool-sugerir_proximos_passos", toolCallId: "p1", state: "input-available", input: { passos: ["Montar o segmento"] } },
+          ],
+        },
+      ],
+    };
+    enviar.mockReset();
+    desenhar();
+    expect(screen.queryByRole("button", { name: "Passo velho" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Montar o segmento" }));
+    expect(enviar).toHaveBeenCalledWith({ text: "Montar o segmento" });
   });
 });

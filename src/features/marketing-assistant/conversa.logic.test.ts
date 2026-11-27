@@ -213,3 +213,14 @@ describe("organizarMensagem", () => {
     expect(m.passos).toHaveLength(2);
   });
 });
+
+describe("próximos passos", () => {
+  it("saem da ferramenta de tela e não viram passo do agente", () => {
+    const m = organizarMensagem([
+      { type: "text", text: "Pronto." },
+      { type: "tool-sugerir_proximos_passos", toolCallId: "p1", state: "input-available", input: { passos: ["Montar o segmento", "", "Ver a mensagem"] } },
+    ]);
+    expect(m.proximos).toEqual(["Montar o segmento", "Ver a mensagem"]);
+    expect(m.passos).toEqual([]);
+  });
+});
