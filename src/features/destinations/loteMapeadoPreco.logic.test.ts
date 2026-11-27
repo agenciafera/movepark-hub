@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ProspectCard } from "@/types/domain";
 import { postsDoLote, precoPesquisado } from "./loteMapeadoPreco.logic";
@@ -33,6 +33,16 @@ function lote(over: Partial<ProspectCard> = {}): ProspectCard {
 }
 
 describe("precoPesquisado", () => {
+  // O relógio congela porque a ficha esconde o preço de terceiro 90 dias depois da
+  // pesquisa: sem isto a pesquisa de 08/09 venceria em 07/12/2026 e a suíte quebraria sozinha.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-10T12:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   // Achado de 08/09/2026: a MESMA ficha do Bandeira Park dizia "Preço: não informado" no
   // topo e "R$ 18,49" na FAQ, e a tabela do destino mostrava a linha com data de pesquisa.
   // As colunas existiam; só esta tela não as lia.
@@ -81,6 +91,13 @@ describe("precoPesquisado", () => {
   it("aceita numeric vindo como string do PostgREST", () => {
     const p = precoPesquisado(lote({ researched_daily_brl: "18.49" as unknown as number }))!;
     expect(p.linhas[0].total).toBe(18.49);
+  });
+
+  it("preço vencido sai da ficha, porque a data ao lado não conserta um número velho", () => {
+    // A ficha é SSG como a página do destino, e até 27/11/2026 só a tabela do destino
+    // conferia a validade de novo na renderização. Um HTML do dia 89 seguia com o preço.
+    expect(precoPesquisado(lote(), new Date("2026-12-07T12:00:00Z"))).toBeNull();
+    expect(precoPesquisado(lote(), new Date("2026-12-06T12:00:00Z"))).not.toBeNull();
   });
 });
 

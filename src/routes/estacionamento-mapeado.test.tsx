@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HelmetProvider } from "react-helmet-async";
@@ -270,6 +270,16 @@ describe("Página do lote mapeado (E0.17-e · ADR-010)", () => {
 });
 
 describe("preço pesquisado e leia também na ficha do lote", () => {
+  // O relógio congela porque a ficha esconde o preço de terceiro 90 dias depois da
+  // pesquisa. Só o `Date` é falso: o `waitFor` e o Helmet seguem com os timers de verdade.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-10T12:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   /**
    * Contradição achada em 08/09/2026, na MESMA página do Bandeira Park: o topo dizia
    * "Preço: não informado. Este estacionamento ainda não publica tarifas na Movepark" e a
@@ -299,6 +309,27 @@ describe("preço pesquisado e leia também na ficha do lote", () => {
     expect(screen.queryByText(/Preço: não informado/)).not.toBeInTheDocument();
     // E continua dizendo que não é reserva pela Movepark (ADR-010).
     expect(screen.getByText(/Não é reserva pela Movepark/)).toBeInTheDocument();
+  });
+
+  it("no 90º dia da pesquisa o preço sai da ficha e a ausência volta a ser declarada", () => {
+    // A segunda porta da validade, que até 27/11/2026 só a tabela do destino tinha. A
+    // ficha é SSG: sem conferir na renderização, um HTML do dia 89 seguia com o preço.
+    vi.setSystemTime(new Date("2026-12-07T12:00:00Z"));
+    loaderData.mockReturnValue({
+      destination: dest(),
+      prospect: prospect({
+        researched_daily_brl: 18.49,
+        researched_weekly_brl: 93.17,
+        researched_monthly_brl: 239.4,
+        researched_at: "2026-09-08",
+      }),
+    });
+
+    render();
+
+    expect(screen.queryByText(/Preço pesquisado por nós/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/R\$\s?18,49/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Preço: não informado/)).toBeInTheDocument();
   });
 
   it("sem preço pesquisado, volta a declarar a ausência", () => {

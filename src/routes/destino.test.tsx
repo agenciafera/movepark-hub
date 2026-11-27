@@ -581,7 +581,7 @@ describe("DestinoPage · preço pesquisado do lote mapeado (E0.17-k)", () => {
     expect(screen.getByText(/R\$ 22,90 no Central Park/i)).toBeInTheDocument();
   });
 
-  it("no 90º dia da pesquisa o preço sai da tabela e da resposta curta", () => {
+  it("no 90º dia da pesquisa o preço sai da página inteira, e o lote fica", () => {
     // A segunda porta da validade, na renderização: a página é SSG e o HTML de um build
     // feito no dia 89 seguiria mostrando o número velho. Foi esta conta que derrubou os
     // casos acima quando a data da fixture fez 90 dias.
@@ -595,6 +595,12 @@ describe("DestinoPage · preço pesquisado do lote mapeado (E0.17-k)", () => {
     expect(screen.queryByText("R$ 168,00")).toBeNull();
     expect(screen.queryByText(/Diária mais barata:/i)).toBeNull();
     expect(document.querySelector('time[datetime="2026-08-29"]')).toBeNull();
+    // A lista de distância e o selo dela também. Medido em 27/11/2026: com a tabela já
+    // vazia, a lista seguia com "Menor diária da região" e "a partir de R$ 22,90/dia".
+    expect(screen.queryByText(/Menor diária da região/i)).toBeNull();
+    expect(document.body.textContent ?? "").not.toContain("22,90");
+    // Vence o preço, não a ficha: o lote continua na lista, com a distância medida.
+    expect(screen.getAllByText("Central Park").length).toBeGreaterThan(0);
   });
 
   it("lote sem preço pesquisado não vira linha vazia na tabela", () => {

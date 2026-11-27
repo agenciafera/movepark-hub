@@ -395,6 +395,8 @@ export default function DestinoPage() {
       reference_name: p.reference_name,
       rating: badge ? { avg: badge.avg, count: badge.count } : null,
       researched_daily_brl: p.researched_daily_brl,
+      // A data vai junto para o ranking conferir a validade, como a tabela confere.
+      researched_at: p.researched_at,
     };
   });
 

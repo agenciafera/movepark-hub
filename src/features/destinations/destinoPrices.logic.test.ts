@@ -355,14 +355,52 @@ describe("proximityRanking", () => {
     const linhas = proximityRanking({
       units: [unit({ distance_m: 328 })],
       prospects: [
-        { name: "Pesquisado", slug: "pesquisado", distance_km: 1, researched_daily_brl: 25 },
+        {
+          name: "Pesquisado",
+          slug: "pesquisado",
+          distance_km: 1,
+          researched_daily_brl: 25,
+          researched_at: "2026-08-29",
+        },
         { name: "Sem pesquisa", slug: "sem-pesquisa", distance_km: 2 },
       ],
       destinationSlug: "aeroporto-de-viracopos",
+      now: new Date("2026-09-02T12:00:00Z"),
     });
     expect(linhas.find((l) => l.kind === "partner")?.dailyFrom).toBe(40);
     expect(linhas.find((l) => l.name === "Pesquisado")?.dailyFrom).toBe(25);
     expect(linhas.find((l) => l.name === "Sem pesquisa")?.dailyFrom).toBeNull();
+  });
+
+  it("diária pesquisada vencida sai do ranking, como sai da tabela, e o lote fica", () => {
+    // Achado de 27/11/2026: no 90º dia a tabela escondia o preço, e a lista de distância
+    // logo abaixo seguia com "a partir de R$ 22,90/dia", agora sem data nenhuma ao lado.
+    const linhas = proximityRanking({
+      units: [],
+      prospects: [
+        {
+          name: "Vencido",
+          slug: "vencido",
+          distance_km: 1,
+          researched_daily_brl: 22.9,
+          researched_at: "2026-08-29",
+        },
+      ],
+      destinationSlug: "aeroporto-confins",
+      now: new Date("2026-11-27T12:00:00Z"),
+    });
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].distanceLabel).toBe("1 km");
+    expect(linhas[0].dailyFrom).toBeNull();
+  });
+
+  it("diária pesquisada sem data não entra no ranking, que é afirmação sem lastro", () => {
+    const [linha] = proximityRanking({
+      units: [],
+      prospects: [{ name: "Sem data", slug: "sem-data", distance_km: 1, researched_daily_brl: 22.9 }],
+      destinationSlug: "d",
+    });
+    expect(linha.dailyFrom).toBeNull();
   });
 
   it("nota do parceiro vem só do mapa (nunca a própria avaliação da Movepark)", () => {
@@ -388,14 +426,41 @@ describe("marketSuperlatives", () => {
     const linhas = proximityRanking({
       units: viracopos().units, // Virapark R$40/dia, Garageinn R$59,99/dia
       prospects: [
-        { name: "Barato", slug: "barato", distance_km: 3, researched_daily_brl: 20 },
+        {
+          name: "Barato",
+          slug: "barato",
+          distance_km: 3,
+          researched_daily_brl: 20,
+          researched_at: "2026-08-29",
+        },
         { name: "Bem avaliado", slug: "bem-avaliado", distance_km: 4, rating: { avg: 4.9, count: 50 } },
       ],
       destinationSlug: "aeroporto-de-viracopos",
+      now: new Date("2026-09-02T12:00:00Z"),
     });
     const { cheapest, bestRated } = marketSuperlatives(linhas);
     expect(cheapest?.name).toBe("Barato");
     expect(bestRated?.name).toBe("Bem avaliado");
+  });
+
+  it("diária pesquisada vencida não ganha o selo de menor diária da região", () => {
+    // O selo é a frase mais forte da lista. Com a pesquisa vencida ele passava para o
+    // concorrente com um número que a própria página já tinha tirado da tabela.
+    const linhas = proximityRanking({
+      units: viracopos().units, // Virapark R$40/dia, Garageinn R$59,99/dia
+      prospects: [
+        {
+          name: "Barato",
+          slug: "barato",
+          distance_km: 3,
+          researched_daily_brl: 20,
+          researched_at: "2026-08-29",
+        },
+      ],
+      destinationSlug: "aeroporto-de-viracopos",
+      now: new Date("2026-11-27T12:00:00Z"),
+    });
+    expect(marketSuperlatives(linhas).cheapest?.name).toBe("Virapark");
   });
 
   it("empate fica com quem está mais perto, porque a lista já vem ordenada por distância", () => {
@@ -527,5 +592,12 @@ describe("preço pesquisado do lote mapeado", () => {
     expect(PRECO_PESQUISADO_TTL_DIAS).toBe(90);
     expect(isPesquisaFresca("2026-06-05")).toBe(true);
     expect(isPesquisaFresca("2026-06-04")).toBe(false);
+  });
+
+  it("a data com hora conta pelo dia, em vez de virar data inválida que esconde o preço", () => {
+    // A coluna é `date`, mas um carimbo com hora já circulou em fixture e cache. Montado
+    // como `<ISO>T12:00:00Z` ele dava NaN, e NaN reprovava calado um preço em dia.
+    expect(isPesquisaFresca("2026-06-05T00:00:00Z")).toBe(true);
+    expect(isPesquisaFresca("2026-06-04T00:00:00Z")).toBe(false);
   });
 });

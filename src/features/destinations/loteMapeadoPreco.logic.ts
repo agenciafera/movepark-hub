@@ -16,6 +16,7 @@
  * diária e semana pesquisadas mostra duas linhas, não quatro com célula vazia.
  */
 
+import { isPesquisaFresca } from "@/features/destinations/destinoPrices.logic";
 import type { ProspectCard } from "@/types/domain";
 
 export type PrecoPesquisadoLinha = {
@@ -44,9 +45,17 @@ const DURACOES: { days: number; campo: keyof ProspectCard; label: string }[] = [
  *
  * Sem `researched_at` também devolve null, mesmo com valor preenchido: preço de
  * terceiro sem data é afirmação sem lastro, e a constraint do banco já diz isso.
+ *
+ * Vencido (90 dias) também devolve null, e a ficha volta a dizer "não informado". A RPC
+ * já não entrega o vencido, mas a ficha é SSG: sem conferir aqui, o HTML de um build do
+ * dia 89 seguia com o preço. Até 27/11/2026 só a tabela do destino tinha esta porta.
  */
-export function precoPesquisado(p: ProspectCard | null | undefined): PrecoPesquisado | null {
+export function precoPesquisado(
+  p: ProspectCard | null | undefined,
+  now: Date = new Date(),
+): PrecoPesquisado | null {
   if (!p?.researched_at) return null;
+  if (!isPesquisaFresca(p.researched_at, now)) return null;
   const linhas: PrecoPesquisadoLinha[] = [];
   for (const d of DURACOES) {
     const bruto = p[d.campo];

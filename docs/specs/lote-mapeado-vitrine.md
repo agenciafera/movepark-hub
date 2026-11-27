@@ -631,6 +631,20 @@ existe porque a página é SSG: o HTML sai congelado no dia do build, e sem chec
 uma página construída no dia 89 mostraria o preço no dia 200. É o mesmo desenho do
 `isSnapshotFresh` da nota do Google.
 
+A segunda porta vale em **toda superfície que mostra o número**, e não só na tabela: a tabela
+e a resposta curta do destino (`pesquisadoRows`), a lista de distância e o selo "Menor diária
+da região" (`proximityRanking`, que recebe `researched_at` junto da diária) e a ficha do
+próprio lote (`precoPesquisado`). Até 27/11/2026 só a tabela conferia. Medido naquele dia, no
+90º dia da pesquisa de Confins: a tabela já tinha escondido o preço e a lista logo abaixo
+seguia com "a partir de R$ 22,90/dia", sem data, e com o selo de menor diária. A conta é pelo
+dia (`researched_at` é `date`); um carimbo com hora conta pelo dia dele em vez de virar data
+inválida.
+
+Teste que usa preço pesquisado com data fixa **congela o relógio** (`vi.useFakeTimers({ toFake:
+["Date"] })` + `vi.setSystemTime`). Sem isso a data da fixture envelhece e o caso quebra sozinho
+no 90º dia: foi o que derrubou três casos de `destino.test.tsx` em 27/11/2026, em qualquer
+commit, sem mudança de código.
+
 Vence o **preço**, não a ficha: a linha do lote continua na página com endereço, distância e
 link, só sem tarifa. Sumir com a ficha seria esconder um estacionamento que existe.
 
@@ -778,3 +792,4 @@ Candidatas a chave, provavelmente em cascata:
 - [x] Cobertura de concorrente: 23 dos 26 destinos com 3 ou mais lotes mapeados publicados. Maceió, João Pessoa e Teresina ficam abaixo por falta de mercado, não por falta de busca.
 - [x] Preço pesquisado do lote mapeado na tabela do destino, com data ao lado, fora do JSON-LD e fora do grant público no caso da fonte. Constraint recusa preço sem data e sem fonte, e recusa zero.
 - [x] Validade de 90 dias no preço pesquisado: a RPC devolve nulo no vencido, a página confere de novo na renderização e o painel marca "Preço vencido" para quem vai reconferir (`20261111091500`).
+- [x] A segunda porta cobre a lista de distância, o selo de menor diária e a ficha do lote, além da tabela (27/11/2026).

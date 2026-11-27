@@ -126,9 +126,16 @@ export const PRECO_PESQUISADO_TTL_DIAS = 90;
  * é SSG: o HTML sai congelado no dia do build, e sem checar de novo na renderização uma
  * página construída no dia 89 seguiria mostrando o preço no dia 200. É o mesmo desenho
  * do `isSnapshotFresh` da nota do Google.
+ *
+ * Toda superfície que mostra preço pesquisado passa por aqui: a tabela (`pesquisadoRows`),
+ * a lista de distância e o selo de menor diária (`proximityRanking`) e a ficha do lote
+ * (`precoPesquisado`). Até 27/11/2026 só a tabela passava.
+ *
+ * Conta pelo DIA: a coluna é `date`, e um carimbo com hora montado como `<ISO>T12:00:00Z`
+ * virava data inválida, que reprovava calado um preço em dia.
  */
 export function isPesquisaFresca(researchedAt: string, now: Date = new Date()): boolean {
-  const idade = now.getTime() - new Date(`${researchedAt}T12:00:00Z`).getTime();
+  const idade = now.getTime() - new Date(`${researchedAt.slice(0, 10)}T12:00:00Z`).getTime();
   return idade < PRECO_PESQUISADO_TTL_DIAS * 24 * 60 * 60 * 1000;
 }
 
@@ -369,6 +376,8 @@ export type ProximityProspect = {
   rating?: { avg: number; count: number } | null;
   /** Diária pesquisada (ADR-010, E0.17-k). Nulo na maioria: cobre só quem já foi cotado. */
   researched_daily_brl?: number | null;
+  /** Data da pesquisa. Sem ela, ou vencida, a diária não entra na lista nem no selo. */
+  researched_at?: string | null;
 };
 
 /**
@@ -398,6 +407,8 @@ export function proximityRanking(args: {
   /** Nota do Google por `company_slug/location_slug`, do mesmo card da vitrine (fresca,
    *  fato da unidade). Sem o mapa, o parceiro entra sem nota — nunca com a própria. */
   googleRatingByLocation?: Map<string, { avg: number; count: number } | null>;
+  /** Relógio da validade do preço pesquisado. Só o teste passa. */
+  now?: Date;
 }): ProximityRow[] {
   const sufixo = args.anchorLabel ? ` ${args.anchorLabel}` : "";
   const carros = carUnits(args.units);
@@ -444,7 +455,13 @@ export function proximityRanking(args: {
         meters == null
           ? null
           : `${formatDistance(meters)}${p.reference_name ? ` do ${p.reference_name}` : sufixo}`,
-      dailyFrom: p.researched_daily_brl ?? null,
+      // A mesma validade da tabela. Sem ela, no 90º dia a tabela escondia o preço e esta
+      // lista seguia com "a partir de R$ 22,90/dia", sem data, e com o selo de menor
+      // diária da região (medido em 27/11/2026). Vence o preço, a linha do lote fica.
+      dailyFrom:
+        p.researched_at && isPesquisaFresca(p.researched_at, args.now)
+          ? (p.researched_daily_brl ?? null)
+          : null,
       path: p.public_path ?? caminhoFicha(args.destinationSlug, p.public_slug ?? p.slug),
       kind: "mapped" as const,
     };
