@@ -507,6 +507,48 @@ agosto a outubro ficam como histórico datado na dona de "como estacionar barato
   ano e guias) precisa de rodada quando o agendamento aplicar. Várias frases mudam de sentido de
   novo: a partir de 01/12 o Aeropark fica mais barato até 20 diárias na descoberta.
 
+## Rodada extra de 27/11/2026: a Aerovalet volta
+
+A parceria voltou no fim da tarde do mesmo dia, e os 143 campos (87 documentos) que a rodada acima
+reescreveu voltaram a citar a Aerovalet pela migration `20261209200000_aerovalet_volta_textos.sql`.
+A saída tinha começado de um mal-entendido: as três unidades foram tiradas da vitrine às 11:38
+porque o subdomínio `aerovalet.movepark.co` estava sendo redirecionado, e isso foi lido como saída
+do parceiro. O post mortem da queda do banco do mesmo dia está em `deploy-automatico.md`.
+
+### De onde veio o texto
+
+As migrations da saída guardam só o texto novo e o **md5** do antigo. O texto antigo saiu dos
+arquivos de trabalho da sessão que fez a reescrita (`orig/`), e cada um dos 143 só entrou quando o
+md5 batia com o registrado. Lição para a próxima vez: rodada que pode ser desfeita guarda o
+original no repo ou no banco, não só na pasta temporária da sessão.
+
+### O que não voltou como era
+
+- **Aeropark de Guarulhos na tabela de 13/11/2026.** O texto de manhã ainda tinha a de 19/10, e a
+  coberta e a descoberta dele mudaram até 17 diárias. 104 cifras em 27 campos foram trocadas pelo
+  `simulate_price` da mesma vaga e duração, e as diferenças refeitas (semana descoberta contra a
+  Aerovalet de R$ 56,00 para R$ 49,00, coberta de R$ 98,00 para R$ 77,00, 2 diárias de R$ 10,00
+  para R$ 6,00, "de 7 a 12 dias" de R$ 8,00/14,00 para R$ 7,00/11,00 por dia). O valet segue na
+  de 19/10, e as frases que citavam os dois passaram a dar as duas datas.
+- **Mudou de sentido:** o degrau da coberta do Aeropark sumiu (17 diárias custam R$ 423,30 e 18,
+  R$ 430,20), então "reserve dezoito, que devolve R$ 10,10" e "só a coberta tem um ponto assim"
+  saíram. O primeiro degrau da escada de 15 diárias passou de R$ 13,80 para R$ 31,80.
+- **Bloco "em números"** dos três posts donas de GRU: saída de `lint:bloco-fato --print GRU`, que
+  agora traz a Pare Seguro ao lado de Aeropark e Aerovalet.
+- **Aerovalet** conferida no motor: segue na tabela de 28/10/2026 em GRU e CGH.
+
+Verificador: nenhuma cifra antiga do Aeropark sobrou; todo R$ em trecho do Aeropark é da ficha
+nova, do valet, de outro parceiro conferido ou de diferença conferida à mão; as tabelas com coluna
+de diferença fecham a conta. Leitura de volta: 143 de 143 idênticos.
+
+### Aberto
+
+- **"Dois pátios parceiros" em Guarulhos.** 27 frases em 11 campos contam dois parceiros na praça
+  (Aerovalet e Aeropark), mas a Pare Seguro está no ar desde 05/11/2026. Já estava errado no texto
+  de manhã; corrigir pede incluir a Pare Seguro nas comparações e nas distâncias por terminal, uma
+  rodada de texto própria.
+- A rodada da Pare Seguro de 01/12/2026 (acima) continua valendo.
+
 ## O procedimento, para a próxima rodada
 
 > Desde 12/11/2026 o método mora na skill `.claude/skills/frescor-de-preco/SKILL.md`, que cobre

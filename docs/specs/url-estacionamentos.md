@@ -412,4 +412,6 @@ subdomínio foi apagado na Cloudflare e as três unidades foram republicadas.
 Seguindo a regra acima, as entradas da Aerovalet saíram do `FICHA_DE_PARCEIRO_QUE_SAIU` (o mapa
 ficou vazio) e as URLs do WordPress voltaram a apontar para a ficha. Os links do blog continuam
 indo para a página do aeroporto (a migration `20261209130000` não foi desfeita, e o link segue
-válido). O texto reescrito sem a Aerovalet também continua como está.
+válido). O texto reescrito sem a Aerovalet voltou a citá-la na migration
+`20261209200000_aerovalet_volta_textos.sql`, com o Aeropark já na tabela de 13/11/2026 (ver
+`rotina-mensal-frescor.md`, "Rodada extra de 27/11/2026: a Aerovalet volta").
