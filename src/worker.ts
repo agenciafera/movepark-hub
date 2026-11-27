@@ -540,15 +540,13 @@ const WP_REDIRECTION_PLUGIN_REDIRECTS: Record<string, string> = {
  * no sitemap e respondia 301.
  */
 const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
-  // A Aerovalet deixou a Movepark em 27/11/2026: vai direto para o aeroporto, sem passar pela
-  // ficha que saiu do ar (ver `FICHA_DE_PARCEIRO_QUE_SAIU`).
-  "/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos":
-    "/estacionamentos/aeroporto-guarulhos",
-  "/estacionamentos/aeroporto-congonhas/aerovalet-congonhas-estacionamento-aeroporto-congonhas":
-    "/estacionamentos/aeroporto-congonhas",
-  "/estacionamentos/terminal-rodoviario-tiete/aerovalet-tiete-terminal-rodoviario-tiete":
-    "/estacionamentos/rodoviaria-tiete",
   // Parceiros ativos do Hub
+  "/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos":
+    "/estacionamentos/aeroporto-guarulhos/aerovalet",
+  "/estacionamentos/aeroporto-congonhas/aerovalet-congonhas-estacionamento-aeroporto-congonhas":
+    "/estacionamentos/aeroporto-congonhas/aerovalet",
+  "/estacionamentos/terminal-rodoviario-tiete/aerovalet-tiete-terminal-rodoviario-tiete":
+    "/estacionamentos/rodoviaria-tiete/aerovalet",
   "/estacionamentos/aeroporto-guarulhos/aeropark-guarulhos": "/estacionamentos/aeroporto-guarulhos/aeropark",
   "/estacionamentos/aeroporto-afonso-pena/abba-park-estacionamento-aeroporto-afonso-pena":
     "/estacionamentos/aeroporto-curitiba/abbapark",
@@ -621,13 +619,11 @@ const WP_ESTACIONAMENTO_REDIRECTS: Record<string, string> = {
  *
  * Se o parceiro voltar, a entrada SAI deste mapa no mesmo PR que o republica: com a página no
  * ar, o 301 roubaria a própria ficha (o caso do `bandeira-park`, no mapa acima).
+ *
+ * Vazio desde 27/11/2026: a Aerovalet entrou aqui ao meio-dia e saiu no fim da tarde, quando a
+ * parceria voltou e as três unidades foram republicadas.
  */
-const FICHA_DE_PARCEIRO_QUE_SAIU: Record<string, string> = {
-  // Aerovalet, 27/11/2026: empresa e as três unidades despublicadas no Manager.
-  "/estacionamentos/aeroporto-guarulhos/aerovalet": "/estacionamentos/aeroporto-guarulhos",
-  "/estacionamentos/aeroporto-congonhas/aerovalet": "/estacionamentos/aeroporto-congonhas",
-  "/estacionamentos/rodoviaria-tiete/aerovalet": "/estacionamentos/rodoviaria-tiete",
-};
+const FICHA_DE_PARCEIRO_QUE_SAIU: Record<string, string> = {};
 
 /**
  * Ficha de lote mapeado (ADR-010) que saiu do ar porque OUTRO estacionamento passou a ocupar o

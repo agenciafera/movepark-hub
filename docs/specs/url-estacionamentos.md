@@ -401,3 +401,15 @@ rodada, com o que mudou de sentido, está em
 [`rotina-mensal-frescor.md`](./rotina-mensal-frescor.md), seção "Rodada extra de 27/11/2026: a
 Aerovalet sai". Ficaram 24 posts despublicados (consolidados em 301) que ainda a citam e não vão
 ao ar.
+
+### A Aerovalet voltou no mesmo dia (27/11/2026, fim da tarde)
+
+A despublicação das 11:38 não foi feita no Manager: foi um `update location set is_listed =
+false` por SQL, feito pela sessão que redirecionou o subdomínio `aerovalet.movepark.co` (o
+Reservar das unidades apontava para ele). No fim da tarde a parceria voltou, o redirect do
+subdomínio foi apagado na Cloudflare e as três unidades foram republicadas.
+
+Seguindo a regra acima, as entradas da Aerovalet saíram do `FICHA_DE_PARCEIRO_QUE_SAIU` (o mapa
+ficou vazio) e as URLs do WordPress voltaram a apontar para a ficha. Os links do blog continuam
+indo para a página do aeroporto (a migration `20261209130000` não foi desfeita, e o link segue
+válido). O texto reescrito sem a Aerovalet também continua como está.

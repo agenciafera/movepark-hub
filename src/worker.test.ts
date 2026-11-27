@@ -958,42 +958,35 @@ describe("ficha de lote mapeado cujo endereço mudou de dono", () => {
   });
 });
 
-describe("ficha de parceiro que saiu da Movepark", () => {
+describe("ficha de parceiro que voltou para a Movepark", () => {
   /**
-   * A Aerovalet deixou a Movepark em 27/11/2026 e as três unidades saíram do ar. A ficha dela
-   * tem busca de marca e link de fora: sem o 301 viraria 404. Vai para a página do aeroporto,
-   * onde estão os outros estacionamentos.
+   * A Aerovalet saiu e voltou no mesmo dia (27/11/2026). Enquanto esteve fora, as fichas dela
+   * tinham 301 para a página do aeroporto. Com as unidades publicadas de novo, esse 301 roubaria
+   * a própria ficha: o build gera a página e o worker nunca deixa ninguém chegar nela.
    */
   const loc = (path: string) => wpLegacyRedirect(new URL(`https://movepark.co${path}`));
 
   it.each([
-    ["/estacionamentos/aeroporto-guarulhos/aerovalet", "/estacionamentos/aeroporto-guarulhos"],
-    ["/estacionamentos/aeroporto-congonhas/aerovalet", "/estacionamentos/aeroporto-congonhas"],
-    ["/estacionamentos/rodoviaria-tiete/aerovalet", "/estacionamentos/rodoviaria-tiete"],
-  ])("%s vai para a página do aeroporto", (de, para) => {
-    const r = loc(de);
-    expect(r?.status).toBe(301);
-    expect(r?.headers.get("Location")).toBe(para);
+    "/estacionamentos/aeroporto-guarulhos/aerovalet",
+    "/estacionamentos/aeroporto-congonhas/aerovalet",
+    "/estacionamentos/rodoviaria-tiete/aerovalet",
+  ])("%s não é redirecionada", (ficha) => {
+    expect(loc(ficha)).toBeNull();
   });
 
-  it("a URL antiga do WordPress da Aerovalet vai direto para o aeroporto, sem salto pela ficha", () => {
-    const r = loc(
-      "/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos",
-    );
-    expect(r?.headers.get("Location")).toBe("/estacionamentos/aeroporto-guarulhos");
+  it("a URL antiga do WordPress da Aerovalet volta a levar à ficha", () => {
+    expect(
+      loc("/estacionamentos/aeroporto-guarulhos/aerovalet-estacionamento-aeroporto-guarulhos")
+        ?.headers.get("Location"),
+    ).toBe("/estacionamentos/aeroporto-guarulhos/aerovalet");
     expect(
       loc("/estacionamentos/aeroporto-congonhas/aerovalet-congonhas-estacionamento-aeroporto-congonhas")
         ?.headers.get("Location"),
-    ).toBe("/estacionamentos/aeroporto-congonhas");
+    ).toBe("/estacionamentos/aeroporto-congonhas/aerovalet");
     expect(
       loc("/estacionamentos/terminal-rodoviario-tiete/aerovalet-tiete-terminal-rodoviario-tiete")
         ?.headers.get("Location"),
-    ).toBe("/estacionamentos/rodoviaria-tiete");
-  });
-
-  it("preserva a query (UTM de campanha)", () => {
-    const r = loc("/estacionamentos/aeroporto-guarulhos/aerovalet?utm_source=google");
-    expect(r?.headers.get("Location")).toBe("/estacionamentos/aeroporto-guarulhos?utm_source=google");
+    ).toBe("/estacionamentos/rodoviaria-tiete/aerovalet");
   });
 });
 
