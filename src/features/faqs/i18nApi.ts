@@ -9,6 +9,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { LOCALES_TRADUZIDOS, type LocaleTraduzido } from "@/lib/i18n";
+import { leituraDoBuild } from "@/lib/leitura-do-build";
 
 export type FaqTraducao = {
   faq_id: string;
@@ -19,14 +20,24 @@ export type FaqTraducao = {
   body_md: string | null;
 };
 
-/** Todas as traduções publicadas COM slug próprio, que são as que viram URL. */
-export async function fetchTraducoesDeFaq(): Promise<FaqTraducao[]> {
+const lerTraducoesDeFaq = leituraDoBuild(async () => {
   const { data, error } = await supabase
     .from("faq_i18n")
     .select("faq_id, locale, slug, question, answer, body_md")
     .not("slug", "is", null);
   if (error) throw error;
   return (data ?? []) as FaqTraducao[];
+});
+
+/**
+ * Todas as traduções publicadas COM slug próprio, que são as que viram URL.
+ *
+ * Lida uma vez por build (`leituraDoBuild`): toda página de FAQ chama isto para montar o
+ * `hreflang`, e eram ~1.700 leituras da tabela inteira por build. Devolve cópia da lista
+ * para nenhum chamador ordenar no lugar o que a página seguinte vai receber.
+ */
+export async function fetchTraducoesDeFaq(): Promise<FaqTraducao[]> {
+  return [...(await lerTraducoesDeFaq())];
 }
 
 /** A tradução de uma pergunta num idioma, resolvida pelo slug daquele idioma. */

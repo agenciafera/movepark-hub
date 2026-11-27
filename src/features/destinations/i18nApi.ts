@@ -9,6 +9,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { LOCALES_TRADUZIDOS, type LocaleTraduzido } from "@/lib/i18n";
+import { leituraDoBuild } from "@/lib/leitura-do-build";
 
 export type DestinoTraduzido = {
   destination_id: string;
@@ -20,13 +21,22 @@ export type DestinoTraduzido = {
   intro: string | null;
 };
 
-/** Todas as traduções publicadas, para o build gerar as rotas e o cluster. */
-export async function fetchDestinosTraduzidos(): Promise<DestinoTraduzido[]> {
+const lerDestinosTraduzidos = leituraDoBuild(async () => {
   const { data, error } = await supabase
     .from("destination_i18n")
     .select("destination_id, locale, slug, seo_label, meta_title, meta_description, intro");
   if (error) throw error;
   return (data ?? []) as DestinoTraduzido[];
+});
+
+/**
+ * Todas as traduções publicadas, para o build gerar as rotas e o cluster.
+ *
+ * Lida uma vez por build (`leituraDoBuild`): os loaders de destino, de unidade e de FAQ
+ * chamam isto em toda página, e eram ~1.500 leituras da tabela inteira por build.
+ */
+export async function fetchDestinosTraduzidos(): Promise<DestinoTraduzido[]> {
+  return [...(await lerDestinosTraduzidos())];
 }
 
 /** O slug daquele idioma, com queda para o slug público original. */

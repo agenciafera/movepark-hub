@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { leituraDoBuild } from "@/lib/leitura-do-build";
 import { pickRelatedFaqs } from "./related.logic";
 import type {
   Faq,
@@ -268,8 +269,7 @@ export type FaqIndexItem = {
   destination: { name: string; short_name: string | null; slug: string } | null;
 };
 
-/** Acervo publicado de FAQ global + destino, pro hub /faq e pras relacionadas. */
-export async function fetchFaqIndex(): Promise<FaqIndexItem[]> {
+const lerFaqIndex = leituraDoBuild(async () => {
   const { data, error } = await supabase
     .from("faq")
     .select(FAQ_INDEX_SELECT)
@@ -280,6 +280,16 @@ export async function fetchFaqIndex(): Promise<FaqIndexItem[]> {
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as unknown as FaqIndexItem[];
+});
+
+/**
+ * Acervo publicado de FAQ global + destino, pro hub /faq e pras relacionadas.
+ *
+ * Lido uma vez por build (`leituraDoBuild`): cada /faq/<slug> busca o acervo para
+ * escolher as relacionadas, e eram ~1.700 leituras da tabela inteira por build.
+ */
+export async function fetchFaqIndex(): Promise<FaqIndexItem[]> {
+  return [...(await lerFaqIndex())];
 }
 
 export type FaqPageFaq = {

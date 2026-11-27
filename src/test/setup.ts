@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
+import { limparLeiturasDoBuild } from "@/lib/leitura-do-build";
 import { disableScrollTriggerIfLoaded } from "./gsap-teardown";
 import { server } from "./msw/server";
 
@@ -9,6 +10,9 @@ import { server } from "./msw/server";
 // no beforeEach torna cada teste hermético e mata essa classe de flakiness (que quebrou o CI).
 beforeEach(() => {
   sessionStorage.clear();
+  // As leituras de tabela inteira guardam o resultado por 5 minutos (`leituraDoBuild`).
+  // Sem isto, o handler de MSW de um teste seria ignorado porque o anterior já encheu o cache.
+  limparLeiturasDoBuild();
 });
 
 // Stub das envs do Vite usadas por src/lib/supabase.ts. O client já degrada via

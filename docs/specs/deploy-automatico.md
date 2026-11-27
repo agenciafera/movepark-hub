@@ -308,6 +308,33 @@ Cloudflare, na conta `Financeiro@fera.ag`.
 O mesmo log mostrou que o Cloudflare roda **bun 1.2.15**, e não a 1.3.13 que o `CLAUDE.md` diz
 estar fixada em `BUN_VERSION`. Não causou esta falha.
 
+## Oito builds seguidos derrubaram o banco (27/11/2026)
+
+Entre 15:06 e 15:58 (BRT) uma sessão fez 8 pushes na `main`, cada um com uma migration de conteúdo
+(a saída da Aerovalet dos textos de Guarulhos e Congonhas). Cada push gera um build, e os 8 rodaram
+em fila de 18:05 a 19:03 UTC. A instância do banco (Micro: 1 GB de RAM, CPU compartilhada) parou de
+responder às 19:03:55: `db`, `rest`, `auth` e `storage` ficaram UNHEALTHY, a API respondia 522 e o
+site ficou sem busca, login e checkout até o reinício pela Management API, às 20:35 UTC.
+
+**Por que um build pesa tanto.** Medido no `edge_logs` (agente `node`): ~15.800 consultas por
+build. Cerca de 5.000 eram a MESMA leitura de tabela inteira repetida em cada página, porque o
+loader de cada `/faq/<slug>` (e os de destino e unidade) buscava o acervo todo de novo:
+
+| Leitura | Por build | O que traz |
+|---|---|---|
+| `fetchTraducoesDeFaq()` | ~1.700 | todas as traduções de FAQ com texto (154 kB; ~260 MB por build) |
+| `fetchFaqIndex()` | ~1.700 | todas as FAQs publicadas, para as relacionadas |
+| `fetchDestinosTraduzidos()` | ~1.500 | todas as traduções de destino |
+
+**Correção:** as três passam por `leituraDoBuild` (`src/lib/leitura-do-build.ts`), o mesmo
+single-flight com prazo de 5 minutos que o `fetchPriceIndex` já usava: uma leitura serve o build
+inteiro. Toda leitura nova de tabela inteira feita por loader SSG deve passar por ali. Leitura que
+depende de quem está logado não pode, porque o valor guardado seria servido a outra sessão.
+
+**Regra para conteúdo:** migration de conteúdo não precisa de push para ir ao ar, porque o gatilho
+`<tabela>_site_rebuild` já pede o rebuild e o cron agrupa os pedidos. Junte as migrations de uma
+rodada num push só em vez de um push por pacote.
+
 ## Testes
 
 `supabase/tests/pricing_mirror.test.sql` cobre o lado do espelho (seis casos): a porta aberta e
