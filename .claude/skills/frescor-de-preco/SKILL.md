@@ -352,7 +352,8 @@ próxima rodada" e esta skill no mesmo commit. Mensagem de commit no padrão
   parceiro que a reescrita corrigiu de carona: na volta da Aerovalet, 104 cifras do Aeropark ainda
   eram da tabela de 19/10. Rode o verificador no texto restaurado como se fosse texto novo, e
   desconfie de diferença antiga que coincide com um valor válido da ficha nova (R$ 26,90 era
-  diferença velha e também diária nova da coberta).
+  diferença velha e também diária nova da coberta). O verificador de R$ não vê frase sem cifra:
+  "só a coberta tem degrau, reserve dezoito" passou por ele e só apareceu no HTML publicado.
 - **O índice devolve o preço de 1 diária mesmo com estadia mínima maior.** Nunca escreva "diária
   avulsa" sem conferir `location_parking_type.minimum_stay_value`. O `bloco-de-fato.mjs` passou a
   filtrar isso em 27/11/2026.

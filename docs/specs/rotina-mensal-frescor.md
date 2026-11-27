@@ -541,6 +541,12 @@ Verificador: nenhuma cifra antiga do Aeropark sobrou; todo R$ em trecho do Aerop
 nova, do valet, de outro parceiro conferido ou de diferença conferida à mão; as tabelas com coluna
 de diferença fecham a conta. Leitura de volta: 143 de 143 idênticos.
 
+O HTML publicado ainda mostrou três frases de degrau **sem cifra** ("no Aeropark, só a vaga coberta
+tem degrau: viagem de dezessete dias, reserve dezoito"; "degrau aos 7, aos 13 e aos 18 dias"), que
+o verificador de R$ não enxerga. Corrigidas em `20261209201000_aerovalet_volta_degrau_aeropark.sql`.
+Na próxima, varra também as afirmações sem número do parceiro que mudou (degrau, "mais barato",
+"empata", faixas), não só as cifras.
+
 ### Aberto
 
 - **"Dois pátios parceiros" em Guarulhos.** 27 frases em 11 campos contam dois parceiros na praça
