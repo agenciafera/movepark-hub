@@ -197,7 +197,12 @@ export function frasePatio(patio, destino, extras, referencia) {
     partes.push("não declara o tempo de traslado na ficha");
   }
   const precos = [];
-  if (Number.isFinite(patio.diaria)) precos.push(`**${brl(patio.diaria)}** na diária avulsa`);
+  // Diária avulsa só existe onde a unidade aceita estadia de um dia. O índice devolve o preço de
+  // 1 diária mesmo com estadia mínima de 2, e a frase anunciava "diária avulsa" e "estadia mínima
+  // de 2 diárias" juntas para a Pare Seguro (27/11/2026). Com mínimo acima de 1, a diária some.
+  if (Number.isFinite(patio.diaria) && !(patio.minimo > 1)) {
+    precos.push(`**${brl(patio.diaria)}** na diária avulsa`);
+  }
   precos.push(`**${brl(patio.semana)}** por 7 diárias`);
   if (Number.isFinite(patio.mes)) precos.push(`**${brl(patio.mes)}** por 30`);
   const lista =

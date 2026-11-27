@@ -48,6 +48,21 @@ describe("periodoDaNota", () => {
   });
 });
 
+describe("frasePatio · diária avulsa", () => {
+  // Regressão de 27/11/2026: a Pare Seguro tem estadia mínima de 2 diárias, mas o índice devolve o
+  // preço de 1 diária, e o bloco anunciava "R$ 18,90 na diária avulsa" na mesma frase do mínimo.
+  it("não anuncia diária avulsa quando a estadia mínima passa de uma diária", () => {
+    const f = frasePatio({ ...aeropark, diaria: 18.9 }, GRU, extrasAeropark, "novembro de 2026");
+    expect(f).not.toContain("diária avulsa");
+    expect(f).toContain("estadia mínima de **2 diárias**");
+  });
+
+  it("anuncia a diária avulsa quando a unidade aceita um dia", () => {
+    const f = frasePatio({ ...aeropark, diaria: 18.9, minimo: null }, GRU, extrasAeropark, "novembro de 2026");
+    expect(f).toContain("**R$ 18,90** na diária avulsa");
+  });
+});
+
 describe("frasePatio · avaliação (Conteúdo 30)", () => {
   const comNota = (nota) => ({ ...extrasAeropark, nota });
 
