@@ -707,6 +707,15 @@ de vez), "Estacionamento Abraça" (ficha sem dono, sem telefone e sem avaliaçã
 aeroporto) e "Estacionamento Aeroporto" na R. Maria Franceliana Braz (sem site nem marca). O
 `estacionamentoviracopos.com` é um segundo domínio do Viracopos Aeroparking.
 
+**Site x reserva: vale a reserva (27/11/2026, migration `20261209190000`).** O site do Bandeira Park
+anuncia R$ 18,49 a diária em Viracopos, e a reserva para onde ele encaminha cobra R$ 24,99 (7 = R$
+125,93, 15 = R$ 233,87, 30 = R$ 323,82, a mesma tabela da MultiPark). A ficha passou ao valor da
+reserva, com o do site anotado em `research_source`, e as FAQs "quanto custa" e "qual o mais barato"
+(pt, en, es) foram reescritas: a menor avulsa passou a ser o Ouro Park e a estadia longa mais barata,
+a Aerovalet. Regra: quando o operador publica um número no site e cobra outro na reserva, a página
+mostra o que o cliente paga e diz que o site diverge. Os posts do blog de Viracopos ainda citam o
+R$ 18,49 do Bandeira e ficaram para uma rodada própria.
+
 ### A primeira carga, e o que ficou de fora
 
 Entrou só o que foi conferido em agosto de 2026: Park Confins, Central Park e Multipark em
