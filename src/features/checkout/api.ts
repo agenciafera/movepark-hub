@@ -588,7 +588,13 @@ export type CardChargeArgs = {
 
 export type CardChargeResponse = {
   payment_id: string;
-  status: "pending" | "paid" | "failed" | "refunded" | "canceled";
+  /**
+   * `unconfirmed` (HTTP 202): o gateway não respondeu e o cartão pode ter sido cobrado. A reserva
+   * fica esperando o aviso; o cliente NÃO deve tentar de novo (26/11/2026, MP-F00991).
+   */
+  status: "pending" | "paid" | "failed" | "refunded" | "canceled" | "unconfirmed";
+  /** Texto para o cliente quando `status` é `unconfirmed`. */
+  message?: string;
   installments: number;
   charged_amount: number;
   interest_amount: number;

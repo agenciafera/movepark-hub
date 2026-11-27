@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  type CardChargeResponse,
   useCheckoutBooking,
   useCreateCardCharge,
   useCreatePixCharge,
@@ -60,8 +61,17 @@ type Props = {
    */
   termsAccepted?: boolean;
   paymentStatus: "pending" | "authorized" | "paid" | "refunded" | "failed" | "cancelled" | null;
+  /** Meio do último pagamento (`card`/`pix`): o aviso de "confirmando" é do cartão. */
+  paymentMethod?: string | null;
   onBack: () => void;
 };
+
+/**
+ * Cartão esperando resposta da operadora (em análise, ou sem resposta do gateway como na noite de
+ * 25/11/2026). O cliente não pode achar que falhou e pagar de novo.
+ */
+export const CARD_CONFIRMING_NOTE =
+  "Estamos confirmando o pagamento com a operadora do cartão. Não pague de novo: quando confirmar, o voucher chega no seu e-mail.";
 
 export function Step4Payment({
   bookingId,
@@ -70,6 +80,7 @@ export function Step4Payment({
   customerTaxId,
   termsAccepted,
   paymentStatus,
+  paymentMethod,
   onBack,
 }: Props) {
   const qc = useQueryClient();
@@ -225,9 +236,10 @@ export function Step4Payment({
       }
       await garantirAceite();
       trackPayment("card", installments);
+      let res: CardChargeResponse;
       if (savedCard) {
         stage = "charge";
-        await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: entry.cardChoice });
+        res = await card.mutateAsync({ booking_code: bookingCode, installments, payment_method_id: entry.cardChoice });
       } else {
         // Validade, CVV e endereço antes de tokenizar: sem endereço o antifraude recusa, e o token é
         // de uso único.
@@ -239,8 +251,16 @@ export function Step4Payment({
         stage = "tokenize";
         const cartao = await entry.tokenizeNew(config.data!.public_key, conferido);
         stage = "charge";
-        await card.mutateAsync({ booking_code: bookingCode, installments, ...cartao });
+        res = await card.mutateAsync({ booking_code: bookingCode, installments, ...cartao });
         entry.rememberAddress(conferido.parts);
+      }
+      if (res.status === "unconfirmed") {
+        // O gateway não respondeu e o cartão pode ter sido cobrado (MP-F00991): nada de "tente de
+        // novo". A reserva fica esperando o aviso, e o checkout mostra o "confirmando". O rastro
+        // (`charge_unconfirmed`) já foi gravado pela Edge.
+        toast.warning(res.message ?? CARD_CONFIRMING_NOTE, { duration: 15000 });
+        await qc.invalidateQueries({ queryKey: ["checkout-booking", bookingCode] });
+        return;
       }
       logCheckoutEvent(bookingCode, "client:card_charge_ok", null, ctx);
       toast.success("Pagamento aprovado. Confirmando…");
@@ -440,6 +460,12 @@ export function Step4Payment({
                     Pagar com PIX
                   </Button>
                 </div>
+              )}
+
+              {waitingForConfirmation && paymentMethod === "card" && (
+                <p role="status" className="text-pretty text-body-sm text-muted">
+                  {CARD_CONFIRMING_NOTE}
+                </p>
               )}
 
               <Button type="submit" className="w-full" disabled={busy || antifraude === "limit"}>

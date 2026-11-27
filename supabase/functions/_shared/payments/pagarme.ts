@@ -14,6 +14,7 @@ import type {
   CardChargeInput,
   ChargeResult,
   ChargeStatus,
+  GatewayOrder,
   GatewayPayable,
   PayablesResult,
   PaymentGateway,
@@ -471,6 +472,32 @@ export function buildChargeResult(httpStatus: number, body: unknown): ChargeResu
 }
 
 /**
+ * Lista de `GET /orders?code=...` → pedidos normalizados. A v5 devolve `{ data: [...] }`; cada item
+ * é a mesma order do POST, então o `ChargeResult` sai do mesmo `buildChargeResult`.
+ */
+export function buildOrderList(httpStatus: number, body: unknown): GatewayOrder[] {
+  if (httpStatus < 200 || httpStatus >= 300) return [];
+  const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+  const rows = Array.isArray(b.data) ? (b.data as Record<string, unknown>[]) : [];
+  return rows.map((o) => {
+    const charge = (Array.isArray(o.charges) ? (o.charges as Record<string, unknown>[])[0] : null) ?? {};
+    const amount = Number(o.amount ?? charge.amount);
+    return {
+      ...buildChargeResult(httpStatus, o),
+      createdAt: (o.created_at as string) ?? null,
+      amountCents: Number.isFinite(amount) ? amount : null,
+      paymentMethod: (charge.payment_method as string) ?? null,
+    };
+  });
+}
+
+/** Query de `GET /orders` por código, só os pedidos desde `createdSinceIso`. */
+export function orderSearchPath(code: string, createdSinceIso: string): string {
+  const q = new URLSearchParams({ code, created_since: createdSinceIso, size: "20" });
+  return `/orders?${q.toString()}`;
+}
+
+/**
  * Extrai o RefundResult da resposta de DELETE /charges/{id}. Diferente de `buildChargeResult`,
  * o corpo aqui é UM charge (`{ id, status, amount, last_transaction }`), não uma order com `charges[]`.
  */
@@ -865,16 +892,55 @@ export class PagarmeGateway implements PaymentGateway {
     return buildChargeResult(httpStatus, parsed);
   }
 
+  /**
+   * POST /orders com `Idempotency-Key`. Até 25/11/2026 o pedido ia sem a chave (só o repasse e o
+   * saque mandavam). Erro de rede não lança: vira `httpStatus: 0`, porque o pedido pode ter chegado
+   * ao gateway, e quem chama trata 0 e 5xx do mesmo jeito, como resultado desconhecido.
+   */
+  private async createOrder(body: Record<string, unknown>, idempotencyKey: string): Promise<ChargeResult> {
+    let res: Response;
+    try {
+      res = await fetch(`${pagarmeBaseUrl(this.secretKey)}/orders`, {
+        method: "POST",
+        headers: {
+          Authorization: pagarmeAuthHeader(this.secretKey),
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      return buildChargeResult(0, { message: e instanceof Error ? e.message : "erro de rede" });
+    }
+    let parsed: unknown = null;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = null;
+    }
+    return buildChargeResult(res.status, parsed);
+  }
+
   createPixCharge(input: PixChargeInput): Promise<ChargeResult> {
-    return this.charge("POST", "/orders", buildOrderBody(input));
+    return this.createOrder(buildOrderBody(input), input.idempotencyKey ?? crypto.randomUUID());
   }
 
   createCardCharge(input: CardChargeInput): Promise<ChargeResult> {
-    return this.charge("POST", "/orders", buildCardOrderBody(input));
+    return this.createOrder(buildCardOrderBody(input), input.idempotencyKey ?? crypto.randomUUID());
   }
 
   getCharge(orderId: string): Promise<ChargeResult> {
     return this.charge("GET", `/orders/${orderId}`);
+  }
+
+  async findOrdersByCode(code: string, createdSinceIso: string): Promise<GatewayOrder[]> {
+    try {
+      const { httpStatus, parsed } = await this.rawFetch("GET", orderSearchPath(code, createdSinceIso));
+      return buildOrderList(httpStatus, parsed);
+    } catch (e) {
+      console.error("[pagarme] busca de pedidos por código falhou:", code, e instanceof Error ? e.message : e);
+      return [];
+    }
   }
 
   /**

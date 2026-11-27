@@ -478,6 +478,36 @@ export function tplDuplicatePaymentTeam(d: {
   };
 }
 
+/**
+ * Cobrança paga no gateway sem pagamento no Hub (26/11/2026, depois da MP-F00991): o cliente pagou
+ * e não tem reserva. Até então o webhook descartava o aviso e ninguém ficava sabendo.
+ */
+export function tplOrphanChargeTeam(d: {
+  bookingCode: string | null;
+  chargeId: string | null;
+  orderId: string | null;
+  method: string | null;
+  amount: number | null;
+  eventType: string;
+}): { subject: string; html: string } {
+  const meio = d.method === "credit_card" ? "cartão" : d.method === "pix" ? "PIX" : (d.method ?? "meio desconhecido");
+  const reserva = d.bookingCode ? escapeHtml(d.bookingCode) : "sem reserva no metadata";
+  return {
+    subject: `Pagamento sem reserva${d.bookingCode ? ` (${d.bookingCode})` : ""}`,
+    html: shell("Pagamento sem reserva no Hub", `
+      <p>A Pagar.me avisou que esta cobrança foi paga, e o Hub não tem pagamento ligado a ela. O cliente pode ter sido cobrado sem receber a reserva.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${row("Reserva", reserva)}
+        ${row("Cobrança", escapeHtml(d.chargeId ?? "sem id"))}
+        ${row("Pedido", escapeHtml(d.orderId ?? "sem id"))}
+        ${row("Valor", `${meio}${d.amount != null ? `, ${formatBRL(d.amount)}` : ""}`)}
+        ${row("Aviso", escapeHtml(d.eventType))}
+      </table>
+      <p>Confira a cobrança no painel da Pagar.me. Se a reserva ainda tem vaga, reative e ligue o pagamento a ela; se não, devolva o valor e avise o cliente.</p>
+      ${d.bookingCode ? `<p style="margin-top:16px">${button(`${siteUrl()}/manager/bookings/${d.bookingCode}`, "Abrir a reserva")}</p>` : ""}`),
+  };
+}
+
 /** Confirmação ao cliente quando o WhatsApp não saiu (sem telefone ou envio falhou). */
 export function tplSupportTicketCustomer(firstName: string, bookingCode: string, ticketCode: string, bookingUrl: string): { subject: string; html: string } {
   return {

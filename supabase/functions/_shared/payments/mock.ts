@@ -7,6 +7,7 @@ import type {
   AnticipationResult,
   CardChargeInput,
   ChargeResult,
+  GatewayOrder,
   PayablesResult,
   PaymentGateway,
   PixChargeInput,
@@ -48,6 +49,11 @@ export class MockGateway implements PaymentGateway {
       raw: { mock: true },
       httpStatus: 200,
     });
+  }
+
+  findOrdersByCode(_code: string, _createdSinceIso: string): Promise<GatewayOrder[]> {
+    // O mock aprova na hora: nunca há pedido perdido para achar.
+    return Promise.resolve([]);
   }
 
   createCardCharge(input: CardChargeInput): Promise<ChargeResult> {

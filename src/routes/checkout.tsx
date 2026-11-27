@@ -232,6 +232,7 @@ export default function CheckoutPage() {
                   customerTaxId={booking.customer_tax_id}
                   termsAccepted={termsAccepted}
                   paymentStatus={booking.payment?.status ?? null}
+                  paymentMethod={booking.payment?.method ?? null}
                   onBack={() => setStep(stepBefore(4, hasAddons))}
                 />
               ) : (

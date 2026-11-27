@@ -22,6 +22,12 @@
 // diferença entre as tarifas, 100% Movepark, de reserva já paga. Fluxo próprio em ./fare-upgrade.ts.
 //
 // Resposta (201): { payment_id, status, installments, charged_amount, interest_amount, saved_card }
+//
+// Gateway sem resposta (5xx, timeout, rede; 26/11/2026, MP-F00991): procura o pedido pelo código e,
+// se achou, segue normal. Se não achou, grava o pagamento pendente sem ids e responde
+// 202 { payment_id, status: "unconfirmed", message }: o cartão pode ter sido cobrado, então o
+// cliente NÃO é mandado tentar de novo, e nova cobrança da reserva fica bloqueada (409
+// `charge_unconfirmed`) até o webhook ou o prazo. Ver _shared/payments/unconfirmed.ts.
 
 const EDGE_NAME = "create-card-charge";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -76,6 +82,14 @@ import {
   notifyDatesChanged,
 } from "../_shared/payments/date-change.ts";
 import { chargeFareUpgradeByCard, type FareUpgradeBooking } from "./fare-upgrade.ts";
+import {
+  findInFlightUnconfirmed,
+  isUnknownGatewayOutcome,
+  recoverOrder,
+  UNCONFIRMED_CHARGE_MESSAGE,
+  UNCONFIRMED_IN_FLIGHT_MESSAGE,
+  unconfirmedExpiresAt,
+} from "../_shared/payments/unconfirmed.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -231,6 +245,11 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
       .limit(1)
       .maybeSingle();
     if (paid) return await recusar(409, "Esta reserva já foi paga.");
+    // Cartão anterior sem resposta do gateway (MP-F00991): pode ter cobrado. Cobrar de novo agora é
+    // o que fez o cliente pagar duas vezes em 25/11/2026.
+    if (await findInFlightUnconfirmed(admin, booking.id)) {
+      return await recusar(409, UNCONFIRMED_IN_FLIGHT_MESSAGE, { code: "charge_unconfirmed" });
+    }
   }
 
   // 2. Empresa + take_rate + recebedor do parceiro
@@ -509,8 +528,12 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     if (holdErr) return await recusar(409, holdErr.message);
   }
 
-  const result = await gateway.createCardCharge({
-    externalCode: dc ? `${booking.code}-DT-${crypto.randomUUID().slice(0, 4).toUpperCase()}` : booking.code,
+  const externalCode = dc ? `${booking.code}-DT-${crypto.randomUUID().slice(0, 4).toUpperCase()}` : booking.code;
+  const attemptStartedAt = new Date();
+  const idempotencyKey = crypto.randomUUID();
+  let result = await gateway.createCardCharge({
+    externalCode,
+    idempotencyKey,
     amountCents: chargedCents,
     customer: {
       name: payerName,
@@ -529,6 +552,31 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     installments: input.installments,
     metadata: { booking_id: booking.id, booking_code: booking.code, base_cents: String(baseCents), ...(dc ? { kind: "date_change" } : {}) },
   });
+
+  // 8b. Resposta desconhecida (5xx, timeout, rede): o pedido pode ter sido criado mesmo assim
+  // (25/11/2026, MP-F00991). Procura no gateway antes de dizer qualquer coisa ao cliente.
+  const unknownOutcome = isUnknownGatewayOutcome(result.httpStatus);
+  if (unknownOutcome) {
+    const achado = await recoverOrder(admin, gateway, {
+      bookingId: booking.id,
+      code: externalCode,
+      attemptStartedAt,
+      amountCents: chargedCents,
+      paymentMethod: "credit_card",
+    });
+    await logGatewayEvent(admin, {
+      paymentId: null,
+      bookingId: booking.id,
+      kind: "charge_unknown",
+      httpStatus: result.httpStatus,
+      request: { method: "card", amount_cents: chargedCents, installments: input.installments, idempotency_key: idempotencyKey },
+      response: result.raw,
+      note: achado
+        ? `gateway respondeu ${result.httpStatus}, mas o pedido ${achado.orderId} existe (${achado.status})`
+        : `gateway respondeu ${result.httpStatus} e o pedido não apareceu na busca`,
+    });
+    if (achado) result = achado;
+  }
 
   // Recusa do emissor → registra failed e responde 402 (sem confirmar a reserva).
   // Campos da troca de datas na cobrança: o webhook aplica a cotação gravada aqui.
@@ -602,6 +650,72 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     }
     return jsonResponse({ error: "Cartão recusado. Tente outro cartão." }, 402);
   }
+  // 8c. Continua sem saber, e não achou o pedido: o cartão pode ter sido cobrado (na noite de 25/11
+  // a cobrança só apareceu 1h15 depois). Grava o pagamento pendente SEM ids do gateway: segura a
+  // vaga, bloqueia nova tentativa e é onde o webhook pendura a cobrança se ela aparecer. Sem aviso
+  // até o prazo, o cron a dá como recusada e a reserva segue o rumo normal. (Troca de datas fica
+  // de fora: a vaga nova já está presa no hold dela, e o webhook alerta a cobrança sem dono.)
+  if (unknownOutcome && !result.orderId && !dc) {
+    const expiresAt = unconfirmedExpiresAt();
+    const unconfirmedId = crypto.randomUUID();
+    const { error: ucErr } = await admin.from("payment").insert({
+      id: unconfirmedId,
+      booking_id: booking.id,
+      provider: "pagarme",
+      method: "card",
+      provider_payment_id: null,
+      provider_charge_id: null,
+      amount: chargedCents / 100,
+      status: "pending",
+      expires_at: expiresAt,
+      installments: input.installments,
+      split,
+      split_sent_to_gateway: splitEnabled,
+      debt_recovered_cents: debtRecoveryCents,
+      debt_reservation_id: debtReservationId,
+      fee_credit_returned_cents: feeCreditCents,
+      fee_credit_reservation_id: feeCreditReservationId,
+      anticipation_comp_cents: anticipationAppliedCents || null,
+      anticipation_credit_cents: Math.max(0, anticipationCompCents - anticipationAppliedCents),
+      anticipation_estimate_cents: anticipationEstimateCents || null,
+    });
+    if (ucErr) {
+      console.error("[%s] não gravei a cobrança sem resposta:", EDGE_NAME, ucErr.message);
+      return await recusar(502, UNCONFIRMED_CHARGE_MESSAGE, { response: result.raw, code: "charge_unconfirmed" });
+    }
+    if (debtReservationId) {
+      await admin.from("payout_debt_reservation").update({ consumed_by_payment_id: unconfirmedId }).eq("id", debtReservationId);
+    }
+    if (feeCreditReservationId) {
+      await admin.from("payout_fee_credit_reservation").update({ consumed_by_payment_id: unconfirmedId }).eq("id", feeCreditReservationId);
+    }
+    // A reserva vive enquanto a cobrança não tem resposta: o checkout não mostra "expirada" para
+    // quem pode ter pago, e o cron não a expira (cartão pendente segura a reserva).
+    await admin.from("booking").update({ expires_at: expiresAt }).eq("id", booking.id).eq("status", "pending");
+    await logGatewayEvent(admin, {
+      paymentId: unconfirmedId,
+      bookingId: booking.id,
+      kind: "charge_unconfirmed",
+      httpStatus: result.httpStatus,
+      request: { method: "card", amount_cents: chargedCents, installments: input.installments, idempotency_key: idempotencyKey },
+      response: result.raw,
+      note: `sem resposta do gateway; esperando o aviso até ${expiresAt}`,
+    });
+    console.error("[%s] cobrança sem resposta do gateway:", EDGE_NAME, booking.code, result.httpStatus);
+    return jsonResponse(
+      {
+        payment_id: unconfirmedId,
+        status: "unconfirmed",
+        message: UNCONFIRMED_CHARGE_MESSAGE,
+        installments: input.installments,
+        charged_amount: chargedCents / 100,
+        interest_amount: interestCents / 100,
+        saved_card: false,
+      },
+      202,
+    );
+  }
+
   if (!result.orderId || (result.httpStatus ?? 500) >= 400) {
     console.error("Pagar.me card order falhou:", result.httpStatus, JSON.stringify(result.raw));
     return await recusar(502, "Falha ao processar o cartão.", { response: result.raw });

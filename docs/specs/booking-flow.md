@@ -547,6 +547,32 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
   dois pagamentos aprovados, `alertIfDuplicatePayment` grava `duplicate_payment` no rastro da
   reserva e manda e-mail para `app_setting.support_inbox`; a devolução da cópia é manual, no painel
   da Pagar.me, e não cancela a reserva (regra acima).
+- **Gateway sem resposta não é recusa (26/11/2026, MP-F00991 e MP-C365C9):** na noite de 25/11 a
+  Pagar.me respondeu HTTP 500 ao `POST /orders` por uns 15 minutos (22h39 a 22h55) e, mesmo assim,
+  criou e aprovou as cobranças, com o aviso de pago chegando 1h15 depois. O Hub tratava o 500 como
+  recusa: não gravava `payment`, o site dizia "falha" e o cliente pagava de novo (R$ 362,90 duas
+  vezes na MP-F00991), e o webhook descartava o pago por não achar a cobrança. Agora:
+  - **Chave de idempotência:** o pedido sai com o header `Idempotency-Key` (uma por tentativa), como
+    o repasse e o saque já faziam. Erro de rede não lança: vira `httpStatus 0`.
+  - **5xx, 408 e rede são "não sei"** (`isUnknownGatewayOutcome`, em
+    `_shared/payments/unconfirmed.ts`). A Edge procura o pedido no gateway
+    (`GET /orders?code=<reserva>&created_since=`), filtrando meio, valor, data da tentativa e pedido
+    já gravado em `payment`. Achou: segue como se o POST tivesse respondido (no PIX, o cliente
+    recebe o QR do pedido achado). Rastro `charge_unknown` nos dois casos.
+  - **Cartão sem pedido achado:** `create-card-charge` grava o `payment` **pendente sem ids** do
+    gateway, com prazo de 60 min em `payment.expires_at` (e o mesmo prazo em `booking.expires_at`),
+    rastro `charge_unconfirmed`, e responde **202** `{ status: "unconfirmed", message }`. O checkout
+    avisa para não pagar de novo e mostra "Confirmando…". Enquanto a linha estiver no prazo,
+    cartão e PIX da reserva respondem 409 `charge_unconfirmed`. A troca de datas fica de fora
+    (a vaga nova já está presa no hold dela).
+  - **Webhook:** sem match por id, `attachUnconfirmedPayment` pendura a cobrança na linha sem ids da
+    mesma reserva (do `metadata`), mesmo meio e mesmo valor, e o fluxo segue normal:
+    `confirm_or_refund_booking` confirma, reconfirma a reserva expirada se ainda há vaga, ou pede o
+    estorno. Cobrança **paga** sem linha nenhuma vira rastro `orphan_charge` na reserva e e-mail
+    "Pagamento sem reserva" para `support_inbox` (uma vez por cobrança). Ninguém estorna sozinho.
+  - **Cron:** `cron_expire_pending_bookings` dá como `failed` a linha sem ids cujo prazo venceu, e a
+    reserva expira no mesmo passe. `failed` não é terminal: se a cobrança aparecer depois, o
+    webhook ainda a pendura e a reserva volta (migration `20261208180000`).
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
   `cancel_booking_with_release` (noop se já `cancelled` ou `expired`), chamada **tanto** pela Edge
   **quanto** pelo webhook: a vaga nunca é liberada em dobro (`release_booking_capacity` não é

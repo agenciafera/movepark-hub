@@ -61,6 +61,10 @@ export interface ParsedEvent {
   bookingId: string | null;
   bookingCode: string | null;
   rawStatus: string | null;
+  /** Valor da cobrança em centavos (casa a cobrança atrasada com o pagamento sem resposta). */
+  amountCents: number | null;
+  /** `credit_card`, `pix`… como o gateway manda. */
+  paymentMethod: string | null;
 }
 
 /** Intenção de um evento de cobrança/ordem, derivada do TIPO (não do data.status). */
@@ -103,22 +107,42 @@ export function parseWebhookEvent(body: unknown): ParsedEvent {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const data = (b.data ?? {}) as Record<string, unknown>;
   const metadata = (data.metadata ?? {}) as Record<string, unknown>;
+  const orderMetadata = (((data.order ?? {}) as Record<string, unknown>).metadata ?? {}) as Record<string, unknown>;
   const type = (b.type as string) ?? "";
   // charge.* → data.order_id é a ordem; data.id é a cobrança (ch_...).
   // order.*  → data.id é a ordem; a cobrança fica em data.charges[].
   const orderId = (data.order_id as string) ?? (data.id as string) ?? null;
-  const chargeId = type.toLowerCase().startsWith("charge.")
-    ? ((data.id as string) ?? null)
-    : (((data.charges as Array<Record<string, unknown>>)?.[0]?.id as string) ?? null);
+  const isCharge = type.toLowerCase().startsWith("charge.");
+  const firstCharge = ((data.charges as Array<Record<string, unknown>>)?.[0] ?? {}) as Record<string, unknown>;
+  const chargeId = isCharge ? ((data.id as string) ?? null) : ((firstCharge.id as string) ?? null);
+  const amount = Number(data.amount ?? firstCharge.amount);
   return {
     eventId: (b.id as string) ?? null,
     type,
     orderId,
     chargeId,
-    bookingId: (metadata.booking_id as string) ?? null,
-    bookingCode: (data.code as string) ?? (metadata.booking_code as string) ?? null,
+    // charge.* traz a order embutida em data.order; o metadata da reserva fica nela.
+    bookingId: (metadata.booking_id as string) ?? (orderMetadata.booking_id as string) ?? null,
+    bookingCode: (data.code as string) ?? (metadata.booking_code as string) ?? (orderMetadata.booking_code as string) ?? null,
     rawStatus: (data.status as string) ?? null,
+    amountCents: data.amount == null && firstCharge.amount == null ? null : Number.isFinite(amount) ? amount : null,
+    paymentMethod: ((isCharge ? data.payment_method : firstCharge.payment_method) as string) ?? null,
   };
+}
+
+/** Meio do gateway → `payment.method`. Desconhecido = null (não casa com nada). */
+export function paymentMethodFromGateway(raw: string | null | undefined): "card" | "pix" | null {
+  if (raw === "credit_card") return "card";
+  if (raw === "pix") return "pix";
+  return null;
+}
+
+/**
+ * Cobrança sem `payment` que vale alerta à equipe: só a paga. `charge.created`/`pending` de pedido
+ * órfão é normal (PIX gerado num 500 e nunca pago) e não move dinheiro.
+ */
+export function orphanNeedsAlert(intent: WebhookIntent | null): boolean {
+  return intent === "paid";
 }
 
 // ── Resolução do payment casado com o evento ────────────────────────────────

@@ -454,3 +454,53 @@ Deno.test("chargeback não é barrado pela guarda de rebaixamento: paid -> refun
   });
   assertEquals(d.action, "update");
 });
+
+// ── Cobrança que chegou depois do 500 do gateway (26/11/2026, MP-F00991) ──
+
+import { orphanNeedsAlert, paymentMethodFromGateway } from "./logic.ts";
+
+Deno.test("parseWebhookEvent: charge.paid traz valor, meio e a reserva do metadata da order embutida", () => {
+  const ev = parseWebhookEvent({
+    id: "hook_WV7pZl7hGwsmzmad",
+    type: "charge.paid",
+    data: {
+      id: "ch_lr2Xvwatyu8EAwLx",
+      order_id: "or_1",
+      amount: 36290,
+      status: "paid",
+      payment_method: "credit_card",
+      order: { id: "or_1", code: "MP-F00991", metadata: { booking_id: "b1", booking_code: "MP-F00991" } },
+    },
+  });
+  assertEquals(ev.chargeId, "ch_lr2Xvwatyu8EAwLx");
+  assertEquals(ev.amountCents, 36290);
+  assertEquals(ev.paymentMethod, "credit_card");
+  assertEquals(ev.bookingId, "b1");
+  assertEquals(ev.bookingCode, "MP-F00991");
+});
+
+Deno.test("parseWebhookEvent: order.paid lê valor e meio da primeira cobrança quando a order não tem", () => {
+  const ev = parseWebhookEvent({
+    id: "hook_o",
+    type: "order.paid",
+    data: { id: "or_2", charges: [{ id: "ch_2", amount: 13740, payment_method: "credit_card" }], metadata: { booking_id: "b2" } },
+  });
+  assertEquals(ev.amountCents, 13740);
+  assertEquals(ev.paymentMethod, "credit_card");
+  assertEquals(ev.chargeId, "ch_2");
+});
+
+Deno.test("parseWebhookEvent: sem valor no evento, amountCents é null (não zero)", () => {
+  const ev = parseWebhookEvent({ id: "h", type: "charge.created", data: { id: "ch_3" } });
+  assertEquals(ev.amountCents, null);
+  assertEquals(ev.paymentMethod, null);
+});
+
+Deno.test("paymentMethodFromGateway e orphanNeedsAlert", () => {
+  assertEquals(paymentMethodFromGateway("credit_card"), "card");
+  assertEquals(paymentMethodFromGateway("pix"), "pix");
+  assertEquals(paymentMethodFromGateway("boleto"), null);
+  assertEquals(paymentMethodFromGateway(null), null);
+  assertEquals(orphanNeedsAlert("paid"), true);
+  for (const i of [null, "refund", "cancel", "chargeback", "partial_refund"] as const) assertEquals(orphanNeedsAlert(i), false);
+});

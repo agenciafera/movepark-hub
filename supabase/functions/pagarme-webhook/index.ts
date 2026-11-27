@@ -32,6 +32,7 @@ import {
   decidePaymentStatus,
   isProductionKey,
   type MatchedPayment,
+  orphanNeedsAlert,
   parseCardEvent,
   parseRecipientEvent,
   parseTransferEvent,
@@ -47,6 +48,7 @@ import { alertIfDuplicatePayment } from "../_shared/payments/duplicate.ts";
 import { chargebackDebtCents } from "../_shared/payments/commission.ts";
 import { normalizeBrand } from "../_shared/payments/card-brand.ts";
 import { notifyDatesChanged } from "../_shared/payments/date-change.ts";
+import { alertOrphanCharge, attachUnconfirmedPayment } from "./orphan.ts";
 
 
 /** Em produção o webhook exige Basic auth; em staging (chave `sk_test_`) é opcional. */
@@ -360,13 +362,17 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     return (data as MatchedPayment | null) ?? null;
   };
-  const payment = await resolvePayment(ev, {
+  // Sem match por id: pode ser a cobrança de uma tentativa que ficou sem resposta do gateway (5xx em
+  // 25/11/2026, MP-F00991). A Edge de cobrança deixou o pagamento sem ids; ela entra nele aqui.
+  const payment = (await resolvePayment(ev, {
     byOrderId: (orderId) => findBy("provider_payment_id", orderId),
     byChargeId: (chargeId) => findBy("provider_charge_id", chargeId),
-  });
+  })) ?? (await attachUnconfirmedPayment(admin, ev, paymentCols));
   if (!payment) {
-    // Ack mesmo sem casar (evita reentrega infinita); fica logado.
+    // Ack mesmo sem casar (evita reentrega infinita). Cobrança PAGA sem pagamento no Hub é dinheiro
+    // de cliente sem reserva: até 26/11/2026 ficava só nesta linha de log e ninguém via.
     console.warn("[pagarme-webhook] payment não encontrado:", ev.orderId, ev.chargeId);
+    if (orphanNeedsAlert(webhookIntentFromType(ev.type))) await alertOrphanCharge(admin, ev);
     await markProcessed(admin, ev.eventId);
     return json({ ok: true, matched: false });
   }

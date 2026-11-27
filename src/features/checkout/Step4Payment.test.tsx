@@ -23,7 +23,7 @@ const policy: InstallmentPolicy = {
   absorb: "customer",
 };
 
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 const savedCards = vi.hoisted(() => ({ data: [] as { id: string; brand: string; last4: string }[] }));
 vi.mock("@/features/payment-methods/api", () => ({ useMyPaymentMethods: () => savedCards }));
 vi.mock("@/features/profile/api", () => ({
@@ -66,7 +66,7 @@ vi.mock("./api", async (importOriginal) => {
 
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { Step4Payment } from "./Step4Payment";
+import { CARD_CONFIRMING_NOTE, Step4Payment } from "./Step4Payment";
 import { tokenizeCard } from "@/lib/pagarme-tokenize";
 import { toast } from "sonner";
 
@@ -398,6 +398,59 @@ describe("Step4Payment", () => {
     } finally {
       savedCards.data = [];
     }
+  });
+
+  // 25/11/2026 (MP-F00991): o gateway respondeu 500 e cobrou mesmo assim; o site disse "falha" e o
+  // cliente pagou de novo. Sem resposta do gateway, a tela avisa para NÃO pagar de novo.
+  it("cartão sem resposta do gateway: avisa para não pagar de novo, sem erro nem sucesso", async () => {
+    savedCards.data = [{ id: "pm_1", brand: "Visa", last4: "0466" }];
+    cardMutate.mockResolvedValueOnce({
+      payment_id: "pu1",
+      status: "unconfirmed",
+      message: "Não conseguimos confirmar o pagamento com a operadora do cartão. Não pague de novo.",
+      installments: 1,
+      charged_amount: 100,
+      interest_amount: 0,
+      saved_card: false,
+    });
+    try {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <Step4Payment bookingId="bk-1" bookingCode="MP-ABC123" totalAmount={100} customerTaxId="04810388417" paymentStatus={null} onBack={() => {}} />,
+      );
+      await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+      fireEvent.click(await screen.findByRole("button", { name: /Pagar com cartão/i }));
+      await waitFor(() =>
+        expect(toast.warning).toHaveBeenCalledWith(
+          "Não conseguimos confirmar o pagamento com a operadora do cartão. Não pague de novo.",
+          expect.objectContaining({ duration: 15000 }),
+        ),
+      );
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(toast.error).not.toHaveBeenCalled();
+    } finally {
+      savedCards.data = [];
+    }
+  });
+
+  it("cartão pendente: mostra que está confirmando e trava o botão", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Step4Payment bookingId="bk-1" bookingCode="MP-ABC123" totalAmount={100} customerTaxId="04810388417" paymentStatus="pending" paymentMethod="card" onBack={() => {}} />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    expect(await screen.findByText(CARD_CONFIRMING_NOTE)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Confirmando/i })).toBeDisabled();
+  });
+
+  it("PIX pendente não mostra o aviso do cartão", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Step4Payment bookingId="bk-1" bookingCode="MP-ABC123" totalAmount={100} customerTaxId="04810388417" paymentStatus="pending" paymentMethod="pix" onBack={() => {}} />,
+    );
+    await user.click(screen.getByRole("tab", { name: /Cartão/i }));
+    await screen.findByRole("button", { name: /Confirmando/i });
+    expect(screen.queryByText(CARD_CONFIRMING_NOTE)).not.toBeInTheDocument();
   });
 
   it("sem CEP válido o cartão não vai ao gateway: o antifraude recusaria", async () => {

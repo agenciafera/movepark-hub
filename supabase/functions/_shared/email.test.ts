@@ -6,6 +6,7 @@ import {
   siteUrl,
   tplApprovalInvite,
   tplDuplicatePaymentTeam,
+  tplOrphanChargeTeam,
   tplPartnerDailyDigest,
   teamDigestDelta,
   teamDigestEmailAlert,
@@ -785,4 +786,23 @@ Deno.test("tplMarketingDispatchEnabled: diz quem ligou, o motivo e escapa o text
   assertEquals(m.html.includes("Claude &lt;marketing&gt;"), true);
   assertEquals(m.html.includes("campanha &amp; cupom"), true);
   assertEquals(m.html.includes("/manager/marketing/campanhas"), true);
+});
+
+Deno.test("tplOrphanChargeTeam: cobrança paga sem reserva no Hub, com ids e link da reserva", () => {
+  const t = tplOrphanChargeTeam({
+    bookingCode: "MP-F00991",
+    chargeId: "ch_lr2Xvwatyu8EAwLx",
+    orderId: "or_1",
+    method: "credit_card",
+    amount: 362.9,
+    eventType: "charge.paid",
+  });
+  assertEquals(t.subject, "Pagamento sem reserva (MP-F00991)");
+  assertStringIncludes(t.html, "ch_lr2Xvwatyu8EAwLx");
+  assertStringIncludes(t.html, "cartão, R$");
+  assertStringIncludes(t.html, "/manager/bookings/MP-F00991");
+  const solto = tplOrphanChargeTeam({ bookingCode: null, chargeId: null, orderId: "or_2", method: "pix", amount: null, eventType: "order.paid" });
+  assertEquals(solto.subject, "Pagamento sem reserva");
+  assertStringIncludes(solto.html, "sem reserva no metadata");
+  assertEquals(solto.html.includes("/manager/bookings/"), false);
 });

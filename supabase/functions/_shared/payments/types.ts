@@ -202,6 +202,8 @@ export interface PixChargeInput {
   expiresInSeconds: number;
   /** Repassado em metadata da order (p/ casar no webhook). */
   metadata?: Record<string, string>;
+  /** Header `Idempotency-Key` do POST /orders. Ausente = o adapter gera um por chamada. */
+  idempotencyKey?: string;
 }
 
 /** Cobrança com cartão de crédito (E0.1.3). Token é single-use; cartão salvo usa cardId. */
@@ -228,6 +230,8 @@ export interface CardChargeInput {
   installments: number;
   statementDescriptor?: string;
   metadata?: Record<string, string>;
+  /** Header `Idempotency-Key` do POST /orders. Ausente = o adapter gera um por chamada. */
+  idempotencyKey?: string;
 }
 
 /** Resultado normalizado de uma cobrança. */
@@ -242,6 +246,18 @@ export interface ChargeResult {
   expiresAt: string | null;
   raw: unknown;
   httpStatus: number | null;
+}
+
+/**
+ * Pedido achado na busca por código (`findOrdersByCode`). Serve para descobrir se um POST /orders
+ * que voltou 5xx criou a cobrança mesmo assim (25/11/2026, MP-F00991): o resultado normalizado mais
+ * o que precisa para casar com a tentativa (quando nasceu, valor, meio).
+ */
+export interface GatewayOrder extends ChargeResult {
+  createdAt: string | null;
+  amountCents: number | null;
+  /** `credit_card`, `pix`… como o gateway devolve. */
+  paymentMethod: string | null;
 }
 
 // ── Estorno (E0.3.2) ────────────────────────────────────────────────────────
@@ -411,6 +427,12 @@ export interface PaymentGateway {
   createCardCharge(input: CardChargeInput): Promise<ChargeResult>;
   /** Relê o estado atual de uma cobrança (pelo id da order). */
   getCharge(orderId: string): Promise<ChargeResult>;
+  /**
+   * Pedidos com este `code` criados desde `createdSinceIso`. Usado depois de um 5xx na criação:
+   * o gateway pode ter criado a cobrança mesmo respondendo erro. Lista vazia = não achou (ou a
+   * busca falhou: quem chama trata as duas coisas igual, como "não sei").
+   */
+  findOrdersByCode(code: string, createdSinceIso: string): Promise<GatewayOrder[]>;
   /** Estorna uma cobrança (total ou parcial). O split é revertido proporcionalmente pelo gateway. */
   refundCharge(input: RefundInput): Promise<RefundResult>;
   /** Lista os recebíveis de uma cobrança (de onde sai a taxa real do gateway). */

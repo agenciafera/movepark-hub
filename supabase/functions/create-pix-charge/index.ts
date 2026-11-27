@@ -27,6 +27,12 @@ import { parseBrPhone } from "../_shared/payments/contact.ts";
 import { logGatewayEvent } from "../_shared/payments/trail.ts";
 import { CHARGE_IN_PROGRESS_MESSAGE, claimChargeLock } from "../_shared/payments/charge-lock.ts";
 import {
+  findInFlightUnconfirmed,
+  isUnknownGatewayOutcome,
+  recoverOrder,
+  UNCONFIRMED_IN_FLIGHT_MESSAGE,
+} from "../_shared/payments/unconfirmed.ts";
+import {
   type BookingCommissionColumns,
   columnsFromRpc,
   commissionForCharge,
@@ -134,6 +140,12 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     return jsonResponse({ error: CHARGE_IN_PROGRESS_MESSAGE, code: "charge_in_progress" }, 409);
   }
   lock.release = trava.release;
+
+  // Cartão anterior sem resposta do gateway (MP-F00991, 25/11/2026): pode ter cobrado. Um PIX agora
+  // seria o segundo pagamento da mesma reserva.
+  if (await findInFlightUnconfirmed(admin, booking.id)) {
+    return jsonResponse({ error: UNCONFIRMED_IN_FLIGHT_MESSAGE, code: "charge_unconfirmed" }, 409);
+  }
 
   // 2. Empresa do lote + take_rate + recebedor do parceiro
   const { data: location } = await admin
@@ -312,8 +324,11 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
   const { data: holdMin } = await admin.rpc("get_booking_hold_minutes");
   const holdSeconds = pixExpiresInSeconds(holdMin);
 
-  const result = await gateway.createPixCharge({
+  const attemptStartedAt = new Date();
+  const idempotencyKey = crypto.randomUUID();
+  let result = await gateway.createPixCharge({
     externalCode: booking.code,
+    idempotencyKey,
     amountCents: totalCents,
     customer: {
       name: payerName,
@@ -329,6 +344,30 @@ async function handle(req: Request, lock: LockSlot): Promise<Response> {
     expiresInSeconds: holdSeconds,
     metadata: { booking_id: booking.id, booking_code: booking.code },
   });
+
+  // Resposta desconhecida (5xx, timeout, rede): na noite de 25/11/2026 o gateway respondeu 500 e
+  // criou o PIX mesmo assim. Achando o pedido, o cliente recebe o QR dele em vez de um erro.
+  if (isUnknownGatewayOutcome(result.httpStatus)) {
+    const achado = await recoverOrder(admin, gateway, {
+      bookingId: booking.id,
+      code: booking.code,
+      attemptStartedAt,
+      amountCents: totalCents,
+      paymentMethod: "pix",
+    });
+    await logGatewayEvent(admin, {
+      paymentId: null,
+      bookingId: booking.id,
+      kind: "charge_unknown",
+      httpStatus: result.httpStatus,
+      request: { method: "pix", amount_cents: totalCents, idempotency_key: idempotencyKey },
+      response: result.raw,
+      note: achado
+        ? `gateway respondeu ${result.httpStatus}, mas o pedido ${achado.orderId} existe (${achado.status})`
+        : `gateway respondeu ${result.httpStatus} e o pedido não apareceu na busca`,
+    });
+    if (achado) result = achado;
+  }
 
   if (!result.orderId || (result.httpStatus ?? 500) >= 400) {
     console.error("Pagar.me order falhou:", result.httpStatus, JSON.stringify(result.raw));
