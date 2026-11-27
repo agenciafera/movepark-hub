@@ -1054,8 +1054,8 @@ join la_perfil p on p.email = v.email;
 update public.booking set status = 'expired' where code = 'MP-LA-4';
 
 -- Campanha com A matriculada há 10 dias e uma mensagem enviada.
-insert into public.marketing_contact (contact_key, display_name)
-values ('la-a@ex.com', 'Contato A') on conflict do nothing;
+insert into public.marketing_contact (contact_key, display_name, marketing_email)
+values ('la-a@ex.com', 'Contato A', 'la-a@ex.com') on conflict do nothing;
 insert into public.marketing_campaign (name, slug) values ('LA teste', 'la-teste');
 insert into public.marketing_enrollment (campaign_id, contact_id, entered_at)
 select c.id, mc.id, now() - interval '10 days'
