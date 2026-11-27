@@ -12,10 +12,7 @@ select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 
 create temp table la_ctx (loc uuid);
 insert into la_ctx
-  select l.id from public.location l
-  join public.destination d on d.id = l.destination_id
-  where l.deleted_at is null and d.slug is not null
-  order by l.created_at limit 1;
+  select l.id from public.location l where l.deleted_at is null order by l.created_at limit 1;
 
 create temp table la_perfil (email text primary key, uid uuid);
 

@@ -90,14 +90,17 @@ Crie `supabase/tests/marketing_filtros_viagem.test.sql`:
 begin;
 select plan(22);
 
+-- Uma unidade com destino. No banco do CI as unidades do seed não vêm ligadas a destino, então a
+-- primeira unidade ganha um aqui (a transação desfaz).
 create temp table fv_ctx (loc uuid, slug text);
-insert into fv_ctx
-  select l.id, d.slug
-  from public.location l
-  join public.destination d on d.id = l.destination_id
-  where l.deleted_at is null and d.slug is not null
-  order by l.created_at
-  limit 1;
+insert into fv_ctx (loc)
+  select l.id from public.location l where l.deleted_at is null order by l.created_at limit 1;
+update public.location l
+   set destination_id = (select d.id from public.destination d where d.slug is not null order by d.created_at limit 1)
+ where l.id = (select loc from fv_ctx) and l.destination_id is null;
+update fv_ctx set slug = (
+  select d.slug from public.location l join public.destination d on d.id = l.destination_id
+  where l.id = fv_ctx.loc);
 
 create temp table fv_perfil (email text primary key, uid uuid);
 
@@ -1013,10 +1016,7 @@ select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 
 create temp table la_ctx (loc uuid);
 insert into la_ctx
-  select l.id from public.location l
-  join public.destination d on d.id = l.destination_id
-  where l.deleted_at is null and d.slug is not null
-  order by l.created_at limit 1;
+  select l.id from public.location l where l.deleted_at is null order by l.created_at limit 1;
 
 create temp table la_perfil (email text primary key, uid uuid);
 
