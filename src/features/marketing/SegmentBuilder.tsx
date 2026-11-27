@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Plus, Trash, TreeStructure } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,9 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
+  comOpcoes,
   emptyRule,
+  type FieldOption,
   fieldDef,
   isGroup,
   operatorLabel,
@@ -23,12 +26,15 @@ import {
   type SegmentGroup,
   type SegmentRule,
 } from "./segmentBuilder.logic";
+import { OpcoesDoSegmento } from "./opcoesDoSegmento";
 
 type Props = {
   value: SegmentGroup;
   onChange: (next: SegmentGroup) => void;
   /** Profundidade, só para o recuo visual do grupo aninhado. */
   depth?: number;
+  /** Opções vindas do banco, por chave de campo. Só a raiz recebe; os grupos aninhados herdam. */
+  opcoes?: Record<string, FieldOption[]>;
 };
 
 /**
@@ -38,7 +44,7 @@ type Props = {
  * prévia do público (que roda no banco) recalcular sozinha sem o componente guardar estado próprio
  * que possa divergir do que vai ser salvo.
  */
-export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
+export function SegmentBuilder({ value, onChange, depth = 0, opcoes }: Props) {
   function trocarRegra(index: number, patch: Partial<SegmentRule>) {
     const rules = [...value.rules];
     const atual = rules[index] as SegmentRule;
@@ -50,7 +56,7 @@ export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
     onChange({ ...value, rules: value.rules.filter((_, i) => i !== index) });
   }
 
-  return (
+  const arvore = (
     <div
       className={cn(
         "flex flex-col gap-3 rounded-md border p-3",
@@ -212,10 +218,11 @@ export function SegmentBuilder({ value, onChange, depth = 0 }: Props) {
       </div>
     </div>
   );
+  return opcoes ? <OpcoesDoSegmento.Provider value={opcoes}>{arvore}</OpcoesDoSegmento.Provider> : arvore;
 }
 
 function CampoValor({ rule, onChange }: { rule: SegmentRule; onChange: (value: unknown) => void }) {
-  const def = fieldDef(rule.field);
+  const def = comOpcoes(fieldDef(rule.field), React.useContext(OpcoesDoSegmento));
 
   if (rule.op === "between") {
     const par = Array.isArray(rule.value) ? rule.value : ["", ""];
@@ -236,6 +243,30 @@ function CampoValor({ rule, onChange }: { rule: SegmentRule; onChange: (value: u
           value={String(par[1] ?? "")}
           onChange={(e) => onChange([par[0] ?? "", numeroOuVazio(e.target.value)])}
         />
+      </div>
+    );
+  }
+
+  if (def?.kind === "tags" && def.options && def.options.length > 0) {
+    const atual = String(rule.value ?? "");
+    return (
+      <div className="flex flex-wrap gap-1">
+        {def.options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            aria-pressed={atual === opt.value}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "rounded-full border px-2 py-1 text-caption-sm transition-colors",
+              atual === opt.value
+                ? "border-primary bg-primary text-white"
+                : "border-hairline bg-canvas text-muted hover:border-primary",
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
     );
   }

@@ -41,15 +41,23 @@ export function isGroup(node: SegmentRule | SegmentGroup): node is SegmentGroup 
   return (node as SegmentGroup).rules !== undefined;
 }
 
+export type FieldOption = { value: string; label: string };
+
 export type FieldDef = {
   key: string;
   label: string;
   kind: FieldKind;
   /** Onde o campo aparece agrupado na UI. */
-  group: "Comportamento" | "Valor" | "RFM" | "Growth" | "Veículo" | "Contato";
-  options?: Array<{ value: string; label: string }>;
+  group: "Comportamento" | "Viagem" | "Valor" | "RFM" | "Growth" | "Veículo" | "Preferência" | "Contato";
+  options?: FieldOption[];
   hint?: string;
 };
+
+const TARIFAS: FieldOption[] = [
+  { value: "basica", label: "Básica" },
+  { value: "flex", label: "Flex" },
+  { value: "superflex", label: "Superflex" },
+];
 
 /**
  * Catálogo de campos. A ordem aqui é a ordem do seletor, e ela segue o que o time de growth
@@ -143,6 +151,13 @@ export const SEGMENT_FIELDS: FieldDef[] = [
     hint: "Checkout começado com viagem ainda por vir.",
   },
   {
+    key: "abandoned_hours_ago",
+    label: "Horas desde o abandono",
+    kind: "number",
+    group: "Comportamento",
+    hint: "Último checkout vencido sem compra depois dele.",
+  },
+  {
     key: "vacation_share",
     label: "Fatia de viagens em férias",
     kind: "number",
@@ -161,9 +176,34 @@ export const SEGMENT_FIELDS: FieldDef[] = [
     kind: "number",
     group: "Comportamento",
   },
+  {
+    key: "days_since_return",
+    label: "Dias desde a volta da viagem",
+    kind: "number",
+    group: "Viagem",
+    hint: "Conta da saída do pátio na reserva paga mais recente. De 1 a 3 é a hora de chamar para a próxima.",
+  },
+  {
+    key: "has_upcoming_trip",
+    label: "Tem viagem marcada",
+    kind: "boolean",
+    group: "Viagem",
+    hint: "Reserva paga com entrada no futuro.",
+  },
+  { key: "days_until_next_trip", label: "Dias até a próxima viagem", kind: "number", group: "Viagem" },
+  {
+    key: "next_trip_fare_tier",
+    label: "Tarifa da próxima viagem",
+    kind: "enum",
+    group: "Viagem",
+    options: TARIFAS,
+    hint: "Quem vai na Básica pode trocar para a Flex antes de viajar.",
+  },
+  { key: "parked_now", label: "Está com o carro no pátio agora", kind: "boolean", group: "Viagem" },
   { key: "total_spent", label: "Total gasto", kind: "money", group: "Valor" },
   { key: "avg_ticket", label: "Ticket médio", kind: "money", group: "Valor" },
   { key: "last_ticket", label: "Valor da última reserva", kind: "money", group: "Valor" },
+  { key: "abandoned_amount", label: "Valor do carrinho abandonado", kind: "money", group: "Valor" },
   {
     key: "r_score",
     label: "Score de recência (R)",
@@ -262,6 +302,52 @@ export const SEGMENT_FIELDS: FieldDef[] = [
     ],
   },
   { key: "vehicle_color", label: "Cor do veículo", kind: "text", group: "Veículo" },
+  {
+    key: "destinations",
+    label: "Aeroportos onde já estacionou",
+    kind: "tags",
+    group: "Preferência",
+    hint: "As opções vêm do cadastro de destinos.",
+  },
+  {
+    key: "last_destination",
+    label: "Aeroporto da última viagem",
+    kind: "enum",
+    group: "Preferência",
+    hint: "As opções vêm do cadastro de destinos.",
+  },
+  { key: "last_fare_tier", label: "Tarifa da última compra", kind: "enum", group: "Preferência", options: TARIFAS },
+  {
+    key: "first_channel",
+    label: "Por onde comprou a primeira vez",
+    kind: "enum",
+    group: "Preferência",
+    options: [
+      { value: "site", label: "Site" },
+      { value: "busca", label: "Busca do site" },
+      { value: "pagina_destino", label: "Página do aeroporto" },
+      { value: "mia_whatsapp", label: "Mia, no WhatsApp" },
+    ],
+  },
+  {
+    key: "first_traffic_source",
+    label: "De onde veio o tráfego da primeira compra",
+    kind: "text",
+    group: "Preferência",
+    hint: "A origem marcada no link da primeira compra, como pareseguro, chatgpt.com ou google.",
+  },
+  {
+    key: "preferred_payment",
+    label: "Forma de pagamento mais usada",
+    kind: "enum",
+    group: "Preferência",
+    options: [
+      { value: "pix", label: "PIX" },
+      { value: "cartao", label: "Cartão" },
+    ],
+  },
+  { key: "used_coupon", label: "Já usou cupom", kind: "boolean", group: "Preferência" },
+  { key: "last_rating", label: "Nota da última avaliação", kind: "number", group: "Preferência", hint: "De 1 a 5." },
   { key: "tags", label: "Etiquetas", kind: "tags", group: "Contato" },
   { key: "email_consent", label: "Aceita e-mail", kind: "boolean", group: "Contato" },
   { key: "whatsapp_consent", label: "Aceita WhatsApp", kind: "boolean", group: "Contato" },
@@ -270,6 +356,19 @@ export const SEGMENT_FIELDS: FieldDef[] = [
 
 export function fieldDef(key: string): FieldDef | undefined {
   return SEGMENT_FIELDS.find((f) => f.key === key);
+}
+
+/**
+ * O campo com as opções que só se conhecem em tempo de execução (os aeroportos vêm do cadastro de
+ * destinos). Sem opção extra para a chave, devolve o campo como está.
+ */
+export function comOpcoes(
+  def: FieldDef | undefined,
+  extras: Record<string, FieldOption[]>,
+): FieldDef | undefined {
+  if (!def) return def;
+  const opcoes = extras[def.key];
+  return opcoes && opcoes.length > 0 ? { ...def, options: opcoes } : def;
 }
 
 const OPERATOR_LABELS: Record<RuleOperator, string> = {

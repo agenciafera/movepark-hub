@@ -149,6 +149,33 @@ Para fechar de verdade é preciso um evento de checkout (E3.3), gravando a cota�
 **Atribuição de receita da campanha (RF-007).** `marketing_message` registra envio e falha, mas não
 abertura, clique nem reserva originada. Sem isso, "receita de CRM" seria um número inventado.
 
+## Campos de viagem, abandono e preferência (27/11/2026)
+
+Saem de `marketing_contact_extras(uuid[])`, que `marketing_contact_doc` junta ao doc. A métrica
+base (`marketing_contact_metrics`) não mudou. Definições e números do dia em
+[assistente-marketing-proativo.md](./assistente-marketing-proativo.md) § 3.
+
+| Chave | Grupo | O que é |
+|---|---|---|
+| `days_since_return` | Viagem | dias desde a saída do pátio na compra mais recente que já saiu |
+| `has_upcoming_trip` | Viagem | tem compra com entrada no futuro |
+| `days_until_next_trip` | Viagem | dias até a próxima entrada |
+| `next_trip_fare_tier` | Viagem | tarifa da próxima viagem |
+| `parked_now` | Viagem | alguma compra com entrada no passado e saída no futuro |
+| `abandoned_hours_ago` | Comportamento | horas desde o último checkout `expired` sem compra depois dele |
+| `abandoned_amount` | Valor | valor desse checkout |
+| `destinations` | Preferência | slugs dos aeroportos das compras |
+| `last_destination` | Preferência | slug do aeroporto da última compra |
+| `last_fare_tier` | Preferência | tarifa da última compra |
+| `first_channel` | Preferência | `booking.origin` da primeira compra, traduzido (site, busca, pagina_destino, mia_whatsapp) |
+| `first_traffic_source` | Preferência | `utm_source` da primeira compra, em minúsculas |
+| `preferred_payment` | Preferência | forma de pagamento mais usada (pix ou cartao; no empate, a mais recente) |
+| `used_coupon` | Preferência | alguma compra com cupom |
+| `last_rating` | Preferência | nota da avaliação mais recente |
+
+O limite do abandono descrito acima continua: `abandoned_hours_ago` mede o checkout que virou
+reserva e venceu, não quem desistiu antes de reservar.
+
 ## Segurança
 
 Mesmo desenho do E3.1, com a lição da migration `20261027094500` aplicada desde o início:

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { useManagerFilters } from "@/features/manager-filters/context";
 import { ManagerFilterBar } from "@/features/manager-filters/ManagerFilterBar";
+import { useAdminDestinations } from "@/features/destinations/api";
 import { SegmentBuilder } from "@/features/marketing/SegmentBuilder";
 import {
   useDeleteSegment,
@@ -208,6 +209,13 @@ function SegmentDialog({
     (segment?.definition as unknown as SegmentGroup) ?? EMPTY_DEFINITION,
   );
   const [verContatos, setVerContatos] = React.useState(false);
+  const { data: destinos } = useAdminDestinations();
+  const opcoesDeAeroporto = React.useMemo(() => {
+    const lista = (destinos ?? [])
+      .filter((d) => d.slug)
+      .map((d) => ({ value: String(d.slug), label: d.name }));
+    return { destinations: lista, last_destination: lista };
+  }, [destinos]);
 
   const salvar = useSaveSegment();
   const validacao = validateDefinition(definicao);
@@ -268,7 +276,7 @@ function SegmentDialog({
             </div>
           </div>
 
-          <SegmentBuilder value={definicao} onChange={setDefinicao} />
+          <SegmentBuilder value={definicao} onChange={setDefinicao} opcoes={opcoesDeAeroporto} />
 
           <Panel className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-2">

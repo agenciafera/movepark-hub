@@ -629,7 +629,7 @@ O `grep` não pode imprimir nada.
 - Modify: `src/features/marketing/SegmentBuilder.tsx`
 - Modify: `src/routes/manager/marketing-segments.tsx:271`
 - Create: `src/features/marketing/SegmentBuilder.opcoes.test.tsx`
-- Modify: `docs/specs/marketing-automation.md` (tabela de campos de segmento)
+- Modify: `docs/specs/marketing-rfm.md` (lista de campos de contato; a `marketing-automation.md` manda registrar campo novo lá)
 
 **Interfaces:**
 - Consumes: as 15 chaves e os tipos da Task 1.
@@ -877,9 +877,12 @@ Em `src/features/marketing/SegmentBuilder.tsx`:
 
 (a) no topo, acrescente `import * as React from "react";` e, no import de `./segmentBuilder.logic`, acrescente `comOpcoes` e `type FieldOption`.
 
-(b) logo depois dos imports, acrescente:
+(b) crie `src/features/marketing/opcoesDoSegmento.ts` com o contexto (num arquivo à parte, porque o lint reprova contexto exportado junto de componente) e importe-o no construtor:
 
-```tsx
+```ts
+import * as React from "react";
+import type { FieldOption } from "./segmentBuilder.logic";
+
 /** Opções que só se conhecem em tempo de execução, por chave de campo (os aeroportos). */
 export const OpcoesDoSegmento = React.createContext<Record<string, FieldOption[]>>({});
 ```
@@ -956,15 +959,15 @@ Em `src/routes/manager/marketing-segments.tsx`:
 Run: `source ~/.nvm/nvm.sh && nvm use 22 >/dev/null && bunx vitest run src/features/marketing && bun run typecheck`
 Expected: PASS e typecheck limpo.
 
-- [ ] **Step 10: a spec da Automação lista os campos**
+- [ ] **Step 10: a spec do RFM lista os campos**
 
-Rode `grep -n "days_since_last" docs/specs/marketing-automation.md` para achar a lista de campos de segmento. Acrescente nela, no mesmo formato das linhas vizinhas, as 15 chaves novas com o rótulo e o grupo da tabela do § 3 de `assistente-marketing-proativo.md`, e uma linha de referência: "Campos de viagem, abandono e preferência: ver assistente-marketing-proativo.md § 3 (27/11/2026)."
+A `marketing-automation.md` diz que campo novo de contato entra em `marketing-rfm.md`. Lá, antes de "## Segurança", acrescente a seção "Campos de viagem, abandono e preferência (27/11/2026)" com a tabela das 15 chaves (chave, grupo e o que é) e a nota de que `abandoned_hours_ago` mede o checkout que virou reserva e venceu.
 
 - [ ] **Step 11: commit e envio da fase 1**
 
 ```bash
-grep -nP '[\x{2014}\x{2013}]' src/features/marketing/segmentBuilder.logic.ts src/features/marketing/SegmentBuilder.tsx src/features/marketing/SegmentBuilder.opcoes.test.tsx src/features/marketing/segmentFields.contract.test.ts src/routes/manager/marketing-segments.tsx docs/specs/marketing-automation.md
-git add src/features/marketing/segmentBuilder.logic.ts src/features/marketing/SegmentBuilder.tsx src/features/marketing/SegmentBuilder.opcoes.test.tsx src/features/marketing/segmentFields.contract.test.ts src/routes/manager/marketing-segments.tsx docs/specs/marketing-automation.md
+grep -nP '[\x{2014}\x{2013}]' src/features/marketing/segmentBuilder.logic.ts src/features/marketing/SegmentBuilder.tsx src/features/marketing/SegmentBuilder.opcoes.test.tsx src/features/marketing/segmentFields.contract.test.ts src/routes/manager/marketing-segments.tsx docs/specs/marketing-rfm.md
+git add src/features/marketing/segmentBuilder.logic.ts src/features/marketing/SegmentBuilder.tsx src/features/marketing/SegmentBuilder.opcoes.test.tsx src/features/marketing/segmentFields.contract.test.ts src/routes/manager/marketing-segments.tsx docs/specs/marketing-rfm.md
 git commit -m "feat(marketing): filtros novos no construtor de segmento, com os aeroportos do cadastro
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
