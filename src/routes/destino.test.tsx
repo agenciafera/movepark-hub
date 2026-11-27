@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { http, HttpResponse } from "msw";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -521,6 +521,19 @@ function ldVitrine(): Record<string, unknown>[] | undefined {
 }
 
 describe("DestinoPage · preço pesquisado do lote mapeado (E0.17-k)", () => {
+  // O relógio congela porque a página esconde o preço de terceiro 90 dias depois da
+  // pesquisa (`isPesquisaFresca`). Sem isto a pesquisa de 29/08 venceu em 27/11/2026 e
+  // três destes casos passaram a falhar sozinhos, sem ninguém ter mexido no código.
+  // Só o `Date` é falso: o `waitFor` e o Helmet seguem com os timers de verdade.
+  const HOJE = new Date("2026-09-02T12:00:00Z");
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(HOJE);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   /** Um lote mapeado com preço conferido por nós, como o guia de Confins traz. */
   function comPreco() {
     return prospect({
@@ -566,6 +579,22 @@ describe("DestinoPage · preço pesquisado do lote mapeado (E0.17-k)", () => {
 
     expect(screen.getByText(/Diária mais barata:/i)).toBeInTheDocument();
     expect(screen.getByText(/R\$ 22,90 no Central Park/i)).toBeInTheDocument();
+  });
+
+  it("no 90º dia da pesquisa o preço sai da tabela e da resposta curta", () => {
+    // A segunda porta da validade, na renderização: a página é SSG e o HTML de um build
+    // feito no dia 89 seguiria mostrando o número velho. Foi esta conta que derrubou os
+    // casos acima quando a data da fixture fez 90 dias.
+    vi.setSystemTime(new Date("2026-11-27T12:00:00Z"));
+    vi.mocked(useDestinationBySlug).mockReturnValue({ data: dest(), isLoading: false } as never);
+    vi.mocked(useDestinationProspects).mockReturnValue({ data: [comPreco()] } as never);
+
+    render();
+
+    expect(screen.queryByRole("heading", { level: 2, name: /Quanto custa estacionar/i })).toBeNull();
+    expect(screen.queryByText("R$ 168,00")).toBeNull();
+    expect(screen.queryByText(/Diária mais barata:/i)).toBeNull();
+    expect(document.querySelector('time[datetime="2026-08-29"]')).toBeNull();
   });
 
   it("lote sem preço pesquisado não vira linha vazia na tabela", () => {
