@@ -43,8 +43,9 @@ select is(
   'os três escopos de marketing são de plataforma e atribuíveis a chave');
 
 -- ── 2. Catálogo de campos ───────────────────────────────────────────────────
-select is((select count(*)::int from public.marketing_segment_fields()), 36,
-  'o catálogo tem os 36 campos do construtor do front');
+-- 36 da base mais os 15 de viagem, abandono e preferência (20261209100000, 27/11/2026).
+select is((select count(*)::int from public.marketing_segment_fields()), 51,
+  'o catálogo tem os 51 campos do construtor do front');
 
 select is(
   (select jsonb_array_length(options) from public.marketing_segment_fields() where key = 'rfm_segment'),

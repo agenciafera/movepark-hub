@@ -464,14 +464,14 @@ $$;
 -- 3. O catálogo de campos ganha os 15 campos e as opções de aeroporto
 --
 -- Passa de immutable a stable porque as opções de aeroporto vêm do cadastro de destinos: destino
--- com unidade entra sozinho na lista. Security definer para a lista não depender da RLS de quem
--- valida. As linhas antigas são as da 20261207110000_marketing_mcp_base, na mesma ordem.
+-- com unidade entra sozinho na lista. Continua sem security definer, como era: quem chama é o MCP
+-- com a chave de serviço, e um definer liberado a usuário logado viraria achado novo no advisor.
+-- As linhas antigas são as da 20261207110000_marketing_mcp_base, na mesma ordem.
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function public.marketing_segment_fields()
 returns table (key text, kind text, label text, grupo text, options jsonb, hint text, operators text[])
 language sql
 stable
-security definer
 set search_path = public, pg_temp
 as $$
   with aeroportos as (

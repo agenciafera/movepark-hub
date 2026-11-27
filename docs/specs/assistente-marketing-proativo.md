@@ -72,10 +72,12 @@ Definições, para não haver dúvida na hora de escrever o SQL:
 
 Onde entra (regra da Automação: **campo novo entra nos dois lados**):
 
-1. **Migration nova** que reescreve `marketing_contact_metrics` e `marketing_contact_doc` com os
-   campos, e `marketing_segment_fields()` com as 15 linhas novas (14 filtros; o aeroporto tem dois campos). A função deixa de ser `immutable`
-   e passa a `stable`, porque as opções de destino são lidas do banco. Os grupos novos são "Viagem"
-   e "Preferência".
+1. **Migration nova** com a função `marketing_contact_extras(uuid[])`, que calcula os 15 campos por
+   contato, e `marketing_contact_doc` juntando o resultado no doc (`||`). `marketing_contact_metrics`
+   não muda: mudar a assinatura dela obrigaria a recriar o RFM, as descobertas e a matriz de
+   perfis. `marketing_segment_fields()` ganha as 15 linhas novas (14 filtros; o aeroporto tem dois
+   campos) e passa de `immutable` a `stable`, porque as opções de aeroporto são lidas do banco. Os
+   grupos novos são "Viagem" e "Preferência".
 2. **`SEGMENT_FIELDS`** (`src/features/marketing/segmentBuilder.logic.ts`): o grupo ganha
    `"Viagem" | "Preferência"`, e o construtor da tela carrega as opções de destino por query.
 3. **Contrato** `segmentFields.contract.test.ts`: hoje ele lê um arquivo de migration fixo. Passa a
