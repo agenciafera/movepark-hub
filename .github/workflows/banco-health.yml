@@ -1,0 +1,143 @@
+name: Banco de produção no ar
+
+# Por que este workflow existe. Em 27/11/2026 o banco de produção (Supabase) ficou 1 h 32 fora
+# do ar e ninguém soube por 37 minutos: a home continuava abrindo (é estática, sai do
+# Cloudflare), a página de status do Supabase seguia verde (o problema era a nossa instância) e
+# a única checagem que existia, a da publicação automática, roda duas vezes por dia. A queda foi
+# percebida por acaso. Post mortem em docs/specs/deploy-automatico.md.
+#
+# A cada 5 minutos este job pergunta à Management API do Supabase se o banco, a API e o login
+# estão saudáveis. Três respostas ruins seguidas, com 30 s entre elas, abrem (ou atualizam) uma
+# issue atribuída, e o run falha. Quem recebe atribuição recebe e-mail, e o run vermelho
+# notifica quem editou o agendamento por último. Quando o banco volta, a issue fecha sozinha.
+#
+# Limite conhecido: o GitHub atrasa agendamentos em horário de pico (às vezes 10 a 20 minutos).
+# É bem melhor que os 37 minutos de 27/11, e não custa nada. Um monitor de 1 minuto no Sentry
+# ("Movepark Hub - banco de produção", projeto movepark-v3) já está criado e desativado, porque
+# a conta não tinha orçamento para mais um monitor: se o orçamento subir, basta ativá-lo.
+#
+# Quem recebe vem da variável de repositório BANCO_HEALTH_ASSIGNEES (logins separados por
+# vírgula), com Kallef (prhost) e Diego como padrão.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: banco-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECT_REF: mgaigbezdalbyuqiofcf
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Pergunta ao Supabase se o banco, a API e o login estão de pé
+        id: health
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: |
+          set -uo pipefail
+          url="https://api.supabase.com/v1/projects/$PROJECT_REF/health?services=db&services=rest&services=auth"
+          ok=false
+          resumo="sem resposta"
+          for tentativa in 1 2 3; do
+            resp=$(curl -sS -m 20 -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "$url" || echo '[]')
+            resumo=$(echo "$resp" | jq -r 'if type == "array" then (map(.name + "=" + .status) | join(" ")) else tostring end' 2>/dev/null || echo "resposta ilegível")
+            ruins=$(echo "$resp" | jq '[.[]? | select(.status != "ACTIVE_HEALTHY")] | length' 2>/dev/null || echo 1)
+            total=$(echo "$resp" | jq '[.[]?] | length' 2>/dev/null || echo 0)
+            echo "tentativa $tentativa: $resumo"
+            if [ "$total" -ge 3 ] && [ "$ruins" -eq 0 ]; then ok=true; break; fi
+            [ "$tentativa" -lt 3 ] && sleep 30
+          done
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+          echo "resumo=$resumo" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Banco de produção"
+            echo "- resultado: $([ "$ok" = true ] && echo saudável || echo FORA DO AR)"
+            echo "- serviços: $resumo"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Abre ou atualiza a issue quando o banco está fora
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        uses: actions/github-script@v7
+        env:
+          RESUMO: ${{ steps.health.outputs.resumo }}
+          ASSIGNEES: ${{ vars.BANCO_HEALTH_ASSIGNEES || 'prhost,diegoguedesgomes' }}
+        with:
+          script: |
+            const title = "🚨 O banco de produção não está respondendo";
+            const body = [
+              `A checagem de 5 em 5 minutos encontrou o banco de produção fora do ar em três tentativas seguidas.`,
+              ``,
+              `Serviços: \`${process.env.RESUMO}\``,
+              ``,
+              `Com o banco fora, busca, login, checkout, área do cliente, Manager e Operator ficam sem dados. A home continua abrindo e esconde a queda.`,
+              ``,
+              `O que fazer:`,
+              `1. Confira se há build em fila no Workers Builds: em 27/11/2026 a queda veio de oito builds seguidos.`,
+              `2. Se o banco não voltar sozinho em poucos minutos, reinicie: \`POST https://api.supabase.com/v1/projects/mgaigbezdalbyuqiofcf/restart\` (ou Settings > General > Restart project no painel). Volta em cerca de 2 minutos.`,
+              `3. Depois, olhe \`edge_logs\` e \`postgres_logs\` para achar a causa.`,
+              ``,
+              `Post mortem de 27/11: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/main/docs/specs/deploy-automatico.md`,
+              `Run desta checagem: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "banco-fora",
+            });
+            const assignees = process.env.ASSIGNEES.split(",").map(s => s.trim()).filter(Boolean);
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.number, body: `Ainda fora do ar. Serviços: \`${process.env.RESUMO}\``,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["banco-fora"], assignees,
+              });
+            }
+
+      - name: Falha o run enquanto o banco estiver fora
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'false' }}
+        run: |
+          # Vem DEPOIS da issue de propósito: o registro fica feito e só então o run fica vermelho.
+          echo "::error title=Banco de produção fora do ar::${{ steps.health.outputs.resumo }}"
+          exit 1
+
+      - name: Fecha a issue quando o banco volta
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' && steps.health.outputs.ok == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🚨 O banco de produção não está respondendo";
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "banco-fora",
+            });
+            for (const issue of issues.filter(i => i.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "O banco voltou a responder (banco, API e login saudáveis). Fechando.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: "closed",
+              });
+            }
+
+      - name: Aviso se o token não está configurado
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          echo "SUPABASE_ACCESS_TOKEN não configurado; o banco não foi checado." >> "$GITHUB_STEP_SUMMARY"
+          exit 1

@@ -335,6 +335,19 @@ depende de quem está logado não pode, porque o valor guardado seria servido a 
 `<tabela>_site_rebuild` já pede o rebuild e o cron agrupa os pedidos. Junte as migrations de uma
 rodada num push só em vez de um push por pacote.
 
+**Alarme:** a queda ficou 37 minutos sem ninguém saber, porque a home é estática e continuou
+abrindo. Desde 27/11 o workflow `banco-health.yml` pergunta à Management API, de 5 em 5 minutos,
+se banco, API e login estão saudáveis; três respostas ruins seguidas abrem uma issue atribuída
+(variável `BANCO_HEALTH_ASSIGNEES`, padrão Kallef e Diego) e deixam o run vermelho, e a issue fecha
+sozinha quando o banco volta. O GitHub atrasa agendamento em horário de pico, então o aviso pode
+levar de 5 a 20 minutos. Um monitor de 1 minuto no Sentry ("Movepark Hub - banco de produção",
+projeto `movepark-v3`) está criado e **desativado**: a conta não tinha orçamento para mais um
+monitor. Se o orçamento subir, basta ativá-lo. A instância continua Micro por decisão de custo.
+
+**Como reiniciar** quando o banco travar sem voltar sozinho: `POST
+https://api.supabase.com/v1/projects/mgaigbezdalbyuqiofcf/restart` (ou Settings > General no
+painel). Em 27/11 voltou em cerca de 2 minutos.
+
 ## Testes
 
 `supabase/tests/pricing_mirror.test.sql` cobre o lado do espelho (seis casos): a porta aberta e
