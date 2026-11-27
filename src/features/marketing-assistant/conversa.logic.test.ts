@@ -40,6 +40,13 @@ describe("parteDeTool", () => {
 });
 
 describe("grupos e rótulos", () => {
+  it("as tools novas aparecem em destaque", () => {
+    for (const nome of ["marketing_get_opportunities", "marketing_get_breakdown", "marketing_get_trend", "marketing_get_calendar", "marketing_measure_campaign"]) {
+      expect(ondeMostrar(grupoDaTool(nome))).toBe("destaque");
+    }
+    expect(rotuloDaTool("marketing_get_opportunities", "rodando")).toBe("Procurando as oportunidades de hoje…");
+  });
+
   it("cada tool cai no componente certo", () => {
     expect(grupoDaTool("marketing_preview_segment")).toBe("segmento");
     expect(grupoDaTool("marketing_get_funnel")).toBe("funil");

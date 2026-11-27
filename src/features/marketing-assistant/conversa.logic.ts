@@ -48,6 +48,11 @@ export type Grupo =
   | "mensagem"
   | "gravacao"
   | "proposta"
+  | "oportunidades"
+  | "distribuicao"
+  | "tendencia"
+  | "calendario"
+  | "resultado"
   | "generico";
 
 const GRUPOS: Record<string, Grupo> = {
@@ -69,6 +74,11 @@ const GRUPOS: Record<string, Grupo> = {
   marketing_set_dispatch_config: "gravacao",
   marketing_run_campaign: "proposta",
   marketing_set_dispatch_enabled: "proposta",
+  marketing_get_opportunities: "oportunidades",
+  marketing_get_breakdown: "distribuicao",
+  marketing_get_trend: "tendencia",
+  marketing_get_calendar: "calendario",
+  marketing_measure_campaign: "resultado",
 };
 
 export function grupoDaTool(nome: string): Grupo {
@@ -126,6 +136,19 @@ const ROTULOS: Record<string, [string, string, string]> = {
     "Preparando a mudança da chave geral…",
     "Preparou a mudança da chave geral",
     "Não conseguiu preparar a mudança da chave geral",
+  ],
+  marketing_get_opportunities: [
+    "Procurando as oportunidades de hoje…",
+    "Achou as oportunidades de hoje",
+    "Não conseguiu ler as oportunidades",
+  ],
+  marketing_get_breakdown: ["Dividindo o público…", "Dividiu o público", "Não conseguiu dividir o público"],
+  marketing_get_trend: ["Lendo a tendência…", "Leu a tendência", "Não conseguiu ler a tendência"],
+  marketing_get_calendar: ["Olhando o calendário…", "Olhou o calendário", "Não conseguiu ler o calendário"],
+  marketing_measure_campaign: [
+    "Medindo o resultado da campanha…",
+    "Mediu o resultado da campanha",
+    "Não conseguiu medir o resultado da campanha",
   ],
 };
 
@@ -285,7 +308,11 @@ export function normalizarMarkdown(texto: string): string {
  * `nada`: consulta de bastidor, que só serve ao agente.
  */
 export function ondeMostrar(grupo: Grupo): "destaque" | "sob_demanda" | "nada" {
-  if (grupo === "proposta" || grupo === "gravacao" || grupo === "segmento" || grupo === "mensagem") return "destaque";
+  if (
+    grupo === "proposta" || grupo === "gravacao" || grupo === "segmento" || grupo === "mensagem" ||
+    grupo === "oportunidades" || grupo === "distribuicao" || grupo === "tendencia" ||
+    grupo === "calendario" || grupo === "resultado"
+  ) return "destaque";
   if (grupo === "rfm" || grupo === "funil" || grupo === "perfis" || grupo === "descobertas" || grupo === "campanha") {
     return "sob_demanda";
   }
@@ -312,7 +339,7 @@ export function organizarMensagem(parts: Array<{ type: string } & Record<string,
     if (tool) passos.push(tool);
   }
   const destaques: ParteDeTool[] = [];
-  const unicos = new Set(["segmento", "mensagem"]);
+  const unicos = new Set(["segmento", "mensagem", "oportunidades", "calendario"]);
   for (const t of passos) {
     const grupo = grupoDaTool(t.nome);
     if (t.estado !== "pronta" || ondeMostrar(grupo) !== "destaque") continue;

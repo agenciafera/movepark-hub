@@ -2480,12 +2480,9 @@ Em `src/features/marketing-assistant/conversa.logic.ts`:
 
 - [ ] **Step 8: os painéis**
 
-Crie `src/features/marketing-assistant/partes/Oportunidades.tsx`:
+Acrescente ao fim de `src/features/marketing-assistant/paineis.logic.ts` o tipo `Oportunidade` e `listaDeOportunidades` (ficam fora do componente porque o lint reprova função exportada junto de componente):
 
-```tsx
-import { Button } from "@/components/ui/button";
-import { formatBRL } from "@/lib/format";
-
+```ts
 export type Oportunidade = {
   chave: string;
   titulo: string;
@@ -2500,6 +2497,14 @@ export function listaDeOportunidades(saida: unknown): Oportunidade[] {
   const l = (saida as { oportunidades?: unknown } | null)?.oportunidades;
   return Array.isArray(l) ? (l as Oportunidade[]) : [];
 }
+```
+
+Crie `src/features/marketing-assistant/partes/Oportunidades.tsx`:
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { formatBRL } from "@/lib/format";
+import { listaDeOportunidades } from "../paineis.logic";
 
 /** As jogadas que cabem hoje: o público em destaque e o botão que começa o trabalho. */
 export function Oportunidades({ saida, onPedir }: { saida: unknown; onPedir?: (texto: string) => void }) {
@@ -3000,7 +3005,7 @@ Em `src/features/marketing-assistant/api.ts`:
 
 (a) em `assistenteKeys`, acrescente `oportunidades: () => [...assistenteKeys.all, "oportunidades"] as const,`.
 
-(b) acrescente o import `import type { Oportunidade } from "./partes/Oportunidades";` e, depois de `useConversa`, a função:
+(b) acrescente o import `import type { Oportunidade } from "./paineis.logic";` e, depois de `useConversa`, a função:
 
 ```ts
 /** A abertura da conversa: as oportunidades de hoje, direto do Hub, sem passar pelo modelo. */
@@ -3023,7 +3028,8 @@ Em `src/features/marketing-assistant/Conversa.tsx`:
 (a) troque o import de `./api` por `import { criarTransporte, useOportunidades } from "./api";` e acrescente:
 
 ```tsx
-import { listaDeOportunidades, Oportunidades } from "./partes/Oportunidades";
+import { listaDeOportunidades } from "./paineis.logic";
+import { Oportunidades } from "./partes/Oportunidades";
 import { ProximosPassos } from "./partes/ProximosPassos";
 ```
 

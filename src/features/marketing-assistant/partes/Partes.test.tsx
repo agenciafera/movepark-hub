@@ -172,4 +172,98 @@ describe("VisualDaTool", () => {
     const { container } = embrulho(<VisualDaTool parte={parte({ nome: "marketing_list_leads", saida: { leads: [{ id: "x" }] } })} propostas={[]} />);
     expect(container.textContent).toBe("");
   });
+
+  it("oportunidades mostram o público e o botão manda o pedido", () => {
+    const onPedir = vi.fn();
+    embrulho(
+      <VisualDaTool
+        parte={parte({
+          nome: "marketing_get_opportunities",
+          saida: {
+            data: "2026-11-27",
+            oportunidades: [
+              {
+                chave: "segunda_compra",
+                titulo: "Voltou de viagem nos últimos 3 dias",
+                por_que: "Fez a primeira viagem com a Movepark e ainda não marcou a próxima.",
+                publico: 14,
+                alcance_email: 13,
+                ticket_medio: 172.4,
+                pedido: "Quero chamar para a segunda compra quem voltou de viagem nos últimos 3 dias",
+              },
+            ],
+          },
+        })}
+        propostas={[]}
+        onPedir={onPedir}
+      />,
+    );
+    expect(screen.getByText("14")).toBeInTheDocument();
+    expect(screen.getByText("Voltou de viagem nos últimos 3 dias")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Montar esse público" }));
+    expect(onPedir).toHaveBeenCalledWith("Quero chamar para a segunda compra quem voltou de viagem nos últimos 3 dias");
+  });
+
+  it("distribuição mostra cada valor com pessoas e percentual", () => {
+    embrulho(
+      <VisualDaTool
+        parte={parte({
+          nome: "marketing_get_breakdown",
+          saida: { dimensao: "tarifa", total: 194, itens: [{ valor: "basica", rotulo: "Básica", pessoas: 115, percentual: 59.3 }] },
+        })}
+        propostas={[]}
+      />,
+    );
+    expect(screen.getByText("Por tarifa")).toBeInTheDocument();
+    expect(screen.getByText("Básica")).toBeInTheDocument();
+    expect(screen.getByText("115 (59,3%)")).toBeInTheDocument();
+  });
+
+  it("calendário mostra a data, o nome e a janela", () => {
+    embrulho(
+      <VisualDaTool
+        parte={parte({
+          nome: "marketing_get_calendar",
+          saida: {
+            hoje: "2026-11-27",
+            datas: [{ nome: "Natal", data: "2026-12-25", tipo: "feriado", aproximada: false, janela_de: "2026-12-18", janela_ate: "2026-12-22", abre_em_dias: 21 }],
+          },
+        })}
+        propostas={[]}
+      />,
+    );
+    expect(screen.getByText("25/12")).toBeInTheDocument();
+    expect(screen.getByText("Enviar de 18/12 a 22/12, abre em 21 dias")).toBeInTheDocument();
+  });
+
+  it("resultado sem execução diz que não há o que medir", () => {
+    embrulho(
+      <VisualDaTool parte={parte({ nome: "marketing_measure_campaign", saida: { campanha: "Volta", executada: false } })} propostas={[]} />,
+    );
+    expect(screen.getByText("A campanha Volta ainda não rodou, então não há resultado para medir.")).toBeInTheDocument();
+  });
+
+  it("resultado executado mostra antes, depois e o aviso", () => {
+    embrulho(
+      <VisualDaTool
+        parte={parte({
+          nome: "marketing_measure_campaign",
+          saida: {
+            campanha: "Volta",
+            executada: true,
+            janela_dias: 30,
+            matriculados: 31,
+            mensagens_enviadas: 28,
+            janela_completa: true,
+            antes: { reservas: 2, receita: 340 },
+            depois: { reservas: 5, receita: 910 },
+            aviso: "Comparação, não prova: a ferramenta não tem grupo de controle.",
+          },
+        })}
+        propostas={[]}
+      />,
+    );
+    expect(screen.getByText("+150%")).toBeInTheDocument();
+    expect(screen.getByText("Comparação, não prova: a ferramenta não tem grupo de controle.")).toBeInTheDocument();
+  });
 });

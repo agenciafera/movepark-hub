@@ -19,12 +19,25 @@ import {
   type Proposta,
 } from "../conversa.logic";
 import { CartaoDaProposta } from "./CartaoDaProposta";
+import { Calendario } from "./Calendario";
+import { Distribuicao } from "./Distribuicao";
+import { Oportunidades } from "./Oportunidades";
+import { ResultadoDaCampanha } from "./ResultadoDaCampanha";
+import { Tendencia } from "./Tendencia";
 import { NumerosDaCampanha } from "./NumerosDaCampanha";
 import { PreviaDaMensagem } from "./PreviaDaMensagem";
 import { PreviaDeSegmento } from "./PreviaDeSegmento";
 
 /** O resultado de uma tool desenhado do jeito que serve ao admin. Consulta de bastidor não tem. */
-export function VisualDaTool({ parte, propostas }: { parte: ParteDeTool; propostas: Proposta[] }) {
+export function VisualDaTool({
+  parte,
+  propostas,
+  onPedir,
+}: {
+  parte: ParteDeTool;
+  propostas: Proposta[];
+  onPedir?: (texto: string) => void;
+}) {
   const s = parte.saida;
   switch (grupoDaTool(parte.nome)) {
     case "segmento":
@@ -41,6 +54,16 @@ export function VisualDaTool({ parte, propostas }: { parte: ParteDeTool; propost
       return <NumerosDaCampanha saida={s} />;
     case "mensagem":
       return <PreviaDaMensagem saida={s} />;
+    case "oportunidades":
+      return <Oportunidades saida={s} onPedir={onPedir} />;
+    case "distribuicao":
+      return <Distribuicao saida={s} />;
+    case "tendencia":
+      return <Tendencia saida={s} />;
+    case "calendario":
+      return <Calendario saida={s} />;
+    case "resultado":
+      return <ResultadoDaCampanha saida={s} />;
     case "gravacao": {
       const link = linkDaGravacao(parte.nome, parte.entrada, s);
       return (
