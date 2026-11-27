@@ -388,7 +388,16 @@ as entradas do `WP_ESTACIONAMENTO_REDIRECTS` que apontavam para ela passam a apo
 aeroporto. Se o parceiro voltar, a entrada sai do mapa no mesmo PR que o republica, senão o 301
 rouba a própria ficha (o caso `bandeira-park`).
 
-### Continua em aberto
+O quarto passo é o texto, e ele não cabe no mesmo dia: o parceiro que sai costuma ser a
+referência de preço de dezenas de comparações, muitas sem citar o nome (só a cifra e a data da
+tabela dele). Ele segue o método da skill `frescor-de-preco`, como uma virada de tabela.
 
-- **O texto dos posts ainda chama a Aerovalet de parceira** ("parceiro Movepark", "preço vivo
-  no Movepark", tabela com R$ 28,90). Só o destino do link mudou.
+### Texto reescrito em 27/11/2026
+
+Os posts, as FAQs de destino e as traduções deixaram de citar a Aerovalet no mesmo dia, em sete
+migrations (`20261209170000` a `20261209176000`, 87 documentos). Congonhas passou a comparar o
+Plenty Park, o The Parking e o oficial; Guarulhos, a Pare Seguro e o Aeropark. O registro da
+rodada, com o que mudou de sentido, está em
+[`rotina-mensal-frescor.md`](./rotina-mensal-frescor.md), seção "Rodada extra de 27/11/2026: a
+Aerovalet sai". Ficaram 24 posts despublicados (consolidados em 301) que ainda a citam e não vão
+ao ar.

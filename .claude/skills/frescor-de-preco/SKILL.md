@@ -340,6 +340,17 @@ próxima rodada" e esta skill no mesmo commit. Mensagem de commit no padrão
 
 ## Armadilhas, reunidas
 
+- **Parceiro que sai é uma virada de tabela, e das grandes.** Em 27/11/2026 a Aerovalet saiu e
+  era a referência de preço de 87 documentos em Guarulhos e Congonhas, boa parte deles sem citar
+  o nome: só a cifra (R$ 16,90, R$ 6,90 por dia no mês) e a data da tabela dela (28/10/2026).
+  Varra pelo nome, pela data da tabela e pelos valores, nos três idiomas, e comece pelas FAQs de
+  destino, que ficam justamente na página que recebe o 301 da ficha.
+- **O índice devolve o preço de 1 diária mesmo com estadia mínima maior.** Nunca escreva "diária
+  avulsa" sem conferir `location_parking_type.minimum_stay_value`. O `bloco-de-fato.mjs` passou a
+  filtrar isso em 27/11/2026.
+- **Tabela agendada na nativa.** Antes de escrever, olhe `pricing_schedule` com `status =
+  'scheduled'` dos parceiros citados: o texto mostra a tabela de hoje, e a rodada seguinte já tem
+  data marcada.
 - **Leitura por anon não alcança `company` nem `pricing_mirror_run`.** Use o MCP ou JWT de admin.
 - **`aeropark` casa com `aeroparking`** em `ilike`. Slug exato ou fronteira de palavra.
 - **Tarifa do oficial igual a valor antigo do parceiro** é falso positivo, e fica com a data dela.

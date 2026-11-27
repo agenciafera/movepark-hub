@@ -418,7 +418,94 @@ de um dia; as duas passaram a mostrar a menor estadia aceita.
 
 **Aberto:** a FAQ "o que está incluso na diária em Congonhas" diz que os parceiros oferecem
 traslado até o terminal, enquanto o post de informações do aeroporto diz que nenhum dos dois
-declara van. Não é preço e ficou fora desta rodada.
+declara van. Não é preço e ficou fora desta rodada. (Fechado em 27/11/2026, na rodada abaixo: a
+FAQ passou a dizer percurso curto, sem prometer traslado.)
+
+## Rodada extra de 27/11/2026: a Aerovalet sai
+
+A Aerovalet deixou a Movepark em 27/11/2026 e foi despublicada no Manager (empresa e as três
+unidades). A ficha virou 301 para a página do aeroporto e os links de post mudaram de alvo no mesmo
+dia (`20261209130000`, ver [`url-estacionamentos.md`](./url-estacionamentos.md)). O texto, não: em
+Guarulhos e em Congonhas ela era o parceiro mais barato de quase toda comparação, com a tabela de
+28/10/2026, e muitas frases usavam a cifra e a data dela sem citar o nome.
+
+### Quem fica, e de onde sai cada cifra
+
+| Praça | Parceiro | Tabela | Observação |
+| --- | --- | --- | --- |
+| CGH | Plenty Park | 17/11/2026, espelhada | só vaga coberta, mínimo de 3 diárias, 863 m do terminal |
+| GRU | Pare Seguro | 03/11/2026, nativa | checkout pela Movepark, mínimo de 2 diárias; descoberta a R$ 18,90 por dia até 14 e R$ 290,00 fixos de 15 a 30 |
+| GRU | Aeropark | 13/11/2026 nas vagas comuns, 19/10/2026 no valet | espelhada, mínimo de 2 diárias, 1,88 km do T1 |
+
+Toda cifra saiu do `simulate_price` lido em 27/11/2026, de 1 a 45 diárias, online e balcão. Onde a
+Aerovalet era a diária avulsa mais barata de Congonhas, entrou o The Parking (R$ 35,00, conferido
+no site em 27/11/2026, já publicado no acervo), citado pelo nome e sem link. Distâncias por terminal
+do PostGIS; fichas de segurança relidas em 27/11/2026.
+
+### O que foi gravado
+
+Sete migrations, cada campo trocado inteiro com trava de md5 e lido de volta byte a byte:
+
+| Migration | O que cobre | Documentos | Campos |
+| --- | --- | --- | --- |
+| `20261209170000_aerovalet_sai_congonhas` | 6 posts, 4 traduções, 7 FAQs e 12 traduções de FAQ | 29 | 44 |
+| `20261209171000_aerovalet_sai_referencias_soltas` | convênio, quanto custa, voo atrasado, 2 posts de Curitiba | 9 | 9 |
+| `20261209172000_aerovalet_sai_faqs_guarulhos` | 8 FAQs de destino e 12 traduções | 20 | 25 |
+| `20261209173000_aerovalet_sai_posts_guarulhos_1` | Aeropark, guias gerais, 5 opções, segurança, fim de ano | 14 | 26 |
+| `20261209174000_aerovalet_sai_terminais_guarulhos` | Terminais 1, 2 e 3 | 9 | 24 |
+| `20261209175000_aerovalet_sai_mensal_guarulhos` | estacionamento mensal | 3 | 6 |
+| `20261209176000_aerovalet_sai_donas_guarulhos` | as três donas da praça | 3 | 9 |
+
+Aplicadas por `supabase db query --linked -f`, cada uma ensaiada antes numa transação desfeita, com
+o par fechado no ledger. A varredura final no banco não acha a Aerovalet em nenhum campo publicado;
+sobram 24 posts despublicados (consolidados em 301) que não vão ao ar.
+
+### O que mudou de sentido
+
+- **Guarulhos perdeu a diária avulsa.** Os dois parceiros que ficam pedem 2 diárias, então "para
+  poucas horas o oficial compra tempo, não economia" virou "o oficial ganha em tempo e em
+  dinheiro": a primeira hora (R$ 31,00) custa menos que as duas diárias mínimas (R$ 37,80).
+- **O parceiro mais barato depende da duração.** Na descoberta, a Pare Seguro sai R$ 1,00 por dia
+  abaixo de 2 a 6 diárias, os dois empatam de 7 a 14, o Aeropark leva a quinzena por R$ 6,50 e a
+  Pare Seguro volta a ganhar a partir de 16, até R$ 247,00 no mês. "O mais distante é sempre o
+  mais barato" deixou de valer.
+- **O degrau retroativo de 7, 17 e 30 diárias sumiu.** O que devolve dinheiro agora é a vaga
+  coberta da Pare Seguro: 13 ou 14 diárias (R$ 375,70 e R$ 404,60) custam mais que 15
+  (R$ 350,00). Na descoberta dela, o pacote segura o total de 15 a 30 diárias.
+- **As economias contra o oficial encolheram.** Em 15 diárias, R$ 196,50 contra o Standard (era
+  R$ 301,50); a escada inteira da dona de "como estacionar barato" passou de 63% para 41%.
+- **Congonhas ficou com um parceiro.** O top 3 passou a ser Plenty Park, The Parking e o oficial,
+  e a menor diária avulsa da vizinhança é a do The Parking (R$ 35,00).
+- **No convênio**, a referência passou a R$ 18,90 e o desconto de empate foi refeito (58,8% sobre
+  balcão de R$ 45,90, era 63,2%).
+
+### Corrigido de passagem
+
+- **O Aeropark ainda estava na tabela de 19/10/2026 nos posts de Guarulhos.** A virada dele em
+  13/11/2026 (descoberta de R$ 21,90/19,90/18,90 para R$ 19,90/18,90/17,90 por dia) não tinha
+  rodada de texto; os valores foram atualizados em toda frase tocada.
+- **O `bloco-de-fato.mjs` anunciava "diária avulsa" junto de "estadia mínima de 2 diárias"**
+  para a Pare Seguro, porque o índice devolve o preço de 1 diária mesmo com mínimo maior. Com
+  mínimo acima de 1, a diária some da frase; teste de regressão em `bloco-de-fato.test.mjs`.
+- **A FAQ de Congonhas que prometia traslado** (aberto da rodada de 17/11) passou a dizer só
+  percurso curto, que é o que a ficha declara.
+
+### Resíduos conferidos
+
+R$ 139,30 é o balcão da Pare Seguro em 7 diárias (coincide com o online antigo do Aeropark);
+R$ 119,20 é a diferença do oficial em 2 diárias (coincide com o valet antigo da Aerovalet);
+R$ 19,90 e R$ 23,88 são diária online e de balcão do Aeropark; R$ 178,50 e as outras quinzenas de
+agosto a outubro ficam como histórico datado na dona de "como estacionar barato".
+
+### Aberto
+
+- **Rodada da Pare Seguro em 01/12/2026.** Ela tem tabela agendada (`pricing_schedule`, efetiva
+  em 01/12 às 0h): descoberta de R$ 18,90 para R$ 24,90 por dia e de R$ 290,00 para R$ 370,00 de
+  15 a 30 diárias, coberta de R$ 28,90 para R$ 38,90 e de R$ 350,00 para R$ 420,00, mínimo de 2
+  para 3 diárias. O texto mostra a tabela que vale hoje (vigência pela compra), então tudo que
+  cita a Pare Seguro (FAQs de Guarulhos, convênio, quanto custa, terminais, mensal, donas, fim de
+  ano e guias) precisa de rodada quando o agendamento aplicar. Várias frases mudam de sentido de
+  novo: a partir de 01/12 o Aeropark fica mais barato até 20 diárias na descoberta.
 
 ## O procedimento, para a próxima rodada
 
