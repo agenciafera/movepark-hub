@@ -697,6 +697,16 @@ O KM64 foi despublicado e `/estacionamentos/aeroporto-viracopos/km64` responde 3
 a tabela do Bandeira Park (R. Antônio Luchiari, 1100): é o mesmo pátio e fica uma linha só. Aeroparking,
 oficial e Yellow ganharam as durações que publicam (Aeroparking conferido no simulador de reserva).
 
+**Uma linha por marca, mesmo no mesmo pátio (27/11/2026, migration `20261209180000`).** A decisão de
+deixar Multipark e Aerovalet fora foi revista: são marcas com site, reserva e tabela próprios, e quem
+busca pela marca precisa achá-la na página. As duas entraram com a coordenada do Bandeira e o total
+por período cotado no sistema de reserva para onde o site de cada uma encaminha (quando o site
+publica um número que a reserva não cobra, vale a reserva). A FAQ "quanto custa" diz que as três
+dividem o pátio. Ficaram fora, por motivo verificável: Viracopos Park (o Google marca como fechado
+de vez), "Estacionamento Abraça" (ficha sem dono, sem telefone e sem avaliação, na via interna do
+aeroporto) e "Estacionamento Aeroporto" na R. Maria Franceliana Braz (sem site nem marca). O
+`estacionamentoviracopos.com` é um segundo domínio do Viracopos Aeroparking.
+
 ### A primeira carga, e o que ficou de fora
 
 Entrou só o que foi conferido em agosto de 2026: Park Confins, Central Park e Multipark em
