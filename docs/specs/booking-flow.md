@@ -572,9 +572,9 @@ normal, mas não é uma sentença: dinheiro que chega atrasado é honrado ou dev
     "Pagamento sem reserva" para `support_inbox` (uma vez por cobrança). Ninguém estorna sozinho.
   - **Cron:** `cron_expire_pending_bookings` dá como `failed` a linha sem ids cujo prazo venceu, e a
     reserva expira no mesmo passe. `failed` não é terminal: se a cobrança aparecer depois, o
-    webhook ainda a pendura e a reserva volta (migration `20261208180000`).
+    webhook ainda a pendura e a reserva volta (migration `20261208180500`).
   - **Uma cobrança, um pagamento:** índice único `payment (provider, provider_charge_id)` (migration
-    `20261208150000`, 27/11/2026). A Pagar.me entrega o mesmo aviso mais de uma vez (a
+    `20261208200000`, 27/11/2026). A Pagar.me entrega o mesmo aviso mais de uma vez (a
     ch_QOXZKxhm0cyjdKeR chegou quatro vezes em 15 min); se dois avisos tentarem pendurar a mesma
     cobrança em linhas diferentes, a segunda escrita falha em vez de contar o dinheiro em dobro.
 - **Capacidade:** cancelar + liberar a vaga é uma RPC única e **idempotente por status**,
