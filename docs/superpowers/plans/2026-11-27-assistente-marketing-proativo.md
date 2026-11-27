@@ -1664,13 +1664,18 @@ Crie `supabase/functions/_shared/marketing/oportunidades.test.ts`:
 import { assert, assertEquals } from "jsr:@std/assert";
 import { jogadasDeHoje, oportunidadesDeHoje } from "./oportunidades.ts";
 
-Deno.test("em 27/11/2026 não há feriado com janela abrindo em 14 dias", () => {
-  assertEquals(jogadasDeHoje("2026-11-27").map((j) => j.chave), [
+Deno.test("em 20/09/2026 nenhuma janela de envio abre em 14 dias", () => {
+  assertEquals(jogadasDeHoje("2026-09-20").map((j) => j.chave), [
     "abandono_recente",
     "segunda_compra",
     "troca_flex",
     "indicacao",
   ]);
+});
+
+Deno.test("em 27/11/2026 a janela das férias de fim de ano abre em 11 dias", () => {
+  const feriado = jogadasDeHoje("2026-11-27").find((j) => j.chave === "feriado")!;
+  assertEquals(feriado.titulo, "Férias de fim de ano, por volta de 15/12");
 });
 
 Deno.test("em 14/12/2026 o feriado da vez é o Natal", () => {
@@ -1808,7 +1813,7 @@ function jogadaDoFeriado(hoje: string): Jogada | null {
   if (!d) return null;
   return {
     chave: "feriado",
-    titulo: `${d.nome} em ${ddmm(d.data)}`,
+    titulo: d.aproximada ? `${d.nome}, por volta de ${ddmm(d.data)}` : `${d.nome} em ${ddmm(d.data)}`,
     porQue: `A janela de envio vai de ${ddmm(d.janela_de)} a ${ddmm(d.janela_ate)}. Público: quem já comprou e não tem viagem marcada.`,
     pedido: `Quero montar a campanha de ${d.nome} para quem já comprou e não tem viagem marcada`,
     definition: {
@@ -1862,7 +1867,7 @@ export async function oportunidadesDeHoje(
 - [ ] **Step 8: ver passar**
 
 Run: `deno test --no-check --allow-env --allow-net --allow-read supabase/functions/_shared/marketing/oportunidades.test.ts supabase/functions/_shared/marketing/calendario.test.ts`
-Expected: 9 passed. O teste do catálogo depende da Task 1 estar no repo.
+Expected: 10 passed. O teste do catálogo depende da Task 1 estar no repo.
 
 - [ ] **Step 9: commit**
 
