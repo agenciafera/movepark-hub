@@ -53,15 +53,17 @@ describe("MCP público · só leitura", () => {
   });
 
   // F2 · filtro por empresa (o bug corrigido em 7b1839f: o bot dizia não saber onde a empresa atua)
+  // A empresa tem que ser parceira com unidade no ar: era a Aerovalet, que saiu da Movepark em
+  // 27/11/2026 e deixou este caso vermelho por dado do vivo, sem regressão nenhuma.
   it("list_locations com company devolve só as unidades daquela empresa", async () => {
     const r = await rpc("", "tools/call", {
       name: "list_locations",
-      arguments: { company: "aerovalet" },
+      arguments: { company: "aeropark" },
     });
     const rows = toolPayload<Array<{ company?: { slug?: string; name?: string } }>>(r);
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      expect(row.company?.slug ?? row.company?.name?.toLowerCase()).toMatch(/aerovalet/);
+      expect(row.company?.slug ?? row.company?.name?.toLowerCase()).toMatch(/aeropark/);
     }
   });
 });
