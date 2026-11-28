@@ -221,6 +221,8 @@ Uma linha por semana, sem apagar as anteriores. Números da segunda-feira.
 |---|---|---|---|---|---|---|---|---|---|---|
 | 23/11/2026 | 17 | 9,1 | 7,8 | 22,9 | 16,5 | 7,7 | 6.114 | `vale-a-pena-deixar-o-carro-no-aeroporto-ou-ir-de-uber`, `preco-estacionamento-aeroporto-ferias`, `voo-de-madrugada-guarulhos` | | Marco desta spec. Posição geral do GSC na cabeça; em VCP é "estacionamento viracopos" |
 
+Placar de IA de 28/11/2026: Movepark 17, Bandeira Park 21, Xpark 5 em 36 células ([CSV](dados/placar-ia/placar-2026-11-28.csv)). Medidos Gemini, Google visão geral e Google Modo IA; ChatGPT e Perplexity estavam deslogados e o envio no Claude não disparou, então ficaram sem medida.
+
 ## 6. Metas
 
 Somam-se às das specs de conteúdo e de backlinks, sem trocá-las.
